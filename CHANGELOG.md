@@ -2,6 +2,165 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [0.2.0](https://github.com/Patricoaa/ERPGrafico/compare/v0.1.23...v0.2.0) (2026-06-10)
+
+
+### ⚠ BREAKING CHANGES
+
+* **treasury:** deprecación definitiva de DEBIT_CARD/CHECKBOOK como tipos de cuenta
+
+### 🧪 Testing
+
+* **treasury:** gasto con tarjeta de crédito aumenta el pasivo (F3.1) ([977219f](https://github.com/Patricoaa/ERPGrafico/commit/977219f628db687faa2818a77a92c88dd0d0e20e))
+
+
+### 🚀 Maintenance
+
+* **treasury:** migración 0056 para bank_provisioned en TreasuryAccount y PaymentMethod ([bd9fa59](https://github.com/Patricoaa/ERPGrafico/commit/bd9fa594549e16fa711551923b26b61917e0d689))
+
+
+### 📚 Documentation
+
+* ADR-0036 Centro de Bancos + actualización fase 5 transversal — F5.5 ([df0d436](https://github.com/Patricoaa/ERPGrafico/commit/df0d43659ad5cf991ea1bb4461d1e8c2db1e8f30))
+* **adr:** renumber loan-charges ADR 0042 → 0045 (collision with card P0) ([475c04b](https://github.com/Patricoaa/ERPGrafico/commit/475c04ba23866d262ea202a61c372561da2636a1))
+* **architecture:** ADR-0038 seed del puente de Cheques en Cartera ([dac278e](https://github.com/Patricoaa/ERPGrafico/commit/dac278e6b38e5141fa32fdf4bf05464f0d504412))
+* **bancos:** ADR-0033 + state-map + entity-identity + api-contracts (F2.13) ([2f71d7f](https://github.com/Patricoaa/ERPGrafico/commit/2f71d7f99b989e3587f05e9655b358947309bae5))
+* **bancos:** avance Fase 1 (F1.3/F1.4/F1.5 hechos) + procedimiento F1.1 ([3c5a7fd](https://github.com/Patricoaa/ERPGrafico/commit/3c5a7fd0565db0144e9caaa33e5e2d25ed266309))
+* **bancos:** objetivos, commits por fase y contratos del proyecto ([b1e5b25](https://github.com/Patricoaa/ERPGrafico/commit/b1e5b25e31d2866362fbf41304f2c6140b17ae36))
+* **bancos:** registrar commit F1.2 (0fd14785) en tabla Avance ([4d28407](https://github.com/Patricoaa/ERPGrafico/commit/4d2840770368fc80978dd0d312542a97336d1cd4))
+* **bancos:** registrar commits F2.1–F2.10 en tabla Avance (fase-2) ([8079cd4](https://github.com/Patricoaa/ERPGrafico/commit/8079cd4e66784a0d93e5d533b95f981758a963dc))
+* **bancos:** roadmap completo de gestión bancaria (50-audit/bancos) ([edc4a28](https://github.com/Patricoaa/ERPGrafico/commit/edc4a28d68d31a47c1efb4e2ef0862484ac5a9d4))
+* **legacy-migration:** documentación completa para importar 7.960 NVs desde ordenes_dump ([51d97c6](https://github.com/Patricoaa/ERPGrafico/commit/51d97c6181db68f2d47fd90e666acf2fe458e9b6))
+* **treasury:** ADR-0034 tarjeta de crédito estado/pago + fase-3 completa ([b2ed0fc](https://github.com/Patricoaa/ERPGrafico/commit/b2ed0fc58bb19f02ea764f122d4a7342ff7b3615))
+* **treasury:** ADR-0035 + state-map + fase-4 complete ([8febb22](https://github.com/Patricoaa/ERPGrafico/commit/8febb22370f1ffffd623d6017e1b22e6d5469264))
+* **treasury:** ADR-0035 update with F4.4 CHECK orchestrator integration ([df0633d](https://github.com/Patricoaa/ERPGrafico/commit/df0633ded884cc4ebe349407c3b1d714f75ac49d))
+* **treasury:** api-contracts F4.4 CHECK orchestrator params ([2b0f9f9](https://github.com/Patricoaa/ERPGrafico/commit/2b0f9f9cd19bd3aa39761f4d47439b8b1abd31d5))
+
+
+### ⚙️ Refactors
+
+* **drawer:** ActivitySidebar padding fix, NotchedButton, tabs border, barcode button ([9a40fdb](https://github.com/Patricoaa/ERPGrafico/commit/9a40fdb782151384d69dc86307c9ff5b2815eb87))
+* move close button inside PanelHeader flex, normalize panel padding ([4652c8f](https://github.com/Patricoaa/ERPGrafico/commit/4652c8fb7d5d8661e47763aa0fe1ae5bc3d5e416))
+* **pos-terminal:** uniformizar selector de métodos de pago y reflejarlos en la card view ([5a7e04d](https://github.com/Patricoaa/ERPGrafico/commit/5a7e04d60a8cef3e06e4640632b275ca1572409b))
+* **sheet:** move panel-surface styles to base SheetContent, remove overrides and inner wrappers ([143ec6c](https://github.com/Patricoaa/ERPGrafico/commit/143ec6c043f183b2d3b2f87de3c215486735e381))
+* **treasury:** BankManagement muestra overview por banco en tabla ([75acf31](https://github.com/Patricoaa/ERPGrafico/commit/75acf3135e852c44a5c7eb5bcbbc40f939e74f6c))
+* **treasury:** cheque cleanup — remove endorsement (ADR-0039) + bounce/void invoice demotion (ADR-0040) + card view ([945db2c](https://github.com/Patricoaa/ERPGrafico/commit/945db2c8bede8f13c9856f9a7b5f3442bae4e2d8))
+* **treasury:** compactar columnas de lista de préstamos y filtrar total desembolsado solo pagado ([6452c39](https://github.com/Patricoaa/ERPGrafico/commit/6452c39c3b29ae6d006f04119ff47342b69c08e6))
+* **treasury:** deprecación definitiva de DEBIT_CARD/CHECKBOOK como tipos de cuenta ([0fd1478](https://github.com/Patricoaa/ERPGrafico/commit/0fd1478573555bb13636ccee1ba8eeb26902aed6))
+* **treasury:** eliminar rutas antiguas y simplificar navegación ([42d5588](https://github.com/Patricoaa/ERPGrafico/commit/42d5588798eb3e4325ee352d27967a673a9d34c1))
+* **treasury:** migrate bank routing to URL segments with full nav hierarchy ([f0ee027](https://github.com/Patricoaa/ERPGrafico/commit/f0ee027539b04a4982d517783e16fce173864741))
+* **treasury:** normalizar Cheque como PaymentMethod real, eliminar POSTerminal.allows_check ([c41fd02](https://github.com/Patricoaa/ERPGrafico/commit/c41fd025bb3886c271ce4306a88448aaab459e39))
+* **treasury:** remove monthly rate from credit card installments selector ([cf20ff2](https://github.com/Patricoaa/ERPGrafico/commit/cf20ff253fa6993a1ed5ccbef21f1e60101b40d2))
+* **treasury:** remove refinancing, add editable payment amounts and PrepayLoanModal ([dd9a2a7](https://github.com/Patricoaa/ERPGrafico/commit/dd9a2a74649dfd6e0a9d5e3aa1e9e308b722e26f))
+* **treasury:** remove StatCards from checks/loans/cards tabs and use full viewport height ([2cdf91c](https://github.com/Patricoaa/ERPGrafico/commit/2cdf91c8e4f4780f1a34da023fa102bc0251e365))
+* unificar acciones 'view' y 'detail' en una sola con icono FileText ([55212f5](https://github.com/Patricoaa/ERPGrafico/commit/55212f5a3ae17b6aa10c71a36a518a8ddd0a5b6a))
+
+
+### ✨ Features
+
+* **accounting:** añadir cuentas puente de Cheque al CoA IFRS ([314099b](https://github.com/Patricoaa/ERPGrafico/commit/314099b307fe0e2717bb8dc70a1f28c5328a43c2))
+* **cheques:** completar ciclo de vida de cheques propios y de terceros ([3384efc](https://github.com/Patricoaa/ERPGrafico/commit/3384efc628541c2e5b6477c1ee48143936aeb9d8))
+* **cheques:** hardcodear método CHECK en ventas + control vía POS ([8a714cf](https://github.com/Patricoaa/ERPGrafico/commit/8a714cf396eb051635acf8433facbd55838e262e))
+* **drawer:** alinear PaymentDrawer al patrón estándar y agregar mode prop a todos los CRUD drawers ([e229b93](https://github.com/Patricoaa/ERPGrafico/commit/e229b938fe18e6988ae9ca0f238919bfea232677))
+* **drawer:** mejorar jerarquía visual de colores en drawers (dark/light) ([0d99392](https://github.com/Patricoaa/ERPGrafico/commit/0d9939209c71f17e7a7b3f0e62d385f3b03e71e1))
+* **finances:** modelo IndicatorValue (UF/UTM/USD) + carga manual y feed ([8f88ced](https://github.com/Patricoaa/ERPGrafico/commit/8f88cedc6b9e39c00ed1e2ccc4e700ff79442ec0))
+* **settings:** cuenta 'Cheques en Cartera' en panel de Tesorería ([484d58e](https://github.com/Patricoaa/ERPGrafico/commit/484d58ee7f89cf5b1050e57878441d89a0413779))
+* **settings:** cuentas de gasto financiero (intereses, seguros) — F5.1 ([809c2c8](https://github.com/Patricoaa/ERPGrafico/commit/809c2c81f6e027a1db263c38865f569a11e2292e))
+* **setup:** demo data con F5.1 + cuentas únicas + banco archivado + tarjeta ([2c7d0ec](https://github.com/Patricoaa/ERPGrafico/commit/2c7d0ecb1f7b72ca18c3d4b1e1083476d4f9a5f8))
+* **treasury-ui:** mostrar próximas cuotas del cronograma en cargos no facturados ([686ebf0](https://github.com/Patricoaa/ERPGrafico/commit/686ebf0935a4a3c55566d830f5229b826891f27c))
+* **treasury:** add card view + persistent toolbar/pagination to bank loans & cards ([5d38ac2](https://github.com/Patricoaa/ERPGrafico/commit/5d38ac2520e3cbd872f481652e2d7c144a78389b))
+* **treasury:** add installments selector for credit card payments in hub ([82df777](https://github.com/Patricoaa/ERPGrafico/commit/82df777c0405b39fd16d2602a04560198931948a))
+* **treasury:** agregar filtro desplegable 'Cargos del mes' / 'Todos los cargos' en vista de cargos no facturados ([4ad8638](https://github.com/Patricoaa/ERPGrafico/commit/4ad8638d22fe360d02e6c36b2870b9c30fdb9c61))
+* **treasury:** agregar StatementsClientView para tarjetas de crédito ([5c89bf5](https://github.com/Patricoaa/ERPGrafico/commit/5c89bf514ebc99302917058788491e2b240367fe))
+* **treasury:** API + UI estados de cuenta de tarjeta de crédito (F3.5) ([d4cc606](https://github.com/Patricoaa/ERPGrafico/commit/d4cc6060d226973719cc5d60728a541e1a9b579a))
+* **treasury:** API REST de créditos bancarios (F2.11) ([b694177](https://github.com/Patricoaa/ERPGrafico/commit/b694177219c41e05a744227aa30e29eeb5011277))
+* **treasury:** archive/restore de bancos con BankDeletionService ([f486a9a](https://github.com/Patricoaa/ERPGrafico/commit/f486a9a87f2f0c3a04f84e09d06e41006bcff822))
+* **treasury:** assert post-creación en setup_demo_data para vínculo TUU ([70271f0](https://github.com/Patricoaa/ERPGrafico/commit/70271f0d557b96b62cd5b36f82c746a21c1a5df9))
+* **treasury:** auto-crear cuenta BRIDGE en proveedor terminal + refactor ProviderDrawer ([97ab633](https://github.com/Patricoaa/ERPGrafico/commit/97ab633770ec137e7b9eef0571b8fe9e4d448a78))
+* **treasury:** auto-provisión de la cuenta puente Cheques en Cartera ([bfd11ea](https://github.com/Patricoaa/ERPGrafico/commit/bfd11ea0f7c0e35291c2c4f71411a353c215d9df))
+* **treasury:** bank center toolbar/pagination + reconciliation page overflow ([e6d228a](https://github.com/Patricoaa/ERPGrafico/commit/e6d228aca44535aa0020c1559c53aa9cb495faae))
+* **treasury:** CardService — intereses/comisiones + pago del estado de cuenta (F3.3+F3.4) ([fa8b526](https://github.com/Patricoaa/ERPGrafico/commit/fa8b526b650b835f38e6c7adf936555f42834f19))
+* **treasury:** cartera de cheques recibidos con cuenta puente ([47bf7a3](https://github.com/Patricoaa/ERPGrafico/commit/47bf7a3a7302b265b4cc41383c69517474f34632))
+* **treasury:** Celery tasks para devengo de interés y alertas de cuotas (F2.9+F2.10) ([b397da0](https://github.com/Patricoaa/ERPGrafico/commit/b397da0d0cb321a5efe46c38d99777d9f070b010))
+* **treasury:** Centro de Bancos — F5.2 ([9bf8fe7](https://github.com/Patricoaa/ERPGrafico/commit/9bf8fe7ec2411e3b2923c3d7676cd08980b7e01c))
+* **treasury:** columnas Banco y Proveedor de Terminal en vista de cuentas ([e0cddb4](https://github.com/Patricoaa/ERPGrafico/commit/e0cddb4e4d65751bddcd0b3c57f88c221529d3f7))
+* **treasury:** compras en tarjeta en cuotas con interés explícito (ADR-0043) ([ca3656a](https://github.com/Patricoaa/ERPGrafico/commit/ca3656ac8b5f2f5386cd1d43ff70f5c374afc9a1))
+* **treasury:** configurable loan charges — opening fee, stamp tax, penalty (backend) ([e696c2a](https://github.com/Patricoaa/ERPGrafico/commit/e696c2a2efcb07d1995da746c4f1a7efdecf858a))
+* **treasury:** DataTable amortización, balance cascade, prepago y modal readonly ([b6485b7](https://github.com/Patricoaa/ERPGrafico/commit/b6485b7eb3323014e41eb70cd8f6c880412c7008))
+* **treasury:** dedicated LOAN treasury account type for loan liabilities (ADR-0041) ([271f707](https://github.com/Patricoaa/ERPGrafico/commit/271f707e31ef7ec185ec888d27dab204d07b015b))
+* **treasury:** exponer terminal_providers en serializer de TreasuryAccount ([439d35a](https://github.com/Patricoaa/ERPGrafico/commit/439d35a3f6f54879e5941b6fbd9e7e81f27ce5b8))
+* **treasury:** expose hidden config sub-tabs in nav ([1cbf4dc](https://github.com/Patricoaa/ERPGrafico/commit/1cbf4dc63ce7de6bf74784788d9079298924495d))
+* **treasury:** F4.1+F4.2 emisión, cobro y endoso de cheques ([86401db](https://github.com/Patricoaa/ERPGrafico/commit/86401dbaa96aa8be1241b6ff0ef28b8be789579c))
+* **treasury:** F4.3 chequera con folios correlativos ([82b3409](https://github.com/Patricoaa/ERPGrafico/commit/82b34095d9b6bfbce80e158a5f760ff52a64c013))
+* **treasury:** F4.4 integración del método CHECK crea entidad Check ([8139c46](https://github.com/Patricoaa/ERPGrafico/commit/8139c46a24902c0728851bedec32b88fb8554af0))
+* **treasury:** F4.5 KPIs de cartera y depósitos en tránsito (UI) ([9ba8962](https://github.com/Patricoaa/ERPGrafico/commit/9ba89621e68b7a364aba1fc18ea62ee0e218bb92))
+* **treasury:** F4.6 alertas Celery de cheques por vencer/en tránsito ([6de75b7](https://github.com/Patricoaa/ERPGrafico/commit/6de75b7656d9ca34f7ea9284b651026e14b6ecf8))
+* **treasury:** facturación de cargos TC con desglose por grupo de compra + cuotas ([7e8e708](https://github.com/Patricoaa/ERPGrafico/commit/7e8e708319f42d67372f17499820531e537ab957))
+* **treasury:** fusionar Banco y Proveedor en columna 'Entidad Externa' ([d55ee33](https://github.com/Patricoaa/ERPGrafico/commit/d55ee33047fe8a7ae97c8518d1a9f2a05d71db34))
+* **treasury:** habilitar Cheque como método vendible en POS demo ([84b28e8](https://github.com/Patricoaa/ERPGrafico/commit/84b28e89bc6e7186a9e06327ed418ecacee9775c))
+* **treasury:** integrate CREDIT_CARD method in payment selector for purchases ([e1b361c](https://github.com/Patricoaa/ERPGrafico/commit/e1b361caa1fb05bd0fd517aff1f521f2fbb9b0e4))
+* **treasury:** loan charges UI + ADR-0042 (opening fee, stamp tax, penalty) ([6fbf02e](https://github.com/Patricoaa/ERPGrafico/commit/6fbf02e91f4250766892f01f87a6cc1858264f12))
+* **treasury:** loan creation drawer UX ([03613a2](https://github.com/Patricoaa/ERPGrafico/commit/03613a217584ba6711f5c7ca6bd374a4ed367573))
+* **treasury:** loan lifecycle improvements ([f49bbe2](https://github.com/Patricoaa/ERPGrafico/commit/f49bbe2cb5edfcabaef9e192a08005f55960b2ae))
+* **treasury:** LoanDisburseDrawer with hybrid expense account override ([14c177a](https://github.com/Patricoaa/ERPGrafico/commit/14c177aa6f172210da9b91dc20e0acf9fcfeb60b))
+* **treasury:** LoanService (amortización + desembolso + pago CLP/UF + prepago + refi) ([8b8f7bd](https://github.com/Patricoaa/ERPGrafico/commit/8b8f7bdd7abae43865f3be4bba2ba35310a858df))
+* **treasury:** modelo CreditCardStatement + entity-registry (F3.2) ([85dc619](https://github.com/Patricoaa/ERPGrafico/commit/85dc6199a924ec55647e64508e1da95d6015c32d))
+* **treasury:** modelos BankLoan + LoanInstallment (créditos bancarios) ([ace7a82](https://github.com/Patricoaa/ERPGrafico/commit/ace7a82fb3ad180ea62448c5b1fe8b20be64c3dc))
+* **treasury:** P0 contable tarjeta de crédito (ADR-0042) ([1b39805](https://github.com/Patricoaa/ERPGrafico/commit/1b39805bcae70b6560b3df8636d33f25c821e140))
+* **treasury:** pagos parciales e interés punitorio tarjeta (ADR-0044) ([66b3ded](https://github.com/Patricoaa/ERPGrafico/commit/66b3dedbb39e85917c31ec4b601445221756b749))
+* **treasury:** pre-cablear AccountingSettings y mostrar puente de Cheque en seed ([6f0df73](https://github.com/Patricoaa/ERPGrafico/commit/6f0df73aeda8b51fdc0388a94e6ceae5ce5b8daf))
+* **treasury:** proyección de flujo de caja con vencimientos + alerta unificada — F5.3/F5.4 ([b706b3d](https://github.com/Patricoaa/ERPGrafico/commit/b706b3d3b7d89938978bcb0013501cdfd294f994))
+* **treasury:** reestructuración Centro de Bancos y mejoras de UX ([57556ad](https://github.com/Patricoaa/ERPGrafico/commit/57556ad500742551e9b33cf0e75854e57d7266a6))
+* **treasury:** reestructuración de navegación del módulo ([ef05583](https://github.com/Patricoaa/ERPGrafico/commit/ef055832cc1c58e8a3acb1873dffedcf3d628561))
+* **treasury:** separar columnas ID/N° operación, agregar total desembolsado y cuota 0 ([db7f79f](https://github.com/Patricoaa/ERPGrafico/commit/db7f79f2ad1ea1d4899146bd688e0b0d852d3673))
+* **treasury:** separar detalle de tabla amortización, agregar vista previa en creación ([c4452f6](https://github.com/Patricoaa/ERPGrafico/commit/c4452f6683104f376b97f3584301e19c5a4c230d))
+* **treasury:** show estimated late-payment penalty in pay-installment modal ([d48f0b8](https://github.com/Patricoaa/ERPGrafico/commit/d48f0b892de54c5c102ae56263ada4215299b171))
+* **treasury:** solicitar cuenta contable en wizard de creación de bancos ([2cbc5ff](https://github.com/Patricoaa/ERPGrafico/commit/2cbc5ff910854c1606dbde563f4aeee893263f4f))
+* **treasury:** tarjeta de crédito propia como cuenta de pasivo ([294c15e](https://github.com/Patricoaa/ERPGrafico/commit/294c15e8a8dbadbcf3690ff909945e07723b093c))
+* **treasury:** taxonomía de dos capas — cuentas vs formas de pago ([0c06473](https://github.com/Patricoaa/ERPGrafico/commit/0c064735433bca2e4a58d7fe5fe197940d82461b))
+* **treasury:** TC uso = 1 movimiento/asiento + cuotas vía statement (ADR-0046) ([56c68a3](https://github.com/Patricoaa/ERPGrafico/commit/56c68a3a2f26df5f9604b6372112466a9a5ac040))
+* **treasury:** UI de archive/restore para bancos ([cb44f83](https://github.com/Patricoaa/ERPGrafico/commit/cb44f83c24925ac9f19aa34d90004c790750394f))
+* **treasury:** UI de créditos bancarios (F2.12) ([a11b9de](https://github.com/Patricoaa/ERPGrafico/commit/a11b9de2fa60cf20e54429a683a5a83d213a44c9))
+
+
+### 🐛 Bug Fixes
+
+* **JournalEntryDrawer:** ocultar add/delete/hover en modo readonly, fondo muted en inputs disabled ([0c4c971](https://github.com/Patricoaa/ERPGrafico/commit/0c4c971886d965bd2f8998db0e0ddca3cf7f3d6e))
+* mejorar registro de cheques — check_bank_id en checkout compras, validaciones y serializer ([c311c03](https://github.com/Patricoaa/ERPGrafico/commit/c311c03fbe951a09d9d75a4997eaa65df256a27a))
+* **pos:** habilitar selección de Cheque en checkout sin exigir cuenta de tesorería ([864f0d8](https://github.com/Patricoaa/ERPGrafico/commit/864f0d8e72010929b6b38cd690b88959c32a6efa))
+* resolve POS blank screen on new tab ([cb834e2](https://github.com/Patricoaa/ERPGrafico/commit/cb834e26e627d01ee95fec020fd4ef75b106d489))
+* **shared:** remove max-w constraint from EmptyState description to allow multi-line text ([a0c0bc2](https://github.com/Patricoaa/ERPGrafico/commit/a0c0bc27dcbfd7cbb084bb3095e1c5bdcbc83799))
+* **treasury+infra:** enable test suite execution for Onda 3 ([eff7aae](https://github.com/Patricoaa/ERPGrafico/commit/eff7aae5ee9f10380b84d1b93696668eb6a8b9fb))
+* **treasury:** add migration 0059 convert merchant to bridge ([6d0afb8](https://github.com/Patricoaa/ERPGrafico/commit/6d0afb8ed223836e772db72333ca378131670cea))
+* **treasury:** asegurar altura completa en todas las vistas de tesorería ([f890f72](https://github.com/Patricoaa/ERPGrafico/commit/f890f7230adf8fd529c3dff6a1e0855ff95015bc))
+* **treasury:** auditar y auto-reparar vínculo proveedor↔cuenta puente ([b5a079c](https://github.com/Patricoaa/ERPGrafico/commit/b5a079c23088d9240d27eae65e646d60aa5f6744))
+* **treasury:** book balanced disbursement entry for bank loans ([e89691c](https://github.com/Patricoaa/ERPGrafico/commit/e89691ca605c94805577ee578fa5fbe1084a9996))
+* **treasury:** correct bank overview total_loan_debt aggregation ([1c9efe7](https://github.com/Patricoaa/ERPGrafico/commit/1c9efe73c81a8f2339b37741a31aede7420345d9))
+* **treasury:** corregir asientos contables del ciclo de compra con TC ([900c544](https://github.com/Patricoaa/ERPGrafico/commit/900c544908e2e7c6d2eba2ee0493c34e94b39a74))
+* **treasury:** corregir wizard de banco y dropdown MultiSelect en modales ([4b4d670](https://github.com/Patricoaa/ERPGrafico/commit/4b4d67011962b5aa1edea33f0b9073a6a8038518))
+* **treasury:** credit card account selector + accounting entries ([6a728b6](https://github.com/Patricoaa/ERPGrafico/commit/6a728b64bea88d5c639f8bc8f9bfa1d0771427ee))
+* **treasury:** eliminar tipo MERCHANT (Cuenta Recaudadora) ([a7185bb](https://github.com/Patricoaa/ERPGrafico/commit/a7185bb6fea173a9ec69d0407fa50742ce72f987))
+* **treasury:** empty Select.Item value in loan modals ([1ac249a](https://github.com/Patricoaa/ERPGrafico/commit/1ac249a16aa25874f2d4a64f43c0c1703df726d4))
+* **treasury:** exponer bank_treasury_account en ProviderDrawer ([5df1a1b](https://github.com/Patricoaa/ERPGrafico/commit/5df1a1b620cdac2fe034b1e2d3c0d9ca81266f5c))
+* **treasury:** fix editable inputs and modal footer placement ([a6a299d](https://github.com/Patricoaa/ERPGrafico/commit/a6a299d3fbfb3e7b534d79c835614748fa8c8d64))
+* **treasury:** invalidate allowed-payment-methods cache after PaymentMethod create/update/delete ([87486d4](https://github.com/Patricoaa/ERPGrafico/commit/87486d4b56f2a7bf24dc4981c67e27eb6d9cadff))
+* **treasury:** keep loan journal entries balanced in whole pesos ([ab6e826](https://github.com/Patricoaa/ERPGrafico/commit/ab6e8268b38c6ed256a810cc525ebf5c5c23d148))
+* **treasury:** migración 0057 — db_default en bank_provisioned ([5b624f1](https://github.com/Patricoaa/ERPGrafico/commit/5b624f14eaa233449837f438d5a6740cfbccd4ff))
+* **treasury:** move tax amount before JournalItem creation to prevent unbalanced entries ([c46f624](https://github.com/Patricoaa/ERPGrafico/commit/c46f6249a6da7ada1f6abc59a232df279220d782))
+* **treasury:** normalizar date string en create_card_purchase ([3a79d4e](https://github.com/Patricoaa/ERPGrafico/commit/3a79d4e5760d90e9955d55e1714cb8b06590464e))
+* **treasury:** pasar provider completo al EntityBadge → view-mode drawer ([08de7b7](https://github.com/Patricoaa/ERPGrafico/commit/08de7b716dcc5a0000e5cc8d633e40345bb37081))
+* **treasury:** registrar treasury.check en ENTITY_REGISTRY + state-map ([6a3b16a](https://github.com/Patricoaa/ERPGrafico/commit/6a3b16af7285cb77eb2d7f40983457fce721ab1a))
+* **treasury:** remove duplicate 'Tipo' column from accounts table ([f013ab5](https://github.com/Patricoaa/ERPGrafico/commit/f013ab5ed6d5d84192d0e43d3f805073d78f6c45))
+* **treasury:** separar filtro del toolbar de botones de accion ([8112662](https://github.com/Patricoaa/ERPGrafico/commit/81126622de63027925926d01a8f8287757d2e727))
+* **treasury:** Style.NOTCHANGING → Style.NOTICE en audit command ([fcbeab5](https://github.com/Patricoaa/ERPGrafico/commit/fcbeab50246d11958c512a2f3f0f180d5b1d6cb1))
+* **treasury:** unificar cuotas y cargos no facturados en un solo DataTableView + filtrar preview por cut_off_date ([f3b2d53](https://github.com/Patricoaa/ERPGrafico/commit/f3b2d53081643b896e8cb41210a7646cc30c83df))
+* **treasury:** usar rightButtonGroupAction en vez de createAction para consistencia visual con toolbar ([b00632a](https://github.com/Patricoaa/ERPGrafico/commit/b00632a60bdadc7be65c4374d0d46d2b476871bf))
+* **treasury:** wizard de bancos — cuenta contable obligatoria e idempotencia ([68f4b63](https://github.com/Patricoaa/ERPGrafico/commit/68f4b63aaa1dc14a13dac12022fa741bf423eb12))
+* **ui:** eliminar opacidad en disabled state, mantener texto a color completo ([7b70457](https://github.com/Patricoaa/ERPGrafico/commit/7b70457260274ccb4ea31a74597d7fad186c14e0))
+* **ui:** estandarizar bordes, sombras y radius en toolbar del DataTable ([fe6f747](https://github.com/Patricoaa/ERPGrafico/commit/fe6f747e11ac1a21167ff80b48f5bc473c7ad7ce))
+* **ui:** use --muted for notched-field background to create proper input/surface hierarchy ([d48820d](https://github.com/Patricoaa/ERPGrafico/commit/d48820d89dfb41c395994cffbd6b83fe047a5ee5))
+* unify MoneyDisplay usage — remove anti-patterns and redundant props ([7585605](https://github.com/Patricoaa/ERPGrafico/commit/75856056c1e47650f77eec1ea96ed81d5e4c92f2))
+
 ### [0.1.23](https://github.com/Patricoaa/ERPGrafico/compare/v0.1.22...v0.1.23) (2026-06-02)
 
 
