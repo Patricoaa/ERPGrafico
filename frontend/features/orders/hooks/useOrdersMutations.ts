@@ -91,15 +91,15 @@ export function useAnnulOrder(orderType: 'sale' | 'purchase') {
     })
 }
 
-export function useDeleteOrder(orderType: 'sale' | 'purchase') {
+export function useCancelOrder(orderType: 'sale' | 'purchase') {
     const queryClient = useQueryClient()
     return useMutation({
         mutationFn: (id: number) =>
             orderType === 'purchase'
-                ? ordersApi.deletePurchaseOrder(id)
-                : ordersApi.deleteSaleOrder(id),
+                ? ordersApi.cancelPurchaseOrder(id)
+                : ordersApi.cancelSaleOrder(id),
         onSuccess: () => {
-            toast.success('Borrador eliminado')
+            toast.success('Orden cancelada correctamente')
             queryClient.invalidateQueries({ queryKey: SALES_KEYS.all })
             queryClient.invalidateQueries({ queryKey: PURCHASING_KEYS.all })
         },
