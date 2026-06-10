@@ -638,6 +638,75 @@ class CardPurchaseInstallment(models.Model):
         return f"CPI-{self.card_purchase_group_id}-{self.number}"
 
 
+class CardPendingCharge(models.Model):
+    """
+    Cargo pendiente de facturar en una tarjeta de crédito (comisiones,
+    impuestos, seguros, etc.). A diferencia de TreasuryMovement, este
+    modelo NO representa un evento de tesorería real: el único movimiento
+    en el ciclo de vida de la tarjeta es el TRANSFER al pagar el statement.
+
+    Reemplaza el uso de TreasuryMovement ADJUSTMENT para cargos no
+    facturados (ADR-0046 D-3 bis).
+    """
+
+    class ChargeType(models.TextChoices):
+        COMMISSION = 'COMMISSION', _('Comisión')
+        TAX = 'TAX', _('Impuesto')
+        FEE = 'FEE', _('Cargo')
+        INSURANCE = 'INSURANCE', _('Seguro')
+        OTHER = 'OTHER', _('Otro')
+
+    card_account = models.ForeignKey(
+        'TreasuryAccount', on_delete=models.PROTECT,
+        related_name='pending_charges',
+        limit_choices_to={'account_type': 'CREDIT_CARD'},
+        verbose_name=_("Cuenta Tarjeta de Crédito"),
+    )
+    amount = models.DecimalField(
+        _("Monto"), max_digits=14, decimal_places=2,
+    )
+    charge_type = models.CharField(
+        _("Tipo de Cargo"), max_length=20,
+        choices=ChargeType.choices, default=ChargeType.OTHER,
+    )
+    description = models.TextField(_("Descripción"), blank=True)
+    date = models.DateField(_("Fecha"))
+
+    # Billing tracking
+    is_billed = models.BooleanField(_("Facturado"), default=False)
+    billed_in_statement = models.ForeignKey(
+        'CreditCardStatement', on_delete=models.SET_NULL,
+        null=True, blank=True,
+        related_name='pending_charges',
+        verbose_name=_("Facturado en Statement"),
+    )
+    journal_entry = models.OneToOneField(
+        'accounting.JournalEntry', on_delete=models.SET_NULL,
+        null=True, blank=True,
+        related_name='card_pending_charge',
+        verbose_name=_("Asiento Contable"),
+    )
+
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL,
+        null=True, blank=True,
+        verbose_name=_("Creado Por"),
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = _("Cargo Pendiente de Tarjeta")
+        verbose_name_plural = _("Cargos Pendientes de Tarjeta")
+        ordering = ['-date', '-id']
+        indexes = [
+            models.Index(fields=['card_account', 'is_billed']),
+            models.Index(fields=['card_account', 'date']),
+        ]
+
+    def __str__(self):
+        return f"PEND-{self.id} - {self.get_charge_type_display()} ${self.amount}"
+
+
 class TreasuryAccountManager(models.Manager):
     """Custom manager with query helpers for filtering by payment methods."""
     

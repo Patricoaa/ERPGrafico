@@ -447,6 +447,22 @@ class TreasuryMovementSerializer(serializers.ModelSerializer):
         return None
 
 
+class CardPendingChargeSerializer(serializers.ModelSerializer):
+    charge_type_display = serializers.CharField(
+        source='get_charge_type_display', read_only=True,
+    )
+
+    class Meta:
+        from .models import CardPendingCharge
+
+        model = CardPendingCharge
+        fields = [
+            'id', 'card_account', 'amount', 'charge_type', 'charge_type_display',
+            'description', 'date', 'is_billed', 'billed_in_statement',
+            'journal_entry', 'created_by', 'created_at',
+        ]
+
+
 class POSSessionSerializer(serializers.ModelSerializer):
     """Serializer for POS Sessions"""
     from .models import POSSession

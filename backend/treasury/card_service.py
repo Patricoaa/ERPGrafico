@@ -40,6 +40,7 @@ from django.utils import timezone
 from django.utils.translation import gettext_lazy as _t
 
 from .models import (
+    CardPendingCharge,
     CardPurchaseInstallment,
     CreditCardStatement,
     TreasuryAccount,
@@ -824,14 +825,8 @@ class CardService:
                 reversal_lines.append(f"Facturación {statement.display_id} reversada")
             except ValidationError:
                 pass
-        # Soltar el FK de asiento en los cargos diferidos para permitir
-        # re-postear si se re-factura.
-        TreasuryMovement.objects.filter(
-            billed_in_statement=statement,
-            journal_entry__reference=statement.display_id,
-        ).update(journal_entry=None)
-        # Volver a "no facturado": movimientos + cuotas del cronograma.
-        TreasuryMovement.objects.filter(billed_in_statement=statement).update(
+        # Volver a "no facturado": cargos pendientes + cuotas del cronograma.
+        CardPendingCharge.objects.filter(billed_in_statement=statement).update(
             is_billed=False, billed_in_statement=None,
         )
         CardPurchaseInstallment.objects.filter(billed_in_statement=statement).update(
@@ -954,29 +949,22 @@ class CardService:
     # ── Cargos no facturados (Onda 4) ────────────────────────────────────
 
     @staticmethod
-    def get_unbilled_charges(
+    def get_pending_charges(
         card_account: TreasuryAccount,
         cut_off_date: _date | None = None,
     ):
         """
-        Retorna los cargos no facturados de una tarjeta de crédito.
-        Son movimientos OUTBOUND/ADJUSTMENT sobre la cuenta CREDIT_CARD
-        con is_billed=False, excluyendo pagos (TRANSFER).
+        Retorna los cargos pendientes (no facturados) de una tarjeta de
+        crédito que NO son TreasuryMovement: comisiones, impuestos, seguros
+        y otros cargos creados con `add_unbilled_charge`.
 
-        Si se proporciona cut_off_date, solo retorna cargos con date <= cut_off_date
-        para que cada período facture solo las cuotas que corresponden.
+        Estos cargos se facturan en el statement y SOLO al pagar se genera
+        un TreasuryMovement TRANSFER (un solo movimiento por evento real).
         """
-        qs = TreasuryMovement.objects.filter(
-            from_account=card_account,
-            movement_type__in=[
-                TreasuryMovement.Type.OUTBOUND,
-                TreasuryMovement.Type.ADJUSTMENT,
-            ],
+        qs = CardPendingCharge.objects.filter(
+            card_account=card_account,
             is_billed=False,
-        ).exclude(
-            movement_type=TreasuryMovement.Type.TRANSFER,
         )
-
         if cut_off_date:
             qs = qs.filter(date__lte=cut_off_date)
 
@@ -1006,27 +994,16 @@ class CardService:
     ) -> dict:
         """
         Retorna resumen de cargos no facturados:
-        - total: suma de todos los cargos no facturados (movimientos + cuotas)
+        - total: suma de todos los cargos no facturados (pendientes + cuotas)
         - count: cantidad de cargos
-        - purchases: suma de cargos directos/legacy (OUTBOUND)
-        - charges: suma de cargos financieros (ADJUSTMENT)
+        - charges: suma de cargos financieros (CardPendingCharge)
         - installments: suma del principal de cuotas pendientes (cronograma)
-
-        Si se proporciona cut_off_date, solo incluye cargos/cuotas con
-        date/due_date <= cut_off_date para coincidir con lo facturable.
         """
         from django.db import models as dj_models
 
-        qs = CardService.get_unbilled_charges(card_account, cut_off_date=cut_off_date)
-
-        purchases = (
-            qs.filter(movement_type=TreasuryMovement.Type.OUTBOUND)
-            .aggregate(total=dj_models.Sum('amount'))['total']
-            or Decimal('0')
-        )
+        pending = CardService.get_pending_charges(card_account, cut_off_date=cut_off_date)
         charges = (
-            qs.filter(movement_type=TreasuryMovement.Type.ADJUSTMENT)
-            .aggregate(total=dj_models.Sum('amount'))['total']
+            pending.aggregate(total=dj_models.Sum('amount'))['total']
             or Decimal('0')
         )
         sched_qs = CardService.get_unbilled_installments(card_account, cut_off_date=cut_off_date)
@@ -1034,12 +1011,11 @@ class CardService:
             sched_qs.aggregate(total=dj_models.Sum('principal_amount'))['total']
             or Decimal('0')
         )
-        count = qs.count() + sched_qs.count()
+        count = pending.count() + sched_qs.count()
 
         return {
-            'total': purchases + charges + installments,
+            'total': charges + installments,
             'count': count,
-            'purchases': purchases,
             'charges': charges,
             'installments': installments,
         }
@@ -1054,15 +1030,16 @@ class CardService:
         description: str = '',
         date: _date | None = None,
         created_by: "AbstractUser | None" = None,
-    ) -> TreasuryMovement:
+    ):
         """
-        Agrega un cargo no facturado a la tarjeta de crédito.
+        Agrega un cargo pendiente de facturar a la tarjeta de crédito.
 
         - `charge_type`: tipo de cargo (COMMISSION, TAX, FEE, INSURANCE, OTHER)
-        - Crea un ADJUSTMENT sobre la card_account con is_billed=False
-        - No genera asiento contable (se facturará después)
+        - Crea un CardPendingCharge (NO un TreasuryMovement — el único
+          movimiento de tesorería en el ciclo es el TRANSFER al pagar).
+        - No genera asiento contable (se contabiliza al facturar).
 
-        Retorna el movimiento creado.
+        Retorna el CardPendingCharge creado.
         """
         if card_account.account_type != TreasuryAccount.Type.CREDIT_CARD:
             raise ValidationError(
@@ -1074,32 +1051,15 @@ class CardService:
         if not date:
             date = timezone.now().date()
 
-        from .services import TreasuryService
-
-        charge_labels = {
-            'COMMISSION': 'Comisión',
-            'TAX': 'Impuesto',
-            'FEE': 'Cargo',
-            'INSURANCE': 'Seguro',
-            'OTHER': 'Otro cargo',
-        }
-        charge_label = charge_labels.get(charge_type, charge_type)
-
-        movement = TreasuryService.create_movement(
+        charge = CardPendingCharge.objects.create(
+            card_account=card_account,
             amount=amount,
-            movement_type=TreasuryMovement.Type.ADJUSTMENT,
-            payment_method=TreasuryMovement.Method.CARD,
+            charge_type=charge_type,
+            description=description,
             date=date,
             created_by=created_by,
-            from_account=card_account,
-            reference=f"CARGO-{charge_type}-{date.strftime('%Y%m%d')}",
-            notes=f"{charge_label}: {description}".strip(),
-            is_pending_registration=True,
         )
-        movement.is_billed = False
-        movement.save(update_fields=['is_billed'])
-
-        return movement
+        return charge
 
     @staticmethod
     @transaction.atomic
@@ -1124,13 +1084,12 @@ class CardService:
              `due_date <= cut_off_date` aún no facturadas. El uso de la
              tarjeta ya se contabilizó al comprar; acá NO se postea
              principal.
-          2. Cargos en movimientos (`get_unbilled_charges`): comisiones/
-             impuestos de `add_unbilled_charge` (diferidos, sin asiento) y
-             cargos directos/legacy. Solo los diferidos se contabilizan al
-             facturar (el resto ya posteó al crearse).
+          2. Cargos pendientes (`get_pending_charges`): comisiones/
+             impuestos (CardPendingCharge, diferidos, sin asiento).
+             Se contabilizan al facturar.
 
-        Marca ambas fuentes como facturadas, arma el desglose por grupo de
-        compra y retorna el statement.
+        Marca ambas fuentes como facturadas, arma el desglose por grupo
+        de compra y retorna el statement.
         """
         # 1) Cuotas del cronograma que vencen hasta el cierre.
         schedule_rows = list(
@@ -1142,21 +1101,18 @@ class CardService:
         )
         schedule_total = sum((r.principal_amount for r in schedule_rows), Decimal('0'))
 
-        # 2) Cargos sueltos / legacy en movimientos. El OUTBOUND del uso
-        #    (ADR-0046) es is_billed=True, así que no entra acá.
-        unbilled = CardService.get_unbilled_charges(card_account, cut_off_date=cut_off_date)
-        movement_rows = list(
-            unbilled.select_related('card_purchase_group', 'card_purchase_group__partner')
-        )
-        movement_total = sum((m.amount for m in movement_rows), Decimal('0'))
+        # 2) Cargos pendientes (CardPendingCharge — diferidos, sin asiento).
+        pending = CardService.get_pending_charges(card_account, cut_off_date=cut_off_date)
+        pending_rows = list(pending)
+        pending_total = sum((p.amount for p in pending_rows), Decimal('0'))
 
-        total = schedule_total + movement_total
+        total = schedule_total + pending_total
         if total <= 0:
             raise ValidationError(
                 _t("No hay cargos no facturados para facturar en este período.")
             )
 
-        # ── Desglose por grupo de compra (cronograma + movimientos) ───
+        # ── Desglose por grupo de compra (cronograma + pendientes) ──
         groups_data: dict = {}
         standalone_charges: list = []
 
@@ -1178,15 +1134,15 @@ class CardService:
                 'reference': f"CP-{g.uuid}-i{r.number}",
                 'date': str(r.due_date),
             })
-        for m in movement_rows:
-            _add_charge(m.card_purchase_group, {
-                'id': m.id,
-                'amount': str(m.amount),
-                'installment_number': m.installment_number,
-                'is_installment_interest': m.is_installment_interest,
-                'movement_type': m.movement_type,
-                'reference': m.reference,
-                'date': str(m.date),
+        for p in pending_rows:
+            _add_charge(None, {
+                'id': p.id,
+                'amount': str(p.amount),
+                'installment_number': None,
+                'is_installment_interest': False,
+                'movement_type': 'ADJUSTMENT',
+                'reference': f"PEND-{p.id}",
+                'date': str(p.date),
             })
 
         purchase_group_breakdown = []
@@ -1234,45 +1190,42 @@ class CardService:
             created_by=created_by,
         )
 
-        # Marcar facturado: cuotas del cronograma + movimientos.
+        # Marcar facturado: cuotas del cronograma + pendientes.
         if schedule_rows:
             CardPurchaseInstallment.objects.filter(
                 id__in=[r.id for r in schedule_rows],
             ).update(is_billed=True, billed_in_statement=statement)
-        if movement_rows:
-            TreasuryMovement.objects.filter(
-                id__in=[m.id for m in movement_rows],
+        if pending_rows:
+            CardPendingCharge.objects.filter(
+                id__in=[p.id for p in pending_rows],
             ).update(is_billed=True, billed_in_statement=statement)
 
-        # Asiento: SOLO cargos diferidos (sin asiento previo). El uso, los
-        # cargos directos y el cronograma ya están contabilizados o no
-        # requieren asiento (ADR-0046 D-3: sin doble conteo).
-        CardService._create_billing_entry(statement, movement_rows=movement_rows)
+        # Asiento: cargos diferidos (CardPendingCharge sin asiento previo).
+        CardService._create_billing_entry(statement, pending_rows=pending_rows)
 
         statement._purchase_group_breakdown = purchase_group_breakdown
         return statement
 
     @staticmethod
-    def _create_billing_entry(statement: CreditCardStatement, *, movement_rows=None):
+    def _create_billing_entry(
+        statement: CreditCardStatement,
+        *,
+        pending_rows=None,
+    ):
         """
-        Postea el asiento de facturación SOLO para los cargos **diferidos**
-        (sin asiento previo, p.ej. los de `add_unbilled_charge`):
+        Postea el asiento de facturación para los cargos **diferidos**
+        (CardPendingCharge sin asiento previo):
           D: Gasto financiero  /  H: Pasivo tarjeta de crédito
 
-        El uso de la TC, los cargos directos (`create_movement`) y las
-        cuotas legacy ya postearon su asiento al crearse; el cronograma
-        (`CardPurchaseInstallment`) no requiere asiento. Re-acreditar el
-        pasivo por ellos era el doble conteo que corrige ADR-0046 D-3.
-        Por eso solo se contabilizan los movimientos con
-        `journal_entry IS NULL`.
+        Solo se contabilizan los objetos con `journal_entry IS NULL`.
         """
         from accounting.models import JournalEntry, JournalItem, AccountingSettings
         from accounting.services import JournalEntryService
         from django.contrib.contenttypes.models import ContentType
 
-        rows = movement_rows or []
-        deferred = [m for m in rows if m.journal_entry_id is None]
-        total = sum((m.amount for m in deferred), Decimal('0'))
+        p_rows = pending_rows or []
+        deferred = [p for p in p_rows if p.journal_entry_id is None]
+        total = sum((d.amount for d in deferred), Decimal('0'))
         if total <= 0:
             return
 
@@ -1311,6 +1264,6 @@ class CardService:
 
         # Vincular el asiento a los cargos diferidos (quedan "posteados",
         # idempotencia ante una segunda facturación accidental).
-        for m in deferred:
-            m.journal_entry = entry
-            m.save(update_fields=['journal_entry'])
+        for d in deferred:
+            d.journal_entry = entry
+            d.save(update_fields=['journal_entry'])

@@ -24,10 +24,11 @@ import {
     Skeleton,
 } from '@/components/shared'
 import { treasuryApi } from '../api/treasuryApi'
-import type { TreasuryMovement, UpcomingInstallment, UnbilledItemRow } from '../types'
+import type { PendingChargeRow, UpcomingInstallment, UnbilledItemRow } from '../types'
 import { mapToUnbilledItemRows } from './utils'
 import { AddChargeModal } from './AddChargeModal'
 import { BillChargesModal } from './BillChargesModal'
+import { useHubPanel } from '@/components/providers'
 
 interface UnbilledChargesViewProps {
     bankId: number
@@ -39,9 +40,16 @@ interface UnbilledChargesViewProps {
 interface UnbilledSummary {
     total: number
     count: number
-    purchases: number
     charges: number
     installments: number
+}
+
+const chargeTypeColorMap: Record<string, string> = {
+    COMMISSION: 'bg-warning text-warning-foreground',
+    TAX: 'bg-destructive text-destructive-foreground',
+    FEE: 'bg-info text-info-foreground',
+    INSURANCE: 'bg-accent text-accent-foreground',
+    OTHER: 'bg-muted text-muted-foreground',
 }
 
 export function UnbilledChargesView({
@@ -54,6 +62,7 @@ export function UnbilledChargesView({
     const [showBillCharges, setShowBillCharges] = useState(false)
     const [filterMode, setFilterMode] = useState<'month' | 'all'>('month')
     const queryClient = useQueryClient()
+    const { openHub } = useHubPanel()
 
     const today = new Date().toISOString().split('T')[0]
     const cutOffDate = filterMode === 'month' ? today : undefined
@@ -64,7 +73,7 @@ export function UnbilledChargesView({
         enabled: !!cardAccountId,
     })
 
-    const charges: TreasuryMovement[] = result?.charges ?? []
+    const charges: PendingChargeRow[] = result?.charges ?? []
     const upcomingInstallments: UpcomingInstallment[] = result?.upcoming_installments ?? []
     const summary: UnbilledSummary | undefined = result?.summary
 
@@ -105,12 +114,13 @@ export function UnbilledChargesView({
             ),
             cell: ({ row }) => {
                 const item = row.original
+                const label = item.reference || (item.source === 'pending' ? item.chargeTypeDisplay || 'Cargo' : item.notes) || '-'
                 return (
                     <div className="flex flex-col items-start gap-0.5">
                         <span className="text-xs font-medium text-foreground">
-                            {item.reference || (item.source === 'charge' ? `Movimiento #${item.id}` : item.notes) || '-'}
+                            {label}
                         </span>
-                        {item.source === 'charge' && item.notes && (
+                        {item.source === 'pending' && item.notes && (
                             <span className="text-[10px] text-muted-foreground truncate max-w-[200px]">
                                 {item.notes}
                             </span>
@@ -126,6 +136,13 @@ export function UnbilledChargesView({
             ),
             cell: ({ row }) => {
                 const item = row.original
+                if (item.source === 'pending') {
+                    return (
+                        <div className="flex justify-center w-full">
+                            <span className="text-xs text-muted-foreground">N/A</span>
+                        </div>
+                    )
+                }
                 if (!item.installmentNumber || !item.totalInstallments) return null
                 return (
                     <div className="flex justify-center w-full">
@@ -144,20 +161,22 @@ export function UnbilledChargesView({
             ),
             cell: ({ row }) => {
                 const item = row.original
-                const group = item.purchaseGroupDetail
-                if (!group) return null
+                if (item.source !== 'installment' || !item.originalInstallment) return null
+                const inst = item.originalInstallment
                 return (
                     <div className="flex justify-center w-full">
-                        <div className="flex flex-col items-start gap-0.5">
-                            <span className="text-[11px] font-medium text-foreground truncate max-w-[180px]">
-                                {group.client_reference || `Compra #${group.id}`}
-                            </span>
-                            {group.partner_name && (
-                                <span className="text-[10px] text-muted-foreground truncate max-w-[180px]">
-                                    {group.partner_name}
-                                </span>
-                            )}
-                        </div>
+                        <button
+                            type="button"
+                            onClick={(e) => {
+                                e.stopPropagation()
+                                if (inst.purchase_order_id) {
+                                    openHub({ orderId: inst.purchase_order_id, type: 'purchase' })
+                                }
+                            }}
+                            className="text-xs font-medium text-foreground hover:underline underline-offset-2 truncate max-w-[180px]"
+                        >
+                            {inst.group_display_id || `Compra #${inst.group_uuid.slice(0, 8)}`}
+                        </button>
                     </div>
                 )
             },
@@ -186,11 +205,15 @@ export function UnbilledChargesView({
             ),
             cell: ({ row }) => {
                 const item = row.original
+                const colorClass = item.source === 'pending'
+                    ? (chargeTypeColorMap[item.chargeType ?? ''] || 'bg-muted text-muted-foreground')
+                    : 'bg-info text-info-foreground'
+                const label = item.chargeTypeDisplay || item.chargeType || (item.source === 'installment' ? 'Cuota' : '')
                 return (
                     <div className="flex justify-center w-full">
                         <StatusBadge
-                            status={item.movementType || ''}
-                            label={item.movementTypeDisplay || ''}
+                            status={item.chargeType || item.source}
+                            label={label}
                         />
                     </div>
                 )
@@ -219,15 +242,15 @@ export function UnbilledChargesView({
         <div className="flex items-center gap-2">
             <Button
                 variant="outline"
-                size="sm"
+                className="border-0 h-10 text-[10px] font-black uppercase tracking-widest"
                 disabled={!summary || summary.count === 0}
                 onClick={() => setShowBillCharges(true)}
             >
-                <Receipt className="mr-2 h-4 w-4" />
+                <Receipt className="h-3.5 w-3.5 mr-2" />
                 Facturar Cargos
             </Button>
-            <Button size="sm" onClick={() => setShowAddCharge(true)}>
-                <Plus className="mr-2 h-4 w-4" />
+            <Button className="h-10 text-[10px] font-black uppercase tracking-widest" onClick={() => setShowAddCharge(true)}>
+                <Plus className="h-3.5 w-3.5 mr-2" />
                 Agregar Cargo
             </Button>
         </div>
@@ -249,18 +272,12 @@ export function UnbilledChargesView({
     return (
         <div className="flex flex-col flex-1 min-h-0 space-y-4">
             {summary && (
-                <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                     <StatCard
                         label="Total"
                         value={<MoneyDisplay amount={summary.total} currency={currency} inline />}
                         icon={CreditCard}
                         accent="primary"
-                    />
-                    <StatCard
-                        label="Compras"
-                        value={<MoneyDisplay amount={summary.purchases} currency={currency} inline />}
-                        icon={CreditCard}
-                        accent="info"
                     />
                     <StatCard
                         label="Cuotas"
@@ -303,57 +320,18 @@ export function UnbilledChargesView({
                     renderCard={(item: UnbilledItemRow) => (
                         <EntityCard>
                             <EntityCard.Header
-                                title={item.reference || (item.source === 'charge' ? `Movimiento #${item.id}` : `Cuota ${item.installmentNumber}/${item.totalInstallments}`)}
+                                title={item.reference || (item.source === 'pending' ? (item.chargeTypeDisplay || 'Cargo') : `Cuota ${item.installmentNumber}/${item.totalInstallments}`)}
                                 subtitle={item.date}
                                 trailing={
                                     <StatusBadge
-                                        status={item.movementType || ''}
-                                        label={item.movementTypeDisplay || ''}
+                                        status={item.chargeType || item.source}
+                                        label={item.chargeTypeDisplay || item.source}
                                     />
                                 }
                             />
                             <EntityCard.Body>
-                                {item.source === 'charge' && item.notes && (
+                                {item.source === 'pending' && item.notes && (
                                     <EntityCard.Field label="Descripción" value={item.notes} full />
-                                )}
-                                {item.purchaseGroupDetail && (
-                                    <EntityCard.Field
-                                        label="Detalle de Compra"
-                                        value={(() => {
-                                            const group = item.purchaseGroupDetail!
-                                            return (
-                                                <div className="flex flex-col gap-2 text-xs">
-                                                    <div className="flex items-center gap-2">
-                                                        <span className="text-muted-foreground">Cuota:</span>
-                                                        <span className="font-medium tabular-nums">
-                                                            {item.installmentNumber || '—'}/{group.installments}
-                                                        </span>
-                                                    </div>
-                                                    <div className="flex items-center gap-2">
-                                                        <span className="text-muted-foreground">Compra:</span>
-                                                        <span className="font-medium">
-                                                            {group.client_reference || `Compra #${group.id}`}
-                                                        </span>
-                                                    </div>
-                                                    {group.partner_name && (
-                                                        <div className="flex items-center gap-2">
-                                                            <span className="text-muted-foreground">Proveedor:</span>
-                                                            <span className="font-medium">{group.partner_name}</span>
-                                                        </div>
-                                                    )}
-                                                    <div className="flex items-center gap-2">
-                                                        <span className="text-muted-foreground">Total:</span>
-                                                        <MoneyDisplay amount={Number(group.total_amount)} currency={currency} inline />
-                                                    </div>
-                                                    <div className="flex items-center gap-2">
-                                                        <span className="text-muted-foreground">1ra cuota:</span>
-                                                        <span className="font-medium">{group.first_installment_date}</span>
-                                                    </div>
-                                                </div>
-                                            )
-                                        })()}
-                                        full
-                                    />
                                 )}
                             </EntityCard.Body>
                             <EntityCard.Footer className="justify-between items-center border-t bg-muted/10 py-2 px-4">
