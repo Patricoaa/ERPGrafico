@@ -1,9 +1,9 @@
 from django.db import models
-from django.contrib.postgres.search import SearchVectorField
-from django.contrib.postgres.indexes import GinIndex
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.utils.translation import gettext_lazy as _
+
+from core.db_compat import SearchVectorField, GinIndex
 
 class GlobalSearchIndex(models.Model):
     """

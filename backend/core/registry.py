@@ -142,7 +142,6 @@ class UniversalRegistry:
 
         # 2. Perform Unified Search using GlobalSearchIndex
         from core.models import GlobalSearchIndex
-        from django.contrib.postgres.search import SearchRank, SearchQuery
         from django.db.models import F
 
         # Filter by allowed entities (Permission check at DB level for performance and correctness)
@@ -160,44 +159,40 @@ class UniversalRegistry:
             logger.info(f"User '{user}' has no permissions for any searchable entity. Registered: {list(cls._entities.keys())}")
             return []
 
-        # Prepare Query Term and SearchQuery
+        # Prepare Query Term
         q_term = clean_query if targeted_entities else query
         
         logger.debug(f"Search parameters: q_term='{q_term}', targeted={targeted_entities}, allowed={len(allowed_labels)}")
-        
-        # Use websearch for FTS as it handles most user inputs gracefully.
-        # Prefix matching (e.g., "NV-1") is handled by the icontains filter on denormalized fields.
-        if q_term:
-            sq = SearchQuery(q_term, config='spanish', search_type='websearch')
-        else:
-            sq = None
 
         # Base QuerySet
         qs = GlobalSearchIndex.objects.filter(entity_label__in=allowed_labels)
-        
-        # Build Filter
+
+        # Build Filter — use FTS on PostgreSQL, icontains fallback on SQLite
         q_filter = Q()
-        if sq:
-            q_filter |= Q(search_vector=sq)
-            # Fallback to icontains for exact substring matches (e.g. middle of a code)
+        if q_term:
             q_filter |= Q(title__icontains=q_term) | Q(subtitle__icontains=q_term)
 
+            if _is_postgres():
+                from django.contrib.postgres.search import SearchQuery
+                sq = SearchQuery(q_term, config='spanish', search_type='websearch')
+                q_filter |= Q(search_vector=sq)
+
         # Enhanced RUT logic for the unified index (Search across denormalized display fields)
-        if q_term.isalnum() and len(q_term) >= 3:
-             # If the query is clean alphanumeric, try to match formatted patterns in display fields
+        if q_term and q_term.isalnum() and len(q_term) >= 3:
              regex_pattern = "[.-]?".join(list(q_term))
              q_filter |= Q(title__iregex=regex_pattern) | Q(subtitle__iregex=regex_pattern)
 
         # Filter by targeted entities if prefix detected
         if targeted_entities:
-            # Intersect allowed with targeted
             final_targets = [t for t in targeted_entities if t in allowed_labels]
             qs = qs.filter(entity_label__in=final_targets)
 
-        # Annotate rank only if we have a search query
-        if sq:
-            qs = qs.annotate(rank=SearchRank(F('search_vector'), sq))
-            qs = qs.filter(q_filter).order_by("-rank", "-last_updated")
+        # Apply filter and order
+        qs = qs.filter(q_filter)
+        if _is_postgres() and q_term:
+            from django.contrib.postgres.search import SearchRank
+            sq = SearchQuery(q_term, config='spanish', search_type='websearch')
+            qs = qs.annotate(rank=SearchRank(F('search_vector'), sq)).order_by("-rank", "-last_updated")
         else:
             qs = qs.order_by("-last_updated")
 
@@ -351,7 +346,6 @@ class UniversalRegistry:
             return
 
         from django.contrib.contenttypes.models import ContentType
-        from django.contrib.postgres.search import SearchVector
         from core.models import GlobalSearchIndex
 
         # 1. Get or create index entry
@@ -372,15 +366,15 @@ class UniversalRegistry:
 
         # 3. Update search vector (calculated from original model fields)
         # We now include ALL search fields, including related ones (__)
+        from django.db import connection as db_conn
         fts_fields = entity.search_fields
-        if fts_fields:
-            # We annotate the vector on the original instance to get its value
-            # Django's SearchVector handles foreign key traversals correctly in annotate()
+        if fts_fields and db_conn.vendor == 'postgresql':
+            from django.contrib.postgres.search import SearchVector
             try:
                 instance_with_vector = instance.__class__.objects.annotate(
                     computed_vector=SearchVector(*fts_fields, config='spanish')
                 ).get(pk=instance.pk)
-                
+
                 idx.search_vector = instance_with_vector.computed_vector
                 idx.save()
             except Exception as e:
