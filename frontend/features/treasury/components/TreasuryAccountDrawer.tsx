@@ -174,7 +174,7 @@ export function TreasuryAccountDrawer({ open, onOpenChange, accountId, onSuccess
                 onOpenChange={onOpenChange}
                 side="left"
                 defaultSize={formDrawerWidth("medium", !!accountId)}
-                contentClassName="p-0"
+                mode={mode}
                 title={
                     <>
                         <div className="flex items-center gap-3">

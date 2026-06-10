@@ -251,7 +251,7 @@ export function TerminalDrawer({ open, onOpenChange, terminal, onSuccess, mode: 
             onOpenChange={onOpenChange}
             side="left"
             defaultSize={formDrawerWidth("complex", !!terminal)}
-            contentClassName="p-0"
+            mode={mode}
             title={
                 <div className="flex items-center gap-3">
                     <MonitorSmartphone className="h-5 w-5 text-muted-foreground" />

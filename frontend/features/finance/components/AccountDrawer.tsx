@@ -291,7 +291,7 @@ export function AccountDrawer({
                 icon={BookOpen}
                 title={<><span>{drawerTitle}</span>{(mode === 'view' || mode === 'edit') && initialData?.id && <Button variant="ghost" size="icon" onClick={() => handlePrint()}><Printer className="h-4 w-4" /></Button>}</>}
                 subtitle={drawerSubtitle}
-                contentClassName="p-0"
+                mode={mode}
                 footer={isViewMode ? undefined : (
                     <FormFooter
                         actions={

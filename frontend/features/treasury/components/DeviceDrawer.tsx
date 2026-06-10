@@ -133,7 +133,7 @@ export function DeviceDrawer({ open, onOpenChange, device, providers: providersP
                 onOpenChange={onOpenChange}
                 side="left"
                 defaultSize={formDrawerWidth("medium", !!device)}
-                contentClassName="p-0"
+                mode={mode}
                 title={<><span>{drawerTitle}</span>{(mode === 'view' || mode === 'edit') && device?.id && <Button variant="ghost" size="icon" onClick={() => handlePrint()}><Printer className="h-4 w-4" /></Button>}</>}
                 subtitle="Vincule una terminal física con un proveedor de servicios."
                 footer={isView ? undefined : (

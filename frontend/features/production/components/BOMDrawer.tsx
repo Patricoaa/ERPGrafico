@@ -333,7 +333,7 @@ export function BOMDrawer({
             onOpenChange={onOpenChange}
             side="left"
             defaultSize={formDrawerWidth("complex", !!bomToEdit)}
-            contentClassName="p-0"
+            mode={mode}
             icon={Workflow}
             title={<><span>{drawerTitle}</span>{(mode === 'view' || mode === 'edit') && bomToEdit?.id && <Button variant="ghost" size="icon" onClick={() => handlePrint()}><Printer className="h-4 w-4" /></Button>}</>}
             subtitle={

@@ -518,7 +518,7 @@ export function JournalEntryDrawer({
                 onOpenChange={setOpen}
                 side="left"
                 defaultSize={width}
-                contentClassName="p-0"
+                mode={mode}
                 icon={BookOpen}
                 title={<><span>{drawerTitle}</span>{showPrintable && <Button variant="ghost" size="icon" onClick={() => handlePrint()}><Printer className="h-4 w-4" /></Button>}</>}
                 subtitle={drawerSubtitle}

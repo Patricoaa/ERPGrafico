@@ -162,7 +162,7 @@ export function UoMDrawer({ open: openProp, onOpenChange, initialData, onSuccess
                 onOpenChange={setOpen}
                 side="left"
                 defaultSize={width}
-                contentClassName="p-0"
+                mode={mode}
                 icon={Ruler}
                 title={<><span>{drawerTitle}</span>{(mode === 'view' || mode === 'edit') && initialData?.id && <Button variant="ghost" size="icon" onClick={() => handlePrint()}><Printer className="h-4 w-4" /></Button>}</>}
                 subtitle={initialData?.id ? "Modifique los parámetros de conversión y consulte el historial." : "Configure el nombre, categoría y ratio de conversión."}

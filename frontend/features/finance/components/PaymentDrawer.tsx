@@ -16,7 +16,7 @@ import { financeApi } from "../api/financeApi"
 import { TreasuryAccountSelector } from "@/components/selectors/TreasuryAccountSelector"
 import { AdvancedContactSelector } from "@/components/selectors/AdvancedContactSelector"
 import { CreditCard, Landmark, Wallet, ClipboardList, Printer } from "lucide-react"
-import { Drawer, Skeleton, LabeledInput, LabeledSelect, FormFooter, CancelButton, ActionSlideButton, StatusBadge, SkeletonShell, FormSplitLayout } from "@/components/shared"
+import { Drawer, Skeleton, LabeledInput, LabeledSelect, FormFooter, CancelButton, ActionSlideButton, SkeletonShell, FormSplitLayout } from "@/components/shared"
 import { formDrawerWidth } from "@/lib/form-widths"
 import { useBillingInvoices, usePaymentMethodsByFilter } from "@/features/finance/hooks"
 import { useReactToPrint } from "react-to-print"
@@ -146,6 +146,23 @@ export function PaymentDrawer({
         }
     }, [availableMethods, treasuryAccountId, form])
 
+    // Sync view data into form for read-only mode
+    useEffect(() => {
+        if (isViewMode && paymentData) {
+            form.reset({
+                payment_type: (paymentData.payment_type ?? paymentData.payment_type_new ?? "INBOUND") as "INBOUND" | "OUTBOUND",
+                payment_method: (paymentData.payment_method ?? "CASH") as any,
+                treasury_account: paymentData.treasury_account?.toString() ?? paymentData.treasury_account_id?.toString() ?? null,
+                amount: paymentData.amount ? parseFloat(String(paymentData.amount)) : 0,
+                customer_id: (paymentData.payment_type === "INBOUND" ? (paymentData.contact?.toString() ?? paymentData.customer?.toString() ?? paymentData.customer_id?.toString()) : "") ?? "",
+                supplier_id: (paymentData.payment_type === "OUTBOUND" ? (paymentData.contact?.toString() ?? paymentData.supplier?.toString() ?? paymentData.supplier_id?.toString()) : "") ?? "",
+                invoice_id: paymentData.invoice?.toString() ?? paymentData.invoice_id?.toString() ?? "",
+                reference: paymentData.reference ?? paymentData.transaction_number ?? "",
+                payment_method_new: paymentData.payment_method_new?.toString() ?? null,
+            })
+        }
+    }, [isViewMode, paymentData, form])
+
     async function onSubmit(data: PaymentFormValues) {
         setLoading(true)
         const payload = {
@@ -174,47 +191,6 @@ export function PaymentDrawer({
         }
     }
 
-    const viewData = paymentData || initialData
-
-    let viewContent: React.ReactNode = null
-    if (isViewMode) {
-        if (isViewLoading) {
-            viewContent = <SkeletonShell isLoading ariaLabel="Cargando pago" />
-        } else if (viewData) {
-            const amount = Number(viewData.amount ?? 0)
-            const isInbound = (viewData.payment_type ?? viewData.payment_type_new) === 'INBOUND'
-            viewContent = (
-                <div className="p-4 space-y-4">
-                    <StatusBadge status={viewData.status ?? (isInbound ? 'INBOUND' : 'OUTBOUND')} />
-                    <div className="grid grid-cols-2 gap-4 text-sm">
-                        <div>
-                            <span className="text-xs text-muted-foreground">Monto</span>
-                            <p className={`font-bold text-lg ${isInbound ? 'text-income' : 'text-expense'}`}>
-                                {isInbound ? '+' : '-'}{formatCurrency(amount)}
-                            </p>
-                        </div>
-                        <div>
-                            <span className="text-xs text-muted-foreground">Tipo</span>
-                            <p className="font-medium">{isInbound ? 'Ingreso (Cobro)' : 'Egreso (Pago)'}</p>
-                        </div>
-                        <div>
-                            <span className="text-xs text-muted-foreground">Método</span>
-                            <p className="font-medium">{viewData.payment_method_display ?? viewData.payment_method ?? '-'}</p>
-                        </div>
-                        <div>
-                            <span className="text-xs text-muted-foreground">Referencia</span>
-                            <p className="font-medium">{viewData.reference ?? viewData.transaction_number ?? '-'}</p>
-                        </div>
-                        <div className="col-span-2">
-                            <span className="text-xs text-muted-foreground">Documento Relacionado</span>
-                            <p className="font-medium">{viewData.invoice_display_id ?? '-'}</p>
-                        </div>
-                    </div>
-                </div>
-            )
-        }
-    }
-
     const drawerTitle = isViewMode
         ? `Pago #${entityId}`
         : mode === 'create'
@@ -227,26 +203,28 @@ export function PaymentDrawer({
             ? "Actualice la información del pago."
             : "Ingrese los datos para el flujo de tesorería."
 
+    const showPrintable = entityId && (mode === 'view' || mode === 'edit')
+
     return (
         <>
-            {isViewMode && viewData && (
+            {showPrintable && (
                 <PrintableLayout
                     ref={printRef}
                     title="Comprobante de Pago"
-                    displayId={viewData.display_id ?? `#${entityId}`}
+                    displayId={`#${entityId}`}
                 >
                     <div className="text-[9px] space-y-1 mb-2">
                         <div className="flex justify-between">
                             <span>Monto:</span>
-                            <span>{formatCurrency(Number(viewData.amount ?? 0))}</span>
+                            <span>{formatCurrency(Number(form.watch("amount") ?? 0))}</span>
                         </div>
                         <div className="flex justify-between">
                             <span>Método:</span>
-                            <span>{viewData.payment_method_display ?? viewData.payment_method ?? '-'}</span>
+                            <span>-</span>
                         </div>
                         <div className="flex justify-between">
                             <span>Referencia:</span>
-                            <span>{viewData.reference ?? viewData.transaction_number ?? '-'}</span>
+                            <span>{form.watch("reference") || '-'}</span>
                         </div>
                     </div>
                 </PrintableLayout>
@@ -260,11 +238,12 @@ export function PaymentDrawer({
                 open={open}
                 onOpenChange={setOpen}
                 side="left"
-                defaultSize={isViewMode ? "50%" : formDrawerWidth("medium", !!initialData?.id)}
+                defaultSize={formDrawerWidth("medium", !!initialData?.id || !!entityId)}
                 icon={Landmark}
-                contentClassName={isViewMode ? undefined : "p-0"}
-                title={<><span>{drawerTitle}</span><Button variant="ghost" size="icon" onClick={() => handlePrint()}><Printer className="h-4 w-4" /></Button></>}
+                contentClassName="p-0"
+                title={<><span>{drawerTitle}</span>{showPrintable && <Button variant="ghost" size="icon" onClick={() => handlePrint()}><Printer className="h-4 w-4" /></Button>}</>}
                 subtitle={drawerSubtitle}
+                mode={mode}
                 footer={isViewMode ? undefined : (
                     <FormFooter
                         actions={
@@ -278,14 +257,13 @@ export function PaymentDrawer({
                     />
                 )}
             >
-                {isViewMode ? viewContent : (
-                    <SkeletonShell isLoading={false} ariaLabel="Cargando formulario de pago" className="flex-1 flex flex-col">
-                        <FormSplitLayout sidebar={initialData?.id ? <ActivitySidebar entityType="payment" entityId={initialData.id} /> : undefined} showSidebar={!!initialData?.id}>
-                            <Form {...form}>
-                                <form id="payment-form" onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 pt-4">
-                                    <fieldset disabled={loading} className="space-y-6 group">
+                <SkeletonShell isLoading={isViewMode && isViewLoading} ariaLabel="Cargando pago" className="flex-1 flex flex-col">
+                    <FormSplitLayout sidebar={entityId ? <ActivitySidebar entityType="payment" entityId={entityId} /> : undefined} showSidebar={!!entityId}>
+                        <Form {...form}>
+                            <form id="payment-form" onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 pt-4">
+                                <fieldset disabled={loading || isViewMode} className="space-y-6 group">
                                         <div className="space-y-4 group-disabled:opacity-60 transition-opacity">
-                                            {!initialData && (
+                                            {mode === 'create' && (
                                                 <FormField
                                                     control={form.control as any}
                                                     name="payment_type"
@@ -403,7 +381,7 @@ export function PaymentDrawer({
                                                     )}
                                                 />
                                             )}
-                                            {!initialData && (
+                                            {mode === 'create' && (
                                                 <FormField
                                                     control={form.control as any}
                                                     name="invoice_id"
@@ -445,7 +423,6 @@ export function PaymentDrawer({
                             </Form>
                         </FormSplitLayout>
                     </SkeletonShell>
-                )}
             </Drawer>
         </>
     )

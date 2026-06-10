@@ -147,7 +147,7 @@ export function ProviderDrawer({ open, onOpenChange, provider, onSuccess, mode: 
                 onOpenChange={onOpenChange}
                 side="left"
                 defaultSize={formDrawerWidth("medium", !!provider)}
-                contentClassName="p-0"
+                mode={mode}
                 title={<><span>{drawerTitle}</span>{(mode === 'view' || mode === 'edit') && provider?.id && <Button variant="ghost" size="icon" onClick={() => handlePrint()}><Printer className="h-4 w-4" /></Button>}</>}
                 subtitle="Configure las cuentas contables para recaudación y comisiones."
                 footer={isView ? undefined : (
