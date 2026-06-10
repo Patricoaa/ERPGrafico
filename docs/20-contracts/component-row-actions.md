@@ -61,7 +61,8 @@ the icon, label, variant and destructiveness of each CRUD-style action.
 | `restore` | `ArchiveRestore` | "Restaurar" | write | reverse archive |
 | `lock` | `Lock` | "Bloquear" | write | toggle lock |
 | `unlock` | `Unlock` | "Desbloquear" | write | toggle lock |
-| `annul` | `Ban` | "Anular" | destructive | open `ActionConfirmModal variant="destructive"` — **transactional docs** (invoice, order, payment); preserves the record for audit — added in ADR-0023 |
+| `cancel` | `Trash2` | "Cancelar" | destructive | open `ActionConfirmModal variant="destructive"` — **DRAFT transactional docs**; no reversals, marks status=CANCELLED, deletes JE if DRAFT |
+| `annul` | `Ban` | "Anular" | destructive | open `ActionConfirmModal variant="destructive"` — **POSTED/PAID transactional docs** (invoice, order, payment); preserves the record for audit, creates reversal entries — added in ADR-0023 |
 | `delete` | `Trash2` | "Eliminar" | destructive | open `ActionConfirmModal variant="destructive"` — **masters / config** (category, warehouse); removes the record |
 
 Any addition to the registry **requires an ADR** (governance: changing a contract).
@@ -94,20 +95,20 @@ left → right or top → bottom in cards):
 
 ```
 detail → hub → edit → duplicate → pay → deliver → receive →
-  download → print → share → archive → restore → lock / unlock → annul → delete
+  download → print → share → archive → restore → lock / unlock → cancel → annul → delete
 ```
 
-`annul` and `delete` are **always last**, in that order. `edit` is the visual anchor — if
+`cancel`, `annul` and `delete` are **always last**, in that order. `edit` is the visual anchor — if
 present, it should be the first *write* action. Read actions (`detail`, `hub`) come
 before any write action. Transactional workflow verbs (`pay`, `deliver`, `receive`) sit between
 `duplicate` and the read-only export block (`download`/`print`/`share`).
 
-**`annul` vs `delete` — when to use which:**
+**`cancel` vs `annul` vs `delete` — when to use which:**
 
-| Use `annul` for | Use `delete` for |
-|-----------------|------------------|
-| Transactional documents that must remain in the audit trail (invoices, sale orders, payments, work orders, journal entries) | Masters / configuration entities with no legal trace requirement (categories, warehouses, tags, payment methods) |
-| Backend keeps the row and flips `status`/`voided_at` | Backend hard-deletes (or soft-deletes via `deleted_at`) |
+| Use `cancel` for | Use `annul` for | Use `delete` for |
+|------------------|-----------------|------------------|
+| DRAFT transactional docs where the entire document tree is DRAFT — no reversals needed | Posted/confirmed transactional docs that must remain in the audit trail (invoices, sale orders, payments, work orders, journal entries) | Masters / configuration entities with no legal trace requirement (categories, warehouses, tags, payment methods) |
+| Backend marks `status=CANCELLED`, deletes DRAFT Journal Entries (no reversal) | Backend creates reversal entries (JE REVERSAL, StockMove reversal) | Backend hard-deletes (or soft-deletes via `deleted_at`) |
 
 Both are destructive — both MUST open `ActionConfirmModal` with `variant="destructive"`.
 

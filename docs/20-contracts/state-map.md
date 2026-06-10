@@ -197,9 +197,13 @@ Single source of truth for every entity state. `StatusBadge` variants must match
 
 ## TreasuryMovement
 
-No explicit status field. Edit restrictions based on journal_entry status:
-- If `journal_entry.status == 'POSTED'` → deletion blocked (must annul via service).
-- Created in any AccountingPeriod; blocked if period is closed.
+| Status | Intent | Transitions allowed to |
+|--------|--------|------------------------|
+| `DRAFT` | `info` | `POSTED`, `CANCELLED` |
+| `POSTED` | `success` | `CANCELLED` (vía annul: reverso contable) |
+| `CANCELLED` | `destructive` | — |
+
+**Edit restrictions:** If `is_reconciled == True` → bloquea cancelación. Si tiene `journal_entry.status == POSTED` → solo annul vía reverso. Movimientos en período contable cerrado se bloquean.
 
 ## POSSession
 
