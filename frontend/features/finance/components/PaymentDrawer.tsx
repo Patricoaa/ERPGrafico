@@ -101,7 +101,7 @@ export function PaymentDrawer({
             customer_id: (initialData?.payment_type === "INBOUND" ? (initialData?.contact?.toString() || initialData?.customer?.toString() || initialData?.customer_id?.toString()) : "") || "",
             supplier_id: (initialData?.payment_type === "OUTBOUND" ? (initialData?.contact?.toString() || initialData?.supplier?.toString() || initialData?.supplier_id?.toString()) : "") || "",
             invoice_id: initialData?.invoice?.toString() || initialData?.invoice_id?.toString() || "",
-            reference: initialData?.reference || initialData?.transaction_number || "",
+            reference: initialData?.reference || "",
             payment_method_new: initialData?.payment_method_new?.toString() || null,
         },
     })
@@ -157,7 +157,7 @@ export function PaymentDrawer({
                 customer_id: (paymentData.payment_type === "INBOUND" ? (paymentData.contact?.toString() ?? paymentData.customer?.toString() ?? paymentData.customer_id?.toString()) : "") ?? "",
                 supplier_id: (paymentData.payment_type === "OUTBOUND" ? (paymentData.contact?.toString() ?? paymentData.supplier?.toString() ?? paymentData.supplier_id?.toString()) : "") ?? "",
                 invoice_id: paymentData.invoice?.toString() ?? paymentData.invoice_id?.toString() ?? "",
-                reference: paymentData.reference ?? paymentData.transaction_number ?? "",
+                reference: paymentData.reference ?? "",
                 payment_method_new: paymentData.payment_method_new?.toString() ?? null,
             })
         }

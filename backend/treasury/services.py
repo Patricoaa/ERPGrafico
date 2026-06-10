@@ -188,38 +188,10 @@ class TreasuryService:
 
              # Check if fully paid
              if total_paid >= target_total:
-                 # CRITICAL: Check if any payment requires a transaction number but misses it
-                 has_pending_transactions = related_payments.filter(
-                     movement_type__in=[TreasuryMovement.Type.INBOUND, TreasuryMovement.Type.OUTBOUND, TreasuryMovement.Type.TRANSFER],
-                     payment_method__in=[TreasuryMovement.Method.CARD, TreasuryMovement.Method.TRANSFER],
-                     transaction_number__isnull=True
-                 ).exclude(transaction_number__exact='').exists()
-                 
-                 # Also check empty string explicitly in case nulls are handled differently
-                 if not has_pending_transactions:
-                      # If we do exclude(exact='') above, it handles empty strings.
-                      # Let's be thorough:
-                      pending_empty = related_payments.filter(
-                         movement_type__in=[TreasuryMovement.Type.INBOUND, TreasuryMovement.Type.OUTBOUND, TreasuryMovement.Type.TRANSFER],
-                         payment_method__in=[TreasuryMovement.Method.CARD, TreasuryMovement.Method.TRANSFER],
-                         transaction_number=''
-                      ).exists()
-                      has_pending_transactions = has_pending_transactions or pending_empty
-
                  status_field = 'status'
-                 if hasattr(target, 'Status'):
-                      if hasattr(target.Status, 'PAID'):
-                          # Only mark as PAID if NO pending transaction numbers
-                          if not has_pending_transactions:
-                              setattr(target, status_field, target.Status.PAID)
-                              target.save()
-                          else:
-                               if target.status == target.Status.PAID:
-                                    new_status = target.Status.CONFIRMED
-                                    if hasattr(target.Status, 'INVOICED'):
-                                         new_status = target.Status.INVOICED
-                                    setattr(target, status_field, new_status)
-                                    target.save()
+                 if hasattr(target, 'Status') and hasattr(target.Status, 'PAID'):
+                     setattr(target, status_field, target.Status.PAID)
+                     target.save()
 
                  # Sync HUB Tasks
                  from workflow.services import WorkflowService

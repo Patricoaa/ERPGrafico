@@ -179,13 +179,7 @@ class WorkflowService:
                 
             payments = getattr(order, 'payments', None)
             if payments is not None:
-                # Exact same logic as frontend: complete only if no payments are pending registration
-                has_pending = payments.filter(
-                    movement_type__in=['INBOUND', 'OUTBOUND', 'TRANSFER'],
-                    payment_method__in=['CARD', 'TRANSFER'],
-                    transaction_number__isnull=True
-                ).exclude(transaction_number__exact='').exists()
-                return not has_pending
+                return True
             return True
             
         return False

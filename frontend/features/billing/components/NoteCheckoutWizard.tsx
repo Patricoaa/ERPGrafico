@@ -53,10 +53,9 @@ export function NoteCheckoutWizard({
         attachment: null as File | null
     })
     const [paymentData, setPaymentData] = useState<Record<string, unknown>>({
-        method: '', // Blank means "Credit" if not selected? User wants implicit Credit.
+        method: '',
         amount: 0,
         treasury_account_id: '',
-        transaction_number: '',
         is_pending: false
     })
 
@@ -96,7 +95,6 @@ export function NoteCheckoutWizard({
                 method: '',
                 amount: 0,
                 treasury_account_id: '',
-                transaction_number: '',
                 is_pending: false
             })
 
@@ -133,7 +131,6 @@ export function NoteCheckoutWizard({
                 method: '',
                 amount: 0,
                 treasury_account_id: '',
-                transaction_number: '',
                 is_pending: false
             })
 

@@ -3,13 +3,12 @@ import { getErrorMessage } from "@/lib/errors"
 
 import { useState } from "react"
 import { PhaseCard } from "./PhaseCard"
-import { Banknote, Hash, Trash2, AlertCircle, Gavel } from "lucide-react"
+import { Banknote, Trash2, Gavel } from "lucide-react"
 import { formatEntity } from '@/features/orders/utils/status'
 import { cn } from "@/lib/utils"
 import { toast } from "sonner"
 import { useDeletePayment, useAnnulPayment } from "../../hooks/useOrdersMutations"
 import { ActionConfirmModal } from '@/components/shared'
-import { TransactionNumberDrawer } from "@/features/finance/components/TransactionNumberDrawer"
 import { saleOrderActions } from '@/features/sales/actions'
 import { purchaseOrderActions } from '@/features/purchasing/actions'
 import { Order, PhaseDocument, Payment } from "../../types"
@@ -61,20 +60,6 @@ export function TreasuryPhase({
         title: "",
         description: null,
         onConfirm: () => { }
-    })
-
-    const [trForm, setTrForm] = useState<{ open: boolean, id: number | null, initialValue: string }>({
-        open: false,
-        id: null,
-        initialValue: ""
-    })
-
-    const hasPendingTransactions = payments.some((pay: Payment) => {
-        const requiresTR = (
-            (pay.payment_type === 'OUTBOUND' && (pay.payment_method === 'CARD' || pay.payment_method === 'TRANSFER')) ||
-            (pay.payment_type === 'INBOUND' && pay.payment_method === 'TRANSFER')
-        )
-        return requiresTR && !pay.transaction_number
     })
 
     const handleDeletePayment = async (id: number, isConfirmed = false) => {
@@ -133,8 +118,8 @@ export function TreasuryPhase({
                 icon={Banknote}
                 variant={
                     (isNoteMode ? noteStatuses.treasury :
-                        ((parseFloat(String(activeDoc.pending_amount || '0')) <= 0 && !hasPendingTransactions) ? 'success' :
-                            (payments.length > 0 || hasPendingTransactions ? 'active' : 'neutral'))) as any
+                        (parseFloat(String(activeDoc.pending_amount || '0')) <= 0 ? 'success' :
+                            (payments.length > 0 ? 'active' : 'neutral'))) as any
                 }
                 documents={payments.map((p: Payment) => {
                     const isWriteOff = p.payment_method === 'WRITE_OFF'
@@ -149,12 +134,6 @@ export function TreasuryPhase({
                         amount: p.amount,
                         documentReference: p.reference,
                         actions: [
-                            ...((((p.payment_type === 'OUTBOUND' && (p.payment_method === 'CARD' || p.payment_method === 'TRANSFER')) || (p.payment_type === 'INBOUND' && p.payment_method === 'TRANSFER'))) && !p.transaction_number ? [{
-                                icon: Hash,
-                                title: 'Ingresar N° Transacción',
-                                color: 'text-warning hover:bg-warning/10',
-                                onClick: () => p.id && setTrForm({ open: true, id: Number(p.id), initialValue: "" })
-                            }] : []),
                             ...((p.status !== 'CANCELLED') ? [{
                                 icon: Trash2,
                                 title: 'Eliminar/Anular Pago',
@@ -171,7 +150,7 @@ export function TreasuryPhase({
                 userPermissions={userPermissions}
                 onActionSuccess={onActionSuccess}
                 stageId="treasury"
-                isComplete={parseFloat(String(activeDoc.pending_amount || '0')) <= 0 && !hasPendingTransactions}
+                isComplete={parseFloat(String(activeDoc.pending_amount || '0')) <= 0}
                 posSessionId={posSessionId}
                 collapsible={collapsible}
                 isOpen={isOpen}
@@ -197,23 +176,8 @@ export function TreasuryPhase({
                         </span>
                     </div>
                 </div>
-                {hasPendingTransactions && (
-                    <div className="flex items-center justify-center gap-1.5 py-1 text-[9px] text-warning/80 animate-pulse font-black uppercase tracking-widest">
-                        <AlertCircle className="size-3" />
-                        Falta N° TRX
-                    </div>
-                )}
+                
             </PhaseCard>
-
-            <TransactionNumberDrawer
-                open={trForm.open}
-                onOpenChange={(open) => setTrForm({ ...trForm, open })}
-                paymentId={trForm.id}
-                initialValue={trForm.initialValue}
-                onSuccess={() => {
-                    onActionSuccess?.()
-                }}
-            />
 
             <ActionConfirmModal
                 open={confirmModal.open}

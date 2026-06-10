@@ -56,7 +56,6 @@ export function PurchaseNoteModal({
         amount: 0,
         treasuryAccountId: null,
         paymentMethodId: null,
-        transactionNumber: '',
         isPending: false
     })
     const [isFolioValid, setIsFolioValid] = useState(true)

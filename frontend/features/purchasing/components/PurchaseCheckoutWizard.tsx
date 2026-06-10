@@ -151,7 +151,6 @@ export function PurchaseCheckoutWizard({
     const [paymentData, setPaymentData] = useState<PaymentData>({
         method: null,
         amount: total,
-        transactionNumber: '',
         treasuryAccountId: null,
         paymentMethodId: null,
         isPending: false
@@ -264,12 +263,8 @@ export function PurchaseCheckoutWizard({
                 toast.error("Debe seleccionar una cuenta de tesorería / caja origen.")
                 return false
             }
-            if (paymentData.method === 'TRANSFER' && !paymentData.isPending && !paymentData.transactionNumber) {
-                toast.error("Debe ingresar el número de transferencia o marcar como pendiente.")
-                return false
-            }
             if (paymentData.method === 'CHECK') {
-                if (!paymentData.transactionNumber) {
+                if (!paymentData.checkNumber) {
                     toast.error("Debe ingresar el número de cheque.")
                     return false
                 }
@@ -336,9 +331,9 @@ export function PurchaseCheckoutWizard({
                 formData.append('payment_method', paymentData.method || "")
                 formData.append('amount', paymentData.amount.toString())
                 formData.append('payment_is_pending', (paymentData.isPending || false).toString())
-                if (paymentData.transactionNumber) formData.append('transaction_number', paymentData.transactionNumber)
                 if (paymentData.treasuryAccountId) formData.append('treasury_account_id', paymentData.treasuryAccountId)
                 if (paymentData.paymentMethodId) formData.append('payment_method_id', paymentData.paymentMethodId.toString())
+                if (paymentData.method === 'CHECK' && paymentData.checkNumber) formData.append('check_number', paymentData.checkNumber)
                 if (paymentData.method === 'CHECK' && paymentData.checkBankId) formData.append('check_bank_id', paymentData.checkBankId.toString())
                 if (paymentData.method === 'CHECK' && paymentData.checkDueDate) formData.append('check_due_date', paymentData.checkDueDate)
                 if (paymentData.installments && paymentData.installments > 1) {
