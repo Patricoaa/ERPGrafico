@@ -40,8 +40,8 @@ function EntityCardRoot({
                 "bg-card text-card-foreground shadow-sm",
                 variant === "compact" ? "gap-1.5 p-3" : "gap-3 p-4",
                 isSelected
-                    ? "border-primary/60 bg-primary/5 ring-1 ring-primary/20 shadow-primary/10"
-                    : "border-border/50 hover:border-border hover:shadow-md hover:bg-muted/20",
+                    ? "border-primary/60 bg-accent ring-1 ring-primary/20 shadow-primary/10"
+                    : "border-border/50 hover:border-border hover:shadow-md",
                 onClick && "cursor-pointer select-none",
                 className
             )}
