@@ -1,6 +1,7 @@
 import logging
 
 from django.db import transaction
+from django.db.models.deletion import ProtectedError
 from django.core.exceptions import ValidationError
 from django.utils import timezone
 from django.contrib.contenttypes.models import ContentType
@@ -404,6 +405,7 @@ class TreasuryService:
         if entry.items.count() >= 2:
              JournalEntryService.post_entry(entry)
              movement.journal_entry = entry
+             movement.status = TreasuryMovement.MovementStatus.POSTED
              movement.save()
         else:
              entry.delete()
@@ -609,45 +611,46 @@ class TreasuryService:
 
     @staticmethod
     @transaction.atomic
-    def delete_movement(movement: TreasuryMovement):
+    def cancel_movement(movement: TreasuryMovement):
         """
-        Deletes a movement and its associated journal entry.
-        Only allowed for movements that are not reconciled and if accounting entry is DRAFT (or force delete).
+        Cancels a movement by marking it as CANCELLED.
+        - If DRAFT: deletes the unposted journal entry.
+        - If POSTED: reverses the journal entry (keeps audit trail).
+        - Never hard-deletes the movement record.
         """
         if movement.is_reconciled:
-             raise ValidationError("No se puede eliminar un movimiento conciliado.")
-        
-        # Reverse/Delete Journal Entry
-        if movement.journal_entry:
-             if movement.journal_entry.status == JournalEntry.State.POSTED:
-                  # If posted, we should ideally annul, not delete. 
-                  # But matching 'delete_payment' behavior which allowed deletion of DRAFT/PENDING things.
-                  # If strict, raise error. Assuming this is for Draft/Cancelled flows.
-                  # But verify logic: delete_invoice only calls this for DRAFT invoice payments.
-                  movement.journal_entry.delete()
-             else:
-                  movement.journal_entry.delete()
+             raise ValidationError("No se puede cancelar un movimiento conciliado.")
 
-        movement.delete()
+        if movement.status == TreasuryMovement.MovementStatus.CANCELLED:
+             return movement
+
+        if movement.journal_entry:
+             if movement.journal_entry.status == JournalEntry.State.DRAFT:
+                  je = movement.journal_entry
+                  movement.journal_entry = None
+                  movement.save(update_fields=['journal_entry'])
+                  try:
+                       je.delete()
+                  except ProtectedError:
+                       pass
+             elif movement.journal_entry.status == JournalEntry.State.POSTED:
+                  JournalEntryService.reverse_entry(
+                       movement.journal_entry,
+                       description=f"Cancelación Movimiento {movement.id}",
+                  )
+
+        movement.status = TreasuryMovement.MovementStatus.CANCELLED
+        movement.save()
+        return movement
 
     @staticmethod
     @transaction.atomic
     def annul_movement(movement: TreasuryMovement):
         """
-        Annuls a movement by reversing its accounting entry and marking it (or deleting it depending on logic).
-        For now, we reverse accounting and keep the record if needed, or maybe just delete if it's a hard annulment.
+        Annuls a POSTED movement by reversing its accounting entry and marking it as CANCELLED.
+        Delegates to cancel_movement for consistency.
         """
-        if movement.is_reconciled:
-             raise ValidationError("No se puede anular un movimiento conciliado.")
-
-        if movement.journal_entry and movement.journal_entry.status == JournalEntry.State.POSTED:
-             JournalEntryService.reverse_entry(movement.journal_entry, description=f"Anulación Movimiento {movement.id}")
-        
-        # Update movement status? We don't have a status field in TreasuryMovement (only validation flags).
-        # Typically we might delete it or mark it as cancelled if we add a status field.
-        # For now, let's delete strictly to avoid orphans affecting totals.
-        # The reversed entry remains as audit trail.
-        movement.delete()
+        TreasuryService.cancel_movement(movement)
 
     @staticmethod
     def create_movement_from_payload(data: dict, *, created_by) -> "TreasuryMovement":

@@ -47,8 +47,12 @@ class InvoiceViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
 
     def destroy(self, request, *args, **kwargs):
         instance = self.get_object()
-        BillingService.delete_invoice(instance)
-        return Response(status=status.HTTP_204_NO_CONTENT)
+        if instance.status != 'CANCELLED':
+            return Response(
+                {'error': 'Use el endpoint de cancelación para facturas activas.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        return super().destroy(request, *args, **kwargs)
 
     @action(detail=False, methods=['post'])
     def create_from_order(self, request):

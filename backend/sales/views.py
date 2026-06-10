@@ -267,8 +267,48 @@ class SaleOrderViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
 
     def destroy(self, request, *args, **kwargs):
         instance = self.get_object()
-        SalesService.delete_sale_order(instance)
-        return Response(status=status.HTTP_204_NO_CONTENT)
+        if instance.status != 'CANCELLED':
+            return Response(
+                {'error': 'Use POST /cancel/ para cancelar documentos activos.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        return super().destroy(request, *args, **kwargs)
+
+    @action(detail=True, methods=['get'])
+    def cancel_impact(self, request, pk=None):
+        """Preview what will happen when cancelling this order."""
+        order = self.get_object()
+        impact = {
+            'order_status': order.status,
+            'invoices': [
+                {'id': inv.id, 'display_id': inv.display_id, 'status': inv.status}
+                for inv in order.invoices.all()
+            ],
+            'deliveries': [
+                {'id': d.id, 'status': d.status}
+                for d in order.deliveries.all()
+            ],
+            'payments': [
+                {'id': p.id, 'amount': str(p.amount), 'status': p.status if hasattr(p, 'status') else 'POSTED'}
+                for p in order.payments.all()
+            ],
+            'has_confirmed_deliveries': order.deliveries.filter(status='CONFIRMED').exists(),
+            'has_posted_payments': order.payments.filter(journal_entry__status='POSTED').exists(),
+            'action': 'soft_cancel' if order.status == 'DRAFT' else 'full_annul',
+        }
+        return Response(impact)
+
+    @action(detail=True, methods=['post'])
+    def cancel(self, request, pk=None):
+        """Cancel a sale order (soft if DRAFT, full annul if CONFIRMED)."""
+        order = self.get_object()
+        try:
+            SalesService.cancel_sale_order(order)
+            return Response(SaleOrderSerializer(order).data)
+        except ValidationError as e:
+            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
     @action(detail=True, methods=['post'])
     def confirm(self, request, pk=None):

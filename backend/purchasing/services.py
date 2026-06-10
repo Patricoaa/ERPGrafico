@@ -872,19 +872,21 @@ class PurchasingService:
 
     @staticmethod
     @transaction.atomic
-    def delete_receipt(receipt: PurchaseReceipt):
+    def cancel_receipt(receipt: PurchaseReceipt):
         """
-        Deletes a purchase receipt, its journal entry, and associated stock moves.
-        Also reverts quantity_received on the purchase order lines.
-        Only allowed for DRAFT receipts.
+        Cancels a DRAFT purchase receipt by reverting stock moves, deleting the
+        draft JE, and marking it as CANCELLED. Never hard-deletes the record.
         """
         if receipt.status != PurchaseReceipt.Status.DRAFT:
-            raise ValidationError("Solo se pueden eliminar recepciones en estado Borrador.")
+            raise ValidationError("Solo se pueden cancelar recepciones en estado Borrador.")
+
+        if receipt.status == PurchaseReceipt.Status.CANCELLED:
+            return receipt
 
         # 1. Revert received quantities & Delete Stock Moves
         for line in receipt.lines.all():
             if line.stock_move:
-                line.stock_move.delete() # Accounting entry for move is often shared with receipt JE
+                line.stock_move.delete()
             
             line.purchase_line.quantity_received -= line.quantity_received
             line.purchase_line.save()
@@ -893,8 +895,10 @@ class PurchasingService:
         if receipt.journal_entry:
             receipt.journal_entry.delete()
 
-        # 3. Delete Receipt
-        receipt.delete()
+        # 3. Mark as CANCELLED
+        receipt.status = PurchaseReceipt.Status.CANCELLED
+        receipt.save()
+        return receipt
 
     @staticmethod
     @transaction.atomic
@@ -1160,36 +1164,42 @@ class PurchasingService:
 
     @staticmethod
     @transaction.atomic
-    def delete_purchase_order(order: PurchaseOrder):
+    def cancel_purchase_order(order: PurchaseOrder):
         """
-        Deletes a purchase order, its invoices, and associated journal entries.
-        Only allowed for DRAFT orders.
+        Cancels a DRAFT purchase order by cancelling children and marking it as CANCELLED.
+        For CONFIRMED orders with confirmed children, delegates to full annul logic.
         """
-        if order.status != PurchaseOrder.Status.DRAFT:
-            raise ValidationError("Solo se pueden eliminar órdenes de compra en estado Borrador.")
+        if order.status == PurchaseOrder.Status.CANCELLED:
+            return order
 
         from billing.services import BillingService
         from treasury.services import TreasuryService
-        
-        # 1. Delete associated invoices (and their payments/JEs)
-        for invoice in order.invoices.all():
-            if invoice.status != 'CANCELLED':
-                 BillingService.delete_invoice(invoice)
-        
-        # 2. Delete stand-alone payments linked to order
-        for movement in order.payments.all():
-            TreasuryService.delete_movement(movement)
+        from treasury.models import TreasuryMovement
 
-        # 3. Delete receipts (which removes Stock Moves and their JEs)
-        for receipt in order.receipts.all():
-            PurchasingService.delete_receipt(receipt)
-
-        # 3. Delete order's own journal entry
-        if order.journal_entry:
-            order.journal_entry.delete()
+        if order.status == PurchaseOrder.Status.DRAFT:
+            # Soft cancel: all children are DRAFT → just mark CANCELLED, no reversals
+            for invoice in order.invoices.all():
+                if invoice.status != 'CANCELLED':
+                     BillingService.cancel_invoice(invoice)
             
-        # 4. Delete Order
-        order.delete()
+            for movement in order.payments.all():
+                if movement.status != TreasuryMovement.MovementStatus.CANCELLED:
+                    TreasuryService.cancel_movement(movement)
+
+            for receipt in order.receipts.all():
+                if receipt.status != PurchaseReceipt.Status.CANCELLED:
+                     PurchasingService.cancel_receipt(receipt)
+
+            if order.journal_entry:
+                order.journal_entry.delete()
+        else:
+            # CONFIRMED or other: delegate to DocumentService.cancel (full annul)
+            from core.services.document import DocumentRegistry
+            DocumentRegistry.for_instance(order).cancel(order, user=None)
+
+        order.status = PurchaseOrder.Status.CANCELLED
+        order.save()
+        return order
 
 from core.services.document import DocumentService, DocumentRegistry
 
