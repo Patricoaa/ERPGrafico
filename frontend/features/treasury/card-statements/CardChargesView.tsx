@@ -1,7 +1,8 @@
 "use client"
 
-import { useState } from 'react'
+import { useEffect } from 'react'
 import { CreditCard } from 'lucide-react'
+import { useSearchParams, useRouter } from 'next/navigation'
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { EmptyState } from '@/components/shared'
 import { UnbilledChargesView } from './UnbilledChargesView'
@@ -17,10 +18,28 @@ interface CardChargesViewProps {
 }
 
 export function CardChargesView({ bankId, creditCardAccounts }: CardChargesViewProps) {
-    const [activeSubTab, setActiveSubTab] = useState('unbilled')
-    const [selectedCardAccount, setSelectedCardAccount] = useState<number | null>(
-        creditCardAccounts[0]?.id ?? null
-    )
+    const searchParams = useSearchParams()
+    const router = useRouter()
+
+    useEffect(() => {
+        const params = new URLSearchParams(searchParams.toString())
+        let changed = false
+        if (!searchParams.has('card') && creditCardAccounts.length > 0) {
+            params.set('card', String(creditCardAccounts[0].id))
+            changed = true
+        }
+        if (changed) {
+            router.replace(`?${params.toString()}`, { scroll: false })
+        }
+    }, [])
+
+    const activeSubTab = searchParams.get('subtab') || 'unbilled'
+    const cardParam = searchParams.get('card')
+    const selectedCardAccount = cardParam
+        ? (creditCardAccounts.some(a => a.id === Number(cardParam))
+            ? Number(cardParam)
+            : creditCardAccounts[0]?.id ?? null)
+        : (creditCardAccounts[0]?.id ?? null)
 
     if (creditCardAccounts.length === 0) {
         return (
@@ -40,7 +59,11 @@ export function CardChargesView({ bankId, creditCardAccounts }: CardChargesViewP
         <div className="flex flex-col flex-1 min-h-0">
             {/* Toolbar row — sub-tab tabs + TC selector */}
             <div className="flex items-center gap-3 shrink-0">
-                <Tabs value={activeSubTab} onValueChange={setActiveSubTab}>
+                <Tabs value={activeSubTab} onValueChange={(v) => {
+                    const params = new URLSearchParams(searchParams.toString())
+                    params.set('subtab', v)
+                    router.replace(`?${params.toString()}`, { scroll: false })
+                }}>
                     <TabsList className="h-8">
                         <TabsTrigger value="unbilled" className="text-xs px-3">
                             Cargos No Facturados
@@ -54,7 +77,11 @@ export function CardChargesView({ bankId, creditCardAccounts }: CardChargesViewP
                 {creditCardAccounts.length > 1 ? (
                     <Tabs
                         value={String(selectedCardAccount)}
-                        onValueChange={(v) => setSelectedCardAccount(Number(v))}
+                        onValueChange={(v) => {
+                            const params = new URLSearchParams(searchParams.toString())
+                            params.set('card', v)
+                            router.replace(`?${params.toString()}`, { scroll: false })
+                        }}
                     >
                         <TabsList className="h-8">
                             {creditCardAccounts.map(acc => (
