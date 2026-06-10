@@ -523,17 +523,12 @@ class TreasuryMovementViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
 
     def destroy(self, request, *args, **kwargs):
         instance = self.get_object()
-        if instance.journal_entry and instance.journal_entry.status == 'POSTED':
-             # We might allow annulment here via delete if that's the intention,
-             # but strictly delete is for drafts. Annul is for posted.
-             # If user clicks delete, we try delete_movement which checks status.
-             pass
-
-        try:
-            TreasuryService.delete_movement(instance)
-            return Response(status=status.HTTP_204_NO_CONTENT)
-        except ValidationError as e:
-            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        if instance.status != 'CANCELLED':
+            return Response(
+                {'error': 'Use el endpoint de cancelación para movimientos activos.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        return super().destroy(request, *args, **kwargs)
 
     def perform_update(self, serializer):
         instance = serializer.save()

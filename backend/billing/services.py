@@ -1065,30 +1065,36 @@ class BillingService:
 
     @staticmethod
     @transaction.atomic
-    def delete_invoice(invoice: Invoice):
+    def cancel_invoice(invoice: Invoice):
         """
-        Deletes an invoice, its associated Journal Entry, and its associated payments.
-        Only allowed for DRAFT invoices.
+        Cancels a DRAFT invoice by cancelling its payments, deleting its draft JE,
+        and marking it as CANCELLED. Never hard-deletes fiscal records.
         """
         if invoice.status != Invoice.Status.DRAFT:
-            raise ValidationError("Solo se pueden eliminar facturas en estado Borrador.")
+            raise ValidationError("Solo se pueden cancelar facturas en estado Borrador.")
+
+        if invoice.status == Invoice.Status.CANCELLED:
+            return invoice
 
         from treasury.services import TreasuryService
+        from treasury.models import TreasuryMovement
         
-        # 1. Delete associated payments
-        # 1. Delete associated payments
+        # 1. Cancel associated payments
         for movement in invoice.payments.all():
-            TreasuryService.delete_movement(movement)
+            if movement.status != TreasuryMovement.MovementStatus.CANCELLED:
+                TreasuryService.cancel_movement(movement)
         
-        # 2. Delete invoice's own Journal Entry
+        # 2. Delete invoice's own draft Journal Entry
         if invoice.journal_entry:
             invoice.journal_entry.delete()
         
-        # 2.5 Delete reconciliation journal entries (RECO-...)
+        # 3. Delete reconciliation journal entries (RECO-...)
         JournalEntry.objects.filter(reference=f"RECO-{invoice.id}").delete()
         
-        # 3. Delete invoice
-        invoice.delete()
+        # 4. Mark as CANCELLED
+        invoice.status = Invoice.Status.CANCELLED
+        invoice.save()
+        return invoice
 
     @staticmethod
     @transaction.atomic

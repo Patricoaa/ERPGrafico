@@ -337,6 +337,16 @@ class TreasuryMovement(models.Model):
         ),
     )
 
+    class MovementStatus(models.TextChoices):
+        DRAFT = 'DRAFT', _('Borrador')
+        POSTED = 'POSTED', _('Contabilizado')
+        CANCELLED = 'CANCELLED', _('Anulado')
+
+    status = models.CharField(
+        _("Estado"), max_length=20, choices=MovementStatus.choices, default=MovementStatus.DRAFT,
+        help_text=_("Estado del movimiento: Borrador, Contabilizado o Anulado.")
+    )
+
     created_at = models.DateTimeField(auto_now_add=True)
     created_by = models.ForeignKey(
         settings.AUTH_USER_MODEL,
@@ -2354,8 +2364,8 @@ class Check(models.Model):
     deposited_at = models.DateTimeField(_("Depositado el"), null=True, blank=True)
     cleared_at   = models.DateTimeField(_("Cobrado el"),    null=True, blank=True)
     bounced_at   = models.DateTimeField(_("Protestado el"), null=True, blank=True)
-    created_at   = models.DateTimeField(auto_now_add=True)
-    created_by   = models.ForeignKey(
+    created_at = models.DateTimeField(auto_now_add=True)
+    created_by = models.ForeignKey(
         settings.AUTH_USER_MODEL, on_delete=models.SET_NULL,
         null=True, blank=True,
         related_name='checks_created', verbose_name=_("Creado Por")

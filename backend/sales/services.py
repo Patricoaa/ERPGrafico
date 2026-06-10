@@ -533,73 +533,58 @@ class SalesService:
 
     @staticmethod
     @transaction.atomic
-    def delete_sale_order(order: SaleOrder):
+    def cancel_sale_order(order: SaleOrder):
         """
-        Deletes a sale order with strict business rule validations.
-        Only allowed for DRAFT orders without physical or financial impact.
+        Cancels a sale order by cancelling children and marking it as CANCELLED.
+        - DRAFT order → soft cancel children, mark CANCELLED, no reversals.
+        - CONFIRMED order → delegate to SaleOrderService.cancel() (full annul).
         """
-        if order.status != SaleOrder.Status.DRAFT:
-            raise ValidationError("Solo se pueden eliminar notas de venta en estado Borrador.")
-
-        # VALIDATION 1: Despachos confirmados
-        confirmed_deliveries = order.deliveries.filter(status='CONFIRMED').exists()
-        if confirmed_deliveries:
-            raise ValidationError(
-                "❌ No se puede eliminar: existen despachos confirmados.\n"
-                "📦 Los productos ya fueron despachados físicamente.\n"
-                "💡 Opciones:\n"
-                "   1. Anular los despachos primero (solo si son productos stockeables)\n"
-                "   2. Registrar devolución de mercadería\n"
-                "   3. Confirmar la orden y usar Nota de Crédito"
-            )
-        
-        # VALIDATION 2: Pagos registrados
-        posted_payments = order.payments.filter(
-            journal_entry__status='POSTED'
-        ).exists()
-        
-        if posted_payments:
-            raise ValidationError(
-                "❌ No se puede eliminar: existen pagos registrados.\n"
-                "💰 Los pagos ya fueron contabilizados.\n"
-                "💡 Opciones:\n"
-                "   1. Registrar devolución de pago\n"
-                "   2. Confirmar la orden y usar Nota de Crédito"
-            )
-        
-        # VALIDATION 3: Productos no stockeables despachados
-        has_non_stockable_delivered = False
-        for line in order.lines.all():
-            if line.quantity_delivered > 0 and line.product:
-                if not line.product.track_inventory:
-                    has_non_stockable_delivered = True
-                    break
-        
-        if has_non_stockable_delivered:
-            raise ValidationError(
-                "❌ No se puede eliminar: se despacharon productos no stockeables (servicios/consumibles).\n"
-                "⚠️ No es posible revertir estos despachos ya que no afectan inventario.\n"
-                "💡 Debe confirmar la orden y usar Nota de Crédito para ajustar."
-            )
+        if order.status == SaleOrder.Status.CANCELLED:
+            return order
 
         from billing.services import BillingService
         from treasury.services import TreasuryService
-        
-        # 1. Delete associated invoices (and their payments/JEs)
-        for invoice in order.invoices.all():
-            if invoice.status != 'CANCELLED': # Safety check if needed
-                 BillingService.delete_invoice(invoice)
-        
-        # 2. Delete stand-alone payments linked to order
-        for movement in order.payments.all():
-            TreasuryService.delete_movement(movement)
+        from treasury.models import TreasuryMovement
 
-        # 3. Delete order's own journal entry
-        if order.journal_entry:
-            order.journal_entry.delete()
-            
-        # 4. Delete Order
-        order.delete()
+        if order.status == SaleOrder.Status.DRAFT:
+            # VALIDATION 1: Deliveries with confirmed status
+            confirmed_deliveries = order.deliveries.filter(status='CONFIRMED').exists()
+            if confirmed_deliveries:
+                raise ValidationError(
+                    "❌ No se puede cancelar: existen despachos confirmados.\n"
+                    "📦 Los productos ya fueron despachados físicamente.\n"
+                    "💡 Use la acción 'Anular' en el despacho primero."
+                )
+
+            # VALIDATION 2: Posted payments
+            posted_payments = order.payments.filter(
+                journal_entry__status='POSTED'
+            ).exists()
+            if posted_payments:
+                raise ValidationError(
+                    "❌ No se puede cancelar: existen pagos contabilizados.\n"
+                    "💡 Use la acción 'Anular' para revertir con asientos de reversión."
+                )
+
+            # Soft cancel children
+            for invoice in order.invoices.all():
+                if invoice.status != 'CANCELLED':
+                     BillingService.cancel_invoice(invoice)
+
+            for movement in order.payments.all():
+                if movement.status != TreasuryMovement.MovementStatus.CANCELLED:
+                    TreasuryService.cancel_movement(movement)
+
+            if order.journal_entry:
+                order.journal_entry.delete()
+        else:
+            # CONFIRMED: delegate to DocumentService.cancel (full annul with reversals)
+            from core.services.document import DocumentRegistry
+            DocumentRegistry.for_instance(order).cancel(order, user=None)
+
+        order.status = SaleOrder.Status.CANCELLED
+        order.save()
+        return order
 
     @staticmethod
     @transaction.atomic
