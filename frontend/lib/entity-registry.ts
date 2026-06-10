@@ -341,6 +341,16 @@ export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
     partnerField: (data) => data.loan_display_id || '---',
     viewPolicy: { availableViews: ['list'], defaultView: 'list', cardComponent: 'entity', gridLayout: 'single-column' },
   },
+  'treasury.cardpurchasegroup': {
+    label: 'treasury.cardpurchasegroup',
+    title: 'Compra en Cuotas',
+    titlePlural: 'Compras en Cuotas',
+    icon: ShoppingCart,
+    shortTemplate: '{group_display_id}',
+    listUrl: '/treasury/centro-bancos',
+    detailUrlPattern: '/treasury/centro-bancos',
+    viewPolicy: { availableViews: ['list'], defaultView: 'list', cardComponent: 'entity', gridLayout: 'single-column' },
+  },
   'treasury.creditcardstatement': {
     label: 'treasury.creditcardstatement',
     title: 'Estado de Cuenta Tarjeta',
