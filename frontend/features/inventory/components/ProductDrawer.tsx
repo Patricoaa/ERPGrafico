@@ -667,7 +667,7 @@ export function ProductDrawer({ sidebar, open, onOpenChange, initialData, onSucc
                                 className="flex-1"
                                 contentClassName="bg-transparent"
                             >
-                                <fieldset disabled={loading} className="flex-1 min-w-0 transition-opacity disabled:opacity-75 flex flex-col h-full min-h-0">
+                                <fieldset disabled={loading} className="flex-1 min-w-0 flex flex-col h-full min-h-0">
                                     <FormTabsContent value="general" className="mt-0 pt-6 px-6 pb-8 data-[state=active]:flex data-[state=active]:flex-1 data-[state=active]:flex-col data-[state=active]:min-h-0 overflow-y-auto scrollbar-thin">
                                         <div className="space-y-8 pr-2">
                                             <ProductBasicInfo

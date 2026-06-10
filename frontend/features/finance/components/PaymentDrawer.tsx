@@ -262,7 +262,7 @@ export function PaymentDrawer({
                         <Form {...form}>
                             <form id="payment-form" onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 pt-4">
                                 <fieldset disabled={loading || isViewMode} className="space-y-6 group">
-                                        <div className="space-y-4 group-disabled:opacity-60 transition-opacity">
+                                        <div className="space-y-4 transition-opacity">
                                             {mode === 'create' && (
                                                 <FormField
                                                     control={form.control as any}
