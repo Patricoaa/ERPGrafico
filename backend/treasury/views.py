@@ -2449,11 +2449,18 @@ class CreditCardStatementViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
 
     @action(detail=True, methods=['post'])
     def cancel(self, request, pk=None):
+        """Anula el estado de cuenta: revierte la facturación de cargos/cuotas
+        y marca como CANCELED. Solo disponible si no está pagado."""
         from .card_service import CardService
         stmt = self.get_object()
+        if stmt.status == 'PAID':
+            return Response(
+                {'detail': 'No se puede anular un estado de cuenta pagado.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
         notes = request.data.get('notes', '')
         try:
-            stmt = CardService.cancel_statement(stmt, notes=notes)
+            stmt = CardService.reverse_statement(stmt, notes=notes)
         except ValidationError as e:
             return Response({'detail': str(e)}, status=status.HTTP_400_BAD_REQUEST)
         stmt.refresh_from_db()
@@ -2707,14 +2714,36 @@ class CreditCardStatementViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
 
     @action(detail=True, methods=['get'], url_path='charges')
     def charges(self, request, pk=None):
-        """Retorna los movimientos (cargos) facturados en este statement."""
-        from .models import TreasuryMovement
+        """Retorna cargos facturados en este statement (movimientos + cuotas)."""
+        from .models import TreasuryMovement, CardPurchaseInstallment
         from .serializers import TreasuryMovementSerializer
         stmt = self.get_object()
         movements = TreasuryMovement.objects.filter(
             billed_in_statement=stmt,
-        ).order_by('-date', '-id')
-        return Response(TreasuryMovementSerializer(movements, many=True).data)
+        ).select_related('card_purchase_group', 'card_purchase_group__partner').order_by('-date', '-id')
+        installments = CardPurchaseInstallment.objects.filter(
+            billed_in_statement=stmt,
+        ).select_related('card_purchase_group', 'card_purchase_group__partner').order_by('-due_date', '-id')
+        installments_data = [
+            {
+                'id': inst.id,
+                'number': inst.number,
+                'due_date': inst.due_date.isoformat(),
+                'principal_amount': str(inst.principal_amount),
+                'group_uuid': str(inst.card_purchase_group.uuid) if inst.card_purchase_group else None,
+                'group_display_id': inst.card_purchase_group.display_id if inst.card_purchase_group else None,
+                'partner_name': (
+                    inst.card_purchase_group.partner.name
+                    if inst.card_purchase_group and inst.card_purchase_group.partner else None
+                ),
+                'total_installments': inst.card_purchase_group.installments if inst.card_purchase_group else None,
+            }
+            for inst in installments
+        ]
+        return Response({
+            'movements': TreasuryMovementSerializer(movements, many=True).data,
+            'installments': installments_data,
+        })
 
     @action(detail=True, methods=['post'], url_path='reverse')
     def reverse(self, request, pk=None):

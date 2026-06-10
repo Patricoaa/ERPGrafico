@@ -315,7 +315,7 @@ export function JournalEntryDrawer({
 
     const journalFormFields = (
         <Form {...form}>
-            <form id="journal-entry-form" onSubmit={form.handleSubmit(onSubmit)}>
+            <form id="journal-entry-form" onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 px-6 pb-6 pt-6">
                 <fieldset disabled={isViewMode} className="contents">
                     <div className="grid grid-cols-12 gap-4 ">
                         <div className="col-span-3">

@@ -12,4 +12,5 @@ export type {
     CreditCardStatement, CreditCardStatementStatus,
     CreditCardStatementCreatePayload,
     PayStatementPayload, ApplyChargesPayload,
+    StatementInstallment, StatementChargesResponse, StatementChargeRow,
 } from './types'

@@ -21,7 +21,10 @@ export function PayStatementModal({ statement, open, onOpenChange }: PayStatemen
     const [paymentAccountId, setPaymentAccountId] = useState<number | null>(null)
 
     const bankAccounts = accounts.filter(
-        (a: TreasuryAccount) => a.account_type === 'CHECKING' || a.account_type === 'CASH',
+        (a: TreasuryAccount) =>
+            (a.account_type === 'CHECKING' || a.account_type === 'CASH') &&
+            statement?.card_account_bank != null &&
+            a.bank === statement.card_account_bank,
     )
 
     const handlePay = async () => {

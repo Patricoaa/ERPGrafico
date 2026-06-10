@@ -142,7 +142,7 @@ export function LoanDisburseDrawer({ open, onOpenChange, loan, onSuccess }: Prop
             }
         >
             <Form {...form}>
-                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5 px-4 pb-4 pt-2">
+                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 px-6 pb-6 pt-6">
                     <FormSection title="Datos del Desembolso" icon={Send} />
                     <div className="grid grid-cols-1 gap-4">
                         <FormField

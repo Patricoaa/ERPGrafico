@@ -1,3 +1,5 @@
+import type { TreasuryMovement, CardPurchaseGroup } from '../types'
+
 export type CreditCardStatementStatus = 'OPEN' | 'PAID' | 'OVERDUE' | 'CANCELED'
 
 export interface CreditCardStatement {
@@ -5,6 +7,7 @@ export interface CreditCardStatement {
     display_id: string
     card_account: number
     card_account_name: string
+    card_account_bank: number | null
     period_year: number
     period_month: number
     cut_off_date: string
@@ -80,4 +83,40 @@ export interface PurchaseGroupBreakdownItem {
 
 export interface BillChargesResponse extends CreditCardStatement {
     purchase_group_breakdown?: PurchaseGroupBreakdownItem[]
+}
+
+/** Cuota del cronograma facturada en un statement. */
+export interface StatementInstallment {
+    id: number
+    number: number
+    due_date: string
+    principal_amount: string
+    group_uuid: string | null
+    group_display_id: string | null
+    partner_name: string | null
+    total_installments: number | null
+}
+
+export interface StatementChargesResponse {
+    movements: TreasuryMovement[]
+    installments: StatementInstallment[]
+}
+
+export type StatementChargeSource = 'movement' | 'installment'
+
+export interface StatementChargeRow {
+    id: string
+    source: StatementChargeSource
+    date: string
+    reference: string | null
+    notes: string | null
+    amount: number
+    installmentNumber: number | null
+    totalInstallments: number | null
+    purchaseGroupDetail: CardPurchaseGroup | null
+    partnerName: string | null
+    movementType: string | null
+    movementTypeDisplay: string | null
+    originalMovement: TreasuryMovement | null
+    originalInstallment: StatementInstallment | null
 }

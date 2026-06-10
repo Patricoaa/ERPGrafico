@@ -240,7 +240,7 @@ export function LoanRegisterDrawer({ open, onOpenChange, bankId }: Props) {
             }
         >
             <Form {...form}>
-                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5 px-4 pb-4 pt-2">
+                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 px-6 pb-6 pt-6">
                     <FormSection title="Entidad" icon={Banknote} />
                     <div className="grid grid-cols-2 gap-4">
                         <FormField

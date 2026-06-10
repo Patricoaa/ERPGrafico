@@ -49,7 +49,7 @@ export function AbsenceDrawer({ open, onOpenChange, absence, employees: employee
     const printRef = useRef<HTMLDivElement>(null)
     const handlePrint = useReactToPrint({ contentRef: printRef })
     const [saving, setSaving] = useState(false)
-    
+
     const width = formDrawerWidth("medium", !!absence)
 
     const form = useForm<AbsenceFormValues>({
@@ -150,187 +150,193 @@ export function AbsenceDrawer({ open, onOpenChange, absence, employees: employee
                 mode={mode}
                 footer={footer}
             >
-            {absence ? (
-                <FormSplitLayout
-                    showSidebar={true}
-                    sidebar={<ActivitySidebar entityType="absence" entityId={absence.id} />}
-                >
-                    <div className="flex-1 flex flex-col overflow-y-auto p-6 pt-4 scrollbar-thin">
-                        <Form {...form}>
-                            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 pr-1">
-                                <fieldset disabled={isView} className="contents">
-                                <FormField control={form.control} name="employee" render={({ field, fieldState }) => (
-                                    <LabeledSelect
-                                        label="Empleado"
-                                        value={field.value}
-                                        onChange={field.onChange}
-                                        error={fieldState.error?.message}
-                                        placeholder="Seleccione empleado"
-                                        options={employees.map(e => ({
-                                            value: e.id.toString(),
-                                            label: e.contact_detail?.name || ""
-                                        }))}
-                                    />
-                                )} />
-                                <FormField control={form.control} name="absence_type" render={({ field, fieldState }) => (
-                                    <LabeledSelect
-                                        label="Tipo de Inasistencia"
-                                        value={field.value}
-                                        onChange={field.onChange}
-                                        error={fieldState.error?.message}
-                                        options={[
-                                            { value: "AUSENTISMO", label: "Ausentismo Injustificado" },
-                                            { value: "LICENCIA", label: "Licencia Médica" },
-                                            { value: "PERMISO_SIN_GOCE", label: "Permiso sin Goce de Sueldo" },
-                                            { value: "AUSENCIA_HORAS", label: "Ausencia de Horas" }
-                                        ]}
-                                    />
-                                )} />
-                                <FormField control={form.control} name="days" render={({ field, fieldState }) => (
-                                    <LabeledInput
-                                        label="Días Totales"
-                                        type="number"
-                                        step="0.5"
-                                        min="0"
-                                        hint="Para ausencia de horas, calcule su equivalente en días (ej. 0.5)."
-                                        error={fieldState.error?.message}
-                                        {...field}
-                                        onChange={e => field.onChange(parseFloat(e.target.value) || 0)}
-                                    />
-                                )} />
-                                <FormField control={form.control} name="start_date" render={({ field, fieldState }) => (
-                                    <PeriodValidationDateInput
-                                        label="Fecha Inicio"
-                                        date={field.value ? new Date(field.value + 'T12:00:00') : undefined}
-                                        onDateChange={(d) => {
-                                            if (!d) {
-                                                field.onChange("")
-                                                return
-                                            }
-                                            field.onChange(d.toISOString().split('T')[0])
-                                        }}
-                                        error={fieldState.error?.message}
-                                        validationType="accounting"
-                                    />
-                                )} />
-                                <FormField control={form.control} name="end_date" render={({ field, fieldState }) => (
-                                    <PeriodValidationDateInput
-                                        label="Fecha Fin"
-                                        date={field.value ? new Date(field.value + 'T12:00:00') : undefined}
-                                        onDateChange={(d) => {
-                                            if (!d) {
-                                                field.onChange("")
-                                                return
-                                            }
-                                            field.onChange(d.toISOString().split('T')[0])
-                                        }}
-                                        error={fieldState.error?.message}
-                                        validationType="accounting"
-                                    />
-                                )} />
-                                <FormField control={form.control} name="notes" render={({ field, fieldState }) => (
-                                    <LabeledInput
-                                        label="Notas Adicionales"
-                                        placeholder="Opcional..."
-                                        error={fieldState.error?.message}
-                                        {...field}
-                                    />
-                                )} />
-                                </fieldset>
-                            </form>
-                        </Form>
-                    </div>
-                </FormSplitLayout>
-            ) : (
-                <FormSplitLayout>
-                    <div className="flex-1 flex flex-col overflow-y-auto p-6 pt-4 scrollbar-thin">
-                        <Form {...form}>
-                            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 pr-1">
-                                <fieldset disabled={isView} className="contents">
-                                <FormField control={form.control} name="employee" render={({ field, fieldState }) => (
-                                    <LabeledSelect
-                                        label="Empleado"
-                                        value={field.value}
-                                        onChange={field.onChange}
-                                        error={fieldState.error?.message}
-                                        placeholder="Seleccione empleado"
-                                        options={employees.map(e => ({
-                                            value: e.id.toString(),
-                                            label: e.contact_detail?.name || ""
-                                        }))}
-                                    />
-                                )} />
-                                <FormField control={form.control} name="absence_type" render={({ field, fieldState }) => (
-                                    <LabeledSelect
-                                        label="Tipo de Inasistencia"
-                                        value={field.value}
-                                        onChange={field.onChange}
-                                        error={fieldState.error?.message}
-                                        options={[
-                                            { value: "AUSENTISMO", label: "Ausentismo Injustificado" },
-                                            { value: "LICENCIA", label: "Licencia Médica" },
-                                            { value: "PERMISO_SIN_GOCE", label: "Permiso sin Goce de Sueldo" },
-                                            { value: "AUSENCIA_HORAS", label: "Ausencia de Horas" }
-                                        ]}
-                                    />
-                                )} />
-                                <FormField control={form.control} name="days" render={({ field, fieldState }) => (
-                                    <LabeledInput
-                                        label="Días Totales"
-                                        type="number"
-                                        step="0.5"
-                                        min="0"
-                                        hint="Para ausencia de horas, calcule su equivalente en días (ej. 0.5)."
-                                        error={fieldState.error?.message}
-                                        {...field}
-                                        onChange={e => field.onChange(parseFloat(e.target.value) || 0)}
-                                    />
-                                )} />
-                                <FormField control={form.control} name="start_date" render={({ field, fieldState }) => (
-                                    <PeriodValidationDateInput
-                                        label="Fecha Inicio"
-                                        date={field.value ? new Date(field.value + 'T12:00:00') : undefined}
-                                        onDateChange={(d) => {
-                                            if (!d) {
-                                                field.onChange("")
-                                                return
-                                            }
-                                            field.onChange(d.toISOString().split('T')[0])
-                                        }}
-                                        error={fieldState.error?.message}
-                                        validationType="accounting"
-                                    />
-                                )} />
-                                <FormField control={form.control} name="end_date" render={({ field, fieldState }) => (
-                                    <PeriodValidationDateInput
-                                        label="Fecha Fin"
-                                        date={field.value ? new Date(field.value + 'T12:00:00') : undefined}
-                                        onDateChange={(d) => {
-                                            if (!d) {
-                                                field.onChange("")
-                                                return
-                                            }
-                                            field.onChange(d.toISOString().split('T')[0])
-                                        }}
-                                        error={fieldState.error?.message}
-                                        validationType="accounting"
-                                    />
-                                )} />
-                                <FormField control={form.control} name="notes" render={({ field, fieldState }) => (
-                                    <LabeledInput
-                                        label="Notas Adicionales"
-                                        placeholder="Opcional..."
-                                        error={fieldState.error?.message}
-                                        {...field}
-                                    />
-                                )} />
-                                </fieldset>
-                            </form>
-                        </Form>
-                    </div>
-                </FormSplitLayout>
-            )}
-        </Drawer>
+                {absence ? (
+                    <FormSplitLayout
+                        showSidebar={true}
+                        sidebar={<ActivitySidebar entityType="absence" entityId={absence.id} />}
+                    >
+                        <div className="flex-1 flex flex-col overflow-y-auto p-6 pt-4 scrollbar-thin">
+                            <Form {...form}>
+                                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 px-6 pb-6 pt-6">
+
+                                    <fieldset disabled={isView} className="contents">
+                                        <div className="space-y-6">
+                                            <FormField control={form.control} name="employee" render={({ field, fieldState }) => (
+                                                <LabeledSelect
+                                                    label="Empleado"
+                                                    value={field.value}
+                                                    onChange={field.onChange}
+                                                    error={fieldState.error?.message}
+                                                    placeholder="Seleccione empleado"
+                                                    options={employees.map(e => ({
+                                                        value: e.id.toString(),
+                                                        label: e.contact_detail?.name || ""
+                                                    }))}
+                                                />
+                                            )} />
+                                            <FormField control={form.control} name="absence_type" render={({ field, fieldState }) => (
+                                                <LabeledSelect
+                                                    label="Tipo de Inasistencia"
+                                                    value={field.value}
+                                                    onChange={field.onChange}
+                                                    error={fieldState.error?.message}
+                                                    options={[
+                                                        { value: "AUSENTISMO", label: "Ausentismo Injustificado" },
+                                                        { value: "LICENCIA", label: "Licencia Médica" },
+                                                        { value: "PERMISO_SIN_GOCE", label: "Permiso sin Goce de Sueldo" },
+                                                        { value: "AUSENCIA_HORAS", label: "Ausencia de Horas" }
+                                                    ]}
+                                                />
+                                            )} />
+                                            <FormField control={form.control} name="days" render={({ field, fieldState }) => (
+                                                <LabeledInput
+                                                    label="Días Totales"
+                                                    type="number"
+                                                    step="0.5"
+                                                    min="0"
+                                                    hint="Para ausencia de horas, calcule su equivalente en días (ej. 0.5)."
+                                                    error={fieldState.error?.message}
+                                                    {...field}
+                                                    onChange={e => field.onChange(parseFloat(e.target.value) || 0)}
+                                                />
+                                            )} />
+                                            <FormField control={form.control} name="start_date" render={({ field, fieldState }) => (
+                                                <PeriodValidationDateInput
+                                                    label="Fecha Inicio"
+                                                    date={field.value ? new Date(field.value + 'T12:00:00') : undefined}
+                                                    onDateChange={(d) => {
+                                                        if (!d) {
+                                                            field.onChange("")
+                                                            return
+                                                        }
+                                                        field.onChange(d.toISOString().split('T')[0])
+                                                    }}
+                                                    error={fieldState.error?.message}
+                                                    validationType="accounting"
+                                                />
+                                            )} />
+                                            <FormField control={form.control} name="end_date" render={({ field, fieldState }) => (
+                                                <PeriodValidationDateInput
+                                                    label="Fecha Fin"
+                                                    date={field.value ? new Date(field.value + 'T12:00:00') : undefined}
+                                                    onDateChange={(d) => {
+                                                        if (!d) {
+                                                            field.onChange("")
+                                                            return
+                                                        }
+                                                        field.onChange(d.toISOString().split('T')[0])
+                                                    }}
+                                                    error={fieldState.error?.message}
+                                                    validationType="accounting"
+                                                />
+                                            )} />
+                                            <FormField control={form.control} name="notes" render={({ field, fieldState }) => (
+                                                <LabeledInput
+                                                    label="Notas Adicionales"
+                                                    placeholder="Opcional..."
+                                                    error={fieldState.error?.message}
+                                                    {...field}
+                                                />
+                                            )} />
+                                        </div>
+                                    </fieldset>
+
+                                </form>
+                            </Form>
+                        </div>
+                    </FormSplitLayout>
+                ) : (
+                    <FormSplitLayout>
+                        <div className="flex-1 flex flex-col overflow-y-auto p-6 pt-4 scrollbar-thin">
+                            <Form {...form}>
+                                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 px-6 pb-6 pt-6">
+                                    <fieldset disabled={isView} className="contents">
+                                        <div className="space-y-6">
+                                            <FormField control={form.control} name="employee" render={({ field, fieldState }) => (
+                                                <LabeledSelect
+                                                    label="Empleado"
+                                                    value={field.value}
+                                                    onChange={field.onChange}
+                                                    error={fieldState.error?.message}
+                                                    placeholder="Seleccione empleado"
+                                                    options={employees.map(e => ({
+                                                        value: e.id.toString(),
+                                                        label: e.contact_detail?.name || ""
+                                                    }))}
+                                                />
+                                            )} />
+                                            <FormField control={form.control} name="absence_type" render={({ field, fieldState }) => (
+                                                <LabeledSelect
+                                                    label="Tipo de Inasistencia"
+                                                    value={field.value}
+                                                    onChange={field.onChange}
+                                                    error={fieldState.error?.message}
+                                                    options={[
+                                                        { value: "AUSENTISMO", label: "Ausentismo Injustificado" },
+                                                        { value: "LICENCIA", label: "Licencia Médica" },
+                                                        { value: "PERMISO_SIN_GOCE", label: "Permiso sin Goce de Sueldo" },
+                                                        { value: "AUSENCIA_HORAS", label: "Ausencia de Horas" }
+                                                    ]}
+                                                />
+                                            )} />
+                                            <FormField control={form.control} name="days" render={({ field, fieldState }) => (
+                                                <LabeledInput
+                                                    label="Días Totales"
+                                                    type="number"
+                                                    step="0.5"
+                                                    min="0"
+                                                    hint="Para ausencia de horas, calcule su equivalente en días (ej. 0.5)."
+                                                    error={fieldState.error?.message}
+                                                    {...field}
+                                                    onChange={e => field.onChange(parseFloat(e.target.value) || 0)}
+                                                />
+                                            )} />
+                                            <FormField control={form.control} name="start_date" render={({ field, fieldState }) => (
+                                                <PeriodValidationDateInput
+                                                    label="Fecha Inicio"
+                                                    date={field.value ? new Date(field.value + 'T12:00:00') : undefined}
+                                                    onDateChange={(d) => {
+                                                        if (!d) {
+                                                            field.onChange("")
+                                                            return
+                                                        }
+                                                        field.onChange(d.toISOString().split('T')[0])
+                                                    }}
+                                                    error={fieldState.error?.message}
+                                                    validationType="accounting"
+                                                />
+                                            )} />
+                                            <FormField control={form.control} name="end_date" render={({ field, fieldState }) => (
+                                                <PeriodValidationDateInput
+                                                    label="Fecha Fin"
+                                                    date={field.value ? new Date(field.value + 'T12:00:00') : undefined}
+                                                    onDateChange={(d) => {
+                                                        if (!d) {
+                                                            field.onChange("")
+                                                            return
+                                                        }
+                                                        field.onChange(d.toISOString().split('T')[0])
+                                                    }}
+                                                    error={fieldState.error?.message}
+                                                    validationType="accounting"
+                                                />
+                                            )} />
+                                            <FormField control={form.control} name="notes" render={({ field, fieldState }) => (
+                                                <LabeledInput
+                                                    label="Notas Adicionales"
+                                                    placeholder="Opcional..."
+                                                    error={fieldState.error?.message}
+                                                    {...field}
+                                                />
+                                            )} />
+                                        </div>
+                                    </fieldset>
+                                </form>
+                            </Form>
+                        </div>
+                    </FormSplitLayout>
+                )}
+            </Drawer >
         </>
     )
 }

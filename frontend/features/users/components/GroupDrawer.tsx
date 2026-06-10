@@ -17,7 +17,7 @@ import { ActivitySidebar } from "@/features/audit/components"
 import { Form, FormField } from "@/components/ui/form"
 import { Button } from "@/components/ui/button"
 import { toast } from "sonner"
-import {Printer} from "lucide-react"
+import { Printer } from "lucide-react"
 import { useReactToPrint } from "react-to-print"
 import { PrintableLayout } from "@/features/_shared/transaction-drawer"
 import type { DrawerMode } from "@/features/_shared/drawer/types"
@@ -86,7 +86,7 @@ export function GroupDrawer({
             name: "",
         },
     })
-    
+
     const mode: DrawerMode = modeProp ?? (initialData ? 'edit' : 'create')
     const isView = mode === 'view'
     const drawerTitle = mode === 'create' ? 'Nuevo Grupo' : mode === 'view' ? initialData?.name || 'Grupo' : `Editar: ${initialData?.name || ''}`
@@ -178,7 +178,7 @@ export function GroupDrawer({
                     showSidebar={!!initialData?.id}
                 >
                     <Form {...form}>
-                        <form id="group-form" onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 px-4 pb-4 pt-4">
+                        <form id="group-form" onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 px-6 pb-6 pt-6">
                             <fieldset disabled={isView} className="contents">
                                 <FormField
                                     control={form.control}

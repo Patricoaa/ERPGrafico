@@ -1074,6 +1074,8 @@ class CardService:
         if not date:
             date = timezone.now().date()
 
+        from .services import TreasuryService
+
         charge_labels = {
             'COMMISSION': 'Comisión',
             'TAX': 'Impuesto',

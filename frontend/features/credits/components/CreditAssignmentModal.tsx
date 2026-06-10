@@ -112,7 +112,7 @@ export default function CreditAssignmentModal({
             }
         >
             <Form {...form}>
-                <form id="credit-assignment-form" onSubmit={form.handleSubmit(onSubmit as any)}>
+                <form id="credit-assignment-form" onSubmit={form.handleSubmit(onSubmit as any)} className="space-y-6 px-6 pb-6 pt-6">
                     <div className="p-6 space-y-6 min-h-[380px]">
                         {!initialContact && (
                             <AdvancedContactSelector

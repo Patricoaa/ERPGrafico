@@ -259,7 +259,7 @@ Drawer (contentClassName="p-0") o BaseModal (hideScrollArea + contentClassName="
                 sidebar={<ActivitySidebar entityId={initialData.id} entityType="product" />}
                 showSidebar={!!initialData?.id}
             >
-                <form className="space-y-6 px-4 pb-4 pt-2">
+                <form className="space-y-6 px-4 pb-4 pt-4">
                     {/* campos */}
                 </form>
             </FormSplitLayout>

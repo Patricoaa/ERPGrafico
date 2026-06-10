@@ -90,7 +90,7 @@ export const LabeledSelect = forwardRef<
                     "w-full shadow-none focus:ring-0 focus:ring-offset-0 transition-all !py-0",
                     variant === 'standalone'
                         ? "!h-[1.5rem] border-0 bg-transparent hover:bg-primary/[0.03]"
-                : cn("h-9 text-xs bg-background hover:bg-primary/[0.02]", className),
+                : cn("h-9 text-xs bg-transparent hover:bg-primary/[0.02]", className),
                     !value && "text-muted-foreground font-normal"
                 )}
             >
@@ -110,19 +110,18 @@ export const LabeledSelect = forwardRef<
         variant === 'standalone' ? (
             <div className={cn("relative w-full group", containerClassName)}>
                 <fieldset
+                    data-disabled={disabled || undefined}
                     className={cn(
                         "notched-field transition-all duration-200",
                         "group-focus-within:border-primary group-focus-within:ring-1 group-focus-within:ring-primary/20",
-                        hasError && "border-destructive group-focus-within:border-destructive group-focus-within:ring-destructive/20",
-                        disabled && "opacity-50 cursor-not-allowed bg-muted/10"
+                        hasError && "border-destructive group-focus-within:border-destructive group-focus-within:ring-destructive/20"
                     )}
                 >
                     {label && (
                         <legend
                             className={cn(
                                 "px-1.5 text-[10px] font-black uppercase tracking-[0.15em] transition-colors duration-200",
-                                hasError ? "text-destructive" : "text-muted-foreground group-focus-within:text-primary",
-                                disabled && "text-muted-foreground/50"
+                                hasError ? "text-destructive" : "text-muted-foreground group-focus-within:text-primary"
                             )}
                         >
                             {label}

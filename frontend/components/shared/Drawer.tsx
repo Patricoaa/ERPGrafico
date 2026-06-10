@@ -277,8 +277,8 @@ export function Drawer({
                 )}
 
                 <div className={cn(
-                    "flex-1 flex flex-col overflow-y-auto px-6 pb-6 scrollbar-thin scrollbar-thumb-primary/10 scrollbar-track-transparent",
-                    mode === "view" && "bg-muted/5",
+                    "flex-1 flex flex-col overflow-y-auto scrollbar-thin scrollbar-thumb-primary/10 scrollbar-track-transparent",
+                    mode === "view" && "bg-muted/30",
                     contentClassName
                 )}>
                     {children}

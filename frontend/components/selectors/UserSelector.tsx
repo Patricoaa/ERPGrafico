@@ -54,15 +54,15 @@ export function UserSelector({ value, onChange, placeholder = "Seleccionar usuar
     return (
         <div className="relative w-full flex flex-col group">
             <fieldset 
+                data-disabled={disabled || undefined}
                 className={cn(
                     "notched-field w-full group transition-all",
                     open && "focused",
-                    error && "error",
-                    disabled && "opacity-50 cursor-not-allowed bg-muted/10"
+                    error && "error"
                 )}
             >
                 {label && (
-                    <legend className={cn("notched-legend", error && "text-destructive", disabled && "text-muted-foreground/50")}>
+                    <legend className={cn("notched-legend", error && "text-destructive")}>
                         {label}
                     </legend>
                 )}

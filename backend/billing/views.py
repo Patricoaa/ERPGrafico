@@ -199,6 +199,14 @@ class InvoiceViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
         document_date = request.data.get('document_date')
         document_attachment = request.FILES.get('document_attachment')
         amount = request.data.get('amount')
+        installments = request.data.get('installments')
+        if installments is not None:
+            try:
+                installments = int(installments)
+            except (ValueError, TypeError):
+                installments = 1
+        else:
+            installments = 1
         treasury_account_id = request.data.get('treasury_account_id')
         payment_type = request.data.get('payment_type', 'INBOUND')
         pos_session_id = request.data.get('pos_session_id')
@@ -255,6 +263,7 @@ class InvoiceViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
                 is_pending_registration=is_pending_registration,
                 payment_is_pending=payment_is_pending,
                 amount=amount,
+                installments=installments,
                 treasury_account_id=treasury_account_id,
                 document_number=document_number,
                 document_date=document_date,
