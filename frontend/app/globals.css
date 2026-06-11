@@ -394,14 +394,12 @@
    * Centralized for zoom/viewport proportionality.
    * Used by DashboardShell, CollapsibleSheet, and sheets.
    */
-  --sidebar-width: 3.5rem;
   --header-height: 4rem;
   --page-gap-top: clamp(0.125rem, 0.5vh, 0.5rem);
   --page-gap-bottom: clamp(0.5rem, 1.5vh, 1.5rem);
-  --page-gap-left: clamp(0.125rem, 0.5vw, 0.5rem);
-  --page-gap-right: clamp(0.5rem, 2vw, 2rem);
+  --page-gap-left: clamp(0.5rem, 1.5vw, 1.5rem);
+  --page-gap-right: clamp(0.5rem, 1.5vw, 1.5rem);
   --page-padding-top: calc(var(--header-height) + var(--page-gap-top));
-  --page-padding-left: calc(var(--sidebar-width) + var(--page-gap-left));
 
   /*
    * FLUID TYPOGRAPHY — Scales proportionally to viewport width.
