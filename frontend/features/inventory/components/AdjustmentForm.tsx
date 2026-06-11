@@ -28,7 +28,7 @@ import { useUoMs } from "../hooks/useUoMs"
 import { useProduct } from "../hooks/useProducts"
 import { useStockAdjustment } from "../hooks/useStockMoves"
 import { usePartners } from "@/features/contacts"
-import { FormSection, FormTabs, LabeledInput, LabeledSelect, SkeletonShell, type FormTabItem } from '@/components/shared'
+import { FormSection, UnderlineTabs, LabeledInput, LabeledSelect, SkeletonShell, type TabItem } from '@/components/shared'
 
 const adjustmentSchema = z.object({
     product_id: z.string().min(1, "Seleccione un producto"),
@@ -237,7 +237,7 @@ export function AdjustmentForm({
 
     const conversion = getConversionPreview()
 
-    const tabItems: FormTabItem[] = [
+    const tabItems: TabItem[] = [
         {
             value: "IN",
             label: "Entrada",
@@ -265,7 +265,7 @@ export function AdjustmentForm({
                         </Alert>
                     )}
 
-                    <FormTabs
+                    <UnderlineTabs
                         items={tabItems}
                         value={moveType}
                         onValueChange={(val) => form.setValue("type", val as "IN" | "OUT")}
@@ -540,7 +540,7 @@ export function AdjustmentForm({
                             </div>
 
                         </div>
-                    </FormTabs>
+                    </UnderlineTabs>
                 </form>
             </Form>
         </SkeletonShell>

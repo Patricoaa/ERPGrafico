@@ -12,7 +12,7 @@ import { usersApi } from "../api/usersApi"
 import { Button } from "@/components/ui/button"
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
 import { Plus, User, ShieldCheck, Printer } from "lucide-react"
-import { Drawer, CancelButton, ActionSlideButton, LabeledInput, FormSection, FormTabs, FormTabsContent, type FormTabItem, FormSplitLayout, FormFooter, LabeledSelect, LabeledSwitch, EntityHeader, SkeletonShell } from "@/components/shared"
+import { Drawer, CancelButton, ActionSlideButton, LabeledInput, FormSection, UnderlineTabs, UnderlineTabsContent, type TabItem, FormSplitLayout, FormFooter, LabeledSelect, LabeledSwitch, EntityHeader, SkeletonShell } from "@/components/shared"
 import { Checkbox } from "@/components/ui/checkbox"
 import { AdvancedContactSelector } from "@/components/selectors/AdvancedContactSelector"
 import { AppGroup } from "@/types/entities"
@@ -190,7 +190,7 @@ export function UserDrawer({ auditSidebar, initialData, onSuccess, trigger, open
 
     const tabErrors = getTabsWithErrors()
 
-    const tabItems: FormTabItem[] = [
+    const tabItems: TabItem[] = [
         {
             value: "general",
             label: "General",
@@ -279,7 +279,7 @@ export function UserDrawer({ auditSidebar, initialData, onSuccess, trigger, open
                     <Form {...form}>
                         <form id="user-form" onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 px-6 pb-6 pt-6">
                             <fieldset disabled={isView} className="contents">
-                                <FormTabs
+                                <UnderlineTabs
                                     items={tabItems}
                                     value={activeTab}
                                     onValueChange={setActiveTab}
@@ -290,7 +290,7 @@ export function UserDrawer({ auditSidebar, initialData, onSuccess, trigger, open
                                     className="flex-1"
                                 >
                                     <fieldset disabled={loading} className="flex-1 min-w-0 flex flex-col h-full min-h-0">
-                                        <FormTabsContent value="general" className="mt-0 data-[state=active]:flex data-[state=active]:flex-1 data-[state=active]:flex-col data-[state=active]:min-h-0 overflow-hidden outline-none">
+                                        <UnderlineTabsContent value="general" className="mt-0 data-[state=active]:flex data-[state=active]:flex-1 data-[state=active]:flex-col data-[state=active]:min-h-0 overflow-hidden outline-none">
                                             <FormSplitLayout sidebar={auditSidebar} showSidebar={!!initialData?.id} className="p-0">
                                                 <div className="p-6 lg:p-8 space-y-8 overflow-y-auto scrollbar-thin h-full">
                                                     <div className="space-y-8">
@@ -373,8 +373,8 @@ export function UserDrawer({ auditSidebar, initialData, onSuccess, trigger, open
                                                     </div>
                                                 </div>
                                             </FormSplitLayout>
-                                        </FormTabsContent>
-                                        <FormTabsContent value="permissions" className="mt-0 data-[state=active]:flex data-[state=active]:flex-1 data-[state=active]:flex-col data-[state=active]:min-h-0 overflow-hidden outline-none">
+                                        </UnderlineTabsContent>
+                                        <UnderlineTabsContent value="permissions" className="mt-0 data-[state=active]:flex data-[state=active]:flex-1 data-[state=active]:flex-col data-[state=active]:min-h-0 overflow-hidden outline-none">
                                             <FormSplitLayout sidebar={auditSidebar} showSidebar={!!initialData?.id} className="p-0">
                                                 <div className="p-6 lg:p-8 space-y-8 overflow-y-auto scrollbar-thin h-full">
                                                     <div className="space-y-8">
@@ -434,9 +434,9 @@ export function UserDrawer({ auditSidebar, initialData, onSuccess, trigger, open
                                                     </div>
                                                 </div>
                                             </FormSplitLayout>
-                                        </FormTabsContent>
+                                        </UnderlineTabsContent>
                                     </fieldset>
-                                </FormTabs>
+                                </UnderlineTabs>
                             </fieldset>
                         </form>
                     </Form>

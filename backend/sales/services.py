@@ -533,12 +533,15 @@ class SalesService:
 
     @staticmethod
     @transaction.atomic
-    def cancel_sale_order(order: SaleOrder):
+    def cancel_sale_order(order: SaleOrder, user=None, reason: str = ''):
         """
         Cancels a sale order by cancelling children and marking it as CANCELLED.
         - DRAFT order → soft cancel children, mark CANCELLED, no reversals.
         - CONFIRMED order → delegate to SaleOrderService.cancel() (full annul).
         """
+        from core.services.document import lock_document
+        lock_document(order)
+
         if order.status == SaleOrder.Status.CANCELLED:
             return order
 
@@ -572,11 +575,11 @@ class SalesService:
             # Soft cancel children
             for invoice in order.invoices.all():
                 if invoice.status != 'CANCELLED':
-                     BillingService.cancel_invoice(invoice)
+                     BillingService.cancel_invoice(invoice, user=user, reason=reason)
 
             for movement in order.payments.all():
                 if movement.status != TreasuryMovement.MovementStatus.CANCELLED:
-                    TreasuryService.cancel_movement(movement)
+                    TreasuryService.cancel_movement(movement, user=user, reason=reason)
 
             for delivery in order.deliveries.all():
                 if delivery.status != SaleDelivery.Status.CANCELLED:
@@ -588,17 +591,23 @@ class SalesService:
             from production.services import WorkOrderService
             from production.models import WorkOrder
             for work_order in order.work_orders.exclude(status=WorkOrder.Status.CANCELLED):
-                WorkOrderService.annul_work_order(work_order)
+                WorkOrderService.annul_work_order(work_order, user=user, notes=reason)
 
             if order.journal_entry:
+                from tax.services import validate_period_open
+                validate_period_open(order.journal_entry.date, action='cancelar la orden')
                 order.journal_entry.delete()
+
+            order.status = SaleOrder.Status.CANCELLED
+            order.save()
+
+            from workflow.services import WorkflowService
+            WorkflowService.log_transition(order, 'cancel', user=user, reason=reason)
         else:
             # CONFIRMED: delegate to DocumentService.cancel (full annul with reversals)
             from core.services.document import DocumentRegistry
-            DocumentRegistry.for_instance(order).cancel(order, user=None)
+            DocumentRegistry.for_instance(order).cancel(order, user=user, reason=reason)
 
-        order.status = SaleOrder.Status.CANCELLED
-        order.save()
         return order
 
     @staticmethod
@@ -623,7 +632,7 @@ class SalesService:
 
     @staticmethod
     @transaction.atomic
-    def annul_delivery(delivery: SaleDelivery):
+    def annul_delivery(delivery: SaleDelivery, user=None, reason: str = ''):
         """
         Annuls a confirmed delivery:
         1. Reverses COGS accounting entry.
@@ -631,12 +640,20 @@ class SalesService:
         3. Reverts delivered quantities on sale lines.
         4. Marks delivery as CANCELLED.
         """
+        from core.services.document import lock_document
+        lock_document(delivery)
+
+        if delivery.status == SaleDelivery.Status.CANCELLED:
+            return delivery
+
         if delivery.status != SaleDelivery.Status.CONFIRMED:
             raise ValidationError("Solo se pueden anular despachos confirmados.")
 
         # 1. Reverse Accounting
         rev_entry = None
         if delivery.journal_entry:
+            from tax.services import validate_period_open
+            validate_period_open(timezone.now().date(), action='anular el despacho')
             rev_entry = JournalEntryService.reverse_entry(delivery.journal_entry, description=f"Anulación Despacho {delivery.number}")
 
         # 2. Reverse Stock Moves & Update Sale Lines
@@ -661,10 +678,13 @@ class SalesService:
         # 3. Update Delivery Status
         delivery.status = SaleDelivery.Status.CANCELLED
         delivery.save()
-        
+
         # 4. Update Order Delivery Status
         SalesService._update_order_delivery_status(delivery.sale_order)
-        
+
+        from workflow.services import WorkflowService
+        WorkflowService.log_transition(delivery, 'annul', user=user, reason=reason)
+
         return delivery
 
     @staticmethod
@@ -1041,10 +1061,13 @@ class SaleOrderService(DocumentService):
         """
         order = document
         force = kwargs.get('force', False)
-        
+
+        from core.services.document import lock_document
+        lock_document(order)
+
         if order.status == SaleOrder.Status.CANCELLED:
              return order
-             
+
         from billing.models import Invoice
         from billing.services import BillingService
         from treasury.models import TreasuryMovement
@@ -1055,10 +1078,10 @@ class SaleOrderService(DocumentService):
             if invoice.status == Invoice.Status.CANCELLED:
                 continue
             if invoice.status == Invoice.Status.DRAFT:
-                BillingService.cancel_invoice(invoice)
+                BillingService.cancel_invoice(invoice, user=user, reason=reason)
             else:
-                BillingService.annul_invoice(invoice, force=force)
-        
+                BillingService.annul_invoice(invoice, force=force, user=user, reason=reason)
+
         # 2. Handle Deliveries — cancel if DRAFT, annul if CONFIRMED
         for delivery in order.deliveries.all():
             if delivery.status == SaleDelivery.Status.CANCELLED:
@@ -1067,26 +1090,30 @@ class SaleOrderService(DocumentService):
                 delivery.status = SaleDelivery.Status.CANCELLED
                 delivery.save()
             else:
-                SalesService.annul_delivery(delivery)
-        
-        # 3. Handle Payments — cancel if DRAFT, annul if POSTED
+                SalesService.annul_delivery(delivery, user=user, reason=reason)
+
+        # 3. Handle Payments — cancel if DRAFT (sin JE POSTED), annul if POSTED
         for movement in order.payments.all():
             if movement.status == TreasuryMovement.MovementStatus.CANCELLED:
                 continue
-            if movement.status == TreasuryMovement.MovementStatus.DRAFT:
-                TreasuryService.cancel_movement(movement)
+            je_posted = movement.journal_entry and movement.journal_entry.status == 'POSTED'
+            if movement.status == TreasuryMovement.MovementStatus.DRAFT and not je_posted:
+                TreasuryService.cancel_movement(movement, user=user, reason=reason)
             else:
-                TreasuryService.annul_movement(movement)
+                TreasuryService.annul_movement(movement, user=user, reason=reason)
 
         # 4. Handle Work Orders — annul with stage-limit/consumption validations.
         # Si una OT superó la etapa límite, ValidationError aborta toda la anulación.
         from production.services import WorkOrderService
         from production.models import WorkOrder
         for work_order in order.work_orders.exclude(status=WorkOrder.Status.CANCELLED):
-            WorkOrderService.annul_work_order(work_order, user=user)
+            WorkOrderService.annul_work_order(work_order, user=user, notes=reason)
 
         order.status = SaleOrder.Status.CANCELLED
         if reason:
             order.notes = (order.notes or '') + f"\nAnulado: {reason}"
         order.save()
+
+        from workflow.services import WorkflowService
+        WorkflowService.log_transition(order, 'annul', user=user, reason=reason)
         return order

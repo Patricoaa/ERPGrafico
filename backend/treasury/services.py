@@ -625,46 +625,85 @@ class TreasuryService:
 
     @staticmethod
     @transaction.atomic
-    def cancel_movement(movement: TreasuryMovement):
+    def cancel_movement(movement: TreasuryMovement, user=None, reason: str = ''):
         """
-        Cancels a movement by marking it as CANCELLED.
-        - If DRAFT: deletes the unposted journal entry.
-        - If POSTED: reverses the journal entry (keeps audit trail).
-        - Never hard-deletes the movement record.
+        Cancels a DRAFT movement: deletes the unposted journal entry and marks
+        the movement as CANCELLED. No reversals — a movement with a POSTED
+        journal entry must be annulled (see annul_movement) per deletion-policy.
+        Never hard-deletes the movement record.
         """
-        if movement.is_reconciled:
-             raise ValidationError("No se puede cancelar un movimiento conciliado.")
+        from core.services.document import lock_document
+        lock_document(movement)
 
         if movement.status == TreasuryMovement.MovementStatus.CANCELLED:
              return movement
 
+        if movement.is_reconciled:
+             raise ValidationError("No se puede cancelar un movimiento conciliado.")
+
+        if movement.journal_entry and movement.journal_entry.status == JournalEntry.State.POSTED:
+             raise ValidationError(
+                  "No se puede cancelar: el movimiento ya está contabilizado. "
+                  "Use 'Anular' para revertir con asiento de reversión."
+             )
+
         if movement.journal_entry:
-             if movement.journal_entry.status == JournalEntry.State.DRAFT:
-                  je = movement.journal_entry
-                  movement.journal_entry = None
-                  movement.save(update_fields=['journal_entry'])
-                  try:
-                       je.delete()
-                  except ProtectedError:
-                       pass
-             elif movement.journal_entry.status == JournalEntry.State.POSTED:
-                  JournalEntryService.reverse_entry(
-                       movement.journal_entry,
-                       description=f"Cancelación Movimiento {movement.id}",
-                  )
+             from tax.services import validate_period_open
+             validate_period_open(movement.journal_entry.date, action='cancelar el movimiento')
+             je = movement.journal_entry
+             movement.journal_entry = None
+             movement.save(update_fields=['journal_entry'])
+             try:
+                  je.delete()
+             except ProtectedError:
+                  pass
 
         movement.status = TreasuryMovement.MovementStatus.CANCELLED
         movement.save()
+
+        from workflow.services import WorkflowService
+        WorkflowService.log_transition(movement, 'cancel', user=user, reason=reason)
         return movement
 
     @staticmethod
     @transaction.atomic
-    def annul_movement(movement: TreasuryMovement):
+    def annul_movement(movement: TreasuryMovement, user=None, reason: str = ''):
         """
-        Annuls a POSTED movement by reversing its accounting entry and marking it as CANCELLED.
-        Delegates to cancel_movement for consistency.
+        Annuls a movement: reverses its POSTED journal entry (reversal dated
+        today, original untouched) and marks it as CANCELLED.
         """
-        TreasuryService.cancel_movement(movement)
+        from core.services.document import lock_document
+        lock_document(movement)
+
+        if movement.status == TreasuryMovement.MovementStatus.CANCELLED:
+             return movement
+
+        if movement.is_reconciled:
+             raise ValidationError("No se puede anular un movimiento conciliado.")
+
+        if movement.journal_entry and movement.journal_entry.status == JournalEntry.State.POSTED:
+             from tax.services import validate_period_open
+             validate_period_open(timezone.now().date(), action='anular el movimiento')
+             JournalEntryService.reverse_entry(
+                  movement.journal_entry,
+                  description=f"Anulación Movimiento {movement.id}",
+             )
+        elif movement.journal_entry:
+             # JE aún en borrador — no hay nada que reversar, solo limpiar
+             je = movement.journal_entry
+             movement.journal_entry = None
+             movement.save(update_fields=['journal_entry'])
+             try:
+                  je.delete()
+             except ProtectedError:
+                  pass
+
+        movement.status = TreasuryMovement.MovementStatus.CANCELLED
+        movement.save()
+
+        from workflow.services import WorkflowService
+        WorkflowService.log_transition(movement, 'annul', user=user, reason=reason)
+        return movement
 
     @staticmethod
     def create_movement_from_payload(data: dict, *, created_by) -> "TreasuryMovement":

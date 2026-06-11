@@ -1,12 +1,27 @@
 from django.utils import timezone
 from django.db import transaction
 
-from workflow.models import Task, Notification, TaskAssignmentRule, NotificationRule
+from workflow.models import Task, Notification, TaskAssignmentRule, NotificationRule, Transition
 
 class WorkflowService:
     """
     Central service to handle business logic for Workflows.
     """
+
+    @staticmethod
+    def log_transition(instance, transition: str, user=None, reason: str = '') -> Transition:
+        """
+        Registra una transición de ciclo de vida (cancel/annul/purge) en el
+        audit log append-only. `instance` es el documento afectado.
+        """
+        meta = instance._meta
+        return Transition.objects.create(
+            entity_type=f"{meta.app_label}.{meta.model_name}",
+            entity_id=instance.pk,
+            transition=transition,
+            user=user if getattr(user, 'pk', None) else None,
+            reason=reason or '',
+        )
 
     @staticmethod
     def get_assignee_for_task_type(task_type):

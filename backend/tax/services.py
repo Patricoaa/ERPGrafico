@@ -959,3 +959,20 @@ class AccountingPeriodService:
         
         return checklist
 
+
+
+def validate_period_open(document_date, action: str = 'modificar'):
+    """
+    Guard compartido para cancel/annul (deletion-policy): bloquea la operación
+    si la fecha cae en un período tributario (F29) o contable cerrado.
+    """
+    if TaxPeriodService.is_period_closed(document_date):
+        raise ValidationError(
+            f"No se puede {action}: el período tributario (F29) de la fecha "
+            f"{document_date} ya se encuentra cerrado."
+        )
+    if AccountingPeriodService.is_period_closed(document_date):
+        raise ValidationError(
+            f"No se puede {action}: el período contable de la fecha "
+            f"{document_date} ya se encuentra cerrado."
+        )
