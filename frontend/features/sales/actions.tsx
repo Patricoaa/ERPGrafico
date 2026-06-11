@@ -6,7 +6,6 @@ import {
     History,
     FileBadge,
     X,
-    Ban,
     Eye,
     Package,
     Trash2,
@@ -403,27 +402,11 @@ export const saleOrderActions: ActionRegistry<any> = {
                 checkAvailability: (order) => (order.work_orders?.length || 0) > 0
             },
             {
-                id: 'annul-document',
-                label: 'Anular Documento',
-                icon: Ban,
-                requiredPermissions: ['billing.delete_invoice'],
-                checkAvailability: (order) => {
-                    // Only show for DRAFT invoices without folio
-                    const invoices = order.related_documents?.invoices || order.invoices || []
-                    return invoices.some((inv: any) =>
-                        inv.status === 'DRAFT' &&
-                        (inv.number === 'Draft' || !inv.number)
-                    )
-                },
-                variant: 'destructive',
-                badge: { type: 'warning', label: 'Solo DRAFT' }
-            },
-            {
                 id: 'cancel-order',
                 label: 'Cancelar Orden',
                 icon: Trash2,
                 requiredPermissions: ['billing.delete_invoice'],
-                checkAvailability: (order) => order.status === 'DRAFT',
+                checkAvailability: (order) => order.status !== 'CANCELLED',
                 variant: 'destructive'
             }
         ]

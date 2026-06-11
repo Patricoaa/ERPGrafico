@@ -7,7 +7,7 @@ import { Banknote, Trash2, Gavel } from "lucide-react"
 import { formatEntity } from '@/features/orders/utils/status'
 import { cn } from "@/lib/utils"
 import { toast } from "sonner"
-import { useDeletePayment, useAnnulPayment } from "../../hooks/useOrdersMutations"
+import { useCancelPayment, useAnnulPayment } from "../../hooks/useOrdersMutations"
 import { ActionConfirmModal } from '@/components/shared'
 import { saleOrderActions } from '@/features/sales/actions'
 import { purchaseOrderActions } from '@/features/purchasing/actions'
@@ -45,7 +45,7 @@ export function TreasuryPhase({
 }: TreasuryPhaseProps) {
     const registry = isSale ? saleOrderActions : purchaseOrderActions
 
-    const deletePayment = useDeletePayment()
+    const cancelPayment = useCancelPayment()
     const annulPayment = useAnnulPayment()
 
     const [confirmModal, setConfirmModal] = useState<{
@@ -70,44 +70,23 @@ export function TreasuryPhase({
                 variant: "destructive",
                 confirmText: "Cancelar",
                 onConfirm: () => handleDeletePayment(id, true),
-                description: "¿Está seguro de que desea eliminar este pago?"
+                description: "¿Está seguro de que desea cancelar este pago?"
             })
             return
         }
 
         try {
-            await deletePayment.mutateAsync(id)
+            const p = payments.find(p => Number(p.id) === id)
+            if (p?.status === 'POSTED') {
+                await annulPayment.mutateAsync(id)
+            } else {
+                await cancelPayment.mutateAsync(id)
+            }
             setConfirmModal(prev => ({ ...prev, open: false }))
             onActionSuccess?.()
         } catch (error: unknown) {
-            const errorMessage = getErrorMessage(error) || ""
-            // Identify if error is due to POSTED status (standardize backend to return this specific code/msg)
-            if (errorMessage.includes("publicado") || (error as { response?: { status?: number } })?.response?.status === 400) {
-                // Close previous modal
-                setConfirmModal(prev => ({ ...prev, open: false }))
-
-                // Open new modal for Annulment
-                setTimeout(() => {
-                    setConfirmModal({
-                        open: true,
-                        title: "Anular Pago Confirmado",
-                        variant: "warning",
-                        confirmText: "Anular Pago",
-                        onConfirm: async () => {
-                            try {
-                                await annulPayment.mutateAsync(id)
-                                setConfirmModal(prev => ({ ...prev, open: false }))
-                                onActionSuccess?.()
-                            } catch (err: unknown) {
-                                toast.error((err as { response?: { data?: { error?: string } } })?.response?.data?.error || "Error al anular pago")
-                            }
-                        },
-                        description: "No se puede eliminar un pago ya contabilizado. ¿Desea ANULARLO en su lugar? Esto creará un contra-asiento contable."
-                    })
-                }, 100)
-            } else {
-                toast.error(errorMessage || "Error al eliminar el pago")
-            }
+            const errorMessage = getErrorMessage(error) || "Error al cancelar/anular el pago"
+            toast.error(errorMessage)
         }
     }
 

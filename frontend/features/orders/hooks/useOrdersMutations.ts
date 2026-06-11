@@ -25,12 +25,12 @@ export function useAnnulInvoice() {
     })
 }
 
-export function useDeleteInvoice() {
+export function useCancelInvoice() {
     const queryClient = useQueryClient()
     return useMutation({
-        mutationFn: (id: number) => ordersApi.deleteInvoice(id),
+        mutationFn: (id: number) => ordersApi.cancelInvoice(id),
         onSuccess: () => {
-            toast.success('Borrador eliminado correctamente')
+            toast.success('Borrador cancelado correctamente')
             queryClient.invalidateQueries({ queryKey: INVOICES_QUERY_KEY })
             queryClient.invalidateQueries({ queryKey: SALES_KEYS.all })
             queryClient.invalidateQueries({ queryKey: PURCHASING_KEYS.all })
@@ -145,12 +145,12 @@ export function useRegisterPaymentMovement() {
     })
 }
 
-export function useDeletePayment() {
+export function useAnnulPayment() {
     const queryClient = useQueryClient()
     return useMutation({
-        mutationFn: (id: number) => ordersApi.deletePayment(id),
+        mutationFn: (id: number) => ordersApi.annulPayment(id),
         onSuccess: () => {
-            toast.success('Pago eliminado correctamente')
+            toast.success('Pago anulado correctamente')
             queryClient.invalidateQueries({ queryKey: PAYMENTS_KEYS.all })
             queryClient.invalidateQueries({ queryKey: MOVEMENTS_KEYS.all })
             queryClient.invalidateQueries({ queryKey: SALES_KEYS.all })
@@ -159,12 +159,12 @@ export function useDeletePayment() {
     })
 }
 
-export function useAnnulPayment() {
+export function useCancelPayment() {
     const queryClient = useQueryClient()
     return useMutation({
-        mutationFn: (id: number) => ordersApi.annulPayment(id),
+        mutationFn: (id: number) => ordersApi.cancelPayment(id),
         onSuccess: () => {
-            toast.success('Pago anulado correctamente')
+            toast.success('Pago cancelado correctamente')
             queryClient.invalidateQueries({ queryKey: PAYMENTS_KEYS.all })
             queryClient.invalidateQueries({ queryKey: MOVEMENTS_KEYS.all })
             queryClient.invalidateQueries({ queryKey: SALES_KEYS.all })
