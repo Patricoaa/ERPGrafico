@@ -1,5 +1,5 @@
 from django_filters import rest_framework as filters
-from .models import Product, StockMove
+from .models import Product, StockMove, UoM
 
 class ProductFilter(filters.FilterSet):
     category = filters.NumberFilter(field_name="category__id")
@@ -15,6 +15,14 @@ class ProductFilter(filters.FilterSet):
             'has_variants': ['exact'],
             'track_inventory': ['exact'],
         }
+
+class UoMFilter(filters.FilterSet):
+    # Alias de compatibilidad durante la deprecación del nombre `active` en la API.
+    active = filters.BooleanFilter(field_name='is_active')
+
+    class Meta:
+        model = UoM
+        fields = ['category', 'active', 'is_active']
 
 class StockMoveFilter(filters.FilterSet):
     product_id = filters.NumberFilter(field_name="product__id")

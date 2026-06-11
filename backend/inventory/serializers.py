@@ -46,7 +46,9 @@ class UoMCategorySerializer(serializers.ModelSerializer):
 
 class UoMSerializer(serializers.ModelSerializer):
     category_name = serializers.CharField(source='category.name', read_only=True)
-    
+    # Alias de compatibilidad durante la deprecación del nombre `active` en la API.
+    active = serializers.BooleanField(source='is_active', required=False)
+
     class Meta:
         model = UoM
         fields = '__all__'
@@ -111,6 +113,8 @@ class SubscriptionSerializer(serializers.ModelSerializer):
 class ProductSimpleSerializer(serializers.ModelSerializer):
     """Simplified product serializer for nested lists to avoid recursion"""
     attribute_values_data = ProductAttributeValueSerializer(source='attribute_values', many=True, read_only=True)
+    # Alias de compatibilidad durante la deprecación del nombre `active` en la API.
+    active = serializers.BooleanField(source='is_active', required=False)
     is_favorite = serializers.SerializerMethodField()
 
     def get_is_favorite(self, obj):
@@ -137,12 +141,14 @@ class ProductSimpleSerializer(serializers.ModelSerializer):
         model = Product
         fields = [
             'id', 'internal_code', 'name', 'variant_display_name', 
-            'sale_price', 'cost_price', 'is_favorite', 'active', 'attribute_values', 'attribute_values_data',
+            'sale_price', 'cost_price', 'is_favorite', 'active', 'is_active', 'attribute_values', 'attribute_values_data',
             'product_type', 'requires_advanced_manufacturing', 'uom', 'uom_name', 'uom_category', 'image', 'image_thumbnail'
         ]
 
 class ProductSerializer(serializers.ModelSerializer):
     category_name = serializers.CharField(source='category.name', read_only=True)
+    # Alias de compatibilidad durante la deprecación del nombre `active` en la API.
+    active = serializers.BooleanField(source='is_active', required=False)
     uom_name = serializers.CharField(source='uom.name', read_only=True)
     uom_category = serializers.SerializerMethodField()
     sale_uom_name = serializers.CharField(source='sale_uom.name', read_only=True)
@@ -224,7 +230,7 @@ class ProductSerializer(serializers.ModelSerializer):
             'recurrence_period', 'renewal_notice_days',
             'is_variable_amount', 'is_dynamic_pricing', 'track_inventory', 'can_be_sold', 'can_be_purchased',
             'uom', 'sale_uom', 'purchase_uom', 'allowed_sale_uoms', 'receiving_warehouse',
-            'sale_price', 'sale_price_gross', 'cost_price', 'is_favorite', 'active', 'income_account', 'expense_account',
+            'sale_price', 'sale_price_gross', 'cost_price', 'is_favorite', 'active', 'is_active', 'income_account', 'expense_account',
             'price_inheritance_mode', 'price_surcharge', 'effective_price_net',
             'uom_prices',
             'preferred_supplier', 'preferred_supplier_name',
@@ -247,9 +253,9 @@ class ProductSerializer(serializers.ModelSerializer):
     def get_variants(self, obj):
         # Use prefetched variants if available to avoid N+1 queries
         if hasattr(obj, '_prefetched_objects_cache') and 'variants' in obj._prefetched_objects_cache:
-            variants = [v for v in obj.variants.all() if v.active]
+            variants = [v for v in obj.variants.all() if v.is_active]
         else:
-            variants = obj.variants.filter(active=True)
+            variants = obj.variants.filter(is_active=True)
         
         return ProductSimpleSerializer(variants, many=True).data
 

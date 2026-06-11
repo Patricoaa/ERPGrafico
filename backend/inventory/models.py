@@ -66,8 +66,9 @@ class ProductCategory(TimeStampedModel):
     prefix = models.CharField(_("Prefijo"), max_length=10, null=True, blank=True, help_text=_("Usado para generar el código interno (ej: IMP, DIS)"))
     icon = models.CharField(_("Icono"), max_length=50, null=True, blank=True, help_text=_("Nombre del icono de Lucide (ej: Package, Coffee)"))
     parent = models.ForeignKey('self', on_delete=models.CASCADE, null=True, blank=True, related_name='children')
+    is_active = models.BooleanField(_("Activo"), default=True, db_index=True, help_text=_("Desactivar para archivar la categoría; los productos históricos la siguen referenciando."))
     history = HistoricalRecords()
-    
+
     # Default Accounting Config for this category
     asset_account = models.ForeignKey(
         Account, on_delete=models.SET_NULL, null=True, blank=True, related_name='category_assets',
@@ -100,6 +101,7 @@ class ProductCategory(TimeStampedModel):
 class UoMCategory(TimeStampedModel):
     # NOTE: created_at / updated_at heredados de TimeStampedModel (T-14).
     name = models.CharField(_("Nombre"), max_length=100)
+    is_active = models.BooleanField(_("Activo"), default=True, db_index=True)
     history = HistoricalRecords()
     
     class Meta:
@@ -122,13 +124,13 @@ class UoM(TimeStampedModel):
     uom_type = models.CharField(_("Tipo"), max_length=20, choices=Type.choices, default=Type.REFERENCE)
     ratio = models.DecimalField(_("Ratio"), max_digits=12, decimal_places=5, default=1.0)
     rounding = models.DecimalField(_("Redondeo"), max_digits=12, decimal_places=5, default=0.01000)
-    active = models.BooleanField(default=True)
+    is_active = models.BooleanField(default=True, db_index=True)
     history = HistoricalRecords()
-    
+
     class FormMeta:
         ui_layout = {
             'tabs': [
-                {'id': 'main', 'label': 'General', 'fields': ['name', 'category', 'uom_type', 'ratio', 'rounding', 'active']}
+                {'id': 'main', 'label': 'General', 'fields': ['name', 'category', 'uom_type', 'ratio', 'rounding', 'is_active']}
             ]
         }
 
@@ -548,7 +550,7 @@ class Product(models.Model):
         help_text=_("Sobreescribe la cuenta de la categoría para este producto.")
     )
 
-    active = models.BooleanField(_("Activo"), default=True, help_text=_("Desactivar para archivar el producto en lugar de eliminarlo."))
+    is_active = models.BooleanField(_("Activo"), default=True, db_index=True, help_text=_("Desactivar para archivar el producto en lugar de eliminarlo."))
 
     created_at = models.DateTimeField(auto_now_add=True)
 
@@ -561,7 +563,7 @@ class Product(models.Model):
                     'fields': [
                         'name', 'code', 'category', 'product_type',
                         'sale_price', 'sale_price_gross', 'can_be_sold', 'can_be_purchased',
-                        'income_account', 'expense_account', 'active'
+                        'income_account', 'expense_account', 'is_active'
                     ]
                 },
                 {
@@ -1067,6 +1069,7 @@ class Warehouse(models.Model):
     name = models.CharField(_("Nombre"), max_length=100)
     code = models.CharField(_("Código"), max_length=20, unique=True)
     address = models.CharField(_("Dirección"), max_length=255, blank=True)
+    is_active = models.BooleanField(_("Activo"), default=True, db_index=True, help_text=_("Desactivar para archivar la bodega; los movimientos históricos la siguen referenciando."))
     history = HistoricalRecords()
 
     class Meta:

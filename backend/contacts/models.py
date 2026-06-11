@@ -42,6 +42,8 @@ class Contact(models.Model):
         help_text=_("Roles manuales asignados al contacto (Cliente, Proveedor, etc.)")
     )
 
+    is_active = models.BooleanField(_("Activo"), default=True, db_index=True, help_text=_("Desactivar para archivar el contacto; los documentos históricos lo siguen referenciando."))
+
     history = HistoricalRecords()
     
     # Accounting links

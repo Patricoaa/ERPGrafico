@@ -8,7 +8,8 @@ Mechanisms per the contract's authoritative table:
 - Cancelación / Anulación con status → `status` field with a CANCELLED value
 - Anulación vía contramovimiento (StockMove) → no own status; reversal moves
 - Anulación vía conciliación (BankStatementLine) → `reconciliation_status`
-- Archivo → `is_active` BooleanField (known gaps pinned in ARCHIVO_KNOWN_GAPS)
+- Archivo → `is_active` BooleanField (excepciones por enum `status` en
+  ARCHIVO_EXEMPT; gaps pendientes fijados en ARCHIVO_KNOWN_GAPS)
 - Hard delete → model exists; no structural requirement
 
 If you add a model to the deletion-policy table, add it here in the same PR.
@@ -68,22 +69,19 @@ STATUS_EXEMPT = {
     'BankStatementLine': 'reconciliation_status',
 }
 
+# Archivo entities whose lifecycle is governed by an existing `status` enum
+# instead of `is_active` — adding a parallel boolean would create two sources
+# of truth. Key → field that implements the mechanism. Documented in
+# deletion-policy.md.
+ARCHIVO_EXEMPT = {
+    'Employee': 'status',    # ACTIVE / INACTIVE
+    'TaxPeriod': 'status',   # OPEN / UNDER_REVIEW / CLOSED — no es archivable
+}
+
 # Archivo entities that do NOT yet comply with the contract's
 # "el campo se llama siempre is_active" rule. Pinned so the gap cannot grow
 # silently; remove an entry here the day the model gains `is_active`.
-# Documented in deletion-policy.md ("Deuda conocida del patrón Archivo").
-ARCHIVO_KNOWN_GAPS = {
-    'Product':         "usa `active` (legacy) en vez de `is_active`",
-    'UoM':             "usa `active` (legacy) en vez de `is_active`",
-    'Account':         "sin flag de archivo",
-    'Contact':         "sin flag de archivo",
-    'Employee':        "sin flag de archivo",
-    'ProductCategory': "sin flag de archivo",
-    'UoMCategory':     "sin flag de archivo",
-    'Warehouse':       "sin flag de archivo",
-    'TaxPeriod':       "sin flag de archivo",
-    'TreasuryAccount': "sin flag de archivo",
-}
+ARCHIVO_KNOWN_GAPS = {}
 
 CANCELLED_KEYWORDS = {'CANCELLED', 'CANCELED', 'ANNULLED', 'ANULLED'}
 
@@ -169,6 +167,15 @@ class TestDeletionPolicyConsistency:
                 model = apps.get_model(app, model_name)
             except LookupError:
                 failures.append(f"{entity_key}: model {app}.{model_name} not found")
+                continue
+
+            if entity_key in ARCHIVO_EXEMPT:
+                mechanism_field = ARCHIVO_EXEMPT[entity_key]
+                if _get_field(model, mechanism_field) is None:
+                    failures.append(
+                        f"{entity_key}: exempt from is_active but mechanism field "
+                        f"'{mechanism_field}' is missing"
+                    )
                 continue
 
             has_flag = _has_is_active_field(model)

@@ -816,6 +816,7 @@ class TreasuryAccount(models.Model):
     allows_card = models.BooleanField(_("Permite Tarjeta"), default=False)
     allows_transfer = models.BooleanField(_("Permite Traspaso"), default=False)
     allows_check = models.BooleanField(_("Permite Cheque"), default=False)
+    is_active = models.BooleanField(_("Activa"), default=True, db_index=True, help_text=_("Desactivar para archivar la cuenta (cerrada); los movimientos históricos la siguen referenciando."))
 
     # Custom manager
     objects = TreasuryAccountManager()

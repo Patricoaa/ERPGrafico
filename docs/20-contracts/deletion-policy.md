@@ -50,7 +50,7 @@ Cómo se "elimina" una entidad en ERPGrafico depende de qué tipo de entidad sea
 | `billing` | `CreditNote` / `DebitNote` | Anulación | Idem invoice — solo anulación (nunca DRAFT) |
 | `contacts` | `Contact` | Archivo | `is_active=False` saca del selector pero preserva FKs en docs históricos |
 | `core` | `User` | Archivo | `is_active=False`. Nunca borrar — preserva audit trail |
-| `hr` | `Employee` | Archivo | `is_active=False` para ex-empleados |
+| `hr` | `Employee` | Archivo | Excepción: usa `status` `ACTIVE`/`INACTIVE` para ex-empleados (ver `ARCHIVO_EXEMPT`) |
 | `inventory` | `Product` | Archivo | `is_active=False`; las líneas históricas siguen referenciándolo |
 | `inventory` | `ProductCategory` | Archivo | |
 | `inventory` | `UoM` / `UoMCategory` | Archivo | |
@@ -62,7 +62,7 @@ Cómo se "elimina" una entidad en ERPGrafico depende de qué tipo de entidad sea
 | `sales` | `SaleOrder` | Cancelación / Anulación | Cancel si DRAFT (tree DRAFT). Annul si CONFIRMED (reversos). |
 | `sales` | `SaleDelivery` | Anulación | Annul directo con reverso de stock. Además admite cancelación **en cascada**: la rama DRAFT de `cancel_sale_order` cancela deliveries DRAFT (no existe `cancel` directo sobre el delivery). |
 | `sales` | `POSDraft` / `DraftCart` | Hard delete | Drafts sin valor fiscal — `.delete()` libre |
-| `tax` | `TaxRate` / `FiscalPeriod` | Archivo | Nunca borrar — afecta cálculos históricos |
+| `tax` | `TaxPeriod` | Archivo | Excepción: ciclo de vida vía `status` `OPEN`/`UNDER_REVIEW`/`CLOSED`; nunca se borra — afecta cálculos históricos |
 | `treasury` | `Bank` | Archivo | |
 | `treasury` | `TreasuryAccount` | Archivo | |
 | `treasury` | `PaymentMethod` / `PaymentProvider` | Archivo | |
@@ -103,13 +103,18 @@ Cómo se "elimina" una entidad en ERPGrafico depende de qué tipo de entidad sea
 - Pareja semántica obligatoria: si una entidad acepta `archive`, debe aceptar `restore`. Ambas viven en [row-actions registry](component-row-actions.md).
 - El servicio de archive **no** elimina FKs; los registros históricos que apunten siguen funcionando.
 
-> **Deuda conocida del patrón Archivo.** Hoy solo `User`, `Bank` y `PaymentMethod` cumplen
-> con `is_active`. `Product` y `UoM` usan `active` (legacy) y ocho modelos (`Account`,
-> `Contact`, `Employee`, `ProductCategory`, `UoMCategory`, `Warehouse`, `TaxPeriod`,
-> `TreasuryAccount`) no tienen flag de archivo. El gap está fijado en `ARCHIVO_KNOWN_GAPS`
-> dentro de [`test_deletion_policy_consistency`](../../backend/core/tests/test_deletion_policy_consistency.py):
-> no puede crecer (modelos nuevos deben cumplir) y cada entrada se elimina al migrar el
-> modelo a `is_active`.
+> **Excepciones documentadas.** `Employee` (status `ACTIVE`/`INACTIVE`) y `TaxPeriod`
+> (status `OPEN`/`UNDER_REVIEW`/`CLOSED`) gobiernan su ciclo de vida con un enum `status`
+> existente; un `is_active` paralelo crearía dos fuentes de verdad. Están declaradas en
+> `ARCHIVO_EXEMPT` dentro de
+> [`test_deletion_policy_consistency`](../../backend/core/tests/test_deletion_policy_consistency.py).
+>
+> **Deprecación del nombre `active` en la API.** El campo de modelo es `is_active` en
+> todos los casos (rename 2026-06-11). Los serializers de `Product` y `UoM` y el filtro
+> `?active=` mantienen un **alias de compatibilidad** `active` mientras el frontend
+> migra a `is_active`; el alias se retira en una fase 2 (ver
+> [add-migration.md — 2-phase](../30-playbooks/add-migration.md)). Código nuevo debe
+> usar `is_active`.
 
 ### Para entidades de Hard delete
 
