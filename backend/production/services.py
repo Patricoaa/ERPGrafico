@@ -493,6 +493,8 @@ class WorkOrderService:
             user=user
         )
 
+        WorkflowService.log_transition(work_order, 'annul', user=user, reason=notes)
+
         return work_order
 
     @staticmethod

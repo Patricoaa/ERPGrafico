@@ -331,14 +331,14 @@ class InvoiceViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
 
     @action(detail=True, methods=['post'])
     def annul(self, request, pk=None):
-        # ... (keep existing)
         invoice = self.get_object()
         force = request.data.get('force', False)
         if isinstance(force, str):
             force = force.lower() == 'true'
-            
+        reason = request.data.get('reason', '')
+
         try:
-            BillingService.annul_invoice(invoice, force=force)
+            invoice = BillingService.annul_invoice(invoice, force=force, user=request.user, reason=reason)
             return Response(InvoiceSerializer(invoice).data)
         except ValidationError as e:
             msg = e.messages[0] if hasattr(e, 'messages') and e.messages else str(e)
@@ -349,8 +349,9 @@ class InvoiceViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
     @action(detail=True, methods=['post'])
     def cancel(self, request, pk=None):
         invoice = self.get_object()
+        reason = request.data.get('reason', '')
         try:
-            BillingService.cancel_invoice(invoice)
+            invoice = BillingService.cancel_invoice(invoice, user=request.user, reason=reason)
             return Response(InvoiceSerializer(invoice).data)
         except ValidationError as e:
             msg = e.messages[0] if hasattr(e, 'messages') and e.messages else str(e)
