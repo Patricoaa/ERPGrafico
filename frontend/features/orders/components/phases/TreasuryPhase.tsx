@@ -52,9 +52,10 @@ export function TreasuryPhase({
         open: boolean,
         title: string,
         description: React.ReactNode,
-        onConfirm: () => Promise<void> | void,
+        onConfirm: (reason?: string) => Promise<void> | void,
         variant?: 'destructive' | 'warning',
-        confirmText?: string
+        confirmText?: string,
+        requireReason?: boolean
     }>({
         open: false,
         title: "",
@@ -62,32 +63,34 @@ export function TreasuryPhase({
         onConfirm: () => { }
     })
 
-    const handleDeletePayment = async (id: number, isConfirmed = false) => {
-        if (!isConfirmed) {
-            setConfirmModal({
-                open: true,
-                title: "Cancelar/Anular Pago",
-                variant: "destructive",
-                confirmText: "Cancelar",
-                onConfirm: () => handleDeletePayment(id, true),
-                description: "¿Está seguro de que desea cancelar este pago?"
-            })
-            return
-        }
+    const canCancelPayment = userPermissions.includes('treasury.delete_treasurymovement')
 
-        try {
-            const p = payments.find(p => Number(p.id) === id)
-            if (p?.status === 'POSTED') {
-                await annulPayment.mutateAsync(id)
-            } else {
-                await cancelPayment.mutateAsync(id)
-            }
-            setConfirmModal(prev => ({ ...prev, open: false }))
-            onActionSuccess?.()
-        } catch (error: unknown) {
-            const errorMessage = getErrorMessage(error) || "Error al cancelar/anular el pago"
-            toast.error(errorMessage)
-        }
+    const handleDeletePayment = (id: number) => {
+        const isPosted = payments.find(p => Number(p.id) === id)?.status === 'POSTED'
+        setConfirmModal({
+            open: true,
+            title: isPosted ? "Anular Pago" : "Cancelar Pago",
+            variant: "destructive",
+            confirmText: isPosted ? "Anular" : "Cancelar",
+            requireReason: isPosted,
+            onConfirm: async (reason?: string) => {
+                try {
+                    if (isPosted) {
+                        await annulPayment.mutateAsync({ id, reason })
+                    } else {
+                        await cancelPayment.mutateAsync({ id, reason })
+                    }
+                    setConfirmModal(prev => ({ ...prev, open: false }))
+                    onActionSuccess?.()
+                } catch (error: unknown) {
+                    toast.error(getErrorMessage(error) || "Error al cancelar/anular el pago")
+                    throw error
+                }
+            },
+            description: isPosted
+                ? "El pago está contabilizado: se generará un asiento de reversión."
+                : "¿Está seguro de que desea cancelar este pago?"
+        })
     }
 
     return (
@@ -113,9 +116,9 @@ export function TreasuryPhase({
                         amount: p.amount,
                         documentReference: p.reference,
                         actions: [
-                            ...((p.status !== 'CANCELLED') ? [{
+                            ...(canCancelPayment && p.status !== 'CANCELLED' ? [{
                                 icon: Trash2,
-                                title: 'Cancelar/Anular Pago',
+                                title: p.status === 'POSTED' ? 'Anular Pago' : 'Cancelar Pago',
                                 color: 'text-destructive hover:bg-destructive/10',
                                 onClick: () => p.id && handleDeletePayment(Number(p.id))
                             }] : [])
@@ -166,6 +169,8 @@ export function TreasuryPhase({
                 onConfirm={confirmModal.onConfirm}
                 variant={confirmModal.variant}
                 confirmText={confirmModal.confirmText}
+                requireReason={confirmModal.requireReason}
+                reasonLabel="Motivo de la anulación"
             />
         </>
     )

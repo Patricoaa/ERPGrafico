@@ -14,8 +14,8 @@ import { PRODUCTS_KEYS } from '@/features/inventory/hooks/queryKeys'
 export function useAnnulInvoice() {
     const queryClient = useQueryClient()
     return useMutation({
-        mutationFn: ({ id, force }: { id: number; force?: boolean }) =>
-            ordersApi.annulInvoice(id, force ?? false),
+        mutationFn: ({ id, force, reason }: { id: number; force?: boolean; reason?: string }) =>
+            ordersApi.annulInvoice(id, force ?? false, reason ?? ''),
         onSuccess: () => {
             toast.success('Documento anulado correctamente')
             queryClient.invalidateQueries({ queryKey: INVOICES_QUERY_KEY })
@@ -28,7 +28,8 @@ export function useAnnulInvoice() {
 export function useCancelInvoice() {
     const queryClient = useQueryClient()
     return useMutation({
-        mutationFn: (id: number) => ordersApi.cancelInvoice(id),
+        mutationFn: ({ id, reason }: { id: number; reason?: string }) =>
+            ordersApi.cancelInvoice(id, reason ?? ''),
         onSuccess: () => {
             toast.success('Borrador cancelado correctamente')
             queryClient.invalidateQueries({ queryKey: INVOICES_QUERY_KEY })
@@ -79,10 +80,10 @@ export function useProcessLogistics() {
 export function useAnnulOrder(orderType: 'sale' | 'purchase') {
     const queryClient = useQueryClient()
     return useMutation({
-        mutationFn: (id: number) =>
+        mutationFn: ({ id, reason }: { id: number; reason?: string }) =>
             orderType === 'purchase'
-                ? ordersApi.annulPurchaseOrder(id)
-                : ordersApi.annulSaleOrder(id),
+                ? ordersApi.annulPurchaseOrder(id, reason ?? '')
+                : ordersApi.annulSaleOrder(id, reason ?? ''),
         onSuccess: () => {
             toast.success('Orden anulada correctamente')
             queryClient.invalidateQueries({ queryKey: SALES_KEYS.all })
@@ -94,10 +95,10 @@ export function useAnnulOrder(orderType: 'sale' | 'purchase') {
 export function useCancelOrder(orderType: 'sale' | 'purchase') {
     const queryClient = useQueryClient()
     return useMutation({
-        mutationFn: (id: number) =>
+        mutationFn: ({ id, reason }: { id: number; reason?: string }) =>
             orderType === 'purchase'
-                ? ordersApi.cancelPurchaseOrder(id)
-                : ordersApi.cancelSaleOrder(id),
+                ? ordersApi.cancelPurchaseOrder(id, reason ?? '')
+                : ordersApi.cancelSaleOrder(id, reason ?? ''),
         onSuccess: () => {
             toast.success('Orden cancelada correctamente')
             queryClient.invalidateQueries({ queryKey: SALES_KEYS.all })
@@ -111,12 +112,12 @@ export function useCancelOrder(orderType: 'sale' | 'purchase') {
 export function useAnnulLogistics() {
     const queryClient = useQueryClient()
     return useMutation({
-        mutationFn: ({ id, docType }: { id: number; docType: string }) => {
+        mutationFn: ({ id, docType, reason }: { id: number; docType: string; reason?: string }) => {
             switch (docType) {
-                case 'sale_delivery': return ordersApi.annulSaleDelivery(id)
-                case 'purchase_receipt': return ordersApi.annulPurchaseReceipt(id)
-                case 'sale_return': return ordersApi.annulSaleReturn(id)
-                case 'purchase_return': return ordersApi.annulPurchaseReturn(id)
+                case 'sale_delivery': return ordersApi.annulSaleDelivery(id, reason ?? '')
+                case 'purchase_receipt': return ordersApi.annulPurchaseReceipt(id, reason ?? '')
+                case 'sale_return': return ordersApi.annulSaleReturn(id, reason ?? '')
+                case 'purchase_return': return ordersApi.annulPurchaseReturn(id, reason ?? '')
                 default: throw new Error(`Unknown logistics docType: ${docType}`)
             }
         },
@@ -148,7 +149,8 @@ export function useRegisterPaymentMovement() {
 export function useAnnulPayment() {
     const queryClient = useQueryClient()
     return useMutation({
-        mutationFn: (id: number) => ordersApi.annulPayment(id),
+        mutationFn: ({ id, reason }: { id: number; reason?: string }) =>
+            ordersApi.annulPayment(id, reason ?? ''),
         onSuccess: () => {
             toast.success('Pago anulado correctamente')
             queryClient.invalidateQueries({ queryKey: PAYMENTS_KEYS.all })
@@ -162,7 +164,8 @@ export function useAnnulPayment() {
 export function useCancelPayment() {
     const queryClient = useQueryClient()
     return useMutation({
-        mutationFn: (id: number) => ordersApi.cancelPayment(id),
+        mutationFn: ({ id, reason }: { id: number; reason?: string }) =>
+            ordersApi.cancelPayment(id, reason ?? ''),
         onSuccess: () => {
             toast.success('Pago cancelado correctamente')
             queryClient.invalidateQueries({ queryKey: PAYMENTS_KEYS.all })
@@ -178,7 +181,8 @@ export function useCancelPayment() {
 export function useAnnulWorkOrder() {
     const queryClient = useQueryClient()
     return useMutation({
-        mutationFn: (id: number) => ordersApi.annulWorkOrder(id),
+        mutationFn: ({ id, reason }: { id: number; reason?: string }) =>
+            ordersApi.annulWorkOrder(id, reason ?? ''),
         onSuccess: () => {
             toast.success('OT anulada correctamente')
             queryClient.invalidateQueries({ queryKey: SALES_KEYS.all })

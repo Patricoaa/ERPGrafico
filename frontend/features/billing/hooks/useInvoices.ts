@@ -31,8 +31,8 @@ export function useInvoices({ filters }: UseInvoicesProps = {}) {
     }
 
     const annulMutation = useMutation({
-        mutationFn: async ({ id, force }: { id: number, force: boolean }) => {
-            return billingApi.annulInvoice(id, { force })
+        mutationFn: async ({ id, force, reason }: { id: number, force: boolean, reason?: string }) => {
+            return billingApi.annulInvoice(id, { force, reason })
         },
         onSuccess: () => {
             markLocalMutation()

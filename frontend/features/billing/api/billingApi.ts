@@ -98,8 +98,8 @@ export const billingApi = {
         return data
     },
 
-    cancelInvoice: async (id: number): Promise<void> => {
-        await api.post(`/billing/invoices/${id}/cancel/`)
+    cancelInvoice: async (id: number, reason: string = ''): Promise<void> => {
+        await api.post(`/billing/invoices/${id}/cancel/`, { reason })
     },
 
     createPayment: async (formData: FormData): Promise<void> => {

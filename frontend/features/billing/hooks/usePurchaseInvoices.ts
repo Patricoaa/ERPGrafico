@@ -27,8 +27,8 @@ export function usePurchaseInvoices({ filters }: UsePurchaseInvoicesProps = {}) 
     }
 
     const annulMutation = useMutation({
-        mutationFn: async ({ id, force }: { id: number, force: boolean }) => {
-            return billingApi.annulInvoice(id, { force })
+        mutationFn: async ({ id, force, reason }: { id: number, force: boolean, reason?: string }) => {
+            return billingApi.annulInvoice(id, { force, reason })
         },
         onSuccess: () => {
             toast.success('Documento anulado correctamente')
@@ -40,7 +40,8 @@ export function usePurchaseInvoices({ filters }: UsePurchaseInvoicesProps = {}) 
     })
 
     const cancelMutation = useMutation({
-        mutationFn: async (id: number) => billingApi.cancelInvoice(id),
+        mutationFn: async ({ id, reason }: { id: number, reason?: string }) =>
+            billingApi.cancelInvoice(id, reason ?? ''),
         onSuccess: () => {
             toast.success('Documento cancelado correctamente')
             invalidate()

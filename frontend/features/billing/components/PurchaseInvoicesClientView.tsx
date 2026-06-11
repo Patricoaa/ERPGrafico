@@ -1,7 +1,7 @@
 "use client"
 
 import { showApiError, getErrorMessage } from "@/lib/errors"
-import React, { useState } from "react"
+import React, { useState, useRef } from "react"
 import { useRouter, useSearchParams, usePathname } from "next/navigation"
 import { ColumnDef } from "@tanstack/react-table"
 import {ActionConfirmModal, DocumentCompletionModal, SmartSearchBar, useSmartSearch} from '@/components/shared'
@@ -51,9 +51,12 @@ export function PurchaseInvoicesClientView() {
 
     const handleDelete = (id: number) => deleteConfirm.requestConfirm(id)
 
+    // El motivo se captura en el modal de anulación y se reutiliza en el force-retry
+    const annulReasonRef = useRef('')
+
     const forceAnnulConfirm = useConfirmAction<number>(async (id) => {
         try {
-            await billingApi.annulInvoice(id, { force: true })
+            await billingApi.annulInvoice(id, { force: true, reason: annulReasonRef.current })
             toast.success("Documento anulado correctamente.")
             fetchDocuments()
         } catch (error: unknown) {
@@ -63,14 +66,14 @@ export function PurchaseInvoicesClientView() {
 
     const annulConfirm = useConfirmAction<number>(async (id) => {
         try {
-            await billingApi.annulInvoice(id, { force: false })
+            await billingApi.annulInvoice(id, { force: false, reason: annulReasonRef.current })
             toast.success("Documento anulado correctamente.")
             fetchDocuments()
         } catch (error: unknown) {
             console.error("Error annulling invoice:", error)
             const errorMessage = getErrorMessage(error) || ""
 
-            if (errorMessage.includes("Debe anular los pagos asociados")) {
+            if (errorMessage.includes("pagos")) {
                 forceAnnulConfirm.requestConfirm(id)
                 return
             }
@@ -247,7 +250,7 @@ export function PurchaseInvoicesClientView() {
             {notingDoc && <PurchaseNoteModal open={!!notingDoc} onOpenChange={(open) => !open && setNotingDoc(null)} orderId={notingDoc.purchase_order} orderNumber={notingDoc.purchase_order_number || notingDoc.purchase_order?.toString()} invoiceId={notingDoc.id} onSuccess={fetchDocuments} />}
             {completingDoc && <DocumentCompletionModal open={!!completingDoc} onOpenChange={(open) => !open && setCompletingDoc(null)} invoiceId={completingDoc.id} invoiceType={completingDoc.dte_type} contactId={completingDoc.partner || completingDoc.supplier} isPurchase={true} onComplete={async (invoiceId, formData) => { await billingApi.confirmInvoice(invoiceId, formData) }} onSuccess={fetchDocuments} />}
             <ActionConfirmModal open={deleteConfirm.isOpen} onOpenChange={(open) => { if (!open) deleteConfirm.cancel() }} onConfirm={deleteConfirm.confirm} title="Cancelar Documento" description="¿Está seguro de cancelar este documento?" variant="destructive" />
-            <ActionConfirmModal open={annulConfirm.isOpen} onOpenChange={(open) => { if (!open) annulConfirm.cancel() }} onConfirm={annulConfirm.confirm} title="Anular Documento" description="¿Está seguro de que desea ANULAR este documento?" variant="destructive" />
+            <ActionConfirmModal open={annulConfirm.isOpen} onOpenChange={(open) => { if (!open) annulConfirm.cancel() }} onConfirm={(reason) => { annulReasonRef.current = reason ?? ''; return annulConfirm.confirm() }} title="Anular Documento" description="¿Está seguro de que desea ANULAR este documento?" variant="destructive" requireReason reasonLabel="Motivo de la anulación" />
             <ActionConfirmModal open={forceAnnulConfirm.isOpen} onOpenChange={(open) => { if (!open) forceAnnulConfirm.cancel() }} onConfirm={forceAnnulConfirm.confirm} title="Desvincular y Anular Pagos" description="Este documento tiene pagos asociados. ¿Desea anular también todos los pagos vinculados automáticamente?" variant="destructive" />
         </div>
     )

@@ -71,10 +71,18 @@ def test_cancel_reconciled_raises_error(env):
 
 
 @pytest.mark.django_db
-def test_annul_movement_delega_a_cancel(env):
+def test_annul_movement_requiere_motivo(env):
     m = _movimiento(env)
 
-    TreasuryService.annul_movement(m)
+    with pytest.raises(ValidationError, match='motivo'):
+        TreasuryService.annul_movement(m)
+
+
+@pytest.mark.django_db
+def test_annul_movement_con_motivo(env):
+    m = _movimiento(env)
+
+    TreasuryService.annul_movement(m, reason='ajuste de prueba')
 
     m.refresh_from_db()
     assert m.status == TreasuryMovement.MovementStatus.CANCELLED

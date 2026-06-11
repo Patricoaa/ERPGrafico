@@ -405,8 +405,16 @@ export const saleOrderActions: ActionRegistry<any> = {
                 id: 'cancel-order',
                 label: 'Cancelar Orden',
                 icon: Trash2,
-                requiredPermissions: ['billing.delete_invoice'],
-                checkAvailability: (order) => order.status !== 'CANCELLED',
+                requiredPermissions: ['sales.delete_saleorder'],
+                checkAvailability: (order) => order.status === 'DRAFT',
+                variant: 'destructive'
+            },
+            {
+                id: 'annul-order',
+                label: 'Anular Orden',
+                icon: Trash2,
+                requiredPermissions: ['sales.delete_saleorder'],
+                checkAvailability: (order) => order.status !== 'CANCELLED' && order.status !== 'DRAFT',
                 variant: 'destructive'
             }
         ]

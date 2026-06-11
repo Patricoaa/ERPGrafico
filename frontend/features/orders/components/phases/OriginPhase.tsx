@@ -1,28 +1,13 @@
-import { getErrorMessage } from "@/lib/errors"
-
-import { useState } from "react"
 import { PhaseCard } from "./PhaseCard"
 import { FileText, Trash2, X, Edit, TrendingUp } from "lucide-react"
 import { formatEntity } from '@/features/orders/utils/status'
 import { toast } from "sonner"
-import { useAnnulOrder, useCancelOrder } from "../../hooks/useOrdersMutations"
-import { ordersApi } from "../../api/ordersApi"
+import { useCancelOrderFlow } from "../../hooks/useCancelOrderFlow"
 import { useRouter } from "next/navigation"
 import { ActionConfirmModal } from '@/components/shared'
 import { saleOrderActions } from '@/features/sales/actions'
 import { purchaseOrderActions } from '@/features/purchasing/actions'
 import { Order, OrderLine, PhaseDocument } from "../../types"
-
-interface CancelImpact {
-    order_status: string
-    invoices: { id: number; display_id: string; status: string }[]
-    deliveries?: { id: number; status: string }[]
-    receipts?: { id: number; status: string }[]
-    payments: { id: number; amount: string; status: string }[]
-    has_confirmed_deliveries: boolean
-    has_posted_payments: boolean
-    action: string
-}
 
 interface OriginPhaseProps {
     isNoteMode: boolean
@@ -60,89 +45,14 @@ export function OriginPhase({
     const registry = isSale ? saleOrderActions : purchaseOrderActions
     const router = useRouter()
     const orderType = type === 'obligation' ? 'purchase' : type
-    const annulOrder = useAnnulOrder(orderType)
-    const cancelOrder = useCancelOrder(orderType)
 
-    const [cancelImpact, setCancelImpact] = useState<CancelImpact | null>(null)
-    const [confirmModal, setConfirmModal] = useState<{
-        open: boolean
-        title: string
-        description: React.ReactNode
-        onConfirm: () => Promise<void> | void
-        variant?: 'destructive' | 'warning'
-        confirmText?: string
-    }>({
-        open: false,
-        title: "",
-        description: null,
-        onConfirm: () => { }
-    })
+    // Flujo unificado: cancel y annul pasan por el mismo modal de impacto;
+    // el backend decide soft-cancel vs full-annul según el árbol de documentos.
+    const { requestCancel, modalProps } = useCancelOrderFlow(orderType, { onSuccess: onActionSuccess })
 
-    const handleCancelOrder = async (id: number, isConfirmed = false) => {
-        if (!isConfirmed) {
-            try {
-                const impact = isSale
-                    ? await ordersApi.getCancelSaleImpact(id)
-                    : await ordersApi.getCancelPurchaseImpact(id)
-                setCancelImpact(impact)
-
-                const items: string[] = [
-                    ...impact.invoices.map((i: any) => `• Factura ${i.display_id} — ${i.status}`),
-                    ...(impact.deliveries || []).map((d: any) => `• Despacho #${d.id} — ${d.status}`),
-                    ...(impact.receipts || []).map((r: any) => `• Recepción #${r.id} — ${r.status}`),
-                    ...impact.payments.map((p: any) => `• Pago #${p.id} — ${p.status}`),
-                ]
-
-                setConfirmModal({
-                    open: true,
-                    title: "Cancelar Orden",
-                    variant: impact.action === 'full_annul' ? 'warning' : 'destructive',
-                    confirmText: impact.action === 'full_annul' ? 'Anular Todo' : 'Cancelar Orden',
-                    onConfirm: () => handleCancelOrder(id, true),
-                    description: (
-                        <div className="flex flex-col gap-2 text-sm">
-                            <p>¿Qué desea hacer con esta orden?</p>
-                            <p className="text-xs text-muted-foreground">
-                                {impact.action === 'full_annul'
-                                    ? 'Se revertirán asientos contables y movimientos de stock.'
-                                    : 'Se cancelarán los documentos en Borrador sin reversos.'}
-                            </p>
-                            {items.length > 0 && (
-                                <div className="flex flex-col gap-0.5 text-xs font-mono bg-muted p-2 rounded">
-                                    {items.map((line, i) => (
-                                        <span key={i}>{line}</span>
-                                    ))}
-                                </div>
-                            )}
-                        </div>
-                    ),
-                })
-            } catch {
-                toast.error("Error al obtener impacto de cancelación")
-            }
-            return
-        }
-
-        try {
-            await cancelOrder.mutateAsync(id)
-            setConfirmModal(prev => ({ ...prev, open: false }))
-            setCancelImpact(null)
-            onActionSuccess?.()
-        } catch (error: unknown) {
-            const errorMessage = getErrorMessage(error) || "Error al cancelar orden"
-            toast.error(errorMessage)
-        }
-    }
-
-    const handleAnnulOrder = async (id: number) => {
-        try {
-            await annulOrder.mutateAsync(id)
-            onActionSuccess?.()
-        } catch (error: unknown) {
-            const errorMessage = getErrorMessage(error) || "Error al anular orden"
-            toast.error(errorMessage)
-        }
-    }
+    const canCancelOrder = userPermissions.includes(
+        isSale ? 'sales.delete_saleorder' : 'purchasing.delete_purchaseorder'
+    )
 
     const documents: PhaseDocument[] = isNoteMode ? [
         {
@@ -169,17 +79,17 @@ export function OriginPhase({
             id: order?.id,
             docType: type === 'obligation' ? 'service_obligation' : (type === 'sale' ? 'sale_order' : 'purchase_order'),
             actions: [
-                    ...(order?.status === 'DRAFT' ? [{
+                ...(canCancelOrder && order?.status === 'DRAFT' ? [{
                     icon: Trash2,
                     title: 'Cancelar Orden',
                     color: 'text-destructive hover:bg-destructive/10',
-                    onClick: () => handleCancelOrder(order?.id)
+                    onClick: () => requestCancel(order?.id)
                 }] : []),
-                ...((order?.status !== 'CANCELLED' && order?.status !== 'DRAFT') ? [{
+                ...(canCancelOrder && order?.status !== 'CANCELLED' && order?.status !== 'DRAFT' ? [{
                     icon: X,
                     title: 'Anular Orden',
                     color: 'text-destructive hover:bg-destructive/10',
-                    onClick: () => handleAnnulOrder(order?.id)
+                    onClick: () => requestCancel(order?.id)
                 }] : [])
             ]
         }
@@ -250,15 +160,7 @@ export function OriginPhase({
             </div>
         </PhaseCard>
 
-            <ActionConfirmModal
-                open={confirmModal.open}
-                onOpenChange={(open) => setConfirmModal(prev => ({ ...prev, open }))}
-                title={confirmModal.title}
-                description={confirmModal.description}
-                onConfirm={confirmModal.onConfirm}
-                variant={confirmModal.variant}
-                confirmText={confirmModal.confirmText}
-            />
+            <ActionConfirmModal {...modalProps} />
         </>
     )
 }

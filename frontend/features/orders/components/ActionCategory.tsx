@@ -28,10 +28,9 @@ const WorkOrderWizard = dynamic(() => import("@/features/production").then(m => 
 import {
     useCreateInvoiceFromOrder,
     useConfirmInvoice,
-    useCancelOrder,
     useRegisterPaymentMovement,
 } from "../hooks/useOrdersMutations"
-import { ordersApi } from "../api/ordersApi"
+import { useCancelOrderFlow } from "../hooks/useCancelOrderFlow"
 
 import { useHubPanel } from "@/components/providers/HubPanelProvider"
 import { Order, OrderLine } from "../types"
@@ -75,34 +74,8 @@ export const ActionCategory = forwardRef(({
     }
     const [isProcessing, setIsProcessing] = useState(false)
     const [hasNotifiedOpen, setHasNotifiedOpen] = useState(false)
-    const [confirmModal, setConfirmModal] = useState<{
-        open: boolean
-        title: string
-        description: React.ReactNode
-        onConfirm: () => Promise<void> | void
-        variant?: 'destructive' | 'warning'
-        confirmText?: string
-    }>({
-        open: false,
-        title: "",
-        description: null,
-        onConfirm: () => { }
-    })
 
     const { setHubTemporarilyHidden, triggerAction } = useHubPanel()
-
-    // Notify parent about modal state changes without clobbering other instances
-    useEffect(() => {
-        const isAnyModalActive = activeModal !== null || confirmModal.open;
-        if (isAnyModalActive) {
-            console.log(`[ActionEngine] Hub should hide now. activeModal: ${activeModal}, confirmOpen: ${confirmModal.open}`);
-            setHubTemporarilyHidden(true)
-            return () => {
-                console.log(`[ActionEngine] Hub should restore now.`);
-                setHubTemporarilyHidden(false)
-            }
-        }
-    }, [activeModal, confirmModal.open, setHubTemporarilyHidden])
     const [tempInvoiceId, setTempInvoiceId] = useState<number | null>(null)
 
     useImperativeHandle(ref, () => ({
@@ -116,7 +89,19 @@ export const ActionCategory = forwardRef(({
     const createInvoiceFromOrder = useCreateInvoiceFromOrder()
     const confirmInvoice = useConfirmInvoice()
     const registerPaymentMovement = useRegisterPaymentMovement()
-    const cancelOrder = useCancelOrder(isSale ? 'sale' : 'purchase')
+    const { requestCancel, modalProps: cancelModalProps, isModalOpen: isCancelModalOpen } =
+        useCancelOrderFlow(isSale ? 'sale' : 'purchase', { onSuccess: onActionSuccess })
+
+    // Notify parent about modal state changes without clobbering other instances
+    useEffect(() => {
+        const isAnyModalActive = activeModal !== null || isCancelModalOpen;
+        if (isAnyModalActive) {
+            setHubTemporarilyHidden(true)
+            return () => {
+                setHubTemporarilyHidden(false)
+            }
+        }
+    }, [activeModal, isCancelModalOpen, setHubTemporarilyHidden])
 
     const resolvedInvoices = (order?.dte_type ? [order] : (order?.related_documents?.invoices || order?.invoices)) || []
 
@@ -186,7 +171,9 @@ export const ActionCategory = forwardRef(({
                 handleRegenerateDocument()
                 break
             case 'cancel-order':
-                handleCancelOrder()
+            case 'annul-order':
+                if (order?.id) requestCancel(order.id)
+                else toast.error("Error: No se pudo identificar la orden")
                 break
             default:
                 console.warn(`No handler for action: ${actionId}`)
@@ -213,66 +200,6 @@ export const ActionCategory = forwardRef(({
             showApiError(error, "Error al re-emitir documento")
         } finally {
             setIsProcessing(false)
-        }
-    }
-
-    const handleCancelOrder = async (isConfirmed = false) => {
-        if (!isConfirmed) {
-            try {
-                const id = order?.id
-                if (!id) { toast.error("Error: No se pudo identificar la orden"); return }
-
-                const impact = isSale
-                    ? await ordersApi.getCancelSaleImpact(id)
-                    : await ordersApi.getCancelPurchaseImpact(id)
-
-                const items: string[] = [
-                    ...impact.invoices.map((i: any) => `• Factura ${i.display_id} — ${i.status}`),
-                    ...(impact.deliveries || []).map((d: any) => `• Despacho #${d.id} — ${d.status}`),
-                    ...(impact.receipts || []).map((r: any) => `• Recepción #${r.id} — ${r.status}`),
-                    ...impact.payments.map((p: any) => `• Pago #${p.id} — ${p.status}`),
-                ]
-
-                setConfirmModal({
-                    open: true,
-                    title: "Cancelar Orden",
-                    variant: impact.action === 'full_annul' ? 'warning' : 'destructive',
-                    confirmText: impact.action === 'full_annul' ? 'Anular Todo' : 'Cancelar Orden',
-                    onConfirm: () => handleCancelOrder(true),
-                    description: (
-                        <div className="flex flex-col gap-2 text-sm">
-                            <p>¿Qué desea hacer con esta orden?</p>
-                            <p className="text-xs text-muted-foreground">
-                                {impact.action === 'full_annul'
-                                    ? 'Se revertirán asientos contables y movimientos de stock.'
-                                    : 'Se cancelarán los documentos en Borrador sin reversos.'}
-                            </p>
-                            {items.length > 0 && (
-                                <div className="flex flex-col gap-0.5 text-xs font-mono bg-muted p-2 rounded">
-                                    {items.map((line, i) => (
-                                        <span key={i}>{line}</span>
-                                    ))}
-                                </div>
-                            )}
-                        </div>
-                    ),
-                })
-            } catch {
-                toast.error("Error al obtener impacto de cancelación")
-            }
-            return
-        }
-
-        const id = order?.id
-        if (!id) { toast.error("Error: No se pudo identificar la orden"); return }
-
-        try {
-            await cancelOrder.mutateAsync(id)
-            setConfirmModal(prev => ({ ...prev, open: false }))
-            onActionSuccess?.()
-        } catch (error: unknown) {
-            const errorMessage = getErrorMessage(error) || "Error al cancelar orden"
-            toast.error(errorMessage)
         }
     }
 
@@ -533,15 +460,7 @@ export const ActionCategory = forwardRef(({
                      onOpenChange={(open) => !open && closeTransaction()}
                  />
              )}
-             <ActionConfirmModal
-                 open={confirmModal.open}
-                 onOpenChange={(open) => setConfirmModal(prev => ({ ...prev, open }))}
-                 title={confirmModal.title}
-                 description={confirmModal.description}
-                 onConfirm={confirmModal.onConfirm}
-                 variant={confirmModal.variant}
-                 confirmText={confirmModal.confirmText}
-             />
+             <ActionConfirmModal {...cancelModalProps} />
              </Suspense>
          </SkeletonShell>
         </>

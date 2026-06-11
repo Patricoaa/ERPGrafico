@@ -3,6 +3,7 @@
 import React, { useState } from "react"
 import { BaseModal } from "./BaseModal"
 import { Button } from "@/components/ui/button"
+import { Textarea } from "@/components/ui/textarea"
 import { AlertTriangle, AlertCircle, Info, Loader2, LucideIcon, CheckCircle2 } from "lucide-react"
 import { cn } from "@/lib/utils"
 
@@ -11,13 +12,17 @@ export type ActionVariant = "default" | "destructive" | "warning" | "info" | "su
 interface ActionConfirmModalProps {
     open: boolean
     onOpenChange: (open: boolean) => void
-    onConfirm: () => Promise<void> | void
+    onConfirm: (reason?: string) => Promise<void> | void
     title: string
     description: React.ReactNode
     confirmText?: string
     cancelText?: string
     variant?: ActionVariant
     icon?: LucideIcon
+    /** Muestra un textarea de motivo; confirmar queda bloqueado hasta escribirlo. */
+    requireReason?: boolean
+    reasonLabel?: string
+    reasonPlaceholder?: string
 }
 
 export function ActionConfirmModal({
@@ -29,14 +34,28 @@ export function ActionConfirmModal({
     confirmText = "Confirmar",
     cancelText = "Cancelar",
     variant = "default",
-    icon: CustomIcon
+    icon: CustomIcon,
+    requireReason = false,
+    reasonLabel = "Motivo",
+    reasonPlaceholder = "Indique el motivo de esta operación…"
 }: ActionConfirmModalProps) {
     const [isLoading, setIsLoading] = useState(false)
+    const [reason, setReason] = useState("")
+
+    // Reset del motivo en cada apertura (patrón "adjust state during render")
+    const [prevOpen, setPrevOpen] = useState(open)
+    if (open !== prevOpen) {
+        setPrevOpen(open)
+        if (open) setReason("")
+    }
+
+    const reasonMissing = requireReason && reason.trim().length === 0
 
     const handleConfirm = async () => {
+        if (reasonMissing) return
         setIsLoading(true)
         try {
-            await onConfirm()
+            await onConfirm(requireReason ? reason.trim() : undefined)
             onOpenChange(false)
         } catch (error) {
             console.error("Action confirmation failed:", error)
@@ -117,7 +136,7 @@ export function ActionConfirmModal({
                     <Button
                         variant={config.buttonVariant}
                         onClick={handleConfirm}
-                        disabled={isLoading}
+                        disabled={isLoading || reasonMissing}
                         className={cn(
                             "flex-1 sm:flex-none min-w-[100px]",
                             variant === "warning" && "bg-warning hover:bg-warning/90 text-warning-foreground border-none",
@@ -141,6 +160,20 @@ export function ActionConfirmModal({
                     <p>{description}</p>
                 ) : (
                     description
+                )}
+                {requireReason && (
+                    <div className="mt-4 flex flex-col gap-1.5">
+                        <label className="text-xs font-medium text-foreground">
+                            {reasonLabel} <span className="text-destructive">*</span>
+                        </label>
+                        <Textarea
+                            value={reason}
+                            onChange={(e) => setReason(e.target.value)}
+                            placeholder={reasonPlaceholder}
+                            rows={3}
+                            disabled={isLoading}
+                        />
+                    </div>
                 )}
             </div>
         </BaseModal>
