@@ -1,7 +1,6 @@
 export { useSaleOrderSearch } from './useSaleOrderSearch'
 export {
     useAnnulInvoice,
-    useDeleteInvoice,
     useConfirmInvoice,
     useCreateInvoiceFromOrder,
     useProcessLogistics,
@@ -9,7 +8,6 @@ export {
     useCancelOrder,
     useAnnulLogistics,
     useRegisterPaymentMovement,
-    useDeletePayment,
     useAnnulPayment,
     useAnnulWorkOrder,
     ordersApi,

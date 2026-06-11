@@ -6,7 +6,7 @@ import { FileText, Trash2, X } from "lucide-react"
 import { formatEntity } from '@/features/orders/utils/status'
 import { getDtePrefix, getDteLabel } from '@/lib/entity-registry'
 import { toast } from "sonner"
-import { useAnnulInvoice, useDeleteInvoice } from "../../hooks/useOrdersMutations"
+import { useAnnulInvoice, useCancelInvoice } from "../../hooks/useOrdersMutations"
 import { ActionConfirmModal } from '@/components/shared'
 import { saleOrderActions } from '@/features/sales/actions'
 import { purchaseOrderActions } from '@/features/purchasing/actions'
@@ -50,7 +50,7 @@ export function BillingPhase({
 }: BillingPhaseProps) {
     const registry = isSale ? saleOrderActions : purchaseOrderActions
     const annulInvoice = useAnnulInvoice()
-    const deleteInvoice = useDeleteInvoice()
+    const cancelInvoice = useCancelInvoice()
 
     const [confirmModal, setConfirmModal] = useState<{
         open: boolean,
@@ -66,26 +66,26 @@ export function BillingPhase({
         onConfirm: () => { }
     })
 
-    const handleDeleteDraft = async (id: number, isConfirmed = false) => {
+    const handleCancelDraft = async (id: number, isConfirmed = false) => {
         if (!isConfirmed) {
             setConfirmModal({
                 open: true,
                 title: "Cancelar Borrador",
                 variant: "destructive",
                 confirmText: "Cancelar Borrador",
-                onConfirm: () => handleDeleteDraft(id, true),
+                onConfirm: () => handleCancelDraft(id, true),
                 description: "¿Estás seguro de que deseas cancelar este borrador de factura?"
             })
             return
         }
 
         try {
-            await deleteInvoice.mutateAsync(id)
+            await cancelInvoice.mutateAsync(id)
             setConfirmModal(prev => ({ ...prev, open: false }))
             onActionSuccess?.()
         } catch (error: unknown) {
-            console.error("Error deleting draft:", error)
-            toast.error("No se pudo eliminar el borrador")
+            console.error("Error cancelando borrador:", error)
+            toast.error("No se pudo cancelar el borrador")
         }
     }
 
@@ -152,7 +152,7 @@ export function BillingPhase({
                                     icon: Trash2,
                                     title: 'Cancelar Borrador',
                                     color: 'text-destructive hover:bg-destructive/10',
-                                    onClick: () => handleDeleteDraft(Number(inv.id))
+                                    onClick: () => handleCancelDraft(Number(inv.id))
                                 }] : []),
                                 ...((inv.status !== 'CANCELLED' && inv.status !== 'DRAFT') ? [{
                                     icon: X,

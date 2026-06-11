@@ -39,10 +39,10 @@ export function usePurchaseInvoices({ filters }: UsePurchaseInvoicesProps = {}) 
         }
     })
 
-    const deleteMutation = useMutation({
-        mutationFn: async (id: number) => billingApi.deleteInvoice(id),
+    const cancelMutation = useMutation({
+        mutationFn: async (id: number) => billingApi.cancelInvoice(id),
         onSuccess: () => {
-            toast.success('Documento eliminado correctamente')
+            toast.success('Documento cancelado correctamente')
             invalidate()
         },
     })
@@ -69,7 +69,7 @@ export function usePurchaseInvoices({ filters }: UsePurchaseInvoicesProps = {}) 
         refetch,
         annulInvoice: annulMutation.mutateAsync,
         isAnnulling: annulMutation.isPending,
-        deleteInvoice: deleteMutation.mutateAsync,
+        cancelInvoice: cancelMutation.mutateAsync,
         confirmInvoice: confirmMutation.mutateAsync,
         makePayment: payMutation.mutateAsync,
     }

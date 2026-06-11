@@ -6,8 +6,8 @@ export const ordersApi = {
         api.post(`/billing/invoices/${id}/annul/`, { force }).then(r => r.data),
     createInvoiceFromOrder: (data: Record<string, unknown>) =>
         api.post('/billing/invoices/create_from_order/', data).then(r => r.data),
-    deleteInvoice: (id: number) =>
-        api.delete(`/billing/invoices/${id}/`).then(r => r.data),
+    cancelInvoice: (id: number) =>
+        api.post(`/billing/invoices/${id}/cancel/`).then(r => r.data),
     confirmInvoice: (id: number, formData: Record<string, unknown>) =>
         api.post(`/billing/invoices/${id}/confirm/`, formData, {
             headers: { 'Content-Type': 'multipart/form-data' }
@@ -54,8 +54,8 @@ export const ordersApi = {
     // ── Treasury ──
     registerPaymentMovement: (data: Record<string, unknown>) =>
         api.post('/treasury/payments/register_movement/', data).then(r => r.data),
-    deletePayment: (id: number) =>
-        api.delete(`/treasury/payments/${id}/`).then(r => r.data),
+    cancelPayment: (id: number) =>
+        api.post(`/treasury/payments/${id}/cancel/`).then(r => r.data),
     annulPayment: (id: number) =>
         api.post(`/treasury/payments/${id}/annul/`).then(r => r.data),
 

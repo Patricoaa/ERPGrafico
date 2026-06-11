@@ -6,7 +6,6 @@ import {
     History,
     FileBadge,
     X,
-    Ban,
     Eye,
     FileEdit,
     Trash2,
@@ -357,28 +356,11 @@ export const purchaseOrderActions: ActionRegistry<any> = {
         icon: X,
         actions: [
             {
-                id: 'annul-document',
-                label: 'Anular Documento',
-                icon: Ban,
-                requiredPermissions: ['billing.delete_invoice'],
-                checkAvailability: (order) => {
-                    // Only show if there's a posted invoice WITHOUT folio (Draft)
-                    // Backend will block annulment if folio exists (fiscal requirement)
-                    const invoices = order.related_documents?.invoices || order.invoices || []
-                    return invoices.some((inv: any) =>
-                        (inv.status === 'POSTED' || inv.status === 'PAID') &&
-                        (inv.number === 'Draft' || !inv.number)
-                    )
-                },
-                variant: 'destructive',
-                badge: { type: 'warning', label: 'Solo sin folio' }
-            },
-            {
                 id: 'cancel-order',
                 label: 'Cancelar Orden',
                 icon: Trash2,
                 requiredPermissions: ['billing.delete_invoice'],
-                checkAvailability: (order) => order.status === 'DRAFT',
+                checkAvailability: (order) => order.status !== 'CANCELLED',
                 variant: 'destructive'
             }
         ]

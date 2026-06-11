@@ -26,12 +26,12 @@ import { LazyDrawer } from "@/features/_shared/transaction-drawer"
 const NoteLogisticsModal = dynamic(() => import("./NoteLogisticsModal").then(m => m.NoteLogisticsModal))
 const WorkOrderWizard = dynamic(() => import("@/features/production").then(m => m.WorkOrderWizard))
 import {
-    useAnnulInvoice,
-    useDeleteInvoice,
     useCreateInvoiceFromOrder,
     useConfirmInvoice,
+    useCancelOrder,
     useRegisterPaymentMovement,
 } from "../hooks/useOrdersMutations"
+import { ordersApi } from "../api/ordersApi"
 
 import { useHubPanel } from "@/components/providers/HubPanelProvider"
 import { Order, OrderLine } from "../types"
@@ -109,15 +109,14 @@ export const ActionCategory = forwardRef(({
         handleActionClick
     }))
 
-    const annulInvoice = useAnnulInvoice()
-    const deleteInvoice = useDeleteInvoice()
-    const createInvoiceFromOrder = useCreateInvoiceFromOrder()
-    const confirmInvoice = useConfirmInvoice()
-    const registerPaymentMovement = useRegisterPaymentMovement()
-
     // Determine order type helper - supporting both Order and Note models
     const isSale = !!order?.customer_name || !!order?.customer || !!order?.sale_order
     const isPurchase = !!order?.supplier_name || !!order?.supplier || !!order?.purchase_order
+
+    const createInvoiceFromOrder = useCreateInvoiceFromOrder()
+    const confirmInvoice = useConfirmInvoice()
+    const registerPaymentMovement = useRegisterPaymentMovement()
+    const cancelOrder = useCancelOrder(isSale ? 'sale' : 'purchase')
 
     const resolvedInvoices = (order?.dte_type ? [order] : (order?.related_documents?.invoices || order?.invoices)) || []
 
@@ -186,11 +185,8 @@ export const ActionCategory = forwardRef(({
             case 'regenerate-document':
                 handleRegenerateDocument()
                 break
-            case 'annul-document':
-                handleAnnulDocument()
-                break
             case 'cancel-order':
-                handleDeleteDraft()
+                handleCancelOrder()
                 break
             default:
                 console.warn(`No handler for action: ${actionId}`)
@@ -198,40 +194,6 @@ export const ActionCategory = forwardRef(({
     }
 
     const closeModal = () => setActiveModal(null)
-
-    const handleAnnulDocument = async (force: boolean = false) => {
-        const invoices = resolvedInvoices
-        const invoice = invoices.find((inv: any) => inv.number !== 'Draft' && inv.status !== 'CANCELLED')
-
-        if (!invoice) {
-            toast.error("No se encontró un documento válido para anular")
-            return
-        }
-
-        setIsProcessing(true)
-        try {
-            await annulInvoice.mutateAsync({ id: Number(invoice.id), force })
-            onActionSuccess?.()
-        } catch (error: unknown) {
-            console.error("Error annulling document:", error)
-            const errorMessage = getErrorMessage(error) || "Error al anular documento"
-
-            if (errorMessage.includes("pagos asociados") && !force) {
-                setConfirmModal({
-                    open: true,
-                    title: "Anular Documento con Pagos",
-                    variant: "warning",
-                    confirmText: "Anular Todo",
-                    onConfirm: () => handleAnnulDocument(true),
-                    description: "El documento tiene pagos asociados. ¿Deseas anular el documento y todos sus pagos?"
-                })
-            } else {
-                toast.error(errorMessage)
-            }
-        } finally {
-            setIsProcessing(false)
-        }
-    }
 
     const handleRegenerateDocument = async () => {
         setIsProcessing(true)
@@ -254,35 +216,64 @@ export const ActionCategory = forwardRef(({
         }
     }
 
-    const handleDeleteDraft = async () => {
-        const invoices = resolvedInvoices
-        const draftInvoice = invoices.find((inv: any) => inv.status === 'DRAFT' || inv.number === 'Draft')
+    const handleCancelOrder = async (isConfirmed = false) => {
+        if (!isConfirmed) {
+            try {
+                const id = order?.id
+                if (!id) { toast.error("Error: No se pudo identificar la orden"); return }
 
-        if (!draftInvoice) {
-            toast.error("No se encontró un borrador para eliminar")
+                const impact = isSale
+                    ? await ordersApi.getCancelSaleImpact(id)
+                    : await ordersApi.getCancelPurchaseImpact(id)
+
+                const items: string[] = [
+                    ...impact.invoices.map((i: any) => `• Factura ${i.display_id} — ${i.status}`),
+                    ...(impact.deliveries || []).map((d: any) => `• Despacho #${d.id} — ${d.status}`),
+                    ...(impact.receipts || []).map((r: any) => `• Recepción #${r.id} — ${r.status}`),
+                    ...impact.payments.map((p: any) => `• Pago #${p.id} — ${p.status}`),
+                ]
+
+                setConfirmModal({
+                    open: true,
+                    title: "Cancelar Orden",
+                    variant: impact.action === 'full_annul' ? 'warning' : 'destructive',
+                    confirmText: impact.action === 'full_annul' ? 'Anular Todo' : 'Cancelar Orden',
+                    onConfirm: () => handleCancelOrder(true),
+                    description: (
+                        <div className="flex flex-col gap-2 text-sm">
+                            <p>¿Qué desea hacer con esta orden?</p>
+                            <p className="text-xs text-muted-foreground">
+                                {impact.action === 'full_annul'
+                                    ? 'Se revertirán asientos contables y movimientos de stock.'
+                                    : 'Se cancelarán los documentos en Borrador sin reversos.'}
+                            </p>
+                            {items.length > 0 && (
+                                <div className="flex flex-col gap-0.5 text-xs font-mono bg-muted p-2 rounded">
+                                    {items.map((line, i) => (
+                                        <span key={i}>{line}</span>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+                    ),
+                })
+            } catch {
+                toast.error("Error al obtener impacto de cancelación")
+            }
             return
         }
 
-        setConfirmModal({
-            open: true,
-            title: "Cancelar Borrador",
-            variant: "destructive",
-            confirmText: "Cancelar",
-            onConfirm: async () => {
-                setIsProcessing(true)
-                try {
-                    await deleteInvoice.mutateAsync(Number(draftInvoice.id))
-                    setConfirmModal(prev => ({ ...prev, open: false }))
-                    onActionSuccess?.()
-                } catch (error: unknown) {
-                    console.error("Error deleting draft:", error)
-                    toast.error("No se pudo cancelar el borrador")
-                } finally {
-                    setIsProcessing(false)
-                }
-            },
-            description: "¿Estás seguro de que deseas cancelar este borrador?"
-        })
+        const id = order?.id
+        if (!id) { toast.error("Error: No se pudo identificar la orden"); return }
+
+        try {
+            await cancelOrder.mutateAsync(id)
+            setConfirmModal(prev => ({ ...prev, open: false }))
+            onActionSuccess?.()
+        } catch (error: unknown) {
+            const errorMessage = getErrorMessage(error) || "Error al cancelar orden"
+            toast.error(errorMessage)
+        }
     }
 
     const handlePaymentConfirm = async (data: Record<string, unknown>) => {
