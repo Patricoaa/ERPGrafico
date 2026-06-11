@@ -29,6 +29,7 @@ export * from './BulkActionDock';
 
 // Cards & Containers
 export * from './StatCard';
+export * from './EntityStatsBottomSheet';
 export * from './CardSkeleton';
 export * from './SkeletonShell';
 export * from './LayoutSkeletons';
@@ -122,6 +123,6 @@ export * from './PrintableReceipt'
 
 export * from './ContactSelector'
 // Product Selector family (PR-1, PR-2, PR-3)
-export { SearchBar, CategoryFilter, ProductGrid, VariantSelectorModal, ProductSelector } from './ProductSelector'
+export { SearchBar, CategoryFilter, ProductGrid, VariantSelectorModal, ProductSelector, CategoryDropdown } from './ProductSelector'
 export type { SearchBarProps, CategoryFilterProps, ProductGridProps, SharedStockLimits, VariantSelectorModalProps, ProductSelectorProps } from './ProductSelector'
 export * from './manufacturing'
