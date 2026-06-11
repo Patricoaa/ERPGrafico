@@ -11,15 +11,13 @@ import {
 } from "@/components/ui/tooltip"
 import { motion } from "framer-motion"
 import { useBranding } from "@/contexts/BrandingProvider"
-import { MODULE_REGISTRY } from "@/lib/module-registry"
+import { MODULE_REGISTRY, MODULE_ORDER } from "@/lib/module-registry"
 
 interface MiniSidebarProps {
     activeCategory: string | null
     onCategoryChange: (category: string) => void
     collapsed?: boolean
 }
-
-const MODULE_ORDER = ["dashboard", "accounting", "billing", "sales", "contacts", "inventory", "production", "treasury", "purchasing", "finances", "hr"] as const
 
 const mainItems = MODULE_ORDER.map((id) => MODULE_REGISTRY[id]).filter(Boolean)
 
