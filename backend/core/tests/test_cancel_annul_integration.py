@@ -209,7 +209,7 @@ class TestCancelSaleOrderIntegration:
         """CONFIRMED order → SaleOrderService.cancel() runs full annul path."""
         order = _sale_order(env, status=SaleOrder.Status.CONFIRMED)
         svc = SaleOrderService()
-        result = svc.cancel(order, user=env['user'])
+        result = svc.cancel(order, user=env['user'], reason='test integración')
         assert result.status == SaleOrder.Status.CANCELLED
 
 
@@ -331,7 +331,7 @@ class TestMixedChildrenAnnulIntegration:
         delivery = _delivery(env, order, status=SaleDelivery.Status.CONFIRMED)
         svc = SaleOrderService()
         # The DRAFT invoice should be cancelled (not annulled), the CONFIRMED delivery annulled
-        result = svc.cancel(order, user=env['user'])
+        result = svc.cancel(order, user=env['user'], reason='test integración')
         result.refresh_from_db()
         inv.refresh_from_db()
         delivery.refresh_from_db()
@@ -346,7 +346,7 @@ class TestMixedChildrenAnnulIntegration:
         inv = _invoice(env, purchase_order=order)  # DRAFT
         receipt = _receipt(env, order, status=PurchaseReceipt.Status.CONFIRMED)
         svc = PurchaseOrderService()
-        result = svc.cancel(order, user=env['user'])
+        result = svc.cancel(order, user=env['user'], reason='test integración')
         result.refresh_from_db()
         inv.refresh_from_db()
         receipt.refresh_from_db()
@@ -392,7 +392,7 @@ class TestPRACancelIntegrity:
             env, purchase_order=order, contact=env['supplier'],
             number='F-7788', status=Invoice.Status.POSTED,
         )
-        result = BillingService.annul_invoice(inv)
+        result = BillingService.annul_invoice(inv, reason='test integración')
         result.refresh_from_db()
         assert result.status == Invoice.Status.CANCELLED
 
@@ -402,7 +402,7 @@ class TestPRACancelIntegrity:
         order = _sale_order(env, status=SaleOrder.Status.CONFIRMED)
         inv = _invoice(env, sale_order=order, number='1234', status=Invoice.Status.POSTED)
         with pytest.raises(ValidationError, match='Nota de Crédito'):
-            BillingService.annul_invoice(inv)
+            BillingService.annul_invoice(inv, reason='test integración')
 
     @pytest.mark.django_db
     def test_026_purge_blocked_for_annulled_movement(self, env):
@@ -490,7 +490,7 @@ class TestPRBAuditAndSemantics:
             env, journal_entry=je, status=TreasuryMovement.MovementStatus.POSTED,
         )
         with pytest.raises(ValidationError, match='cerrado'):
-            TreasuryService.annul_movement(mov)
+            TreasuryService.annul_movement(mov, reason='test integración')
 
     @pytest.mark.django_db
     def test_034_annul_order_logs_annul_transition(self, env):
@@ -501,3 +501,23 @@ class TestPRBAuditAndSemantics:
         t = Transition.objects.get(entity_type='sales.saleorder', entity_id=order.id)
         assert t.transition == 'annul'
         assert t.reason == 'cliente desistió'
+
+    @pytest.mark.django_db
+    def test_035_annul_without_reason_blocked(self, env):
+        """PR C: annul paths demand an explicit reason (cancel does not)."""
+        order = _sale_order(env, status=SaleOrder.Status.CONFIRMED)
+        svc = SaleOrderService()
+        with pytest.raises(ValidationError, match='motivo'):
+            svc.cancel(order, user=env['user'])
+
+        je = _posted_je(env, suffix='035')
+        mov = _movement(
+            env, journal_entry=je, status=TreasuryMovement.MovementStatus.POSTED,
+        )
+        with pytest.raises(ValidationError, match='motivo'):
+            TreasuryService.annul_movement(mov)
+
+        inv = _invoice(env, purchase_order=_purchase_order(env, status=PurchaseOrder.Status.CONFIRMED),
+                       contact=env['supplier'], number='F-035', status=Invoice.Status.POSTED)
+        with pytest.raises(ValidationError, match='motivo'):
+            BillingService.annul_invoice(inv)

@@ -1136,6 +1136,9 @@ class BillingService:
         if invoice.status == Invoice.Status.CANCELLED:
              return invoice
 
+        if not reason:
+             raise ValidationError("Debe indicar el motivo de la anulación.")
+
         if invoice.status not in [Invoice.Status.POSTED, Invoice.Status.PAID]:
              raise ValidationError("Solo se pueden anular facturas publicadas o pagadas.")
 

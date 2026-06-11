@@ -1,7 +1,7 @@
 "use client"
 
 import { showApiError, getErrorMessage } from "@/lib/errors"
-import React, { useState } from "react"
+import React, { useState, useRef } from "react"
 import { useRouter, useSearchParams, usePathname } from "next/navigation"
 import { ActionConfirmModal, DataTableView } from '@/components/shared'
 import { DataCell } from '@/components/shared'
@@ -43,9 +43,12 @@ export function SalesInvoicesClientView() {
         router.push(query ? `${pathname}?${query}` : pathname, { scroll: false })
     }
 
+    // El motivo se captura en el modal de anulación y se reutiliza en el force-retry
+    const annulReasonRef = useRef('')
+
     const forceAnnulConfirm = useConfirmAction<number>(async (id) => {
         try {
-            await annulInvoice({ id, force: true })
+            await annulInvoice({ id, force: true, reason: annulReasonRef.current })
         } catch (error: unknown) {
             toast.error(getErrorMessage(error) || "Error al anular el documento.")
         }
@@ -53,11 +56,11 @@ export function SalesInvoicesClientView() {
 
     const annulConfirm = useConfirmAction<number>(async (id) => {
         try {
-            await annulInvoice({ id, force: false })
+            await annulInvoice({ id, force: false, reason: annulReasonRef.current })
         } catch (error: unknown) {
             console.error("Error annulling invoice:", error)
             const errorMessage = getErrorMessage(error) || ""
-            if (errorMessage.includes("Debe anular los pagos asociados")) {
+            if (errorMessage.includes("pagos")) {
                 forceAnnulConfirm.requestConfirm(id)
                 return
             }
@@ -204,10 +207,12 @@ export function SalesInvoicesClientView() {
             <ActionConfirmModal
                 open={annulConfirm.isOpen}
                 onOpenChange={(open) => { if (!open) annulConfirm.cancel() }}
-                onConfirm={annulConfirm.confirm}
+                onConfirm={(reason) => { annulReasonRef.current = reason ?? ''; return annulConfirm.confirm() }}
                 title="Anular Documento"
                 description="¿Está seguro de que desea ANULAR este documento? Esta acción generará reversos contables y no se puede deshacer."
                 variant="destructive"
+                requireReason
+                reasonLabel="Motivo de la anulación"
             />
 
             <ActionConfirmModal

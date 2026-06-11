@@ -56,9 +56,10 @@ export function BillingPhase({
         open: boolean,
         title: string,
         description: React.ReactNode,
-        onConfirm: () => Promise<void> | void,
+        onConfirm: (reason?: string) => Promise<void> | void,
         variant?: 'destructive' | 'warning',
-        confirmText?: string
+        confirmText?: string,
+        requireReason?: boolean
     }>({
         open: false,
         title: "",
@@ -66,49 +67,66 @@ export function BillingPhase({
         onConfirm: () => { }
     })
 
-    const handleCancelDraft = async (id: number, isConfirmed = false) => {
-        if (!isConfirmed) {
-            setConfirmModal({
-                open: true,
-                title: "Cancelar Borrador",
-                variant: "destructive",
-                confirmText: "Cancelar Borrador",
-                onConfirm: () => handleCancelDraft(id, true),
-                description: "¿Estás seguro de que deseas cancelar este borrador de factura?"
-            })
-            return
-        }
+    const canCancelInvoice = userPermissions.includes('billing.delete_invoice')
 
-        try {
-            await cancelInvoice.mutateAsync(id)
-            setConfirmModal(prev => ({ ...prev, open: false }))
-            onActionSuccess?.()
-        } catch (error: unknown) {
-            console.error("Error cancelando borrador:", error)
-            toast.error("No se pudo cancelar el borrador")
-        }
+    const handleCancelDraft = (id: number) => {
+        setConfirmModal({
+            open: true,
+            title: "Cancelar Borrador",
+            variant: "destructive",
+            confirmText: "Cancelar Borrador",
+            onConfirm: async (reason?: string) => {
+                try {
+                    await cancelInvoice.mutateAsync({ id, reason })
+                    setConfirmModal(prev => ({ ...prev, open: false }))
+                    onActionSuccess?.()
+                } catch (error: unknown) {
+                    console.error("Error cancelando borrador:", error)
+                    toast.error("No se pudo cancelar el borrador")
+                    throw error
+                }
+            },
+            description: "¿Estás seguro de que deseas cancelar este borrador de factura?"
+        })
     }
 
-    const handleAnnulDocument = async (id: number, force: boolean = false) => {
-        try {
-            await annulInvoice.mutateAsync({ id, force })
-            setConfirmModal(prev => ({ ...prev, open: false }))
-            onActionSuccess?.()
-        } catch (error: unknown) {
-            const errorMessage = getErrorMessage(error) || "Error al anular documento"
-            if (errorMessage.includes("pagos asociados") && !force) {
-                setConfirmModal({
-                    open: true,
-                    title: "Anular Documento con Pagos",
-                    variant: "warning",
-                    confirmText: "Anular Todo",
-                    onConfirm: () => handleAnnulDocument(id, true),
-                    description: "El documento tiene pagos asociados. ¿Deseas anular el documento y todos sus pagos vinculados? Esta acción es irreversible."
-                })
-            } else {
-                toast.error(errorMessage)
+    const handleAnnulDocument = (id: number) => {
+        const executeAnnul = async (force: boolean, reason?: string) => {
+            try {
+                await annulInvoice.mutateAsync({ id, force, reason })
+                setConfirmModal(prev => ({ ...prev, open: false }))
+                onActionSuccess?.()
+            } catch (error: unknown) {
+                const errorMessage = getErrorMessage(error) || "Error al anular documento"
+                if (errorMessage.includes("pagos") && !force) {
+                    // Reemplaza el contenido del modal abierto por la variante force;
+                    // el throw evita que ActionConfirmModal lo cierre.
+                    setConfirmModal({
+                        open: true,
+                        title: "Anular Documento con Pagos",
+                        variant: "warning",
+                        confirmText: "Anular Todo",
+                        requireReason: true,
+                        onConfirm: (r?: string) => executeAnnul(true, r),
+                        description: "El documento tiene pagos asociados. ¿Deseas anular el documento y todos sus pagos vinculados? Esta acción es irreversible."
+                    })
+                    throw error
+                } else {
+                    toast.error(errorMessage)
+                    throw error
+                }
             }
         }
+
+        setConfirmModal({
+            open: true,
+            title: "Anular Documento",
+            variant: "warning",
+            confirmText: "Anular",
+            requireReason: true,
+            onConfirm: (reason?: string) => executeAnnul(false, reason),
+            description: "Se revertirá el asiento contable del documento. Esta acción es irreversible."
+        })
     }
 
     return (
@@ -148,13 +166,13 @@ export function BillingPhase({
                             docType: 'invoice',
                             status: inv.status,
                             actions: [
-                                ...((inv.status === 'DRAFT') ? [{
+                                ...(canCancelInvoice && inv.status === 'DRAFT' ? [{
                                     icon: Trash2,
                                     title: 'Cancelar Borrador',
                                     color: 'text-destructive hover:bg-destructive/10',
                                     onClick: () => handleCancelDraft(Number(inv.id))
                                 }] : []),
-                                ...((inv.status !== 'CANCELLED' && inv.status !== 'DRAFT') ? [{
+                                ...(canCancelInvoice && inv.status !== 'CANCELLED' && inv.status !== 'DRAFT' ? [{
                                     icon: X,
                                     title: 'Anular Documento',
                                     color: 'text-warning hover:bg-warning/10',
@@ -204,6 +222,8 @@ export function BillingPhase({
                 onConfirm={confirmModal.onConfirm}
                 variant={confirmModal.variant}
                 confirmText={confirmModal.confirmText}
+                requireReason={confirmModal.requireReason}
+                reasonLabel="Motivo de la anulación"
             />
         </>
     )

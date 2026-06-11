@@ -55,9 +55,10 @@ export function LogisticsPhase({
         open: boolean,
         title: string,
         description: React.ReactNode,
-        onConfirm: () => Promise<void> | void,
+        onConfirm: (reason?: string) => Promise<void> | void,
         variant?: 'destructive' | 'warning',
-        confirmText?: string
+        confirmText?: string,
+        requireReason?: boolean
     }>({
         open: false,
         title: "",
@@ -65,7 +66,11 @@ export function LogisticsPhase({
         onConfirm: () => { }
     })
 
-    const handleAnnulLogistics = async (id: number, docType: string) => {
+    const canAnnulLogistics = userPermissions.includes(
+        isSale ? 'sales.delete_saledelivery' : 'purchasing.delete_purchasereceipt'
+    )
+
+    const handleAnnulLogistics = (id: number, docType: string) => {
         const label = docType === 'sale_delivery' ? 'Despacho' :
             (docType === 'purchase_receipt' ? 'Recepción' : 'Devolución')
 
@@ -74,13 +79,15 @@ export function LogisticsPhase({
             title: `Anular ${label}`,
             variant: "destructive",
             confirmText: `Anular ${label}`,
-            onConfirm: async () => {
+            requireReason: true,
+            onConfirm: async (reason?: string) => {
                 try {
-                    await annulLogistics.mutateAsync({ id, docType })
+                    await annulLogistics.mutateAsync({ id, docType, reason })
                     setConfirmModal(prev => ({ ...prev, open: false }))
                     onActionSuccess?.()
                 } catch (error: unknown) {
                     showApiError(error, `Error al anular ${label}`)
+                    throw error
                 }
             },
             description: `Esta acción reverterá los movimientos de inventario asociados. ¿Está seguro de anular este ${label.toLowerCase()}?`
@@ -101,7 +108,7 @@ export function LogisticsPhase({
                 docType: doc.docType as string,
                 status: doc.status,
                 actions: [
-                    ...((doc.status !== 'CANCELLED') ? [{
+                    ...(canAnnulLogistics && doc.status !== 'CANCELLED' ? [{
                         icon: Ban,
                         title: 'Anular Devolución',
                         color: 'text-warning hover:bg-warning/10',
@@ -122,7 +129,7 @@ export function LogisticsPhase({
                 docType: (doc.docType as string) || (isSale ? 'sale_delivery' : 'inventory'),
                 status: doc.status as string,
                 actions: [
-                    ...((doc.status !== 'CANCELLED' && invoices.some((inv: Order) => inv.status === 'DRAFT')) ? [{
+                    ...(canAnnulLogistics && doc.status !== 'CANCELLED' && invoices.some((inv: Order) => inv.status === 'DRAFT') ? [{
                         icon: Ban,
                         title: isSale ? 'Anular Despacho' : 'Anular Recepción',
                         color: 'text-warning hover:bg-warning/10',
@@ -233,6 +240,8 @@ export function LogisticsPhase({
                 onConfirm={confirmModal.onConfirm}
                 variant={confirmModal.variant}
                 confirmText={confirmModal.confirmText}
+                requireReason={confirmModal.requireReason}
+                reasonLabel="Motivo de la anulación"
             />
         </>
     )

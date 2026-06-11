@@ -944,6 +944,9 @@ class PurchasingService:
         if receipt.status == PurchaseReceipt.Status.CANCELLED:
             return receipt
 
+        if not reason:
+            raise ValidationError("Debe indicar el motivo de la anulación.")
+
         if receipt.status != PurchaseReceipt.Status.CONFIRMED:
             raise ValidationError("Solo se pueden anular recepciones confirmadas.")
 
@@ -1307,6 +1310,9 @@ class PurchaseOrderService(DocumentService):
 
         if order.status == PurchaseOrder.Status.CANCELLED:
              return order
+
+        if not reason:
+            raise ValidationError("Debe indicar el motivo de la anulación.")
 
         from billing.models import Invoice
         from billing.services import BillingService

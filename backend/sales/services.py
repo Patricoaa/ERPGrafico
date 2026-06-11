@@ -646,6 +646,9 @@ class SalesService:
         if delivery.status == SaleDelivery.Status.CANCELLED:
             return delivery
 
+        if not reason:
+            raise ValidationError("Debe indicar el motivo de la anulación.")
+
         if delivery.status != SaleDelivery.Status.CONFIRMED:
             raise ValidationError("Solo se pueden anular despachos confirmados.")
 
@@ -1067,6 +1070,9 @@ class SaleOrderService(DocumentService):
 
         if order.status == SaleOrder.Status.CANCELLED:
              return order
+
+        if not reason:
+            raise ValidationError("Debe indicar el motivo de la anulación.")
 
         from billing.models import Invoice
         from billing.services import BillingService

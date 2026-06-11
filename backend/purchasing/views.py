@@ -63,6 +63,7 @@ class PurchaseOrderViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
     def cancel_impact(self, request, pk=None):
         """Preview what will happen when cancelling this purchase order."""
         order = self.get_object()
+        action_kind = 'soft_cancel' if order.status == 'DRAFT' else 'full_annul'
         impact = {
             'order_status': order.status,
             'invoices': [
@@ -79,7 +80,8 @@ class PurchaseOrderViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
             ],
             'has_confirmed_receipts': order.receipts.filter(status='CONFIRMED').exists(),
             'has_posted_payments': order.payments.filter(journal_entry__status='POSTED').exists(),
-            'action': 'soft_cancel' if order.status == 'DRAFT' else 'full_annul',
+            'requires_reason': action_kind == 'full_annul',
+            'action': action_kind,
         }
         return Response(impact)
 

@@ -45,9 +45,10 @@ export function ProductionPhase({
         open: boolean,
         title: string,
         description: React.ReactNode,
-        onConfirm: () => Promise<void> | void,
+        onConfirm: (reason?: string) => Promise<void> | void,
         variant?: 'destructive' | 'warning',
-        confirmText?: string
+        confirmText?: string,
+        requireReason?: boolean
     }>({
         open: false,
         title: "",
@@ -68,19 +69,23 @@ export function ProductionPhase({
 
     const invoices = activeDoc.related_documents?.invoices || []
 
-    const handleAnnulWorkOrder = async (id: number) => {
+    const canAnnulWorkOrder = userPermissions.includes('production.delete_workorder')
+
+    const handleAnnulWorkOrder = (id: number) => {
         setConfirmModal({
             open: true,
             title: "Anular Orden de Trabajo",
             variant: "destructive",
             confirmText: "Anular OT",
-            onConfirm: async () => {
+            requireReason: true,
+            onConfirm: async (reason?: string) => {
                 try {
-                    await annulWorkOrder.mutateAsync(id)
+                    await annulWorkOrder.mutateAsync({ id, reason })
                     setConfirmModal(prev => ({ ...prev, open: false }))
                     onActionSuccess?.()
                 } catch (error: unknown) {
                     showApiError(error, "Error al anular OT")
+                    throw error
                 }
             },
             description: "Esta acción reverterá los consumos de materiales y liberará las reservas. ¿Está seguro?"
@@ -103,7 +108,8 @@ export function ProductionPhase({
                     progressValue: ot.production_progress || 0,
                     actions: [
                         // Only show OT annulment if invoice is DRAFT and stage is pre-impresion or earlier
-                        ...((ot.status !== 'CANCELLED' &&
+                        ...((canAnnulWorkOrder &&
+                            ot.status !== 'CANCELLED' &&
                             invoices.some((inv: any) => inv.status === 'DRAFT') &&
                             ['MATERIAL_ASSIGNMENT', 'MATERIAL_APPROVAL', 'PREPRESS'].includes(ot.current_stage as string)) ? [{
                                 icon: Ban,
@@ -147,6 +153,8 @@ export function ProductionPhase({
                 onConfirm={confirmModal.onConfirm}
                 variant={confirmModal.variant}
                 confirmText={confirmModal.confirmText}
+                requireReason={confirmModal.requireReason}
+                reasonLabel="Motivo de la anulación"
             />
         </>
     )

@@ -57,6 +57,7 @@ export interface InvoiceFilters {
 
 export interface AnnulInvoicePayload {
     force: boolean
+    reason?: string
 }
 
 export interface PaymentPayload {

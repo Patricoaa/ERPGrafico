@@ -678,6 +678,9 @@ class TreasuryService:
         if movement.status == TreasuryMovement.MovementStatus.CANCELLED:
              return movement
 
+        if not reason:
+             raise ValidationError("Debe indicar el motivo de la anulación.")
+
         if movement.is_reconciled:
              raise ValidationError("No se puede anular un movimiento conciliado.")
 
