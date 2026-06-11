@@ -1,6 +1,6 @@
 "use client"
 
-import React from "react"
+import React, { useState } from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { ChevronsUpDown } from "lucide-react"
@@ -36,6 +36,9 @@ export function HeaderNavDropdowns({ navigation, iconName }: HeaderNavDropdownsP
     const currentModuleId = segments[0] || 'dashboard'
     const isModuleInRegistry = !!MODULE_REGISTRY[currentModuleId]
 
+    // Track which dropdown is open for exclusive behavior
+    const [openDropdown, setOpenDropdown] = useState<'module' | 'primary' | 'secondary' | 'tertiary' | null>(null)
+
     // Separate config tab from regular tabs
     const regularTabs = (tabs || [])
     const activeTab = (tabs || []).find(t => t.value === activeValue)
@@ -57,7 +60,10 @@ export function HeaderNavDropdowns({ navigation, iconName }: HeaderNavDropdownsP
             {/* ── Module Name (Root) — Module Selector ── */}
             {navigation.moduleName && isModuleInRegistry && (
                 <div className="flex items-center">
-                    <DropdownMenu>
+                    <DropdownMenu
+                        open={openDropdown === 'module'}
+                        onOpenChange={(open) => setOpenDropdown(open ? 'module' : null)}
+                    >
                         <DropdownMenuTrigger
                             className={cn(
                                 "flex items-center gap-1.5 px-2 py-1.5 -ml-2 rounded-md transition-colors",
@@ -137,7 +143,10 @@ export function HeaderNavDropdowns({ navigation, iconName }: HeaderNavDropdownsP
 
             {/* ── Primary Dropdown: View Selector ── */}
             {regularTabs.length > 0 && (
-                <DropdownMenu>
+                <DropdownMenu
+                    open={openDropdown === 'primary'}
+                    onOpenChange={(open) => setOpenDropdown(open ? 'primary' : null)}
+                >
                     <DropdownMenuTrigger
                         className={cn(
                             "flex items-center gap-1.5 px-2 py-1.5 -ml-2 rounded-md transition-colors",
@@ -205,7 +214,10 @@ export function HeaderNavDropdowns({ navigation, iconName }: HeaderNavDropdownsP
                 <>
                     <span className="text-border/60 mx-1.5 text-sm select-none">/</span>
 
-                    <DropdownMenu>
+                    <DropdownMenu
+                        open={openDropdown === 'secondary'}
+                        onOpenChange={(open) => setOpenDropdown(open ? 'secondary' : null)}
+                    >
                         <DropdownMenuTrigger
                             className={cn(
                                 "flex items-center gap-1.5 px-2 py-1.5 rounded-md transition-colors",
@@ -270,7 +282,10 @@ export function HeaderNavDropdowns({ navigation, iconName }: HeaderNavDropdownsP
                 <>
                     <span className="text-border/60 mx-1.5 text-sm select-none">/</span>
 
-                    <DropdownMenu>
+                    <DropdownMenu
+                        open={openDropdown === 'tertiary'}
+                        onOpenChange={(open) => setOpenDropdown(open ? 'tertiary' : null)}
+                    >
                         <DropdownMenuTrigger
                             className={cn(
                                 "flex items-center gap-1.5 px-2 py-1.5 rounded-md transition-colors",
