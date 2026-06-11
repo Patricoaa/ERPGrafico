@@ -2,8 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react"
 import dynamic from "next/dynamic"
-import { useRouter, usePathname } from "next/navigation"
-import { MiniSidebar } from "@/components/layout/MiniSidebar"
+import { usePathname } from "next/navigation"
 import { Toaster } from "@/components/ui/sonner"
 import { cn } from "@/lib/utils"
 import { useHubPanel } from "@/components/providers/HubPanelProvider"
@@ -13,11 +12,8 @@ import { useHeader } from "@/components/providers/HeaderProvider"
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion"
 import { Skeleton } from "@/components/ui/skeleton"
 import { HeaderNavDropdowns, PageHeaderSkeleton, UniversalSearch } from '@/components/shared'
-import { Loader2, PanelLeft } from "lucide-react"
+import { Loader2 } from "lucide-react"
 import { DynamicIcon } from '@/components/shared'
-import { useDeviceContext } from "@/hooks/useDeviceContext"
-import { Button } from "@/components/ui/button"
-import { getModuleDefaultUrl } from "@/lib/module-registry"
 
 // Lazy load: solo se compila al abrir el inbox, no en la carga inicial de cada página
 const TaskInboxSidebar = dynamic(
@@ -26,22 +22,10 @@ const TaskInboxSidebar = dynamic(
 )
 
 function DashboardShellInner({ children }: { children: React.ReactNode }) {
-    const router = useRouter()
     const pathname = usePathname()
     const shouldReduceMotion = useReducedMotion()
 
-    const activeCategory = pathname.split('/')[1] || "dashboard"
     const [isInboxOpen, setIsInboxOpen] = useState(false)
-
-    const { isMediumScreen, isSmallScreen } = useDeviceContext()
-    const isCramped = isMediumScreen || isSmallScreen
-    const [sidebarOpen, setSidebarOpen] = useState(!isCramped)
-
-    const toggleSidebar = useCallback(() => {
-        setSidebarOpen(prev => !prev)
-    }, [])
-
-    const effectiveSidebarWidth = isCramped && !sidebarOpen ? '0rem' : '3.5rem'
 
     const { config } = useHeader()
     const { isHubEffectivelyOpen } = useHubPanel()
@@ -67,35 +51,9 @@ function DashboardShellInner({ children }: { children: React.ReactNode }) {
     }
 
     return (
-        <div className="relative h-screen bg-background overflow-hidden font-sans" style={{ '--sidebar-width': effectiveSidebarWidth } as React.CSSProperties}>
-            {/* Mini Sidebar - Now Floating & Independent */}
-            <MiniSidebar
-                activeCategory={activeCategory}
-                onCategoryChange={(cat: string) => {
-                    const url = getModuleDefaultUrl(cat)
-                    if (url) {
-                        if (isCramped) setSidebarOpen(false)
-                        router.push(url)
-                    }
-                }}
-                collapsed={isCramped ? !sidebarOpen : false}
-            />
-
+        <div className="relative h-screen bg-background overflow-hidden font-sans">
             {/* ── TOP BAR ────────────────────────────────────────────── */}
-            <div className="absolute top-0 left-[var(--sidebar-width)] right-0 h-16 flex items-center bg-background z-30 gap-3 px-4 md:px-6 transition-[left] duration-300 ease-[cubic-bezier(0.16,1,0.3,1)]">
-                {/* Sidebar toggle (visible when cramped) */}
-                {isCramped && (
-                    <Button
-                        variant="ghost"
-                        size="icon-sm"
-                        onClick={toggleSidebar}
-                        className="shrink-0"
-                        aria-label="Toggle sidebar"
-                    >
-                        <PanelLeft className="h-4 w-4" />
-                    </Button>
-                )}
-
+            <div className="absolute top-0 left-0 right-0 h-16 flex items-center bg-background z-30 gap-3 px-4 md:px-6">
                 {/* Left: page title & meta — shrinks to content */}
                 <div className="flex-none flex items-center gap-4 min-w-0 pointer-events-none">
                     <AnimatePresence mode="wait">
@@ -185,10 +143,9 @@ function DashboardShellInner({ children }: { children: React.ReactNode }) {
             </div>
 
             <div
-                className="h-full flex flex-col min-w-0 relative transition-[margin-right,padding-left] duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] pt-[var(--page-padding-top)] pr-[var(--page-gap-right)] pb-[var(--page-gap-bottom)]"
+                className="h-full flex flex-col min-w-0 relative transition-[margin-right] duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] pt-[var(--page-padding-top)] pl-[var(--page-gap-left)] pr-[var(--page-gap-right)] pb-[var(--page-gap-bottom)]"
                 style={{
                     marginRight: `${totalSheetsWidth}px`,
-                    paddingLeft: `calc(${effectiveSidebarWidth} + var(--page-gap-left))`,
                 }}
             >
                 <main
