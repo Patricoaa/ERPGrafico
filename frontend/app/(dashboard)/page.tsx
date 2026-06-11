@@ -43,12 +43,20 @@ export default function DashboardPage() {
     )
   }
 
+  const navigation = {
+    moduleName: "Inicio",
+    moduleHref: "/",
+    tabs: [],
+    activeValue: "dashboard",
+  }
+
   return (
     <PageContainer className="space-y-8">
       <PageHeader 
         title="Dashboard" 
         description={`Bienvenido de nuevo, ${displayName}. Selecciona un módulo para comenzar.`}
         iconName="home"
+        navigation={navigation}
       />
       
       <ProductionMetricsCard />
