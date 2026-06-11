@@ -176,21 +176,19 @@ export function TreasuryAccountDrawer({ open, onOpenChange, accountId, onSuccess
                 defaultSize={formDrawerWidth("medium", !!accountId)}
                 mode={mode}
                 title={
-                    <>
-                        <div className="flex items-center gap-3">
-                            <Landmark className="h-5 w-5 text-muted-foreground" />
-                            <span>{drawerTitle}</span>
-                            {isSystemManaged && (
-                                <Chip icon={Lock}>Gestionada por sistema</Chip>
-                            )}
-                        </div>
-                        {(mode === 'view' || mode === 'edit') && accountId && (
-                            <Button variant="ghost" size="icon" onClick={() => handlePrint()}>
-                                <Printer className="h-4 w-4" />
-                            </Button>
+                    <div className="flex items-center gap-3">
+                        <Landmark className="h-5 w-5 text-muted-foreground" />
+                        <span>{drawerTitle}</span>
+                        {isSystemManaged && (
+                            <Chip icon={Lock}>Gestionada por sistema</Chip>
                         )}
-                    </>
+                    </div>
                 }
+                headerActions={(mode === 'view' || mode === 'edit') && accountId && (
+                    <Button variant="ghost" size="icon" onClick={() => handlePrint()}>
+                        <Printer className="h-4 w-4" />
+                    </Button>
+                )}
                 subtitle={
                     isSystemManaged
                         ? "Esta cuenta es gestionada automáticamente por el proveedor de terminal. No puede modificarse directamente."

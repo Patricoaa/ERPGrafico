@@ -216,13 +216,13 @@ export function PosTerminalDrawer({ open, onOpenChange, terminal, onSuccess, mod
                     <div className="flex items-center gap-3">
                         <MonitorSmartphone className="h-5 w-5 text-muted-foreground" />
                         <span>{drawerTitle}</span>
-                        {terminal?.id && (mode === 'view' || mode === 'edit') && (
-                            <Button variant="ghost" size="icon" onClick={() => handlePrint()}>
-                                <Printer className="h-4 w-4" />
-                            </Button>
-                        )}
                     </div>
                 }
+                headerActions={terminal?.id && (mode === 'view' || mode === 'edit') && (
+                    <Button variant="ghost" size="icon" onClick={() => handlePrint()}>
+                        <Printer className="h-4 w-4" />
+                    </Button>
+                )}
                 subtitle={
                     <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
                         {terminal?.code && (

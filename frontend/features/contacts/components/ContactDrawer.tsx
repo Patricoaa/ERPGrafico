@@ -273,7 +273,8 @@ export default function ContactDrawer({ open, onOpenChange, contact, onSuccess, 
                 open={open}
                 onOpenChange={onOpenChange}
                 icon={User}
-                title={<><span>{drawerTitle}</span>{contact?.id && (mode === 'view' || mode === 'edit') && <Button variant="ghost" size="icon" onClick={() => handlePrint()}><Printer className="h-4 w-4" /></Button>}</>}
+                title={<span>{drawerTitle}</span>}
+                headerActions={contact?.id && (mode === 'view' || mode === 'edit') && <Button variant="ghost" size="icon" onClick={() => handlePrint()}><Printer className="h-4 w-4" /></Button>}
                 subtitle="Ficha Maestra • CRM & Finanzas"
                 defaultSize={formDrawerWidth("master", !!c)}
                 className="h-[90vh]"

@@ -134,7 +134,8 @@ export function BankJournalDrawer({ auditSidebar, onSuccess, initialData, open: 
                 defaultSize={width}
                 mode={mode}
                 icon={WalletCards}
-                title={<><span>{drawerTitle}</span>{(mode === 'view' || mode === 'edit') && (initialData as any)?.id && <Button variant="ghost" size="icon" onClick={() => handlePrint()}><Printer className="h-4 w-4" /></Button>}</>}
+                title={<span>{drawerTitle}</span>}
+                headerActions={(mode === 'view' || mode === 'edit') && (initialData as any)?.id && <Button variant="ghost" size="icon" onClick={() => handlePrint()}><Printer className="h-4 w-4" /></Button>}
                 subtitle={initialData ? `${(initialData as any).code || ""} • ${form.watch("name") || ""}` : "Tesorería • Configuración de Caja o Banco"}
                 footer={isView ? undefined : (
                     <FormFooter

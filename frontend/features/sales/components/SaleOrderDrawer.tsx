@@ -52,7 +52,8 @@ export function SaleOrderDrawer({ id, open, onOpenChange, mode = 'view', orderId
                 side="left"
                 defaultSize="50%"
                 icon={FileText}
-                title={<><span>{order?.number ?? 'Nota de Venta'}</span><Button variant="ghost" size="icon" onClick={() => handlePrint()}><Printer className="h-4 w-4" /></Button></>}
+                title={<span>{order?.number ?? 'Nota de Venta'}</span>}
+                headerActions={<Button variant="ghost" size="icon" onClick={() => handlePrint()}><Printer className="h-4 w-4" /></Button>}
                 subtitle={order?.customer_name}
                 description={`${formatPlainDate(order?.date)} · ${order?.channel_display ?? ''}`}
             >

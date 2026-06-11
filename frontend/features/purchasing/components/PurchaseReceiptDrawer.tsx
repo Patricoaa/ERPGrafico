@@ -67,7 +67,8 @@ export function PurchaseReceiptDrawer({ receiptId, open, onOpenChange }: Purchas
                 side="left"
                 boundary="embedded"
                 defaultSize="50%"
-                title={<><span>{receipt ? `Recepción ${(receipt as any).number}` : "Recepción de Compra"}</span><Button variant="ghost" size="icon" onClick={() => handlePrint()}><Printer className="h-4 w-4" /></Button></>}
+                title={<span>{receipt ? `Recepción ${(receipt as any).number}` : "Recepción de Compra"}</span>}
+                headerActions={<Button variant="ghost" size="icon" onClick={() => handlePrint()}><Printer className="h-4 w-4" /></Button>}
                 subtitle={(receipt as any)?.supplier_name}
                 icon={PackageCheck}
 

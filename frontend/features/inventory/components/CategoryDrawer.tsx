@@ -470,7 +470,8 @@ export function CategoryDrawer({
                 defaultSize={width}
                 mode={mode}
                 icon={LucideIcons.Tag}
-                title={<><span>{drawerTitle}</span>{(mode === 'view' || mode === 'edit') && initialData?.id && <Button variant="ghost" size="icon" onClick={() => handlePrint()}><Printer className="h-4 w-4" /></Button>}</>}
+                title={<span>{drawerTitle}</span>}
+                headerActions={(mode === 'view' || mode === 'edit') && initialData?.id && <Button variant="ghost" size="icon" onClick={() => handlePrint()}><Printer className="h-4 w-4" /></Button>}
                 subtitle={
                     form.watch("name")
                         ? `${form.watch("prefix") ? `${form.watch("prefix")} | ` : ""}${form.watch("name")}`

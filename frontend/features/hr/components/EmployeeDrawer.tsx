@@ -289,7 +289,8 @@ export function EmployeeDrawer({ open, onOpenChange, employee, onSaved, trigger,
                 open={open}
                 onOpenChange={onOpenChange}
                 icon={UserCog}
-                title={<><span>{drawerTitle}</span>{(mode === 'view' || mode === 'edit') && employee?.id && <Button variant="ghost" size="icon" onClick={() => handlePrint()}><Printer className="h-4 w-4" /></Button>}</>}
+                title={<span>{drawerTitle}</span>}
+                headerActions={(mode === 'view' || mode === 'edit') && employee?.id && <Button variant="ghost" size="icon" onClick={() => handlePrint()}><Printer className="h-4 w-4" /></Button>}
                 subtitle={employee ? `Ficha de Personal • ${employee.display_id} • ${employee.contact_detail?.name}` : "Ficha de Personal • Recursos Humanos"}
                 defaultSize={formDrawerWidth("master", !!employee)}
                 className="h-[90vh]"

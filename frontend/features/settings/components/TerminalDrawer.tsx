@@ -256,13 +256,13 @@ export function TerminalDrawer({ open, onOpenChange, terminal, onSuccess, mode: 
                     <div className="flex items-center gap-3">
                         <MonitorSmartphone className="h-5 w-5 text-muted-foreground" />
                         <span>{drawerTitle}</span>
-                        {(mode === 'view' || mode === 'edit') && terminal?.id && (
-                            <Button variant="ghost" size="icon" onClick={() => handlePrint()}>
-                                <Printer className="h-4 w-4" />
-                            </Button>
-                        )}
                     </div>
                 }
+                headerActions={(mode === 'view' || mode === 'edit') && terminal?.id && (
+                    <Button variant="ghost" size="icon" onClick={() => handlePrint()}>
+                        <Printer className="h-4 w-4" />
+                    </Button>
+                )}
                 subtitle={
                     <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
                         {terminal?.code && (

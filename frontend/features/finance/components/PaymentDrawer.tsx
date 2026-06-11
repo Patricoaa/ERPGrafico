@@ -241,7 +241,8 @@ export function PaymentDrawer({
                 defaultSize={formDrawerWidth("medium", !!initialData?.id || !!entityId)}
                 icon={Landmark}
                 contentClassName="p-0"
-                title={<><span>{drawerTitle}</span>{showPrintable && <Button variant="ghost" size="icon" onClick={() => handlePrint()}><Printer className="h-4 w-4" /></Button>}</>}
+                title={<span>{drawerTitle}</span>}
+                headerActions={showPrintable && <Button variant="ghost" size="icon" onClick={() => handlePrint()}><Printer className="h-4 w-4" /></Button>}
                 subtitle={drawerSubtitle}
                 mode={mode}
                 footer={isViewMode ? undefined : (

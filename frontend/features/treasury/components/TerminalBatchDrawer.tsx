@@ -52,7 +52,8 @@ export function TerminalBatchDrawer({ id, open, onOpenChange, batchId }: Termina
         side="left"
         defaultSize="50%"
         icon={Layers}
-        title={<><span>{displayId}</span><Button variant="ghost" size="icon" onClick={() => handlePrint()}><Printer className="h-4 w-4" /></Button></>}
+        title={<span>{displayId}</span>}
+        headerActions={<Button variant="ghost" size="icon" onClick={() => handlePrint()}><Printer className="h-4 w-4" /></Button>}
         subtitle="Lote de Liquidación"
         description={batch?.provider_name ?? batch?.payment_method ?? ''}
 

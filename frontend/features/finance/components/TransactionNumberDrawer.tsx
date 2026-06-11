@@ -104,7 +104,8 @@ export function TransactionNumberDrawer({
                 defaultSize={width}
                 mode={mode}
                 icon={Hash}
-                title={<><span>{drawerTitle}</span>{(mode === 'view' || mode === 'edit') && paymentId && <Button variant="ghost" size="icon" onClick={() => handlePrint()}><Printer className="h-4 w-4" /></Button>}</>}
+                title={<span>{drawerTitle}</span>}
+                headerActions={(mode === 'view' || mode === 'edit') && paymentId && <Button variant="ghost" size="icon" onClick={() => handlePrint()}><Printer className="h-4 w-4" /></Button>}
                 subtitle="Ingrese el número de comprobante o transacción bancaria."
                 footer={isView ? undefined : (
                     <FormFooter

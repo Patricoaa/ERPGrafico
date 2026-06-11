@@ -56,7 +56,8 @@ export function SaleDeliveryDrawer({ id, open, onOpenChange, saleOrderId, delive
                 side="left"
                 defaultSize="50%"
                 icon={Truck}
-                title={<><span>{deliveryNumber}</span><Button variant="ghost" size="icon" onClick={() => handlePrint()}><Printer className="h-4 w-4" /></Button></>}
+                title={<span>{deliveryNumber}</span>}
+                headerActions={<Button variant="ghost" size="icon" onClick={() => handlePrint()}><Printer className="h-4 w-4" /></Button>}
                 subtitle={partnerName}
                 description={`Despacho · ${formatPlainDate(delivery?.date)}`}
 

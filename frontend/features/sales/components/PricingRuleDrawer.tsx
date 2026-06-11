@@ -453,7 +453,8 @@ export function PricingRuleDrawer({ auditSidebar, initialData, onSuccess, open, 
                 side="left"
                 defaultSize={formDrawerWidth("complex", !!initialData)}
                 mode={mode}
-                title={<><span>{drawerTitle}</span>{(mode === 'view' || mode === 'edit') && initialData?.id && <Button variant="ghost" size="icon" onClick={() => handlePrint()}><Printer className="h-4 w-4" /></Button>}</>}
+                title={<span>{drawerTitle}</span>}
+                headerActions={(mode === 'view' || mode === 'edit') && initialData?.id && <Button variant="ghost" size="icon" onClick={() => handlePrint()}><Printer className="h-4 w-4" /></Button>}
                 subtitle={
                     <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
                         {initialData?.rule_type && (
