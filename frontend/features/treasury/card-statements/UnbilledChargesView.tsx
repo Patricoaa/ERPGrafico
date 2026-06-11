@@ -3,7 +3,7 @@
 import { useMemo, useState } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
-import { Plus, Receipt, CreditCard, ChevronDown, Calendar } from 'lucide-react'
+import { Plus, Receipt, CreditCard, ChevronDown, Calendar, BarChart3 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
     DropdownMenu,
@@ -19,9 +19,8 @@ import {
     DataCell,
     MoneyDisplay,
     EntityCard,
-    StatCard,
     StatusBadge,
-    Skeleton,
+    EntityStatsBottomSheet,
 } from '@/components/shared'
 import { treasuryApi } from '../api/treasuryApi'
 import type { PendingChargeRow, UpcomingInstallment, UnbilledItemRow } from '../types'
@@ -61,6 +60,7 @@ export function UnbilledChargesView({
     const [showAddCharge, setShowAddCharge] = useState(false)
     const [showBillCharges, setShowBillCharges] = useState(false)
     const [filterMode, setFilterMode] = useState<'month' | 'all'>('month')
+    const [statsOpen, setStatsOpen] = useState(false)
     const queryClient = useQueryClient()
     const { openHub } = useHubPanel()
 
@@ -237,50 +237,63 @@ export function UnbilledChargesView({
         </div>
     )
 
-    if (isLoading) {
-        return (
-            <div className="flex flex-col flex-1 min-h-0 space-y-4">
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                    {[1, 2, 3, 4].map((i) => (
-                        <Skeleton key={i} className="h-24" />
-                    ))}
-                </div>
-                <Skeleton className="h-64" />
-            </div>
-        )
-    }
+    const distributionByType = useMemo(() => {
+        const map = new Map<string, number>()
+        charges.forEach((c) => {
+            const key = c.charge_type_display || c.charge_type || 'Otros'
+            map.set(key, (map.get(key) || 0) + parseFloat(String(c.amount)))
+        })
+        return Array.from(map.entries()).map(([label, amount]) => ({ label, amount }))
+    }, [charges])
+
+    const timelineEvents = useMemo(() => upcomingInstallments.map((inst) => ({
+        date: new Date(inst.due_date).toLocaleDateString('es-CL'),
+        label: `Cuota ${inst.number}/${inst.total_installments} — ${inst.purchase_order_display_id || inst.group_display_id || ''}`,
+        description: <MoneyDisplay amount={inst.principal_amount} currency={currency} inline />,
+    })), [upcomingInstallments, currency])
+
+    const statsCards = useMemo(() => summary ? [
+        { label: 'Total', value: <MoneyDisplay amount={summary.total} currency={currency} inline />, icon: CreditCard, accent: 'primary' as const },
+        { label: 'Cuotas', value: <MoneyDisplay amount={summary.installments} currency={currency} inline />, icon: CreditCard, accent: 'info' as const },
+        { label: 'Cargos Financieros', value: <MoneyDisplay amount={summary.charges} currency={currency} inline />, icon: CreditCard, accent: 'warning' as const },
+        { label: 'Cantidad', value: summary.count.toString(), icon: CreditCard, accent: 'muted' as const },
+    ] : [], [summary, currency])
+
+    const statsSections = summary ? [
+        {
+            type: 'cards' as const,
+            title: 'Resumen',
+            props: { cards: statsCards },
+        },
+        {
+            type: 'chart' as const,
+            title: 'Distribución por Tipo',
+            props: {
+                children: distributionByType.length > 0 ? (
+                    <div className="space-y-2">
+                        {distributionByType.map((d, i) => (
+                            <div key={i} className="flex items-center justify-between">
+                                <span className="text-xs font-medium text-muted-foreground truncate mr-2">{d.label}</span>
+                                <span className="text-xs font-bold text-foreground shrink-0">
+                                    <MoneyDisplay amount={d.amount} currency={currency} inline />
+                                </span>
+                            </div>
+                        ))}
+                    </div>
+                ) : (
+                    <p className="text-xs text-muted-foreground text-center py-2 italic">Sin cargos</p>
+                ),
+            },
+        },
+        {
+            type: 'timeline' as const,
+            title: 'Próximas Cuotas',
+            props: { events: timelineEvents },
+        },
+    ] : []
 
     return (
         <div className="flex flex-col flex-1 min-h-0 space-y-4">
-            {summary && (
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                    <StatCard
-                        label="Total"
-                        value={<MoneyDisplay amount={summary.total} currency={currency} inline />}
-                        icon={CreditCard}
-                        accent="primary"
-                    />
-                    <StatCard
-                        label="Cuotas"
-                        value={<MoneyDisplay amount={summary.installments} currency={currency} inline />}
-                        icon={CreditCard}
-                        accent="info"
-                    />
-                    <StatCard
-                        label="Cargos Financieros"
-                        value={<MoneyDisplay amount={summary.charges} currency={currency} inline />}
-                        icon={CreditCard}
-                        accent="warning"
-                    />
-                    <StatCard
-                        label="Cantidad"
-                        value={summary.count.toString()}
-                        icon={CreditCard}
-                        accent="muted"
-                    />
-                </div>
-            )}
-
             <div className="flex-1 min-h-0">
                 <DataTableView
                     entityLabel="treasury.unbilled-charge"
@@ -288,6 +301,11 @@ export function UnbilledChargesView({
                     data={mergedRows}
                     isLoading={isLoading}
                     variant="embedded"
+                    leftAction={
+                        <Button variant="ghost" size="icon" className="h-10 w-10" onClick={() => setStatsOpen(true)}>
+                            <BarChart3 className="h-4 w-4" />
+                        </Button>
+                    }
                     rightButtonGroupAction={filterDropdown}
                     createAction={actionButtons}
                     emptyState={{
@@ -348,6 +366,16 @@ export function UnbilledChargesView({
                     currency={currency}
                     onSuccess={handleBillChargesSuccess}
                     onCancel={() => setShowBillCharges(false)}
+                />
+            )}
+
+            {summary && (
+                <EntityStatsBottomSheet
+                    open={statsOpen}
+                    onOpenChange={setStatsOpen}
+                    title={cardAccountName}
+                    description="Cargos no facturados"
+                    sections={statsSections}
                 />
             )}
         </div>

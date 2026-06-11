@@ -2,9 +2,9 @@
 
 import { usePathname } from 'next/navigation'
 import { useQuery } from '@tanstack/react-query'
-import { Landmark, Banknote, CreditCard, CheckSquare, Calendar, AlertTriangle } from 'lucide-react'
+import { Calendar, AlertTriangle } from 'lucide-react'
 import {
-    StatCard, Skeleton, EmptyState, StatusBadge, MoneyDisplay,
+    Skeleton, EmptyState, StatusBadge, MoneyDisplay,
 } from '@/components/shared'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
@@ -97,44 +97,6 @@ export function BankCenterView({ bankId }: { bankId: number }) {
             {activeTab === 'overview' && (
                 <div className="overflow-y-auto custom-scrollbar flex-1">
                     <div className="space-y-6">
-                    <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4">
-                        <StatCard
-                            label="Cuentas"
-                            value={summary.total_accounts.toString()}
-                            icon={Landmark}
-                            accent="primary"
-                        />
-                        <StatCard
-                            label="Deuda Tarjeta"
-                            value={<MoneyDisplay amount={summary.card_debt} inline />}
-                            icon={CreditCard}
-                            accent="warning"
-                        />
-                        <StatCard
-                            label="Cheques en Cartera"
-                            value={<MoneyDisplay amount={summary.portfolio_checks} inline />}
-                            icon={CheckSquare}
-                            accent="info"
-                        />
-                        <StatCard
-                            label="Cheques Propios"
-                            value={<MoneyDisplay amount={summary.issued_checks} inline />}
-                            icon={CheckSquare}
-                            accent="destructive"
-                        />
-                        <StatCard
-                            label="Préstamos Activos"
-                            value={summary.active_loan_count.toString()}
-                            icon={Banknote}
-                            accent="primary"
-                        />
-                        <StatCard
-                            label="Deuda Préstamos"
-                            value={<MoneyDisplay amount={summary.total_loan_debt} inline />}
-                            icon={Banknote}
-                            accent="warning"
-                        />
-                    </div>
 
                     <Card>
                         <CardHeader className="pb-3">
