@@ -1083,11 +1083,14 @@ class BillingService:
 
     @staticmethod
     @transaction.atomic
-    def cancel_invoice(invoice: Invoice):
+    def cancel_invoice(invoice: Invoice, user=None, reason: str = ''):
         """
         Cancels a DRAFT invoice by cancelling its payments, deleting its draft JE,
         and marking it as CANCELLED. Never hard-deletes fiscal records.
         """
+        from core.services.document import lock_document
+        lock_document(invoice)
+
         if invoice.status == Invoice.Status.CANCELLED:
             return invoice
 
@@ -1096,32 +1099,43 @@ class BillingService:
 
         from treasury.services import TreasuryService
         from treasury.models import TreasuryMovement
-        
+
         # 1. Cancel associated payments
         for movement in invoice.payments.all():
             if movement.status != TreasuryMovement.MovementStatus.CANCELLED:
-                TreasuryService.cancel_movement(movement)
-        
+                TreasuryService.cancel_movement(movement, user=user, reason=reason)
+
         # 2. Delete invoice's own draft Journal Entry
         if invoice.journal_entry:
+            from tax.services import validate_period_open
+            validate_period_open(invoice.journal_entry.date, action='cancelar la factura')
             invoice.journal_entry.delete()
-        
+
         # 3. Delete reconciliation journal entries (RECO-...)
         JournalEntry.objects.filter(reference=f"RECO-{invoice.id}").delete()
-        
+
         # 4. Mark as CANCELLED
         invoice.status = Invoice.Status.CANCELLED
         invoice.save()
+
+        from workflow.services import WorkflowService
+        WorkflowService.log_transition(invoice, 'cancel', user=user, reason=reason)
         return invoice
 
     @staticmethod
     @transaction.atomic
-    def annul_invoice(invoice: Invoice, force: bool = False):
+    def annul_invoice(invoice: Invoice, force: bool = False, user=None, reason: str = ''):
         """
         Annuls a POSTED invoice with strict business rule validations.
         Reverses the accounting entry and marks as CANCELLED.
         If force is True, also annuls associated payments.
         """
+        from core.services.document import lock_document
+        lock_document(invoice)
+
+        if invoice.status == Invoice.Status.CANCELLED:
+             return invoice
+
         if invoice.status not in [Invoice.Status.POSTED, Invoice.Status.PAID]:
              raise ValidationError("Solo se pueden anular facturas publicadas o pagadas.")
 
@@ -1168,6 +1182,7 @@ class BillingService:
                 )
         
         # VALIDATION 4: Pagos registrados
+        from treasury.services import TreasuryService
         posted_payments = invoice.payments.filter(journal_entry__status='POSTED')
 
         if posted_payments.exists():
@@ -1180,25 +1195,26 @@ class BillingService:
                      "   2. Registrar una devolución de pago\n"
                      "   3. Usar una Nota de Crédito para ajustar la factura"
                  )
-             
-             # Annul payments in cascade
+
              # Annul payments in cascade
              for movement in posted_payments:
-                 TreasuryService.annul_movement(movement)
+                 TreasuryService.annul_movement(movement, user=user, reason=reason)
 
         # 1. Reverse Accounting Entry
         if invoice.journal_entry:
+            from tax.services import validate_period_open
+            from django.utils import timezone
+            validate_period_open(timezone.now().date(), action='anular la factura')
             JournalEntryService.reverse_entry(invoice.journal_entry, description=f"Anulación Factura {invoice.number}")
-        
-        # 2. Handle associated payments (already handled in validation)
-        from treasury.services import TreasuryService
 
-        # 3. Update Status
+        # 2. Update Status
         invoice.status = Invoice.Status.CANCELLED
         invoice.save()
 
-        # 4. Update Order Status
+        # 3. Update Order Status
         if invoice.source_order:
             invoice.source_order.revert_after_invoice_cancellation()
-        
+
+        from workflow.services import WorkflowService
+        WorkflowService.log_transition(invoice, 'annul', user=user, reason=reason)
         return invoice

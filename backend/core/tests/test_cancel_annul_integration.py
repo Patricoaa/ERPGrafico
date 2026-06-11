@@ -19,10 +19,11 @@ from billing.models import Invoice
 from billing.services import BillingService
 from treasury.models import TreasuryMovement, TreasuryAccount
 from treasury.services import TreasuryService
-from accounting.models import Account, AccountType, JournalEntry
+from accounting.models import Account, AccountType, JournalEntry, JournalItem
 from contacts.models import Contact
 from inventory.models import Warehouse
 from production.models import WorkOrder
+from workflow.models import Transition
 
 User = get_user_model()
 
@@ -107,6 +108,20 @@ def _delivery(env, order, **overrides):
     )
     kwargs.update(overrides)
     return SaleDelivery.objects.create(**kwargs)
+
+
+def _posted_je(env, suffix='001'):
+    """Posted JE with one balanced debit/credit pair (reverse_entry requires items)."""
+    income_acc, _created = Account.objects.get_or_create(
+        code='4.1.01.001', defaults=dict(name='Ventas Test', account_type=AccountType.INCOME),
+    )
+    asset_acc = Account.objects.get(code='1.1.01.001')
+    je = JournalEntry.objects.create(
+        description=f'JE integración {suffix}', status=JournalEntry.State.POSTED,
+    )
+    JournalItem.objects.create(entry=je, account=asset_acc, debit=Decimal('100'), credit=0)
+    JournalItem.objects.create(entry=je, account=income_acc, debit=0, credit=Decimal('100'))
+    return je
 
 
 def _receipt(env, order, **overrides):
@@ -420,3 +435,69 @@ class TestPRACancelIntegrity:
         _invoice(env, sale_order=order, status=Invoice.Status.CANCELLED, journal_entry=je)
         with pytest.raises(ValidationError, match='pista de auditoría'):
             SalesService.validate_purge(order)
+
+
+class TestPRBAuditAndSemantics:
+    """PR B: workflow.Transition audit trail, treasury cancel/annul split, period guard."""
+
+    @pytest.mark.django_db
+    def test_030_cancel_logs_transition_with_user_and_reason(self, env):
+        """Cancel logs a Transition for the order AND its cascaded children."""
+        order = _sale_order(env)
+        inv = _invoice(env, sale_order=order)
+        SalesService.cancel_sale_order(order, user=env['user'], reason='orden duplicada')
+
+        t = Transition.objects.get(entity_type='sales.saleorder', entity_id=order.id)
+        assert t.transition == 'cancel'
+        assert t.user == env['user']
+        assert t.reason == 'orden duplicada'
+
+        ti = Transition.objects.get(entity_type='billing.invoice', entity_id=inv.id)
+        assert ti.transition == 'cancel'
+        assert ti.reason == 'orden duplicada'
+
+    @pytest.mark.django_db
+    def test_031_cancel_movement_blocked_when_je_posted(self, env):
+        """cancel on a movement whose JE is POSTED → redirect to annul."""
+        je = _posted_je(env)
+        mov = _movement(env, journal_entry=je)
+        with pytest.raises(ValidationError, match='Anular'):
+            TreasuryService.cancel_movement(mov)
+
+    @pytest.mark.django_db
+    def test_032_annul_movement_reverses_posted_je(self, env):
+        """annul reverses the POSTED JE (linked via reversal_of) and logs 'annul'."""
+        je = _posted_je(env)
+        mov = _movement(
+            env, journal_entry=je, status=TreasuryMovement.MovementStatus.POSTED,
+        )
+        result = TreasuryService.annul_movement(mov, user=env['user'], reason='monto errado')
+        result.refresh_from_db()
+        assert result.status == TreasuryMovement.MovementStatus.CANCELLED
+        assert JournalEntry.objects.filter(reversal_of=je).exists()
+
+        t = Transition.objects.get(entity_type='treasury.treasurymovement', entity_id=mov.id)
+        assert t.transition == 'annul'
+        assert t.reason == 'monto errado'
+
+    @pytest.mark.django_db
+    def test_033_annul_blocked_when_period_closed(self, env, monkeypatch):
+        """Reversal date in a closed tax period → annul blocked."""
+        from tax.services import TaxPeriodService
+        monkeypatch.setattr(TaxPeriodService, 'is_period_closed', staticmethod(lambda d: True))
+        je = _posted_je(env, suffix='033')
+        mov = _movement(
+            env, journal_entry=je, status=TreasuryMovement.MovementStatus.POSTED,
+        )
+        with pytest.raises(ValidationError, match='cerrado'):
+            TreasuryService.annul_movement(mov)
+
+    @pytest.mark.django_db
+    def test_034_annul_order_logs_annul_transition(self, env):
+        """Full annul of a CONFIRMED order logs transition='annul' with reason."""
+        order = _sale_order(env, status=SaleOrder.Status.CONFIRMED)
+        svc = SaleOrderService()
+        svc.cancel(order, user=env['user'], reason='cliente desistió')
+        t = Transition.objects.get(entity_type='sales.saleorder', entity_id=order.id)
+        assert t.transition == 'annul'
+        assert t.reason == 'cliente desistió'

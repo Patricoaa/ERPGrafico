@@ -307,8 +307,9 @@ class SaleOrderViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
     def cancel(self, request, pk=None):
         """Cancel a sale order (soft if DRAFT, full annul if CONFIRMED)."""
         order = self.get_object()
+        reason = request.data.get('reason', '')
         try:
-            SalesService.cancel_sale_order(order)
+            order = SalesService.cancel_sale_order(order, user=request.user, reason=reason)
             return Response(SaleOrderSerializer(order).data)
         except ValidationError as e:
             return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
@@ -653,8 +654,9 @@ class SaleDeliveryViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
     @action(detail=True, methods=['post'])
     def annul(self, request, pk=None):
         delivery = self.get_object()
+        reason = request.data.get('reason', '')
         try:
-            SalesService.annul_delivery(delivery)
+            delivery = SalesService.annul_delivery(delivery, user=request.user, reason=reason)
             return Response(SaleDeliverySerializer(delivery).data)
         except ValidationError as e:
             return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)

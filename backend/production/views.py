@@ -233,7 +233,7 @@ class WorkOrderViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
         """Annul an OT and reverse its effects"""
         work_order = self.get_object()
         try:
-            notes = request.data.get('notes', '')
+            notes = request.data.get('notes', '') or request.data.get('reason', '')
             WorkOrderService.annul_work_order(
                 work_order=work_order,
                 user=request.user,

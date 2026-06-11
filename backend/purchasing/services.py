@@ -1202,11 +1202,14 @@ class PurchasingService:
 
     @staticmethod
     @transaction.atomic
-    def cancel_purchase_order(order: PurchaseOrder):
+    def cancel_purchase_order(order: PurchaseOrder, user=None, reason: str = ''):
         """
         Cancels a DRAFT purchase order by cancelling children and marking it as CANCELLED.
         For CONFIRMED orders with confirmed children, delegates to full annul logic.
         """
+        from core.services.document import lock_document
+        lock_document(order)
+
         if order.status == PurchaseOrder.Status.CANCELLED:
             return order
 
@@ -1240,25 +1243,31 @@ class PurchasingService:
             # Soft cancel: all children are DRAFT → just mark CANCELLED, no reversals
             for invoice in order.invoices.all():
                 if invoice.status != 'CANCELLED':
-                     BillingService.cancel_invoice(invoice)
-            
+                     BillingService.cancel_invoice(invoice, user=user, reason=reason)
+
             for movement in order.payments.all():
                 if movement.status != TreasuryMovement.MovementStatus.CANCELLED:
-                    TreasuryService.cancel_movement(movement)
+                    TreasuryService.cancel_movement(movement, user=user, reason=reason)
 
             for receipt in order.receipts.all():
                 if receipt.status != PurchaseReceipt.Status.CANCELLED:
-                     PurchasingService.cancel_receipt(receipt)
+                     PurchasingService.cancel_receipt(receipt, user=user, reason=reason)
 
             if order.journal_entry:
+                from tax.services import validate_period_open
+                validate_period_open(order.journal_entry.date, action='cancelar la orden')
                 order.journal_entry.delete()
+
+            order.status = PurchaseOrder.Status.CANCELLED
+            order.save()
+
+            from workflow.services import WorkflowService
+            WorkflowService.log_transition(order, 'cancel', user=user, reason=reason)
         else:
             # CONFIRMED or other: delegate to DocumentService.cancel (full annul)
             from core.services.document import DocumentRegistry
-            DocumentRegistry.for_instance(order).cancel(order, user=None)
+            DocumentRegistry.for_instance(order).cancel(order, user=user, reason=reason)
 
-        order.status = PurchaseOrder.Status.CANCELLED
-        order.save()
         return order
 
 from core.services.document import DocumentService, DocumentRegistry
@@ -1292,7 +1301,10 @@ class PurchaseOrderService(DocumentService):
         """
         order = document
         force = kwargs.get('force', False)
-        
+
+        from core.services.document import lock_document
+        lock_document(order)
+
         if order.status == PurchaseOrder.Status.CANCELLED:
              return order
 
@@ -1306,30 +1318,34 @@ class PurchaseOrderService(DocumentService):
             if invoice.status == Invoice.Status.CANCELLED:
                 continue
             if invoice.status == Invoice.Status.DRAFT:
-                BillingService.cancel_invoice(invoice)
+                BillingService.cancel_invoice(invoice, user=user, reason=reason)
             else:
-                BillingService.annul_invoice(invoice, force=force)
-        
+                BillingService.annul_invoice(invoice, force=force, user=user, reason=reason)
+
         # 2. Handle Receipts — cancel if DRAFT, annul if CONFIRMED
         for receipt in order.receipts.all():
             if receipt.status == PurchaseReceipt.Status.CANCELLED:
                 continue
             if receipt.status == PurchaseReceipt.Status.DRAFT:
-                PurchasingService.cancel_receipt(receipt)
+                PurchasingService.cancel_receipt(receipt, user=user, reason=reason)
             else:
-                PurchasingService.annul_receipt(receipt)
-        
-        # 3. Handle Payments — cancel if DRAFT, annul if POSTED
+                PurchasingService.annul_receipt(receipt, user=user, reason=reason)
+
+        # 3. Handle Payments — cancel if DRAFT (sin JE POSTED), annul if POSTED
         for movement in order.payments.all():
             if movement.status == TreasuryMovement.MovementStatus.CANCELLED:
                 continue
-            if movement.status == TreasuryMovement.MovementStatus.DRAFT:
-                TreasuryService.cancel_movement(movement)
+            je_posted = movement.journal_entry and movement.journal_entry.status == 'POSTED'
+            if movement.status == TreasuryMovement.MovementStatus.DRAFT and not je_posted:
+                TreasuryService.cancel_movement(movement, user=user, reason=reason)
             else:
-                TreasuryService.annul_movement(movement)
+                TreasuryService.annul_movement(movement, user=user, reason=reason)
 
         order.status = PurchaseOrder.Status.CANCELLED
         if reason:
             order.notes = (order.notes or '') + f"\nAnulado: {reason}"
         order.save()
+
+        from workflow.services import WorkflowService
+        WorkflowService.log_transition(order, 'annul', user=user, reason=reason)
         return order

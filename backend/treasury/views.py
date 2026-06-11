@@ -734,8 +734,9 @@ class TreasuryMovementViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
     @action(detail=True, methods=['post'])
     def cancel(self, request, pk=None):
         movement = self.get_object()
+        reason = request.data.get('reason', '')
         try:
-            TreasuryService.cancel_movement(movement)
+            movement = TreasuryService.cancel_movement(movement, user=request.user, reason=reason)
             return Response(TreasuryMovementSerializer(movement).data)
         except ValidationError as e:
             return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
@@ -760,10 +761,9 @@ class TreasuryMovementViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
     @action(detail=True, methods=['post'])
     def annul(self, request, pk=None):
         movement = self.get_object()
+        reason = request.data.get('reason', '')
         try:
-            TreasuryService.annul_movement(movement)
-            # Since annul_movement deletes the object (in current implementation), we can't return it serialized.
-            # Or we return what we had.
+            movement = TreasuryService.annul_movement(movement, user=request.user, reason=reason)
             return Response(TreasuryMovementSerializer(movement).data)
         except ValidationError as e:
             return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)

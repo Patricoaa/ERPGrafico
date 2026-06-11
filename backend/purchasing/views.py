@@ -87,8 +87,9 @@ class PurchaseOrderViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
     def cancel(self, request, pk=None):
         """Cancel a purchase order (soft if DRAFT, full annul if CONFIRMED)."""
         order = self.get_object()
+        reason = request.data.get('reason', '')
         try:
-            PurchasingService.cancel_purchase_order(order)
+            order = PurchasingService.cancel_purchase_order(order, user=request.user, reason=reason)
             return Response(PurchaseOrderSerializer(order).data)
         except ValidationError as e:
             return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
@@ -340,8 +341,9 @@ class PurchaseReceiptViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
     @action(detail=True, methods=['post'])
     def annul(self, request, pk=None):
         receipt = self.get_object()
+        reason = request.data.get('reason', '')
         try:
-            PurchasingService.annul_receipt(receipt)
+            receipt = PurchasingService.annul_receipt(receipt, user=request.user, reason=reason)
             return Response(PurchaseReceiptSerializer(receipt).data)
         except ValidationError as e:
             return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
