@@ -502,13 +502,13 @@ class UoMService:
             # Base + allowed_sale_uoms (restrictivo)
             allowed_ids = [product.uom.id]
             allowed_ids.extend(product.allowed_sale_uoms.values_list('id', flat=True))
-            return UoM.objects.filter(id__in=allowed_ids, active=True)
+            return UoM.objects.filter(id__in=allowed_ids, is_active=True)
         
         elif context in ['purchase', 'bom']:
             # Toda la categoría (flexible)
             return UoM.objects.filter(
                 category=product.uom.category,
-                active=True
+                is_active=True
             ).order_by('ratio')
         
         else:
@@ -545,7 +545,7 @@ class UoMService:
         smaller_uoms = UoM.objects.filter(
             category=base_uom.category,
             ratio__lt=base_uom.ratio,
-            active=True
+            is_active=True
         ).order_by('-ratio')  # De mayor a menor (más cercano a base primero)
         
         for smaller_uom in smaller_uoms:

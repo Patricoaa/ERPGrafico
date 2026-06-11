@@ -45,6 +45,7 @@ class Account(TimeStampedModel):
     account_type = models.CharField(_("Tipo"), max_length=20, choices=AccountType.choices)
     parent = models.ForeignKey('self', on_delete=models.CASCADE, null=True, blank=True, related_name='children', verbose_name=_("Cuenta Padre"))
     is_reconcilable = models.BooleanField(_("Conciliable"), default=False)
+    is_active = models.BooleanField(_("Activo"), default=True, db_index=True, help_text=_("Desactivar para archivar la cuenta; los mayores históricos siguen visibles."))
     history = HistoricalRecords()
     # NOTE: created_at / updated_at heredados de TimeStampedModel (T-14).
 

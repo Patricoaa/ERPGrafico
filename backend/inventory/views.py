@@ -21,7 +21,7 @@ from decimal import Decimal
 from core.mixins import BulkImportMixin, AuditHistoryMixin as AuditHistory
 from core.api.pagination import StandardResultsSetPagination
 
-from .filters import ProductFilter, StockMoveFilter
+from .filters import ProductFilter, StockMoveFilter, UoMFilter
 
 class ProductViewSet(BulkImportMixin, AuditHistory, viewsets.ModelViewSet):
     queryset = Product.objects.all()
@@ -42,7 +42,7 @@ class ProductViewSet(BulkImportMixin, AuditHistory, viewsets.ModelViewSet):
         if len(q) < 2:
             return Response([])
         names = (
-            Product.objects.filter(active=True, name__icontains=q)
+            Product.objects.filter(is_active=True, name__icontains=q)
             .values_list('name', flat=True)
             .distinct()
             .order_by('name')[:10]
@@ -67,10 +67,10 @@ class ProductViewSet(BulkImportMixin, AuditHistory, viewsets.ModelViewSet):
 
     def partial_update(self, request, *args, **kwargs):
         instance = self.get_object()
-        active_val = request.data.get('active')
-        
-        # If we are archiving (active: True -> False)
-        if active_val is False and instance.active is True:
+        active_val = request.data.get('is_active', request.data.get('active'))
+
+        # If we are archiving (is_active: True -> False)
+        if active_val is False and instance.is_active is True:
             from .services import ProductService
             restrictions = ProductService.check_archiving_restrictions(instance)
             if restrictions:
@@ -382,7 +382,7 @@ class ProductViewSet(BulkImportMixin, AuditHistory, viewsets.ModelViewSet):
                 {"error": "Este producto no es un template de variantes."},
                 status=status.HTTP_400_BAD_REQUEST,
             )
-        updated = template.variants.filter(active=True).update(
+        updated = template.variants.filter(is_active=True).update(
             price_inheritance_mode=Product.PriceInheritance.INHERIT,
             price_surcharge=None,
         )
@@ -413,7 +413,7 @@ class ProductViewSet(BulkImportMixin, AuditHistory, viewsets.ModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        variants_qs = template.variants.filter(active=True)
+        variants_qs = template.variants.filter(is_active=True)
         if variant_ids:
             variants_qs = variants_qs.filter(id__in=variant_ids)
 
@@ -473,7 +473,7 @@ class ProductViewSet(BulkImportMixin, AuditHistory, viewsets.ModelViewSet):
             )
 
         from decimal import Decimal
-        variants_qs = template.variants.filter(active=True)
+        variants_qs = template.variants.filter(is_active=True)
         if variant_ids:
             variants_qs = variants_qs.filter(id__in=variant_ids)
 
@@ -486,7 +486,7 @@ class ProductViewSet(BulkImportMixin, AuditHistory, viewsets.ModelViewSet):
     @action(detail=True, methods=['get'])
     def variants(self, request, pk=None):
         template = self.get_object()
-        variants = template.variants.filter(active=True)
+        variants = template.variants.filter(is_active=True)
         serializer = ProductSimpleSerializer(variants, many=True, context={'request': request})
         return Response(serializer.data)
 
@@ -657,7 +657,7 @@ class UoMViewSet(viewsets.ModelViewSet, AuditHistory):
     queryset = UoM.objects.all()
     serializer_class = UoMSerializer
     filter_backends = [DjangoFilterBackend, filters.SearchFilter]
-    filterset_fields = ['category', 'active']
+    filterset_class = UoMFilter
     search_fields = ['name', 'abbreviation']
 
     @action(detail=False, methods=['get'])
@@ -802,7 +802,7 @@ class SubscriptionViewSet(viewsets.ModelViewSet):
         """
         Only show subscriptions for products that are currently active (not archived).
         """
-        return super().get_queryset().filter(product__active=True)
+        return super().get_queryset().filter(product__is_active=True)
 
     @action(detail=True, methods=['post'])
     def pause(self, request, pk=None):
@@ -826,5 +826,5 @@ class ProductUoMPriceViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         return ProductUoMPrice.objects.select_related('uom').filter(
-            product__active=True
+            product__is_active=True
         )

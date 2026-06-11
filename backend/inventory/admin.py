@@ -17,5 +17,5 @@ class UoMCategoryAdmin(admin.ModelAdmin):
 
 @admin.register(UoM)
 class UoMAdmin(admin.ModelAdmin):
-    list_display = ('name', 'category', 'uom_type', 'ratio', 'active')
-    list_filter = ('category', 'uom_type', 'active')
+    list_display = ('name', 'category', 'uom_type', 'ratio', 'is_active')
+    list_filter = ('category', 'uom_type', 'is_active')

@@ -40,7 +40,7 @@ def list_products(*, user, params: dict) -> QuerySet:
         "allowed_sale_uoms",
         "product_custom_fields",
         "attachments",
-        Prefetch("variants", queryset=Product.objects.filter(active=True).select_related("uom").prefetch_related("attribute_values", "attribute_values__attribute"))
+        Prefetch("variants", queryset=Product.objects.filter(is_active=True).select_related("uom").prefetch_related("attribute_values", "attribute_values__attribute"))
     ).annotate(
         annotated_current_stock=Sum("stock_moves__quantity"),
         variants_count=Count("variants"),
@@ -57,13 +57,13 @@ def list_products(*, user, params: dict) -> QuerySet:
             is_favorite=Value(False, output_field=BooleanField())
         )
 
-    active_param = params.get("active")
+    active_param = params.get("active", params.get("is_active"))
     if active_param == "all":
         pass
     elif active_param == "false":
-        queryset = queryset.filter(active=False)
+        queryset = queryset.filter(is_active=False)
     else:
-        queryset = queryset.filter(active=True)
+        queryset = queryset.filter(is_active=True)
 
     # Variant visibility
     if "parent_template__isnull" not in params and "parent_template" not in params:
@@ -138,7 +138,7 @@ def get_product_base_queryset(*, user) -> QuerySet:
         "allowed_sale_uoms",
         "product_custom_fields",
         "attachments",
-        Prefetch("variants", queryset=Product.objects.filter(active=True).select_related("uom").prefetch_related("attribute_values", "attribute_values__attribute"))
+        Prefetch("variants", queryset=Product.objects.filter(is_active=True).select_related("uom").prefetch_related("attribute_values", "attribute_values__attribute"))
     ).annotate(
         annotated_current_stock=Sum("stock_moves__quantity"),
         variants_count=Count("variants"),
