@@ -1,9 +1,9 @@
 ---
 layer: 50-audit
 doc: cancel-annul-entity-audit
-status: draft
+status: implemented
 owner: core-team
-last_review: 2026-06-10
+last_review: 2026-06-11
 related:
   - ../20-contracts/deletion-policy.md
   - ../20-contracts/state-map.md
@@ -295,6 +295,13 @@ cancela — actualizar tabla del contrato.
 ## 6. Plan de implementación
 
 Cuatro PRs secuenciales, sin dependencias externas nuevas. Esfuerzo estimado total: **7–10 días-persona**.
+
+> **Estado (2026-06-11): los cuatro PRs están ejecutados.**
+> PR A `c475ff04` · PR B `e338e148` · PR C `44850889` · PR D (este commit).
+> Suite `test_cancel_annul_integration.py`: 35/35 verde en SQLite local.
+> `test_deletion_policy_consistency.py`: 5/5 verde (gaps de Archivo fijados en
+> `ARCHIVO_KNOWN_GAPS`). G-16 resuelto vía
+> [ADR-0048](../10-architecture/adr/0048-cancelled-terminal-no-reset-to-draft.md).
 
 ### PR A — Integridad de cascada y compliance fiscal (crítico) — 2–3 días
 

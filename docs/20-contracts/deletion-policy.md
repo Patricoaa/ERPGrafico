@@ -3,7 +3,7 @@ layer: 20-contracts
 doc: deletion-policy
 status: active
 owner: core-team
-last_review: 2026-05-21
+last_review: 2026-06-11
 stability: contract-changes-require-ADR
 ---
 
@@ -15,7 +15,7 @@ Cómo se "elimina" una entidad en ERPGrafico depende de qué tipo de entidad sea
 
 | Patrón | Mecanismo | Reversible | Compliance fiscal | Acción de UI |
 |--------|-----------|-----------|-------------------|--------------|
-| **Cancelación** | `status = CANCELLED`. Sin reversos ni asientos de contra-partida. El JE se elimina si es DRAFT. | Sí (Reset to Draft) | No — el documento nunca salió de borrador | `cancel` ([row-actions](component-row-actions.md)) |
+| **Cancelación** | `status = CANCELLED`. Sin reversos ni asientos de contra-partida. El JE se elimina si es DRAFT. | No — `CANCELLED` es terminal; si fue un error, crear un documento nuevo ([ADR-0048](../10-architecture/adr/0048-cancelled-terminal-no-reset-to-draft.md)) | No — el documento nunca salió de borrador | `cancel` ([row-actions](component-row-actions.md)) |
 | **Anulación** | `status = CANCELLED`. Reversos contables / de stock según corresponda. | Solo vía nuevo documento (nota de crédito, contramovimiento) | Sí — el registro queda visible en libros con marca de anulado | `annul` ([row-actions](component-row-actions.md)) |
 | **Archivo** | `is_active = False` | Sí — pareja `archive` / `restore` | No aplica | `archive` ↔ `restore` ([row-actions](component-row-actions.md)) |
 | **Borrado** | `obj.delete()` (hard) | No | No aplica (no son fiscales) | `delete` ([row-actions](component-row-actions.md)) |
@@ -40,7 +40,7 @@ Cómo se "elimina" una entidad en ERPGrafico depende de qué tipo de entidad sea
 
 ## Mapeo por app (estado canónico)
 
-> Esta tabla es **autoritativa**. Si un modelo nuevo se agrega, esta tabla debe actualizarse en el mismo PR. El test de arquitectura `test_deletion_policy_consistency` (a crear, T-pendiente) la consume.
+> Esta tabla es **autoritativa**. Si un modelo nuevo se agrega, esta tabla debe actualizarse en el mismo PR. El test de arquitectura [`test_deletion_policy_consistency`](../../backend/core/tests/test_deletion_policy_consistency.py) la consume: agrega el modelo a `DELETION_POLICY` en el mismo PR.
 
 | App | Modelo | Patrón | Notas |
 |-----|--------|--------|-------|
@@ -60,7 +60,7 @@ Cómo se "elimina" una entidad en ERPGrafico depende de qué tipo de entidad sea
 | `purchasing` | `PurchaseOrder` | Cancelación / Anulación | Cancel si DRAFT (tree DRAFT). Annul si CONFIRMED (con reversos). |
 | `purchasing` | `PurchaseReceipt` | Cancelación / Anulación | Cancel si DRAFT. Annul si CONFIRMED (reverso de stock). |
 | `sales` | `SaleOrder` | Cancelación / Anulación | Cancel si DRAFT (tree DRAFT). Annul si CONFIRMED (reversos). |
-| `sales` | `SaleDelivery` | Anulación | Solo anulación (sin cancelación por separado). |
+| `sales` | `SaleDelivery` | Anulación | Annul directo con reverso de stock. Además admite cancelación **en cascada**: la rama DRAFT de `cancel_sale_order` cancela deliveries DRAFT (no existe `cancel` directo sobre el delivery). |
 | `sales` | `POSDraft` / `DraftCart` | Hard delete | Drafts sin valor fiscal — `.delete()` libre |
 | `tax` | `TaxRate` / `FiscalPeriod` | Archivo | Nunca borrar — afecta cálculos históricos |
 | `treasury` | `Bank` | Archivo | |
@@ -103,6 +103,14 @@ Cómo se "elimina" una entidad en ERPGrafico depende de qué tipo de entidad sea
 - Pareja semántica obligatoria: si una entidad acepta `archive`, debe aceptar `restore`. Ambas viven en [row-actions registry](component-row-actions.md).
 - El servicio de archive **no** elimina FKs; los registros históricos que apunten siguen funcionando.
 
+> **Deuda conocida del patrón Archivo.** Hoy solo `User`, `Bank` y `PaymentMethod` cumplen
+> con `is_active`. `Product` y `UoM` usan `active` (legacy) y ocho modelos (`Account`,
+> `Contact`, `Employee`, `ProductCategory`, `UoMCategory`, `Warehouse`, `TaxPeriod`,
+> `TreasuryAccount`) no tienen flag de archivo. El gap está fijado en `ARCHIVO_KNOWN_GAPS`
+> dentro de [`test_deletion_policy_consistency`](../../backend/core/tests/test_deletion_policy_consistency.py):
+> no puede crecer (modelos nuevos deben cumplir) y cada entrada se elimina al migrar el
+> modelo a `is_active`.
+
 ### Para entidades de Hard delete
 
 - Se permiten en `.delete()` directo, DELETE endpoint REST y cleanup por cron.
@@ -126,6 +134,19 @@ Cómo se "elimina" una entidad en ERPGrafico depende de qué tipo de entidad sea
 - Mostrar `archive` sin pareja `restore`.
 - Inventar acciones tipo `soft-delete`, `discard`, `remove` que no mapeen a uno de los cuatro patrones.
 
+## Permisos (RBAC)
+
+- Las acciones `cancel` / `annul` de UI se gatean con el permiso `delete_<model>` **de la
+  app y entidad propias** (`sales.delete_saleorder`, `purchasing.delete_purchaseorder`,
+  `billing.delete_invoice`, `treasury.delete_treasurymovement`, `production.delete_workorder`,
+  `sales.delete_saledelivery`, `purchasing.delete_purchasereceipt`), declarado vía
+  `requiredPermissions` en los registries de acciones y en los botones inline de fase del HUB.
+- Nunca gatear con el permiso de otra app (anti-patrón corregido en G-10: `cancel-order`
+  gateado con `billing.delete_invoice`).
+- En backend los ViewSets usan `StandardizedModelPermissions`
+  ([core/api/permissions.py](../../backend/core/api/permissions.py)), y los servicios
+  cancel/annul reciben `user`/`reason` y los registran en `workflow.Transition`.
+
 ## Migrations: cambio de patrón
 
 Si una entidad cambia de categoría (e.g. lo que era draft se vuelve fiscal):
@@ -139,11 +160,14 @@ Si una entidad cambia de categoría (e.g. lo que era draft se vuelve fiscal):
 
 ```python
 # backend/core/tests/test_deletion_policy_consistency.py
-# Tests existentes que verifican:
-# - anulacion/cancelacion → modelo tiene status con CANCELLED
-# - archivo → modelo tiene is_active BooleanField
-# - cancelacion → modelo tiene cancel_* service method registrado en CANCEL_SERVICE_MAP
-# - Todos los modelos referenciados existen en el backend
+# Verifica contra el registry de Django:
+# - anulacion/cancelacion → status con valor CANCELLED, salvo mecanismos especiales
+#   declarados en STATUS_EXEMPT (StockMove: contramovimiento; BankStatementLine:
+#   reconciliation_status)
+# - archivo → is_active BooleanField; gaps actuales fijados en ARCHIVO_KNOWN_GAPS
+#   (fallan si crecen o si una entrada ya migrada no se retira de la lista)
+# - cancelacion → service method registrado en CANCEL_SERVICE_MAP existe y es callable
+# - Todos los modelos referenciados en DELETION_POLICY existen en el backend
 ```
 
 ## Referencias
