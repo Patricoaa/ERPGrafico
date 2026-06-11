@@ -47,11 +47,16 @@ class PurchaseOrderViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
 
     def destroy(self, request, *args, **kwargs):
         instance = self.get_object()
-        if instance.status != 'CANCELLED':
+        if not request.user.is_staff:
             return Response(
-                {'error': 'Use POST /cancel/ para cancelar documentos activos.'},
-                status=status.HTTP_400_BAD_REQUEST,
+                {'error': 'Solo administradores pueden purgar documentos cancelados.'},
+                status=status.HTTP_403_FORBIDDEN,
             )
+        try:
+            PurchasingService.validate_purge(instance)
+        except ValidationError as e:
+            msg = e.messages[0] if getattr(e, 'messages', None) else str(e)
+            return Response({'error': msg}, status=status.HTTP_400_BAD_REQUEST)
         return super().destroy(request, *args, **kwargs)
 
     @action(detail=True, methods=['get'])

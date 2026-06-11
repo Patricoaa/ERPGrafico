@@ -418,6 +418,9 @@ class WorkOrderService:
         3. Reverses stock movements (consumptions and finished products)
         4. Updates status to CANCELLED and stage to CANCELLED
         """
+        if work_order.status == WorkOrder.Status.CANCELLED:
+            return work_order
+
         # VALIDATION 1: Dynamic Production Stage Limit (Printing/Prepress/Approval)
         # Sequence of stages to determine if the limit has been surpassed
         STAGES_SEQUENCE = [
@@ -456,18 +459,14 @@ class WorkOrderService:
                 "⚠️ Debe revertir los consumos manualmente antes de anular la OT.\n"
             )
 
-        # 2. Cancel Linked Purchase Orders
+        # 2. Cancel Linked Purchase Orders via service (cascades invoices,
+        # payments, receipts and JE cleanup; reversals if PO is CONFIRMED)
+        from purchasing.services import PurchasingService
         for po in work_order.purchase_orders.all():
             if po.status in [PurchaseOrder.Status.DRAFT, PurchaseOrder.Status.CONFIRMED]:
-                po.status = PurchaseOrder.Status.CANCELLED
+                PurchasingService.cancel_purchase_order(po)
                 po.notes += f"\nAnulado por anulación de OT-{work_order.number}"
-                po.save()
-                
-                # Also cancel draft invoices linked to this PO
-                from billing.models import Invoice
-                for invoice in po.invoices.filter(status=Invoice.Status.DRAFT):
-                    invoice.status = Invoice.Status.CANCELLED
-                    invoice.save()
+                po.save(update_fields=['notes'])
 
         # 3. Finalize Annulment
         work_order.status = WorkOrder.Status.CANCELLED

@@ -1064,17 +1064,35 @@ class BillingService:
         return invoice
 
     @staticmethod
+    def validate_purge(invoice: Invoice):
+        """
+        Una factura solo puede purgarse (hard delete) si está CANCELLED y no dejó
+        huella contable: facturas anuladas con reversos se conservan por auditoría.
+        """
+        if invoice.status != Invoice.Status.CANCELLED:
+            raise ValidationError("Use el endpoint de cancelación para facturas activas.")
+        has_accounting_trace = (
+            invoice.journal_entry_id is not None
+            or invoice.payments.filter(journal_entry__isnull=False).exists()
+        )
+        if has_accounting_trace:
+            raise ValidationError(
+                "No se puede eliminar: la factura tiene asientos contables asociados. "
+                "Los documentos anulados se conservan como pista de auditoría."
+            )
+
+    @staticmethod
     @transaction.atomic
     def cancel_invoice(invoice: Invoice):
         """
         Cancels a DRAFT invoice by cancelling its payments, deleting its draft JE,
         and marking it as CANCELLED. Never hard-deletes fiscal records.
         """
-        if invoice.status != Invoice.Status.DRAFT:
-            raise ValidationError("Solo se pueden cancelar facturas en estado Borrador.")
-
         if invoice.status == Invoice.Status.CANCELLED:
             return invoice
+
+        if invoice.status != Invoice.Status.DRAFT:
+            raise ValidationError("Solo se pueden cancelar facturas en estado Borrador.")
 
         from treasury.services import TreasuryService
         from treasury.models import TreasuryMovement
@@ -1108,7 +1126,12 @@ class BillingService:
              raise ValidationError("Solo se pueden anular facturas publicadas o pagadas.")
 
         # VALIDATION 1: Folio registrado (fiscal requirement)
-        if invoice.number and invoice.number != 'Draft':
+        # Solo aplica a documentos EMITIDOS (ventas): un folio propio informado al SII
+        # es inmutable y se ajusta por Nota de Crédito. En compras el folio pertenece
+        # al proveedor; la factura recibida se anula con asiento de reverso.
+        # (create_purchase_bill no setea source_order, por eso el FK explícito manda.)
+        is_purchase_doc = invoice.purchase_order_id is not None or not invoice.is_sale_document()
+        if invoice.number and invoice.number != 'Draft' and not is_purchase_doc:
             raise ValidationError(
                 "❌ No se puede anular una factura con folio asignado.\n"
                 "💡 Use una Nota de Crédito para ajustar esta factura."

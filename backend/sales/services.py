@@ -556,9 +556,12 @@ class SalesService:
                     "💡 Use la acción 'Anular' en el despacho primero."
                 )
 
-            # VALIDATION 2: Posted payments
+            # VALIDATION 2: Posted payments (status is canonical; JE check covers
+            # legacy movements created before the status field existed)
+            from django.db.models import Q
             posted_payments = order.payments.filter(
-                journal_entry__status='POSTED'
+                Q(status=TreasuryMovement.MovementStatus.POSTED)
+                | Q(journal_entry__status='POSTED')
             ).exists()
             if posted_payments:
                 raise ValidationError(
@@ -575,6 +578,18 @@ class SalesService:
                 if movement.status != TreasuryMovement.MovementStatus.CANCELLED:
                     TreasuryService.cancel_movement(movement)
 
+            for delivery in order.deliveries.all():
+                if delivery.status != SaleDelivery.Status.CANCELLED:
+                    delivery.status = SaleDelivery.Status.CANCELLED
+                    delivery.save()
+
+            # Work Orders: annul_work_order valida etapa límite y consumos;
+            # si la OT ya avanzó demasiado, bloquea toda la cancelación (atomic).
+            from production.services import WorkOrderService
+            from production.models import WorkOrder
+            for work_order in order.work_orders.exclude(status=WorkOrder.Status.CANCELLED):
+                WorkOrderService.annul_work_order(work_order)
+
             if order.journal_entry:
                 order.journal_entry.delete()
         else:
@@ -585,6 +600,26 @@ class SalesService:
         order.status = SaleOrder.Status.CANCELLED
         order.save()
         return order
+
+    @staticmethod
+    def validate_purge(order: SaleOrder):
+        """
+        Un documento solo puede purgarse (hard delete) si está CANCELLED y no dejó
+        huella contable: documentos anulados con reversos se conservan por auditoría.
+        """
+        if order.status != SaleOrder.Status.CANCELLED:
+            raise ValidationError("Use POST /cancel/ para cancelar documentos activos.")
+        has_accounting_trace = (
+            order.journal_entry_id is not None
+            or order.invoices.filter(journal_entry__isnull=False).exists()
+            or order.payments.filter(journal_entry__isnull=False).exists()
+            or order.deliveries.filter(journal_entry__isnull=False).exists()
+        )
+        if has_accounting_trace:
+            raise ValidationError(
+                "No se puede eliminar: el documento tiene asientos contables asociados. "
+                "Los documentos anulados se conservan como pista de auditoría."
+            )
 
     @staticmethod
     @transaction.atomic
@@ -1012,23 +1047,44 @@ class SaleOrderService(DocumentService):
              
         from billing.models import Invoice
         from billing.services import BillingService
+        from treasury.models import TreasuryMovement
         from treasury.services import TreasuryService
 
-        # 1. Annul Invoices (this will block if payments exist and force is False)
+        # 1. Handle Invoices — cancel if DRAFT, annul if POSTED/PAID
         for invoice in order.invoices.all():
-            if invoice.status != Invoice.Status.CANCELLED:
-                 BillingService.annul_invoice(invoice, force=force)
+            if invoice.status == Invoice.Status.CANCELLED:
+                continue
+            if invoice.status == Invoice.Status.DRAFT:
+                BillingService.cancel_invoice(invoice)
+            else:
+                BillingService.annul_invoice(invoice, force=force)
         
-        # 2. Annul Deliveries
+        # 2. Handle Deliveries — cancel if DRAFT, annul if CONFIRMED
         for delivery in order.deliveries.all():
-            if delivery.status != SaleDelivery.Status.CANCELLED:
-                 SalesService.annul_delivery(delivery)
+            if delivery.status == SaleDelivery.Status.CANCELLED:
+                continue
+            if delivery.status == SaleDelivery.Status.DRAFT:
+                delivery.status = SaleDelivery.Status.CANCELLED
+                delivery.save()
+            else:
+                SalesService.annul_delivery(delivery)
         
-        # 3. Annul stand-alone Payments (if any)
+        # 3. Handle Payments — cancel if DRAFT, annul if POSTED
         for movement in order.payments.all():
-            if movement.journal_entry and movement.journal_entry.status == 'POSTED':
-                 TreasuryService.annul_movement(movement)
-        
+            if movement.status == TreasuryMovement.MovementStatus.CANCELLED:
+                continue
+            if movement.status == TreasuryMovement.MovementStatus.DRAFT:
+                TreasuryService.cancel_movement(movement)
+            else:
+                TreasuryService.annul_movement(movement)
+
+        # 4. Handle Work Orders — annul with stage-limit/consumption validations.
+        # Si una OT superó la etapa límite, ValidationError aborta toda la anulación.
+        from production.services import WorkOrderService
+        from production.models import WorkOrder
+        for work_order in order.work_orders.exclude(status=WorkOrder.Status.CANCELLED):
+            WorkOrderService.annul_work_order(work_order, user=user)
+
         order.status = SaleOrder.Status.CANCELLED
         if reason:
             order.notes = (order.notes or '') + f"\nAnulado: {reason}"
