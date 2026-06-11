@@ -59,7 +59,8 @@ export function ProfitDistributionDrawer({ id, open, onOpenChange, distributionI
         side="left"
         defaultSize="55%"
         icon={ChartPie}
-        title={<><span>{displayId}</span><Button variant="ghost" size="icon" onClick={() => handlePrint()}><Printer className="h-4 w-4" /></Button></>}
+        title={<span>{displayId}</span>}
+        headerActions={<Button variant="ghost" size="icon" onClick={() => handlePrint()}><Printer className="h-4 w-4" /></Button>}
         subtitle={isProfit ? 'Utilidad' : 'Pérdida'}
         description={`Ejercicio ${distribution?.fiscal_year ?? ''} · ${formatPlainDate(distribution?.resolution_date)}`}
 

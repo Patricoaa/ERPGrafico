@@ -56,7 +56,8 @@ export function StockMoveDrawer({ id, open, onOpenChange, stockMoveId }: StockMo
                 side="left"
                 defaultSize="50%"
                 icon={Package}
-                title={<><span>{displayId}</span><Button variant="ghost" size="icon" onClick={() => handlePrint()}><Printer className="h-4 w-4" /></Button></>}
+                title={<span>{displayId}</span>}
+                headerActions={<Button variant="ghost" size="icon" onClick={() => handlePrint()}><Printer className="h-4 w-4" /></Button>}
                 subtitle={move?.product_name}
                 description={`${move?.move_type ?? ''} · ${formatPlainDate(move?.date)}`}
             >

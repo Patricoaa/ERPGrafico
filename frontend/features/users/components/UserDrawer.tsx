@@ -256,7 +256,8 @@ export function UserDrawer({ auditSidebar, initialData, onSuccess, trigger, open
                 open={open}
                 onOpenChange={setOpen}
                 headerClassName="sr-only"
-                title={<><span>{drawerTitle}</span>{(mode === 'view' || mode === 'edit') && initialData?.id && <Button variant="ghost" size="icon" onClick={() => handlePrint()}><Printer className="h-4 w-4" /></Button>}</>}
+                title={<span>{drawerTitle}</span>}
+                headerActions={(mode === 'view' || mode === 'edit') && initialData?.id && <Button variant="ghost" size="icon" onClick={() => handlePrint()}><Printer className="h-4 w-4" /></Button>}
                 subtitle="Gestión de cuentas, roles y permisos de acceso."
                 defaultSize={width}
                 mode={mode}

@@ -54,7 +54,8 @@ export function PurchaseOrderDrawer({ id, open, onOpenChange, mode = 'view', pur
         side="left"
         defaultSize="50%"
         icon={ShoppingCart}
-        title={<><span>{displayId}</span><Button variant="ghost" size="icon" onClick={() => handlePrint()}><Printer className="h-4 w-4" /></Button></>}
+        title={<span>{displayId}</span>}
+        headerActions={<Button variant="ghost" size="icon" onClick={() => handlePrint()}><Printer className="h-4 w-4" /></Button>}
         subtitle={contactName}
         description={`${order?.date ? formatPlainDate(order.date) : ''} · ${order?.status_display ?? order?.status ?? ''}`}
       >

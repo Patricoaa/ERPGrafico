@@ -137,7 +137,8 @@ export function AdvanceDrawer({ open, onOpenChange, advance, employees: employee
                 side="left"
                 defaultSize={width}
                 icon={WalletCards}
-                title={<><span>{drawerTitle}</span>{(mode === 'view' || mode === 'edit') && advance?.id && <Button variant="ghost" size="icon" onClick={() => handlePrint()}><Printer className="h-4 w-4" /></Button>}</>}
+                title={<span>{drawerTitle}</span>}
+                headerActions={(mode === 'view' || mode === 'edit') && advance?.id && <Button variant="ghost" size="icon" onClick={() => handlePrint()}><Printer className="h-4 w-4" /></Button>}
                 subtitle={advance ? "Revise y modifique los datos del anticipo solicitado." : "Registre una entrega de dinero a cuenta de la próxima liquidación."}
                 mode={mode}
                 footer={isView ? undefined : (

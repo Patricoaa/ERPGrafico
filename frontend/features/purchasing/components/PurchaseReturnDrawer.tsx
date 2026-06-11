@@ -65,7 +65,8 @@ export function PurchaseReturnDrawer({ returnId, open, onOpenChange }: PurchaseR
                 side="left"
                 boundary="embedded"
                 defaultSize="50%"
-                title={<><span>{returnData ? `Devolución ${(returnData as any).number}` : "Devolución de Compra"}</span><Button variant="ghost" size="icon" onClick={() => handlePrint()}><Printer className="h-4 w-4" /></Button></>}
+                title={<span>{returnData ? `Devolución ${(returnData as any).number}` : "Devolución de Compra"}</span>}
+                headerActions={<Button variant="ghost" size="icon" onClick={() => handlePrint()}><Printer className="h-4 w-4" /></Button>}
                 subtitle={(returnData as any)?.supplier_name}
                 icon={Undo2}
 

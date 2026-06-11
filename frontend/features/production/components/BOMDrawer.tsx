@@ -335,7 +335,8 @@ export function BOMDrawer({
                 defaultSize={formDrawerWidth("complex", !!bomToEdit)}
                 mode={mode}
                 icon={Workflow}
-                title={<><span>{drawerTitle}</span>{(mode === 'view' || mode === 'edit') && bomToEdit?.id && <Button variant="ghost" size="icon" onClick={() => handlePrint()}><Printer className="h-4 w-4" /></Button>}</>}
+                title={<span>{drawerTitle}</span>}
+                headerActions={(mode === 'view' || mode === 'edit') && bomToEdit?.id && <Button variant="ghost" size="icon" onClick={() => handlePrint()}><Printer className="h-4 w-4" /></Button>}
                 subtitle={
                     selectedVariant
                         ? `Lista de Materiales • Variante: ${selectedVariant.variant_display_name || selectedVariant.name}`

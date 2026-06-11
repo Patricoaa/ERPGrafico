@@ -54,7 +54,8 @@ export function CashMovementDrawer({ id, open, onOpenChange, movementId }: CashM
         side="left"
         defaultSize="50%"
         icon={ArrowLeftRight}
-        title={<><span>{displayId}</span><Button variant="ghost" size="icon" onClick={() => handlePrint()}><Printer className="h-4 w-4" /></Button></>}
+        title={<span>{displayId}</span>}
+        headerActions={<Button variant="ghost" size="icon" onClick={() => handlePrint()}><Printer className="h-4 w-4" /></Button>}
         subtitle={movementType}
         description={formatPlainDate(movement?.date ?? movement?.created_at)}
 

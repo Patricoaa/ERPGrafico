@@ -65,7 +65,8 @@ export function InvoiceDrawer({ id, open, onOpenChange, mode = 'view', invoiceId
                 side="left"
                 defaultSize="50%"
                 icon={Receipt}
-                title={<><span>{displayId}</span><Button variant="ghost" size="icon" onClick={() => handlePrint()}><Printer className="h-4 w-4" /></Button></>}
+                title={<span>{displayId}</span>}
+                headerActions={<Button variant="ghost" size="icon" onClick={() => handlePrint()}><Printer className="h-4 w-4" /></Button>}
                 subtitle={partnerName}
                 description={`${dteLabel} · ${formatPlainDate(invoice?.date)}`}
             >

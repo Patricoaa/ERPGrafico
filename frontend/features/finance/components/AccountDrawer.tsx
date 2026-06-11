@@ -289,7 +289,8 @@ export function AccountDrawer({
                 side="left"
                 defaultSize={width}
                 icon={BookOpen}
-                title={<><span>{drawerTitle}</span>{(mode === 'view' || mode === 'edit') && initialData?.id && <Button variant="ghost" size="icon" onClick={() => handlePrint()}><Printer className="h-4 w-4" /></Button>}</>}
+                title={<span>{drawerTitle}</span>}
+                headerActions={(mode === 'view' || mode === 'edit') && !!initialData?.id && <Button variant="ghost" size="icon" onClick={() => handlePrint()}><Printer className="h-4 w-4" /></Button>}
                 subtitle={drawerSubtitle}
                 mode={mode}
                 footer={isViewMode ? undefined : (

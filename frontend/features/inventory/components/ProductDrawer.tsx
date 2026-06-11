@@ -812,7 +812,8 @@ export function ProductDrawer({ sidebar, open, onOpenChange, initialData, onSucc
                 defaultSize={width}
                 className="h-[90vh]"
                 icon={Package}
-                title={<><span>{drawerTitle}</span>{(mode === 'view' || mode === 'edit') && initialData?.id && <Button variant="ghost" size="icon" onClick={() => handlePrint()}><Printer className="h-4 w-4" /></Button>}</>}
+                title={<span>{drawerTitle}</span>}
+                headerActions={(mode === 'view' || mode === 'edit') && initialData?.id && <Button variant="ghost" size="icon" onClick={() => handlePrint()}><Printer className="h-4 w-4" /></Button>}
                 subtitle={initialData ? form.watch("name") : "Maestro de Producto"}
                 mode={mode}
                 footer={footerSlot}
