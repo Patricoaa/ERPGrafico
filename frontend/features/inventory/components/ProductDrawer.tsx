@@ -15,7 +15,7 @@ import {ShoppingCart, Package, Truck, Layers, Factory, DollarSign, Printer} from
 import { showApiError } from "@/lib/errors"
 import { Form } from "@/components/ui/form"
 
-import {ActionConfirmModal, Drawer, FormFooter, FormSplitLayout, FormTabs, FormTabsContent, SkeletonShell, type FormTabItem} from '@/components/shared'
+import {ActionConfirmModal, Drawer, FormFooter, FormSplitLayout, UnderlineTabs, UnderlineTabsContent, SkeletonShell, type TabItem} from '@/components/shared'
 import { ActivitySidebar } from "@/features/audit/components"
 // Removed Badge import for governance compliance
 
@@ -563,7 +563,7 @@ export function ProductDrawer({ sidebar, open, onOpenChange, initialData, onSucc
         }
     }
 
-    const tabItems: FormTabItem[] = [
+    const tabItems: TabItem[] = [
         {
             value: "general",
             label: "General",
@@ -657,7 +657,7 @@ export function ProductDrawer({ sidebar, open, onOpenChange, initialData, onSucc
                             }
                             className="min-w-0 h-full overflow-hidden p-0"
                         >
-                            <FormTabs
+                            <UnderlineTabs
                                 items={tabItems}
                                 value={activeTab}
                                 onValueChange={setActiveTab}
@@ -668,7 +668,7 @@ export function ProductDrawer({ sidebar, open, onOpenChange, initialData, onSucc
                                 contentClassName="bg-transparent"
                             >
                                 <fieldset disabled={loading} className="flex-1 min-w-0 flex flex-col h-full min-h-0">
-                                    <FormTabsContent value="general" className="mt-0 pt-6 px-6 pb-8 data-[state=active]:flex data-[state=active]:flex-1 data-[state=active]:flex-col data-[state=active]:min-h-0 overflow-y-auto scrollbar-thin">
+                                    <UnderlineTabsContent value="general" className="mt-0 pt-6 px-6 pb-8 data-[state=active]:flex data-[state=active]:flex-1 data-[state=active]:flex-col data-[state=active]:min-h-0 overflow-y-auto scrollbar-thin">
                                         <div className="space-y-8 pr-2">
                                             <ProductBasicInfo
                                                 form={form}
@@ -678,9 +678,9 @@ export function ProductDrawer({ sidebar, open, onOpenChange, initialData, onSucc
                                                 lockedType={lockedType}
                                             />
                                         </div>
-                                    </FormTabsContent>
+                                    </UnderlineTabsContent>
 
-                                    <FormTabsContent value="manufacturing" className="mt-0 pt-6 px-6 pb-8 data-[state=active]:flex data-[state=active]:flex-1 data-[state=active]:flex-col data-[state=active]:min-h-0 overflow-y-auto scrollbar-thin">
+                                    <UnderlineTabsContent value="manufacturing" className="mt-0 pt-6 px-6 pb-8 data-[state=active]:flex data-[state=active]:flex-1 data-[state=active]:flex-col data-[state=active]:min-h-0 overflow-y-auto scrollbar-thin">
                                         <ProductManufacturingTab
                                             form={form}
                                             initialData={initialData}
@@ -688,9 +688,9 @@ export function ProductDrawer({ sidebar, open, onOpenChange, initialData, onSucc
                                             uoms={uoms as unknown as UoM[]}
                                             variantMode={variantMode}
                                         />
-                                    </FormTabsContent>
+                                    </UnderlineTabsContent>
 
-                                    <FormTabsContent forceMount value="variants" className="mt-0 pt-6 px-6 pb-8 data-[state=active]:flex data-[state=active]:flex-1 data-[state=active]:flex-col data-[state=active]:min-h-0 data-[state=inactive]:hidden overflow-y-auto scrollbar-thin">
+                                    <UnderlineTabsContent forceMount value="variants" className="mt-0 pt-6 px-6 pb-8 data-[state=active]:flex data-[state=active]:flex-1 data-[state=active]:flex-col data-[state=active]:min-h-0 data-[state=inactive]:hidden overflow-y-auto scrollbar-thin">
                                         <ProductVariantsTab
                                             key={variantsRefreshKey}
                                             form={form}
@@ -700,9 +700,9 @@ export function ProductDrawer({ sidebar, open, onOpenChange, initialData, onSucc
                                                 window.open(`/inventory/products?selected=${v.id}`, '_blank');
                                             }}
                                         />
-                                    </FormTabsContent>
+                                    </UnderlineTabsContent>
 
-                                    <FormTabsContent value="logistics" className="mt-0 pt-6 px-6 pb-8 data-[state=active]:flex data-[state=active]:flex-1 data-[state=active]:flex-col data-[state=active]:min-h-0 overflow-y-auto scrollbar-thin">
+                                    <UnderlineTabsContent value="logistics" className="mt-0 pt-6 px-6 pb-8 data-[state=active]:flex data-[state=active]:flex-1 data-[state=active]:flex-col data-[state=active]:min-h-0 overflow-y-auto scrollbar-thin">
                                         <ProductInventoryTab
                                             form={form}
                                             initialData={initialData}
@@ -710,13 +710,13 @@ export function ProductDrawer({ sidebar, open, onOpenChange, initialData, onSucc
                                             uoms={uoms as unknown as UoM[]}
                                             isEditing={!!initialData}
                                         />
-                                    </FormTabsContent>
+                                    </UnderlineTabsContent>
 
-                                    <FormTabsContent value="commercial" className="mt-0 animate-in fade-in duration-300 pt-6 px-6 pb-8 data-[state=active]:flex data-[state=active]:flex-1 data-[state=active]:flex-col data-[state=active]:min-h-0 overflow-y-auto scrollbar-thin">
+                                    <UnderlineTabsContent value="commercial" className="mt-0 animate-in fade-in duration-300 pt-6 px-6 pb-8 data-[state=active]:flex data-[state=active]:flex-1 data-[state=active]:flex-col data-[state=active]:min-h-0 overflow-y-auto scrollbar-thin">
                                         <ProductSubscriptionTab form={form} isEditing={!!initialData} />
-                                    </FormTabsContent>
+                                    </UnderlineTabsContent>
 
-                                    <FormTabsContent value="pricing" className="mt-0 pt-6 px-6 pb-8 data-[state=active]:flex data-[state=active]:flex-1 data-[state=active]:flex-col data-[state=active]:min-h-0 overflow-y-auto scrollbar-thin">
+                                    <UnderlineTabsContent value="pricing" className="mt-0 pt-6 px-6 pb-8 data-[state=active]:flex data-[state=active]:flex-1 data-[state=active]:flex-col data-[state=active]:min-h-0 overflow-y-auto scrollbar-thin">
                                         <div className="space-y-8 pr-2">
                                             <ProductPricingSection
                                                 form={form}
@@ -736,9 +736,9 @@ export function ProductDrawer({ sidebar, open, onOpenChange, initialData, onSucc
                                                 isVariant={!!initialData?.parent_template}
                                             />
                                         </div>
-                                    </FormTabsContent>
+                                    </UnderlineTabsContent>
                                 </fieldset>
-                            </FormTabs>
+                            </UnderlineTabs>
                         </FormSplitLayout>
                     </SkeletonShell>
                 </fieldset>

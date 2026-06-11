@@ -2,6 +2,17 @@ from abc import ABC, abstractmethod
 from typing import ClassVar
 
 
+def lock_document(instance):
+    """
+    Adquiere el row-lock del documento dentro de la transacción actual
+    (select_for_update; no-op en SQLite) y refresca la instancia in place
+    para decidir sobre el estado real, no el del momento de la request.
+    """
+    type(instance).objects.select_for_update().only('pk').get(pk=instance.pk)
+    instance.refresh_from_db()
+    return instance
+
+
 class DocumentService(ABC):
     """Servicio polimórfico para procesar cualquier documento transaccional."""
 

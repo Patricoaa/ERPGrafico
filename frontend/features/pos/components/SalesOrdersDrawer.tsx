@@ -2,7 +2,7 @@
 
 import { ShoppingCart, FileText } from "lucide-react"
 import { SalesOrdersView } from "@/features/sales"
-import { FormTabs } from "@/components/shared"
+import { UnderlineTabs } from "@/components/shared"
 import {ScrollArea as ScrollAreaUI } from "@/components/ui/scroll-area"
 import { useState, useEffect, Suspense } from "react"
 import { Drawer, SkeletonShell } from "@/components/shared"
@@ -50,7 +50,7 @@ export function SalesOrdersDrawer({ open, onOpenChange, posSessionId }: SalesOrd
             boundary="embedded"
             defaultSize="90%"
             headerActions={
-                <FormTabs
+                <UnderlineTabs
                     value={viewMode}
                     onValueChange={(v) => setViewMode(v as 'orders' | 'notes')}
                     orientation="horizontal"
@@ -63,7 +63,7 @@ export function SalesOrdersDrawer({ open, onOpenChange, posSessionId }: SalesOrd
                     headerClassName="border-b-0 px-0 h-auto"
                 >
                     <div className="hidden" />
-                </FormTabs>
+                </UnderlineTabs>
             }
         >
             <div className="py-2">

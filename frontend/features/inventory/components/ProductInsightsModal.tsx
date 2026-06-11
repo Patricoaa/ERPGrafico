@@ -22,7 +22,7 @@ import { es } from "date-fns/locale"
 import { DataCell } from '@/components/shared'
 import { formatEntityDisplay } from "@/lib/entity-registry"
 
-import { FormTabs, FormTabsContent } from "@/components/shared"
+import { UnderlineTabs, UnderlineTabsContent } from "@/components/shared"
 import { LazyDrawer, type TransactionType } from "@/features/_shared/transaction-drawer"
 import { WorkOrderWizard } from "@/features/production"
 import type { ColumnDef } from "@tanstack/react-table"
@@ -143,7 +143,7 @@ export function ProductInsightsModal({ productId, productName, open, onOpenChang
                         </div>
                     </SkeletonShell>
                 ) : (
-                    <FormTabs
+                    <UnderlineTabs
                         value={activeTab}
                         onValueChange={setActiveTab}
                         orientation="horizontal"
@@ -159,7 +159,7 @@ export function ProductInsightsModal({ productId, productName, open, onOpenChang
                         <div className="flex-1 overflow-auto p-6 scrollbar-thin">
 
                             {/* OVERVIEW TAB */}
-                            <FormTabsContent value="overview" className="mt-0 space-y-6">
+                            <UnderlineTabsContent value="overview" className="mt-0 space-y-6">
                                 <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                                     <StatCard
                                         label="Ventas Totales"
@@ -238,10 +238,10 @@ export function ProductInsightsModal({ productId, productName, open, onOpenChang
                                         </div>
                                     </div>
                                 </div>
-                            </FormTabsContent>
+                            </UnderlineTabsContent>
 
                             {/* HISTORY TAB */}
-                            <FormTabsContent value="history" className="mt-0 space-y-6">
+                            <UnderlineTabsContent value="history" className="mt-0 space-y-6">
                                 <div className="h-[250px] w-full bg-card rounded-md border p-4">
                                     <ResponsiveContainer width="100%" height="100%">
                                         <AreaChart data={[...data.price_history].reverse()}>
@@ -277,10 +277,10 @@ export function ProductInsightsModal({ productId, productName, open, onOpenChang
                                 <div className="rounded-md border">
                                     <PriceHistoryTable entries={data.price_history} />
                                 </div>
-                            </FormTabsContent>
+                            </UnderlineTabsContent>
 
                             {/* KARDEX TAB */}
-                            <FormTabsContent value="kardex" className="mt-0">
+                            <UnderlineTabsContent value="kardex" className="mt-0">
                                 <div className="rounded-md border">
                                     <KardexTable
                                         entries={data.kardex}
@@ -288,19 +288,19 @@ export function ProductInsightsModal({ productId, productName, open, onOpenChang
                                         onOpenTransaction={openTransaction}
                                     />
                                 </div>
-                            </FormTabsContent>
+                            </UnderlineTabsContent>
 
                             {/* PRODUCTION TAB */}
-                            <FormTabsContent value="production" className="mt-0">
+                            <UnderlineTabsContent value="production" className="mt-0">
                                 <div className="rounded-md border">
                                     <ProductionUsageTable
                                         entries={data.production_usage}
                                         onOpenWorkOrder={openWorkOrder}
                                     />
                                 </div>
-                            </FormTabsContent>
+                            </UnderlineTabsContent>
                         </div>
-                    </FormTabs>
+                    </UnderlineTabs>
                 )}
             </div>
 

@@ -20,7 +20,7 @@ import {
 import { Switch } from "@/components/ui/switch"
 import { cn } from "@/lib/utils"
 import { AdvancedContactSelector } from "@/components/selectors/AdvancedContactSelector"
-import { Drawer, LabeledInput, LabeledSelect, FormTabs, FormTabsContent, FormSection, type FormTabItem, FormFooter, DatePicker, LabeledContainer, SkeletonShell } from "@/components/shared"
+import { Drawer, LabeledInput, LabeledSelect, UnderlineTabs, UnderlineTabsContent, FormSection, type TabItem, FormFooter, DatePicker, LabeledContainer, SkeletonShell } from "@/components/shared"
 import { formDrawerWidth } from "@/lib/form-widths"
 import { Button } from "@/components/ui/button"
 import { useReactToPrint } from "react-to-print"
@@ -223,7 +223,7 @@ export function EmployeeDrawer({ open, onOpenChange, employee, onSaved, trigger,
         }
     }
 
-    const tabItems: FormTabItem[] = [
+    const tabItems: TabItem[] = [
         {
             value: "contratacion",
             label: "Contratación",
@@ -309,7 +309,7 @@ export function EmployeeDrawer({ open, onOpenChange, employee, onSaved, trigger,
                                     ) : undefined}
                                     className="min-w-0 h-full overflow-hidden p-0"
                                 >
-                                    <FormTabs
+                                    <UnderlineTabs
                                         items={tabItems}
                                         value={activeTab}
                                         onValueChange={setActiveTab}
@@ -319,7 +319,7 @@ export function EmployeeDrawer({ open, onOpenChange, employee, onSaved, trigger,
                                         contentClassName="bg-transparent"
                                     >
                                         <fieldset disabled={saving} className="flex-1 min-w-0 flex flex-col h-full min-h-0">
-                                            <FormTabsContent
+                                            <UnderlineTabsContent
                                                 value="contratacion"
                                                 className="mt-0 pt-6 px-6 pb-8 data-[state=active]:flex data-[state=active]:flex-1 data-[state=active]:flex-col data-[state=active]:min-h-0 overflow-y-auto scrollbar-thin"
                                             >
@@ -423,8 +423,8 @@ export function EmployeeDrawer({ open, onOpenChange, employee, onSaved, trigger,
                                                         </div>
                                                     </div>
                                                 </div>
-                                            </FormTabsContent>
-                                            <FormTabsContent value="jornada" className="mt-0 pt-6 px-6 pb-8 data-[state=active]:flex data-[state=active]:flex-1 data-[state=active]:flex-col data-[state=active]:min-h-0 overflow-y-auto scrollbar-thin space-y-12">
+                                            </UnderlineTabsContent>
+                                            <UnderlineTabsContent value="jornada" className="mt-0 pt-6 px-6 pb-8 data-[state=active]:flex data-[state=active]:flex-1 data-[state=active]:flex-col data-[state=active]:min-h-0 overflow-y-auto scrollbar-thin space-y-12">
                                                 <div className="space-y-8">
                                                     <FormSection title="Detalles de Jornada" icon={CalendarCheck2} />
                                                     <div className="grid grid-cols-4 gap-6 items-start">
@@ -571,8 +571,8 @@ export function EmployeeDrawer({ open, onOpenChange, employee, onSaved, trigger,
                                                         </div>
                                                     </div>
                                                 </div>
-                                            </FormTabsContent>
-                                            <FormTabsContent value="haberes" className="mt-0 pt-6 px-6 pb-8 data-[state=active]:flex data-[state=active]:flex-1 data-[state=active]:flex-col data-[state=active]:min-h-0 overflow-y-auto scrollbar-thin">
+                                            </UnderlineTabsContent>
+                                            <UnderlineTabsContent value="haberes" className="mt-0 pt-6 px-6 pb-8 data-[state=active]:flex data-[state=active]:flex-1 data-[state=active]:flex-col data-[state=active]:min-h-0 overflow-y-auto scrollbar-thin">
                                                 <div className="space-y-8">
                                                     {availableConcepts.length > 0 ? (
                                                         <div className="grid grid-cols-4 gap-6 items-start">
@@ -603,9 +603,9 @@ export function EmployeeDrawer({ open, onOpenChange, employee, onSaved, trigger,
                                                         </div>
                                                     )}
                                                 </div>
-                                            </FormTabsContent>
+                                            </UnderlineTabsContent>
                                         </fieldset>
-                                    </FormTabs>
+                                    </UnderlineTabs>
                                 </FormSplitLayout>
                             </fieldset>
                         </form>

@@ -38,7 +38,7 @@ import { DataTable } from '@/components/shared'
 import { ColumnDef } from "@tanstack/react-table"
 
 import { getHubStatuses } from '@/features/orders/utils/status'
-import { LabeledInput, FormTabs, FormTabsContent, type FormTabItem, FormFooter, FormSection, FormSplitLayout, SkeletonShell } from "@/components/shared"
+import { LabeledInput, UnderlineTabs, UnderlineTabsContent, type TabItem, FormFooter, FormSection, FormSplitLayout, SkeletonShell } from "@/components/shared"
 import { formatCurrency } from "@/lib/money"
 
 const contactSchema = z.object({
@@ -207,7 +207,7 @@ export default function ContactDrawer({ open, onOpenChange, contact, onSuccess, 
         await saveContact(values)
     }
 
-    const tabItems: FormTabItem[] = [
+    const tabItems: TabItem[] = [
         {
             value: "profile",
             label: "Perfil",
@@ -306,7 +306,7 @@ export default function ContactDrawer({ open, onOpenChange, contact, onSuccess, 
                             ) : undefined}
                             className="min-w-0 h-full overflow-hidden p-0"
                         >
-                            <FormTabs
+                            <UnderlineTabs
                                 items={tabItems}
                                 value={activeTab}
                                 onValueChange={setActiveTab}
@@ -315,7 +315,7 @@ export default function ContactDrawer({ open, onOpenChange, contact, onSuccess, 
                                 className="flex-1"
                                 contentClassName="bg-transparent"
                             >
-                                <FormTabsContent
+                                <UnderlineTabsContent
                                     value="profile"
                                     className="mt-0 pt-6 px-6 pb-8 data-[state=active]:flex data-[state=active]:flex-1 data-[state=active]:flex-col data-[state=active]:min-h-0 overflow-y-auto scrollbar-thin"
                                 >
@@ -562,9 +562,9 @@ export default function ContactDrawer({ open, onOpenChange, contact, onSuccess, 
                                             </div>
                                         </div>
                                     </div>
-                                </FormTabsContent>
+                                </UnderlineTabsContent>
 
-                                <FormTabsContent value="sales" className="h-full w-full flex-1 m-0 border-0 outline-none overflow-hidden flex flex-col p-6">
+                                <UnderlineTabsContent value="sales" className="h-full w-full flex-1 m-0 border-0 outline-none overflow-hidden flex flex-col p-6">
                                     <InsightsTable
                                         data={insightsData?.sales?.orders || []}
                                         type="sale"
@@ -572,9 +572,9 @@ export default function ContactDrawer({ open, onOpenChange, contact, onSuccess, 
                                         icon={ShoppingCart}
                                         onActionSuccess={handleActionSuccess}
                                     />
-                                </FormTabsContent>
+                                </UnderlineTabsContent>
 
-                                <FormTabsContent value="purchases" className="h-full w-full flex-1 m-0 border-0 outline-none overflow-hidden flex flex-col p-6">
+                                <UnderlineTabsContent value="purchases" className="h-full w-full flex-1 m-0 border-0 outline-none overflow-hidden flex flex-col p-6">
                                     <InsightsTable
                                         data={insightsData?.purchases?.orders || []}
                                         type="purchase"
@@ -582,9 +582,9 @@ export default function ContactDrawer({ open, onOpenChange, contact, onSuccess, 
                                         icon={Package}
                                         onActionSuccess={handleActionSuccess}
                                     />
-                                </FormTabsContent>
+                                </UnderlineTabsContent>
 
-                                <FormTabsContent value="work_orders" className="h-full w-full flex-1 m-0 border-0 outline-none overflow-hidden flex flex-col p-6">
+                                <UnderlineTabsContent value="work_orders" className="h-full w-full flex-1 m-0 border-0 outline-none overflow-hidden flex flex-col p-6">
                                     <InsightsTable
                                         data={insightsData?.work_orders?.orders || []}
                                         type="work_order"
@@ -592,11 +592,11 @@ export default function ContactDrawer({ open, onOpenChange, contact, onSuccess, 
                                         icon={Wand2}
                                         onActionSuccess={handleActionSuccess}
                                     />
-                                </FormTabsContent>
-                                <FormTabsContent value="credit" className="h-full w-full flex-1 m-0 border-0 outline-none overflow-hidden flex flex-col p-6">
+                                </UnderlineTabsContent>
+                                <UnderlineTabsContent value="credit" className="h-full w-full flex-1 m-0 border-0 outline-none overflow-hidden flex flex-col p-6">
                                     <CreditLedgerTable data={ledgerData} loading={loadingLedger} onActionSuccess={handleActionSuccess} />
-                                </FormTabsContent>
-                            </FormTabs>
+                                </UnderlineTabsContent>
+                            </UnderlineTabs>
                         </FormSplitLayout>
                     </fieldset>
                     </form>

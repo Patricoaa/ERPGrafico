@@ -4,7 +4,7 @@ import { useState, useEffect } from "react"
 import { getTasks, Task } from '@/features/workflow/api/workflowApi'
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { UnderlineTabs, UnderlineTabsContent, type TabItem } from "@/components/shared"
 import {CheckCircle2, ListTodo, ChevronDown, ChevronRight, User, ExternalLink, Package, FileText, Wallet, TrendingUp} from "lucide-react"
 import { toast } from "sonner"
 import { useGlobalModalActions } from "@/components/providers/GlobalModalProvider"
@@ -444,35 +444,24 @@ export function TaskInbox() {
     const approvalsPending = approvalTasks.filter(t => t.status === 'PENDING')
     const approvalsCompleted = approvalTasks.filter(t => t.status === 'COMPLETED')
 
+    const tabItems: TabItem[] = [
+        { value: 'approvals', label: 'Aprobaciones', icon: CheckCircle2, badge: approvalsPending.length },
+        { value: 'tasks', label: 'Tareas', icon: ListTodo, badge: operationalTasks.length },
+    ]
+
     return (
         <div className="space-y-4 p-4 h-full overflow-auto">
-            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-                <TabsList className="grid w-full grid-cols-2 bg-muted/50 p-1 border border-border/50 backdrop-blur-md rounded-md">
-                    <TabsTrigger
-                        value="approvals"
-                        className="flex items-center justify-center h-9 gap-2 text-xs rounded-md transition-all data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm border border-transparent data-[state=active]:border-border/50 group/trigger text-muted-foreground"
-                    >
-                        <CheckCircle2 className="h-3.5 w-3.5" />
-                        <span className="hidden sm:inline">Aprobaciones</span>
-                        <span className="sm:hidden">Aprob.</span>
-                        <Chip size="xs" intent={approvalsPending.length > 0 ? "primary" : "neutral"} className="ml-1">
-                            {approvalsPending.length}
-                        </Chip>
-                    </TabsTrigger>
-                    <TabsTrigger
-                        value="tasks"
-                        className="flex items-center justify-center h-9 gap-2 text-xs rounded-md transition-all data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm border border-transparent data-[state=active]:border-border/50 group/trigger text-muted-foreground"
-                    >
-                        <ListTodo className="h-3.5 w-3.5" />
-                        <span className="hidden sm:inline">Tareas</span>
-                        <span className="sm:hidden">Tareas</span>
-                        <Chip size="xs" intent={operationalTasks.length > 0 ? "primary" : "neutral"} className="ml-1">
-                            {operationalTasks.length}
-                        </Chip>
-                    </TabsTrigger>
-                </TabsList>
-
-                 <TabsContent value="approvals" className="mt-4">
+            <UnderlineTabs
+                items={tabItems}
+                value={activeTab}
+                onValueChange={setActiveTab}
+                orientation="horizontal"
+                variant="underline"
+                dense
+                className="w-full"
+                contentClassName="mt-4 bg-transparent"
+            >
+                <UnderlineTabsContent value="approvals">
                      {loading ? (
                          <SkeletonShell isLoading={true} ariaLabel="Cargando tareas de aprobación">
                              <div className="flex flex-col gap-2">
@@ -513,9 +502,9 @@ export function TaskInbox() {
                             )}
                         </>
                     )}
-                </TabsContent>
+                 </UnderlineTabsContent>
 
-                 <TabsContent value="tasks" className="mt-4">
+                  <UnderlineTabsContent value="tasks">
                      {loading ? (
                          <SkeletonShell isLoading={true} ariaLabel="Cargando tareas operativas">
                              <div className="flex flex-col gap-2">
@@ -534,8 +523,8 @@ export function TaskInbox() {
                              {operationalTasks.map(task => renderTaskCard(task))}
                          </div>
                      )}
-                </TabsContent>
-            </Tabs>
-        </div>
+                 </UnderlineTabsContent>
+             </UnderlineTabs>
+         </div>
     )
 }

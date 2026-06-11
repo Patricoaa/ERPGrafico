@@ -3,8 +3,7 @@
 import { useEffect } from 'react'
 import { CreditCard } from 'lucide-react'
 import { useSearchParams, useRouter } from 'next/navigation'
-import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { EmptyState } from '@/components/shared'
+import { UnderlineTabs, type TabItem, EmptyState } from '@/components/shared'
 import { UnbilledChargesView } from './UnbilledChargesView'
 import { StatementsView } from './StatementsView'
 
@@ -59,38 +58,43 @@ export function CardChargesView({ bankId, creditCardAccounts }: CardChargesViewP
         <div className="flex flex-col flex-1 min-h-0">
             {/* Toolbar row — sub-tab tabs + TC selector */}
             <div className="flex items-center gap-3 shrink-0">
-                <Tabs value={activeSubTab} onValueChange={(v) => {
-                    const params = new URLSearchParams(searchParams.toString())
-                    params.set('subtab', v)
-                    router.replace(`?${params.toString()}`, { scroll: false })
-                }}>
-                    <TabsList className="h-8">
-                        <TabsTrigger value="unbilled" className="text-xs px-3">
-                            Cargos No Facturados
-                        </TabsTrigger>
-                        <TabsTrigger value="statements" className="text-xs px-3">
-                            Cargos Facturados
-                        </TabsTrigger>
-                    </TabsList>
-                </Tabs>
+                <UnderlineTabs
+                    items={[
+                        { value: 'unbilled', label: 'Cargos No Facturados' },
+                        { value: 'statements', label: 'Cargos Facturados' },
+                    ]}
+                    value={activeSubTab}
+                    onValueChange={(v) => {
+                        const params = new URLSearchParams(searchParams.toString())
+                        params.set('subtab', v)
+                        router.replace(`?${params.toString()}`, { scroll: false })
+                    }}
+                    orientation="horizontal"
+                    variant="underline"
+                    className="w-auto"
+                    headerClassName="h-8 px-0 bg-transparent"
+                    contentClassName="hidden"
+                >
+                    <div />
+                </UnderlineTabs>
 
                 {creditCardAccounts.length > 1 ? (
-                    <Tabs
+                    <UnderlineTabs
+                        items={creditCardAccounts.map(acc => ({ value: String(acc.id), label: acc.name }))}
                         value={String(selectedCardAccount)}
                         onValueChange={(v) => {
                             const params = new URLSearchParams(searchParams.toString())
                             params.set('card', v)
                             router.replace(`?${params.toString()}`, { scroll: false })
                         }}
+                        orientation="horizontal"
+                        variant="underline"
+                        className="w-auto"
+                        headerClassName="h-8 px-0 bg-transparent"
+                        contentClassName="hidden"
                     >
-                        <TabsList className="h-8">
-                            {creditCardAccounts.map(acc => (
-                                <TabsTrigger key={acc.id} value={String(acc.id)} className="text-xs px-2">
-                                    {acc.name}
-                                </TabsTrigger>
-                            ))}
-                        </TabsList>
-                    </Tabs>
+                        <div />
+                    </UnderlineTabs>
                 ) : (
                     <span className="text-xs font-medium text-muted-foreground">
                         {creditCardAccounts[0]?.name}

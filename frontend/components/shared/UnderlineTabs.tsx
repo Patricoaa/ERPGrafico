@@ -5,7 +5,7 @@ import { LucideIcon } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
 
-export interface FormTabItem {
+export interface TabItem {
     value: string
     label: string
     icon?: LucideIcon
@@ -15,8 +15,8 @@ export interface FormTabItem {
     disabled?: boolean
 }
 
-export interface FormTabsProps {
-    items: FormTabItem[]
+export interface UnderlineTabsProps {
+    items: TabItem[]
     value: string
     onValueChange: (value: string) => void
     orientation?: "vertical" | "horizontal"
@@ -36,9 +36,11 @@ export interface FormTabsProps {
     headerClassName?: string
     /** Additional classes for the centered pill wrapper (horizontal only) */
     pillClassName?: string
+    /** Compact mode — smaller triggers, icons, badges, font (for tight spaces) */
+    dense?: boolean
 }
 
-export function FormTabs({
+export function UnderlineTabs({
     items,
     value,
     onValueChange,
@@ -52,8 +54,9 @@ export function FormTabs({
     children,
     contentClassName,
     headerClassName,
-    pillClassName
-}: FormTabsProps) {
+    pillClassName,
+    dense
+}: UnderlineTabsProps) {
     const visible = items.filter((i) => !i.hidden)
     const effectiveListClassName = listClassName || tabsListClassName
 
@@ -63,11 +66,13 @@ export function FormTabs({
     // Common Trigger Style.
     const triggerStyles = isUnderline
         ? cn(
-            "group relative w-auto h-12 transition-all duration-200 bg-transparent rounded-none",
+            "group relative w-auto transition-all duration-200 bg-transparent rounded-none",
+            dense ? "h-8" : "h-12",
             "border-b-2 border-transparent",
-            "data-[state=active]:border-primary data-[state=active]:text-foreground data-[state=active]:font-bold",
+            "hover:border-muted-foreground/30",
+            "data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:text-foreground data-[state=active]:font-bold data-[state=active]:bg-transparent data-[state=active]:shadow-none",
             "data-[state=inactive]:text-foreground/60 data-[state=inactive]:font-bold hover:text-foreground",
-            "focus-visible:outline-none disabled:opacity-40 disabled:pointer-events-none px-1 flex items-center justify-center gap-2"
+            "focus-visible:outline-none focus-visible:ring-0 focus-visible:ring-offset-0 disabled:opacity-40 disabled:pointer-events-none px-1 flex items-center justify-center gap-2"
         )
         : cn(
             "group relative w-auto h-auto transition-all duration-200",
@@ -93,7 +98,7 @@ export function FormTabs({
                     "bg-transparent rounded-none p-0 z-20",
                     isVertical ? "h-auto w-auto flex-col items-start justify-start gap-3 col-start-1 overflow-visible max-h-full"
                         : isUnderline
-                            ? "h-full w-auto flex-row items-end justify-start gap-8 px-1 pb-0"
+                            ? "h-full w-auto flex-row items-end justify-start gap-2 px-1 pb-0"
                             : "h-auto w-auto flex-row items-end justify-center gap-1 px-1 pb-0",
                     effectiveListClassName
                 )}
@@ -119,11 +124,12 @@ export function FormTabs({
                                 )}
                             >
                                 {Icon && (
-                                    <Icon className={cn("h-4 w-4 shrink-0", isVertical && "rotate-90")} />
+                                    <Icon className={cn(dense ? "h-3 w-3" : "h-4 w-4", "shrink-0", isVertical && "rotate-90")} />
                                 )}
-                                <span
-                                    className={cn(
-                                        "font-bold text-[11px] uppercase tracking-widest leading-tight",
+                                    <span
+                                        className={cn(
+                                            "font-bold uppercase leading-tight",
+                                            dense ? "text-[9px] tracking-wide" : "text-[11px] tracking-widest",
                                         "whitespace-normal break-words text-center",
                                         "max-h-[16ch]",
                                         isVertical && "group-data-[state=inactive]:hidden group-hover:!block"
@@ -133,7 +139,8 @@ export function FormTabs({
                                 </span>
                                 {item.badge !== undefined && (
                                     <span className={cn(
-                                        "shrink-0 flex h-4 min-w-[1rem] px-1 items-center justify-center rounded border border-border bg-muted/50 text-muted-foreground text-[9px] font-bold leading-none",
+                                        "shrink-0 flex px-1 items-center justify-center rounded border border-border bg-muted/50 text-muted-foreground font-bold leading-none",
+                                        dense ? "h-3 min-w-[0.625rem] text-[7px]" : "h-4 min-w-[1rem] text-[9px]",
                                         isVertical && "rotate-90",
                                         "group-data-[state=active]:bg-primary-foreground/20 group-data-[state=active]:text-primary-foreground group-data-[state=active]:border-primary-foreground/30",
                                         isVertical && "group-data-[state=inactive]:hidden group-hover:!flex"
@@ -165,8 +172,8 @@ export function FormTabs({
 
         if (isUnderline) {
             return (
-                <div className={cn("flex items-end justify-start w-full px-6 h-12 bg-transparent", headerClassName)}>
-                    <div className="border-b border-border/20 w-fit">
+                <div className={cn("flex items-end justify-start w-full bg-transparent", dense ? "px-3 h-8" : "px-6 h-12", headerClassName)}>
+                    <div className="w-fit">
                         {list}
                     </div>
                 </div>
@@ -239,4 +246,14 @@ export function FormTabs({
 }
 
 
-export { TabsContent as FormTabsContent }
+export const UnderlineTabsContent = TabsContent
+
+// ── Deprecated aliases — use UnderlineTabs / TabItem / UnderlineTabsContent instead ──
+/** @deprecated Use UnderlineTabs instead */
+export const FormTabs = UnderlineTabs
+/** @deprecated Use UnderlineTabsProps instead */
+export type FormTabsProps = UnderlineTabsProps
+/** @deprecated Use TabItem instead */
+export type FormTabItem = TabItem
+/** @deprecated Use UnderlineTabsContent instead */
+export const FormTabsContent = UnderlineTabsContent

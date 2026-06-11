@@ -17,7 +17,7 @@ import { format, isWithinInterval, startOfDay, endOfDay } from "date-fns"
 import { es } from "date-fns/locale"
 import { DataCell } from '@/components/shared'
 
-import { FormTabs, FormTabsContent } from "@/components/shared"
+import { UnderlineTabs, UnderlineTabsContent } from "@/components/shared"
 import type { ColumnDef } from "@tanstack/react-table"
 import {
     ResponsiveContainer,
@@ -135,7 +135,7 @@ export function SubscriptionHistoryModal({ subscriptionId, open, onOpenChange }:
                                     <p className="text-muted-foreground">Error al cargar datos.</p>
                                 </div>
                             ) : (
-                                <FormTabs
+                                <UnderlineTabs
                                     value={activeTab}
                                     onValueChange={setActiveTab}
                                     orientation="horizontal"
@@ -150,7 +150,7 @@ export function SubscriptionHistoryModal({ subscriptionId, open, onOpenChange }:
                                     <div className="flex-1 overflow-auto p-6 scrollbar-thin">
 
                                         {/* HISTORIAL TAB */}
-                                        <FormTabsContent value="historial" className="mt-0 space-y-6">
+                                        <UnderlineTabsContent value="historial" className="mt-0 space-y-6">
                                             <div className="space-y-4">
                                                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                                                     <StatCard
@@ -220,10 +220,10 @@ export function SubscriptionHistoryModal({ subscriptionId, open, onOpenChange }:
                                                     description="No hay datos para el periodo seleccionado."
                                                 />
                                             )}
-                                        </FormTabsContent>
+                                        </UnderlineTabsContent>
 
                                         {/* ORDERS TAB */}
-                                        <FormTabsContent value="orders" className="mt-0">
+                                        <UnderlineTabsContent value="orders" className="mt-0">
                                             <div className="rounded-md border shadow-sm overflow-hidden bg-card">
                                                 <OrderTable
                                                     orders={data.orders}
@@ -234,10 +234,10 @@ export function SubscriptionHistoryModal({ subscriptionId, open, onOpenChange }:
                                                     })}
                                                 />
                                             </div>
-                                        </FormTabsContent>
+                                        </UnderlineTabsContent>
 
                                         {/* NOTES TAB */}
-                                        <FormTabsContent value="notes" className="mt-0">
+                                        <UnderlineTabsContent value="notes" className="mt-0">
                                             <div className="rounded-md border shadow-sm overflow-hidden bg-card">
                                                 <NoteTable
                                                     notes={data.notes}
@@ -248,9 +248,9 @@ export function SubscriptionHistoryModal({ subscriptionId, open, onOpenChange }:
                                                     })}
                                                 />
                                             </div>
-                                        </FormTabsContent>
+                                        </UnderlineTabsContent>
                                     </div>
-                                </FormTabs>
+                                </UnderlineTabs>
                             )}
                         </SkeletonShell>
                     )}

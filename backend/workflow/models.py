@@ -6,6 +6,37 @@ from django.contrib.contenttypes.fields import GenericForeignKey, GenericRelatio
 from django.contrib.contenttypes.models import ContentType
 from core.models import User, TimeStampedModel
 
+class Transition(models.Model):
+    """
+    Append-only audit log de transiciones de ciclo de vida de documentos
+    (cancel / annul / purge). Nunca se actualiza ni se borra — es la pista
+    de auditoría que exige deletion-policy.md.
+    """
+    class Type(models.TextChoices):
+        CANCEL = 'cancel', _('Cancelación')
+        ANNUL = 'annul', _('Anulación')
+        PURGE = 'purge', _('Purga')
+
+    entity_type = models.CharField(_("Entidad"), max_length=100, db_index=True)  # 'sales.saleorder'
+    entity_id = models.PositiveIntegerField(_("ID"), db_index=True)
+    transition = models.CharField(_("Transición"), max_length=20, choices=Type.choices, db_index=True)
+    reason = models.TextField(_("Motivo"), blank=True)
+    user = models.ForeignKey(
+        User, on_delete=models.SET_NULL, null=True, blank=True,
+        related_name='+', verbose_name=_("Usuario"),
+    )
+    created_at = models.DateTimeField(auto_now_add=True, db_index=True)
+
+    class Meta:
+        verbose_name = _("Transición de Documento")
+        verbose_name_plural = _("Transiciones de Documento")
+        ordering = ['-created_at']
+        indexes = [models.Index(fields=['entity_type', 'entity_id'])]
+
+    def __str__(self):
+        return f"{self.transition} {self.entity_type}#{self.entity_id} @ {self.created_at:%Y-%m-%d %H:%M}"
+
+
 class TaskAssignmentRule(models.Model):
     """
     Defines who gets assigned to specific types of tasks.

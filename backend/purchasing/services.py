@@ -892,11 +892,14 @@ class PurchasingService:
 
     @staticmethod
     @transaction.atomic
-    def cancel_receipt(receipt: PurchaseReceipt):
+    def cancel_receipt(receipt: PurchaseReceipt, user=None, reason: str = ''):
         """
         Cancels a DRAFT purchase receipt by reverting stock moves, deleting the
         draft JE, and marking it as CANCELLED. Never hard-deletes the record.
         """
+        from core.services.document import lock_document
+        lock_document(receipt)
+
         if receipt.status == PurchaseReceipt.Status.CANCELLED:
             return receipt
 
@@ -907,22 +910,27 @@ class PurchasingService:
         for line in receipt.lines.all():
             if line.stock_move:
                 line.stock_move.delete()
-            
+
             line.purchase_line.quantity_received -= line.quantity_received
             line.purchase_line.save()
 
         # 2. Delete Journal Entry
         if receipt.journal_entry:
+            from tax.services import validate_period_open
+            validate_period_open(receipt.journal_entry.date, action='cancelar la recepción')
             receipt.journal_entry.delete()
 
         # 3. Mark as CANCELLED
         receipt.status = PurchaseReceipt.Status.CANCELLED
         receipt.save()
+
+        from workflow.services import WorkflowService
+        WorkflowService.log_transition(receipt, 'cancel', user=user, reason=reason)
         return receipt
 
     @staticmethod
     @transaction.atomic
-    def annul_receipt(receipt: PurchaseReceipt):
+    def annul_receipt(receipt: PurchaseReceipt, user=None, reason: str = ''):
         """
         Annuls a confirmed receipt:
         1. Reverses accounting entry.
@@ -930,11 +938,19 @@ class PurchasingService:
         3. Reverts received quantities on purchase lines.
         4. Marks receipt as CANCELLED.
         """
+        from core.services.document import lock_document
+        lock_document(receipt)
+
+        if receipt.status == PurchaseReceipt.Status.CANCELLED:
+            return receipt
+
         if receipt.status != PurchaseReceipt.Status.CONFIRMED:
             raise ValidationError("Solo se pueden anular recepciones confirmadas.")
 
         # 1. Reverse Accounting
         if receipt.journal_entry:
+             from tax.services import validate_period_open
+             validate_period_open(timezone.now().date(), action='anular la recepción')
              JournalEntryService.reverse_entry(receipt.journal_entry, description=f"Anulación Recepción {receipt.number}")
 
         # 2. Reverse Stock Moves & Update Purchase Lines
@@ -961,10 +977,12 @@ class PurchasingService:
         # 3. Update Receipt Status
         receipt.status = PurchaseReceipt.Status.CANCELLED
         receipt.save()
-        
+
         # 4. Update Order Status
         PurchasingService._update_order_receiving_status(receipt.purchase_order)
-        
+
+        from workflow.services import WorkflowService
+        WorkflowService.log_transition(receipt, 'annul', user=user, reason=reason)
         return receipt
 
     @staticmethod
