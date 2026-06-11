@@ -47,7 +47,8 @@ export function SalesOrdersDrawer({ open, onOpenChange, posSessionId }: SalesOrd
             subtitle={<>Historial <span className="opacity-30">|</span> Documentos emitidos</>}
             icon={viewMode === 'orders' ? ShoppingCart : FileText}
             side="bottom"
-            boundary="embedded"
+            boundary="screen"
+            showOverlay
             defaultSize="90%"
             headerActions={
                 <UnderlineTabs
