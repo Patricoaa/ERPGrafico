@@ -47,11 +47,16 @@ class InvoiceViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
 
     def destroy(self, request, *args, **kwargs):
         instance = self.get_object()
-        if instance.status != 'CANCELLED':
+        if not request.user.is_staff:
             return Response(
-                {'error': 'Use el endpoint de cancelación para facturas activas.'},
-                status=status.HTTP_400_BAD_REQUEST,
+                {'error': 'Solo administradores pueden purgar documentos cancelados.'},
+                status=status.HTTP_403_FORBIDDEN,
             )
+        try:
+            BillingService.validate_purge(instance)
+        except ValidationError as e:
+            msg = e.messages[0] if getattr(e, 'messages', None) else str(e)
+            return Response({'error': msg}, status=status.HTTP_400_BAD_REQUEST)
         return super().destroy(request, *args, **kwargs)
 
     @action(detail=False, methods=['post'])
@@ -340,6 +345,36 @@ class InvoiceViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
             return Response({'error': msg}, status=status.HTTP_400_BAD_REQUEST)
         except Exception as e:
             return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+    @action(detail=True, methods=['post'])
+    def cancel(self, request, pk=None):
+        invoice = self.get_object()
+        try:
+            BillingService.cancel_invoice(invoice)
+            return Response(InvoiceSerializer(invoice).data)
+        except ValidationError as e:
+            msg = e.messages[0] if hasattr(e, 'messages') and e.messages else str(e)
+            return Response({'error': msg}, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+    @action(detail=True, methods=['get'])
+    def cancel_impact(self, request, pk=None):
+        """Preview what will happen when cancelling/annulling this invoice."""
+        invoice = self.get_object()
+        is_purchase_doc = invoice.purchase_order_id is not None or not invoice.is_sale_document()
+        impact = {
+            'invoice_status': invoice.status,
+            'has_folio': bool(invoice.number and invoice.number != 'Draft'),
+            'is_sale_document': not is_purchase_doc,
+            'journal_entry_status': invoice.journal_entry.status if invoice.journal_entry else None,
+            'payments': [
+                {'id': p.id, 'amount': str(p.amount), 'status': p.status}
+                for p in invoice.payments.all()
+            ],
+            'action': 'cancel' if invoice.status == Invoice.Status.DRAFT else 'annul',
+        }
+        return Response(impact)
 
     @action(detail=True, methods=['post'])
     def process_logistics(self, request, pk=None):

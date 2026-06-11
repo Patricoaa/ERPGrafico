@@ -333,15 +333,25 @@ else:
         }
     }
 
-# Channels Channel Layer
-CHANNEL_LAYERS = {
-    'default': {
-        'BACKEND': 'channels_redis.core.RedisChannelLayer',
-        'CONFIG': {
-            "hosts": [fix_redis_url(REDIS_URL, 3)], # DB 3 for Channels
+# Channels Channel Layer — same escape hatch as CACHE_BACKEND: set
+# CHANNEL_BACKEND=locmem for local dev/tests without Redis (entity bus
+# broadcasts go to an in-memory layer instead of failing on connect).
+_CHANNEL_BACKEND = os.environ.get('CHANNEL_BACKEND', 'redis')
+if _CHANNEL_BACKEND == 'locmem':
+    CHANNEL_LAYERS = {
+        'default': {
+            'BACKEND': 'channels.layers.InMemoryChannelLayer',
         },
-    },
-}
+    }
+else:
+    CHANNEL_LAYERS = {
+        'default': {
+            'BACKEND': 'channels_redis.core.RedisChannelLayer',
+            'CONFIG': {
+                "hosts": [fix_redis_url(REDIS_URL, 3)], # DB 3 for Channels
+            },
+        },
+    }
 
 
 

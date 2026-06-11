@@ -523,11 +523,16 @@ class TreasuryMovementViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
 
     def destroy(self, request, *args, **kwargs):
         instance = self.get_object()
-        if instance.status != 'CANCELLED':
+        if not request.user.is_staff:
             return Response(
-                {'error': 'Use el endpoint de cancelación para movimientos activos.'},
-                status=status.HTTP_400_BAD_REQUEST,
+                {'error': 'Solo administradores pueden purgar documentos cancelados.'},
+                status=status.HTTP_403_FORBIDDEN,
             )
+        try:
+            TreasuryService.validate_purge(instance)
+        except ValidationError as e:
+            msg = e.messages[0] if getattr(e, 'messages', None) else str(e)
+            return Response({'error': msg}, status=status.HTTP_400_BAD_REQUEST)
         return super().destroy(request, *args, **kwargs)
 
     def perform_update(self, serializer):
@@ -724,6 +729,32 @@ class TreasuryMovementViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
         except Exception as e:
             import traceback
             traceback.print_exc()
+            return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+    @action(detail=True, methods=['post'])
+    def cancel(self, request, pk=None):
+        movement = self.get_object()
+        try:
+            TreasuryService.cancel_movement(movement)
+            return Response(TreasuryMovementSerializer(movement).data)
+        except ValidationError as e:
+            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+    @action(detail=True, methods=['get'])
+    def cancel_impact(self, request, pk=None):
+        movement = self.get_object()
+        try:
+            return Response({
+                'document_type': 'TreasuryMovement',
+                'document_id': movement.id,
+                'display_id': movement.display_id,
+                'status': movement.status,
+                'is_cancellable': movement.status == TreasuryMovement.MovementStatus.DRAFT,
+                'warning': '',
+            })
+        except Exception as e:
             return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
     @action(detail=True, methods=['post'])

@@ -871,17 +871,37 @@ class PurchasingService:
 
 
     @staticmethod
+    def validate_purge(order: PurchaseOrder):
+        """
+        Un documento solo puede purgarse (hard delete) si está CANCELLED y no dejó
+        huella contable: documentos anulados con reversos se conservan por auditoría.
+        """
+        if order.status != PurchaseOrder.Status.CANCELLED:
+            raise ValidationError("Use POST /cancel/ para cancelar documentos activos.")
+        has_accounting_trace = (
+            order.journal_entry_id is not None
+            or order.invoices.filter(journal_entry__isnull=False).exists()
+            or order.payments.filter(journal_entry__isnull=False).exists()
+            or order.receipts.filter(journal_entry__isnull=False).exists()
+        )
+        if has_accounting_trace:
+            raise ValidationError(
+                "No se puede eliminar: el documento tiene asientos contables asociados. "
+                "Los documentos anulados se conservan como pista de auditoría."
+            )
+
+    @staticmethod
     @transaction.atomic
     def cancel_receipt(receipt: PurchaseReceipt):
         """
         Cancels a DRAFT purchase receipt by reverting stock moves, deleting the
         draft JE, and marking it as CANCELLED. Never hard-deletes the record.
         """
-        if receipt.status != PurchaseReceipt.Status.DRAFT:
-            raise ValidationError("Solo se pueden cancelar recepciones en estado Borrador.")
-
         if receipt.status == PurchaseReceipt.Status.CANCELLED:
             return receipt
+
+        if receipt.status != PurchaseReceipt.Status.DRAFT:
+            raise ValidationError("Solo se pueden cancelar recepciones en estado Borrador.")
 
         # 1. Revert received quantities & Delete Stock Moves
         for line in receipt.lines.all():
@@ -1177,6 +1197,28 @@ class PurchasingService:
         from treasury.models import TreasuryMovement
 
         if order.status == PurchaseOrder.Status.DRAFT:
+            # VALIDATION 1: Receipts with confirmed status
+            confirmed_receipts = order.receipts.filter(status=PurchaseReceipt.Status.CONFIRMED).exists()
+            if confirmed_receipts:
+                raise ValidationError(
+                    "❌ No se puede cancelar: existen recepciones confirmadas.\n"
+                    "📦 Los productos ya fueron recibidos físicamente.\n"
+                    "💡 Use la acción 'Anular' en la recepción primero."
+                )
+
+            # VALIDATION 2: Posted payments (status is canonical; JE check covers
+            # legacy movements created before the status field existed)
+            from django.db.models import Q
+            posted_payments = order.payments.filter(
+                Q(status=TreasuryMovement.MovementStatus.POSTED)
+                | Q(journal_entry__status='POSTED')
+            ).exists()
+            if posted_payments:
+                raise ValidationError(
+                    "❌ No se puede cancelar: existen pagos contabilizados.\n"
+                    "💡 Use la acción 'Anular' para revertir con asientos de reversión."
+                )
+
             # Soft cancel: all children are DRAFT → just mark CANCELLED, no reversals
             for invoice in order.invoices.all():
                 if invoice.status != 'CANCELLED':
@@ -1238,22 +1280,35 @@ class PurchaseOrderService(DocumentService):
 
         from billing.models import Invoice
         from billing.services import BillingService
+        from treasury.models import TreasuryMovement
         from treasury.services import TreasuryService
 
-        # 1. Annul Invoices (Bills)
+        # 1. Handle Invoices — cancel if DRAFT, annul if POSTED/PAID
         for invoice in order.invoices.all():
-            if invoice.status != Invoice.Status.CANCELLED:
-                 BillingService.annul_invoice(invoice, force=force)
+            if invoice.status == Invoice.Status.CANCELLED:
+                continue
+            if invoice.status == Invoice.Status.DRAFT:
+                BillingService.cancel_invoice(invoice)
+            else:
+                BillingService.annul_invoice(invoice, force=force)
         
-        # 2. Annul Receipts
+        # 2. Handle Receipts — cancel if DRAFT, annul if CONFIRMED
         for receipt in order.receipts.all():
-            if receipt.status != PurchaseReceipt.Status.CANCELLED:
-                 PurchasingService.annul_receipt(receipt)
+            if receipt.status == PurchaseReceipt.Status.CANCELLED:
+                continue
+            if receipt.status == PurchaseReceipt.Status.DRAFT:
+                PurchasingService.cancel_receipt(receipt)
+            else:
+                PurchasingService.annul_receipt(receipt)
         
-        # 3. Annul stand-alone Payments
+        # 3. Handle Payments — cancel if DRAFT, annul if POSTED
         for movement in order.payments.all():
-            if movement.journal_entry and movement.journal_entry.status == 'POSTED':
-                 TreasuryService.annul_movement(movement)
+            if movement.status == TreasuryMovement.MovementStatus.CANCELLED:
+                continue
+            if movement.status == TreasuryMovement.MovementStatus.DRAFT:
+                TreasuryService.cancel_movement(movement)
+            else:
+                TreasuryService.annul_movement(movement)
 
         order.status = PurchaseOrder.Status.CANCELLED
         if reason:

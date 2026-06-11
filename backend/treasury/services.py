@@ -610,6 +610,20 @@ class TreasuryService:
         return None
 
     @staticmethod
+    def validate_purge(movement: TreasuryMovement):
+        """
+        Un movimiento solo puede purgarse (hard delete) si está CANCELLED y no dejó
+        huella contable: movimientos anulados con reversos se conservan por auditoría.
+        """
+        if movement.status != TreasuryMovement.MovementStatus.CANCELLED:
+            raise ValidationError("Use el endpoint de cancelación para movimientos activos.")
+        if movement.journal_entry_id is not None:
+            raise ValidationError(
+                "No se puede eliminar: el movimiento tiene asientos contables asociados. "
+                "Los documentos anulados se conservan como pista de auditoría."
+            )
+
+    @staticmethod
     @transaction.atomic
     def cancel_movement(movement: TreasuryMovement):
         """
