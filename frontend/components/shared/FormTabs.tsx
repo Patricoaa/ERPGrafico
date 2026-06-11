@@ -65,9 +65,9 @@ export function FormTabs({
         ? cn(
             "group relative w-auto h-12 transition-all duration-200 bg-transparent rounded-none",
             "border-b-2 border-transparent",
-            "data-[state=active]:border-primary data-[state=active]:text-foreground data-[state=active]:font-semibold",
-            "data-[state=inactive]:text-muted-foreground hover:text-foreground",
-            "focus-visible:outline-none disabled:opacity-20 disabled:pointer-events-none px-1 flex items-center justify-center gap-2"
+            "data-[state=active]:border-primary data-[state=active]:text-foreground data-[state=active]:font-bold",
+            "data-[state=inactive]:text-foreground/60 data-[state=inactive]:font-bold hover:text-foreground",
+            "focus-visible:outline-none disabled:opacity-40 disabled:pointer-events-none px-1 flex items-center justify-center gap-2"
         )
         : cn(
             "group relative w-auto h-auto transition-all duration-200",
