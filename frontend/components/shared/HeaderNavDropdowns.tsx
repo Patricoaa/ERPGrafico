@@ -136,67 +136,69 @@ export function HeaderNavDropdowns({ navigation, iconName }: HeaderNavDropdownsP
             )}
 
             {/* ── Primary Dropdown: View Selector ── */}
-            <DropdownMenu>
-                <DropdownMenuTrigger
-                    className={cn(
-                        "flex items-center gap-1.5 px-2 py-1.5 -ml-2 rounded-md transition-colors",
-                        "text-sm font-semibold tracking-tight text-foreground/90",
-                        "hover:bg-muted/50 focus:outline-none focus-visible:ring-1 focus-visible:ring-primary/30",
-                        "data-[state=open]:bg-muted/50"
-                    )}
-                >
-                    <span className="whitespace-nowrap">{activeTab?.label || "—"}</span>
-                    <ChevronsUpDown className="h-3.5 w-3.5 text-muted-foreground/60 shrink-0" />
-                </DropdownMenuTrigger>
+            {regularTabs.length > 0 && (
+                <DropdownMenu>
+                    <DropdownMenuTrigger
+                        className={cn(
+                            "flex items-center gap-1.5 px-2 py-1.5 -ml-2 rounded-md transition-colors",
+                            "text-sm font-semibold tracking-tight text-foreground/90",
+                            "hover:bg-muted/50 focus:outline-none focus-visible:ring-1 focus-visible:ring-primary/30",
+                            "data-[state=open]:bg-muted/50"
+                        )}
+                    >
+                        <span className="whitespace-nowrap">{activeTab?.label || "—"}</span>
+                        <ChevronsUpDown className="h-3.5 w-3.5 text-muted-foreground/60 shrink-0" />
+                    </DropdownMenuTrigger>
 
-                <DropdownMenuContent
-                    align="start"
-                    sideOffset={8}
-                    className="min-w-[200px] rounded-lg border-border/40 shadow-xl shadow-black/10 bg-popover/95 backdrop-blur-md p-1"
-                >
-                    {regularTabs.map((tab, idx) => {
-                        const isActive = tab.value === activeValue
-                        const isConfig = tab.value === 'config' || tab.value === 'settings'
-                        
-                        return (
-                            <React.Fragment key={tab.value}>
-                                {isConfig && idx > 0 && (
-                                    <div className="h-px bg-border/40 my-1 mx-1" />
-                                )}
-                                <DropdownMenuItem
-                                    className={cn(
-                                        "cursor-pointer rounded-md transition-colors p-0 focus:bg-primary/5",
-                                        isActive && "bg-primary/10"
+                    <DropdownMenuContent
+                        align="start"
+                        sideOffset={8}
+                        className="min-w-[200px] rounded-lg border-border/40 shadow-xl shadow-black/10 bg-popover/95 backdrop-blur-md p-1"
+                    >
+                        {regularTabs.map((tab, idx) => {
+                            const isActive = tab.value === activeValue
+                            const isConfig = tab.value === 'config' || tab.value === 'settings'
+                            
+                            return (
+                                <React.Fragment key={tab.value}>
+                                    {isConfig && idx > 0 && (
+                                        <div className="h-px bg-border/40 my-1 mx-1" />
                                     )}
-                                >
-                                    <Link
-                                        href={tab.href}
-                                        className="flex items-center gap-2.5 py-2 px-2.5 w-full"
-                                    >
-                                        {tab.iconName && (
-                                            <DynamicIcon
-                                                name={tab.iconName}
-                                                className={cn(
-                                                    "h-4 w-4 shrink-0",
-                                                    isActive ? "text-primary" : "text-muted-foreground"
-                                                )}
-                                            />
+                                    <DropdownMenuItem
+                                        className={cn(
+                                            "cursor-pointer rounded-md transition-colors p-0 focus:bg-primary/5",
+                                            isActive && "bg-primary/10"
                                         )}
-                                        <span
-                                            className={cn(
-                                                "text-xs font-semibold",
-                                                isActive ? "text-primary" : "text-foreground/80"
-                                            )}
+                                    >
+                                        <Link
+                                            href={tab.href}
+                                            className="flex items-center gap-2.5 py-2 px-2.5 w-full"
                                         >
-                                            {tab.label}
-                                        </span>
-                                    </Link>
-                                </DropdownMenuItem>
-                            </React.Fragment>
-                        )
-                    })}
-                </DropdownMenuContent>
-            </DropdownMenu>
+                                            {tab.iconName && (
+                                                <DynamicIcon
+                                                    name={tab.iconName}
+                                                    className={cn(
+                                                        "h-4 w-4 shrink-0",
+                                                        isActive ? "text-primary" : "text-muted-foreground"
+                                                    )}
+                                                />
+                                            )}
+                                            <span
+                                                className={cn(
+                                                    "text-xs font-semibold",
+                                                    isActive ? "text-primary" : "text-foreground/80"
+                                                )}
+                                            >
+                                                {tab.label}
+                                            </span>
+                                        </Link>
+                                    </DropdownMenuItem>
+                                </React.Fragment>
+                            )
+                        })}
+                    </DropdownMenuContent>
+                </DropdownMenu>
+            )}
 
             {/* ── Separator + Secondary Dropdown: Sub-view Selector ── */}
             {activeSubTabs && activeSubTabs.length > 0 && (
