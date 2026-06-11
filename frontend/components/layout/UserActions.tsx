@@ -156,7 +156,12 @@ export function UserActions({ isInboxOpen, onInboxToggle }: UserActionsProps) {
                         <motion.button
                             whileTap={{ scale: 0.95 }}
                             onClick={() => setIsCalculatorOpen(true)}
-                            className="h-10 w-10 flex items-center justify-center rounded-md text-foreground/50 hover:bg-accent hover:text-accent-foreground transition-all duration-200 bg-transparent border-none shadow-none"
+                            className={cn(
+                                "h-10 w-10 flex items-center justify-center rounded-md transition-all duration-200",
+                                isCalculatorOpen
+                                    ? "bg-primary text-primary-foreground"
+                                    : "text-foreground/50 hover:bg-accent hover:text-accent-foreground"
+                            )}
                         >
                             <Calculator className="h-5 w-5" />
                         </motion.button>
