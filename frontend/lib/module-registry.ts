@@ -27,6 +27,8 @@ export const MODULE_REGISTRY: Record<string, ModuleConfig> = {
   hr:          { id: "hr",          label: "RRHH",          icon: UserCog,        iconName: "user-cog",        permission: "hr.view_dashboard_hr",                     defaultUrl: "/hr/employees" },
 } as const
 
+export const MODULE_ORDER = ["dashboard", "accounting", "billing", "sales", "contacts", "inventory", "production", "treasury", "purchasing", "finances", "hr"] as const
+
 export function getModuleConfig(id: string): ModuleConfig | undefined {
   return MODULE_REGISTRY[id]
 }

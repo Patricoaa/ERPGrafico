@@ -2,6 +2,7 @@
 
 import React from "react"
 import Link from "next/link"
+import { usePathname } from "next/navigation"
 import { ChevronsUpDown } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { DynamicIcon } from '@/components/shared'
@@ -11,6 +12,8 @@ import {
     DropdownMenuItem,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import { PermissionGuard } from "@/components/auth/PermissionGuard"
+import { MODULE_REGISTRY, MODULE_ORDER, getModuleDefaultUrl } from "@/lib/module-registry"
 import type { NavigationConfig } from "@/components/providers/HeaderProvider"
 
 interface HeaderNavDropdownsProps {
@@ -26,6 +29,12 @@ interface HeaderNavDropdownsProps {
  */
 export function HeaderNavDropdowns({ navigation, iconName }: HeaderNavDropdownsProps) {
     const { tabs, activeValue, subActiveValue, subSubActiveValue, breadcrumbs } = navigation
+
+    // Derive current module id from pathname (same logic as DashboardShell)
+    const pathname = usePathname()
+    const segments = pathname.split('/').filter(Boolean)
+    const currentModuleId = segments[0] || 'dashboard'
+    const isModuleInRegistry = !!MODULE_REGISTRY[currentModuleId]
 
     // Separate config tab from regular tabs
     const regularTabs = (tabs || [])
@@ -45,11 +54,73 @@ export function HeaderNavDropdowns({ navigation, iconName }: HeaderNavDropdownsP
                 />
             )}
 
-            {/* ── Module Name (Root) ── */}
-            {navigation.moduleName && (
+            {/* ── Module Name (Root) — Module Selector ── */}
+            {navigation.moduleName && isModuleInRegistry && (
+                <div className="flex items-center">
+                    <DropdownMenu>
+                        <DropdownMenuTrigger
+                            className={cn(
+                                "flex items-center gap-1.5 px-2 py-1.5 -ml-2 rounded-md transition-colors",
+                                "text-sm font-semibold tracking-tight text-muted-foreground",
+                                "hover:bg-muted/50 focus:outline-none focus-visible:ring-1 focus-visible:ring-primary/30",
+                                "data-[state=open]:bg-muted/50"
+                            )}
+                        >
+                            <span className="whitespace-nowrap">{navigation.moduleName}</span>
+                            <ChevronsUpDown className="h-3.5 w-3.5 text-muted-foreground/60 shrink-0" />
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent
+                            align="start"
+                            sideOffset={8}
+                            className="min-w-[200px] rounded-lg border-border/40 shadow-xl shadow-black/10 bg-popover/95 backdrop-blur-md p-1"
+                        >
+                            {MODULE_ORDER.map((id) => {
+                                const mod = MODULE_REGISTRY[id]
+                                if (!mod) return null
+                                const isActive = id === currentModuleId
+                                return (
+                                    <PermissionGuard permission={mod.permission ?? undefined} key={id}>
+                                        <DropdownMenuItem
+                                            className={cn(
+                                                "cursor-pointer rounded-md transition-colors p-0 focus:bg-primary/5",
+                                                isActive && "bg-primary/10"
+                                            )}
+                                        >
+                                            <Link
+                                                href={getModuleDefaultUrl(id)}
+                                                className="flex items-center gap-2.5 py-2 px-2.5 w-full"
+                                            >
+                                                <DynamicIcon
+                                                    name={mod.iconName}
+                                                    className={cn(
+                                                        "h-4 w-4 shrink-0",
+                                                        isActive ? "text-primary" : "text-muted-foreground"
+                                                    )}
+                                                />
+                                                <span
+                                                    className={cn(
+                                                        "text-xs font-semibold",
+                                                        isActive ? "text-primary" : "text-foreground/80"
+                                                    )}
+                                                >
+                                                    {mod.label}
+                                                </span>
+                                            </Link>
+                                        </DropdownMenuItem>
+                                    </PermissionGuard>
+                                )
+                            })}
+                        </DropdownMenuContent>
+                    </DropdownMenu>
+                    <span className="text-border/60 mx-1.5 text-sm select-none">/</span>
+                </div>
+            )}
+
+            {/* ── Module Name (Root) — Static fallback for non-registry modules (e.g. Settings) ── */}
+            {navigation.moduleName && !isModuleInRegistry && (
                 <div className="flex items-center">
                     {navigation.moduleHref ? (
-                        <Link 
+                        <Link
                             href={navigation.moduleHref}
                             className="text-sm font-semibold tracking-tight text-muted-foreground hover:text-foreground transition-colors"
                         >
