@@ -27,6 +27,7 @@ interface NewCheckingAccount {
 interface NewCreditCard {
     name: string
     currency: string
+    creditLimit: string
 }
 
 interface NewLoan {
@@ -49,7 +50,7 @@ function emptyAccount(): NewCheckingAccount {
 }
 
 function emptyCard(): NewCreditCard {
-    return { name: "", currency: "CLP" }
+    return { name: "", currency: "CLP", creditLimit: "" }
 }
 
 function emptyLoan(): NewLoan {
@@ -227,6 +228,7 @@ export function BankCreationWizard({ open, onOpenChange, onSuccess }: BankCreati
                     bank: createdBankId,
                     currency: card.currency,
                     account: null,
+                    credit_limit: card.creditLimit ? Number(card.creditLimit) : null,
                     tenders: [],
                     usage: "purchases",
                 })
@@ -391,6 +393,13 @@ export function BankCreationWizard({ open, onOpenChange, onSuccess }: BankCreati
                                             value={card.currency}
                                             onChange={(v) => updateCard(i, { currency: v })}
                                             options={CURRENCY_OPTIONS}
+                                        />
+                                        <LabeledInput
+                                            label="Cupo Total"
+                                            placeholder="5000000"
+                                            type="number"
+                                            value={card.creditLimit}
+                                            onChange={(e) => updateCard(i, { creditLimit: e.target.value })}
                                         />
                                     </div>
                                 </ItemCard>
@@ -558,7 +567,7 @@ export function BankCreationWizard({ open, onOpenChange, onSuccess }: BankCreati
                                 )
                             })}
                             {creditCards.filter((c) => c.name).map((c, i) => (
-                                <SummaryRow key={i} icon={CreditCard} label="Tarjeta crédito" value={c.name} />
+                                <SummaryRow key={i} icon={CreditCard} label="Tarjeta crédito" value={c.name} badge={c.creditLimit ? `Cupo: $${Number(c.creditLimit).toLocaleString('es-CL')}` : undefined} />
                             ))}
                             {loans.filter((l) => l.principal).map((l, i) => (
                                 <SummaryRow

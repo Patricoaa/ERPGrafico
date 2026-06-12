@@ -1337,6 +1337,7 @@ class Command(BaseCommand):
                 'account': acc_cc_chile,
                 'account_type': TreasuryAccount.Type.CREDIT_CARD,
                 'account_number': "4500-XXXX-XXXX-1234",
+                'credit_limit': Decimal('5000000'),
                 'allows_cash': False,
                 'allows_card': True,
                 'allows_transfer': False,

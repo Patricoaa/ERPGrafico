@@ -805,6 +805,11 @@ class TreasuryAccount(models.Model):
         null=True,
         help_text=_("Número de cuenta bancaria (solo para cuentas corrientes)")
     )
+    credit_limit = models.DecimalField(
+        _("Cupo Total"),
+        max_digits=18, decimal_places=2, null=True, blank=True,
+        help_text=_("Límite de crédito total otorgado por el banco para esta tarjeta."),
+    )
     default_bank_format = models.CharField(
         _("Formato Bancario por Defecto"),
         max_length=50,
@@ -925,7 +930,36 @@ class TreasuryAccount(models.Model):
         if self.account:
             return self.account.balance
         return 0
-    
+
+    @property
+    def available_credit(self) -> Decimal | None:
+        """
+        Cupo disponible de la tarjeta: credit_limit - deuda actual.
+        Considera saldo contable + cargos pendientes no facturados
+        + cuotas del cronograma no facturadas.
+        Retorna None si no es CREDIT_CARD o no tiene credit_limit.
+        """
+        if self.account_type != self.Type.CREDIT_CARD or self.credit_limit is None:
+            return None
+
+        current_debt = abs(self.current_balance) if self.current_balance else Decimal('0')
+
+        unbilled_charges = (
+            CardPendingCharge.objects.filter(
+                card_account=self, is_billed=False
+            ).aggregate(total=models.Sum('amount'))['total']
+            or Decimal('0')
+        )
+        unbilled_installments = (
+            CardPurchaseInstallment.objects.filter(
+                card_purchase_group__card_account=self, is_billed=False
+            ).aggregate(total=models.Sum('principal_amount'))['total']
+            or Decimal('0')
+        )
+
+        used = current_debt + unbilled_charges + unbilled_installments
+        return max(self.credit_limit - used, Decimal('0'))
+
     history = HistoricalRecords()
 
 

@@ -66,6 +66,7 @@ export function TreasuryAccountWizard({ open, onOpenChange, onSuccess, defaultBa
     const [accountId, setAccountId] = useState<string | null>(null)
     const [bank, setBank] = useState<string>("")
     const [accountNumber, setAccountNumber] = useState("")
+    const [creditLimit, setCreditLimit] = useState("")
     const [tenders, setTenders] = useState<string[]>([])
     const [usage, setUsage] = useState<Usage>("both")
 
@@ -81,6 +82,7 @@ export function TreasuryAccountWizard({ open, onOpenChange, onSuccess, defaultBa
             setAccountId(null)
             setBank(defaultBankId ? String(defaultBankId) : "")
             setAccountNumber("")
+            setCreditLimit("")
             setTenders([])
             setUsage("both")
         })
@@ -199,6 +201,15 @@ export function TreasuryAccountWizard({ open, onOpenChange, onSuccess, defaultBa
                             value={code}
                             onChange={(e) => setCode(e.target.value)}
                         />
+                        {accountType === "CREDIT_CARD" && (
+                            <LabeledInput
+                                label="Cupo Total"
+                                placeholder="5000000"
+                                type="number"
+                                value={creditLimit}
+                                onChange={(e) => setCreditLimit(e.target.value)}
+                            />
+                        )}
                     </div>
                 ),
             },
@@ -275,13 +286,16 @@ export function TreasuryAccountWizard({ open, onOpenChange, onSuccess, defaultBa
                                 value={fixedTenderLabel ?? (tenders.length ? tenders.map((t) => TENDER_LABELS[t] ?? t).join(", ") : "—")}
                             />
                             <SummaryRow label="Uso" value={USAGE_CARDS.find((u) => u.value === usage)?.label ?? "—"} />
+                            {accountType === "CREDIT_CARD" && creditLimit && (
+                                <SummaryRow label="Cupo Total" value={`$${Number(creditLimit).toLocaleString('es-CL')}`} />
+                            )}
                         </div>
                     </div>
                 ),
             },
         ]
         return list.filter((s): s is WizardStep => s !== null)
-    }, [accountType, name, code, currency, accountId, bank, accountNumber, tenders, usage, isPending, banks,
+    }, [accountType, name, code, currency, accountId, bank, accountNumber, creditLimit, tenders, usage, isPending, banks,
         requiresBank, requiresAccountNumber, showTendersStep, fixedTenderLabel, isLiabilityType])
 
     const handleComplete = async () => {
@@ -294,6 +308,7 @@ export function TreasuryAccountWizard({ open, onOpenChange, onSuccess, defaultBa
                 account_type: accountType as TreasuryAccountType,
                 bank: requiresBank && bank ? parseInt(bank) : null,
                 account_number: accountNumber.trim() || null,
+                credit_limit: creditLimit ? Number(creditLimit) : null,
                 tenders: accountType === "CHECKING" ? tenders : [],
                 usage,
             })
