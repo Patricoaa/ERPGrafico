@@ -381,6 +381,8 @@ export function DataTable<TData, TValue>({
                         customFilterCount={customFilterCount}
                         createAction={createAction}
                         rightButtonGroupAction={rightButtonGroupAction}
+                        tabs={tabs}
+                        statsAction={statsAction}
                     />
                 )}
 
@@ -802,6 +804,8 @@ export function DataTable<TData, TValue>({
                         customFilterCount={customFilterCount}
                         createAction={createAction}
                         rightButtonGroupAction={rightButtonGroupAction}
+                        tabs={tabs}
+                        statsAction={statsAction}
                     />
                 </div>
             )}

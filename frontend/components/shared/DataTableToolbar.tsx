@@ -16,7 +16,7 @@ import {
 import { Separator } from "@/components/ui/separator"
 import { Drawer } from "./Drawer"
 import { UnderlineTabs, type TabItem } from "./UnderlineTabs"
-import { EntityStatsBottomSheet, type Section } from "./EntityStatsBottomSheet"
+import { EntityStatsBottomSheet, type StatsPanel } from "./EntityStatsBottomSheet"
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 
 interface DataTableToolbarProps<TData> {
@@ -72,11 +72,10 @@ export type StatsActionConfig = {
         title: string
         description?: string
         icon?: LucideIcon
-        sections: Section[]
+        panels: StatsPanel[]
         segments?: { value: string; label: string; icon?: LucideIcon }[]
         activeSegment?: string
         onSegmentChange?: (value: string) => void
-        layout?: "stack" | "auto"
     }
 }
 
@@ -194,21 +193,17 @@ export function DataTableToolbar<TData>(props: DataTableToolbarProps<TData>) {
                             </div>
                         )}
 
-                        {/* Stats button — ghost, before settings */}
+                        {/* Stats button — before settings */}
                         {statsAction && (
-                            <Tooltip>
-                                <TooltipTrigger asChild>
-                                    <Button
-                                        variant="ghost"
-                                        size="icon"
-                                        className="h-9 w-9 shrink-0"
-                                        onClick={handleStatsClick}
-                                    >
-                                        <statsAction.icon className="h-4 w-4" />
-                                    </Button>
-                                </TooltipTrigger>
-                                <TooltipContent side="bottom">{statsAction.sheet?.title || 'Estadísticas'}</TooltipContent>
-                            </Tooltip>
+                            <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-9 w-9 shrink-0"
+                                onClick={handleStatsClick}
+                                title={statsAction.sheet?.title || 'Estadísticas'}
+                            >
+                                <statsAction.icon className="h-4 w-4" />
+                            </Button>
                         )}
 
                         {/* Config button with filter indicator */}
@@ -507,11 +502,10 @@ export function DataTableToolbar<TData>(props: DataTableToolbarProps<TData>) {
                     title={statsAction.sheet.title}
                     description={statsAction.sheet.description}
                     icon={statsAction.sheet.icon}
-                    sections={statsAction.sheet.sections}
+                    panels={statsAction.sheet.panels}
                     segments={statsAction.sheet.segments}
                     activeSegment={statsAction.sheet.activeSegment}
                     onSegmentChange={statsAction.sheet.onSegmentChange}
-                    layout={statsAction.sheet.layout}
                 />
             )}
         </>
