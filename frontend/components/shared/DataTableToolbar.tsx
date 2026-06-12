@@ -17,6 +17,7 @@ import { Separator } from "@/components/ui/separator"
 import { Drawer } from "./Drawer"
 import { UnderlineTabs, type TabItem } from "./UnderlineTabs"
 import { EntityStatsBottomSheet, type Section } from "./EntityStatsBottomSheet"
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 
 interface DataTableToolbarProps<TData> {
     table: Table<TData>
@@ -193,31 +194,41 @@ export function DataTableToolbar<TData>(props: DataTableToolbarProps<TData>) {
                             </div>
                         )}
 
-                        {/* Config button with filter indicator */}
-                        {hasConfigContent && (
-                            <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-9 w-9 relative shrink-0"
-                                onClick={() => setConfigDrawerOpen(true)}
-                            >
-                                <Settings2 className="h-4 w-4" />
-                                {isFiltered && (
-                                    <span className="absolute top-0.5 right-0.5 h-2 w-2 rounded-full bg-primary ring-1 ring-background" />
-                                )}
-                            </Button>
+                        {/* Stats button — ghost, before settings */}
+                        {statsAction && (
+                            <Tooltip>
+                                <TooltipTrigger asChild>
+                                    <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        className="h-9 w-9 shrink-0"
+                                        onClick={handleStatsClick}
+                                    >
+                                        <statsAction.icon className="h-4 w-4" />
+                                    </Button>
+                                </TooltipTrigger>
+                                <TooltipContent side="bottom">{statsAction.sheet?.title || 'Estadísticas'}</TooltipContent>
+                            </Tooltip>
                         )}
 
-                        {/* Stats button — ghost, after settings */}
-                        {statsAction && (
-                            <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-9 w-9 shrink-0"
-                                onClick={handleStatsClick}
-                            >
-                                <statsAction.icon className="h-4 w-4" />
-                            </Button>
+                        {/* Config button with filter indicator */}
+                        {hasConfigContent && (
+                            <Tooltip>
+                                <TooltipTrigger asChild>
+                                    <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        className="h-9 w-9 relative shrink-0"
+                                        onClick={() => setConfigDrawerOpen(true)}
+                                    >
+                                        <Settings2 className="h-4 w-4" />
+                                        {isFiltered && (
+                                            <span className="absolute top-0.5 right-0.5 h-2 w-2 rounded-full bg-primary ring-1 ring-background" />
+                                        )}
+                                    </Button>
+                                </TooltipTrigger>
+                                <TooltipContent side="bottom">Ajustes</TooltipContent>
+                            </Tooltip>
                         )}
 
                         {/* Main button group */}
