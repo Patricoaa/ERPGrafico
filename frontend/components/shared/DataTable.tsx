@@ -27,7 +27,7 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { LucideIcon } from "lucide-react"
 import { ScrollArea } from "@/components/ui/scroll-area"
 
-import { BulkActionButtons, BulkActionDock, DataTablePagination, DataTableToolbar, EmptyState, SkeletonShell, type BulkAction } from '@/components/shared'
+import { BulkActionButtons, BulkActionDock, DataTablePagination, DataTableToolbar, EmptyState, SkeletonShell, type BulkAction, type StatsActionConfig } from '@/components/shared'
 import { resolveEmptyState, type DataTableEmptyState } from './emptyStateResolver'
 
 export interface DataTableProps<TData, TValue> {
@@ -54,9 +54,18 @@ export interface DataTableProps<TData, TValue> {
     useAdvancedFilter?: boolean
     onReset?: () => void
     renderCustomView?: (table: ReactTable<TData>) => React.ReactNode
+    /** @deprecated Search now lives in the config drawer */
     leftAction?: React.ReactNode
     rightAction?: React.ReactNode
     showToolbarSort?: boolean
+    /** Optional tabs on the left side of the toolbar */
+    tabs?: {
+        items: { value: string; label: string; icon?: LucideIcon; badge?: string | number; hidden?: boolean; disabled?: boolean }[]
+        value: string
+        onValueChange: (value: string) => void
+    }
+    /** Optional stats button in the toolbar button group */
+    statsAction?: StatsActionConfig
     onRowClick?: (row: TData) => void
     /** Layout variant. Use 'embedded' when the table lives inside a card/panel (no outer border, compact toolbar). Use 'standalone' for full-page tables with border. Use 'minimal' for simple display tables inside tabs/detail panels (no toolbar, no pagination). Use 'compact' for dense CSS Grid tables inside modals/drawers (no toolbar, no pagination, no border). */
     variant?: 'standalone' | 'embedded' | 'minimal' | 'compact'
@@ -168,6 +177,8 @@ export function DataTable<TData, TValue>({
     leftAction,
     rightAction,
     showToolbarSort,
+    tabs,
+    statsAction,
     onRowClick,
     variant,
     isLoading = false,
@@ -309,7 +320,20 @@ export function DataTable<TData, TValue>({
         }
     }, [internalRowSelection, onRowSelectionChange])
 
-    const showToolbar = !isMinimal && !isCompact && (filterColumn || globalFilterFields || (facetedFilters && facetedFilters.length > 0) || toolbarAction || rightAction || leftAction || createAction || (viewOptions && viewOptions.length > 0) || showToolbarSort)
+    const showToolbar = !isMinimal && !isCompact && (
+        tabs ||
+        leftAction ||
+        filterColumn || globalFilterFields ||
+        (facetedFilters && facetedFilters.length > 0) ||
+        customFilters ||
+        toolbarAction ||
+        rightAction ||
+        createAction ||
+        (viewOptions && viewOptions.length > 0) ||
+        showToolbarSort ||
+        statsAction ||
+        rightButtonGroupAction
+    )
     const selectedRows = table.getSelectedRowModel().rows
     const selectedItems = React.useMemo(() => selectedRows.map(r => r.original), [selectedRows])
     const clearSelection = React.useCallback(() => table.resetRowSelection(), [table])
@@ -673,7 +697,6 @@ export function DataTable<TData, TValue>({
                             toolbarAction={toolbarAction}
                             useAdvancedFilter={useAdvancedFilter}
                             onReset={onReset}
-                            leftAction={leftAction}
                             rightAction={rightAction}
                             showToolbarSort={showToolbarSort}
                             viewOptions={viewOptions}
@@ -685,6 +708,8 @@ export function DataTable<TData, TValue>({
                             customFilterCount={customFilterCount}
                             createAction={createAction}
                             rightButtonGroupAction={rightButtonGroupAction}
+                            tabs={tabs}
+                            statsAction={statsAction}
                         />
                     </div>
                 )}
