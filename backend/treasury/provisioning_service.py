@@ -68,6 +68,7 @@ class TreasuryProvisioningService:
             "account_type": payload.get("account_type"),
             "bank_id": payload.get("bank") or None,
             "account_number": payload.get("account_number") or None,
+            "credit_limit": payload.get("credit_limit") or None,
             "default_bank_format": payload.get("default_bank_format") or None,
         }
         return cls.provision(

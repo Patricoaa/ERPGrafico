@@ -51,6 +51,8 @@ export interface TreasuryAccount {
     /** true for BRIDGE — managed by provider, no manual edit/delete */
     is_system_managed: boolean
     current_balance?: number
+    credit_limit?: number | null
+    available_credit?: number | null
     bank?: number | null
     bank_name?: string
     account_number?: string | null
@@ -80,6 +82,7 @@ export interface TreasuryAccountCreatePayload {
     allows_transfer: boolean
     bank?: number | null
     account_number?: string | null
+    credit_limit?: number | null
 }
 
 export type TreasuryAccountUpdatePayload = Partial<TreasuryAccountCreatePayload>
@@ -93,7 +96,7 @@ export interface TreasuryAccountProvisionPayload {
     account_type: TreasuryAccountType
     bank?: number | null
     account_number?: string | null
-    /** Tenders a auto-provisionar (PaymentMethod.method_type). Vacío = defaults del tipo. */
+    credit_limit?: number | null
     tenders: string[]
     usage: 'sales' | 'purchases' | 'both'
 }

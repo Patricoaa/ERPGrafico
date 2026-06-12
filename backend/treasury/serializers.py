@@ -48,7 +48,13 @@ class TreasuryAccountSerializer(serializers.ModelSerializer):
     is_system_managed = serializers.SerializerMethodField()
 
     current_balance = serializers.DecimalField(max_digits=20, decimal_places=0, read_only=True)
+    credit_limit = serializers.DecimalField(max_digits=18, decimal_places=2, required=False, allow_null=True)
+    available_credit = serializers.SerializerMethodField(read_only=True)
     payment_methods = PaymentMethodSerializer(many=True, read_only=True)
+
+    def get_available_credit(self, obj):
+        val = obj.available_credit
+        return float(val) if val is not None else None
     terminal_providers = serializers.SerializerMethodField()
 
     def get_is_system_managed(self, obj):
@@ -82,7 +88,8 @@ class TreasuryAccountSerializer(serializers.ModelSerializer):
     class Meta:
         model = TreasuryAccount
         fields = ['id', 'name', 'code', 'currency', 'account', 'account_name', 'account_code', 'account_type', 'account_type_display',
-                  'bank', 'bank_name', 'account_number', 'allows_cash', 'allows_card', 'allows_transfer', 'allows_check',
+                  'bank', 'bank_name', 'account_number', 'credit_limit', 'available_credit',
+                  'allows_cash', 'allows_card', 'allows_transfer', 'allows_check',
                   'is_system_managed', 'current_balance', 'payment_methods', 'default_bank_format', 'reconciliation_settings',
                   'terminal_providers']
 
