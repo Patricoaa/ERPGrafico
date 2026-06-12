@@ -178,7 +178,7 @@ export function Drawer({
     const sideStyles = {
         bottom: "rounded-t-xl border-t-0 !bottom-0 !top-auto !w-full !left-0 !right-0",
         top: "rounded-b-xl border-b-0 !top-0 !bottom-auto !w-full !left-0 !right-0",
-        right: "rounded-l-xl border-l-0 !h-full !right-0 !left-auto !top-0 !bottom-0 sm:max-w-none",
+        right: "rounded-l-xl border-l-0 !h-full !right-4 !left-auto !top-0 !bottom-0 sm:max-w-none",
         left: "rounded-r-xl border-r-0 !h-full !left-0 !right-auto !top-0 !bottom-0 sm:max-w-none",
     }
 
@@ -206,7 +206,7 @@ export function Drawer({
                     maxWidth: isHorizontal ? (maxSize ?? '100vw') : undefined,
                     minHeight: !isHorizontal ? minSize : undefined,
                     maxHeight: !isHorizontal ? (maxSize ?? '100vh') : undefined,
-                    ...(side === "right" ? { right: 0, top: 0, bottom: 0, height: '100%' } : {}),
+                    ...(side === "right" ? { top: 0, bottom: 0, height: '100%' } : {}),
                     ...(side === "left" ? { left: 0, top: 0, bottom: 0, height: '100%' } : {}),
                     ...(side === "bottom" ? { left: 0, right: 0, bottom: 0, width: '100%' } : {}),
                     ...(side === "top" ? { left: 0, right: 0, top: 0, width: '100%' } : {})
