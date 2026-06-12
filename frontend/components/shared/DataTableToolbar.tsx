@@ -2,7 +2,6 @@
 
 import React, { useState, useMemo } from "react"
 import { ArrowUpDown, ArrowUp, ArrowDown, MoreHorizontal, Settings2, Check, X, ListFilter } from "lucide-react"
-import type { LucideIcon } from "lucide-react"
 import { Table } from "@tanstack/react-table"
 
 import { Button } from "@/components/ui/button"
@@ -16,7 +15,7 @@ import {
 import { Separator } from "@/components/ui/separator"
 import { Drawer } from "./Drawer"
 import { UnderlineTabs, type TabItem } from "./UnderlineTabs"
-import { EntityStatsBottomSheet, type StatsPanel } from "./EntityStatsBottomSheet"
+import { EntityHubScreen, type HubPanel, type HubTab } from "./EntityHubScreen"
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 
 interface DataTableToolbarProps<TData> {
@@ -52,11 +51,11 @@ interface DataTableToolbarProps<TData> {
         value: string
         onValueChange: (value: string) => void
     }
-    /** Optional stats button (ghost icon) rendered in the button group.
-     *  If `sheet` is provided, the toolbar manages an EntityStatsBottomSheet internally
+    /** Optional entity hub button (ghost icon) rendered in the button group.
+     *  If `screen` is provided, the toolbar manages an EntityHubScreen internally
      *  (open/close state and rendering). If only `onClick` is provided, it's a simple
      *  button handler for custom drawers. */
-    statsAction?: StatsActionConfig
+    entityHubAction?: EntityHubActionConfig
 
     /** SmartSearchBar (or any left-aligned content) shown in the toolbar between tabs and right buttons */
     leftAction?: React.ReactNode
@@ -65,17 +64,14 @@ interface DataTableToolbarProps<TData> {
     rightButtonGroupAction?: React.ReactNode
 }
 
-export type StatsActionConfig = {
+export type EntityHubActionConfig = {
     icon: React.ComponentType<{ className?: string }>
     onClick?: () => void
-    sheet?: {
-        title: string
-        description?: string
-        icon?: LucideIcon
-        panels: StatsPanel[]
-        segments?: { value: string; label: string; icon?: LucideIcon }[]
-        activeSegment?: string
-        onSegmentChange?: (value: string) => void
+    screen?: {
+        entityName: string
+        tabs: HubTab[]
+        activeTab?: string
+        onTabChange?: (value: string) => void
     }
 }
 
@@ -118,18 +114,18 @@ export function DataTableToolbar<TData>(props: DataTableToolbarProps<TData>) {
         customFilterCount = 0,
         tabs,
         leftAction,
-        statsAction,
+        entityHubAction,
         createAction,
         rightButtonGroupAction,
     } = props
 
     const [configDrawerOpen, setConfigDrawerOpen] = useState(false)
-    const [statsSheetOpen, setStatsSheetOpen] = useState(false)
+    const [hubScreenOpen, setHubScreenOpen] = useState(false)
 
-    const handleStatsClick = () => {
-        statsAction?.onClick?.()
-        if (statsAction?.sheet) {
-            setStatsSheetOpen(true)
+    const handleHubClick = () => {
+        entityHubAction?.onClick?.()
+        if (entityHubAction?.screen) {
+            setHubScreenOpen(true)
         }
     }
 
@@ -193,16 +189,16 @@ export function DataTableToolbar<TData>(props: DataTableToolbarProps<TData>) {
                             </div>
                         )}
 
-                        {/* Stats button — before settings */}
-                        {statsAction && (
+                        {/* Entity hub button — before settings */}
+                        {entityHubAction && (
                             <Button
                                 variant="ghost"
                                 size="icon"
                                 className="h-9 w-9 shrink-0"
-                                onClick={handleStatsClick}
-                                title={statsAction.sheet?.title || 'Estadísticas'}
+                                onClick={handleHubClick}
+                                title={entityHubAction.screen?.entityName || 'Entity Hub'}
                             >
-                                <statsAction.icon className="h-4 w-4" />
+                                <entityHubAction.icon className="h-4 w-4" />
                             </Button>
                         )}
 
@@ -494,18 +490,15 @@ export function DataTableToolbar<TData>(props: DataTableToolbarProps<TData>) {
                 </div>
             </Drawer>
 
-            {/* Stats sheet — managed internally when sheet config provided */}
-            {statsAction?.sheet && (
-                <EntityStatsBottomSheet
-                    open={statsSheetOpen}
-                    onOpenChange={setStatsSheetOpen}
-                    title={statsAction.sheet.title}
-                    description={statsAction.sheet.description}
-                    icon={statsAction.sheet.icon}
-                    panels={statsAction.sheet.panels}
-                    segments={statsAction.sheet.segments}
-                    activeSegment={statsAction.sheet.activeSegment}
-                    onSegmentChange={statsAction.sheet.onSegmentChange}
+            {/* Entity hub screen — managed internally when screen config provided */}
+            {entityHubAction?.screen && (
+                <EntityHubScreen
+                    open={hubScreenOpen}
+                    onOpenChange={setHubScreenOpen}
+                    entityName={entityHubAction.screen.entityName}
+                    tabs={entityHubAction.screen.tabs}
+                    activeTab={entityHubAction.screen.activeTab}
+                    onTabChange={entityHubAction.screen.onTabChange}
                 />
             )}
         </>
