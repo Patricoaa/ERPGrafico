@@ -7,7 +7,7 @@ from django.utils import timezone
 from django.contrib.auth.hashers import make_password
 from decimal import Decimal
 import random
-from accounting.models import Account, AccountType, AccountingSettings, JournalEntry, JournalItem, Budget, BudgetItem, BSCategory, ISCategory
+from accounting.models import Account, AccountType, AccountingSettings, JournalEntry, JournalItem, Budget, BudgetItem, FiscalYear, BSCategory, ISCategory
 from accounting.services import AccountingService
 from inventory.models import (
     ProductCategory, Product, Warehouse, StockMove, UoMCategory, UoM, 
@@ -24,13 +24,16 @@ from treasury.models import (
     POSTerminal, POSSession, POSSessionAudit,
     Bank, PaymentMethod, TerminalBatch,
     PaymentTerminalProvider, PaymentTerminalDevice,
+    CardPurchaseGroup, CardPurchaseInstallment, CardPendingCharge,
+    CreditCardStatement, PaymentAllocation,
+    Check, Checkbook, BankLoan, LoanInstallment,
 )
 from billing.models import Invoice, NoteWorkflow
 from tax.models import TaxPeriod, AccountingPeriod, F29Declaration, F29Payment
 from hr.models import GlobalHRSettings, AFP, PayrollConcept, Employee, EmployeeConceptAmount, Payroll, PayrollItem, Absence, SalaryAdvance, PayrollPayment
 from production.models import BillOfMaterials, BillOfMaterialsLine, WorkOrder, ProductionConsumption, WorkOrderMaterial, WorkOrderHistory
-from core.models import User, CompanySettings, Attachment
-from workflow.models import Task, Notification, TaskAssignmentRule, WorkflowSettings, NotificationRule
+from core.models import User, CompanySettings, Attachment, GlobalSearchIndex, IdempotencyRecord
+from workflow.models import Task, Notification, TaskAssignmentRule, WorkflowSettings, NotificationRule, Transition, Comment
 
 class Command(BaseCommand):
     help = 'Seeds database with comprehensive graphic industry data using IFRS CoA'
@@ -53,80 +56,152 @@ class Command(BaseCommand):
         )
 
     def handle(self, *args, **options):
+        import time
+        seed_start = time.time()
+
         # NOTE: No @transaction.atomic on the outer handle().
         # The purge phase runs each model deletion in its own savepoint via _safe_delete().
         # Wrapping the whole handle in one transaction would cause PostgreSQL to mark the
         # entire connection as aborted if any single savepoint fails, breaking all subsequent
         # deletions with "current transaction is aborted".
         if options['purge']:
-            self.stdout.write(self.style.WARNING('Purging existing data...'))
-            try:
-                self._purge_data()
-                self.stdout.write(self.style.SUCCESS('Data purged.'))
-            except Exception as e:
-                import traceback
-                self.stdout.write(self.style.ERROR(f'Error purging data: {str(e)}'))
-                self.stdout.write(traceback.format_exc())
-                return
+            self._purge_data()
 
         # Wrap the seeding phase in its own atomic block so we get full rollback
         # if anything fails during data creation (separate from the purge phase above).
         with transaction.atomic():
-            self.stdout.write('Populating IFRS Chart of Accounts...')
+            section_start = time.time()
+            self.stdout.write(f"\n{'─' * 50}")
+            self.stdout.write('  Populating IFRS Chart of Accounts...')
             result_msg = AccountingService.populate_ifrs_coa()
-            self.stdout.write(f"  {result_msg}")
+            n_accounts = Account.objects.count()
+            self.stdout.write(f"  ✓ {result_msg} ({n_accounts} cuentas, {time.time()-section_start:.1f}s)")
 
-            self.stdout.write('Configuring Inventory Accounting Mappings...')
+            section_start = time.time()
+            self.stdout.write(f"\n{'─' * 50}")
+            self.stdout.write('  Configuring Inventory Accounting Mappings...')
             self._configure_inventory_accounting()
+            self.stdout.write(f"  ({time.time()-section_start:.1f}s)")
 
-            self.stdout.write('Creating Demo Users...')
+            section_start = time.time()
+            self.stdout.write(f"\n{'─' * 50}")
+            self.stdout.write('  Creating Demo Users and Partners...')
             self._create_all_users()
-            
-            # Get references to key accounts for further seeding
             accounts = self._get_account_references()
-            
-            self.stdout.write('Creating Partners...')
             partners = self._create_partners(accounts)
+            n_users = User.objects.count()
+            n_contacts = Contact.objects.count()
+            self.stdout.write(f"  ✓ {n_users} usuarios, {n_contacts} contactos ({time.time()-section_start:.1f}s)")
 
-            self.stdout.write('Creating Units of Measure...')
+            section_start = time.time()
+            self.stdout.write(f"\n{'─' * 50}")
+            self.stdout.write('  Units of Measure...')
             uoms = self._create_uoms()
+            n_uom = UoM.objects.count()
+            self.stdout.write(f"  ✓ {n_uom} UoMs ({time.time()-section_start:.1f}s)")
 
-            self.stdout.write('Creating Inventory & Manufacturing Data...')
+            section_start = time.time()
+            self.stdout.write(f"\n{'─' * 50}")
+            self.stdout.write('  Inventory & Manufacturing Data...')
             inventory = self._create_inventory(accounts, uoms)
+            n_prods = Product.objects.count()
+            n_boms = BillOfMaterials.objects.count()
+            self.stdout.write(f"  ✓ {n_prods} productos, {n_boms} BOMs ({time.time()-section_start:.1f}s)")
 
-            self.stdout.write('Creating Subscriptions...')
+            section_start = time.time()
+            self.stdout.write(f"\n{'─' * 50}")
+            self.stdout.write('  Subscriptions...')
             self._create_subscriptions(accounts, partners['suppliers'])
+            n_subs = Subscription.objects.count()
+            self.stdout.write(f"  ✓ {n_subs} suscripciones ({time.time()-section_start:.1f}s)")
 
-            # Add initial stock for all storable products first to calculate its value
-            self.stdout.write('Adding Initial Stock...')
+            section_start = time.time()
+            self.stdout.write(f"\n{'─' * 50}")
+            self.stdout.write('  Initial Stock...')
             total_stock_value = self._add_initial_stock(accounts, partners)
+            self.stdout.write(f"  ({time.time()-section_start:.1f}s)")
 
-            self.stdout.write('Creating Opening Balance...')
+            section_start = time.time()
+            self.stdout.write(f"\n{'─' * 50}")
+            self.stdout.write('  Opening Balance...')
             self._create_opening_balance(accounts, partners, total_stock_value)
+            self.stdout.write(f"  ({time.time()-section_start:.1f}s)")
 
-            self.stdout.write('Creating Treasury Infrastructure...')
+            section_start = time.time()
+            self.stdout.write(f"\n{'─' * 50}")
+            self.stdout.write('  Treasury Infrastructure...')
             self._create_treasury_infrastructure(accounts, partners)
+            n_ta = TreasuryAccount.objects.count()
+            n_banks = Bank.objects.count()
+            n_pm = PaymentMethod.objects.count()
+            self.stdout.write(f"  ✓ {n_ta} cuentas tesorería, {n_banks} bancos, {n_pm} métodos pago ({time.time()-section_start:.1f}s)")
 
-            self.stdout.write('Creating Accounting & Tax Periods...')
+            section_start = time.time()
+            self.stdout.write(f"\n{'─' * 50}")
+            self.stdout.write('  Accounting & Tax Periods...')
             periods = self._create_periods()
+            n_tax = TaxPeriod.objects.count()
+            n_acc = AccountingPeriod.objects.count()
+            self.stdout.write(f"  ✓ {n_tax} períodos tributarios, {n_acc} contables ({time.time()-section_start:.1f}s)")
 
             if not options['no_demo_flows'] and not options['only_infra']:
-                self.stdout.write('Creating Sales & Purchasing Demo Flow...')
+                section_start = time.time()
+                self.stdout.write(f"\n{'─' * 50}")
+                self.stdout.write('  Sales & Purchasing Demo Flow...')
                 self._create_sales_purchasing_demo(accounts, partners, inventory, periods)
 
-            self.stdout.write('Initializing Company Settings...')
+                section_start = time.time()
+                self.stdout.write(f"\n{'─' * 50}")
+                self.stdout.write('  Loans Demo...')
+                self._create_loans_demo(accounts, partners)
+
+                section_start = time.time()
+                self.stdout.write(f"\n{'─' * 50}")
+                self.stdout.write('  Purchases Demo...')
+                self._create_purchases_demo(accounts, partners, inventory, uoms)
+
+                section_start = time.time()
+                self.stdout.write(f"\n{'─' * 50}")
+                self.stdout.write('  Sales Demo...')
+                self._create_sales_demo(accounts, partners, inventory, uoms)
+                n_po = PurchaseOrder.objects.count()
+                n_so = SaleOrder.objects.count()
+                n_ot = WorkOrder.objects.count()
+                n_inv = Invoice.objects.count()
+                n_tm = TreasuryMovement.objects.count()
+                self.stdout.write(f"  ✓ {n_po} OC, {n_so} NV, {n_ot} OT, {n_inv} facturas, {n_tm} movs. tesorería")
+
+            section_start = time.time()
+            self.stdout.write(f"\n{'─' * 50}")
+            self.stdout.write('  Company Settings...')
             self._initialize_company_settings()
+            self.stdout.write(f"  ({time.time()-section_start:.1f}s)")
 
-            self.stdout.write('Seeding Chilean HR Data...')
+            section_start = time.time()
+            self.stdout.write(f"\n{'─' * 50}")
+            self.stdout.write('  HR Data...')
             self._create_hr_demo_data(accounts)
+            self.stdout.write(f"  ({time.time()-section_start:.1f}s)")
 
-            self.stdout.write('Initializing Workflow Settings...')
+            section_start = time.time()
+            self.stdout.write(f"\n{'─' * 50}")
+            self.stdout.write('  Workflow Settings...')
             self._initialize_workflow_settings()
+            self.stdout.write(f"  ({time.time()-section_start:.1f}s)")
 
-            self.stdout.write('Creating Demo Budget...')
+            section_start = time.time()
+            self.stdout.write(f"\n{'─' * 50}")
+            self.stdout.write('  Demo Budget...')
             self._create_demo_budget(accounts)
+            self.stdout.write(f"  ({time.time()-section_start:.1f}s)")
 
-        self.stdout.write(self.style.SUCCESS('Successfully seeded demo data for Graphic Industry!'))
+        elapsed = time.time() - seed_start
+        self.stdout.write(f"\n{'═' * 50}")
+        self.stdout.write(self.style.SUCCESS(
+            f"  Seed completado en {elapsed:.1f}s "
+            f"({n_accounts} cuentas, {n_users} usuarios, "
+            f"{n_prods} productos, {n_contacts} contactos)"
+        ))
 
     def _configure_inventory_accounting(self):
         """
@@ -209,34 +284,60 @@ class Command(BaseCommand):
 
 
     def _purge_data(self):
+        import time
         from django.db import connection
         from core.models import ActionLog
-        
+
+        purge_start = time.time()
+        total_records = 0
+        section_records = 0
+
+        def _section_header(title):
+            nonlocal section_records
+            section_records = 0
+            self.stdout.write(f"\n  {'─' * 3} {title} {'─' * max(1, 40 - len(title))}")
+
         def _safe_delete(model_class, name):
-            self.stdout.write(f"  Purging {name} (Truncate)...")
+            nonlocal total_records, section_records
             try:
                 table_name = model_class._meta.db_table
                 with connection.cursor() as cursor:
-                    # RESTART IDENTITY resets the auto-increment sequences (PostgreSQL)
-                    # CASCADE handles foreign key dependencies
-                    cursor.execute(f'TRUNCATE TABLE "{table_name}" RESTART IDENTITY CASCADE;')
+                    cursor.execute(f'SELECT COUNT(*) FROM "{table_name}"')
+                    count = cursor.fetchone()[0]
+                    if count:
+                        cursor.execute(f'TRUNCATE TABLE "{table_name}" RESTART IDENTITY CASCADE;')
+                        total_records += count
+                        section_records += count
+                        self.stdout.write(f"  {name:<45} {count:>6} registros")
             except Exception as e:
-                # Fallback for non-PostgreSQL or if TRUNCATE fails
-                self.stdout.write(f"    - Truncate failed, falling back to delete() for {name}")
+                error_str = str(e).lower()
+                if "does not exist" in error_str:
+                    self.stdout.write(f"  {name:<45}    — (no existe)")
+                    return
+                self.stdout.write(f"  {name:<45}    — fallback delete")
                 try:
                     with transaction.atomic():
-                        model_class.objects.all().delete()
+                        deleted, _ = model_class.objects.all().delete()
+                        total_records += deleted
+                        section_records += deleted
+                        if deleted:
+                            self.stdout.write(f"  {name:<45} {deleted:>6} registros (fallback)")
                 except Exception as e2:
-                    error_str = str(e2).lower()
-                    if "does not exist" in error_str:
-                        return
-                    self.stdout.write(self.style.ERROR(f"    Failed to delete {name}: {str(e2)}"))
+                    self.stdout.write(self.style.WARNING(f"  {name:<45}    ✗ {str(e2)[:60]}"))
 
-        # 0. System & Logs
+        # ── 0. System & Logs ─────────────────────────────────
+        _section_header("0. System & Logs")
         _safe_delete(ActionLog, "ActionLog")
         _safe_delete(Attachment, "Attachment")
+        _safe_delete(GlobalSearchIndex, "GlobalSearchIndex")
+        _safe_delete(IdempotencyRecord, "IdempotencyRecord")
+        _safe_delete(Transition, "Transition")
+        _safe_delete(Comment, "Comment")
+        _safe_delete(WorkflowSettings, "WorkflowSettings")
+        self.stdout.write(f"  {' ':<45} {section_records:>6} total")
 
-        # 1. Workflows & Transients
+        # ── 1. Workflows & Transients ────────────────────────
+        _section_header("1. Workflows & Transients")
         _safe_delete(NoteWorkflow, "NoteWorkflow")
         _safe_delete(Subscription, "Subscription")
         _safe_delete(DraftCart, "DraftCart")
@@ -244,26 +345,34 @@ class Command(BaseCommand):
         _safe_delete(Notification, "Notification")
         _safe_delete(TaskAssignmentRule, "TaskAssignmentRule")
         _safe_delete(NotificationRule, "NotificationRule")
+        self.stdout.write(f"  {' ':<45} {section_records:>6} total")
 
-        # 2. Production
+        # ── 2. Production ────────────────────────────────────
+        _section_header("2. Production")
         _safe_delete(ProductionConsumption, "ProductionConsumption")
         _safe_delete(WorkOrderMaterial, "WorkOrderMaterial")
         _safe_delete(BillOfMaterialsLine, "BillOfMaterialsLine")
         _safe_delete(BillOfMaterials, "BillOfMaterials")
         _safe_delete(WorkOrderHistory, "WorkOrderHistory")
         _safe_delete(WorkOrder, "WorkOrder")
+        self.stdout.write(f"  {' ':<45} {section_records:>6} total")
 
-        # 3. Tax Module
+        # ── 3. Tax ───────────────────────────────────────────
+        _section_header("3. Tax")
         _safe_delete(F29Payment, "F29Payment")
         _safe_delete(F29Declaration, "F29Declaration")
+        self.stdout.write(f"  {' ':<45} {section_records:>6} total")
 
-        # 4. Logistics Detail
+        # ── 4. Logistics Detail ──────────────────────────────
+        _section_header("4. Logistics Detail")
         _safe_delete(SaleReturnLine, "SaleReturnLine")
         _safe_delete(SaleDeliveryLine, "SaleDeliveryLine")
         _safe_delete(PurchaseReturnLine, "PurchaseReturnLine")
         _safe_delete(PurchaseReceiptLine, "PurchaseReceiptLine")
+        self.stdout.write(f"  {' ':<45} {section_records:>6} total")
 
-        # 5. Transactional Documents
+        # ── 5. Transactional Documents ───────────────────────
+        _section_header("5. Transactional Documents")
         _safe_delete(SaleReturn, "SaleReturn")
         _safe_delete(SaleDelivery, "SaleDelivery")
         _safe_delete(PurchaseReturn, "PurchaseReturn")
@@ -271,14 +380,26 @@ class Command(BaseCommand):
         _safe_delete(Invoice, "Invoice")
         _safe_delete(TreasuryMovement, "TreasuryMovement")
         _safe_delete(StockMove, "StockMove")
+        self.stdout.write(f"  {' ':<45} {section_records:>6} total")
 
-        # 6. Orders
+        # ── 5.5. Credit Card / Payment Allocations ───────────
+        _section_header("5.5. Credit Card / Payment Allocations")
+        _safe_delete(PaymentAllocation, "PaymentAllocation")
+        _safe_delete(CardPendingCharge, "CardPendingCharge")
+        _safe_delete(CardPurchaseInstallment, "CardPurchaseInstallment")
+        _safe_delete(CreditCardStatement, "CreditCardStatement")
+        self.stdout.write(f"  {' ':<45} {section_records:>6} total")
+
+        # ── 6. Orders ────────────────────────────────────────
+        _section_header("6. Orders")
         _safe_delete(SaleLine, "SaleLine")
         _safe_delete(SaleOrder, "SaleOrder")
         _safe_delete(PurchaseLine, "PurchaseLine")
         _safe_delete(PurchaseOrder, "PurchaseOrder")
+        self.stdout.write(f"  {' ':<45} {section_records:>6} total")
 
-        # 7. POS & Infrastructure
+        # ── 7. POS & Infrastructure ──────────────────────────
+        _section_header("7. POS & Infrastructure")
         _safe_delete(POSSessionAudit, "POSSessionAudit")
         _safe_delete(POSSession, "POSSession")
         _safe_delete(POSTerminal, "POSTerminal")
@@ -286,27 +407,40 @@ class Command(BaseCommand):
         _safe_delete(PaymentMethod, "PaymentMethod")
         _safe_delete(PaymentTerminalDevice, "PaymentTerminalDevice")
         _safe_delete(PaymentTerminalProvider, "PaymentTerminalProvider")
+        self.stdout.write(f"  {' ':<45} {section_records:>6} total")
 
-        # 8. Banking
+        # ── 7.5. Checks & Loans ─────────────────────────────
+        _section_header("7.5. Checks & Loans")
+        _safe_delete(Check, "Check")
+        _safe_delete(Checkbook, "Checkbook")
+        _safe_delete(LoanInstallment, "LoanInstallment")
+        _safe_delete(BankLoan, "BankLoan")
+        self.stdout.write(f"  {' ':<45} {section_records:>6} total")
+
+        # ── 8. Banking ───────────────────────────────────────
+        _section_header("8. Banking")
         _safe_delete(BankStatementLine, "BankStatementLine")
         _safe_delete(BankStatement, "BankStatement")
         _safe_delete(ReconciliationMatch, "ReconciliationMatch")
         _safe_delete(ReconciliationSettings, "ReconciliationSettings")
         _safe_delete(TreasuryAccount, "TreasuryAccount")
         _safe_delete(Bank, "Bank")
+        _safe_delete(CardPurchaseGroup, "CardPurchaseGroup")
+        self.stdout.write(f"  {' ':<45} {section_records:>6} total")
 
-        # 9. Financial Core
+        # ── 9. Financial Core ────────────────────────────────
+        _section_header("9. Financial Core")
         _safe_delete(JournalEntry, "JournalEntry")
         _safe_delete(BudgetItem, "BudgetItem")
         _safe_delete(Budget, "Budget")
-
+        _safe_delete(FiscalYear, "FiscalYear")
         _safe_delete(ProductCustomField, "ProductCustomField")
         _safe_delete(CustomFieldTemplate, "CustomFieldTemplate")
-
-        # 9.5 Partner Transactions
         _safe_delete(PartnerTransaction, "PartnerTransaction")
+        self.stdout.write(f"  {' ':<45} {section_records:>6} total")
 
-        # 9.6 HR Module — MUST be before Contact (Employee.contact is PROTECT)
+        # ── 9.6. HR Module ──────────────────────────────────
+        _section_header("9.6. HR Module")
         _safe_delete(PayrollItem, "PayrollItem")
         _safe_delete(PayrollPayment, "PayrollPayment")
         _safe_delete(Payroll, "Payroll")
@@ -317,39 +451,50 @@ class Command(BaseCommand):
         _safe_delete(PayrollConcept, "PayrollConcept")
         _safe_delete(AFP, "AFP")
         _safe_delete(GlobalHRSettings, "GlobalHRSettings")
+        self.stdout.write(f"  {' ':<45} {section_records:>6} total")
 
-        # 10. Master Data & Basics
+        # ── 10. Master Data & Basics ─────────────────────────
+        _section_header("10. Master Data & Basics")
         _safe_delete(PricingRule, "PricingRule")
         _safe_delete(ProductAttributeValue, "ProductAttributeValue")
         _safe_delete(ProductAttribute, "ProductAttribute")
         _safe_delete(Product, "Product")
         _safe_delete(ProductCategory, "ProductCategory")
         _safe_delete(Warehouse, "Warehouse")
-        # Contact must come after Employee (Employee.contact is on_delete=PROTECT)
+        _safe_delete(PartnerEquityStake, "PartnerEquityStake")
         _safe_delete(Contact, "Contact")
         _safe_delete(UoM, "UoM")
         _safe_delete(UoMCategory, "UoMCategory")
         _safe_delete(Account, "Account")
         _safe_delete(AccountingPeriod, "AccountingPeriod")
         _safe_delete(TaxPeriod, "TaxPeriod")
+        self.stdout.write(f"  {' ':<45} {section_records:>6} total")
 
-        # 11. Clear History (Comprehensive)
-        self.stdout.write("  Clearing ALL Historical Records...")
-        historical_models = [
-            Employee, Payroll,
-            Product, StockMove, SaleOrder, PurchaseOrder, Invoice, JournalEntry,
-            Contact, Warehouse, ProductCategory, UoM, POSSession, TreasuryMovement,
-            PartnerTransaction
-        ]
-        for model in historical_models:
+        # ── 11. Historical Records ───────────────────────────
+        hist_start = time.time()
+        hist_count = 0
+        self.stdout.write(f"\n  {'─' * 3} 11. Historical Records {'─' * max(1, 40 - 23)}")
+        for model in [
+            Employee, Payroll, Product, StockMove, SaleOrder, PurchaseOrder,
+            Invoice, JournalEntry, Contact, Warehouse, ProductCategory,
+            UoM, POSSession, TreasuryMovement, PartnerTransaction
+        ]:
             if hasattr(model, 'history'):
                 try:
-                    model.history.model.objects.all().delete()
-                    self.stdout.write(f"    - {model.__name__} History cleared.")
+                    n, _ = model.history.model.objects.all().delete()
+                    hist_count += n
+                    if n:
+                        self.stdout.write(f"  {model.__name__ + ' History':<45} {n:>6} registros")
                 except Exception as e:
-                    self.stdout.write(f"    - Could not clear {model.__name__} history: {str(e)}")
+                    self.stdout.write(f"  {model.__name__ + ' History':<45}    ✗ {str(e)[:60]}")
+        self.stdout.write(f"  {' ':<45} {hist_count:>6} total")
 
-        self.stdout.write(self.style.SUCCESS("Purge completed successfully."))
+        purge_elapsed = time.time() - purge_start
+        self.stdout.write(f"\n  {'─' * 50}")
+        self.stdout.write(self.style.SUCCESS(
+            f"  Purge completado: {total_records + hist_count:,} registros "
+            f"en {purge_elapsed:.1f}s"
+        ))
 
     def _get_account_references(self):
         # We fetch accounts by code as defined in the modernize IFRS service
@@ -1562,8 +1707,12 @@ class Command(BaseCommand):
         # 1. SAMPLE SALE: NV -> GD -> FACT
         customer = partners['customers'][0]
         warehouse = inventory['warehouse']
-        # Use a standard product to avoid manufacturing validation during seeding
-        product = Product.objects.filter(product_type='STANDARD').first()
+        # Use a storable product (no manufacturing validation)
+        product = Product.objects.filter(
+            track_inventory=True, product_type=Product.Type.STORABLE
+        ).exclude(
+            requires_advanced_manufacturing=True
+        ).first()
         
         if product:
             order = SaleOrder.objects.create(
@@ -1571,7 +1720,7 @@ class Command(BaseCommand):
                 date=timezone.now().date(),
                 payment_method=SaleOrder.PaymentMethod.CREDIT
             )
-            SaleLine.objects.create(order=order, product=product, quantity=100, unit_price=150)
+            SaleLine.objects.create(order=order, product=product, uom=product.uom, quantity=100, unit_price=150)
             order.save() # Triggers totals calculation
             
             # Confirm and Delivery
@@ -1591,7 +1740,383 @@ class Command(BaseCommand):
                 status=Invoice.Status.POSTED,
                 date=timezone.now().date()
             )
-            self.stdout.write(f"    ✓ Demo Sale Flow: FACT-{invoice.number} created.")
+            self.stdout.write(f"  ✓ NV-{order.number}: {customer.name} → 100u {product.name} (FACT-{invoice.number})")
+        else:
+            self.stdout.write("  — No se encontró producto storable para demo flow")
+
+    def _create_loans_demo(self, accounts, partners):
+        from treasury.loan_service import LoanService
+
+        admin = User.objects.filter(is_superuser=True).first()
+        if BankLoan.objects.filter(loan_number="DEMO-LOAN-001").exists():
+            self.stdout.write("  ✓ Préstamo demo ya existe, saltando.")
+            return
+
+        self.stdout.write("  ─────────────────────────────────────────────")
+        bank_estado = Bank.objects.get(code="ESTADO")
+        bco_estado = TreasuryAccount.objects.get(code="BCO-ESTADO")
+
+        parent_liability = Account.objects.get(code='2.1.04')
+        acc_loan_liability, _ = Account.objects.get_or_create(
+            code='2.1.04.10',
+            defaults={
+                'name': 'Préstamos Bancarios por Pagar',
+                'account_type': AccountType.LIABILITY,
+                'parent': parent_liability,
+                'is_reconcilable': True,
+                'bs_category': BSCategory.CURRENT_LIABILITY,
+            }
+        )
+        loan_liability_ta, _ = TreasuryAccount.objects.get_or_create(
+            code="PASIVO-PRESTAMO-001",
+            defaults={
+                'name': "Préstamo Bancario por Pagar (Demo)",
+                'currency': "CLP",
+                'account': acc_loan_liability,
+                'account_type': TreasuryAccount.Type.LOAN,
+            }
+        )
+
+        loan = BankLoan.objects.create(
+            lender=bank_estado,
+            loan_number="DEMO-LOAN-001",
+            currency=BankLoan.Currency.CLP,
+            principal=Decimal('10000000'),
+            interest_rate=Decimal('1.2'),
+            rate_basis=BankLoan.RateBasis.MONTHLY,
+            amortization_system=BankLoan.AmortizationSystem.FRENCH,
+            term_months=12,
+            start_date=timezone.now().date(),
+            first_due_date=timezone.now().date() + timezone.timedelta(days=30),
+            insurance_monthly=Decimal('5000'),
+            opening_fee=Decimal('50000'),
+            stamp_tax=Decimal('10000'),
+            penalty_rate=Decimal('1.5'),
+            disbursement_account=bco_estado,
+            liability_account=loan_liability_ta,
+            status=BankLoan.Status.DRAFT,
+        )
+        self.stdout.write(
+            f"  ✓ Préstamo {loan.display_id} creado: "
+            f"${loan.principal:,.0f} @ {loan.interest_rate}% / {loan.term_months} cuotas"
+        )
+
+        settings = AccountingSettings.get_solo()
+        loan = LoanService.disburse(
+            loan,
+            created_by=admin,
+            commission_expense_account=settings.loan_commission_expense_account or accounts.get('bank_commission'),
+            stamp_tax_expense_account=settings.loan_stamp_tax_expense_account or accounts.get('expense_general'),
+        )
+        first_inst = loan.installments.filter(number=1).first()
+        n_inst = loan.installments.count()
+        self.stdout.write(f"  ✓ Schedule generado: {n_inst} cuotas (cuota fija: ${first_inst.total_amount:,.0f})")
+        net_cash = loan.principal - loan.opening_fee - loan.stamp_tax
+        self.stdout.write(
+            f"  ✓ Desembolso → BCO-ESTADO: ${net_cash:,.0f} neto "
+            f"(capital ${loan.principal:,.0f} - com ${loan.opening_fee:,.0f} - ITE ${loan.stamp_tax:,.0f})"
+        )
+
+        LoanService.pay_installment(
+            loan, first_inst,
+            payment_account=bco_estado,
+            interest_expense_account=accounts['interest_expense'],
+            insurance_expense_account=accounts['insurance_expense'],
+            created_by=admin,
+        )
+        first_inst.refresh_from_db()
+        self.stdout.write(
+            f"  ✓ Cuota #1 pagada: ${first_inst.total_amount:,.0f} "
+            f"(capital: ${first_inst.principal_amount:,.0f} + "
+            f"interés: ${first_inst.interest_amount:,.0f} + "
+            f"seguro: ${first_inst.insurance_amount:,.0f})"
+        )
+        self.stdout.write("  ── 1 préstamo, 1 desembolso, 1 cuota pagada")
+
+    def _create_purchases_demo(self, accounts, partners, inventory, uoms):
+        from purchasing.services import PurchasingService, PurchaseOrderService
+        from billing.services import BillingService
+        from treasury.services import TreasuryService
+        from treasury.check_service import CheckService
+
+        admin = User.objects.filter(is_superuser=True).first()
+        wh = inventory['warehouse']
+        today = timezone.now().date()
+
+        s1 = partners['suppliers'][0]  # Distribuidora de Papeles
+        s2 = partners['suppliers'][1]  # Tintas Gráficas
+
+        bco_estado = TreasuryAccount.objects.get(code="BCO-ESTADO")
+        bco_chile = TreasuryAccount.objects.get(code="BCO-CHILE")
+        card_chile = TreasuryAccount.objects.get(code="TC-VISA-CHILE")
+        safe = TreasuryAccount.objects.get(code="CAJA-FUERTE")
+
+        self.stdout.write("  ─────────────────────────────────────────────")
+
+        # ── PO-01: Transfer (50 resmas papel) ─────────────────────────
+        papel = Product.objects.get(code="INS-0001")
+        if not PurchaseOrder.objects.filter(supplier=s1, date=today, notes="Seed-Compra-Transfer").exists():
+            po1 = PurchaseOrder.objects.create(
+                supplier=s1, date=today,
+                payment_method=PurchaseOrder.PaymentMethod.TRANSFER,
+                warehouse=wh, notes="Seed-Compra-Transfer",
+            )
+            PurchaseLine.objects.create(
+                order=po1, product=papel, quantity=50,
+                uom=uoms['resma'], unit_cost=5000, tax_rate=Decimal('19'),
+            )
+            po1.save()
+            PurchaseOrderService().confirm(po1, user=admin)
+            PurchasingService.receive_order(po1, wh)
+            BillingService.create_purchase_bill(
+                po1, supplier_invoice_number="FAC-SUP-001", date=today,
+            )
+            TreasuryService.create_movement(
+                amount=Decimal('297500'),
+                movement_type=TreasuryMovement.Type.OUTBOUND,
+                payment_method=TreasuryMovement.Method.TRANSFER,
+                date=today, created_by=admin,
+                from_account=bco_estado, partner=s1,
+                purchase_order=po1, reference="Pago OC Transfer",
+            )
+            self.stdout.write(
+                f"  ✓ OCS-{po1.number}: {po1.supplier.name} → 50 {papel.name} "
+                f"(${po1.total:,.0f}) — Transferencia BCO-ESTADO"
+            )
+        else:
+            po1 = PurchaseOrder.objects.get(supplier=s1, date=today, notes="Seed-Compra-Transfer")
+
+        # ── PO-02: Credit Card (10kg tinta cyan + 10kg tinta negra) ──
+        tinta_c = Product.objects.get(code="MP-TIN-CYA")
+        tinta_k = Product.objects.get(code="MP-TIN-BLA")
+        if not PurchaseOrder.objects.filter(supplier=s2, date=today, notes="Seed-Compra-TC").exists():
+            po2 = PurchaseOrder.objects.create(
+                supplier=s2, date=today,
+                payment_method=PurchaseOrder.PaymentMethod.CARD,
+                warehouse=wh, notes="Seed-Compra-TC",
+            )
+            PurchaseLine.objects.create(
+                order=po2, product=tinta_c, quantity=10,
+                uom=uoms['kg'], unit_cost=12000, tax_rate=Decimal('19'),
+            )
+            PurchaseLine.objects.create(
+                order=po2, product=tinta_k, quantity=10,
+                uom=uoms['kg'], unit_cost=10000, tax_rate=Decimal('19'),
+            )
+            po2.save()
+            PurchaseOrderService().confirm(po2, user=admin)
+            PurchasingService.receive_order(po2, wh)
+            BillingService.create_purchase_bill(
+                po2, supplier_invoice_number="FAC-SUP-002", date=today,
+            )
+            TreasuryService.create_card_purchase(
+                amount=po2.total,
+                card_account=card_chile,
+                installments=3,
+                date=today,
+                partner=s2,
+                purchase_order=po2,
+                notes="Compra insumos gráficos 3 cuotas",
+                created_by=admin,
+            )
+            self.stdout.write(
+                f"  ✓ OCS-{po2.number}: {po2.supplier.name} → 10kg Cyan + 10kg Negra "
+                f"(${po2.total:,.0f}) — TC Visa Chile (3 cuotas)"
+            )
+
+        # ── PO-03: Check (5 paq cartulina sulfatada) ──────────────────
+        cartulina = Product.objects.get(name="Cartulina Sulfatada 300g")
+        if not PurchaseOrder.objects.filter(supplier=s1, date=today, notes="Seed-Compra-Cheque").exists():
+            po3 = PurchaseOrder.objects.create(
+                supplier=s1, date=today,
+                payment_method=PurchaseOrder.PaymentMethod.CHECK,
+                warehouse=wh, notes="Seed-Compra-Cheque",
+            )
+            PurchaseLine.objects.create(
+                order=po3, product=cartulina, quantity=5,
+                uom=uoms['paquete'], unit_cost=22000, tax_rate=Decimal('19'),
+            )
+            po3.save()
+            PurchaseOrderService().confirm(po3, user=admin)
+            PurchasingService.receive_order(po3, wh)
+            BillingService.create_purchase_bill(
+                po3, supplier_invoice_number="FAC-SUP-003", date=today,
+            )
+            chile_bank = Bank.objects.get(code="CHILE")
+            check = CheckService.issue(
+                bank_id=chile_bank.pk,
+                check_number="CHQ-1001",
+                amount=po3.total,
+                issue_date=today,
+                due_date=today + timezone.timedelta(days=30),
+                counterparty_id=s1.pk,
+                payment_account=bco_chile,
+                notes="Pago OC Cartulina",
+                created_by=admin,
+            )
+            CheckService.mark_cashed(check, date=today + timezone.timedelta(days=2), created_by=admin)
+            self.stdout.write(
+                f"  ✓ OCS-{po3.number}: {po3.supplier.name} → 5 {cartulina.name} "
+                f"(${po3.total:,.0f}) — Cheque #{check.check_number} girado y cobrado"
+            )
+
+        self.stdout.write("  ── 3 órdenes de compra, 3 receipts, 3 facturas, 3 pagos")
+
+    def _create_sales_demo(self, accounts, partners, inventory, uoms):
+        from sales.services import SalesService
+        from billing.services import BillingService
+        from treasury.services import TreasuryService
+        from treasury.check_service import CheckService
+        from production.services import WorkOrderService
+
+        admin = User.objects.filter(is_superuser=True).first()
+        wh = inventory['warehouse']
+        today = timezone.now().date()
+
+        c1 = partners['customers'][0]  # Editorial Amanecer
+        c2 = partners['customers'][1]  # Publicidad Creativa
+        c_default = partners['default_customer']
+
+        bco_estado = TreasuryAccount.objects.get(code="BCO-ESTADO")
+        caja_taller = TreasuryAccount.objects.get(code="CAJA-TALLER")
+        chile_bank = Bank.objects.get(code="CHILE")
+
+        self.stdout.write("  ─────────────────────────────────────────────")
+
+        # ── SO-01: Transfer + Manufacturable (500 impresión a color) ──
+        impresion = Product.objects.get(code="PT-0001")
+        if not SaleOrder.objects.filter(customer=c1, date=today, notes="Seed-Venta-Transfer-MFG").exists():
+            so1 = SaleOrder.objects.create(
+                customer=c1, date=today,
+                payment_method=SaleOrder.PaymentMethod.TRANSFER,
+                notes="Seed-Venta-Transfer-MFG",
+            )
+            sl1 = SaleLine.objects.create(
+                order=so1, product=impresion,
+                description="Impresión a color x 500",
+                quantity=500, uom=uoms['hoja'],
+                unit_price=Decimal('150'), tax_rate=Decimal('19'),
+            )
+            so1.save()
+
+            SalesService.confirm_sale(so1)
+            sl1.refresh_from_db()
+
+            ot = WorkOrderService.create_from_sale_line(sl1)
+            WorkOrderService.finalize_production(ot, user=admin)
+            self.stdout.write(f"    ├ OT #{ot.id} finalizada ({impresion.name} x 500)")
+
+            delivery = SalesService.dispatch_order(so1, wh)
+            SalesService.confirm_delivery(delivery)
+            inv1 = BillingService.create_sale_invoice(
+                so1, dte_type=Invoice.DTEType.FACTURA,
+                payment_method='TRANSFER', date=today,
+                number="FACT-1002",
+            )
+            TreasuryService.create_movement(
+                amount=inv1.total,
+                movement_type=TreasuryMovement.Type.INBOUND,
+                payment_method=TreasuryMovement.Method.TRANSFER,
+                date=today, created_by=admin,
+                to_account=bco_estado, partner=c1,
+                sale_order=so1, invoice=inv1,
+                reference="Cobro Venta Transfer",
+            )
+            self.stdout.write(
+                f"  ✓ NV-{so1.number}: {c1.name} → 500 {impresion.name} "
+                f"(${inv1.total:,.0f}) — Transferencia BCO-ESTADO"
+            )
+
+        # ── SO-02: Cash + Service + MFG auto-finalize ────────────────
+        diseno = Product.objects.get(code="SRV-DIS-GRA")
+        encuadernacion = Product.objects.get(name="Servicio Encuadernación")
+        impresion = Product.objects.get(code="PT-0001")
+        if not SaleOrder.objects.filter(customer=c2, date=today, notes="Seed-Venta-Cash-SRV").exists():
+            so2 = SaleOrder.objects.create(
+                customer=c2, date=today,
+                payment_method=SaleOrder.PaymentMethod.CASH,
+                notes="Seed-Venta-Cash-SRV",
+            )
+            sl2b = SaleLine.objects.create(
+                order=so2, product=diseno,
+                description="Servicio Diseño Gráfico x 3",
+                quantity=3, uom=uoms['un'],
+                unit_price=Decimal('25000'), tax_rate=Decimal('19'),
+            )
+            sl2c = SaleLine.objects.create(
+                order=so2, product=encuadernacion,
+                description="Servicio Encuadernación x 10",
+                quantity=10, uom=uoms['un'],
+                unit_price=Decimal('1500'), tax_rate=Decimal('19'),
+            )
+            so2.save()
+
+            SalesService.confirm_sale(so2)
+            sl2b.refresh_from_db()
+            delivery2 = SalesService.dispatch_order(so2, wh)
+            SalesService.confirm_delivery(delivery2)
+            inv2 = BillingService.create_sale_invoice(
+                so2, dte_type=Invoice.DTEType.BOLETA,
+                payment_method='CASH', date=today,
+            )
+            TreasuryService.create_movement(
+                amount=inv2.total,
+                movement_type=TreasuryMovement.Type.INBOUND,
+                payment_method=TreasuryMovement.Method.CASH,
+                date=today, created_by=admin,
+                to_account=caja_taller, partner=c2,
+                sale_order=so2, invoice=inv2,
+                reference="Cobro Venta Efectivo",
+            )
+            self.stdout.write(
+                f"  ✓ NV-{so2.number}: {c2.name} → 3 Diseño + 10 Encuadernación "
+                f"(${inv2.total:,.0f}) — Efectivo CAJA-TALLER"
+            )
+
+        # ── SO-03: Check + Storable (10 resmas papel) ────────────────
+        papel = Product.objects.get(code="INS-0001")
+        if not SaleOrder.objects.filter(customer=c_default, date=today, notes="Seed-Venta-Check").exists():
+            so3 = SaleOrder.objects.create(
+                customer=c_default, date=today,
+                payment_method=SaleOrder.PaymentMethod.CHECK,
+                notes="Seed-Venta-Check",
+            )
+            SaleLine.objects.create(
+                order=so3, product=papel,
+                description="Resma de papel x 10",
+                quantity=10, uom=uoms['resma'],
+                unit_price=Decimal('5000'), tax_rate=Decimal('19'),
+            )
+            so3.save()
+
+            SalesService.confirm_sale(so3)
+            delivery3 = SalesService.dispatch_order(so3, wh)
+            SalesService.confirm_delivery(delivery3)
+            inv3 = BillingService.create_sale_invoice(
+                so3, dte_type=Invoice.DTEType.FACTURA,
+                payment_method='CHECK', date=today,
+                number="FACT-1003",
+            )
+            check = CheckService.receive(
+                bank_id=chile_bank.pk,
+                check_number="2001",
+                amount=inv3.total,
+                issue_date=today,
+                due_date=today + timezone.timedelta(days=30),
+                counterparty_id=c_default.pk,
+                sale_order_id=so3.pk,
+                invoice_id=inv3.pk,
+                notes="Cheque cliente por venta resmas",
+                created_by=admin,
+            )
+            CheckService.deposit(check, bco_estado, date=today + timezone.timedelta(days=1), created_by=admin)
+            CheckService.clear(check)
+            self.stdout.write(
+                f"  ✓ NV-{so3.number}: {c_default.name} → 10 {papel.name} "
+                f"(${inv3.total:,.0f}) — Cheque #2001 depositado y cobrado"
+            )
+
+        self.stdout.write("  ── 3 ventas, 2 OT, 3 deliveries, 3 facturas, 3 cobros")
 
     def _initialize_company_settings(self):
         """
