@@ -688,16 +688,17 @@ export function DataTable<TData, TValue>({
                         !isInModal && "sticky top-0 z-20 bg-transparent py-2",
                         toolbarClassName
                     )}>
-                        <DataTableToolbar
-                            table={table}
-                            filterColumn={filterColumn}
-                            globalFilterFields={globalFilterFields}
-                            searchPlaceholder={searchPlaceholder}
-                            facetedFilters={facetedFilters}
-                            toolbarAction={toolbarAction}
-                            useAdvancedFilter={useAdvancedFilter}
-                            onReset={onReset}
-                            rightAction={rightAction}
+                            <DataTableToolbar
+                                table={table}
+                                filterColumn={filterColumn}
+                                globalFilterFields={globalFilterFields}
+                                searchPlaceholder={searchPlaceholder}
+                                facetedFilters={facetedFilters}
+                                toolbarAction={toolbarAction}
+                                useAdvancedFilter={useAdvancedFilter}
+                                onReset={onReset}
+                                leftAction={leftAction}
+                                rightAction={rightAction}
                             showToolbarSort={showToolbarSort}
                             viewOptions={viewOptions}
                             currentView={currentView}
