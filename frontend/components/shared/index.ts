@@ -29,7 +29,7 @@ export * from './BulkActionDock';
 
 // Cards & Containers
 export * from './StatCard';
-export * from './EntityStatsBottomSheet';
+export * from './EntityHubScreen';
 export * from './CardSkeleton';
 export * from './SkeletonShell';
 export * from './LayoutSkeletons';

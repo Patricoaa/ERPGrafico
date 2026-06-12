@@ -250,52 +250,56 @@ export function UnbilledChargesView({
                     data={mergedRows}
                     isLoading={isLoading}
                     variant="embedded"
-                    statsAction={{
+                    entityHubAction={{
                         icon: BarChart3,
-                        sheet: {
-                            title: "Estadísticas de Cargos",
-                            description: "Resumen de cargos no facturados y cuotas próximas",
-                            panels: [
-                                {
-                                    id: 'resumen',
-                                    title: 'Resumen',
-                                    colSpan: 3 as const,
-                                    content: {
-                                        type: 'custom',
-                                        render: (
-                                            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                                                <StatCard label="Total" value={<MoneyDisplay amount={summary?.total ?? 0} inline />} icon={DollarSign} accent="warning" />
-                                                <StatCard label="Cargos" value={String(summary?.charges ?? 0)} icon={ReceiptText} accent="primary" />
-                                                <StatCard label="Cuotas" value={String(summary?.installments ?? 0)} icon={Wallet} accent="info" />
-                                                <StatCard label="Total Items" value={String(summary?.count ?? 0)} icon={CreditCard} accent="success" />
-                                            </div>
-                                        ),
-                                    },
-                                },
-                                ...(upcomingInstallments.length > 0 ? [
+                        screen: {
+                            entityName: "Cargos no Facturados",
+                            tabs: [{
+                                value: 'resumen',
+                                label: 'Resumen',
+                                icon: BarChart3,
+                                panels: [
                                     {
-                                        id: 'proximas-cuotas',
-                                        title: 'Próximas Cuotas',
+                                        id: 'resumen',
+                                        title: 'Resumen',
                                         colSpan: 3 as const,
                                         content: {
-                                            type: 'custom' as const,
+                                            type: 'custom',
                                             render: (
-                                                <div className="space-y-2">
-                                                    {upcomingInstallments.slice(0, 10).map((inst, i) => (
-                                                        <div key={i} className="flex items-center justify-between py-1 border-b border-border/50 last:border-0">
-                                                            <div className="flex flex-col min-w-0">
-                                                                <span className="text-xs font-medium truncate">{inst.group_display_id || `Cuota ${inst.number}/${inst.total_installments}`}</span>
-                                                                <span className="text-[10px] text-muted-foreground">{new Date(inst.due_date).toLocaleDateString('es-CL')}</span>
-                                                            </div>
-                                                            <MoneyDisplay amount={parseFloat(inst.principal_amount)} inline className="text-xs font-bold shrink-0 ml-2" />
-                                                        </div>
-                                                    ))}
+                                                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                                                    <StatCard label="Total" value={<MoneyDisplay amount={summary?.total ?? 0} inline />} icon={DollarSign} accent="warning" />
+                                                    <StatCard label="Cargos" value={String(summary?.charges ?? 0)} icon={ReceiptText} accent="primary" />
+                                                    <StatCard label="Cuotas" value={String(summary?.installments ?? 0)} icon={Wallet} accent="info" />
+                                                    <StatCard label="Total Items" value={String(summary?.count ?? 0)} icon={CreditCard} accent="success" />
                                                 </div>
                                             ),
                                         },
                                     },
-                                ] : []),
-                            ],
+                                    ...(upcomingInstallments.length > 0 ? [
+                                        {
+                                            id: 'proximas-cuotas',
+                                            title: 'Próximas Cuotas',
+                                            colSpan: 3 as const,
+                                            content: {
+                                                type: 'custom' as const,
+                                                render: (
+                                                    <div className="space-y-2">
+                                                        {upcomingInstallments.slice(0, 10).map((inst, i) => (
+                                                            <div key={i} className="flex items-center justify-between py-1 border-b border-border/50 last:border-0">
+                                                                <div className="flex flex-col min-w-0">
+                                                                    <span className="text-xs font-medium truncate">{inst.group_display_id || `Cuota ${inst.number}/${inst.total_installments}`}</span>
+                                                                    <span className="text-[10px] text-muted-foreground">{new Date(inst.due_date).toLocaleDateString('es-CL')}</span>
+                                                                </div>
+                                                                <MoneyDisplay amount={parseFloat(inst.principal_amount)} inline className="text-xs font-bold shrink-0 ml-2" />
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                ),
+                                            },
+                                        },
+                                    ] : []),
+                                ],
+                            }],
                         },
                     }}
                     leftAction={

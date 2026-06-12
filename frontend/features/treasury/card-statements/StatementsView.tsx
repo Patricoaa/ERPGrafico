@@ -152,29 +152,33 @@ export function StatementsView({ bankId, creditCardAccounts }: StatementsViewPro
                     columns={columns}
                     data={statements}
                     variant="embedded"
-                    statsAction={{
+                    entityHubAction={{
                         icon: BarChart3,
-                        sheet: {
-                            title: "Estadísticas de Estados de Cuenta",
-                            description: "Resumen de cargos facturados",
-                            panels: [
-                                {
-                                    id: 'resumen',
-                                    title: 'Resumen',
-                                    colSpan: 3 as const,
-                                    content: {
-                                        type: 'custom',
-                                        render: (
-                                            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                                                <StatCard label="Deuda Total" value={<MoneyDisplay amount={totalDebt} inline />} icon={DollarSign} accent="warning" />
-                                                <StatCard label="Abiertos" value={String(openCount)} icon={BarChart3} accent="primary" />
-                                                <StatCard label="Vencidos" value={String(overdueCount)} icon={AlertTriangle} accent={overdueCount > 0 ? 'destructive' : 'success'} />
-                                                <StatCard label="Próx. Vencimiento" value={nextDue ? new Date(nextDue.due_date).toLocaleDateString('es-CL') : '—'} icon={Calendar} accent="info" />
-                                            </div>
-                                        ),
+                        screen: {
+                            entityName: "Estados de Cuenta",
+                            tabs: [{
+                                value: 'resumen',
+                                label: 'Resumen',
+                                icon: BarChart3,
+                                panels: [
+                                    {
+                                        id: 'resumen',
+                                        title: 'Resumen',
+                                        colSpan: 3 as const,
+                                        content: {
+                                            type: 'custom',
+                                            render: (
+                                                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                                                    <StatCard label="Deuda Total" value={<MoneyDisplay amount={totalDebt} inline />} icon={DollarSign} accent="warning" />
+                                                    <StatCard label="Abiertos" value={String(openCount)} icon={BarChart3} accent="primary" />
+                                                    <StatCard label="Vencidos" value={String(overdueCount)} icon={AlertTriangle} accent={overdueCount > 0 ? 'destructive' : 'success'} />
+                                                    <StatCard label="Próx. Vencimiento" value={nextDue ? new Date(nextDue.due_date).toLocaleDateString('es-CL') : '—'} icon={Calendar} accent="info" />
+                                                </div>
+                                            ),
+                                        },
                                     },
-                                },
-                            ],
+                                ],
+                            }],
                         },
                     }}
                     leftAction={
