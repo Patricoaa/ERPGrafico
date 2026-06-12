@@ -105,7 +105,7 @@ export function SubscriptionsView({ hideHeader = false, externalOpen = false, cr
         }
 
         try {
-            await updateProduct({ id: currentArchivingProduct.id, payload: { active: false } as never })
+            await updateProduct({ id: currentArchivingProduct.id, payload: { is_active: false } as never })
             toast.success("Producto archivado correctamente")
             setIsConfirmModalOpen(false)
             setIsRestrictionsDialogOpen(false)
@@ -358,7 +358,7 @@ export function SubscriptionsView({ hideHeader = false, externalOpen = false, cr
             disabled: (items) => items.length === 0 || !items.every(s => s.status === "ACTIVE" || s.status === "PAUSED"),
             onClick: async (items) => {
                 try {
-                    await Promise.all(items.map(s => updateProduct({ id: s.product, payload: { active: false } as never })))
+                    await Promise.all(items.map(s => updateProduct({ id: s.product, payload: { is_active: false } as never })))
                     toast.success(`${items.length} productos de suscripción archivados`)
                 } catch (error) {
                     showApiError(error, "Error al archivar suscripciones")

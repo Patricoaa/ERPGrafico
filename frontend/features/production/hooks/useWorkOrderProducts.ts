@@ -9,7 +9,7 @@ export function useWorkOrderProducts(otType: 'LINKED' | 'NONE' | null, searchTer
     queryKey: ['production', 'products', otType, searchTerm],
     queryFn: async ({ pageParam = 0 }) => {
       const filters: ProductFilters = {
-        active: true,
+        is_active: true,
         search: searchTerm,
         page_size: 20,
         ...(otType === "NONE"

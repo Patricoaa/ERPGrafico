@@ -17,7 +17,7 @@ export interface UoM {
     uom_type: 'REFERENCE' | 'BIGGER' | 'SMALLER'
     ratio: string
     rounding: string
-    active: boolean
+    is_active: boolean
 }
 
 export type UoMCategoryPayload = Omit<UoMCategory, 'id'>

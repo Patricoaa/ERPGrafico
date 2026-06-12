@@ -57,7 +57,7 @@ def setup_test_data():
             'category': uom_cat,
             'ratio': Decimal('1.0'),
             'rounding': Decimal('0.01'),
-            'active': True
+            'is_active': True
         }
     )
     if not uom.category:

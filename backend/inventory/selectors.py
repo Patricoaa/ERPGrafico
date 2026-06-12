@@ -57,7 +57,7 @@ def list_products(*, user, params: dict) -> QuerySet:
             is_favorite=Value(False, output_field=BooleanField())
         )
 
-    active_param = params.get("active", params.get("is_active"))
+    active_param = params.get("is_active")
     if active_param == "all":
         pass
     elif active_param == "false":

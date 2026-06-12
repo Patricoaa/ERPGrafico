@@ -17,12 +17,9 @@ class ProductFilter(filters.FilterSet):
         }
 
 class UoMFilter(filters.FilterSet):
-    # Alias de compatibilidad durante la deprecación del nombre `active` en la API.
-    active = filters.BooleanFilter(field_name='is_active')
-
     class Meta:
         model = UoM
-        fields = ['category', 'active', 'is_active']
+        fields = ['category', 'is_active']
 
 class StockMoveFilter(filters.FilterSet):
     product_id = filters.NumberFilter(field_name="product__id")

@@ -39,7 +39,7 @@ interface ProductClientViewProps {
 export function ProductClientView({ externalOpen, onExternalOpenChange, createAction }: ProductClientViewProps) {
     const { filters: smartFilters, isFiltered } = useSmartSearch(productSearchDef)
     const filters = useMemo<ProductFilters>(() => ({
-        active: 'all',
+        is_active: 'all',
         parent_template__isnull: true,
         page_size: 1000,
         ...(smartFilters as Partial<ProductFilters>),
@@ -104,7 +104,7 @@ export function ProductClientView({ externalOpen, onExternalOpenChange, createAc
     }, [products, expandedTemplates])
 
     const handleArchive = async (product: Product, isConfirmed = false) => {
-        const isArchiving = product.active
+        const isArchiving = product.is_active
         const action = isArchiving ? "archivar" : "restaurar"
 
         if (!isConfirmed) {
@@ -122,7 +122,7 @@ export function ProductClientView({ externalOpen, onExternalOpenChange, createAc
         }
 
         try {
-            await updateProduct({ id: targetProduct.id, payload: { active: !targetProduct.active } })
+            await updateProduct({ id: targetProduct.id, payload: { is_active: !targetProduct.is_active } })
             toast.success(`Producto ${isArchiving ? 'archivado' : 'restaurar'} correctamente.`, {
                 description: targetProduct.product_type === 'SUBSCRIPTION'
                     ? `Las suscripciones asociadas han sido ${isArchiving ? 'ocultas' : 'restauradas en la lista'}.`
@@ -241,7 +241,7 @@ export function ProductClientView({ externalOpen, onExternalOpenChange, createAc
                                 <DataCell.Text>
                                     {product.name}
                                 </DataCell.Text>
-                                {!product.active && (
+                                {!product.is_active && (
                                     <StatusBadge
                                         status="inactive"
                                         label="ARCHIVADO"
@@ -289,14 +289,14 @@ export function ProductClientView({ externalOpen, onExternalOpenChange, createAc
             cell: ({ row }) => <DataCell.Text>{row.getValue("category_name")}</DataCell.Text>,
         },
         {
-            accessorKey: "active",
-            id: "active",
+            accessorKey: "is_active",
+            id: "is_active",
             header: ({ column }) => <DataTableColumnHeader column={column} title="Estado" className="justify-center" />,
             enableHiding: true,
             cell: ({ row }) => (
                 <DataCell.Status
-                    status={row.original.active ? "active" : "inactive"}
-                    label={row.original.active ? "Activo" : "Archivado"}
+                    status={row.original.is_active ? "active" : "inactive"}
+                    label={row.original.is_active ? "Activo" : "Archivado"}
                 />
             ),
         },
@@ -391,7 +391,7 @@ export function ProductClientView({ externalOpen, onExternalOpenChange, createAc
                         }}
                     />
                     <DataCell.Action
-                        action={item.active ? "archive" : "restore"}
+                        action={item.is_active ? "archive" : "restore"}
                         onClick={() => handleArchive(item)}
                     />
                 </>
@@ -399,7 +399,7 @@ export function ProductClientView({ externalOpen, onExternalOpenChange, createAc
         }),
     ], [expandedTemplates])
 
-    const initialColumnVisibility = useMemo(() => ({ active: false }), [])
+    const initialColumnVisibility = useMemo(() => ({ is_active: false }), [])
 
     const bulkActions = useMemo<BulkAction<Product>[]>(() => [
         {
@@ -407,10 +407,10 @@ export function ProductClientView({ externalOpen, onExternalOpenChange, createAc
             label: "Restaurar",
             icon: Plus,
             intent: "success",
-            disabled: (items) => items.length === 0 || !items.every(p => !p.active),
+            disabled: (items) => items.length === 0 || !items.every(p => !p.is_active),
             onClick: async (items) => {
                 try {
-                    await Promise.all(items.map(p => updateProduct({ id: p.id, payload: { active: true } })))
+                    await Promise.all(items.map(p => updateProduct({ id: p.id, payload: { is_active: true } })))
                     toast.success(`${items.length} productos restaurados correctamente.`)
                     refetch()
                 } catch {
@@ -423,10 +423,10 @@ export function ProductClientView({ externalOpen, onExternalOpenChange, createAc
             label: "Archivar",
             icon: ArchiveIcon,
             intent: "destructive",
-            disabled: (items) => items.length === 0 || !items.every(p => p.active),
+            disabled: (items) => items.length === 0 || !items.every(p => p.is_active),
             onClick: async (items) => {
                 try {
-                    await Promise.all(items.map(p => updateProduct({ id: p.id, payload: { active: false } })))
+                    await Promise.all(items.map(p => updateProduct({ id: p.id, payload: { is_active: false } })))
                     toast.success(`${items.length} productos archivados correctamente.`)
                     refetch()
                 } catch (error) {
@@ -466,7 +466,7 @@ export function ProductClientView({ externalOpen, onExternalOpenChange, createAc
                                     subtitle={<span className="font-mono text-xs">{product.code}</span>}
                                     trailing={
                                         <StatusBadge
-                                            status={product.active ? "active" : "inactive"}
+                                            status={product.is_active ? "active" : "inactive"}
                                             size="sm"
                                         />
                                     }
@@ -532,18 +532,18 @@ export function ProductClientView({ externalOpen, onExternalOpenChange, createAc
             <ActionConfirmModal
                 open={isConfirmModalOpen}
                 onOpenChange={setIsConfirmModalOpen}
-                title={currentArchivingProduct?.active ? "Archivar Producto" : "Restaurar Producto"}
-                variant={currentArchivingProduct?.active ? "warning" : "default"}
+                title={currentArchivingProduct?.is_active ? "Archivar Producto" : "Restaurar Producto"}
+                variant={currentArchivingProduct?.is_active ? "warning" : "default"}
                 onConfirm={() => { if (currentArchivingProduct) return handleArchive(currentArchivingProduct, true) }}
-                confirmText={currentArchivingProduct?.active ? "Archivar" : "Restaurar"}
+                confirmText={currentArchivingProduct?.is_active ? "Archivar" : "Restaurar"}
                 description={
                     <div className="space-y-3">
                         <p>
-                            ¿Está seguro de que desea {currentArchivingProduct?.active ? "archivar" : "restaurar"} el producto{" "}
+                            ¿Está seguro de que desea {currentArchivingProduct?.is_active ? "archivar" : "restaurar"} el producto{" "}
                             <strong>{currentArchivingProduct?.name}</strong>?
                         </p>
 
-                        {currentArchivingProduct?.active && currentArchivingProduct?.product_type === 'SUBSCRIPTION' && (
+                        {currentArchivingProduct?.is_active && currentArchivingProduct?.product_type === 'SUBSCRIPTION' && (
                             <div className="bg-warning/10 border border-warning/10 p-3 rounded-md flex gap-3 text-warning">
                                 <AlertTriangle className="h-5 w-5 shrink-0" />
                                 <div className="text-xs">
@@ -553,7 +553,7 @@ export function ProductClientView({ externalOpen, onExternalOpenChange, createAc
                             </div>
                         )}
 
-                        {!currentArchivingProduct?.active && currentArchivingProduct?.product_type === 'SUBSCRIPTION' && (
+                        {!currentArchivingProduct?.is_active && currentArchivingProduct?.product_type === 'SUBSCRIPTION' && (
                             <p className="text-xs bg-primary/10 text-primary p-2 rounded-md">
                                 Al restaurar el producto, sus suscripciones volverán a aparecer en el gestor central.
                             </p>
