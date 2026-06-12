@@ -1020,6 +1020,107 @@ class CardService:
             'installments': installments,
         }
 
+    # ── Forecast / Forward-looking analytics ─────────────────
+
+    @staticmethod
+    def get_forecast(
+        card_account: TreasuryAccount,
+        cut_off_date: _date | None = None,
+    ) -> dict:
+        """
+        Retorna datos prospectivos para el dashboard forward-looking
+        de cargos no facturados:
+          - next_statement_date / days_to_next_statement
+          - next_statement_total (cargos + cuotas que caerían en el
+            próximo cierre)
+          - by_month: agregación de cuotas por mes calendario
+            { 'YYYY-MM': { total, count } }
+          - credit_limit, total_used, available_credit
+        """
+        from datetime import date as _date_type
+        from collections import defaultdict
+
+        today = _date_type.today()
+
+        # ── Próxima fecha de cierre estimada ───────────────────────
+        last_stmt = (
+            CreditCardStatement.objects
+            .filter(card_account=card_account)
+            .order_by('-period_year', '-period_month')
+            .first()
+        )
+        if last_stmt:
+            ref = last_stmt.cut_off_date
+            next_cutoff = _date_type(
+                ref.year + (ref.month // 12),
+                (ref.month % 12) + 1,
+                min(ref.day, 28),
+            )
+        else:
+            next_month = today.replace(day=28) + _date_type.resolution * 4
+            next_cutoff = _date_type(next_month.year, next_month.month, 1) - _date_type.resolution
+            next_cutoff = _date_type(next_cutoff.year, next_cutoff.month, 28)
+
+        days_to_next = (next_cutoff - today).days
+
+        pending_until_cutoff = CardService.get_pending_charges(card_account, cut_off_date=next_cutoff)
+        sched_until_cutoff = CardService.get_unbilled_installments(card_account, cut_off_date=next_cutoff)
+        pending = CardService.get_pending_charges(card_account, cut_off_date=cut_off_date)
+        sched_all = CardService.get_unbilled_installments(card_account, cut_off_date=cut_off_date)
+
+        pending_total_until = (
+            pending_until_cutoff.aggregate(total=dj_models.Sum('amount'))['total']
+            or Decimal('0')
+        )
+        sched_total_until = (
+            sched_until_cutoff.aggregate(total=dj_models.Sum('principal_amount'))['total']
+            or Decimal('0')
+        )
+        next_stmt_total = pending_total_until + sched_total_until
+
+        by_month: dict[str, dict] = {}
+        for inst in sched_all:
+            key = inst.due_date.strftime('%Y-%m')
+            bucket = by_month.setdefault(key, {'total': Decimal('0'), 'count': 0})
+            bucket['total'] += inst.principal_amount
+            bucket['count'] += 1
+
+        by_month_serializable = {}
+        for k, v in by_month.items():
+            by_month_serializable[k] = {
+                'total': str(v['total']),
+                'count': v['count'],
+            }
+
+        credit_limit = card_account.credit_limit
+        available = card_account.available_credit
+
+        pending_total = (
+            pending.aggregate(total=dj_models.Sum('amount'))['total']
+            or Decimal('0')
+        )
+        sched_total = (
+            sched_all.aggregate(total=dj_models.Sum('principal_amount'))['total']
+            or Decimal('0')
+        )
+        total_unbilled = pending_total + sched_total
+        current_debt = abs(card_account.current_balance) if card_account.current_balance else Decimal('0')
+        total_used = current_debt + total_unbilled
+
+        return {
+            'next_statement_date': next_cutoff.isoformat(),
+            'days_to_next_statement': max(days_to_next, 0),
+            'next_statement_total': str(next_stmt_total),
+            'pending_until_next_statement': str(pending_total_until),
+            'installments_until_next_statement': str(sched_total_until),
+            'by_month': by_month_serializable,
+            'credit_limit': str(credit_limit) if credit_limit else None,
+            'total_used': str(total_used),
+            'current_debt': str(current_debt),
+            'total_unbilled': str(total_unbilled),
+            'available_credit': str(available) if available is not None else None,
+        }
+
     @staticmethod
     @transaction.atomic
     def add_unbilled_charge(
