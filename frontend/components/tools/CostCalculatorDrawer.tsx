@@ -68,7 +68,7 @@ export function CostCalculatorDrawer({ open, onOpenChange }: CostCalculatorDrawe
 
     const { products: rawProducts = [], isLoading: loadingProducts } = useProducts({
         filters: {
-            active: true,
+            is_active: true,
             track_inventory: true,
             fields: 'id,name,cost_price,image,uom_name,internal_code,barcode,product_type,available_uoms,category,uom'
         }

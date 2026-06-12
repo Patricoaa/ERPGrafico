@@ -35,9 +35,9 @@ export function useProducts() {
 
     // 1. Fetch Products with React Query (Shared Cache)
     const { data: products = EMPTY_ARRAY, isLoading: loadingProducts } = useQuery({
-        queryKey: ['products', { active: true, can_be_sold: true }],
-        queryFn: () => inventoryApi.getProducts({ 
-            active: true, 
+        queryKey: ['products', { is_active: true, can_be_sold: true }],
+        queryFn: () => inventoryApi.getProducts({
+            is_active: true,
             can_be_sold: true,
             page_size: 2000, // Ensure we get all sellable items in one go for instant search
             fields: 'id,name,sale_price,sale_price_gross,image,uom_name,internal_code,barcode,product_type,track_inventory,requires_advanced_manufacturing,category,uom,available_uoms,is_favorite,has_bom'
@@ -61,7 +61,7 @@ export function useProducts() {
     const { data: uoms = [], isLoading: loadingUoms } = useQuery({
         queryKey: ['uoms'],
         queryFn: async () => {
-            const data = await posApi.getUoms({ active: true, page_size: 500 })
+            const data = await posApi.getUoms({ is_active: true, page_size: 500 })
             return Array.isArray(data) ? data : ((data as { results?: unknown[] })?.results ?? [])
         },
         staleTime: 1000 * 60 * 60,

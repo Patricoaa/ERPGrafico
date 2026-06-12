@@ -31,11 +31,11 @@ export const inventoryApi = {
      */
     getProducts: async (filters?: ProductFilters & { page_size?: number, fields?: string }): Promise<Product[]> => {
         const params = new URLSearchParams()
-        if (filters?.active !== undefined) {
+        if (filters?.is_active !== undefined) {
             // Send 'all' literally so the backend enters the correct branch.
-            // An empty string '' would fall through to the default (active=True only).
-            const val = filters.active === 'all' ? 'all' : String(filters.active)
-            params.append('active', val)
+            // An empty string '' would fall through to the default (is_active=True only).
+            const val = filters.is_active === 'all' ? 'all' : String(filters.is_active)
+            params.append('is_active', val)
         }
         if (filters?.can_be_sold !== undefined) params.append('can_be_sold', String(filters.can_be_sold))
         if (filters?.can_be_purchased !== undefined) params.append('can_be_purchased', String(filters.can_be_purchased))

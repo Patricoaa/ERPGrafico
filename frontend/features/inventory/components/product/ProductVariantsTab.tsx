@@ -90,7 +90,7 @@ export function ProductVariantsTab({ form, initialData, onEditVariant, onTabChan
         if (!variantToDelete) return
         const variant = variantToDelete
         try {
-            await updateProduct({ id: variant.id, payload: { active: false } as never })
+            await updateProduct({ id: variant.id, payload: { is_active: false } as never })
             toast.success("Variante archivada exitosamente")
             setSelectedVariantIds(prev => prev.filter(id => id !== variant.id))
             // updateProduct invalida PRODUCTS_KEYS.all → variants list incluida.

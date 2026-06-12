@@ -109,12 +109,12 @@ Cómo se "elimina" una entidad en ERPGrafico depende de qué tipo de entidad sea
 > `ARCHIVO_EXEMPT` dentro de
 > [`test_deletion_policy_consistency`](../../backend/core/tests/test_deletion_policy_consistency.py).
 >
-> **Deprecación del nombre `active` en la API.** El campo de modelo es `is_active` en
-> todos los casos (rename 2026-06-11). Los serializers de `Product` y `UoM` y el filtro
-> `?active=` mantienen un **alias de compatibilidad** `active` mientras el frontend
-> migra a `is_active`; el alias se retira en una fase 2 (ver
-> [add-migration.md — 2-phase](../30-playbooks/add-migration.md)). Código nuevo debe
-> usar `is_active`.
+> **Nombre del campo en la API.** El campo de modelo es `is_active` en todos los casos
+> (rename 2026-06-11). El alias de compatibilidad `active` que cubrió la transición se
+> **retiró el mismo día** (fase 2 del [2-phase de add-migration.md](../30-playbooks/add-migration.md)):
+> serializers, filtros y query params de Product/UoM aceptan únicamente `is_active`.
+> Nota: `BillOfMaterials.active` y `PricingRule.active` conservan su nombre — no son
+> entidades del patrón Archivo y están fuera de este contrato.
 
 ### Para entidades de Hard delete
 

@@ -152,10 +152,10 @@ export const productSearchDef: SearchDefinition = {
       ],
     },
     {
-      key: 'active',
+      key: 'is_active',
       label: 'Estado',
       type: 'enum',
-      serverParam: 'active',
+      serverParam: 'is_active',
       options: [
         { label: 'Todos', value: 'all' },
         { label: 'Activo', value: 'true' },

@@ -6,7 +6,7 @@ export interface UseVariantsOptions {
     productId?: number
     enabled?: boolean
     /**
-     * When false, includes archived (active=false) variants.
+     * When false, includes archived (is_active=false) variants.
      * Default: true (POS/sales selection scenarios want active-only).
      * ProductVariantsTab admin uses `false` to display archived variants too.
      */
@@ -29,7 +29,7 @@ export function useVariants({ productId, enabled = true, activeOnly = true, extr
             params.append('parent_template', productId.toString())
             params.append('show_technical_variants', 'true')
             if (activeOnly) {
-                params.append('active', 'true')
+                params.append('is_active', 'true')
             }
 
             Object.entries(extraParams).forEach(([key, value]) => {

@@ -67,7 +67,7 @@ class ProductViewSet(BulkImportMixin, AuditHistory, viewsets.ModelViewSet):
 
     def partial_update(self, request, *args, **kwargs):
         instance = self.get_object()
-        active_val = request.data.get('is_active', request.data.get('active'))
+        active_val = request.data.get('is_active')
 
         # If we are archiving (is_active: True -> False)
         if active_val is False and instance.is_active is True:

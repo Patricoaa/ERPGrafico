@@ -87,7 +87,7 @@ export interface Product {
     can_be_purchased: boolean
     image_thumbnail?: string
     image_catalog?: string
-    active: boolean
+    is_active: boolean
     is_dynamic_pricing?: boolean
     cost_price?: string
     uom_category?: number
@@ -122,7 +122,7 @@ export interface ProductUoMPrice {
 }
 
 export interface ProductFilters {
-    active?: string | boolean
+    is_active?: string | boolean
     can_be_sold?: boolean
     can_be_purchased?: boolean
     parent_template__isnull?: boolean
@@ -135,7 +135,7 @@ export interface ProductFilters {
 }
 
 export interface ProductUpdatePayload {
-    active?: boolean;
+    is_active?: boolean;
     sale_price?: string | number;
     code?: string;
     sale_uom?: number;
