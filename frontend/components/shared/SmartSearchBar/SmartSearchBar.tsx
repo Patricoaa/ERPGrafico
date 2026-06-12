@@ -262,9 +262,9 @@ export function SmartSearchBar({ searchDef, placeholder = 'Buscar...', className
       {/* Input row */}
       <div
         className={cn(
-          'flex items-center gap-1.5 h-9 px-2 py-1 rounded-md overflow-x-auto scrollbar-hide',
+          'group flex items-center gap-1.5 h-9 px-2 py-1 rounded-md overflow-x-auto scrollbar-hide border border-border/60',
           'bg-background transition-all',
-          'hover:bg-muted/50 hover:ring-2 hover:ring-primary/10',
+          'hover:bg-muted/50 hover:text-foreground hover:ring-2 hover:ring-primary/10',
           'focus-within:bg-muted/50 focus-within:ring-2 focus-within:ring-primary/20',
           isOpen && 'bg-muted/50 ring-2 ring-primary/20',
         )}
@@ -276,7 +276,7 @@ export function SmartSearchBar({ searchDef, placeholder = 'Buscar...', className
           }
         }}
       >
-        <Search className="h-3.5 w-3.5 text-muted-foreground/50 shrink-0" />
+        <Search className="h-3.5 w-3.5 text-muted-foreground/50 shrink-0 transition-colors group-hover:text-foreground" />
 
         {/* Active chips */}
         {chips.map((chip) => (
@@ -390,7 +390,7 @@ export function SmartSearchBar({ searchDef, placeholder = 'Buscar...', className
                   >
                     <Search className="h-3.5 w-3.5 text-muted-foreground/60 shrink-0" />
                     <div className="flex-1 min-w-0">
-                      <p className="text-[11px] text-foreground truncate">
+                      <p className="text-[10px] text-foreground truncate">
                         Buscar <span className="font-bold">«{inputValue.trim()}»</span>
                       </p>
                       <p className="text-[9px] text-muted-foreground/60">Búsqueda general en todos los campos</p>
@@ -414,7 +414,7 @@ export function SmartSearchBar({ searchDef, placeholder = 'Buscar...', className
                     onClick={() => handleFieldSelect(field)}
                     className={cn(
                       'w-full flex items-center justify-between px-2.5 py-2 text-left transition-colors rounded-md',
-                      'text-[11px] font-bold uppercase tracking-widest',
+                      'text-[10px] uppercase tracking-widest',
                       i === focusedIndex ? 'bg-primary/10 text-primary' : 'hover:bg-primary/5 text-foreground',
                     )}
                   >
@@ -435,7 +435,7 @@ export function SmartSearchBar({ searchDef, placeholder = 'Buscar...', className
                 className="w-full flex items-center gap-2 px-2.5 py-1.5 mb-0.5 border-b border-border/40 hover:bg-primary/5 transition-colors group text-left rounded-md"
               >
                 <ChevronLeft className="h-3.5 w-3.5 text-muted-foreground group-hover:text-foreground transition-colors" />
-                <span className="text-[9px] text-muted-foreground uppercase tracking-widest font-bold group-hover:text-foreground transition-colors">
+                <span className="text-[10px] text-muted-foreground uppercase tracking-widest group-hover:text-foreground transition-colors">
                   {stage.field.label}
                 </span>
               </button>
@@ -449,7 +449,7 @@ export function SmartSearchBar({ searchDef, placeholder = 'Buscar...', className
                   onClick={() => handleEnumSelect(stage.field, opt.value)}
                   className={cn(
                     'w-full flex items-center px-2.5 py-2 text-left transition-colors rounded-md',
-                    'text-[11px] font-bold uppercase tracking-widest',
+                    'text-[10px] uppercase tracking-widest',
                     i === focusedIndex ? 'bg-primary/10 text-primary' : 'hover:bg-primary/5 text-foreground',
                   )}
                 >
@@ -480,7 +480,7 @@ export function SmartSearchBar({ searchDef, placeholder = 'Buscar...', className
                       onClick={() => handleSuggestionSelect(parsedActiveFieldInfo!.field, value)}
                       className={cn(
                         'w-full flex items-center px-2.5 py-1.5 text-left transition-colors rounded-md',
-                        'text-[11px] font-medium',
+                        'text-[10px]',
                         i === focusedIndex ? 'bg-primary/10 text-primary' : 'hover:bg-primary/5 text-foreground',
                       )}
                     >
@@ -501,7 +501,7 @@ export function SmartSearchBar({ searchDef, placeholder = 'Buscar...', className
                 className="w-full flex items-center gap-2 px-2.5 py-1.5 border-b border-border/40 hover:bg-primary/5 transition-colors group text-left -mt-1 -ml-1 mb-1 rounded-t-md"
               >
                 <ChevronLeft className="h-3.5 w-3.5 text-muted-foreground group-hover:text-foreground transition-colors" />
-                <span className="text-[9px] text-muted-foreground uppercase tracking-widest font-bold group-hover:text-foreground transition-colors">
+                <span className="text-[10px] text-muted-foreground uppercase tracking-widest group-hover:text-foreground transition-colors">
                   {stage.field.label}
                 </span>
               </button>
@@ -513,21 +513,21 @@ export function SmartSearchBar({ searchDef, placeholder = 'Buscar...', className
                 numberOfMonths={2}
               />
               <div className="flex justify-end gap-2">
-                <button
-                  type="button"
-                  onClick={close}
-                  className="px-3 py-1.5 text-[10px] font-bold uppercase tracking-widest text-muted-foreground hover:text-foreground transition-colors"
-                >
-                  Cancelar
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handleDateConfirm(stage.field, dateRange)}
-                  disabled={!dateRange?.from}
-                  className="px-3 py-1.5 text-[10px] font-bold uppercase tracking-widest bg-primary text-primary-foreground rounded-md disabled:opacity-40 transition-opacity"
-                >
-                  Aplicar
-                </button>
+                  <button
+                    type="button"
+                    onClick={close}
+                    className="px-3 py-1.5 text-[10px] uppercase tracking-widest text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleDateConfirm(stage.field, dateRange)}
+                    disabled={!dateRange?.from}
+                    className="px-3 py-1.5 text-[10px] uppercase tracking-widest bg-primary text-primary-foreground rounded-md disabled:opacity-40 transition-opacity"
+                  >
+                    Aplicar
+                  </button>
               </div>
             </div>
           )}

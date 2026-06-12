@@ -30,6 +30,8 @@ export interface NavigationConfig {
     subActiveValue?: string
     /** Active value for tertiary (third-level) dropdown */
     subSubActiveValue?: string
+    /** Active value for quaternary (fourth-level) dropdown */
+    subSubSubActiveValue?: string
     /** Optional deep breadcrumbs added after the dropdowns */
     breadcrumbs?: { label: string; href?: string }[]
 }

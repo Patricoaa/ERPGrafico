@@ -208,21 +208,20 @@ export function DataTableToolbar<TData>(props: DataTableToolbarProps<TData>) {
                             </Button>
                         )}
 
+                        {/* Stats button — ghost, after settings */}
+                        {statsAction && (
+                            <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-9 w-9 shrink-0"
+                                onClick={handleStatsClick}
+                            >
+                                <statsAction.icon className="h-4 w-4" />
+                            </Button>
+                        )}
+
                         {/* Main button group */}
                         <div className="flex h-9 items-center rounded-md bg-background divide-x divide-border/50 overflow-hidden">
-                            {statsAction && (
-                                <div className="flex items-center h-full">
-                                    <Button
-                                        variant="ghost"
-                                        size="icon"
-                                        className="h-full px-2 rounded-none hover:bg-muted/50 transition-all ring-0 focus-visible:ring-0"
-                                        onClick={handleStatsClick}
-                                    >
-                                        <statsAction.icon className="h-4 w-4" />
-                                    </Button>
-                                </div>
-                            )}
-
                             {rightButtonGroupAction && (
                                 <div className="flex items-center h-full">
                                     {rightButtonGroupAction}
