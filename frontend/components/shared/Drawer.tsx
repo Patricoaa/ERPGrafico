@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState, useRef, useEffect, useCallback, useId } from "react"
+import React, { useState, useRef, useEffect, useCallback, useId, useMemo } from "react"
 import {
     Sheet,
     SheetContent,
@@ -99,23 +99,18 @@ export function Drawer({
         }
     }, [defaultSize])
 
-    const [containerElement, setContainerElement] = useState<HTMLElement | null>(null)
     const uniqueId = useId()
     const contentId = `drawer-content-${uniqueId.replace(/:/g, '')}`
 
-    useEffect(() => {
-        requestAnimationFrame(() => {
-            if (boundary === "screen") {
-                setContainerElement(document.body)
-            } else {
-                setContainerElement(
-                    document.getElementById("main-content") ||
-                    document.getElementById("module-sheets-portal-container") ||
-                    document.body
-                )
-            }
-        })
-    }, [boundary, open])
+    const containerElement = useMemo<HTMLElement | null>(() => {
+        if (typeof document === "undefined") return null
+        if (boundary === "screen") return document.body
+        return (
+            document.getElementById("main-content") ??
+            document.getElementById("module-sheets-portal-container") ??
+            document.body
+        )
+    }, [boundary])
 
     // Resizing logic
     const isResizing = useRef(false)
@@ -178,7 +173,7 @@ export function Drawer({
     const sideStyles = {
         bottom: "rounded-t-xl border-t-0 !bottom-0 !top-auto !w-full !left-0 !right-0",
         top: "rounded-b-xl border-b-0 !top-0 !bottom-auto !w-full !left-0 !right-0",
-        right: "rounded-xl border-l-0 !h-full !right-0 !left-auto !top-0 !bottom-0 sm:max-w-none",
+        right: "rounded-l-xl border-l-0 !h-full !right-0 !left-auto !top-0 !bottom-0 sm:max-w-none",
         left: "rounded-r-xl border-r-0 !h-full !left-0 !right-auto !top-0 !bottom-0 sm:max-w-none",
     }
 
@@ -212,7 +207,7 @@ export function Drawer({
                     ...(side === "top" ? { left: 0, right: 0, top: 0, width: '100%' } : {})
                 }}
                 className={cn(
-                    "p-0 flex flex-col",
+                    "p-0 flex flex-col overflow-hidden",
                     boundary === "embedded" ? "!absolute" : "!fixed",
                     sideStyles[side],
                     className
