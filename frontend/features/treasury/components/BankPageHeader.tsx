@@ -12,6 +12,7 @@ interface BankPageHeaderProps {
     description?: string
     status?: PageHeaderStatus
     titleActions?: React.ReactNode
+    subtab?: string
 }
 
 const SUB_VIEWS = [
@@ -22,7 +23,7 @@ const SUB_VIEWS = [
     { value: "reconciliation", label: "Conciliación", iconName: "arrow-left-right" },
 ]
 
-export function BankPageHeader({ bankId, breadcrumbs, title = "", description, status, titleActions }: BankPageHeaderProps) {
+export function BankPageHeader({ bankId, breadcrumbs, title = "", description, status, titleActions, subtab }: BankPageHeaderProps) {
     const { banks } = useBanks()
     const pathname = usePathname()
     const segments = pathname.split('/').filter(Boolean)
@@ -37,14 +38,25 @@ export function BankPageHeader({ bankId, breadcrumbs, title = "", description, s
                 label: bank.name,
                 iconName: "landmark" as string,
                 href: `/treasury/centro-bancos/${bank.id}`,
-                                subTabs: SUB_VIEWS.map(sv => ({
-                                    value: sv.value,
-                                    label: sv.label,
-                                    iconName: sv.iconName,
-                                    href: sv.value === 'cards'
-                                        ? `/treasury/centro-bancos/${bank.id}/cards?subtab=unbilled`
-                                        : `/treasury/centro-bancos/${bank.id}/${sv.value}`,
-                                })),
+                                subTabs: SUB_VIEWS.map(sv => {
+                                    const baseHref = sv.value === 'cards'
+                                        ? `/treasury/centro-bancos/${bank.id}/cards`
+                                        : `/treasury/centro-bancos/${bank.id}/${sv.value}`
+                                    return {
+                                        value: sv.value,
+                                        label: sv.label,
+                                        iconName: sv.iconName,
+                                        href: sv.value === 'cards'
+                                            ? `${baseHref}?subtab=${subtab || 'unbilled'}`
+                                            : baseHref,
+                                        ...(sv.value === 'cards' && {
+                                            subTabs: [
+                                                { value: "unbilled", label: "Cargos No Facturados", iconName: "file-text", href: `${baseHref}?subtab=unbilled` },
+                                                { value: "statements", label: "Cargos Facturados", iconName: "file-text", href: `${baseHref}?subtab=statements` },
+                                            ],
+                                        }),
+                                    }
+                                }),
             })),
     ]
 
@@ -70,6 +82,7 @@ export function BankPageHeader({ bankId, breadcrumbs, title = "", description, s
         activeValue: "centro-bancos",
         subActiveValue: `bank-${bankId}`,
         subSubActiveValue,
+        subSubSubActiveValue: subtab || 'unbilled',
         breadcrumbs,
     }
 

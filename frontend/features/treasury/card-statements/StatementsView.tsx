@@ -1,29 +1,51 @@
 "use client"
 
-import React, { useState } from 'react'
+import { useState, useMemo } from 'react'
 import type { ColumnDef } from '@tanstack/react-table'
 import { CreditCard, AlertTriangle, Eye } from 'lucide-react'
 import {
     DataTableView, DataTableColumnHeader, DataCell,
     createActionsColumn, StatusBadge, MoneyDisplay, Skeleton, EmptyState, EntityCard,
+    SmartSearchBar,
+    useSmartSearch,
+    UnderlineTabs,
 } from '@/components/shared'
+import type { SearchDefinition } from '@/types/search'
 import { useCardStatements } from './hooks'
 import { StatementDetailModal } from './StatementDetailModal'
 import type { CreditCardStatement } from './types'
 
 interface StatementsViewProps {
     bankId?: number
-    cardAccountId?: number | null
+    creditCardAccounts: Array<{ id: number; name: string; currency: string }>
 }
 
-export function StatementsView({ bankId, cardAccountId }: StatementsViewProps = {}) {
+export function StatementsView({ bankId, creditCardAccounts }: StatementsViewProps = { creditCardAccounts: [] }) {
+    const [selectedId, setSelectedId] = useState<number | null>(null)
+
+    const searchDef: SearchDefinition = useMemo(() => ({
+        fields: [
+            {
+                key: 'card',
+                label: 'Tarjeta',
+                type: 'enum',
+                serverParam: 'card',
+                defaultValue: String(creditCardAccounts[0]?.id ?? ''),
+                options: creditCardAccounts.map(a => ({ label: a.name, value: String(a.id) })),
+            },
+        ],
+    }), [creditCardAccounts])
+
+    const { filters, applyFilter } = useSmartSearch(searchDef)
+
+    const cardAccountId = filters.card ? Number(filters.card) : (creditCardAccounts[0]?.id ?? null)
+
     const params: Record<string, string> = {}
     if (bankId) params.bank = String(bankId)
     if (cardAccountId) params.card_account = String(cardAccountId)
     const { data: statements = [], isLoading, isError } = useCardStatements(
         Object.keys(params).length > 0 ? params : undefined,
     )
-    const [selectedId, setSelectedId] = useState<number | null>(null)
 
     if (isLoading) {
         return <Skeleton className="h-full" />
@@ -117,6 +139,25 @@ export function StatementsView({ bankId, cardAccountId }: StatementsViewProps = 
                     columns={columns}
                     data={statements}
                     variant="embedded"
+                    leftAction={
+                        <div className="flex items-center gap-1 w-full">
+                            {creditCardAccounts.length > 1 && (
+                                <UnderlineTabs
+                                    items={creditCardAccounts.map(a => ({ value: String(a.id), label: a.name }))}
+                                    value={String(filters.card ?? creditCardAccounts[0]?.id ?? '')}
+                                    onValueChange={(v) => applyFilter('card', v)}
+                                    orientation="horizontal"
+                                    variant="underline"
+                                    className="w-auto shrink-0"
+                                    headerClassName="h-9 px-0 bg-transparent"
+                                    contentClassName="hidden"
+                                >
+                                    <div />
+                                </UnderlineTabs>
+                            )}
+                            <SmartSearchBar searchDef={searchDef} placeholder="Buscar estados de cuenta..." className="flex-1" />
+                        </div>
+                    }
                     filterColumn="display_id"
                     searchPlaceholder="Buscar por estado de cuenta..."
                     emptyState={{

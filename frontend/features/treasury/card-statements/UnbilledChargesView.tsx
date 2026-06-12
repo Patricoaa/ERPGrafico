@@ -3,16 +3,9 @@
 import { useMemo, useState } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
-import { Plus, Receipt, CreditCard, ChevronDown, Calendar, BarChart3 } from 'lucide-react'
+import { Plus, Receipt, CreditCard, BarChart3 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import {
-    DropdownMenu,
-    DropdownMenuTrigger,
-    DropdownMenuContent,
-    DropdownMenuRadioGroup,
-    DropdownMenuRadioItem,
-} from '@/components/ui/dropdown-menu'
-import { ColumnDef } from '@tanstack/react-table'
+import type { ColumnDef } from '@tanstack/react-table'
 import {
     DataTableView,
     DataTableColumnHeader,
@@ -20,8 +13,11 @@ import {
     MoneyDisplay,
     EntityCard,
     StatusBadge,
-    EntityStatsBottomSheet,
+    SmartSearchBar,
+    useSmartSearch,
+    UnderlineTabs,
 } from '@/components/shared'
+import type { SearchDefinition } from '@/types/search'
 import { treasuryApi } from '../api/treasuryApi'
 import type { PendingChargeRow, UpcomingInstallment, UnbilledItemRow } from '../types'
 import { mapToUnbilledItemRows } from './utils'
@@ -30,17 +26,7 @@ import { BillChargesModal } from './BillChargesModal'
 import { useHubPanel } from '@/components/providers'
 
 interface UnbilledChargesViewProps {
-    bankId: number
-    cardAccountId: number
-    cardAccountName: string
-    currency?: string
-}
-
-interface UnbilledSummary {
-    total: number
-    count: number
-    charges: number
-    installments: number
+    creditCardAccounts: Array<{ id: number; name: string; currency: string }>
 }
 
 const chargeTypeColorMap: Record<string, string> = {
@@ -51,26 +37,59 @@ const chargeTypeColorMap: Record<string, string> = {
     OTHER: 'bg-muted text-muted-foreground',
 }
 
+interface UnbilledSummary {
+    total: number
+    count: number
+    charges: number
+    installments: number
+}
+
 export function UnbilledChargesView({
-    bankId,
-    cardAccountId,
-    cardAccountName,
-    currency = 'CLP',
+    creditCardAccounts,
 }: UnbilledChargesViewProps) {
     const [showAddCharge, setShowAddCharge] = useState(false)
     const [showBillCharges, setShowBillCharges] = useState(false)
-    const [filterMode, setFilterMode] = useState<'month' | 'all'>('month')
-    const [statsOpen, setStatsOpen] = useState(false)
     const queryClient = useQueryClient()
     const { openHub } = useHubPanel()
 
+    const searchDef: SearchDefinition = useMemo(() => ({
+        fields: [
+            {
+                key: 'scope',
+                label: 'Alcance',
+                type: 'enum',
+                serverParam: 'scope',
+                defaultValue: 'month',
+                options: [
+                    { label: 'Cargos del mes', value: 'month' },
+                    { label: 'Todos los cargos', value: 'all' },
+                ],
+            },
+            {
+                key: 'card',
+                label: 'Tarjeta',
+                type: 'enum',
+                serverParam: 'card',
+                defaultValue: String(creditCardAccounts[0]?.id ?? ''),
+                options: creditCardAccounts.map(a => ({ label: a.name, value: String(a.id) })),
+            },
+        ],
+    }), [creditCardAccounts])
+
+    const { filters, applyFilter } = useSmartSearch(searchDef)
+
+    const selectedCardAccount = filters.card ? Number(filters.card) : (creditCardAccounts[0]?.id ?? 0)
+    const currentAccount = creditCardAccounts.find(a => a.id === selectedCardAccount)
+    const cardAccountName = currentAccount?.name ?? ''
+    const currency = currentAccount?.currency ?? 'CLP'
+
     const today = new Date().toISOString().split('T')[0]
-    const cutOffDate = filterMode === 'month' ? today : undefined
+    const cutOffDate = filters.scope !== 'all' ? today : undefined
 
     const { data: result, isLoading } = useQuery({
-        queryKey: ['unbilled-charges', cardAccountId, cutOffDate ?? 'all'],
-        queryFn: () => treasuryApi.getUnbilledCharges(cardAccountId, cutOffDate),
-        enabled: !!cardAccountId,
+        queryKey: ['unbilled-charges', selectedCardAccount, cutOffDate ?? 'all'],
+        queryFn: () => treasuryApi.getUnbilledCharges(selectedCardAccount, cutOffDate),
+        enabled: !!selectedCardAccount,
     })
 
     const charges: PendingChargeRow[] = result?.charges ?? []
@@ -84,13 +103,13 @@ export function UnbilledChargesView({
 
     const handleAddChargeSuccess = () => {
         setShowAddCharge(false)
-        queryClient.invalidateQueries({ queryKey: ['unbilled-charges', cardAccountId] })
+        queryClient.invalidateQueries({ queryKey: ['unbilled-charges', selectedCardAccount] })
         toast.success('Cargo agregado exitosamente')
     }
 
     const handleBillChargesSuccess = () => {
         setShowBillCharges(false)
-        queryClient.invalidateQueries({ queryKey: ['unbilled-charges', cardAccountId] })
+        queryClient.invalidateQueries({ queryKey: ['unbilled-charges', selectedCardAccount] })
         toast.success('Cargos facturados exitosamente')
     }
 
@@ -202,35 +221,18 @@ export function UnbilledChargesView({
         },
     ]
 
-    const filterDropdown = (
-        <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className="h-full px-3 rounded-none text-[10px] font-black uppercase tracking-widest hover:bg-muted/50 transition-all border-0 ring-0 focus-visible:ring-0">
-                    <Calendar className="h-3.5 w-3.5 mr-2 opacity-50" />
-                    {filterMode === 'month' ? 'Cargos del mes' : 'Todos los cargos'}
-                </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-                <DropdownMenuRadioGroup value={filterMode} onValueChange={(v) => setFilterMode(v as 'month' | 'all')}>
-                    <DropdownMenuRadioItem value="month">Cargos del mes</DropdownMenuRadioItem>
-                    <DropdownMenuRadioItem value="all">Todos los cargos</DropdownMenuRadioItem>
-                </DropdownMenuRadioGroup>
-            </DropdownMenuContent>
-        </DropdownMenu>
-    )
-
     const actionButtons = (
         <div className="flex items-center gap-2">
             <Button
                 variant="outline"
-                className="border-0 h-10 text-[10px] font-black uppercase tracking-widest"
+                className="rounded-md border-0 h-10 text-[10px] font-black uppercase tracking-widest"
                 disabled={!summary || summary.count === 0}
                 onClick={() => setShowBillCharges(true)}
             >
                 <Receipt className="h-3.5 w-3.5 mr-2" />
                 Facturar Cargos
             </Button>
-            <Button className="h-10 text-[10px] font-black uppercase tracking-widest" onClick={() => setShowAddCharge(true)}>
+            <Button className="rounded-md h-10 text-[10px] font-black uppercase tracking-widest" onClick={() => setShowAddCharge(true)}>
                 <Plus className="h-3.5 w-3.5 mr-2" />
                 Agregar Cargo
             </Button>
@@ -266,23 +268,14 @@ export function UnbilledChargesView({
             props: { cards: statsCards },
         },
         {
-            type: 'chart' as const,
+            type: 'bar-chart' as const,
             title: 'Distribución por Tipo',
             props: {
-                children: distributionByType.length > 0 ? (
-                    <div className="space-y-2">
-                        {distributionByType.map((d, i) => (
-                            <div key={i} className="flex items-center justify-between">
-                                <span className="text-xs font-medium text-muted-foreground truncate mr-2">{d.label}</span>
-                                <span className="text-xs font-bold text-foreground shrink-0">
-                                    <MoneyDisplay amount={d.amount} currency={currency} inline />
-                                </span>
-                            </div>
-                        ))}
-                    </div>
-                ) : (
-                    <p className="text-xs text-muted-foreground text-center py-2 italic">Sin cargos</p>
-                ),
+                data: distributionByType.map((d) => ({ tipo: d.label, monto: d.amount })),
+                keys: ['monto'],
+                indexBy: 'tipo',
+                height: 250,
+                colors: { scheme: 'set2' },
             },
         },
         {
@@ -301,12 +294,33 @@ export function UnbilledChargesView({
                     data={mergedRows}
                     isLoading={isLoading}
                     variant="embedded"
+                    statsAction={{
+                        icon: BarChart3,
+                        sheet: {
+                            title: cardAccountName,
+                            description: "Cargos no facturados",
+                            sections: statsSections,
+                        },
+                    }}
                     leftAction={
-                        <Button variant="ghost" size="icon" className="h-10 w-10" onClick={() => setStatsOpen(true)}>
-                            <BarChart3 className="h-4 w-4" />
-                        </Button>
+                        <div className="flex items-center gap-1 w-full">
+                            {creditCardAccounts.length > 1 && (
+                                <UnderlineTabs
+                                    items={creditCardAccounts.map(a => ({ value: String(a.id), label: a.name }))}
+                                    value={String(filters.card ?? creditCardAccounts[0]?.id ?? '')}
+                                    onValueChange={(v) => applyFilter('card', v)}
+                                    orientation="horizontal"
+                                    variant="underline"
+                                    className="w-auto shrink-0"
+                                    headerClassName="h-9 px-0 bg-transparent"
+                                    contentClassName="hidden"
+                                >
+                                    <div />
+                                </UnderlineTabs>
+                            )}
+                            <SmartSearchBar searchDef={searchDef} placeholder="Buscar cargos..." className="flex-1" />
+                        </div>
                     }
-                    rightButtonGroupAction={filterDropdown}
                     createAction={actionButtons}
                     emptyState={{
                         context: 'treasury',
@@ -348,7 +362,7 @@ export function UnbilledChargesView({
 
             {showAddCharge && (
                 <AddChargeModal
-                    cardAccountId={cardAccountId}
+                    cardAccountId={selectedCardAccount}
                     cardAccountName={cardAccountName}
                     currency={currency}
                     onSuccess={handleAddChargeSuccess}
@@ -358,7 +372,7 @@ export function UnbilledChargesView({
 
             {showBillCharges && (
                 <BillChargesModal
-                    cardAccountId={cardAccountId}
+                    cardAccountId={selectedCardAccount}
                     cardAccountName={cardAccountName}
                     total={summary?.total || 0}
                     charges={charges}
@@ -369,15 +383,6 @@ export function UnbilledChargesView({
                 />
             )}
 
-            {summary && (
-                <EntityStatsBottomSheet
-                    open={statsOpen}
-                    onOpenChange={setStatsOpen}
-                    title={cardAccountName}
-                    description="Cargos no facturados"
-                    sections={statsSections}
-                />
-            )}
         </div>
     )
 }

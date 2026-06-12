@@ -14,6 +14,7 @@ export type EnumFieldDef = {
   type: 'enum'
   serverParam: string
   options: { label: string; value: string }[]
+  defaultValue?: string
 }
 
 export type DateRangeFieldDef = {
