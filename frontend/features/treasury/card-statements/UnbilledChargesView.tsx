@@ -3,7 +3,7 @@
 import { useMemo, useState } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
-import { Plus, Receipt, CreditCard, BarChart3 } from 'lucide-react'
+import { Plus, Receipt, CreditCard, BarChart3, Wallet, ReceiptText, DollarSign } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import type { ColumnDef } from '@tanstack/react-table'
 import {
@@ -16,6 +16,7 @@ import {
     SmartSearchBar,
     useSmartSearch,
     UnderlineTabs,
+    StatCard,
 } from '@/components/shared'
 import type { SearchDefinition } from '@/types/search'
 import { treasuryApi } from '../api/treasuryApi'
@@ -110,6 +111,7 @@ export function UnbilledChargesView({
     const handleBillChargesSuccess = () => {
         setShowBillCharges(false)
         queryClient.invalidateQueries({ queryKey: ['unbilled-charges', selectedCardAccount] })
+        queryClient.invalidateQueries({ queryKey: ['card-statements'] })
         toast.success('Cargos facturados exitosamente')
     }
 
@@ -239,52 +241,6 @@ export function UnbilledChargesView({
         </div>
     )
 
-    const distributionByType = useMemo(() => {
-        const map = new Map<string, number>()
-        charges.forEach((c) => {
-            const key = c.charge_type_display || c.charge_type || 'Otros'
-            map.set(key, (map.get(key) || 0) + parseFloat(String(c.amount)))
-        })
-        return Array.from(map.entries()).map(([label, amount]) => ({ label, amount }))
-    }, [charges])
-
-    const timelineEvents = useMemo(() => upcomingInstallments.map((inst) => ({
-        date: new Date(inst.due_date).toLocaleDateString('es-CL'),
-        label: `Cuota ${inst.number}/${inst.total_installments} — ${inst.purchase_order_display_id || inst.group_display_id || ''}`,
-        description: <MoneyDisplay amount={inst.principal_amount} currency={currency} inline />,
-    })), [upcomingInstallments, currency])
-
-    const statsCards = useMemo(() => summary ? [
-        { label: 'Total', value: <MoneyDisplay amount={summary.total} currency={currency} inline />, icon: CreditCard, accent: 'primary' as const },
-        { label: 'Cuotas', value: <MoneyDisplay amount={summary.installments} currency={currency} inline />, icon: CreditCard, accent: 'info' as const },
-        { label: 'Cargos Financieros', value: <MoneyDisplay amount={summary.charges} currency={currency} inline />, icon: CreditCard, accent: 'warning' as const },
-        { label: 'Cantidad', value: summary.count.toString(), icon: CreditCard, accent: 'muted' as const },
-    ] : [], [summary, currency])
-
-    const statsSections = summary ? [
-        {
-            type: 'cards' as const,
-            title: 'Resumen',
-            props: { cards: statsCards },
-        },
-        {
-            type: 'bar-chart' as const,
-            title: 'Distribución por Tipo',
-            props: {
-                data: distributionByType.map((d) => ({ tipo: d.label, monto: d.amount })),
-                keys: ['monto'],
-                indexBy: 'tipo',
-                height: 250,
-                colors: { scheme: 'set2' },
-            },
-        },
-        {
-            type: 'timeline' as const,
-            title: 'Próximas Cuotas',
-            props: { events: timelineEvents },
-        },
-    ] : []
-
     return (
         <div className="flex flex-col flex-1 min-h-0 space-y-4">
             <div className="flex-1 min-h-0">
@@ -297,9 +253,49 @@ export function UnbilledChargesView({
                     statsAction={{
                         icon: BarChart3,
                         sheet: {
-                            title: cardAccountName,
-                            description: "Cargos no facturados",
-                            sections: statsSections,
+                            title: "Estadísticas de Cargos",
+                            description: "Resumen de cargos no facturados y cuotas próximas",
+                            panels: [
+                                {
+                                    id: 'resumen',
+                                    title: 'Resumen',
+                                    colSpan: 3 as const,
+                                    content: {
+                                        type: 'custom',
+                                        render: (
+                                            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                                                <StatCard label="Total" value={<MoneyDisplay amount={summary?.total ?? 0} inline />} icon={DollarSign} accent="warning" />
+                                                <StatCard label="Cargos" value={String(summary?.charges ?? 0)} icon={ReceiptText} accent="primary" />
+                                                <StatCard label="Cuotas" value={String(summary?.installments ?? 0)} icon={Wallet} accent="info" />
+                                                <StatCard label="Total Items" value={String(summary?.count ?? 0)} icon={CreditCard} accent="success" />
+                                            </div>
+                                        ),
+                                    },
+                                },
+                                ...(upcomingInstallments.length > 0 ? [
+                                    {
+                                        id: 'proximas-cuotas',
+                                        title: 'Próximas Cuotas',
+                                        colSpan: 3 as const,
+                                        content: {
+                                            type: 'custom' as const,
+                                            render: (
+                                                <div className="space-y-2">
+                                                    {upcomingInstallments.slice(0, 10).map((inst, i) => (
+                                                        <div key={i} className="flex items-center justify-between py-1 border-b border-border/50 last:border-0">
+                                                            <div className="flex flex-col min-w-0">
+                                                                <span className="text-xs font-medium truncate">{inst.group_display_id || `Cuota ${inst.number}/${inst.total_installments}`}</span>
+                                                                <span className="text-[10px] text-muted-foreground">{new Date(inst.due_date).toLocaleDateString('es-CL')}</span>
+                                                            </div>
+                                                            <MoneyDisplay amount={parseFloat(inst.principal_amount)} inline className="text-xs font-bold shrink-0 ml-2" />
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            ),
+                                        },
+                                    },
+                                ] : []),
+                            ],
                         },
                     }}
                     leftAction={
