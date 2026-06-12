@@ -3,7 +3,7 @@
 import { useMemo, useState } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
-import { Plus, Receipt, CreditCard, BarChart3, Wallet, ReceiptText, DollarSign } from 'lucide-react'
+import { Plus, Receipt, CreditCard, BarChart3, Wallet, ReceiptText, DollarSign, TrendingUp, Timer, Gauge, ArrowUpRight } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import type { ColumnDef } from '@tanstack/react-table'
 import {
@@ -17,13 +17,17 @@ import {
     useSmartSearch,
     UnderlineTabs,
     StatCard,
+    TimelineView,
+    SummaryTable,
 } from '@/components/shared'
 import type { SearchDefinition } from '@/types/search'
 import { treasuryApi } from '../api/treasuryApi'
-import type { PendingChargeRow, UpcomingInstallment, UnbilledItemRow } from '../types'
+import type { PendingChargeRow, UpcomingInstallment, UnbilledItemRow, UnbilledForecast } from '../types'
 import { mapToUnbilledItemRows } from './utils'
 import { AddChargeModal } from './AddChargeModal'
 import { BillChargesModal } from './BillChargesModal'
+import { CreditUtilizationRing } from './CreditUtilizationRing'
+import { UpcomingCalendar } from './UpcomingCalendar'
 import { useHubPanel } from '@/components/providers'
 
 interface UnbilledChargesViewProps {
@@ -96,6 +100,7 @@ export function UnbilledChargesView({
     const charges: PendingChargeRow[] = result?.charges ?? []
     const upcomingInstallments: UpcomingInstallment[] = result?.upcoming_installments ?? []
     const summary: UnbilledSummary | undefined = result?.summary
+    const forecast: UnbilledForecast | undefined = result?.forecast
 
     const mergedRows = useMemo(
         () => mapToUnbilledItemRows(charges, upcomingInstallments),
@@ -251,55 +256,243 @@ export function UnbilledChargesView({
                     isLoading={isLoading}
                     variant="embedded"
                     entityHubAction={{
-                        icon: BarChart3,
                         screen: {
                             entityName: "Cargos no Facturados",
-                            tabs: [{
-                                value: 'resumen',
-                                label: 'Resumen',
-                                icon: BarChart3,
-                                panels: [
-                                    {
-                                        id: 'resumen',
-                                        title: 'Resumen',
-                                        colSpan: 3 as const,
-                                        content: {
-                                            type: 'custom',
-                                            render: (
-                                                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                                                    <StatCard label="Total" value={<MoneyDisplay amount={summary?.total ?? 0} inline />} icon={DollarSign} accent="warning" />
-                                                    <StatCard label="Cargos" value={String(summary?.charges ?? 0)} icon={ReceiptText} accent="primary" />
-                                                    <StatCard label="Cuotas" value={String(summary?.installments ?? 0)} icon={Wallet} accent="info" />
-                                                    <StatCard label="Total Items" value={String(summary?.count ?? 0)} icon={CreditCard} accent="success" />
-                                                </div>
-                                            ),
-                                        },
-                                    },
-                                    ...(upcomingInstallments.length > 0 ? [
+                            tabs: [
+                                {
+                                    value: 'resumen',
+                                    label: 'Resumen',
+                                    icon: BarChart3,
+                                    panels: [
                                         {
-                                            id: 'proximas-cuotas',
-                                            title: 'Próximas Cuotas',
+                                            id: 'resumen',
+                                            title: 'Resumen',
                                             colSpan: 3 as const,
                                             content: {
-                                                type: 'custom' as const,
+                                                type: 'custom',
                                                 render: (
-                                                    <div className="space-y-2">
-                                                        {upcomingInstallments.slice(0, 10).map((inst, i) => (
-                                                            <div key={i} className="flex items-center justify-between py-1 border-b border-border/50 last:border-0">
-                                                                <div className="flex flex-col min-w-0">
-                                                                    <span className="text-xs font-medium truncate">{inst.group_display_id || `Cuota ${inst.number}/${inst.total_installments}`}</span>
-                                                                    <span className="text-[10px] text-muted-foreground">{new Date(inst.due_date).toLocaleDateString('es-CL')}</span>
-                                                                </div>
-                                                                <MoneyDisplay amount={parseFloat(inst.principal_amount)} inline className="text-xs font-bold shrink-0 ml-2" />
-                                                            </div>
-                                                        ))}
+                                                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                                                        <StatCard label="Total" value={<MoneyDisplay amount={summary?.total ?? 0} inline />} icon={DollarSign} accent="warning" />
+                                                        <StatCard label="Cargos" value={String(summary?.charges ?? 0)} icon={ReceiptText} accent="primary" />
+                                                        <StatCard label="Cuotas" value={String(summary?.installments ?? 0)} icon={Wallet} accent="info" />
+                                                        <StatCard label="Total Items" value={String(summary?.count ?? 0)} icon={CreditCard} accent="success" />
                                                     </div>
                                                 ),
                                             },
                                         },
-                                    ] : []),
-                                ],
-                            }],
+                                        ...(upcomingInstallments.length > 0 ? [
+                                            {
+                                                id: 'proximas-cuotas',
+                                                title: 'Próximas Cuotas',
+                                                colSpan: 3 as const,
+                                                content: {
+                                                    type: 'custom' as const,
+                                                    render: (
+                                                        <div className="space-y-2">
+                                                            {upcomingInstallments.slice(0, 10).map((inst, i) => (
+                                                                <div key={i} className="flex items-center justify-between py-1 border-b border-border/50 last:border-0">
+                                                                    <div className="flex flex-col min-w-0">
+                                                                        <span className="text-xs font-medium truncate">{inst.group_display_id || `Cuota ${inst.number}/${inst.total_installments}`}</span>
+                                                                        <span className="text-[10px] text-muted-foreground">{new Date(inst.due_date).toLocaleDateString('es-CL')}</span>
+                                                                    </div>
+                                                                    <MoneyDisplay amount={parseFloat(inst.principal_amount)} inline className="text-xs font-bold shrink-0 ml-2" />
+                                                                </div>
+                                                            ))}
+                                                        </div>
+                                                    ),
+                                                },
+                                            },
+                                        ] : []),
+                                    ],
+                                },
+                                {
+                                    value: 'proximo-cierre',
+                                    label: 'Próximo Cierre',
+                                    icon: TrendingUp,
+                                    panels: [
+                                        {
+                                            id: 'hero-next-statement',
+                                            colSpan: 3 as const,
+                                            content: {
+                                                type: 'custom',
+                                                render: (
+                                                    <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+                                                        <StatCard
+                                                            label="Total a Facturar"
+                                                            value={<MoneyDisplay amount={parseFloat(forecast?.next_statement_total ?? '0')} inline />}
+                                                            icon={DollarSign}
+                                                            accent="warning"
+                                                            valueSize="xl"
+                                                            trend={forecast && summary?.total ? {
+                                                                direction: parseFloat(forecast.next_statement_total) > summary.total ? 'up' : 'down',
+                                                                value: `${((Math.abs(parseFloat(forecast.next_statement_total) - (summary?.total ?? 0)) / Math.max((summary?.total ?? 1), 1)) * 100).toFixed(0)}% vs mes actual`,
+                                                            } : undefined}
+                                                        />
+                                                        <StatCard
+                                                            label="Próximo Cierre"
+                                                            value={forecast?.next_statement_date ? new Date(forecast.next_statement_date).toLocaleDateString('es-CL') : '—'}
+                                                            icon={Timer}
+                                                            accent="info"
+                                                            subtext={forecast ? `en ${forecast.days_to_next_statement} días` : undefined}
+                                                        />
+                                                        <StatCard
+                                                            label="Cuotas a Facturar"
+                                                            value={forecast ? String(Object.values(forecast.by_month).reduce((s, m) => s + m.count, 0)) : '0'}
+                                                            icon={Wallet}
+                                                            accent="primary"
+                                                            subtext={`$ ${new Intl.NumberFormat('es-CL', { maximumFractionDigits: 0 }).format(parseFloat(forecast?.installments_until_next_statement ?? '0'))} en cuotas`}
+                                                        />
+                                                        <StatCard
+                                                            label="Cargos a Facturar"
+                                                            value={forecast ? `$ ${new Intl.NumberFormat('es-CL', { maximumFractionDigits: 0 }).format(parseFloat(forecast.pending_until_next_statement))}` : '$0'}
+                                                            icon={ReceiptText}
+                                                            accent="success"
+                                                        />
+                                                    </div>
+                                                ),
+                                            },
+                                        },
+                                        {
+                                            id: 'calendario-cuotas',
+                                            title: 'Cuotas Próximas por Mes',
+                                            colSpan: 2 as const,
+                                            content: {
+                                                type: 'custom',
+                                                render: (
+                                                    <UpcomingCalendar
+                                                        byMonth={forecast?.by_month ?? {}}
+                                                        currency={currency}
+                                                    />
+                                                ),
+                                            },
+                                        },
+                                        {
+                                            id: 'top-cuotas',
+                                            title: 'Top Cuotas',
+                                            colSpan: 1 as const,
+                                            content: {
+                                                type: 'custom',
+                                                render: (
+                                                    <SummaryTable
+                                                        rows={upcomingInstallments
+                                                            .sort((a, b) => parseFloat(b.principal_amount) - parseFloat(a.principal_amount))
+                                                            .slice(0, 5)
+                                                            .map(i => ({
+                                                                label: `${i.partner_name ?? 'Proveedor'} · ${new Date(i.due_date).toLocaleDateString('es-CL', { day: 'numeric', month: 'short' })}`,
+                                                                value: <MoneyDisplay amount={parseFloat(i.principal_amount)} inline className="text-xs font-bold" />,
+                                                            }))
+                                                        }
+                                                    />
+                                                ),
+                                            },
+                                        },
+                                        {
+                                            id: 'timeline-proximas-cuotas',
+                                            title: 'Próximas Cuotas (Timeline)',
+                                            colSpan: 3 as const,
+                                            content: {
+                                                type: 'custom',
+                                                render: forecast?.by_month && Object.keys(forecast.by_month).length > 0 ? (
+                                                    <TimelineView
+                                                        events={Object.entries(forecast.by_month)
+                                                            .sort(([a], [b]) => a.localeCompare(b))
+                                                            .map(([key, val]) => {
+                                                                const d = new Date(key + '-02')
+                                                                const label = d.toLocaleDateString('es-CL', { month: 'long', year: 'numeric' })
+                                                                return {
+                                                                    date: label,
+                                                                    label: `${val.count} ${val.count === 1 ? 'cuota' : 'cuotas'}`,
+                                                                    description: `Total: $${new Intl.NumberFormat('es-CL', { maximumFractionDigits: 0 }).format(parseFloat(val.total))}`,
+                                                                    status: forecast?.by_month && key === Object.entries(forecast.by_month).sort(([a], [b]) => a.localeCompare(b))[0]?.[0]
+                                                                        ? 'warning' as const
+                                                                        : 'neutral' as const,
+                                                                }
+                                                            })
+                                                        }
+                                                    />
+                                                ) : (
+                                                    <p className="text-sm text-muted-foreground italic py-4 text-center">Sin cuotas futuras</p>
+                                                ),
+                                            },
+                                        },
+                                    ],
+                                },
+                                {
+                                    value: 'cupo',
+                                    label: 'Cupo',
+                                    icon: Gauge,
+                                    panels: [
+                                        {
+                                            id: 'ring-cupo',
+                                            colSpan: 1 as const,
+                                            content: {
+                                                type: 'custom',
+                                                render: forecast ? (
+                                                    <CreditUtilizationRing
+                                                        limit={parseFloat(forecast.credit_limit ?? '0')}
+                                                        used={parseFloat(forecast.total_used)}
+                                                        billed={parseFloat(forecast.current_debt)}
+                                                        unbilled={parseFloat(forecast.total_unbilled)}
+                                                    />
+                                                ) : (
+                                                    <p className="text-sm text-muted-foreground italic py-4 text-center">Sin datos de cupo</p>
+                                                ),
+                                            },
+                                        },
+                                        {
+                                            id: 'stats-cupo',
+                                            colSpan: 2 as const,
+                                            content: {
+                                                type: 'custom',
+                                                render: (
+                                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                                                        <StatCard
+                                                            label="Deuda Actual (Facturada)"
+                                                            value={<MoneyDisplay amount={parseFloat(forecast?.current_debt ?? '0')} inline />}
+                                                            icon={CreditCard}
+                                                            accent="destructive"
+                                                        />
+                                                        <StatCard
+                                                            label="No Facturado"
+                                                            value={<MoneyDisplay amount={parseFloat(forecast?.total_unbilled ?? '0')} inline />}
+                                                            icon={TrendingUp}
+                                                            accent="warning"
+                                                        />
+                                                        <StatCard
+                                                            label="Disponible"
+                                                            value={<MoneyDisplay amount={parseFloat(forecast?.available_credit ?? '0')} inline />}
+                                                            icon={ArrowUpRight}
+                                                            accent="success"
+                                                        />
+                                                    </div>
+                                                ),
+                                            },
+                                        },
+                                        ...(forecast?.credit_limit ? [
+                                            {
+                                                id: 'detalle-cupo',
+                                                title: 'Detalle de Cupo',
+                                                colSpan: 3 as const,
+                                                content: {
+                                                    type: 'custom' as const,
+                                                    render: (
+                                                        <SummaryTable
+                                                            rows={[
+                                                                { label: 'Límite de Crédito', value: <MoneyDisplay amount={parseFloat(forecast.credit_limit ?? '0')} inline /> },
+                                                                { label: 'Total Usado', value: <MoneyDisplay amount={parseFloat(forecast.total_used)} inline /> },
+                                                                { label: 'Disponible', value: <MoneyDisplay amount={parseFloat(forecast.available_credit ?? '0')} inline /> },
+                                                                { label: '% Usado', value: `${((parseFloat(forecast.total_used) / parseFloat(forecast.credit_limit ?? '1')) * 100).toFixed(1)}%` },
+                                                                { label: 'Deuda Facturada', value: <MoneyDisplay amount={parseFloat(forecast.current_debt)} inline /> },
+                                                                { label: 'Comprometido (No Facturado)', value: <MoneyDisplay amount={parseFloat(forecast.total_unbilled)} inline /> },
+                                                            ]}
+                                                        />
+                                                    ),
+                                                },
+                                            },
+                                        ] : []),
+                                    ],
+                                },
+                            ],
                         },
                     }}
                     leftAction={

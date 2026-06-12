@@ -234,6 +234,25 @@ export interface UnbilledItemRow {
     originalInstallment: UpcomingInstallment | null
 }
 
+export interface ByMonthItem {
+    total: string
+    count: number
+}
+
+export interface UnbilledForecast {
+    next_statement_date: string
+    days_to_next_statement: number
+    next_statement_total: string
+    pending_until_next_statement: string
+    installments_until_next_statement: string
+    by_month: Record<string, ByMonthItem>
+    credit_limit: string | null
+    total_used: string
+    current_debt: string
+    total_unbilled: string
+    available_credit: string | null
+}
+
 export interface TreasuryMovement {
     id: number
     display_id: string

@@ -2633,10 +2633,13 @@ class CreditCardStatementViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
                 'partner_name': None,
             })
 
+        forecast = CardService.get_forecast(card_account, cut_off_date=cut_off_date)
+
         return Response({
             'charges': charges_data,
             'upcoming_installments': installments_data,
             'summary': summary,
+            'forecast': forecast,
         })
 
     @action(detail=False, methods=['post'], url_path='add-charge')

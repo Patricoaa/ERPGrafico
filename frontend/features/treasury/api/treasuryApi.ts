@@ -29,6 +29,7 @@ import type {
     TreasuryMovement,
     UpcomingInstallment,
     PendingChargeRow,
+    UnbilledForecast,
 } from '../types'
 
 export const treasuryApi = {
@@ -309,6 +310,7 @@ export const treasuryApi = {
             charges: number
             installments: number
         }
+        forecast: UnbilledForecast
     }> => {
         const params: Record<string, string | number> = {
             card_account: cardAccountId,
