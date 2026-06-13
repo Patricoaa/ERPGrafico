@@ -11,7 +11,7 @@ export default async function BankCardsPage({
     const { subtab } = await searchParams
     const id = Number(bankId)
     return (
-        <div className="flex-1 flex flex-col min-h-0">
+        <div className="h-full flex flex-col">
             <BankPageHeader bankId={id} title="Tarjeta de crédito" subtab={subtab} />
             <BankCenterView bankId={id} />
         </div>

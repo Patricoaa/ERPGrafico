@@ -30,7 +30,7 @@ export default async function CreditsPage({ searchParams }: PageProps) {
     ) : null
 
     return (
-        <div className="pt-2 flex-1 min-h-0 flex flex-col">
+        <div className="h-full flex flex-col">
             <Tabs value={activeTab} className="h-full flex flex-col">
                 <div className="mt-0 outline-none flex-1 min-h-0">
                     <FadeIn key={activeTab}>

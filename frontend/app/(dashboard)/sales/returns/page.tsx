@@ -18,7 +18,7 @@ export default function SalesReturnsPage() {
     })
 
     return (
-        <div className="pt-2 flex-1 min-h-0 flex flex-col">
+        <div className="h-full flex flex-col">
             <SalesOrdersView 
                 viewMode="notes"
             />
