@@ -1,21 +1,20 @@
 "use client"
 
-import {showApiError, getErrorMessage} from "@/lib/errors"
-import React, { useEffect, useState } from "react"
+import { showApiError, getErrorMessage } from "@/lib/errors"
+import React, { useEffect, useState, useMemo } from "react"
 import { useSearchParams, useRouter, usePathname } from "next/navigation"
-import { ActionConfirmModal, DataTableView, DocumentCompletionModal } from '@/components/shared'
-import { DataTableColumnHeader } from '@/components/shared'
-import { ColumnDef } from "@tanstack/react-table"
-import { DataCell } from '@/components/shared'
+import { ActionConfirmModal, DataTableView, DocumentCompletionModal, DomainHubStatus, SmartSearchBar, useSmartSearch } from '@/components/shared'
+import { DataTableColumnHeader, DataCell, TimelineView } from '@/components/shared'
+import type { EntityHubActionConfig } from '@/components/shared'
+import { type ColumnDef } from "@tanstack/react-table"
 import { Button } from "@/components/ui/button"
-import { ArrowRight, ArrowLeft } from "lucide-react"
+import { ArrowRight, ArrowLeft, BarChart3, Building2, DollarSign, Wallet, CreditCard, ShoppingBag, Hash } from "lucide-react"
 import api from "@/lib/api"
-import { PurchaseOrderModal } from "@/features/purchasing"
+import { PurchaseOrderModal, DocumentRegistrationModal, PurchaseCheckoutWizard, usePurchasingOrders, usePurchasingNotes, purchaseOrderSearchDef, usePurchasingHubData } from "@/features/purchasing"
+import type { PurchaseOrderAPI } from "@/features/purchasing"
 import { toast } from "sonner"
-import { DocumentRegistrationModal, PurchaseCheckoutWizard } from "@/features/purchasing"
 
 import { useHubPanel } from "@/components/providers/HubPanelProvider"
-import { DomainHubStatus } from "@/components/shared"
 import { getHubStatuses } from "@/lib/workflow-status"
 import { useConfirmAction } from "@/hooks/useConfirmAction"
 
@@ -44,9 +43,6 @@ interface PurchasingOrdersClientViewProps {
     createAction?: React.ReactNode
 }
 
-import { usePurchasingOrders, usePurchasingNotes, purchaseOrderSearchDef } from "@/features/purchasing"
-import { SmartSearchBar, useSmartSearch } from "@/components/shared"
-
 export function PurchasingOrdersClientView({ viewMode, externalOpenCheckout, createAction }: PurchasingOrdersClientViewProps) {
     const { filters, isFiltered } = useSmartSearch(purchaseOrderSearchDef)
     const { orders, isLoading: isLoadingOrders, refetch: fetchOrders, deleteOrder } = usePurchasingOrders(filters)
@@ -65,6 +61,229 @@ export function PurchasingOrdersClientView({ viewMode, externalOpenCheckout, cre
 
     const { hubConfig, isHubOpen } = useHubPanel()
     const [checkoutOrderId, setCheckoutOrderId] = useState<number | null>(null)
+    const [granularity, setGranularity] = useState<"day" | "month" | "year">("month")
+    const [dateRange, setDateRange] = useState<{ from: string; to: string } | null>(null)
+
+    const hubData = usePurchasingHubData(orders as PurchaseOrderAPI[], dateRange, granularity)
+
+    const entityHubAction: EntityHubActionConfig = useMemo(() => {
+        if (viewMode !== "orders") return { screen: { entityName: "", tabs: [] } }
+
+        const comboData = hubData.monthlyVolume.map((m, i) => ({
+            ...m,
+            avg: hubData.monthlyAvg[i]?.avg ?? 0,
+        }))
+
+        return {
+            screen: {
+                entityName: "Órdenes de Compra",
+                granularity,
+                onGranularityChange: setGranularity,
+                dateRange,
+                onDateRangeChange: setDateRange,
+                tabs: [
+                    // ── Tab 1: Financiero ──────────────────────────────
+                    {
+                        value: "financiero",
+                        label: "Financiero",
+                        icon: BarChart3,
+                        columns: [
+                            {
+                                id: "col-main",
+                                weight: 2,
+                                sections: [
+                                    {
+                                        id: "combo-chart",
+                                        content: {
+                                            type: "stat-card",
+                                            config: {
+                                                label: "Volumen de Órdenes",
+                                                variant: "chart",
+                                                chart: {
+                                                    type: "bar-chart",
+                                                    config: {
+                                                        data: comboData,
+                                                        keys: ["total"],
+                                                        indexBy: "month",
+                                                        valueFormat: "~s",
+                                                        enableGridY: true,
+                                                        lineOverlay: {
+                                                            dataKey: "avg",
+                                                            label: "Promedio",
+                                                        },
+                                                        axisBottomLegend: "Período",
+                                                        axisLeftLegend: "Monto ($)",
+                                                    },
+                                                },
+                                            },
+                                        },
+                                    },
+                                ],
+                            },
+                            {
+                                id: "col-payment",
+                                weight: 1,
+                                sections: [
+                                    {
+                                        id: "payment-chart",
+                                        content: {
+                                            type: "stat-card",
+                                            config: {
+                                                label: "Forma de Pago",
+                                                variant: "chart",
+                                                chart: {
+                                                    type: "pie-chart",
+                                                    config: {
+                                                        data: hubData.paymentMethodDistribution,
+                                                        colors: { datum: "data.color" },
+                                                        showLegend: true,
+                                                        legendDataFrom: "indexes",
+                                                    },
+                                                },
+                                            },
+                                        },
+                                    },
+                                ],
+                            },
+                        ],
+                    },
+
+                    // ── Tab 2: Abastecimiento ──────────────────────────
+                    {
+                        value: "abastecimiento",
+                        label: "Abastecimiento",
+                        icon: Building2,
+                        columns: [
+                            {
+                                id: "col-main",
+                                weight: 2,
+                                sections: [
+                                    {
+                                        id: "top-suppliers",
+                                        content: {
+                                            type: "stat-card",
+                                            config: {
+                                                label: "Top Proveedores",
+                                                variant: "chart",
+                                                chart: {
+                                                    type: "bar-chart",
+                                                    config: {
+                                                        data: hubData.topSuppliers,
+                                                        keys: ["total"],
+                                                        indexBy: "supplier",
+                                                        valueFormat: "~s",
+                                                    },
+                                                },
+                                            },
+                                        },
+                                    },
+                                    {
+                                        id: "warehouse-bar",
+                                        content: {
+                                            type: "stat-card",
+                                            config: {
+                                                label: "Órdenes por Almacén",
+                                                variant: "chart",
+                                                chart: {
+                                                    type: "bar-chart",
+                                                    config: {
+                                                        data: hubData.ordersByWarehouse,
+                                                        keys: ["count"],
+                                                        indexBy: "warehouse",
+                                                    },
+                                                },
+                                            },
+                                        },
+                                    },
+                                ],
+                            },
+                            {
+                                id: "col-logistics",
+                                weight: 1,
+                                sections: [
+                                    {
+                                        id: "receiving-pie",
+                                        content: {
+                                            type: "stat-card",
+                                            config: {
+                                                label: "Estado Recepción",
+                                                variant: "chart",
+                                                chart: {
+                                                    type: "pie-chart",
+                                                    config: {
+                                                        data: hubData.receivingDistribution,
+                                                        colors: { datum: "data.color" },
+                                                        enableLabels: true,
+                                                        arcLabel: (d: any) => `${d.value}`,
+                                                    },
+                                                },
+                                            },
+                                        },
+                                    },
+                                    {
+                                        id: "amount-ranges",
+                                        content: {
+                                            type: "stat-card",
+                                            config: {
+                                                label: "Distribución por Monto",
+                                                variant: "chart",
+                                                chart: {
+                                                    type: "bar-chart",
+                                                    config: {
+                                                        data: hubData.amountRanges,
+                                                        keys: ["count"],
+                                                        indexBy: "range",
+                                                    },
+                                                },
+                                            },
+                                        },
+                                    },
+                                ],
+                            },
+                            {
+                                id: "col-supplier-stats",
+                                weight: 1,
+                                sections: [
+                                    {
+                                        id: "receiving-timeline",
+                                        content: {
+                                            type: "custom",
+                                            render: (
+                                                <TimelineView events={hubData.upcomingReceipts.length > 0 ? hubData.upcomingReceipts : [{ date: "-", label: "Sin recepciones pendientes", status: "neutral" as const }]} />
+                                            ),
+                                        },
+                                    },
+                                    {
+                                        id: "stat-suppliers",
+                                        content: {
+                                            type: "stat-card",
+                                            config: {
+                                                label: "Proveedores",
+                                                value: `${hubData.supplierCount}`,
+                                                valueSize: "xl",
+                                                variant: "metric-chart",
+                                                chart: {
+                                                    type: "pie-chart",
+                                                    config: {
+                                                        data: hubData.supplierDistribution.slice(0, 6),
+                                                        enableLabels: false,
+                                                        innerRadius: 0.4,
+                                                        compact: true,
+                                                    },
+                                                },
+                                            },
+                                        },
+                                    },
+                                ],
+                            },
+                        ],
+                    },
+
+
+                ],
+            },
+        }
+    }, [hubData, viewMode])
 
     const toggleSelection = (id: number) => {
         const isSelected = viewMode === "orders" ? hubConfig?.orderId === id : hubConfig?.invoiceId === id
@@ -416,6 +635,7 @@ export function PurchasingOrdersClientView({ viewMode, externalOpenCheckout, cre
                         }
                         isHubOpen={isHubOpen}
                         isFiltered={isFiltered}
+                        entityHubAction={viewMode === 'orders' ? entityHubAction : undefined}
                         emptyState={{
                             context: "purchase",
                             title: viewMode === 'orders' ? "Aún no hay órdenes de compra" : "Aún no hay notas de compra",

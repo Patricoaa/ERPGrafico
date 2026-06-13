@@ -8,12 +8,21 @@ import Link from "next/link"
 import React from "react"
 
 type Accent = "primary" | "info" | "success" | "warning" | "destructive" | "accent" | "muted"
-type Variant = "default" | "compact" | "minimal"
+type Variant = "default" | "compact" | "minimal" | "fill" | "chart" | "metric-chart"
 type ValueSize = "sm" | "md" | "lg" | "xl"
+
+export interface StatCardChart {
+  type: "bar-chart" | "pie-chart" | "line-chart"
+  data: unknown
+  keys?: string[]
+  indexBy?: string
+  colors?: unknown
+  compact?: boolean
+}
 
 interface StatCardProps {
   label: string
-  value: React.ReactNode
+  value?: React.ReactNode
   icon?: LucideIcon
   subtext?: string
   trend?: { direction: "up" | "down"; value: string; label?: string }
@@ -24,6 +33,7 @@ interface StatCardProps {
   onClick?: () => void
   active?: boolean
   loading?: boolean
+  chart?: React.ReactNode
   children?: React.ReactNode
   className?: string
 }
@@ -96,6 +106,7 @@ export function StatCard({
   valueSize = "lg",
   href,
   onClick,
+  chart,
   active = false,
   loading = false,
   children,
@@ -114,23 +125,34 @@ export function StatCard({
     )
   }
 
-  const wrapperClass =
-    variant === "minimal"
-      ? cn(
-          "rounded-lg p-3",
-          accentBg[accent],
-          active && activeRing[accent],
-          href && "block",
-          className,
-        )
-      : undefined
+  const baseCardClasses =
+    "rounded-xl border bg-card text-card-foreground shadow-sm flex flex-col flex-1 min-h-0"
 
-  const Container = variant === "minimal" ? "div" : Card
+  const Container = variant === "minimal" || variant === "fill" ? "div" : Card
 
   const containerProps =
     variant === "minimal"
       ? {
-          className: wrapperClass,
+          className: cn(
+            baseCardClasses,
+            "p-3",
+            accentBg[accent],
+            active && activeRing[accent],
+            className,
+          ),
+          onClick,
+          role: onClick ? "button" as const : undefined,
+          tabIndex: onClick ? 0 : undefined,
+          onKeyDown: onClick ? (e: React.KeyboardEvent) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onClick() } } : undefined,
+        }
+      : variant === "fill"
+      ? {
+          className: cn(
+            baseCardClasses,
+            accentBg[accent],
+            active && activeRing[accent],
+            className,
+          ),
           onClick,
           role: onClick ? "button" as const : undefined,
           tabIndex: onClick ? 0 : undefined,
@@ -138,10 +160,9 @@ export function StatCard({
         }
       : {
           className: cn(
-            "shadow-sm transition-shadow",
-            variant === "default" && cn(accentBorder[accent], "border-l-4"),
-            variant === "compact" && cn("border", accentBg[accent]),
-            variant === "default" && !accent.startsWith("muted") && "hover:shadow-md",
+            baseCardClasses,
+            variant === "default" && accentBorder[accent],
+            variant === "compact" && accentBg[accent],
             onClick && "cursor-pointer hover:border-primary/20",
             active && activeRing[accent],
             className,
@@ -213,6 +234,7 @@ export function StatCard({
         </p>
         {renderValue()}
         {renderSubtext()}
+        {chart && <div className="mt-2">{chart}</div>}
         {children}
       </>
     )
@@ -227,8 +249,74 @@ export function StatCard({
         </div>
         {renderValue()}
         {renderSubtext()}
+        {chart && <div className="mt-2 h-20">{chart}</div>}
         {children}
       </CardContent>
+    )
+  } else if (variant === "fill") {
+    inner = (
+      <CardContent className="flex-1 flex flex-col items-center justify-center gap-2 p-5">
+        {Icon && (
+          <div className={cn("p-3 rounded-full border-2", accentIconBg[accent])}>
+            <Icon className="h-6 w-6" />
+          </div>
+        )}
+        <div className={cn(valueSizeMap[valueSize], "font-black font-heading tracking-tighter text-center")}>
+          {value}
+        </div>
+        <p className="text-xs font-bold text-muted-foreground text-center leading-tight">
+          {label}
+        </p>
+        {renderSubtext()}
+        {chart && <div className="flex-1 min-h-0 w-full mt-2">{chart}</div>}
+        {children}
+      </CardContent>
+    )
+  } else if (variant === "chart") {
+    const TrendIcon = trendIcon
+    inner = (
+      <>
+        <CardHeader className="flex flex-row items-center justify-between px-4 py-2.5 border-b shrink-0">
+          <CardTitle className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+            {label}
+          </CardTitle>
+          {trend && (
+            <div className={cn("flex items-center gap-1 text-xs font-bold", trendColor)}>
+              <TrendIcon className="h-3 w-3" />
+              <span>{trend.value}</span>
+            </div>
+          )}
+        </CardHeader>
+        <CardContent className="flex flex-col flex-1 min-h-0 p-3">
+          {chart}
+        </CardContent>
+      </>
+    )
+  } else if (variant === "metric-chart") {
+    const TrendIcon = trendIcon
+    inner = (
+      <>
+        <CardHeader className="flex flex-row items-center justify-between px-4 py-2.5 border-b shrink-0 gap-4">
+          <div className="flex items-center gap-2 min-w-0">
+            <span className={cn("font-black font-heading tracking-tighter shrink-0", valueSizeMap[valueSize])}>
+              {value}
+            </span>
+            <span className="text-xs font-bold text-muted-foreground truncate">
+              {label}
+            </span>
+          </div>
+          {trend && (
+            <div className={cn("flex items-center gap-1 text-xs font-bold shrink-0", trendColor)}>
+              <TrendIcon className="h-3 w-3" />
+              <span>{trend.value}</span>
+              {trend.label && <span className="text-muted-foreground font-normal">{trend.label}</span>}
+            </div>
+          )}
+        </CardHeader>
+        <CardContent className="flex flex-col flex-1 min-h-0 p-3">
+          {chart}
+        </CardContent>
+      </>
     )
   } else {
     inner = (
@@ -240,6 +328,7 @@ export function StatCard({
         <CardContent>
           {renderValue()}
           {renderSubtext()}
+          {chart && <div className="mt-2 h-20">{chart}</div>}
           {children}
         </CardContent>
       </>
