@@ -5,6 +5,9 @@ export {
     PURCHASING_KEYS,
 } from './hooks/usePurchasing'
 
+export { usePurchasingHubData } from './hooks/usePurchasingHubData'
+export type { PurchasingHubData, TrendData } from './hooks/usePurchasingHubData'
+
 export type {
     PurchaseOrderAPI,
     PurchaseOrderLineAPI,

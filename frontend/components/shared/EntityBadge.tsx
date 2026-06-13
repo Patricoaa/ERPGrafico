@@ -39,6 +39,12 @@ export interface EntityBadgeProps {
     rounded?: boolean
     /** Layout/position classes only */
     className?: string
+    /**
+     * Optional segmenter (filtro/segmentador) rendered at the bottom of the entity drawer.
+     * Useful for adding data-segmentation controls (date range, category filter, etc.)
+     * to visualization panels inside the drawer. Totally optional per entity.
+     */
+    segmenter?: React.ReactNode
 }
 
 export const EntityBadge: React.FC<EntityBadgeProps> = ({
@@ -49,6 +55,7 @@ export const EntityBadge: React.FC<EntityBadgeProps> = ({
     size = 'md',
     rounded = true,
     className,
+    segmenter,
 }) => {
     const { openEntity } = useGlobalModals()
 
@@ -80,7 +87,7 @@ export const EntityBadge: React.FC<EntityBadgeProps> = ({
         return (
             <button
                 type="button"
-                onClick={(e) => { e.stopPropagation(); openEntity(label, Number(entityId), data) }}
+                onClick={(e) => { e.stopPropagation(); openEntity(label, Number(entityId), data, segmenter) }}
                 className="inline-block outline-none ring-offset-background focus:ring-2 focus:ring-ring focus:ring-offset-2 rounded-md transition-shadow"
             >
                 {badgeEl}

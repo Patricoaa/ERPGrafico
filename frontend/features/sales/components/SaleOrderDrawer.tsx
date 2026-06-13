@@ -15,9 +15,10 @@ import type { TransactionDrawerProps } from '@/features/_shared/transaction-draw
 
 interface SaleOrderDrawerProps extends TransactionDrawerProps {
     orderId?: number
+    segmenter?: React.ReactNode
 }
 
-export function SaleOrderDrawer({ id, open, onOpenChange, mode = 'view', orderId }: SaleOrderDrawerProps) {
+export function SaleOrderDrawer({ id, open, onOpenChange, mode = 'view', orderId, segmenter }: SaleOrderDrawerProps) {
     const entityId = id ?? orderId ?? null
     const { data: order, isLoading } = useSaleOrder(entityId)
     const printRef = useRef<HTMLDivElement>(null)
@@ -102,6 +103,11 @@ export function SaleOrderDrawer({ id, open, onOpenChange, mode = 'view', orderId
                     )}
                 </SkeletonShell>
                 </FormSplitLayout>
+                {segmenter && (
+                    <div className="border-t pt-4 mt-4">
+                        {segmenter}
+                    </div>
+                )}
             </Drawer>
         </>
     )

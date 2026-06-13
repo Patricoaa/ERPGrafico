@@ -9,6 +9,7 @@ import dynamic from 'next/dynamic'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { PrintableReceipt, BaseModal } from '@/components/shared'
+import { useDeviceContext } from '@/hooks/useDeviceContext'
 import { Loader2, LayoutGrid, FileText, ChevronDown, BarChart3, Save, Lock, ArrowRightLeft, LogOut, ShoppingCart, Wallet } from 'lucide-react'
 import { AnimatePresence, motion } from 'framer-motion'
 import {
@@ -42,7 +43,7 @@ import type { TransactionData } from '@/types/transactions'
 import { type DraftCart } from './DraftCartsList'
 import type { CheckoutWizardState } from '@/features/sales/components/checkout/SalesCheckoutWizardContent'
 
-import { SearchBar } from './SearchBar'
+import { SearchBar, CategoryDropdown } from '@/components/shared'
 import { CategoryFilter } from './CategoryFilter'
 import { ProductGrid } from './ProductGrid'
 import { Cart } from './Cart'
@@ -100,6 +101,7 @@ export function POSClientView() {
     } = usePOS()
 
     const { isTouchMode, toggleTouchMode } = useTouchMode()
+    const { isDesktop } = useDeviceContext()
 
     const { user } = useAuth()
 
@@ -544,8 +546,8 @@ export function POSClientView() {
                             <motion.div key="shop" initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, scale: 0.98 }} className="flex-1 flex flex-col min-h-0">
                                 <Card className="flex-1 flex flex-col overflow-hidden bg-muted/10 border py-1.5">
                                     <div className="px-2 pt-1.5 pb-1.5 border-b bg-background/50 space-y-2">
-                                        <SearchBar value={searchTerm} onChange={setSearchTerm} onEnter={handleSearchEnter} />
-                                        <CategoryFilter categories={categories} selectedCategoryId={selectedCategoryId} onSelectCategory={setSelectedCategoryId} />
+                                        <SearchBar value={searchTerm} onChange={setSearchTerm} onEnter={handleSearchEnter} rightAction={isDesktop ? <CategoryDropdown categories={categories} selectedCategoryId={selectedCategoryId} onSelectCategory={setSelectedCategoryId} /> : undefined} />
+                                        {(!isDesktop) && <CategoryFilter categories={categories} selectedCategoryId={selectedCategoryId} onSelectCategory={setSelectedCategoryId} />}
                                     </div>
                                     <div className="flex-1 px-1.5 pt-1.5 pb-0"><ProductGrid products={filteredProducts} categories={categories} limits={stockLimits} isProductDisabled={(p) => isPOSProductDisabled(p as unknown as Product)} onProductClick={(p) => handleProductClick(p as unknown as Product)} onToggleFavorite={toggleFavorite} /></div>
                                 </Card>

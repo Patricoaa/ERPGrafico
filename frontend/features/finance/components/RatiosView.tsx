@@ -4,29 +4,14 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { EmptyState, MoneyDisplay, PageContainer } from '@/components/shared'
 import { formatMoney } from "@/lib/money"
-import {
-    PieChart,
-    Pie,
-    Cell,
-    ResponsiveContainer,
-    Tooltip,
-    Legend,
-    LineChart,
-    Line,
-    XAxis,
-    YAxis,
-    CartesianGrid,
-    BarChart,
-    Bar
-} from 'recharts';
+import { ResponsivePie } from '@nivo/pie'
+import { ResponsiveLine } from '@nivo/line'
+import { ResponsiveBar } from '@nivo/bar'
 import { financeApi } from "../api/financeApi";
 import { DateRange } from "react-day-picker";
 import { format } from "date-fns";
 import { CardSkeleton, StatCard } from "@/components/shared";
 ;
-
-// Categorical data-viz palette (CMYK process inks). NOT semantic state. See color-system.md §8.
-const COLORS = ['var(--chart-1)', 'var(--chart-2)', 'var(--chart-3)', 'var(--chart-4)', 'var(--chart-5)', 'var(--chart-6)'];
 
 interface RatiosViewProps {
     date?: DateRange;
@@ -211,26 +196,36 @@ export const RatiosView: React.FC<RatiosViewProps> = ({ date, showComparison, co
                         <CardDescription>Distribución entre Deuda y Patrimonio</CardDescription>
                     </CardHeader>
                     <CardContent className="h-[300px]">
-                        <ResponsiveContainer width="100%" height="100%">
-                            <PieChart>
-                                <Pie
-                                    data={structureData}
-                                    cx="50%"
-                                    cy="50%"
-                                    labelLine={false}
-                                    label={((props: { name: string; percent?: number }) => `${props.name} (${(props.percent ? props.percent * 100 : 0).toFixed(0)}%)`) as any}
-                                    outerRadius={90}
-                                    fill="var(--primary)"
-                                    dataKey="value"
-                                >
-                                    {structureData.map((entry, index) => (
-                                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                                    ))}
-                                </Pie>
-                                <Tooltip formatter={((value: number | string) => [formatMoney(value), 'Monto']) as any} />
-                                <Legend />
-                            </PieChart>
-                        </ResponsiveContainer>
+                        <ResponsivePie
+                            data={structureData.map((d) => ({ id: d.name, value: d.value }))}
+                            margin={{ top: 20, right: 20, bottom: 40, left: 20 }}
+                            padAngle={2}
+                            cornerRadius={4}
+                            activeOuterRadiusOffset={8}
+                            colors={{ scheme: "set2" }}
+                            arcLinkLabel={(d) => `${d.id} (${((d.value / structureData.reduce((s, v) => s + v.value, 0)) * 100).toFixed(0)}%)`}
+                            arcLinkLabelsColor={{ theme: "text" }}
+                            arcLinkLabelsThickness={1}
+                            arcLinkLabelsStraightLength={8}
+                            arcLabelsSkipAngle={20}
+                            tooltip={({ datum }) => (
+                                <div className="rounded-lg border bg-background p-2 shadow-sm">
+                                    <p className="text-[10px] uppercase text-muted-foreground">{datum.id}</p>
+                                    <p className="font-bold text-xs">Monto: {formatMoney(datum.value)}</p>
+                                </div>
+                            )}
+                            legends={[
+                                {
+                                    anchor: "bottom",
+                                    direction: "row",
+                                    translateY: 50,
+                                    itemWidth: 120,
+                                    itemHeight: 18,
+                                    symbolSize: 10,
+                                    symbolShape: "circle",
+                                },
+                            ]}
+                        />
                     </CardContent>
                 </Card>
 
@@ -241,54 +236,98 @@ export const RatiosView: React.FC<RatiosViewProps> = ({ date, showComparison, co
                         <CardDescription>Corrientes vs No Corrientes</CardDescription>
                     </CardHeader>
                     <CardContent className="h-[300px]">
-                        <ResponsiveContainer width="100%" height="100%">
-                            <PieChart>
-                                <Pie
-                                    data={assetsDistribution}
-                                    cx="50%"
-                                    cy="50%"
-                                    label={((props: { name: string; percent?: number }) => `${props.name} (${(props.percent ? props.percent * 100 : 0).toFixed(0)}%)`) as any}
-                                    innerRadius={60}
-                                    outerRadius={90}
-                                    fill="var(--chart-2)"
-                                    dataKey="value"
-                                >
-                                    {assetsDistribution.map((entry, index) => (
-                                        <Cell key={`cell-${index}`} fill={COLORS[(index + 2) % COLORS.length]} />
-                                    ))}
-                                </Pie>
-                                <Tooltip formatter={((value: number | string) => [formatMoney(value), 'Monto']) as any} />
-                                <Legend />
-                            </PieChart>
-                        </ResponsiveContainer>
+                        <ResponsivePie
+                            data={assetsDistribution.map((d) => ({ id: d.name, value: d.value }))}
+                            margin={{ top: 20, right: 20, bottom: 40, left: 20 }}
+                            innerRadius={0.6}
+                            padAngle={2}
+                            cornerRadius={4}
+                            activeOuterRadiusOffset={8}
+                            colors={{ scheme: "set3" }}
+                            arcLinkLabel={(d) => `${d.id} (${((d.value / assetsDistribution.reduce((s, v) => s + v.value, 0)) * 100).toFixed(0)}%)`}
+                            arcLinkLabelsColor={{ theme: "text" }}
+                            arcLinkLabelsThickness={1}
+                            arcLinkLabelsStraightLength={8}
+                            arcLabelsSkipAngle={20}
+                            tooltip={({ datum }) => (
+                                <div className="rounded-lg border bg-background p-2 shadow-sm">
+                                    <p className="text-[10px] uppercase text-muted-foreground">{datum.id}</p>
+                                    <p className="font-bold text-xs">Monto: {formatMoney(datum.value)}</p>
+                                </div>
+                            )}
+                            legends={[
+                                {
+                                    anchor: "bottom",
+                                    direction: "row",
+                                    translateY: 50,
+                                    itemWidth: 120,
+                                    itemHeight: 18,
+                                    symbolSize: 10,
+                                    symbolShape: "circle",
+                                },
+                            ]}
+                        />
                     </CardContent>
                 </Card>
 
                 {/* Ratios Trend - Only show if comparison enabled */}
-                {showComparison && trendData && (
-                    <Card className="rounded-none shadow-2xl ring-1 ring-border bg-card md:col-span-2 border-t-primary/50 ring-0 shadow-xl">
-                        <CardHeader>
-                            <CardTitle>Evolución de Ratios Financieros</CardTitle>
-                            <CardDescription>Comparación período actual vs anterior</CardDescription>
-                        </CardHeader>
-                        <CardContent className="h-[300px]">
-                            <ResponsiveContainer width="100%" height="100%">
-                                <LineChart data={trendData}>
-                                    <CartesianGrid strokeDasharray="3 3" />
-                                    <XAxis dataKey="period" />
-                                    <YAxis />
-                                    <Tooltip />
-                                    <Legend />
-                                    <Line type="monotone" dataKey="liquidez" stroke={COLORS[0]} strokeWidth={2} name="Ratio Liquidez" />
-                                    <Line type="monotone" dataKey="endeudamiento" stroke={COLORS[1]} strokeWidth={2} name="D/E Ratio" />
-                                    <Line type="monotone" dataKey="solvencia" stroke={COLORS[2]} strokeWidth={2} name="Solvencia" />
-                                    <Line type="monotone" dataKey="mrgn_bruto" stroke={COLORS[3]} strokeWidth={2} name="Margen Bruto (%)" />
-                                    <Line type="monotone" dataKey="mrgn_neto" stroke={COLORS[4]} strokeWidth={2} name="Margen Neto (%)" />
-                                </LineChart>
-                            </ResponsiveContainer>
-                        </CardContent>
-                    </Card>
-                )}
+                {showComparison && trendData && (() => {
+                    const lineKeys = [
+                        { key: 'liquidez', label: 'Ratio Liquidez' },
+                        { key: 'endeudamiento', label: 'D/E Ratio' },
+                        { key: 'solvencia', label: 'Solvencia' },
+                        { key: 'mrgn_bruto', label: 'Margen Bruto (%)' },
+                        { key: 'mrgn_neto', label: 'Margen Neto (%)' },
+                    ]
+                    const lineChartData = lineKeys.map(({ key, label }) => ({
+                        id: label,
+                        data: trendData.map((d) => ({ x: d.period, y: d[key as keyof typeof d] as number })),
+                    }))
+                    return (
+                        <Card className="rounded-none shadow-2xl ring-1 ring-border bg-card md:col-span-2 border-t-primary/50 ring-0 shadow-xl">
+                            <CardHeader>
+                                <CardTitle>Evolución de Ratios Financieros</CardTitle>
+                                <CardDescription>Comparación período actual vs anterior</CardDescription>
+                            </CardHeader>
+                            <CardContent className="h-[300px]">
+                                <ResponsiveLine
+                                    data={lineChartData}
+                                    margin={{ top: 20, right: 20, bottom: 50, left: 60 }}
+                                    curve="monotoneX"
+                                    lineWidth={2}
+                                    pointSize={6}
+                                    enablePointLabel={false}
+                                    colors={{ scheme: "category10" }}
+                                    axisBottom={{
+                                        tickSize: 0,
+                                        tickPadding: 12,
+                                    }}
+                                    axisLeft={{
+                                        tickSize: 0,
+                                        tickPadding: 12,
+                                    }}
+                                    tooltip={({ point }) => (
+                                        <div className="rounded-lg border bg-background p-2 shadow-sm">
+                                            <p className="text-[10px] uppercase text-muted-foreground">{String(point.data.x)}</p>
+                                            <p className="text-xs font-bold">{String(point.seriesId)}: {Number(point.data.y).toFixed(2)}</p>
+                                        </div>
+                                    )}
+                                    legends={[
+                                        {
+                                            anchor: "bottom",
+                                            direction: "row",
+                                            translateY: 50,
+                                            itemWidth: 120,
+                                            itemHeight: 20,
+                                            symbolSize: 10,
+                                            symbolShape: "circle",
+                                        },
+                                    ]}
+                                />
+                            </CardContent>
+                        </Card>
+                    )
+                })()}
 
                 {/* Working Capital Bar Chart */}
                 <Card className="rounded-none shadow-2xl ring-1 ring-border bg-card md:col-span-2 border-t-muted ring-0 shadow-xl">
@@ -297,20 +336,32 @@ export const RatiosView: React.FC<RatiosViewProps> = ({ date, showComparison, co
                         <CardDescription>Activos y Pasivos Corrientes</CardDescription>
                     </CardHeader>
                     <CardContent className="h-[300px]">
-                        <ResponsiveContainer width="100%" height="100%">
-                            <BarChart
-                                data={[
-                                    { name: 'Activos Corrientes', value: d.liquidity.current_assets },
-                                    { name: 'Pasivos Corrientes', value: d.liquidity.current_liabilities }
-                                ]}
-                            >
-                                <CartesianGrid strokeDasharray="3 3" />
-                                <XAxis dataKey="name" />
-                                <YAxis />
-                                <Tooltip formatter={((value: number | string) => [formatMoney(value), 'Monto']) as any} />
-                                <Bar dataKey="value" fill={COLORS[3]} />
-                            </BarChart>
-                        </ResponsiveContainer>
+                        <ResponsiveBar
+                            data={[
+                                { name: 'Activos Corrientes', value: d.liquidity.current_assets },
+                                { name: 'Pasivos Corrientes', value: d.liquidity.current_liabilities },
+                            ]}
+                            keys={["value"]}
+                            indexBy="name"
+                            padding={0.3}
+                            colors={{ scheme: "set2" }}
+                            borderRadius={4}
+                            axisBottom={{
+                                tickSize: 0,
+                                tickPadding: 12,
+                            }}
+                            axisLeft={{
+                                tickSize: 0,
+                                tickPadding: 12,
+                                format: (v) => formatMoney(v as number),
+                            }}
+                            tooltip={({ value, indexValue }) => (
+                                <div className="rounded-lg border bg-background p-2 shadow-sm">
+                                    <p className="text-[10px] uppercase text-muted-foreground">{indexValue as string}</p>
+                                    <p className="font-bold text-xs">Monto: {formatMoney(value)}</p>
+                                </div>
+                            )}
+                        />
                     </CardContent>
                 </Card>
             </div>

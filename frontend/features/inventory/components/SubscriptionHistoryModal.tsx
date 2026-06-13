@@ -19,16 +19,7 @@ import { DataCell } from '@/components/shared'
 
 import { UnderlineTabs, UnderlineTabsContent } from "@/components/shared"
 import type { ColumnDef } from "@tanstack/react-table"
-import {
-    ResponsiveContainer,
-    BarChart,
-    Bar,
-    XAxis,
-    YAxis,
-    CartesianGrid,
-    Tooltip as RechartsTooltip,
-    Cell
-} from 'recharts'
+import { ResponsiveBar } from '@nivo/bar'
 import { useHubPanel } from "@/components/providers/HubPanelProvider"
 
 import { translateStatus } from "@/lib/utils"
@@ -182,35 +173,38 @@ export function SubscriptionHistoryModal({ subscriptionId, open, onOpenChange }:
                                             </div>
 
                                             <div className="h-[400px] w-full bg-card rounded-md border p-6 shadow-sm">
-                                                <ResponsiveContainer width="100%" height="100%">
-                                                    <BarChart data={filteredPriceHistory}>
-                                                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--muted)" />
-                                                        <XAxis
-                                                            dataKey="date"
-                                                            tickFormatter={(str) => format(new Date(str), 'MMM d', { locale: es })}
-                                                            fontSize={10}
-                                                            tickMargin={10}
-                                                            stroke="var(--muted-foreground)"
-                                                        />
-                                                        <YAxis fontSize={10} stroke="var(--muted-foreground)" tickFormatter={(val) => formatCurrency(val)} />
-                                                        <RechartsTooltip
-                                                            labelFormatter={(val) => format(new Date(val), 'PPP', { locale: es })}
-                                                            formatter={(val: unknown) => [typeof val === 'number' ? formatCurrency(val) : '---', 'Costo Unitario']}
-                                                            contentStyle={{ borderRadius: 'var(--radius)', border: '1px solid var(--border)', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)', padding: '12px', backgroundColor: 'var(--popover)', color: 'var(--popover-foreground)' }}
-                                                        />
-                                                        <Bar
-                                                            dataKey="unit_cost"
-                                                            name="Precio"
-                                                            fill="var(--primary)"
-                                                            radius={[6, 6, 0, 0]}
-                                                            barSize={40}
-                                                        >
-                                                            {filteredPriceHistory.map((entry, index) => (
-                                                                <Cell key={`cell-${index}`} fill={index === 0 ? 'var(--primary)' : 'var(--primary)'} fillOpacity={index === 0 ? 1 : 0.7} />
-                                                            ))}
-                                                        </Bar>
-                                                    </BarChart>
-                                                </ResponsiveContainer>
+                                                <ResponsiveBar
+                                                    data={filteredPriceHistory as unknown as { date: string; unit_cost: number }[]}
+                                                    keys={["unit_cost"]}
+                                                    indexBy="date"
+                                                    padding={0.3}
+                                                    colors={{ scheme: "blues" }}
+                                                    borderRadius={6}
+                                                    axisBottom={{
+                                                        tickSize: 0,
+                                                        tickPadding: 10,
+                                                        format: (v) => format(new Date(v), 'MMM d', { locale: es }),
+                                                    }}
+                                                    axisLeft={{
+                                                        tickSize: 0,
+                                                        tickPadding: 10,
+                                                        format: (v) => formatCurrency(v),
+                                                    }}
+                                                    tooltip={({ value, indexValue }) => (
+                                                        <div className="rounded-lg border bg-popover p-3 shadow-lg" style={{ color: 'var(--popover-foreground)' }}>
+                                                            <p className="text-[10px] uppercase font-black tracking-widest text-muted-foreground mb-1">
+                                                                {format(new Date(indexValue as string), 'PPP', { locale: es })}
+                                                            </p>
+                                                            <p className="text-xs font-bold">
+                                                                Costo Unitario: {formatCurrency(value)}
+                                                            </p>
+                                                        </div>
+                                                    )}
+                                                    theme={{
+                                                        background: 'transparent',
+                                                        text: { fill: 'var(--muted-foreground)', fontSize: 10 },
+                                                    }}
+                                                />
                                             </div>
                                             {filteredPriceHistory.length === 0 && (
                                                 <EmptyState
