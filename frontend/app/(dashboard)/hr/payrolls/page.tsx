@@ -320,7 +320,7 @@ export default function PayrollsPage() {
     ]
 
     return (
-        <div className="space-y-4 h-full flex flex-col">
+        <div className="h-full flex flex-col">
             <CreatePayrollDrawer
                 open={dialogOpen}
                 onOpenChange={handleOpenChange}

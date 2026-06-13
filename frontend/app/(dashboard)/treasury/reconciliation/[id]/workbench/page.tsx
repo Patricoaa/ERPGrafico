@@ -65,7 +65,7 @@ export default function WorkbenchPage({ params }: { params: Promise<{ id: string
     }
 
     return (
-        <div className="flex-1 space-y-4 pt-2 h-full flex flex-col">
+        <div className="h-full flex flex-col">
             <PageHeader
                 title="Mesa de Conciliación"
                 description={`${statement.display_id} — ${statement.treasury_account_name}`}

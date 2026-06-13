@@ -103,7 +103,7 @@ export default function AbsencesPage() {
     ]
 
     return (
-        <div className="space-y-4 h-full flex flex-col">
+        <div className="h-full flex flex-col">
 
             <AbsenceDrawer
                 open={dialogOpen}
