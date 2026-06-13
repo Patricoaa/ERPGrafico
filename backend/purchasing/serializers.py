@@ -67,6 +67,7 @@ class PurchaseOrderSerializer(serializers.ModelSerializer):
     serialized_payments = TreasuryMovementSerializer(source='payments', many=True, read_only=True)
     work_order_number = serializers.CharField(source='work_order.number', read_only=True, allow_null=True)
     related_documents = serializers.SerializerMethodField()
+    actual_receipt_date = serializers.SerializerMethodField()
 
     display_id = serializers.CharField(read_only=True)
 
@@ -74,9 +75,10 @@ class PurchaseOrderSerializer(serializers.ModelSerializer):
         model = PurchaseOrder
         fields = [
             'id', 'number', 'display_id', 'supplier', 'supplier_name', 'warehouse', 'warehouse_name',
-            'date', 'status', 'receiving_status', 'notes', 'total_net', 'total_tax', 'total', 'total_paid', 
+            'date', 'status', 'receiving_status', 'receipt_date', 'notes', 'total_net', 'total_tax', 'total', 'total_paid', 
             'pending_amount', 'is_invoiced', 'invoice_details', 'serialized_payments', 'payment_method',
-            'work_order', 'work_order_number', 'related_documents', 'lines', 'created_at', 'updated_at'
+            'work_order', 'work_order_number', 'related_documents', 'lines', 'created_at', 'updated_at',
+            'actual_receipt_date',
         ]
         read_only_fields = ['id', 'number', 'status', 'receiving_status', 'total_net', 'total_tax', 'total']
 
@@ -213,6 +215,10 @@ class PurchaseOrderSerializer(serializers.ModelSerializer):
         
         return docs
     
+    def get_actual_receipt_date(self, obj):
+        first = obj.receipts.filter(status=PurchaseReceipt.Status.CONFIRMED).order_by('receipt_date').first()
+        return first.receipt_date.isoformat() if first else None
+
     def get_lines(self, obj):
         # Only include original lines (not those from notes)
         return PurchaseLineSerializer(obj.lines.filter(related_note__isnull=True), many=True).data

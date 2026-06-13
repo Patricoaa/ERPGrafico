@@ -43,6 +43,7 @@ export interface PurchaseOrderAPI {
     invoice_details: InvoiceDetail | null
     date: string
     receipt_date: string | null
+    actual_receipt_date: string | null
     created_at: string
     updated_at: string
     notes: string

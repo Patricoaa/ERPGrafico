@@ -108,6 +108,10 @@ export interface PurchasingHubData {
     avgOrderValue: number
     supplierCount: number
     overdueCount: number
+    pendingReceiptCount: number
+    onTimeDeliveryRate: number
+    onTimeCount: number
+    lateCount: number
     volumeTrend: TrendData
     paidTrend: TrendData
     pendingTrend: TrendData
@@ -165,6 +169,16 @@ export function usePurchasingHubData(
             && o.receipt_date
             && o.receipt_date < todayStr
         ).length
+        const pendingReceiptCount = filtered.filter((o) => o.receiving_status !== "RECEIVED").length
+
+        const receivedWithDates = filtered.filter((o) =>
+            o.receiving_status === "RECEIVED"
+            && o.receipt_date
+            && o.actual_receipt_date
+        )
+        const onTimeCount = receivedWithDates.filter((o) => o.actual_receipt_date! <= o.receipt_date!).length
+        const lateCount = receivedWithDates.length - onTimeCount
+        const onTimeDeliveryRate = receivedWithDates.length > 0 ? Math.round((onTimeCount / receivedWithDates.length) * 100) : 0
 
         // ── Status distribution ────────────────────────────
         const statusGroups = groupBy(filtered, (o) => o.status || "UNKNOWN")
@@ -326,6 +340,10 @@ export function usePurchasingHubData(
             avgOrderValue,
             supplierCount,
             overdueCount,
+            pendingReceiptCount,
+            onTimeDeliveryRate,
+            onTimeCount,
+            lateCount,
             volumeTrend,
             paidTrend,
             pendingTrend,
