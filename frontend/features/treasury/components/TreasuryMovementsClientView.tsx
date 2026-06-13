@@ -302,7 +302,7 @@ export function TreasuryMovementsClientView({ externalOpen, createAction }: Trea
     ], [openEntity, handleViewDetails])
 
     return (
-        <div className="space-y-6 h-full flex flex-col">
+        <div className="h-full flex flex-col">
             <SkeletonShell isLoading={isLoading} ariaLabel="Cargando modal de movimiento de tesorería">
                 <Suspense fallback={<div />}>
                     <CashMovementModal

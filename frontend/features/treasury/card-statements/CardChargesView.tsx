@@ -32,7 +32,7 @@ export function CardChargesView({ bankId, creditCardAccounts }: CardChargesViewP
     }
 
     return (
-        <div className="flex flex-col flex-1 min-h-0">
+        <div className="h-full flex flex-col">
             <div className="flex-1 min-h-0 flex flex-col">
                 {activeSubTab === 'unbilled' && (
                     <UnbilledChargesView
