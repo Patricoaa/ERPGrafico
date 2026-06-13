@@ -16,8 +16,8 @@ export default async function AnalysisPage({ searchParams }: PageProps) {
     const activeTab = tab
 
     return (
-        <div className="flex-1 flex flex-col min-h-0 pt-0">
-            <Tabs value={activeTab} className="flex-1 flex flex-col min-h-0 space-y-4">
+        <div className="h-full flex flex-col">
+            <Tabs value={activeTab} className="h-full flex flex-col">
                 <AnalysisView activeTab={activeTab} />
             </Tabs>
         </div>

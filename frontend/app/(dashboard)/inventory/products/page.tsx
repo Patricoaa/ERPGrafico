@@ -40,7 +40,7 @@ export default async function UnifiedProductsPage({ searchParams }: PageProps) {
     const createAction = getCreateAction(activeTab)
 
     return (
-        <Tabs value={activeTab} className="space-y-4 pt-2 flex flex-col flex-1 min-h-0">
+        <Tabs value={activeTab} className="h-full flex flex-col">
             <div className="flex-1 min-h-0">
                 <TabsContent value="products" className="h-full mt-0 outline-none">
                     <FadeIn className="h-full">

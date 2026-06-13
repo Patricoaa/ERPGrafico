@@ -65,7 +65,7 @@ export default function SalesOrdersPage() {
     }
 
     return (
-        <div className="pt-2 flex-1 min-h-0 flex flex-col">
+        <div className="h-full flex flex-col">
             <Tabs value={viewMode} className="w-full flex flex-col h-full gap-4">
                 <div className="flex-1 min-h-0">
                     <SalesOrdersClientView viewMode={viewMode} />

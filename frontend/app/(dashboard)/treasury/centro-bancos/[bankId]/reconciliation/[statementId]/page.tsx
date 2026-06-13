@@ -245,7 +245,7 @@ export default function BankStatementDetailPage({
     const netMovement = totalCredits - totalDebits
 
     return (
-        <div className="flex-1 flex flex-col min-h-0">
+        <div className="h-full flex flex-col">
             <BankPageHeader
                 bankId={bankIdNum}
                 title={statement.display_id}

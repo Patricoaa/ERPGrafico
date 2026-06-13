@@ -4,7 +4,7 @@ export default async function BankChecksPage({ params }: { params: Promise<{ ban
     const { bankId } = await params
     const id = Number(bankId)
     return (
-        <div className="flex-1 flex flex-col min-h-0">
+        <div className="h-full flex flex-col">
             <BankPageHeader bankId={id} />
             <BankCenterView bankId={id} />
         </div>
