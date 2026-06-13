@@ -212,7 +212,7 @@ export function PurchaseInvoicesClientView() {
     ]
 
     return (
-        <div className="px-1 h-full flex flex-col">
+        <div className="h-full flex flex-col">
             <div className="flex-1 min-h-0">
                 <DataTableView
                     entityLabel="billing.invoice"

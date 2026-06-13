@@ -572,7 +572,7 @@ export function PurchasingOrdersClientView({ viewMode, externalOpenCheckout, cre
     ]
 
     return (
-        <div className="space-y-6 h-full flex flex-col">
+        <div className="h-full flex flex-col">
             {editingOrder && (
                 <PurchaseOrderModal
                     initialData={editingOrder as unknown as any}

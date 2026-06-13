@@ -141,7 +141,7 @@ export function UoMCategoryClientView({ externalOpen, onExternalOpenChange, crea
     ], [deleteUoMCategory, bulkDeleteConfirm])
 
     return (
-        <div className="space-y-4 h-full flex flex-col">
+        <div className="h-full flex flex-col">
             <div className="flex-1 min-h-0">
                 <DataTableView
                     columns={columns}

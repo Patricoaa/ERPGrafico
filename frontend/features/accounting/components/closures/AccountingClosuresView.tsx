@@ -253,7 +253,7 @@ export function AccountingClosuresView({ externalOpen, onExternalOpenChange }: A
     ];
 
     return (
-        <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-500 h-full flex flex-col">
+        <div className="h-full flex flex-col">
             <div className="flex-1 min-h-0">
                 <DataTableView
                     entityLabel="accounting.fiscalyear"

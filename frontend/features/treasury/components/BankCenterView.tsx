@@ -93,7 +93,7 @@ export function BankCenterView({ bankId }: { bankId: number }) {
     }
 
     return (
-        <div className="flex-1 flex flex-col min-h-0">
+        <div className="h-full flex flex-col">
             {activeTab === 'overview' && (
                 <div className="overflow-y-auto custom-scrollbar flex-1">
                     <div className="space-y-6">

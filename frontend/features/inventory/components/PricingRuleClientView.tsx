@@ -215,7 +215,7 @@ export function PricingRuleClientView({ externalOpen, onExternalOpenChange, crea
     ], [])
 
     return (
-        <div className="space-y-4 h-full flex flex-col">
+        <div className="h-full flex flex-col">
             <PricingRuleDrawer
                 initialData={editingRule || undefined}
                 onSuccess={refetch}

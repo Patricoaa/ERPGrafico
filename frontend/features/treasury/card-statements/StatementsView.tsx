@@ -9,7 +9,6 @@ import {
     SmartSearchBar,
     useSmartSearch,
     UnderlineTabs,
-    StatCard,
 } from '@/components/shared'
 import type { SearchDefinition } from '@/types/search'
 import { useCardStatements } from './hooks'
@@ -59,6 +58,20 @@ export function StatementsView({ bankId, creditCardAccounts }: StatementsViewPro
         .filter((s) => s.status === 'OPEN' || s.status === 'OVERDUE')
         .sort((a, b) => a.due_date.localeCompare(b.due_date))[0],
     [statements])
+
+    const debtTrend = useMemo(() => {
+        const sorted = [...statements]
+            .sort((a, b) => a.period_year !== b.period_year
+                ? a.period_year - b.period_year
+                : a.period_month - b.period_month)
+        return [{
+            id: 'Deuda',
+            data: sorted.map(s => ({
+                x: `${String(s.period_month).padStart(2, '0')}/${String(s.period_year).slice(-2)}`,
+                y: parseFloat(s.total_to_pay),
+            })),
+        }]
+    }, [statements])
 
     if (isLoading) {
         return <Skeleton className="h-full" />
@@ -145,7 +158,7 @@ export function StatementsView({ bankId, creditCardAccounts }: StatementsViewPro
     }
 
     return (
-        <div className="flex-1 flex flex-col">
+        <div className="h-full flex flex-col">
             <div className="flex-1 min-h-0">
                 <DataTableView
                     entityLabel="treasury.creditcardstatement"
@@ -153,31 +166,70 @@ export function StatementsView({ bankId, creditCardAccounts }: StatementsViewPro
                     data={statements}
                     variant="embedded"
                     entityHubAction={{
-                        icon: BarChart3,
                         screen: {
                             entityName: "Estados de Cuenta",
                             tabs: [{
                                 value: 'resumen',
                                 label: 'Resumen',
                                 icon: BarChart3,
-                                panels: [
-                                    {
-                                        id: 'resumen',
-                                        title: 'Resumen',
-                                        colSpan: 3 as const,
-                                        content: {
-                                            type: 'custom',
-                                            render: (
-                                                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                                                    <StatCard label="Deuda Total" value={<MoneyDisplay amount={totalDebt} inline />} icon={DollarSign} accent="warning" />
-                                                    <StatCard label="Abiertos" value={String(openCount)} icon={BarChart3} accent="primary" />
-                                                    <StatCard label="Vencidos" value={String(overdueCount)} icon={AlertTriangle} accent={overdueCount > 0 ? 'destructive' : 'success'} />
-                                                    <StatCard label="Próx. Vencimiento" value={nextDue ? new Date(nextDue.due_date).toLocaleDateString('es-CL') : '—'} icon={Calendar} accent="info" />
-                                                </div>
-                                            ),
+                                columns: [
+                                        {
+                                            id: 'col-main',
+                                            weight: 2,
+                                            sections: [
+                                                {
+                                                    id: 'deuda-total',
+                                                    content: {
+                                                        type: 'stat-card',
+                                                        config: {
+                                                            label: 'Deuda Total',
+                                                            value: <MoneyDisplay amount={totalDebt} inline />,
+                                                            icon: DollarSign,
+                                                            accent: 'warning',
+                                                            variant: 'metric-chart',
+                                                            valueSize: 'xl',
+                                                            chart: {
+                                                                type: 'line-chart',
+                                                                config: {
+                                                                    data: debtTrend,
+                                                                    compact: true,
+                                                                    enableArea: true,
+                                                                    showLegend: false,
+                                                                },
+                                                            },
+                                                        },
+                                                    },
+                                                },
+                                            ],
                                         },
-                                    },
-                                ],
+                                        {
+                                            id: 'col-side',
+                                            weight: 1,
+                                            sections: [
+                                                {
+                                                    id: 'abiertos',
+                                                    content: {
+                                                        type: 'stat-card',
+                                                        config: { label: 'Abiertos', value: String(openCount), icon: BarChart3, accent: 'primary', variant: 'compact' },
+                                                    },
+                                                },
+                                                {
+                                                    id: 'vencidos',
+                                                    content: {
+                                                        type: 'stat-card',
+                                                        config: { label: 'Vencidos', value: String(overdueCount), icon: AlertTriangle, accent: overdueCount > 0 ? 'destructive' : 'success', variant: 'compact' },
+                                                    },
+                                                },
+                                                {
+                                                    id: 'prox-vencimiento',
+                                                    content: {
+                                                        type: 'stat-card',
+                                                        config: { label: 'Próx. Vencimiento', value: nextDue ? new Date(nextDue.due_date).toLocaleDateString('es-CL') : '—', icon: Calendar, accent: 'info', variant: 'compact' },
+                                                    },
+                                                },
+                                            ],
+                                        },
+                                    ],
                             }],
                         },
                     }}

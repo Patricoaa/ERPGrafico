@@ -173,7 +173,7 @@ export function WarehouseClientView({ externalOpen, onExternalOpenChange, create
     ], [deleteWarehouse, bulkDeleteConfirm])
 
     return (
-        <div className="space-y-6 h-full flex flex-col">
+        <div className="h-full flex flex-col">
             <div className="flex-1 min-h-0">
                 <DataTableView
                     entityLabel="inventory.warehouse"
