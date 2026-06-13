@@ -1,12 +1,13 @@
 "use client"
 
-import React, { useState } from "react"
+import React, { useState, useMemo } from "react"
 import type { LucideIcon } from "lucide-react"
 import { LayoutDashboard } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Drawer } from "./Drawer"
 import { StatCard } from "./StatCard"
 import { UnderlineTabs, UnderlineTabsContent } from "./UnderlineTabs"
+import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select"
 import { ResponsiveBar } from "@nivo/bar"
 import { ResponsivePie } from "@nivo/pie"
 import { ResponsiveLine } from "@nivo/line"
@@ -17,11 +18,11 @@ type Accent = "primary" | "info" | "success" | "warning" | "destructive" | "acce
 
 export interface StatCardConfig {
     label: string
-    value: React.ReactNode
+    value?: React.ReactNode
     icon?: LucideIcon
     accent?: Accent
     subtext?: string
-    variant?: "default" | "compact" | "minimal" | "hero" | "tile" | "progress"
+    variant?: "default" | "compact" | "minimal" | "fill" | "hero" | "tile" | "progress" | "chart" | "metric-chart"
     valueSize?: "sm" | "md" | "lg" | "xl"
     trend?: { direction: "up" | "down"; value: string; label?: string }
     progress?: { current: number; max: number }
@@ -29,6 +30,11 @@ export interface StatCardConfig {
     onClick?: () => void
     active?: boolean
     loading?: boolean
+    /** Embed a chart inside the stat card */
+    chart?: {
+        type: "bar-chart" | "pie-chart" | "line-chart"
+        config: ChartConfig
+    }
 }
 
 export interface TimelineEvent {
@@ -48,8 +54,25 @@ interface ChartConfig {
     showLegend?: boolean
     innerRadius?: number
     enableLabels?: boolean
-    arcLabel?: string
+    arcLabel?: string | ((d: any) => string)
     enableArea?: boolean
+    margin?: { top: number; right: number; bottom: number; left: number }
+    /** Compact sparkline mode: removes axes, reduces margins */
+    compact?: boolean
+    enableGridX?: boolean
+    enableGridY?: boolean
+    /** Border radius for bar corners (default 0). Use 4 for subtle rounding matching --radius-sm */
+    borderRadius?: number
+    /** Overlay a line series on top of bar chart (combo chart) */
+    lineOverlay?: {
+        dataKey: string
+        label: string
+        color?: string
+    }
+    axisBottomLegend?: string
+    axisLeftLegend?: string
+    /** Which field to use for legend items: "keys" (bar keys) or "indexes" (data ids, for pie) */
+    legendDataFrom?: "keys" | "indexes"
 }
 
 export interface HubPanel {
@@ -63,14 +86,35 @@ export interface HubPanel {
         | { type: "custom"; render: React.ReactNode }
 }
 
+export interface HubSection {
+    id: string
+    /** How many columns to span (default 1). Requires grid layout — only used when any section in the tab has colSpan > 1 */
+    colSpan?: number
+    content:
+        | { type: "stat-card"; config: StatCardConfig }
+        | { type: "bar-chart" | "pie-chart" | "line-chart"; config: ChartConfig }
+        | { type: "custom"; render: React.ReactNode }
+}
+
+export interface HubColumn {
+    id: string
+    sections: HubSection[]
+    weight?: number
+}
+
 export interface HubTab {
     value: string
     label: string
     icon?: LucideIcon
     badge?: string | number
     description?: string
-    panels: HubPanel[]
+    /** Columnar layout (recommended) — each col splits available height evenly across sections */
+    columns?: HubColumn[]
+    /** Legacy grid layout — kept for backwards compatibility */
+    panels?: HubPanel[]
 }
+
+export type Granularity = "day" | "month" | "year"
 
 interface EntityHubScreenProps {
     open: boolean
@@ -79,6 +123,47 @@ interface EntityHubScreenProps {
     tabs: HubTab[]
     activeTab?: string
     onTabChange?: (value: string) => void
+    /** Data segmentation — date range is managed internally via presets */
+    granularity?: Granularity
+    onGranularityChange?: (g: Granularity) => void
+    /** Override date range; null removes filter */
+    dateRange?: { from: string; to: string } | null
+    onDateRangeChange?: (range: { from: string; to: string } | null) => void
+}
+
+const SEGMENTATION_PRESETS: { label: string; key: string; range: () => { from: string; to: string } | null }[] = [
+    { label: "Todo", key: "all", range: () => null },
+    {
+        label: "Este Mes", key: "month",
+        range: () => {
+            const d = new Date()
+            return { from: new Date(d.getFullYear(), d.getMonth(), 1).toISOString().split("T")[0], to: d.toISOString().split("T")[0] }
+        },
+    },
+    {
+        label: "Trimestre", key: "quarter",
+        range: () => {
+            const d = new Date()
+            const from = new Date(d)
+            from.setMonth(from.getMonth() - 3)
+            return { from: from.toISOString().split("T")[0], to: d.toISOString().split("T")[0] }
+        },
+    },
+    {
+        label: "Año", key: "year",
+        range: () => {
+            const d = new Date()
+            const from = new Date(d)
+            from.setFullYear(from.getFullYear() - 1)
+            return { from: from.toISOString().split("T")[0], to: d.toISOString().split("T")[0] }
+        },
+    },
+]
+
+function isDateRangeEqual(a?: { from: string; to: string } | null, b?: { from: string; to: string } | null): boolean {
+    if (!a && !b) return true
+    if (!a || !b) return false
+    return a.from === b.from && a.to === b.to
 }
 
 // ── Timeline view (exported for reuse) ────────────────────────
@@ -169,8 +254,10 @@ function PanelItem({ panel }: { panel: HubPanel }) {
 
     if (panel.content.type === "stat-card") {
         const card = panel.content.config
-        const statVariant = card.variant === "compact" || card.variant === "minimal"
-            ? card.variant
+        const effectiveVariant = card.variant === "fill" ? "fill"
+            : card.variant === "chart" ? "chart"
+            : card.variant === "metric-chart" ? "metric-chart"
+            : card.variant === "compact" || card.variant === "minimal" ? card.variant
             : undefined
         return (
             <div className="flex flex-col flex-1" style={gridStyle}>
@@ -185,13 +272,16 @@ function PanelItem({ panel }: { panel: HubPanel }) {
                     icon={card.icon}
                     accent={card.accent}
                     subtext={card.subtext}
-                    variant={statVariant}
+                    variant={effectiveVariant}
                     valueSize={card.valueSize}
                     trend={card.trend}
                     href={card.href}
                     onClick={card.onClick}
                     active={card.active}
                     loading={card.loading}
+                    chart={card.chart ? (
+                        <ChartRenderer type={card.chart.type} config={card.chart.config} />
+                    ) : undefined}
                 />
             </div>
         )
@@ -210,12 +300,84 @@ function PanelItem({ panel }: { panel: HubPanel }) {
             {panel.content.type === "custom" ? (
                 <div className="flex-1">{panel.content.render}</div>
             ) : (
-                <div className="flex-1 min-h-0">
+                <div className="flex-1 min-h-0 flex flex-col">
                     <ChartRenderer type={panel.content.type} config={panel.content.config} />
                 </div>
             )}
         </div>
     )
+}
+
+function SectionItem({ section }: { section: HubSection }) {
+    if (section.content.type === "stat-card") {
+        const card = section.content.config
+        const effectiveVariant = card.variant === "fill" ? "fill"
+            : card.variant === "chart" ? "chart"
+            : card.variant === "metric-chart" ? "metric-chart"
+            : card.variant === "compact" || card.variant === "minimal" ? card.variant
+            : undefined
+        return (
+            <div className="flex flex-col flex-1 min-h-0">
+                <StatCard
+                    label={card.label}
+                    value={card.value}
+                    icon={card.icon}
+                    accent={card.accent}
+                    subtext={card.subtext}
+                    variant={effectiveVariant}
+                    valueSize={card.valueSize}
+                    trend={card.trend}
+                    href={card.href}
+                    onClick={card.onClick}
+                    active={card.active}
+                    loading={card.loading}
+                    chart={card.chart ? (
+                        <ChartRenderer type={card.chart.type} config={card.chart.config} />
+                    ) : undefined}
+                />
+            </div>
+        )
+    }
+
+    return (
+        <div className="flex flex-col flex-1 min-h-0">
+            {section.content.type === "custom" ? (
+                <div className="flex-1">{section.content.render}</div>
+            ) : (
+                <div className="flex-1 min-h-0 flex flex-col">
+                    <ChartRenderer type={section.content.type} config={section.content.config} />
+                </div>
+            )}
+        </div>
+    )
+}
+
+function getCssChartColors(): string[] {
+    if (typeof window === "undefined") return ["#3b82f6", "#22c55e", "#f59e0b", "#ef4444", "#8b5cf6", "#06b6d4"]
+    const style = getComputedStyle(document.documentElement)
+    const vars = ["--chart-1", "--chart-2", "--chart-3", "--chart-4", "--chart-5", "--chart-6"]
+    return vars.map((v) => {
+        const val = style.getPropertyValue(v).trim()
+        return val || "#000"
+    })
+}
+
+const nivoTheme = {
+    axis: {
+        ticks: {
+            text: { fontSize: 10, fontFamily: 'inherit', fill: 'hsl(var(--muted-foreground))' },
+            line: { strokeWidth: 0 },
+        },
+    },
+    grid: {
+        line: { stroke: 'transparent', strokeWidth: 0 },
+    },
+    labels: {
+        text: { fontSize: 10, fontFamily: 'inherit' },
+    },
+    legends: {
+        text: { fontSize: 10, fontFamily: 'inherit' },
+    },
 }
 
 function ChartRenderer({
@@ -225,88 +387,214 @@ function ChartRenderer({
     type: "bar-chart" | "pie-chart" | "line-chart"
     config: ChartConfig
 }) {
-    const height = config.height ?? 250
-    const colors = config.colors as any
+    const chartColors = React.useMemo(() => getCssChartColors(), [])
+    const colors = (config.colors ?? chartColors) as any
+    const showLegend = config.showLegend ?? true
+    const pit = config.compact ? 4 : 16
+    const legendPad = showLegend && !config.compact ? 24 : 0
+    const m = config.margin ?? (config.compact ? { top: pit, right: pit, bottom: pit, left: pit } : undefined)
+    const overlay = config.lineOverlay
+    const _colors = Array.isArray(colors) ? colors : (chartColors as string[])
+    const legendItems = overlay && showLegend ? [
+        ...(config.keys ?? []).map((key, i) => ({
+            id: key,
+            label: key.charAt(0).toUpperCase() + key.slice(1),
+            color: _colors[i % _colors.length],
+        })),
+        {
+            id: "line",
+            label: overlay.label,
+            color: overlay.color ?? "#f59e0b",
+        },
+    ] : undefined
 
-    switch (type) {
-        case "bar-chart":
-            return (
-                <div style={{ height }}>
-                    <ResponsiveBar
-                        data={config.data as any}
-                        keys={config.keys ?? []}
-                        indexBy={config.indexBy ?? "id"}
-                        padding={0.3}
-                        borderRadius={4}
-                        colors={colors}
-                        axisBottom={{ tickSize: 0, tickPadding: 12 }}
-                        axisLeft={{ tickSize: 0, tickPadding: 12 }}
-                        valueFormat={config.valueFormat}
-                        legends={config.showLegend ? [{
-                            dataFrom: "keys" as const,
-                            anchor: "bottom" as const,
-                            direction: "row" as const,
-                            translateY: 45,
-                            itemWidth: 80,
-                            itemHeight: 20,
-                            symbolSize: 10,
-                            symbolShape: "circle" as const,
-                        }] : []}
-                    />
-                </div>
-            )
-        case "pie-chart":
-            return (
-                <div style={{ height }}>
-                    <ResponsivePie
-                        data={config.data as any}
-                        innerRadius={config.innerRadius ?? 0}
-                        padAngle={1}
-                        cornerRadius={4}
-                        colors={colors}
-                        borderWidth={1}
-                        borderColor={{ theme: "background" }}
-                        enableArcLinkLabels={config.enableLabels ?? true}
-                        arcLabel={config.arcLabel ?? "id"}
-                        arcLabelsRadiusOffset={0.55}
-                        legends={config.showLegend ? [{
-                            anchor: "bottom" as const,
-                            direction: "row" as const,
-                            translateY: 45,
-                            itemWidth: 80,
-                            itemHeight: 20,
-                            symbolSize: 10,
-                            symbolShape: "circle" as const,
-                        }] : []}
-                    />
-                </div>
-            )
-        case "line-chart":
-            return (
-                <div style={{ height }}>
-                    <ResponsiveLine
-                        data={config.data as any}
-                        margin={{ top: 20, right: 20, bottom: 50, left: 60 }}
-                        curve="monotoneX"
-                        lineWidth={2}
-                        pointSize={5}
-                        colors={colors}
-                        enableArea={config.enableArea ?? false}
-                        axisBottom={{ tickSize: 0, tickPadding: 12 }}
-                        axisLeft={{ tickSize: 0, tickPadding: 12 }}
-                        legends={config.showLegend ? [{
-                            anchor: "bottom" as const,
-                            direction: "row" as const,
-                            translateY: 45,
-                            itemWidth: 80,
-                            itemHeight: 20,
-                            symbolSize: 10,
-                            symbolShape: "circle" as const,
-                        }] : []}
-                    />
-                </div>
-            )
+    const axes = config.compact
+        ? { axisBottom: null, axisLeft: null }
+        : {
+            axisBottom: {
+                tickSize: 0,
+                tickPadding: 8,
+                legend: config.axisBottomLegend,
+                legendPosition: 'middle' as const,
+                legendOffset: 36,
+            },
+            axisLeft: {
+                tickSize: 0,
+                tickPadding: 8,
+                format: config.valueFormat ?? "~s",
+                legend: config.axisLeftLegend,
+                legendPosition: 'middle' as const,
+                legendOffset: -48,
+            },
+        }
+
+    const sharedProps = {
+        colors,
+        enableGridX: config.enableGridX ?? false,
+        enableGridY: config.enableGridY ?? false,
+        theme: nivoTheme,
+        legends: showLegend ? (legendItems ? [{
+            data: legendItems,
+            dataFrom: "keys" as const,
+            anchor: "top" as const,
+            direction: "row" as const,
+            translateY: -22,
+            itemWidth: 80,
+            itemHeight: 14,
+            itemsSpacing: 12,
+            symbolSize: 8,
+            symbolShape: "circle" as const,
+        }] : [{
+            dataFrom: (config.legendDataFrom ?? "keys") as "keys" | "indexes",
+            anchor: "top" as const,
+            direction: "row" as const,
+            translateY: -22,
+            itemWidth: 80,
+            itemHeight: 14,
+            itemsSpacing: 12,
+            symbolSize: 8,
+            symbolShape: "circle" as const,
+        }]) : [],
     }
+
+    const [hoverPoint, setHoverPoint] = React.useState<{ x: number; y: number; value: number; label: string } | null>(null)
+    const chartRef = React.useRef<HTMLDivElement>(null)
+
+    return (
+        <div ref={chartRef} className="flex-1 min-h-0 w-full relative">
+            {type === "bar-chart" && (
+                <ResponsiveBar
+                    data={config.data as any}
+                    keys={config.keys ?? []}
+                    indexBy={config.indexBy ?? "id"}
+                    padding={0.15}
+                    borderRadius={config.borderRadius ?? 4}
+                    margin={m ?? { top: pit + legendPad, right: pit, bottom: 28, left: 36 }}
+                    valueFormat={config.valueFormat}
+                    enableLabel={config.enableLabels ?? false}
+                    layers={overlay ? [
+                        'grid' as const,
+                        'axes' as const,
+                        'bars' as const,
+                        'markers' as const,
+                        ({ bars, yScale, margin: mgn }: any) => {
+                            const lineKey = overlay.dataKey
+                            const lineColor = overlay.color ?? '#f59e0b'
+                            const indexMap = new Map<string, { x: number; y: number; value: number }>()
+                            for (const bar of bars) {
+                                const idx = bar.data.indexValue ?? bar.index
+                                if (indexMap.has(idx)) continue
+                                const data = bar.data.data ?? bar.data
+                                const val = Number(data[lineKey]) ?? 0
+                                if (val > 0 || val === 0) {
+                                    indexMap.set(idx, {
+                                        x: bar.x + bar.width / 2,
+                                        y: yScale(val),
+                                        value: val,
+                                    })
+                                }
+                            }
+                            const points = Array.from(indexMap.values())
+                                .sort((a: any, b: any) => a.x - b.x)
+
+                            return (
+                                <g>
+                                    {points.length >= 2 && (
+                                        <path
+                                            d={points.map((p: any, i: number) =>
+                                                `${i === 0 ? 'M' : 'L'} ${p.x} ${p.y}`
+                                            ).join(' ')}
+                                            stroke={lineColor}
+                                            strokeWidth={2.5}
+                                            fill="none"
+                                            strokeLinejoin="round"
+                                        />
+                                    )}
+                                    {points.map((p: any, i: number) => (
+                                        <circle key={i} cx={p.x} cy={p.y} r={3.5} fill={lineColor} stroke="white" strokeWidth={1.5} />
+                                    ))}
+                                    {points.map((p: any, i: number) => (
+                                        <circle
+                                            key={`hit-${i}`}
+                                            cx={p.x} cy={p.y} r={10}
+                                            fill="transparent"
+                                            style={{ cursor: 'pointer' }}
+                                            onMouseEnter={(e) => {
+                                                const rect = chartRef.current?.getBoundingClientRect()
+                                                if (rect) {
+                                                    setHoverPoint({
+                                                        x: e.clientX - rect.left,
+                                                        y: e.clientY - rect.top,
+                                                        value: p.value,
+                                                        label: overlay.label,
+                                                    })
+                                                }
+                                            }}
+                                            onMouseLeave={() => setHoverPoint(null)}
+                                        />
+                                    ))}
+                                </g>
+                            )
+                        },
+                        'legends' as const,
+                        'annotations' as const,
+                    ] : undefined}
+                    {...axes}
+                    {...sharedProps}
+                />
+            )}
+            {type === "pie-chart" && (
+                <ResponsivePie
+                    data={config.data as any}
+                    innerRadius={config.innerRadius ?? 0}
+                    padAngle={0}
+                    cornerRadius={0}
+                    borderWidth={2}
+                    borderColor={{ theme: "background" }}
+                    enableArcLinkLabels={config.compact ? false : (config.enableLabels ?? false)}
+                    arcLinkLabelsOffset={4}
+                    arcLinkLabelsThickness={1}
+                    arcLinkLabelsTextOffset={4}
+                    arcLinkLabelsTextColor={{ theme: "labels.text.fill" }}
+                    enableArcLabels={config.enableLabels ?? true}
+                    arcLabel={config.arcLabel ?? "id"}
+                    arcLabelsRadiusOffset={0.55}
+                    arcLabelsSkipAngle={8}
+                    margin={m ?? { top: pit + legendPad, right: pit, bottom: pit, left: pit }}
+                    {...sharedProps}
+                />
+            )}
+            {type === "line-chart" && (
+                <ResponsiveLine
+                    data={config.data as any}
+                    margin={m ?? { top: pit + legendPad, right: pit, bottom: 28, left: 36 }}
+                    curve="linear"
+                    lineWidth={config.compact ? 3 : 4}
+                    pointSize={config.compact ? 0 : 4}
+                    pointBorderWidth={0}
+                    enableArea={config.enableArea ?? false}
+                    areaOpacity={0.12}
+                    enablePoints={!config.compact}
+                    enablePointLabel={config.enableLabels ?? false}
+                    {...axes}
+                    {...sharedProps}
+                />
+            )}
+
+            {hoverPoint && (
+                <div
+                    className="pointer-events-none absolute z-10 bg-popover text-popover-foreground text-[11px] font-bold px-2.5 py-1.5 rounded-md shadow-sm border whitespace-nowrap"
+                    style={{
+                        left: hoverPoint.x,
+                        top: hoverPoint.y - 10,
+                        transform: 'translate(-50%, -100%)',
+                    }}
+                >
+                    {hoverPoint.label}: ${Number(hoverPoint.value).toLocaleString("es-CL")}
+                </div>
+            )}
+        </div>
+    )
 }
 
 // ── Main component ────────────────────────────────────────────
@@ -318,11 +606,24 @@ export function EntityHubScreen({
     tabs,
     activeTab: activeTabProp,
     onTabChange,
+    granularity,
+    onGranularityChange,
+    dateRange: dateRangeProp,
+    onDateRangeChange,
 }: EntityHubScreenProps) {
     const [internalTab, setInternalTab] = useState(tabs[0]?.value ?? "")
 
     const currentTab = activeTabProp ?? internalTab
     const handleTabChange = onTabChange ?? setInternalTab
+
+    const activePreset = useMemo(() => {
+        const preset = SEGMENTATION_PRESETS.find(p => isDateRangeEqual(p.range(), dateRangeProp))
+        return preset?.key ?? "custom"
+    }, [dateRangeProp])
+
+    function handlePresetClick(preset: (typeof SEGMENTATION_PRESETS)[number]) {
+        onDateRangeChange?.(preset.range())
+    }
 
     return (
         <Drawer
@@ -346,28 +647,114 @@ export function EntityHubScreen({
                 variant="underline"
                 className="flex-1 flex flex-col overflow-hidden"
                 headerClassName="justify-center"
+                contentClassName="flex flex-col"
             >
                 {tabs.map((tab) => (
                     <UnderlineTabsContent
                         key={tab.value}
                         value={tab.value}
-                        className="flex-1 overflow-y-auto"
+                        className="flex-1 flex flex-col"
                     >
-                        <div className="p-6 flex flex-col min-h-0">
+                        <div className="p-6 flex flex-col min-h-0 h-full">
                             {tab.description && (
-                                <p className="text-xs text-muted-foreground/70 font-medium mb-4">
+                                <p className="text-xs text-muted-foreground/70 font-medium mb-4 shrink-0">
                                     {tab.description}
                                 </p>
                             )}
-                            <div className="grid grid-cols-3 gap-4 flex-1 min-h-0" style={{ gridAutoRows: 'minmax(min-content, 1fr)' }}>
-                                {tab.panels.map((panel) => (
-                                    <PanelItem key={panel.id} panel={panel} />
-                                ))}
-                            </div>
+                            {tab.columns?.length ? (() => {
+                                const hasColSpan = tab.columns.some(col =>
+                                    col.sections.some(s => (s.colSpan ?? 1) > 1)
+                                )
+
+                                if (!hasColSpan) {
+                                    return (
+                                        <div className="flex gap-4 flex-1 min-h-0">
+                                            {tab.columns.map((col) => (
+                                                <div
+                                                    key={col.id}
+                                                    className="flex flex-col gap-4 min-h-0"
+                                                    style={{ flex: col.weight ?? 1 }}
+                                                >
+                                                    {col.sections.map((section) => (
+                                                        <div key={section.id} className="flex-1 min-h-0 flex flex-col">
+                                                            <SectionItem section={section} />
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )
+                                }
+
+                                return (
+                                    <div
+                                        className="grid gap-4 flex-1 min-h-0"
+                                        style={{
+                                            gridTemplateColumns: tab.columns.map(c => `${c.weight ?? 1}fr`).join(' '),
+                                            gridAutoRows: 'minmax(0, 1fr)',
+                                        }}
+                                    >
+                                        {tab.columns.flatMap(col =>
+                                            col.sections.map(section => ({ section }))
+                                        ).map(({ section }) => (
+                                            <div
+                                                key={section.id}
+                                                className="flex flex-col min-h-0"
+                                                style={{ gridColumn: `span ${section.colSpan ?? 1}` }}
+                                            >
+                                                <SectionItem section={section} />
+                                            </div>
+                                        ))}
+                                    </div>
+                                )
+                            })() : (
+                                <div className="grid grid-cols-3 gap-4 flex-1 min-h-0" style={{ gridAutoRows: 'minmax(min-content, 1fr)' }}>
+                                    {tab.panels?.map((panel) => (
+                                        <PanelItem key={panel.id} panel={panel} />
+                                    ))}
+                                </div>
+                            )}
                         </div>
                     </UnderlineTabsContent>
                 ))}
             </UnderlineTabs>
+            {granularity && onGranularityChange && (
+                <div className="flex items-center justify-center gap-5 px-6 py-2 border-t border-border shrink-0">
+                    <span className="text-xs text-muted-foreground font-medium">Rango de fechas:</span>
+                    <Select
+                        value={activePreset}
+                        onValueChange={(key) => {
+                            const preset = SEGMENTATION_PRESETS.find(p => p.key === key)
+                            if (preset) handlePresetClick(preset)
+                        }}
+                    >
+                        <SelectTrigger className="w-[140px] h-8 text-xs">
+                            <SelectValue placeholder="Seleccionar" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            {SEGMENTATION_PRESETS.map((preset) => (
+                                <SelectItem key={preset.key} value={preset.key} className="text-xs">
+                                    {preset.label}
+                                </SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
+                    <span className="text-xs text-muted-foreground font-medium">Agrupar por:</span>
+                    <Select
+                        value={granularity}
+                        onValueChange={(v) => onGranularityChange(v as "day" | "month" | "year")}
+                    >
+                        <SelectTrigger className="w-[120px] h-8 text-xs">
+                            <SelectValue placeholder="Seleccionar" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="day" className="text-xs">Día</SelectItem>
+                            <SelectItem value="month" className="text-xs">Mes</SelectItem>
+                            <SelectItem value="year" className="text-xs">Año</SelectItem>
+                        </SelectContent>
+                    </Select>
+                </div>
+            )}
         </Drawer>
     )
 }

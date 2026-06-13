@@ -75,7 +75,7 @@ class PurchaseOrderSerializer(serializers.ModelSerializer):
         fields = [
             'id', 'number', 'display_id', 'supplier', 'supplier_name', 'warehouse', 'warehouse_name',
             'date', 'status', 'receiving_status', 'notes', 'total_net', 'total_tax', 'total', 'total_paid', 
-            'pending_amount', 'is_invoiced', 'invoice_details', 'serialized_payments',
+            'pending_amount', 'is_invoiced', 'invoice_details', 'serialized_payments', 'payment_method',
             'work_order', 'work_order_number', 'related_documents', 'lines', 'created_at', 'updated_at'
         ]
         read_only_fields = ['id', 'number', 'status', 'receiving_status', 'total_net', 'total_tax', 'total']

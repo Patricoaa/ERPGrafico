@@ -1,7 +1,7 @@
 "use client"
 
 import React, { useState, useMemo } from "react"
-import { ArrowUpDown, ArrowUp, ArrowDown, MoreHorizontal, Settings2, Check, X, ListFilter } from "lucide-react"
+import { ArrowUpDown, ArrowUp, ArrowDown, MoreHorizontal, Settings2, Check, X, ListFilter, LayoutDashboard } from "lucide-react"
 import { Table } from "@tanstack/react-table"
 
 import { Button } from "@/components/ui/button"
@@ -15,7 +15,7 @@ import {
 import { Separator } from "@/components/ui/separator"
 import { Drawer } from "./Drawer"
 import { UnderlineTabs, type TabItem } from "./UnderlineTabs"
-import { EntityHubScreen, type HubPanel, type HubTab } from "./EntityHubScreen"
+import { EntityHubScreen, type HubPanel, type HubTab, type Granularity } from "./EntityHubScreen"
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 
 interface DataTableToolbarProps<TData> {
@@ -65,13 +65,16 @@ interface DataTableToolbarProps<TData> {
 }
 
 export type EntityHubActionConfig = {
-    icon: React.ComponentType<{ className?: string }>
     onClick?: () => void
     screen?: {
         entityName: string
         tabs: HubTab[]
         activeTab?: string
         onTabChange?: (value: string) => void
+        granularity?: Granularity
+        onGranularityChange?: (g: Granularity) => void
+        dateRange?: { from: string; to: string } | null
+        onDateRangeChange?: (range: { from: string; to: string } | null) => void
     }
 }
 
@@ -198,7 +201,7 @@ export function DataTableToolbar<TData>(props: DataTableToolbarProps<TData>) {
                                 onClick={handleHubClick}
                                 title={entityHubAction.screen?.entityName || 'Entity Hub'}
                             >
-                                <entityHubAction.icon className="h-4 w-4" />
+                                <LayoutDashboard className="h-4 w-4" />
                             </Button>
                         )}
 
@@ -499,6 +502,10 @@ export function DataTableToolbar<TData>(props: DataTableToolbarProps<TData>) {
                     tabs={entityHubAction.screen.tabs}
                     activeTab={entityHubAction.screen.activeTab}
                     onTabChange={entityHubAction.screen.onTabChange}
+                    granularity={entityHubAction.screen.granularity}
+                    onGranularityChange={entityHubAction.screen.onGranularityChange}
+                    dateRange={entityHubAction.screen.dateRange}
+                    onDateRangeChange={entityHubAction.screen.onDateRangeChange}
                 />
             )}
         </>
