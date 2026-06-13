@@ -2,21 +2,9 @@
 
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import {
-    BarChart,
-    Bar,
-    LineChart,
-    Line,
-    XAxis,
-    YAxis,
-    CartesianGrid,
-    Tooltip,
-    Legend,
-    ResponsiveContainer,
-    PieChart,
-    Pie,
-    Cell
-} from 'recharts';
+import { ResponsiveLine } from '@nivo/line'
+import { ResponsiveBar } from '@nivo/bar'
+import { ResponsivePie } from '@nivo/pie'
 import { financeApi } from "../api/financeApi";
 import {TrendingUp, Package, DollarSign, ShoppingCart} from 'lucide-react';
 import { CardSkeleton, EmptyState, MoneyDisplay, StatCard } from '@/components/shared';
@@ -26,9 +14,6 @@ import { DateRange } from "react-day-picker";
 import { format } from "date-fns";
 
 import { PageContainer } from "@/components/shared"
-
-// Categorical data-viz palette (CMYK process inks). NOT semantic state. See color-system.md §8.
-const COLORS = ['var(--chart-1)', 'var(--chart-2)', 'var(--chart-3)', 'var(--chart-4)', 'var(--chart-5)', 'var(--chart-6)'];
 
 interface BIAnalyticsViewProps {
     date?: DateRange;
@@ -131,24 +116,52 @@ export const BIAnalyticsView: React.FC<BIAnalyticsViewProps> = ({ date }) => {
                     <CardDescription>Evolución mensual de ventas</CardDescription>
                 </CardHeader>
                 <CardContent className="h-[350px]">
-                    <ResponsiveContainer width="100%" height="100%">
-                        <LineChart data={sales.monthly_trend || []}>
-                            <CartesianGrid strokeDasharray="3 3" />
-                            <XAxis dataKey="month" />
-                            <YAxis />
-                            <Tooltip formatter={((value: number | string) => [formatCurrency(value), 'Ventas']) as any} />
-                            <Legend />
-                            <Line
-                                type="monotone"
-                                dataKey="sales"
-                                stroke={COLORS[0]}
-                                strokeWidth={3}
-                                name="Ventas Mensuales"
-                                dot={{ r: 6 }}
-                                activeDot={{ r: 8 }}
-                            />
-                        </LineChart>
-                    </ResponsiveContainer>
+                    <ResponsiveLine
+                        data={[
+                            {
+                                id: "Ventas Mensuales",
+                                data: (sales.monthly_trend || []).map((d) => ({ x: d.month, y: d.sales })),
+                            },
+                        ]}
+                        margin={{ top: 20, right: 20, bottom: 50, left: 60 }}
+                        curve="monotoneX"
+                        enableArea={false}
+                        lineWidth={3}
+                        pointSize={8}
+                        pointBorderWidth={2}
+                        enablePointLabel={false}
+                        colors={{ scheme: "category10" }}
+                        axisBottom={{
+                            tickSize: 0,
+                            tickPadding: 12,
+                        }}
+                        axisLeft={{
+                            tickSize: 0,
+                            tickPadding: 12,
+                            format: (v) => formatCurrency(v),
+                        }}
+                        tooltip={({ point }) => (
+                            <div className="rounded-lg border bg-background p-2 shadow-sm">
+                                <p className="text-[10px] uppercase text-muted-foreground">
+                                    {String(point.data.x)}
+                                </p>
+                                <p className="font-bold text-xs">
+                                    Ventas: {formatCurrency(Number(point.data.y))}
+                                </p>
+                            </div>
+                        )}
+                        legends={[
+                            {
+                                anchor: "bottom",
+                                direction: "row",
+                                translateY: 50,
+                                itemWidth: 130,
+                                itemHeight: 20,
+                                symbolSize: 12,
+                                symbolShape: "circle",
+                            },
+                        ]}
+                    />
                 </CardContent>
             </Card>
 
@@ -161,15 +174,30 @@ export const BIAnalyticsView: React.FC<BIAnalyticsViewProps> = ({ date }) => {
                         <CardDescription>Por volumen de ventas</CardDescription>
                     </CardHeader>
                     <CardContent className="h-[300px]">
-                        <ResponsiveContainer width="100%" height="100%">
-                            <BarChart data={sales.top_customers || []} layout="vertical">
-                                <CartesianGrid strokeDasharray="3 3" />
-                                <XAxis type="number" />
-                                <YAxis dataKey="name" type="category" width={100} />
-                                <Tooltip formatter={((value: number | string) => [formatCurrency(value), 'Ventas']) as any} />
-                                <Bar dataKey="amount" fill={COLORS[1]} />
-                            </BarChart>
-                        </ResponsiveContainer>
+                        <ResponsiveBar
+                            data={sales.top_customers || []}
+                            keys={["amount"]}
+                            indexBy="name"
+                            layout="horizontal"
+                            padding={0.3}
+                            colors={{ scheme: "set2" }}
+                            borderRadius={4}
+                            axisBottom={{
+                                tickSize: 0,
+                                tickPadding: 12,
+                                format: (v) => formatCurrency(v),
+                            }}
+                            axisLeft={{
+                                tickSize: 0,
+                                tickPadding: 12,
+                            }}
+                            tooltip={({ value, indexValue }) => (
+                                <div className="rounded-lg border bg-background p-2 shadow-sm">
+                                    <p className="text-[10px] uppercase text-muted-foreground">{indexValue as string}</p>
+                                    <p className="font-bold text-xs">Ventas: {formatCurrency(value)}</p>
+                                </div>
+                            )}
+                        />
                     </CardContent>
                 </Card>
 
@@ -180,26 +208,36 @@ export const BIAnalyticsView: React.FC<BIAnalyticsViewProps> = ({ date }) => {
                         <CardDescription>Por categoría de producto</CardDescription>
                     </CardHeader>
                     <CardContent className="h-[300px]">
-                        <ResponsiveContainer width="100%" height="100%">
-                            <PieChart>
-                                <Pie
-                                    data={inventory.stock_distribution || []}
-                                    cx="50%"
-                                    cy="50%"
-                                    labelLine={false}
-                                    label={((entry: any) => `${entry.category}`) as any}
-                                    outerRadius={80}
-                                    fill="var(--primary)"
-                                    dataKey="value"
-                                >
-                                    {(inventory.stock_distribution || []).map((_entry, index: number) => (
-                                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                                    ))}
-                                </Pie>
-                                <Tooltip formatter={((value: number | string) => [formatCurrency(value), 'Valor']) as any} />
-                                <Legend />
-                            </PieChart>
-                        </ResponsiveContainer>
+                        <ResponsivePie
+                            data={(inventory.stock_distribution || []).map((d) => ({ id: d.category, value: d.value }))}
+                            margin={{ top: 20, right: 20, bottom: 40, left: 20 }}
+                            padAngle={2}
+                            cornerRadius={4}
+                            activeOuterRadiusOffset={8}
+                            colors={{ scheme: "set3" }}
+                            arcLinkLabel={(d) => d.id as string}
+                            arcLinkLabelsColor={{ theme: "text" }}
+                            arcLinkLabelsThickness={1}
+                            arcLinkLabelsStraightLength={8}
+                            arcLabelsSkipAngle={20}
+                            tooltip={({ datum }) => (
+                                <div className="rounded-lg border bg-background p-2 shadow-sm">
+                                    <p className="text-[10px] uppercase text-muted-foreground">{datum.id}</p>
+                                    <p className="font-bold text-xs">Valor: {formatCurrency(datum.value)}</p>
+                                </div>
+                            )}
+                            legends={[
+                                {
+                                    anchor: "bottom",
+                                    direction: "row",
+                                    translateY: 50,
+                                    itemWidth: 100,
+                                    itemHeight: 18,
+                                    symbolSize: 10,
+                                    symbolShape: "circle",
+                                },
+                            ]}
+                        />
                     </CardContent>
                 </Card>
             </div>

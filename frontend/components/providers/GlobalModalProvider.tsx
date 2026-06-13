@@ -8,6 +8,7 @@ interface OpenEntityState {
     id: number
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     data?: any
+    segmenter?: React.ReactNode
 }
 
 interface GlobalModalActionsContextType {
@@ -16,7 +17,7 @@ interface GlobalModalActionsContextType {
      * Throws if no drawer is registered for the label — check `hasEntityDrawer(label)` first
      * or rely on EntityBadge's automatic fallback to navigation.
      */
-    openEntity: (label: string, id: number, data?: unknown) => void
+    openEntity: (label: string, id: number, data?: unknown, segmenter?: React.ReactNode) => void
     closeEntity: () => void
     /** @deprecated Use `openEntity('production.workorder', id)` */
     openWorkOrder: (id: number) => void
@@ -56,12 +57,12 @@ export function GlobalModalProvider({ children }: { children: ReactNode }) {
 
     const closeEntity = useCallback(() => setOpenedEntity(null), [])
 
-    const openEntity = useCallback((label: string, id: number, data?: unknown) => {
+    const openEntity = useCallback((label: string, id: number, data?: unknown, segmenter?: React.ReactNode) => {
         if (!hasEntityDrawer(label)) {
             console.warn(`[GlobalModalProvider] No drawer registered for entity "${label}". Register it in lib/entity-drawers.tsx.`)
             return
         }
-        setOpenedEntity({ label, id, data })
+        setOpenedEntity({ label, id, data, segmenter })
     }, [])
 
     // Backward-compatible specific openers — delegate to the generic one.
@@ -174,6 +175,7 @@ export function GlobalModalProvider({ children }: { children: ReactNode }) {
             open: true,
             onOpenChange: (open) => { if (!open) setOpenedEntity(null) },
             onSuccess: () => setOpenedEntity(null),
+            segmenter: openedEntity.segmenter,
         })
     }
 

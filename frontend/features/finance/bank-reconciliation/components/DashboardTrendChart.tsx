@@ -1,7 +1,7 @@
 "use client"
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Bar, BarChart, ResponsiveContainer, XAxis, YAxis, Tooltip, Legend } from "recharts"
+import { ResponsiveBar } from "@nivo/bar"
 import type { TrendItem } from "../types"
 
 interface DashboardTrendChartProps {
@@ -14,67 +14,47 @@ export function DashboardTrendChart({ data }: DashboardTrendChartProps) {
             <CardHeader>
                 <CardTitle>Tendencia Mensual de Conciliación</CardTitle>
             </CardHeader>
-            <CardContent className="pl-2">
-                <ResponsiveContainer width="100%" height={350}>
-                    <BarChart data={data}>
-                        <XAxis
-                            dataKey="month"
-                            stroke="var(--muted-foreground)"
-                            fontSize={12}
-                            tickLine={false}
-                            axisLine={false}
-                        />
-                        <YAxis
-                            stroke="var(--muted-foreground)"
-                            fontSize={12}
-                            tickLine={false}
-                            axisLine={false}
-                            tickFormatter={(value) => `${value}`}
-                        />
-                        <Tooltip
-                            content={({ active, payload }) => {
-                                if (active && payload && payload.length) {
-                                    return (
-                                        <div className="rounded-lg border bg-background p-2 shadow-sm">
-                                            <div className="grid grid-cols-2 gap-2">
-                                                <div className="flex flex-col">
-                                                    <span className="text-[0.70rem] uppercase text-muted-foreground">
-                                                        Total Líneas
-                                                    </span>
-                                                    <span className="font-bold text-muted-foreground">
-                                                        {payload[0].value}
-                                                    </span>
-                                                </div>
-                                                <div className="flex flex-col">
-                                                    <span className="text-[0.70rem] uppercase text-muted-foreground">
-                                                        Conciliadas
-                                                    </span>
-                                                    <span className="font-bold text-success">
-                                                        {payload[1].value}
-                                                    </span>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    )
-                                }
-                                return null
-                            }}
-                        />
-                        <Legend />
-                        <Bar
-                            dataKey="total_lines"
-                            name="Total Líneas"
-                            fill="var(--muted)" // gray-200
-                            radius={[4, 4, 0, 0]}
-                        />
-                        <Bar
-                            dataKey="reconciled_lines"
-                            name="Conciliadas"
-                            fill="var(--success)" // green-600
-                            radius={[4, 4, 0, 0]}
-                        />
-                    </BarChart>
-                </ResponsiveContainer>
+            <CardContent className="pl-2" style={{ height: 350 }}>
+                <ResponsiveBar
+                    data={data as unknown as { month: string; total_lines: number; reconciled_lines: number }[]}
+                    keys={["total_lines", "reconciled_lines"]}
+                    indexBy="month"
+                    groupMode="grouped"
+                    padding={0.3}
+                    colors={["var(--muted)", "var(--success)"]}
+                    borderRadius={4}
+                    axisBottom={{
+                        tickSize: 0,
+                        tickPadding: 12,
+                    }}
+                    axisLeft={{
+                        tickSize: 0,
+                        tickPadding: 12,
+                        format: (v) => `${v}`,
+                    }}
+                    tooltip={({ id, value, color }) => (
+                        <div className="rounded-lg border bg-background p-2 shadow-sm">
+                            <div className="flex items-center gap-2">
+                                <div className="w-2 h-2 rounded-full" style={{ backgroundColor: color }} />
+                                <span className="text-[0.70rem] uppercase text-muted-foreground">
+                                    {id === "total_lines" ? "Total Líneas" : "Conciliadas"}
+                                </span>
+                                <span className="font-bold">{value}</span>
+                            </div>
+                        </div>
+                    )}
+                    legends={[
+                        {
+                            dataFrom: "keys",
+                            anchor: "bottom-right",
+                            direction: "row",
+                            itemWidth: 130,
+                            itemHeight: 20,
+                            symbolSize: 12,
+                            symbolShape: "square",
+                        },
+                    ]}
+                />
             </CardContent>
         </Card>
     )

@@ -26,16 +26,7 @@ import { UnderlineTabs, UnderlineTabsContent } from "@/components/shared"
 import { LazyDrawer, type TransactionType } from "@/features/_shared/transaction-drawer"
 import { WorkOrderWizard } from "@/features/production"
 import type { ColumnDef } from "@tanstack/react-table"
-import {
-    ResponsiveContainer,
-    XAxis,
-    YAxis,
-    CartesianGrid,
-    Tooltip as RechartsTooltip,
-    Legend,
-    AreaChart,
-    Area
-} from 'recharts'
+import { ResponsiveLine } from '@nivo/line'
 
 interface ProductInsightsModalProps {
     productId: number | null
@@ -243,35 +234,55 @@ export function ProductInsightsModal({ productId, productName, open, onOpenChang
                             {/* HISTORY TAB */}
                             <UnderlineTabsContent value="history" className="mt-0 space-y-6">
                                 <div className="h-[250px] w-full bg-card rounded-md border p-4">
-                                    <ResponsiveContainer width="100%" height="100%">
-                                        <AreaChart data={[...data.price_history].reverse()}>
-                                            <defs>
-                                                <linearGradient id="colorSale" x1="0" y1="0" x2="0" y2="1">
-                                                    <stop offset="5%" stopColor="var(--primary)" stopOpacity={0.1} />
-                                                    <stop offset="95%" stopColor="var(--primary)" stopOpacity={0} />
-                                                </linearGradient>
-                                                <linearGradient id="colorCost" x1="0" y1="0" x2="0" y2="1">
-                                                    <stop offset="5%" stopColor="var(--destructive)" stopOpacity={0.1} />
-                                                    <stop offset="95%" stopColor="var(--destructive)" stopOpacity={0} />
-                                                </linearGradient>
-                                            </defs>
-                                            <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                                            <XAxis
-                                                dataKey="date"
-                                                tickFormatter={(str) => format(new Date(str), 'MMM d')}
-                                                fontSize={10}
-                                                tickMargin={10}
-                                            />
-                                            <YAxis fontSize={10} />
-                                            <RechartsTooltip
-                                                labelFormatter={(val) => format(new Date(val), 'PPP', { locale: es })}
-                                                formatter={(val) => [formatCurrency(Number(val || 0)), '']}
-                                            />
-                                            <Legend verticalAlign="top" height={36} />
-                                            <Area type="monotone" name="Precio Venta" dataKey="sale_price" stroke="var(--primary)" fillOpacity={1} fill="url(#colorSale)" strokeWidth={2} />
-                                            <Area type="monotone" name="Costo" dataKey="cost_price" stroke="var(--destructive)" fillOpacity={1} fill="url(#colorCost)" strokeWidth={2} />
-                                        </AreaChart>
-                                    </ResponsiveContainer>
+                                    <ResponsiveLine
+                                        data={[
+                                            {
+                                                id: "Precio Venta",
+                                                data: [...data.price_history].reverse().map((d) => ({ x: d.date, y: d.sale_price })),
+                                            },
+                                            {
+                                                id: "Costo",
+                                                data: [...data.price_history].reverse().map((d) => ({ x: d.date, y: d.cost_price })),
+                                            },
+                                        ]}
+                                        curve="monotoneX"
+                                        enableArea
+                                        areaOpacity={0.08}
+                                        lineWidth={2}
+                                        pointSize={4}
+                                        enablePointLabel={false}
+                                        colors={["var(--primary)", "var(--destructive)"]}
+                                        axisBottom={{
+                                            tickSize: 0,
+                                            tickPadding: 10,
+                                            format: (v) => format(new Date(v as string), 'MMM d'),
+                                        }}
+                                        axisLeft={{
+                                            tickSize: 0,
+                                            tickPadding: 10,
+                                        }}
+                                        tooltip={({ point }) => (
+                                            <div className="rounded-lg border bg-popover p-2 shadow-sm">
+                                                <p className="text-[10px] uppercase text-muted-foreground">
+                                                    {format(new Date(String(point.data.x)), 'PPP', { locale: es })}
+                                                </p>
+                                                    <p className="text-xs font-bold">
+                                                    {String(point.seriesId)}: {formatCurrency(Number(point.data.y))}
+                                                </p>
+                                            </div>
+                                        )}
+                                        legends={[
+                                            {
+                                                anchor: "top",
+                                                direction: "row",
+                                                translateY: -30,
+                                                itemWidth: 120,
+                                                itemHeight: 20,
+                                                symbolSize: 10,
+                                                symbolShape: "circle",
+                                            },
+                                        ]}
+                                    />
                                 </div>
 
                                 <div className="rounded-md border">

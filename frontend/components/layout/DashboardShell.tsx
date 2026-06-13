@@ -54,8 +54,8 @@ function DashboardShellInner({ children }: { children: React.ReactNode }) {
         <div className="relative h-screen bg-background overflow-hidden font-sans">
             {/* ── TOP BAR ────────────────────────────────────────────── */}
             <div className="absolute top-0 left-0 right-0 h-16 flex items-center bg-background z-30 gap-3 px-4 md:px-6">
-                {/* Left: page title & meta — shrinks to content */}
-                <div className="flex-none flex items-center gap-4 min-w-0 pointer-events-none">
+                {/* Left: page title & meta — fills remaining space */}
+                <div className="flex-1 flex items-center gap-4 min-w-0 pointer-events-none">
                     <AnimatePresence mode="wait">
                         {config ? (
                             <motion.div
@@ -131,13 +131,9 @@ function DashboardShellInner({ children }: { children: React.ReactNode }) {
                     </AnimatePresence>
                 </div>
 
-                {/* Center: Universal Search — takes all available space and centers the search bar */}
-                <div className="flex-1 flex items-center justify-center px-8">
+                {/* Right: Universal Search + UserActions */}
+                <div className="flex-none flex items-center gap-3">
                     <UniversalSearch />
-                </div>
-
-                {/* Right: UserActions */}
-                <div className="flex-none">
                     <UserActions isInboxOpen={isInboxOpen} onInboxToggle={handleInboxToggle} />
                 </div>
             </div>

@@ -41,7 +41,7 @@ const nextConfig: NextConfig = {
   },
   experimental: {
   },
-  transpilePackages: ["react-day-picker"],
+  transpilePackages: ["react-day-picker", "@nivo/core", "@nivo/bar", "@nivo/pie", "@nivo/line"],
   devIndicators: {
   },
 };

@@ -8,30 +8,10 @@ import {
     Building2,
     BarChart3
 } from "lucide-react"
-import {
-    PieChart,
-    Pie,
-    Cell,
-    ResponsiveContainer,
-    Tooltip,
-    BarChart,
-    Bar,
-    XAxis,
-    YAxis,
-    CartesianGrid,
-    Legend
-} from "recharts"
+import { ResponsivePie } from "@nivo/pie"
+import { ResponsiveBar } from "@nivo/bar"
 
 // Categorical data-viz palette (CMYK process inks). NOT semantic state. See color-system.md §8.
-const COLORS = [
-    'var(--chart-1)',
-    'var(--chart-2)',
-    'var(--chart-3)',
-    'var(--chart-4)',
-    'var(--chart-5)',
-    'var(--chart-6)',
-]
-
 import { Partner, PartnerSummary } from "@/features/contacts/types/partner"
 
 interface EquityStatsDrawerProps {
@@ -41,27 +21,6 @@ interface EquityStatsDrawerProps {
     summary: PartnerSummary
 }
 
-const CustomTooltip = ({ active, payload }: any) => {
-    if (active && payload && payload.length) {
-        return (
-            <div className="bg-background/95 backdrop-blur border border-border p-3 rounded-lg shadow-xl">
-                <p className="text-[10px] uppercase font-black tracking-widest text-muted-foreground mb-2">
-                    {payload[0].name || payload[0].payload.name}
-                </p>
-                {payload.map((entry: any, index: number) => (
-                    <div key={index} className="flex items-center gap-2 mt-1">
-                        <div className="w-2 h-2 rounded-full" style={{ backgroundColor: entry.color }} />
-                        <span className="text-xs font-medium">
-                            {entry.name}: <span className="font-mono font-bold">{formatCurrency(entry.value)}</span>
-                        </span>
-                    </div>
-                ))}
-            </div>
-        )
-    }
-    return null
-}
-
 export function EquityStatsDrawer({ open, onOpenChange, partners, summary }: EquityStatsDrawerProps) {
     if (!summary || !partners) return null
 
@@ -69,8 +28,8 @@ export function EquityStatsDrawer({ open, onOpenChange, partners, summary }: Equ
     const pieData = partners
         .filter(p => parseFloat(p.partner_equity_percentage) > 0)
         .map(p => ({
-            name: p.name,
-            value: parseFloat(p.partner_net_equity)
+            id: p.name,
+            value: parseFloat(p.partner_net_equity),
         }))
 
     // Prepare data for Bar Chart (Paid vs Pending)
@@ -114,28 +73,41 @@ export function EquityStatsDrawer({ open, onOpenChange, partners, summary }: Equ
                         <h3 className="text-[11px] font-black uppercase tracking-widest">Participación Patrimonial</h3>
                     </div>
                     <div className="h-64 bg-background border border-border rounded-xl p-4">
-                        <ResponsiveContainer width="100%" height="100%">
-                            <PieChart>
-                                <Pie
-                                    data={pieData}
-                                    cx="50%"
-                                    cy="50%"
-                                    innerRadius={60}
-                                    outerRadius={80}
-                                    paddingAngle={5}
-                                    dataKey="value"
-                                >
-                                    {pieData.map((entry, index) => (
-                                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                                    ))}
-                                </Pie>
-                                <Tooltip content={<CustomTooltip />} />
-                                <Legend 
-                                    wrapperStyle={{ fontSize: '10px', textTransform: 'uppercase', fontWeight: 900, opacity: 0.8 }}
-                                    iconType="circle"
-                                />
-                            </PieChart>
-                        </ResponsiveContainer>
+                        <ResponsivePie
+                            data={pieData}
+                            innerRadius={0.7}
+                            padAngle={3}
+                            cornerRadius={4}
+                            activeOuterRadiusOffset={8}
+                            colors={{ scheme: "set2" }}
+                            arcLinkLabel={(d) => d.id as string}
+                            arcLinkLabelsColor={{ theme: "text" }}
+                            arcLinkLabelsThickness={1}
+                            arcLinkLabelsStraightLength={8}
+                            arcLabelsSkipAngle={20}
+                            tooltip={({ datum }) => (
+                                <div className="bg-background/95 backdrop-blur border border-border p-3 rounded-lg shadow-xl">
+                                    <p className="text-[10px] uppercase font-black tracking-widest text-muted-foreground mb-1">
+                                        {datum.id}
+                                    </p>
+                                    <p className="text-xs font-mono font-bold">
+                                        {formatCurrency(datum.value)}
+                                    </p>
+                                </div>
+                            )}
+                            legends={[
+                                {
+                                    anchor: "bottom",
+                                    direction: "row",
+                                    translateY: 50,
+                                    itemWidth: 100,
+                                    itemHeight: 18,
+                                    itemTextColor: "var(--muted-foreground)",
+                                    symbolSize: 10,
+                                    symbolShape: "circle",
+                                },
+                            ]}
+                        />
                     </div>
                 </div>
 
@@ -146,30 +118,50 @@ export function EquityStatsDrawer({ open, onOpenChange, partners, summary }: Equ
                         <h3 className="text-[11px] font-black uppercase tracking-widest">Capital Enterado vs Pendiente</h3>
                     </div>
                     <div className="h-64 bg-background border border-border rounded-xl p-4">
-                        <ResponsiveContainer width="100%" height="100%">
-                            <BarChart data={barData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="currentColor" className="opacity-10" />
-                                <XAxis 
-                                    dataKey="name" 
-                                    axisLine={false} 
-                                    tickLine={false} 
-                                    tick={{ fontSize: 10, fontWeight: 900, fill: 'currentColor', opacity: 0.6 }} 
-                                />
-                                <YAxis 
-                                    axisLine={false} 
-                                    tickLine={false} 
-                                    tickFormatter={(value) => `$${value/1000}k`}
-                                    tick={{ fontSize: 10, fontWeight: 900, fill: 'currentColor', opacity: 0.6 }} 
-                                />
-                                <Tooltip content={<CustomTooltip />} cursor={{ fill: 'currentColor', opacity: 0.05 }} />
-                                <Legend 
-                                    wrapperStyle={{ fontSize: '10px', textTransform: 'uppercase', fontWeight: 900, opacity: 0.8 }}
-                                    iconType="circle"
-                                />
-                                <Bar dataKey="paid" name="Enterado" stackId="a" fill="var(--color-success)" radius={[0, 0, 4, 4]} />
-                                <Bar dataKey="pending" name="Pendiente" stackId="a" fill="var(--color-warning)" radius={[4, 4, 0, 0]} />
-                            </BarChart>
-                        </ResponsiveContainer>
+                        <ResponsiveBar
+                            data={barData}
+                            keys={["paid", "pending"]}
+                            indexBy="name"
+                            groupMode="stacked"
+                            padding={0.3}
+                            borderRadius={4}
+                            colors={["var(--success)", "var(--warning)"]}
+                            axisBottom={{
+                                tickSize: 0,
+                                tickPadding: 10,
+                            }}
+                            axisLeft={{
+                                tickSize: 0,
+                                tickPadding: 10,
+                                format: (v) => `$${Number(v) / 1000}k`,
+                            }}
+                            tooltip={({ id, value, indexValue, color }) => (
+                                <div className="bg-background/95 backdrop-blur border border-border p-3 rounded-lg shadow-xl">
+                                    <div className="flex items-center gap-2">
+                                        <div className="w-2 h-2 rounded-full" style={{ backgroundColor: color }} />
+                                        <span className="text-[10px] uppercase font-black tracking-widest text-muted-foreground">
+                                            {indexValue as string}
+                                        </span>
+                                    </div>
+                                    <p className="text-xs mt-1">
+                                        <span className="font-medium">{id === "paid" ? "Enterado" : "Pendiente"}: </span>
+                                        <span className="font-mono font-bold">{formatCurrency(value)}</span>
+                                    </p>
+                                </div>
+                            )}
+                            legends={[
+                                {
+                                    dataFrom: "keys",
+                                    anchor: "bottom",
+                                    direction: "row",
+                                    translateY: 50,
+                                    itemWidth: 100,
+                                    itemHeight: 18,
+                                    symbolSize: 10,
+                                    symbolShape: "circle",
+                                },
+                            ]}
+                        />
                     </div>
                 </div>
             </div>

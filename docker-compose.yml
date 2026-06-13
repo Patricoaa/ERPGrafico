@@ -31,7 +31,7 @@ services:
     networks:
       - backend_net
     ports:
-      - "5432:5432"
+      - "5433:5432"
     healthcheck:
       test: [ "CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres}" ]
       interval: 5s
@@ -50,6 +50,7 @@ services:
       context: ./backend
       dockerfile: Dockerfile
       target: development
+      network: host
     restart: unless-stopped
     env_file: .env.dev
     environment:
@@ -105,6 +106,7 @@ services:
       context: ./backend
       dockerfile: Dockerfile
       target: development
+      network: host
     restart: unless-stopped
     env_file: .env.dev
     environment:
@@ -137,6 +139,7 @@ services:
       context: ./backend
       dockerfile: Dockerfile
       target: development
+      network: host
     restart: unless-stopped
     env_file: .env.dev
     environment:
@@ -168,6 +171,7 @@ services:
       context: ./frontend
       dockerfile: Dockerfile
       target: development
+      network: host
     restart: unless-stopped
     env_file: .env.dev
     environment:

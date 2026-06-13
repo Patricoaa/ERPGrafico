@@ -67,7 +67,7 @@ export function SalesOrdersDrawer({ open, onOpenChange, posSessionId }: SalesOrd
                 </UnderlineTabs>
             }
         >
-            <div className="py-2">
+            <div className="px-6 pb-4 pt-2 flex-1 flex flex-col min-h-0">
                 {shouldRenderContent && (
                     <Suspense fallback={<SkeletonShell isLoading ariaLabel="Cargando..." />}>
                         <SalesOrdersView

@@ -182,18 +182,20 @@ export function CostCalculatorDrawer({ open, onOpenChange }: CostCalculatorDrawe
             defaultSize="100%"
             contentClassName="p-0 flex flex-col overflow-hidden"
         >
-            <div className="flex-1 overflow-hidden flex divide-x">
+            <div className="flex-1 overflow-hidden flex">
                 {/* Panel Izquierdo: Catálogo */}
-                <div className="w-[60%] flex flex-col p-4 gap-4 bg-muted/20 min-h-0">
+                <div className="w-[60%] flex flex-col p-4 gap-4 min-h-0">
                     {loading ? (
-                        <Card className="flex-1 flex flex-col overflow-hidden shadow-none border bg-background">
-                            <POSSearchSkeleton />
+                        <Card className="flex-1 flex flex-col overflow-hidden shadow-none border bg-muted/10 py-1.5">
+                            <div className="px-2 pt-1.5 pb-1.5 border-b">
+                                <POSSearchSkeleton />
+                            </div>
                             <div className="p-6">
                                 <POSGridSkeleton count={8} />
                             </div>
                         </Card>
                     ) : (
-                        <ProductSelector 
+                        <ProductSelector
                             products={filteredProducts as any}
                             categories={categories as any}
                             searchTerm={searchTerm}
@@ -216,10 +218,10 @@ export function CostCalculatorDrawer({ open, onOpenChange }: CostCalculatorDrawe
                 </div>
 
                 {/* Panel Derecho: Selección */}
-                <div className="w-[40%] flex flex-col p-4 bg-muted/10 gap-4 min-h-0">
-                    <Card className="flex-1 flex flex-col min-h-0 overflow-hidden shadow-none border bg-background">
+                <div className="w-[40%] flex flex-col p-4 gap-4 min-h-0">
+                    <Card className="flex-1 flex flex-col min-h-0 overflow-hidden shadow-none border">
                         {/* List Header */}
-                        <div className="grid grid-cols-12 gap-2 px-6 py-2 bg-muted/20 border-b text-[10px] font-bold uppercase text-muted-foreground/60 tracking-widest shrink-0">
+                        <div className="grid grid-cols-12 gap-2 px-6 py-2 border-b text-[10px] font-bold uppercase text-muted-foreground/60 tracking-widest shrink-0">
                             <div className="col-span-6">Descripción</div>
                             <div className="col-span-2 text-center">Cantidad</div>
                             <div className="col-span-2">Unidad</div>
@@ -231,7 +233,7 @@ export function CostCalculatorDrawer({ open, onOpenChange }: CostCalculatorDrawe
                                 <POSCartItemsSkeleton count={6} />
                             ) : selectedItems.length === 0 ? (
                                 <div className="h-[300px] flex flex-col items-center justify-center p-12 text-center text-muted-foreground gap-4">
-                                    <div className="h-16 w-16 rounded-sm bg-muted/50 flex items-center justify-center">
+                                    <div className="h-16 w-16 rounded-sm flex items-center justify-center">
                                         <Calculator className="h-8 w-8 text-muted-foreground/20" />
                                     </div>
                                     <div className="space-y-1">
@@ -281,7 +283,7 @@ export function CostCalculatorDrawer({ open, onOpenChange }: CostCalculatorDrawe
                                                     <SelectContent>
                                                         {(item.product.available_uoms || []).map(uom => (
                                                             <SelectItem key={uom.id} value={String(uom.id)} className="text-[10px]">
-                                                                 {uom.name}
+                                                                {uom.name}
                                                             </SelectItem>
                                                         ))}
                                                     </SelectContent>
@@ -309,7 +311,7 @@ export function CostCalculatorDrawer({ open, onOpenChange }: CostCalculatorDrawe
                         </ScrollArea>
 
                         {/* Totals Section Align with POS */}
-                        <div className="p-6 bg-muted/20 border-t space-y-4 shrink-0">
+                        <div className="p-6 border-t space-y-4 shrink-0">
                             <div className="space-y-1.5">
                                 <div className="flex justify-between items-center text-xs text-muted-foreground uppercase tracking-widest font-bold">
                                     <span>Costo Neto</span>

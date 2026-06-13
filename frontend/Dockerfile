@@ -7,7 +7,7 @@ WORKDIR /app
 
 COPY package.json package-lock.json* ./
 RUN --mount=type=cache,target=/root/.npm \
-    npm ci
+    npm ci --legacy-peer-deps
 
 # ── Stage 2: Development ────────────────────────────────────────────────
 # Arranque mínimo: solo node_modules copiados, código llega via bind-mount.
