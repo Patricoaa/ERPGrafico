@@ -275,7 +275,7 @@ export function AttributeManager({ externalOpen, createAction }: AttributeManage
     ], [deleteAttribute, bulkDeleteConfirm])
 
     return (
-        <div className="space-y-4 h-full flex flex-col">
+        <div className="h-full flex flex-col">
             <div className="flex-1 min-h-0">
                 <DataTable
                     columns={columns}

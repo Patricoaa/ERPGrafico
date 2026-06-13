@@ -209,7 +209,7 @@ export function BankManagement({ externalOpen, onOpenChange, createAction }: Ban
     ]
 
     return (
-        <div className="space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-300 h-full flex flex-col">
+        <div className="h-full flex flex-col">
             <div className="flex justify-between items-center bg-muted/30 p-4 rounded-lg border border-primary/10 hidden">
                 <div>
                     <h2 className="text-xl font-bold tracking-tight text-primary flex items-center gap-2">
@@ -534,7 +534,7 @@ export function PaymentMethodManagement({ externalOpen, onOpenChange, createActi
     ]
 
     return (
-        <div className="space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-300 h-full flex flex-col">
+        <div className="h-full flex flex-col">
             <div className="flex justify-between items-center bg-muted/30 p-4 rounded-lg border border-primary/10 hidden">
                 <div>
                     <h2 className="text-xl font-bold tracking-tight text-primary flex items-center gap-2">

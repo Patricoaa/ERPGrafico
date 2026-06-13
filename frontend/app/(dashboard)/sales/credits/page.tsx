@@ -31,7 +31,7 @@ export default async function CreditsPage({ searchParams }: PageProps) {
 
     return (
         <div className="pt-2 flex-1 min-h-0 flex flex-col">
-            <Tabs value={activeTab} className="space-y-4 h-full flex flex-col">
+            <Tabs value={activeTab} className="h-full flex flex-col">
                 <div className="mt-0 outline-none flex-1 min-h-0">
                     <FadeIn key={activeTab}>
                         {activeTab === 'blacklist' ? (

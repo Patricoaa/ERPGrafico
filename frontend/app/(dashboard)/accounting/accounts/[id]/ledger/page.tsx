@@ -122,7 +122,7 @@ export default function AccountLedgerPage() {
     }
 
     return (
-        <div className="space-y-6 h-full flex flex-col">
+        <div className="h-full flex flex-col">
             <div className="flex items-center gap-4 shrink-0">
                 <Button variant="ghost" size="icon" onClick={() => router.back()}>
                     <ArrowLeft className="h-4 w-4" />
