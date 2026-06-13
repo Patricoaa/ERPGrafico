@@ -4,7 +4,7 @@ import { showApiError, getErrorMessage } from "@/lib/errors"
 import React, { useEffect, useState, useMemo } from "react"
 import { useSearchParams, useRouter, usePathname } from "next/navigation"
 import { ActionConfirmModal, DataTableView, DocumentCompletionModal, DomainHubStatus, SmartSearchBar, useSmartSearch } from '@/components/shared'
-import { DataTableColumnHeader, DataCell, TimelineView } from '@/components/shared'
+import { DataTableColumnHeader, DataCell } from '@/components/shared'
 import type { EntityHubActionConfig } from '@/components/shared'
 import { type ColumnDef } from "@tanstack/react-table"
 import { Button } from "@/components/ui/button"
@@ -172,11 +172,57 @@ export function PurchasingOrdersClientView({ viewMode, externalOpenCheckout, cre
                                                         keys: ["total"],
                                                         indexBy: "supplier",
                                                         valueFormat: "~s",
+                                                        lineOverlay: {
+                                                            dataKey: "orderCount",
+                                                            label: "Cantidad Órdenes",
+                                                            color: "#22c55e",
+                                                        },
                                                     },
                                                 },
                                             },
                                         },
                                     },
+                                ],
+                            },
+                            {
+                                id: "col-logistics",
+                                weight: 1,
+                                sections: [
+                                    {
+                                        id: "receiving-status",
+                                        content: {
+                                            type: "stat-card",
+                                            config: {
+                                                label: "Entregas a Tiempo",
+                                                variant: "metric-chart",
+                                                value: `${hubData.onTimeCount}`,
+                                                subtext: `${hubData.lateCount} con retraso · ${hubData.pendingReceiptCount} pendientes · ${hubData.overdueCount} vencidas`,
+                                                chart: {
+                                                    type: "pie-chart",
+                                                    config: {
+                                                        data: [
+                                                            { id: "A tiempo", value: hubData.onTimeCount, color: "#22c55e" },
+                                                            { id: "Con retraso", value: hubData.lateCount, color: "#ef4444" },
+                                                            { id: "Pendientes", value: hubData.pendingReceiptCount, color: "#f59e0b" },
+                                                        ],
+                                                        innerRadius: 0.6,
+                                                        compact: true,
+                                                        enableLabels: true,
+                                                        arcLabel: (d: any) => {
+                                                            const total = hubData.onTimeCount + hubData.lateCount + hubData.pendingReceiptCount
+                                                            return total > 0 ? `${Math.round((d.value / total) * 100)}%` : d.id
+                                                        },
+                                                    },
+                                                },
+                                            },
+                                        },
+                                    },
+                                ],
+                            },
+                            {
+                                id: "col-almacen",
+                                weight: 1,
+                                sections: [
                                     {
                                         id: "warehouse-bar",
                                         content: {
@@ -190,85 +236,6 @@ export function PurchasingOrdersClientView({ viewMode, externalOpenCheckout, cre
                                                         data: hubData.ordersByWarehouse,
                                                         keys: ["count"],
                                                         indexBy: "warehouse",
-                                                    },
-                                                },
-                                            },
-                                        },
-                                    },
-                                ],
-                            },
-                            {
-                                id: "col-logistics",
-                                weight: 1,
-                                sections: [
-                                    {
-                                        id: "receiving-pie",
-                                        content: {
-                                            type: "stat-card",
-                                            config: {
-                                                label: "Estado Recepción",
-                                                variant: "chart",
-                                                chart: {
-                                                    type: "pie-chart",
-                                                    config: {
-                                                        data: hubData.receivingDistribution,
-                                                        colors: { datum: "data.color" },
-                                                        enableLabels: true,
-                                                        arcLabel: (d: any) => `${d.value}`,
-                                                    },
-                                                },
-                                            },
-                                        },
-                                    },
-                                    {
-                                        id: "amount-ranges",
-                                        content: {
-                                            type: "stat-card",
-                                            config: {
-                                                label: "Distribución por Monto",
-                                                variant: "chart",
-                                                chart: {
-                                                    type: "bar-chart",
-                                                    config: {
-                                                        data: hubData.amountRanges,
-                                                        keys: ["count"],
-                                                        indexBy: "range",
-                                                    },
-                                                },
-                                            },
-                                        },
-                                    },
-                                ],
-                            },
-                            {
-                                id: "col-supplier-stats",
-                                weight: 1,
-                                sections: [
-                                    {
-                                        id: "receiving-timeline",
-                                        content: {
-                                            type: "custom",
-                                            render: (
-                                                <TimelineView events={hubData.upcomingReceipts.length > 0 ? hubData.upcomingReceipts : [{ date: "-", label: "Sin recepciones pendientes", status: "neutral" as const }]} />
-                                            ),
-                                        },
-                                    },
-                                    {
-                                        id: "stat-suppliers",
-                                        content: {
-                                            type: "stat-card",
-                                            config: {
-                                                label: "Proveedores",
-                                                value: `${hubData.supplierCount}`,
-                                                valueSize: "xl",
-                                                variant: "metric-chart",
-                                                chart: {
-                                                    type: "pie-chart",
-                                                    config: {
-                                                        data: hubData.supplierDistribution.slice(0, 6),
-                                                        enableLabels: false,
-                                                        innerRadius: 0.4,
-                                                        compact: true,
                                                     },
                                                 },
                                             },
