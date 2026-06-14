@@ -157,6 +157,12 @@ export function HeaderNavDropdowns({ navigation, iconName }: HeaderNavDropdownsP
                             "data-[state=open]:bg-muted/50"
                         )}
                     >
+                        {activeTab?.iconName && (
+                            <DynamicIcon
+                                name={activeTab.iconName}
+                                className="h-4 w-4 shrink-0 text-primary/70"
+                            />
+                        )}
                         <span className="whitespace-nowrap">{activeTab?.label || "—"}</span>
                         <ChevronsUpDown className="h-3.5 w-3.5 text-muted-foreground/60 shrink-0" />
                     </DropdownMenuTrigger>
