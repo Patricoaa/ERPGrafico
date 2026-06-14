@@ -15,7 +15,7 @@ import {
 import { Separator } from "@/components/ui/separator"
 import { Drawer } from "./Drawer"
 import { UnderlineTabs, type TabItem } from "./UnderlineTabs"
-import { EntityHubScreen, type HubPanel, type HubTab, type Granularity } from "./EntityHubScreen"
+import { AnalyticsPanel, type AnalyticsPanelItem, type AnalyticsTab, type Granularity } from "./AnalyticsPanel"
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 
 interface DataTableToolbarProps<TData> {
@@ -51,11 +51,11 @@ interface DataTableToolbarProps<TData> {
         value: string
         onValueChange: (value: string) => void
     }
-    /** Optional entity hub button (ghost icon) rendered in the button group.
-     *  If `screen` is provided, the toolbar manages an EntityHubScreen internally
+    /** Optional analytics panel button (ghost icon) rendered in the button group.
+     *  If `screen` is provided, the toolbar manages an AnalyticsPanel internally
      *  (open/close state and rendering). If only `onClick` is provided, it's a simple
      *  button handler for custom drawers. */
-    entityHubAction?: EntityHubActionConfig
+    analyticsPanel?: AnalyticsPanelConfig
 
     /** SmartSearchBar (or any left-aligned content) shown in the toolbar between tabs and right buttons */
     leftAction?: React.ReactNode
@@ -64,17 +64,20 @@ interface DataTableToolbarProps<TData> {
     rightButtonGroupAction?: React.ReactNode
 }
 
-export type EntityHubActionConfig = {
+export type AnalyticsPanelConfig = {
     onClick?: () => void
     screen?: {
         entityName: string
-        tabs: HubTab[]
+        tabs: AnalyticsTab[]
         activeTab?: string
         onTabChange?: (value: string) => void
         granularity?: Granularity
         onGranularityChange?: (g: Granularity) => void
         dateRange?: { from: string; to: string } | null
         onDateRangeChange?: (range: { from: string; to: string } | null) => void
+        cardAccounts?: Array<{ id: number; name: string; currency: string }>
+        cardAccountId?: number | null
+        onCardAccountChange?: (id: number) => void
     }
 }
 
@@ -117,18 +120,18 @@ export function DataTableToolbar<TData>(props: DataTableToolbarProps<TData>) {
         customFilterCount = 0,
         tabs,
         leftAction,
-        entityHubAction,
+        analyticsPanel,
         createAction,
         rightButtonGroupAction,
     } = props
 
     const [configDrawerOpen, setConfigDrawerOpen] = useState(false)
-    const [hubScreenOpen, setHubScreenOpen] = useState(false)
+    const [analyticsOpen, setAnalyticsOpen] = useState(false)
 
-    const handleHubClick = () => {
-        entityHubAction?.onClick?.()
-        if (entityHubAction?.screen) {
-            setHubScreenOpen(true)
+    const handleAnalyticsClick = () => {
+        analyticsPanel?.onClick?.()
+        if (analyticsPanel?.screen) {
+            setAnalyticsOpen(true)
         }
     }
 
@@ -192,17 +195,23 @@ export function DataTableToolbar<TData>(props: DataTableToolbarProps<TData>) {
                             </div>
                         )}
 
-                        {/* Entity hub button — before settings */}
-                        {entityHubAction && (
-                            <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-9 w-9 shrink-0"
-                                onClick={handleHubClick}
-                                title={entityHubAction.screen?.entityName || 'Entity Hub'}
-                            >
-                                <LayoutDashboard className="h-4 w-4" />
-                            </Button>
+                        {/* Analytics panel button — before settings */}
+                        {analyticsPanel && (
+                            <Tooltip>
+                                <TooltipTrigger asChild>
+                                    <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        className="h-9 w-9 shrink-0"
+                                        onClick={handleAnalyticsClick}
+                                    >
+                                        <LayoutDashboard className="h-4 w-4" />
+                                    </Button>
+                                </TooltipTrigger>
+                                <TooltipContent side="bottom">
+                                    Análisis de {analyticsPanel.screen?.entityName || 'Panel'}
+                                </TooltipContent>
+                            </Tooltip>
                         )}
 
                         {/* Config button with filter indicator */}
@@ -493,19 +502,22 @@ export function DataTableToolbar<TData>(props: DataTableToolbarProps<TData>) {
                 </div>
             </Drawer>
 
-            {/* Entity hub screen — managed internally when screen config provided */}
-            {entityHubAction?.screen && (
-                <EntityHubScreen
-                    open={hubScreenOpen}
-                    onOpenChange={setHubScreenOpen}
-                    entityName={entityHubAction.screen.entityName}
-                    tabs={entityHubAction.screen.tabs}
-                    activeTab={entityHubAction.screen.activeTab}
-                    onTabChange={entityHubAction.screen.onTabChange}
-                    granularity={entityHubAction.screen.granularity}
-                    onGranularityChange={entityHubAction.screen.onGranularityChange}
-                    dateRange={entityHubAction.screen.dateRange}
-                    onDateRangeChange={entityHubAction.screen.onDateRangeChange}
+            {/* Analytics panel — managed internally when screen config provided */}
+            {analyticsPanel?.screen && (
+                <AnalyticsPanel
+                    open={analyticsOpen}
+                    onOpenChange={setAnalyticsOpen}
+                    entityName={analyticsPanel.screen.entityName}
+                    tabs={analyticsPanel.screen.tabs}
+                    activeTab={analyticsPanel.screen.activeTab}
+                    onTabChange={analyticsPanel.screen.onTabChange}
+                    granularity={analyticsPanel.screen.granularity}
+                    onGranularityChange={analyticsPanel.screen.onGranularityChange}
+                    dateRange={analyticsPanel.screen.dateRange}
+                    onDateRangeChange={analyticsPanel.screen.onDateRangeChange}
+                    cardAccounts={analyticsPanel.screen.cardAccounts}
+                    cardAccountId={analyticsPanel.screen.cardAccountId}
+                    onCardAccountChange={analyticsPanel.screen.onCardAccountChange}
                 />
             )}
         </>

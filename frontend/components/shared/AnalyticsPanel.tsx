@@ -11,6 +11,11 @@ import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@
 import { ResponsiveBar } from "@nivo/bar"
 import { ResponsivePie } from "@nivo/pie"
 import { ResponsiveLine } from "@nivo/line"
+import { ResponsiveCalendar } from "@nivo/calendar"
+import { ResponsiveStream } from "@nivo/stream"
+import { ResponsiveTreeMap } from "@nivo/treemap"
+import { ResponsiveWaffle } from "@nivo/waffle"
+import { ResponsiveRadar } from "@nivo/radar"
 
 // ── Shared types ──────────────────────────────────────────────
 
@@ -32,7 +37,7 @@ export interface StatCardConfig {
     loading?: boolean
     /** Embed a chart inside the stat card */
     chart?: {
-        type: "bar-chart" | "pie-chart" | "line-chart"
+        type: "bar-chart" | "pie-chart" | "line-chart" | "calendar-heatmap" | "stream-chart" | "treemap-chart" | "waffle-chart" | "radar-chart"
         config: ChartConfig
     }
 }
@@ -73,54 +78,81 @@ interface ChartConfig {
     axisLeftLegend?: string
     /** Which field to use for legend items: "keys" (bar keys) or "indexes" (data ids, for pie) */
     legendDataFrom?: "keys" | "indexes"
+    // ── Calendar heatmap ──
+    /** Direction: "horizontal" (default) or "vertical" */
+    calendarDirection?: "horizontal" | "vertical"
+    from?: string
+    to?: string
+    // ── Stream chart ──
+    /** Keys for stream layers (must match data keys) */
+    streamKeys?: string[]
+    /** Offset type for stream */
+    streamOffsetType?: "wiggle" | "silhouette" | "expand" | "diverging" | "none"
+    // ── Treemap ──
+    /** Identity accessor for treemap nodes */
+    identity?: string
+    /** Value accessor for treemap nodes */
+    treemapValue?: string
+    // ── Waffle ──
+    /** Total value for waffle (sum of data values) */
+    waffleTotal?: number
+    /** Number of columns in waffle grid */
+    waffleColumns?: number
+    /** Row height for waffle rows */
+    waffleRows?: number
+    // ── Radar ──
+    /** Keys for radar indices */
+    radarKeys?: string[]
+    /** IndexBy for radar */
+    radarIndexBy?: string
 }
 
-export interface HubPanel {
+export interface AnalyticsPanelItem {
     id: string
     title?: string
     colSpan?: 1 | 2 | 3
     rowSpan?: 1 | 2
     content:
         | { type: "stat-card"; config: StatCardConfig }
-        | { type: "bar-chart" | "pie-chart" | "line-chart"; config: ChartConfig }
+        | { type: "bar-chart" | "pie-chart" | "line-chart" | "calendar-heatmap" | "stream-chart" | "treemap-chart" | "waffle-chart" | "radar-chart"; config: ChartConfig }
         | { type: "custom"; render: React.ReactNode }
 }
 
-export interface HubSection {
+export interface AnalyticsSection {
     id: string
     /** How many columns to span (default 1). Requires grid layout — only used when any section in the tab has colSpan > 1 */
     colSpan?: number
     content:
         | { type: "stat-card"; config: StatCardConfig }
-        | { type: "bar-chart" | "pie-chart" | "line-chart"; config: ChartConfig }
+        | { type: "bar-chart" | "pie-chart" | "line-chart" | "calendar-heatmap" | "stream-chart" | "treemap-chart" | "waffle-chart" | "radar-chart"; config: ChartConfig }
         | { type: "custom"; render: React.ReactNode }
 }
 
-export interface HubColumn {
+export interface AnalyticsColumn {
     id: string
-    sections: HubSection[]
+    sections: AnalyticsSection[]
     weight?: number
 }
 
-export interface HubTab {
+export interface AnalyticsTab {
     value: string
     label: string
     icon?: LucideIcon
     badge?: string | number
     description?: string
     /** Columnar layout (recommended) — each col splits available height evenly across sections */
-    columns?: HubColumn[]
+    columns?: AnalyticsColumn[]
     /** Legacy grid layout — kept for backwards compatibility */
-    panels?: HubPanel[]
+    panels?: AnalyticsPanelItem[]
 }
 
 export type Granularity = "day" | "month" | "year"
 
-interface EntityHubScreenProps {
+interface AnalyticsPanelProps {
     open: boolean
     onOpenChange: (open: boolean) => void
     entityName: string
-    tabs: HubTab[]
+    tabs: AnalyticsTab[]
     activeTab?: string
     onTabChange?: (value: string) => void
     /** Data segmentation — date range is managed internally via presets */
@@ -129,6 +161,10 @@ interface EntityHubScreenProps {
     /** Override date range; null removes filter */
     dateRange?: { from: string; to: string } | null
     onDateRangeChange?: (range: { from: string; to: string } | null) => void
+    /** Card account filter — synced with SmartSearchBar card filter */
+    cardAccounts?: Array<{ id: number; name: string; currency: string }>
+    cardAccountId?: number | null
+    onCardAccountChange?: (id: number) => void
 }
 
 const SEGMENTATION_PRESETS: { label: string; key: string; range: () => { from: string; to: string } | null }[] = [
@@ -243,7 +279,7 @@ export function SummaryTable({ rows }: { rows: { label: string; value: React.Rea
 
 // ── Internal panel/chart renderers ────────────────────────────
 
-function PanelItem({ panel }: { panel: HubPanel }) {
+function PanelItem({ panel }: { panel: AnalyticsPanelItem }) {
     const colSpan = panel.colSpan ?? 1
     const rowSpan = panel.rowSpan ?? 1
 
@@ -308,7 +344,7 @@ function PanelItem({ panel }: { panel: HubPanel }) {
     )
 }
 
-function SectionItem({ section }: { section: HubSection }) {
+function SectionItem({ section }: { section: AnalyticsSection }) {
     if (section.content.type === "stat-card") {
         const card = section.content.config
         const effectiveVariant = card.variant === "fill" ? "fill"
@@ -384,7 +420,7 @@ function ChartRenderer({
     type,
     config,
 }: {
-    type: "bar-chart" | "pie-chart" | "line-chart"
+    type: "bar-chart" | "pie-chart" | "line-chart" | "calendar-heatmap" | "stream-chart" | "treemap-chart" | "waffle-chart" | "radar-chart"
     config: ChartConfig
 }) {
     const chartColors = React.useMemo(() => getCssChartColors(), [])
@@ -580,6 +616,135 @@ function ChartRenderer({
                     {...sharedProps}
                 />
             )}
+            {type === "calendar-heatmap" && (
+                <ResponsiveCalendar
+                    data={config.data as any}
+                    margin={m ?? { top: pit, right: pit, bottom: pit, left: pit }}
+                    from={config.from ?? ((config.data as any[])?.[0]?.day) ?? new Date().toISOString().split("T")[0]}
+                    to={config.to ?? ((config.data as any[])?.[(config.data as any[])?.length - 1]?.day) ?? new Date().toISOString().split("T")[0]}
+                    direction={config.calendarDirection ?? "horizontal"}
+                    emptyColor="hsl(var(--muted))"
+                    colors={["hsl(var(--chart-2))", "hsl(var(--chart-3))", "hsl(var(--chart-4))", "hsl(var(--chart-5))"] as any}
+                    monthBorderColor="hsl(var(--border))"
+                    dayBorderColor="hsl(var(--background))"
+                    dayBorderWidth={2}
+                    theme={nivoTheme}
+                    legends={config.showLegend ? [{
+                        anchor: "bottom-right" as const,
+                        direction: "row" as const,
+                        translateY: 28,
+                        itemWidth: 40,
+                        itemHeight: 14,
+                        itemDirection: "left-to-right" as const,
+                        itemsSpacing: 6,
+                        symbolSize: 8,
+                        itemCount: 4,
+                    }] : []}
+                />
+            )}
+            {type === "stream-chart" && (
+                <ResponsiveStream
+                    data={config.data as any}
+                    keys={config.streamKeys ?? []}
+                    margin={m ?? { top: pit + legendPad, right: pit, bottom: 28, left: 36 }}
+                    offsetType={config.streamOffsetType ?? "none"}
+                    curve="natural"
+                    colors={{ scheme: "nivo" } as any}
+                    borderWidth={0}
+                    enableGridX={config.enableGridX ?? false}
+                    enableGridY={config.enableGridY ?? false}
+                    axisBottom={{
+                        tickSize: 0,
+                        tickPadding: 8,
+                        legend: config.axisBottomLegend,
+                        legendPosition: "middle" as const,
+                        legendOffset: 36,
+                    }}
+                    axisLeft={config.compact ? null : {
+                        tickSize: 0,
+                        tickPadding: 8,
+                        format: config.valueFormat ?? "~s",
+                    }}
+                    theme={nivoTheme}
+                    legends={config.showLegend ? [{
+                        anchor: "top" as const,
+                        direction: "row" as const,
+                        translateY: -22,
+                        itemWidth: 80,
+                        itemHeight: 14,
+                        itemsSpacing: 12,
+                        symbolSize: 8,
+                        symbolShape: "circle" as const,
+                    }] : []}
+                />
+            )}
+            {type === "treemap-chart" && (
+                <ResponsiveTreeMap
+                    data={config.data as any}
+                    identity={config.identity ?? "id"}
+                    value={config.treemapValue ?? "value"}
+                    margin={m ?? { top: pit, right: pit, bottom: pit, left: pit }}
+                    labelSkipSize={16}
+                    borderWidth={2}
+                    borderColor={{ theme: "background" }}
+                    colors={{ scheme: "nivo" } as any}
+                    theme={nivoTheme}
+                    leavesOnly={true}
+                    enableLabel={config.enableLabels ?? true}
+                />
+            )}
+            {type === "waffle-chart" && (
+                <ResponsiveWaffle
+                    data={config.data as any}
+                    total={config.waffleTotal ?? 100}
+                    columns={config.waffleColumns ?? 14}
+                    rows={config.waffleRows ?? 8}
+                    margin={m ?? { top: pit, right: pit, bottom: pit, left: pit }}
+                    colors={{ scheme: "nivo" } as any}
+                    borderWidth={2}
+                    borderColor={{ theme: "background" }}
+                    theme={nivoTheme}
+                    valueFormat={config.valueFormat ?? " >-.0f"}
+                    legends={config.showLegend ? [{
+                        anchor: "bottom" as const,
+                        direction: "row" as const,
+                        translateY: 28,
+                        itemWidth: 60,
+                        itemHeight: 14,
+                        itemsSpacing: 8,
+                        symbolSize: 8,
+                    }] : []}
+                />
+            )}
+            {type === "radar-chart" && (
+                <ResponsiveRadar
+                    data={config.data as any}
+                    keys={config.radarKeys ?? []}
+                    indexBy={config.radarIndexBy ?? "category"}
+                    margin={m ?? { top: 40, right: 60, bottom: 40, left: 60 }}
+                    curve="catmullRomClosed"
+                    borderWidth={2}
+                    borderColor={{ from: "color" }}
+                    gridLevels={3}
+                    gridShape="circular"
+                    gridLabelOffset={12}
+                    theme={nivoTheme}
+                    colors={{ scheme: "nivo" } as any}
+                    fillOpacity={0.15}
+                    blendMode="multiply"
+                    enableDotLabel={config.enableLabels ?? true}
+                    legends={config.showLegend ? [{
+                        anchor: "top-left" as const,
+                        direction: "column" as const,
+                        translateX: -40,
+                        translateY: -20,
+                        itemWidth: 80,
+                        itemHeight: 20,
+                        itemsSpacing: 8,
+                        symbolSize: 8,
+                    }] : []}
+                />
+            )}
 
             {hoverPoint && (
                 <div
@@ -599,7 +764,7 @@ function ChartRenderer({
 
 // ── Main component ────────────────────────────────────────────
 
-export function EntityHubScreen({
+export function AnalyticsPanel({
     open,
     onOpenChange,
     entityName,
@@ -610,7 +775,10 @@ export function EntityHubScreen({
     onGranularityChange,
     dateRange: dateRangeProp,
     onDateRangeChange,
-}: EntityHubScreenProps) {
+    cardAccounts,
+    cardAccountId,
+    onCardAccountChange,
+}: AnalyticsPanelProps) {
     const [internalTab, setInternalTab] = useState(tabs[0]?.value ?? "")
 
     const currentTab = activeTabProp ?? internalTab
@@ -629,7 +797,7 @@ export function EntityHubScreen({
         <Drawer
             open={open}
             onOpenChange={onOpenChange}
-            title={`Hub · ${entityName}`}
+            title={`Análisis · ${entityName}`}
             icon={<LayoutDashboard />}
             side="bottom"
             defaultSize="70vh"
@@ -718,43 +886,67 @@ export function EntityHubScreen({
                     </UnderlineTabsContent>
                 ))}
             </UnderlineTabs>
-            {granularity && onGranularityChange && (
-                <div className="flex items-center justify-center gap-5 px-6 py-2 border-t border-border shrink-0">
-                    <span className="text-xs text-muted-foreground font-medium">Rango de fechas:</span>
-                    <Select
-                        value={activePreset}
-                        onValueChange={(key) => {
-                            const preset = SEGMENTATION_PRESETS.find(p => p.key === key)
-                            if (preset) handlePresetClick(preset)
-                        }}
-                    >
-                        <SelectTrigger className="w-[140px] h-8 text-xs">
-                            <SelectValue placeholder="Seleccionar" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            {SEGMENTATION_PRESETS.map((preset) => (
-                                <SelectItem key={preset.key} value={preset.key} className="text-xs">
-                                    {preset.label}
-                                </SelectItem>
-                            ))}
-                        </SelectContent>
-                    </Select>
-                    <span className="text-xs text-muted-foreground font-medium">Agrupar por:</span>
-                    <Select
-                        value={granularity}
-                        onValueChange={(v) => onGranularityChange(v as "day" | "month" | "year")}
-                    >
-                        <SelectTrigger className="w-[120px] h-8 text-xs">
-                            <SelectValue placeholder="Seleccionar" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="day" className="text-xs">Día</SelectItem>
-                            <SelectItem value="month" className="text-xs">Mes</SelectItem>
-                            <SelectItem value="year" className="text-xs">Año</SelectItem>
-                        </SelectContent>
-                    </Select>
+            {(cardAccounts && cardAccounts.length > 0 && onCardAccountChange) || (granularity && onGranularityChange) ? (
+                <div className="flex items-center justify-center gap-5 px-6 py-2 border-t border-border shrink-0 flex-wrap">
+                    {cardAccounts && cardAccounts.length > 0 && onCardAccountChange && (
+                        <>
+                            <span className="text-xs text-muted-foreground font-medium">Tarjeta:</span>
+                            <Select
+                                value={String(cardAccountId ?? cardAccounts[0]?.id ?? '')}
+                                onValueChange={(v) => onCardAccountChange(Number(v))}
+                            >
+                                <SelectTrigger className="w-[180px] h-8 text-xs">
+                                    <SelectValue placeholder="Seleccionar tarjeta" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {cardAccounts.map((acct) => (
+                                        <SelectItem key={acct.id} value={String(acct.id)} className="text-xs">
+                                            {acct.name}
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                        </>
+                    )}
+                    {granularity && onGranularityChange && (
+                        <>
+                            <span className="text-xs text-muted-foreground font-medium">Rango de fechas:</span>
+                            <Select
+                                value={activePreset}
+                                onValueChange={(key) => {
+                                    const preset = SEGMENTATION_PRESETS.find(p => p.key === key)
+                                    if (preset) handlePresetClick(preset)
+                                }}
+                            >
+                                <SelectTrigger className="w-[140px] h-8 text-xs">
+                                    <SelectValue placeholder="Seleccionar" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {SEGMENTATION_PRESETS.map((preset) => (
+                                        <SelectItem key={preset.key} value={preset.key} className="text-xs">
+                                            {preset.label}
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                            <span className="text-xs text-muted-foreground font-medium">Agrupar por:</span>
+                            <Select
+                                value={granularity}
+                                onValueChange={(v) => onGranularityChange(v as "day" | "month" | "year")}
+                            >
+                                <SelectTrigger className="w-[120px] h-8 text-xs">
+                                    <SelectValue placeholder="Seleccionar" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="day" className="text-xs">Día</SelectItem>
+                                    <SelectItem value="month" className="text-xs">Mes</SelectItem>
+                                    <SelectItem value="year" className="text-xs">Año</SelectItem>
+                                </SelectContent>
+                            </Select>
+                        </>
+                    )}
                 </div>
-            )}
+            ) : null}
         </Drawer>
     )
 }

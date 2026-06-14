@@ -2788,6 +2788,37 @@ class CreditCardStatementViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
             status=status.HTTP_201_CREATED,
         )
 
+    @action(detail=False, methods=['get'], url_path='analytics')
+    def analytics(self, request):
+        """Retorna analytics consolidados de TC para el hub de gestión.
+
+        Query params:
+          - card_account (opcional): filtrar por cuenta específica.
+          - months (opcional, default 12): ventana de meses históricos.
+        """
+        from .card_analytics import CardAnalyticsService
+        from .models import TreasuryAccount
+
+        card_account_id = request.query_params.get('card_account')
+        months_str = request.query_params.get('months', '12')
+        months = max(1, int(months_str)) if months_str.isdigit() else 12
+
+        card_account = None
+        if card_account_id:
+            try:
+                card_account = TreasuryAccount.objects.get(pk=card_account_id)
+            except TreasuryAccount.DoesNotExist:
+                return Response(
+                    {'detail': 'card_account no existe.'},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+        data = CardAnalyticsService.get_consolidated_hub_data(
+            card_account=card_account,
+            months=months,
+        )
+        return Response(data)
+
     @action(detail=True, methods=['get'], url_path='charges')
     def charges(self, request, pk=None):
         """Retorna cargos facturados en este statement (movimientos + cuotas + pendientes)."""
