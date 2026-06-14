@@ -4,8 +4,8 @@ import { useMemo, useState } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import {
-    Plus, Receipt, CreditCard, Wallet,
-    Gauge, ArrowUpRight,
+    Plus, Receipt, CreditCard,
+    Gauge,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import type { ColumnDef } from '@tanstack/react-table'
@@ -28,9 +28,8 @@ import type { PendingChargeRow, UpcomingInstallment, UnbilledItemRow } from '../
 import { mapToUnbilledItemRows } from './utils'
 import { AddChargeModal } from './AddChargeModal'
 import { BillChargesModal } from './BillChargesModal'
-
+import { ResponsivePie } from "@nivo/pie"
 import { useHubPanel } from '@/components/providers'
-import { useTcHubData } from './useTcHubData'
 
 interface UnbilledChargesViewProps {
     creditCardAccounts: Array<{ id: number; name: string; currency: string }>
@@ -116,8 +115,6 @@ export function UnbilledChargesView({
         () => mapToUnbilledItemRows(charges, upcomingInstallments),
         [charges, upcomingInstallments],
     )
-
-    const hubData = useTcHubData(selectedCardAccount)
 
     const handleAddChargeSuccess = () => {
         setShowAddCharge(false)
@@ -262,49 +259,25 @@ export function UnbilledChargesView({
 
     // ── Charge type helpers for hub ──
     const chargeTypeDistribution = useMemo(() => {
-        const groups: Record<string, { count: number; amount: number }> = {}
+        const groups: Record<string, { count: number; amount: number; display: string }> = {}
         for (const c of charges) {
             const t = c.charge_type || 'OTHER'
-            if (!groups[t]) groups[t] = { count: 0, amount: 0 }
+            if (!groups[t]) groups[t] = { count: 0, amount: 0, display: c.charge_type_display || t }
             groups[t].count++
             groups[t].amount += Number(c.amount)
         }
         return Object.entries(groups)
-            .map(([id, v]) => ({ id, count: v.count, amount: v.amount, color: CHARGE_TYPE_COLORS[id] ?? CHARGE_TYPE_COLORS.OTHER }))
+            .map(([id, v]) => ({ id, display: v.display, count: v.count, amount: v.amount, color: CHARGE_TYPE_COLORS[id] ?? CHARGE_TYPE_COLORS.OTHER }))
             .sort((a, b) => b.amount - a.amount)
     }, [charges])
 
-    const partnerDistribution = useMemo(() => {
-        const groups: Record<string, number> = {}
-        for (const i of upcomingInstallments) {
-            const p = i.partner_name || 'Desconocido'
-            groups[p] = (groups[p] ?? 0) + Number(i.principal_amount)
-        }
-        return Object.entries(groups)
-            .map(([id, value]) => ({ id, value }))
-            .sort((a, b) => b.value - a.value)
-            .slice(0, 10)
-    }, [upcomingInstallments])
+    const totalInstAmount = useMemo(
+        () => upcomingInstallments.reduce((s, i) => s + Number(i.principal_amount), 0),
+        [upcomingInstallments],
+    )
+    const totalInstCount = upcomingInstallments.length
 
-    const topPartners = useMemo(() => {
-        const groups: Record<string, { total: number; count: number }> = {}
-        for (const i of upcomingInstallments) {
-            const p = i.partner_name || 'Desconocido'
-            if (!groups[p]) groups[p] = { total: 0, count: 0 }
-            groups[p].total += Number(i.principal_amount)
-            groups[p].count++
-        }
-        return Object.entries(groups)
-            .map(([partner, v]) => ({ partner, total: v.total, count: v.count }))
-            .sort((a, b) => b.total - a.total)
-            .slice(0, 8)
-    }, [upcomingInstallments])
-
-    const creditComposition = useMemo(() => forecast ? [
-        { id: "Deuda Facturada", value: parseFloat(forecast.current_debt), color: "#ef4444" },
-        { id: "No Facturado", value: parseFloat(forecast.total_unbilled), color: "#f59e0b" },
-        { id: "Disponible", value: parseFloat(forecast.available_credit ?? "0"), color: "#22c55e" },
-    ].filter(d => d.value > 0) : [], [forecast])
+    const usedPercent = forecast?.credit_limit ? (parseFloat(forecast.total_used) / parseFloat(forecast.credit_limit)) * 100 : 0
 
     return (
         <div className="h-full flex flex-col">
@@ -329,87 +302,44 @@ export function UnbilledChargesView({
                                             weight: 2,
                                             sections: [
                                                 {
-                                                    id: 'cupo-kpis',
-                                                    colSpan: 3,
+                                                    id: 'cupo-unified',
                                                     content: {
                                                         type: 'custom',
-                                                        render: (
-                                                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                                                                <StatCard
-                                                                    label="Cupo Total"
-                                                                    value={forecast?.credit_limit ? <MoneyDisplay amount={parseFloat(forecast.credit_limit)} inline /> : '—'}
-                                                                    icon={CreditCard}
-                                                                    accent="primary"
-                                                                    variant="fill"
-                                                                    valueSize="lg"
-                                                                />
-                                                                <StatCard
-                                                                    label="Cupo Utilizado"
-                                                                    value={forecast?.total_used ? <MoneyDisplay amount={parseFloat(forecast.total_used)} inline /> : '—'}
-                                                                    icon={Wallet}
-                                                                    accent="warning"
-                                                                    variant="fill"
-                                                                    valueSize="lg"
-                                                                />
-                                                                <StatCard
-                                                                    label="Cupo Disponible"
-                                                                    value={forecast?.available_credit ? <MoneyDisplay amount={parseFloat(forecast.available_credit)} inline /> : '—'}
-                                                                    icon={ArrowUpRight}
-                                                                    accent="success"
-                                                                    variant="fill"
-                                                                    valueSize="lg"
-                                                                />
-                                                            </div>
-                                                        ),
-                                                    },
-                                                },
-                                                {
-                                                    id: 'cupo-donut',
-                                                    colSpan: 2,
-                                                    content: creditComposition.length > 0 ? {
-                                                        type: 'stat-card',
-                                                        config: {
-                                                            label: 'Composición del Cupo',
-                                                            variant: 'chart',
-                                                            chart: {
-                                                                type: 'pie-chart',
-                                                                config: {
-                                                                    data: creditComposition.map(d => ({ id: d.id, value: d.value, color: undefined })),
-                                                                    innerRadius: 0.6,
-                                                                    showLegend: true,
-                                                                    legendDataFrom: 'indexes',
-                                                                    enableLabels: true,
-                                                                    arcLabel: (d: any) => `${Math.round((d.value / creditComposition.reduce((s, c) => s + c.value, 0)) * 100)}%`,
-                                                                },
-                                                            },
-                                                        },
-                                                    } : {
-                                                        type: 'custom',
-                                                        render: (
-                                                            <p className="text-sm text-muted-foreground italic py-4 text-center">Sin datos de cupo</p>
-                                                        ),
-                                                    },
-                                                },
-                                                {
-                                                    id: 'cupo-table',
-                                                    colSpan: 1,
-                                                    content: forecast?.credit_limit ? {
-                                                        type: 'custom',
-                                                        render: (
-                                                            <SummaryTable
-                                                                rows={[
-                                                                    { label: 'Límite de Crédito', value: <MoneyDisplay amount={parseFloat(forecast.credit_limit)} inline /> },
-                                                                    { label: 'Total Usado', value: <MoneyDisplay amount={parseFloat(forecast.total_used)} inline /> },
-                                                                    { label: 'Disponible', value: <MoneyDisplay amount={parseFloat(forecast.available_credit ?? '0')} inline /> },
-                                                                    { label: '% Usado', value: `${((parseFloat(forecast.total_used) / parseFloat(forecast.credit_limit ?? '1')) * 100).toFixed(1)}%` },
-                                                                    { label: 'Deuda Facturada', value: <MoneyDisplay amount={parseFloat(forecast.current_debt)} inline /> },
-                                                                    { label: 'Comprometido (No Facturado)', value: <MoneyDisplay amount={hubData.totalUnbilled} inline /> },
-                                                                ]}
+                                                         render: forecast?.credit_limit ? (
+                                                            <StatCard
+                                                                label="Cupo"
+                                                                variant="chart"
+                                                                className="flex-1"
+                                                                chart={
+                                                                    <div className="flex flex-col gap-4">
+                                                                        <div className="flex flex-col gap-1.5">
+                                                                            <div className="flex justify-between items-center text-xs">
+                                                                                <span className="font-bold text-foreground">
+                                                                                    <MoneyDisplay amount={parseFloat(forecast.total_used)} inline /> usado
+                                                                                </span>
+                                                                                <span className="font-bold text-muted-foreground">
+                                                                                    <MoneyDisplay amount={parseFloat(forecast.available_credit ?? '0')} inline /> disp.
+                                                                                </span>
+                                                                            </div>
+                                                                            <div className="h-1.5 bg-muted rounded-full overflow-hidden">
+                                                                                <div
+                                                                                    className="h-full rounded-full bg-warning transition-all"
+                                                                                    style={{ width: `${Math.min(usedPercent, 100)}%` }}
+                                                                                />
+                                                                            </div>
+                                                                        </div>
+                                                                        <SummaryTable
+                                                                            rows={[
+                                                                                { label: 'Límite de Crédito', value: <MoneyDisplay amount={parseFloat(forecast.credit_limit)} inline /> },
+                                                                                { label: 'Total Usado', value: <MoneyDisplay amount={parseFloat(forecast.total_used)} inline /> },
+                                                                                { label: 'Disponible', value: <MoneyDisplay amount={parseFloat(forecast.available_credit ?? '0')} inline /> },
+                                                                                { label: '% Usado', value: `${usedPercent.toFixed(1)}%` },
+                                                                            ]}
+                                                                        />
+                                                                    </div>
+                                                                }
                                                             />
-                                                        ),
-                                                    } : {
-                                                        type: 'custom',
-                                                        render: (
+                                                        ) : (
                                                             <p className="text-sm text-muted-foreground italic py-4 text-center">Sin datos de cupo</p>
                                                         ),
                                                     },
@@ -422,75 +352,63 @@ export function UnbilledChargesView({
                                             sections: [
                                                 {
                                                     id: 'charge-types-pie',
-                                                    content: chargeTypeDistribution.length > 0 ? {
-                                                        type: 'stat-card',
-                                                        config: {
-                                                            label: 'Distribución por Tipo de Cargo',
-                                                            variant: 'chart',
-                                                            chart: {
-                                                                type: 'pie-chart',
-                                                                config: {
-                                                                    data: chargeTypeDistribution.map(d => ({ id: d.id, value: d.amount })),
-                                                                    innerRadius: 0.6,
-                                                                    showLegend: true,
-                                                                    legendDataFrom: 'indexes',
-                                                                    enableLabels: true,
-                                                                    arcLabel: (d: any) => `${Math.round((d.value / chargeTypeDistribution.reduce((s, c) => s + c.amount, 0)) * 100)}%`,
-                                                                },
-                                                            },
-                                                        },
-                                                    } : {
+                                                    content: chargeTypeDistribution.length > 0 || totalInstCount > 0 ? {
                                                         type: 'custom',
                                                         render: (
-                                                            <p className="text-sm text-muted-foreground italic py-4 text-center">Sin cargos</p>
-                                                        ),
-                                                    },
-                                                },
-                                                {
-                                                    id: 'charge-types-table',
-                                                    content: chargeTypeDistribution.length > 0 ? {
-                                                        type: 'custom',
-                                                        render: (
-                                                            <div>
-                                                                <h4 className="text-[11px] font-black uppercase tracking-widest text-muted-foreground mb-3">
-                                                                    Resumen por Tipo
-                                                                </h4>
-                                                                <SummaryTable
-                                                                    rows={chargeTypeDistribution.map(ct => ({
-                                                                        label: ct.id,
-                                                                        value: <span className="text-xs font-bold">${fmt(ct.amount)} ({ct.count} cargos)</span>,
-                                                                    }))}
-                                                                />
-                                                            </div>
-                                                        ),
-                                                    } : {
-                                                        type: 'custom',
-                                                        render: (
-                                                            <p className="text-sm text-muted-foreground italic py-4 text-center">Sin cargos</p>
-                                                        ),
-                                                    },
-                                                },
-                                                {
-                                                    id: 'top-partners',
-                                                    content: topPartners.length > 0 ? {
-                                                        type: 'custom',
-                                                        render: (
-                                                            <div>
-                                                                <h4 className="text-[11px] font-black uppercase tracking-widest text-muted-foreground mb-3">
-                                                                    Cuotas Pendientes por Proveedor
-                                                                </h4>
-                                                                <SummaryTable
-                                                                    rows={topPartners.map(p => ({
-                                                                        label: p.partner,
-                                                                        value: <span className="text-xs font-bold">${fmt(p.total)} ({p.count} cuotas)</span>,
-                                                                    }))}
-                                                                />
-                                                            </div>
+                                                            <StatCard label="Distribución de Cargos" variant="chart" className="flex-1" chart={
+                                                                <div className="flex flex-col gap-3">
+                                                                    <div className="flex-1 min-h-0" style={{ minHeight: 160 }}>
+                                                                        <ResponsivePie
+                                                                            data={[
+                                                                                ...chargeTypeDistribution.map(d => ({ id: d.display, value: d.amount })),
+                                                                                ...(totalInstCount > 0 ? [{ id: 'Cuotas', value: totalInstAmount }] : []),
+                                                                            ]}
+                                                                            innerRadius={0.6}
+                                                                            padAngle={0}
+                                                                            cornerRadius={0}
+                                                                            borderWidth={2}
+                                                                            borderColor={{ theme: "background" }}
+                                                                            enableArcLinkLabels={false}
+                                                                            enableArcLabels={true}
+                                                                            arcLabel={(d) => `${Math.round((d.value / [...chargeTypeDistribution.map(c => c.amount), ...(totalInstCount > 0 ? [totalInstAmount] : [])].reduce((s, v) => s + v, 0)) * 100)}%`}
+                                                                            arcLabelsRadiusOffset={0.55}
+                                                                            colors={{ scheme: "nivo" }}
+                                                                            theme={{
+                                                                                labels: { text: { fontSize: 10 } },
+                                                                                legends: { text: { fontSize: 10 } },
+                                                                            }}
+                                                                            legends={[{
+                                                                                anchor: "bottom",
+                                                                                direction: "row",
+                                                                                translateY: 28,
+                                                                                itemWidth: 100,
+                                                                                itemHeight: 14,
+                                                                                itemsSpacing: 8,
+                                                                                symbolSize: 8,
+                                                                            }]}
+                                                                        />
+                                                                    </div>
+                                                                    <div className="shrink-0">
+                                                                        <SummaryTable
+                                                                            rows={[
+                                                                                ...chargeTypeDistribution.map(ct => ({
+                                                                                    label: ct.display,
+                                                                                    value: <span className="text-xs font-bold">${fmt(ct.amount)} ({ct.count} cargos)</span>,
+                                                                                })),
+                                                                                ...(totalInstCount > 0 ? [{
+                                                                                    label: 'Cuotas',
+                                                                                    value: <span className="text-xs font-bold">${fmt(totalInstAmount)} ({totalInstCount} cuotas)</span>,
+                                                                                }] : []),
+                                                                            ]}
+                                                                        />
+                                                                    </div>
+                                                                </div>
+                                                            } />
                                                         ),
                                                     } : {
                                                         type: 'custom',
                                                         render: (
-                                                            <p className="text-sm text-muted-foreground italic py-4 text-center">Sin cuotas pendientes</p>
+                                                            <p className="text-sm text-muted-foreground italic py-4 text-center">Sin cargos ni cuotas</p>
                                                         ),
                                                     },
                                                 },
@@ -502,6 +420,8 @@ export function UnbilledChargesView({
                             cardAccounts: creditCardAccounts,
                             cardAccountId: selectedCardAccount,
                             onCardAccountChange: (id) => applyFilter('card', String(id)),
+                            scope: filters.scope as 'month' | 'all',
+                            onScopeChange: (v) => applyFilter('scope', v),
                         },
                     }}
                     leftAction={

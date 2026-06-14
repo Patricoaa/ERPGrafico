@@ -5,12 +5,12 @@ import React, { useEffect, useState, useMemo } from "react"
 import { useSearchParams, useRouter, usePathname } from "next/navigation"
 import { ActionConfirmModal, DataTableView, DocumentCompletionModal, DomainHubStatus, SmartSearchBar, useSmartSearch } from '@/components/shared'
 import { DataTableColumnHeader, DataCell } from '@/components/shared'
-import type { EntityHubActionConfig } from '@/components/shared'
+import type { AnalyticsPanelConfig } from '@/components/shared'
 import { type ColumnDef } from "@tanstack/react-table"
 import { Button } from "@/components/ui/button"
 import { ArrowRight, ArrowLeft, BarChart3, Building2, DollarSign, Wallet, CreditCard, ShoppingBag, Hash } from "lucide-react"
 import api from "@/lib/api"
-import { PurchaseOrderModal, DocumentRegistrationModal, PurchaseCheckoutWizard, usePurchasingOrders, usePurchasingNotes, purchaseOrderSearchDef, usePurchasingHubData } from "@/features/purchasing"
+import { PurchaseOrderModal, DocumentRegistrationModal, PurchaseCheckoutWizard, usePurchasingOrders, usePurchasingNotes, purchaseOrderSearchDef, usePurchasingAnalyticsData } from "@/features/purchasing"
 import type { PurchaseOrderAPI } from "@/features/purchasing"
 import { toast } from "sonner"
 
@@ -64,14 +64,14 @@ export function PurchasingOrdersClientView({ viewMode, externalOpenCheckout, cre
     const [granularity, setGranularity] = useState<"day" | "month" | "year">("month")
     const [dateRange, setDateRange] = useState<{ from: string; to: string } | null>(null)
 
-    const hubData = usePurchasingHubData(orders as PurchaseOrderAPI[], dateRange, granularity)
+    const analyticsData = usePurchasingAnalyticsData(orders as PurchaseOrderAPI[], dateRange, granularity)
 
-    const entityHubAction: EntityHubActionConfig = useMemo(() => {
+    const analyticsPanel: AnalyticsPanelConfig = useMemo(() => {
         if (viewMode !== "orders") return { screen: { entityName: "", tabs: [] } }
 
-        const comboData = hubData.monthlyVolume.map((m, i) => ({
+        const comboData = analyticsData.monthlyVolume.map((m, i) => ({
             ...m,
-            avg: hubData.monthlyAvg[i]?.avg ?? 0,
+            avg: analyticsData.monthlyAvg[i]?.avg ?? 0,
         }))
 
         return {
@@ -100,8 +100,7 @@ export function PurchasingOrdersClientView({ viewMode, externalOpenCheckout, cre
                                                 label: "Volumen de Órdenes",
                                                 variant: "chart",
                                                 chart: {
-                                                    type: "bar-chart",
-                                                    config: {
+                                                        type: "bar-chart",
                                                         data: comboData,
                                                         keys: ["total"],
                                                         indexBy: "month",
@@ -114,7 +113,6 @@ export function PurchasingOrdersClientView({ viewMode, externalOpenCheckout, cre
                                                         axisBottomLegend: "Período",
                                                         axisLeftLegend: "Monto ($)",
                                                     },
-                                                },
                                             },
                                         },
                                     },
@@ -132,14 +130,10 @@ export function PurchasingOrdersClientView({ viewMode, externalOpenCheckout, cre
                                                 label: "Forma de Pago",
                                                 variant: "chart",
                                                 chart: {
-                                                    type: "pie-chart",
-                                                    config: {
-                                                        data: hubData.paymentMethodDistribution,
-                                                        colors: { datum: "data.color" },
+                                                        type: "pie-chart",
+                                                        data: analyticsData.paymentMethodDistribution,
                                                         showLegend: true,
-                                                        legendDataFrom: "indexes",
                                                     },
-                                                },
                                             },
                                         },
                                     },
@@ -166,9 +160,8 @@ export function PurchasingOrdersClientView({ viewMode, externalOpenCheckout, cre
                                                 label: "Top Proveedores",
                                                 variant: "chart",
                                                 chart: {
-                                                    type: "bar-chart",
-                                                    config: {
-                                                        data: hubData.topSuppliers,
+                                                        type: "bar-chart",
+                                                        data: analyticsData.topSuppliers,
                                                         keys: ["total"],
                                                         indexBy: "supplier",
                                                         valueFormat: "~s",
@@ -178,7 +171,6 @@ export function PurchasingOrdersClientView({ viewMode, externalOpenCheckout, cre
                                                             color: "#22c55e",
                                                         },
                                                     },
-                                                },
                                             },
                                         },
                                     },
@@ -195,25 +187,23 @@ export function PurchasingOrdersClientView({ viewMode, externalOpenCheckout, cre
                                             config: {
                                                 label: "Entregas a Tiempo",
                                                 variant: "metric-chart",
-                                                value: `${hubData.onTimeCount}`,
-                                                subtext: `${hubData.lateCount} con retraso · ${hubData.pendingReceiptCount} pendientes · ${hubData.overdueCount} vencidas`,
+                                                value: `${analyticsData.onTimeCount}`,
+                                                subtext: `${analyticsData.lateCount} con retraso · ${analyticsData.pendingReceiptCount} pendientes · ${analyticsData.overdueCount} vencidas`,
                                                 chart: {
-                                                    type: "pie-chart",
-                                                    config: {
+                                                        type: "pie-chart",
                                                         data: [
-                                                            { id: "A tiempo", value: hubData.onTimeCount, color: "#22c55e" },
-                                                            { id: "Con retraso", value: hubData.lateCount, color: "#ef4444" },
-                                                            { id: "Pendientes", value: hubData.pendingReceiptCount, color: "#f59e0b" },
+                                                            { id: "A tiempo", value: analyticsData.onTimeCount, color: "#22c55e" },
+                                                            { id: "Con retraso", value: analyticsData.lateCount, color: "#ef4444" },
+                                                            { id: "Pendientes", value: analyticsData.pendingReceiptCount, color: "#f59e0b" },
                                                         ],
                                                         innerRadius: 0.6,
                                                         compact: true,
                                                         enableLabels: true,
-                                                        arcLabel: (d: any) => {
-                                                            const total = hubData.onTimeCount + hubData.lateCount + hubData.pendingReceiptCount
+                                                        arcLabel: (d: { id: string; value: number }) => {
+                                                            const total = analyticsData.onTimeCount + analyticsData.lateCount + analyticsData.pendingReceiptCount
                                                             return total > 0 ? `${Math.round((d.value / total) * 100)}%` : d.id
                                                         },
                                                     },
-                                                },
                                             },
                                         },
                                     },
@@ -231,13 +221,11 @@ export function PurchasingOrdersClientView({ viewMode, externalOpenCheckout, cre
                                                 label: "Órdenes por Almacén",
                                                 variant: "chart",
                                                 chart: {
-                                                    type: "bar-chart",
-                                                    config: {
-                                                        data: hubData.ordersByWarehouse,
+                                                        type: "bar-chart",
+                                                        data: analyticsData.ordersByWarehouse,
                                                         keys: ["count"],
                                                         indexBy: "warehouse",
                                                     },
-                                                },
                                             },
                                         },
                                     },
@@ -250,7 +238,7 @@ export function PurchasingOrdersClientView({ viewMode, externalOpenCheckout, cre
                 ],
             },
         }
-    }, [hubData, viewMode])
+    }, [analyticsData, viewMode])
 
     const toggleSelection = (id: number) => {
         const isSelected = viewMode === "orders" ? hubConfig?.orderId === id : hubConfig?.invoiceId === id
@@ -602,7 +590,7 @@ export function PurchasingOrdersClientView({ viewMode, externalOpenCheckout, cre
                         }
                         isHubOpen={isHubOpen}
                         isFiltered={isFiltered}
-                        entityHubAction={viewMode === 'orders' ? entityHubAction : undefined}
+                        analyticsPanel={viewMode === 'orders' ? analyticsPanel : undefined}
                         emptyState={{
                             context: "purchase",
                             title: viewMode === 'orders' ? "Aún no hay órdenes de compra" : "Aún no hay notas de compra",
