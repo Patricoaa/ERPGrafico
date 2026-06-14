@@ -8,7 +8,7 @@ import Link from "next/link"
 import React from "react"
 
 type Accent = "primary" | "info" | "success" | "warning" | "destructive" | "accent" | "muted"
-type Variant = "default" | "compact" | "minimal" | "fill" | "chart" | "metric-chart"
+type Variant = "default" | "compact" | "minimal" | "fill" | "chart" | "metric-chart" | "plain"
 type ValueSize = "sm" | "md" | "lg" | "xl"
 
 export interface StatCardChart {
@@ -150,6 +150,19 @@ export function StatCard({
           className: cn(
             baseCardClasses,
             accentBg[accent],
+            active && activeRing[accent],
+            className,
+          ),
+          onClick,
+          role: onClick ? "button" as const : undefined,
+          tabIndex: onClick ? 0 : undefined,
+          onKeyDown: onClick ? (e: React.KeyboardEvent) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onClick() } } : undefined,
+        }
+      : variant === "plain"
+      ? {
+          className: cn(
+            baseCardClasses,
+            onClick && "cursor-pointer hover:border-primary/20",
             active && activeRing[accent],
             className,
           ),

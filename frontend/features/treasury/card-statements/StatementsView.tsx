@@ -2,11 +2,11 @@
 
 import { useState, useMemo } from 'react'
 import type { ColumnDef } from '@tanstack/react-table'
-import { CreditCard, AlertTriangle, Eye, BarChart3, DollarSign, Calendar, TrendingUp, Receipt, Clock, Activity } from 'lucide-react'
+import { CreditCard, AlertTriangle, Eye, BarChart3, DollarSign, Calendar, TrendingUp, Receipt, Activity } from 'lucide-react'
 import {
     DataTableView, DataTableColumnHeader, DataCell,
     createActionsColumn, StatusBadge, MoneyDisplay, Skeleton, EmptyState, EntityCard,
-    SmartSearchBar, StatCard, SummaryTable, TimelineView,
+    SmartSearchBar, StatCard, SummaryTable,
     useSmartSearch,
     UnderlineTabs,
 } from '@/components/shared'
@@ -14,7 +14,7 @@ import type { SearchDefinition } from '@/types/search'
 import { useCardStatements } from './hooks'
 import { StatementDetailModal } from './StatementDetailModal'
 import type { CreditCardStatement } from './types'
-import { useTcHubData } from './useTcHubData'
+import { useStatementsAnalyticsData } from './useStatementsAnalyticsData'
 
 interface StatementsViewProps {
     bankId?: number
@@ -44,11 +44,19 @@ export function StatementsView({ bankId, creditCardAccounts }: StatementsViewPro
     const params: Record<string, string> = {}
     if (bankId) params.bank = String(bankId)
     if (cardAccountId) params.card_account = String(cardAccountId)
+    const [granularity, setGranularity] = useState<'day' | 'month' | 'year'>('month')
+    const [dateRange, setDateRange] = useState<{ from: string; to: string } | null>(null)
+
+    const months = useMemo(() => dateRange === null
+        ? 24
+        : Math.max(1, Math.ceil((new Date(dateRange.to).getTime() - new Date(dateRange.from).getTime()) / (30 * 24 * 60 * 60 * 1000))),
+    [dateRange])
+
+    const hubData = useStatementsAnalyticsData(cardAccountId, months)
+
     const { data: statements = [], isLoading, isError } = useCardStatements(
         Object.keys(params).length > 0 ? params : undefined,
     )
-
-    const hubData = useTcHubData(cardAccountId)
 
     const totalDebt = useMemo(() => statements
         .filter((s) => s.status === 'OPEN' || s.status === 'OVERDUE')
@@ -75,6 +83,16 @@ export function StatementsView({ bankId, creditCardAccounts }: StatementsViewPro
             })),
         }]
     }, [statements])
+
+    const averageDaysLate = useMemo(() => {
+        if (!hubData.analytics?.payment_performance?.length) return null
+        const lateDays = hubData.analytics.payment_performance
+            .map(p => p.days_late)
+            .filter((d): d is number => d != null && d > 0)
+        return lateDays.length > 0
+            ? Math.round(lateDays.reduce((s, d) => s + d, 0) / lateDays.length)
+            : null
+    }, [hubData.analytics?.payment_performance])
 
     if (isLoading) {
         return <Skeleton className="h-full" />
@@ -225,15 +243,13 @@ export function StatementsView({ bankId, creditCardAccounts }: StatementsViewPro
                                                         config: {
                                                             label: 'Evolución de Deuda Facturada',
                                                             variant: 'chart',
-                                                            chart: {
-                                                                type: 'line-chart',
-                                                                config: {
-                                                                    data: debtTrend,
-                                                                    enableArea: true,
-                                                                    showLegend: false,
-                                                                    valueFormat: ' >-$s',
-                                                                },
-                                                            },
+                                        chart: {
+                                                                        type: 'line-chart',
+                                                                        data: debtTrend,
+                                                                        enableArea: true,
+                                                                        showLegend: false,
+                                                                        valueFormat: ' >-$s',
+                                                                    },
                                                         },
                                                     },
                                                 },
@@ -261,23 +277,18 @@ export function StatementsView({ bankId, creditCardAccounts }: StatementsViewPro
                                                 },
                                                 {
                                                     id: 'resumen-financiero',
-                                                    content: hubData.analytics ? {
+                                                    content: {
                                                         type: 'custom',
                                                         render: (
                                                             <SummaryTable
                                                                 rows={[
-                                                                    { label: 'Deuda Consolidada', value: <span className="font-bold">${fmt(hubData.totalDebt)}</span> },
-                                                                    { label: 'No Facturado', value: <span className="font-bold">${fmt(hubData.totalUnbilled)}</span> },
-                                                                    { label: 'Total Comprometido', value: <span className="font-bold">${fmt(hubData.totalCombined)}</span> },
-                                                                    { label: 'Vencidos', value: <span className="font-bold">{hubData.overdueCount}</span> },
-                                                                    { label: 'Próximo Vencimiento', value: <span className="font-bold">{nextDue ? new Date(nextDue.due_date).toLocaleDateString('es-CL') : '—'}</span> },
+                                                                    { label: 'Deuda Total', value: <span className="font-bold">${fmt(totalDebt)}</span> },
+                                                                    { label: 'Abiertos', value: <span className="font-bold">{openCount}</span> },
+                                                                    { label: 'Vencidos', value: <span className="font-bold">{overdueCount}</span> },
+                                                                    { label: 'Deuda Vencida', value: <span className="font-bold">${fmt(statements.filter(s => s.status === 'OVERDUE').reduce((s, st) => s + parseFloat(st.total_to_pay), 0))}</span> },
+                                                                    { label: 'Último Período', value: <span className="font-bold">{statements.length > 0 ? `${String(statements[0].period_month).padStart(2, '0')}/${statements[0].period_year}` : '—'}</span> },
                                                                 ]}
                                                             />
-                                                        ),
-                                                    } : {
-                                                        type: 'custom',
-                                                        render: (
-                                                            <p className="text-sm text-muted-foreground italic py-4 text-center">Cargando...</p>
                                                         ),
                                                     },
                                                 },
@@ -303,15 +314,13 @@ export function StatementsView({ bankId, creditCardAccounts }: StatementsViewPro
                                                         config: {
                                                             label: 'Saldo Pendiente por Estado de Cuenta',
                                                             variant: 'chart',
-                                                            chart: {
-                                                                type: 'line-chart',
-                                                                config: {
-                                                                    data: hubData.paymentPerformanceChart,
-                                                                    enableArea: true,
-                                                                    showLegend: false,
-                                                                    valueFormat: ' >-$s',
-                                                                },
-                                                            },
+                                            chart: {
+                                                                        type: 'line-chart',
+                                                                        data: hubData.paymentPerformanceChart,
+                                                                        enableArea: true,
+                                                                        showLegend: false,
+                                                                        valueFormat: ' >-$s',
+                                                                    },
                                                         },
                                                     } : {
                                                         type: 'custom',
@@ -360,13 +369,14 @@ export function StatementsView({ bankId, creditCardAccounts }: StatementsViewPro
                                                         render: (
                                                             <SummaryTable
                                                                 rows={[
-                                                                    { label: 'Statements Vencidos', value: <span className="font-bold">{hubData.overdueCount}</span> },
+                                                                    { label: 'Statements Vencidos', value: <span className="font-bold">{overdueCount}</span> },
                                                                     { label: 'Morosos con Interés', value: <span className="font-bold">
                                                                         {hubData.analytics.payment_performance.filter(p => parseFloat(p.punitory_interest) > 0).length}
                                                                     </span> },
                                                                     { label: 'Total Interés Punitorio', value: <span className="font-bold">${fmt(
                                                                         hubData.analytics.payment_performance.reduce((s, p) => s + parseFloat(p.punitory_interest), 0)
                                                                     )}</span> },
+                                                                    { label: 'Atraso Promedio', value: <span className="font-bold">{averageDaysLate != null ? `${averageDaysLate} días` : '—'}</span> },
                                                                 ]}
                                                             />
                                                         ),
@@ -374,25 +384,6 @@ export function StatementsView({ bankId, creditCardAccounts }: StatementsViewPro
                                                         type: 'custom',
                                                         render: (
                                                             <p className="text-sm text-muted-foreground italic py-4 text-center">Cargando...</p>
-                                                        ),
-                                                    },
-                                                },
-                                                {
-                                                    id: 'upcoming-timeline',
-                                                    content: hubData.nextUpcomingPayments.length > 0 ? {
-                                                        type: 'custom',
-                                                        render: (
-                                                            <div>
-                                                                <h4 className="text-[11px] font-black uppercase tracking-widest text-muted-foreground mb-3">
-                                                                    Próximos Vencimientos
-                                                                </h4>
-                                                                <TimelineView events={hubData.nextUpcomingPayments} />
-                                                            </div>
-                                                        ),
-                                                    } : {
-                                                        type: 'custom',
-                                                        render: (
-                                                            <p className="text-sm text-muted-foreground italic py-4 text-center">Sin próximos vencimientos</p>
                                                         ),
                                                     },
                                                 },
@@ -418,21 +409,19 @@ export function StatementsView({ bankId, creditCardAccounts }: StatementsViewPro
                                                         config: {
                                                             label: 'Intereses y Comisiones por Período',
                                                             variant: 'chart',
-                                                            chart: {
-                                                                type: 'bar-chart',
-                                                                config: {
-                                                                    data: hubData.financialCostsChart.map(c => ({
-                                                                        period: c.period,
-                                                                        Intereses: c.interest,
-                                                                        Comisiones: c.fees,
-                                                                    })),
-                                                                    keys: ['Intereses', 'Comisiones'],
-                                                                    indexBy: 'period',
-                                                                    valueFormat: ' >-$s',
-                                                                    showLegend: true,
-                                                                    enableGridY: true,
-                                                                },
-                                                            },
+                                            chart: {
+                                                                        type: 'bar-chart',
+                                                                        data: hubData.financialCostsChart.map(c => ({
+                                                                            period: c.period,
+                                                                            Intereses: c.interest,
+                                                                            Comisiones: c.fees,
+                                                                        })),
+                                                                        keys: ['Intereses', 'Comisiones'],
+                                                                        indexBy: 'period',
+                                                                        valueFormat: ' >-$s',
+                                                                        showLegend: true,
+                                                                        enableGridY: true,
+                                                                    },
                                                         },
                                                     } : {
                                                         type: 'custom',
@@ -449,18 +438,16 @@ export function StatementsView({ bankId, creditCardAccounts }: StatementsViewPro
                                                         config: {
                                                             label: 'Evolución de Costos',
                                                             variant: 'chart',
-                                                            chart: {
-                                                                type: 'line-chart',
-                                                                config: {
-                                                                    data: [{
-                                                                        id: 'Costo Total',
-                                                                        data: hubData.financialCostsChart.map(c => ({ x: c.period, y: c.total })),
-                                                                    }],
-                                                                    enableArea: true,
-                                                                    showLegend: false,
-                                                                    valueFormat: ' >-$s',
-                                                                },
-                                                            },
+                                            chart: {
+                                                                        type: 'line-chart',
+                                                                        data: [{
+                                                                            id: 'Costo Total',
+                                                                            data: hubData.financialCostsChart.map(c => ({ x: c.period, y: c.total })),
+                                                                        }],
+                                                                        enableArea: true,
+                                                                        showLegend: false,
+                                                                        valueFormat: ' >-$s',
+                                                                    },
                                                         },
                                                     } : {
                                                         type: 'custom',
@@ -523,6 +510,10 @@ export function StatementsView({ bankId, creditCardAccounts }: StatementsViewPro
                             cardAccounts: creditCardAccounts,
                             cardAccountId: cardAccountId,
                             onCardAccountChange: (id) => applyFilter('card', String(id)),
+                            granularity,
+                            onGranularityChange: setGranularity,
+                            dateRange,
+                            onDateRangeChange: setDateRange,
                         },
                     }}
                     leftAction={

@@ -15,7 +15,7 @@ import {
 import { Separator } from "@/components/ui/separator"
 import { Drawer } from "./Drawer"
 import { UnderlineTabs, type TabItem } from "./UnderlineTabs"
-import { AnalyticsPanel, type AnalyticsPanelItem, type AnalyticsTab, type Granularity } from "./AnalyticsPanel"
+import { AnalyticsPanel, type AnalyticsTab, type Granularity } from "./AnalyticsPanel"
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 
 interface DataTableToolbarProps<TData> {
@@ -78,6 +78,8 @@ export type AnalyticsPanelConfig = {
         cardAccounts?: Array<{ id: number; name: string; currency: string }>
         cardAccountId?: number | null
         onCardAccountChange?: (id: number) => void
+        scope?: 'month' | 'all'
+        onScopeChange?: (scope: 'month' | 'all') => void
     }
 }
 
@@ -518,6 +520,8 @@ export function DataTableToolbar<TData>(props: DataTableToolbarProps<TData>) {
                     cardAccounts={analyticsPanel.screen.cardAccounts}
                     cardAccountId={analyticsPanel.screen.cardAccountId}
                     onCardAccountChange={analyticsPanel.screen.onCardAccountChange}
+                    scope={analyticsPanel.screen.scope}
+                    onScopeChange={analyticsPanel.screen.onScopeChange}
                 />
             )}
         </>
