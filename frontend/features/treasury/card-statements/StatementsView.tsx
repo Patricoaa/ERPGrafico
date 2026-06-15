@@ -52,7 +52,7 @@ export function StatementsView({ bankId, creditCardAccounts }: StatementsViewPro
         : Math.max(1, Math.ceil((new Date(dateRange.to).getTime() - new Date(dateRange.from).getTime()) / (30 * 24 * 60 * 60 * 1000))),
     [dateRange])
 
-    const hubData = useStatementsAnalyticsData(cardAccountId, months)
+    const hubData = useStatementsAnalyticsData(cardAccountId, months, granularity)
 
     const { data: statements = [], isLoading, isError } = useCardStatements(
         Object.keys(params).length > 0 ? params : undefined,

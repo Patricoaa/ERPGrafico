@@ -113,6 +113,9 @@ export function HeaderNavDropdowns({ navigation, iconName }: HeaderNavDropdownsP
                             "data-[state=open]:bg-muted/50"
                         )}
                     >
+                        {activeTab?.iconName && (
+                            <DynamicIcon name={activeTab.iconName} className="h-4 w-4 shrink-0 text-muted-foreground/70" />
+                        )}
                         <span className="whitespace-nowrap">{activeTab?.label || "—"}</span>
                         <ChevronsUpDown className="h-3.5 w-3.5 text-muted-foreground/60 shrink-0" />
                     </DropdownMenuTrigger>
@@ -179,18 +182,24 @@ export function HeaderNavDropdowns({ navigation, iconName }: HeaderNavDropdownsP
                                 "data-[state=open]:bg-muted/50"
                             )}
                         >
-                            <span className="whitespace-nowrap">
-                                {activeSubTab?.label || activeSubTabs[0]?.label || "—"}
-                            </span>
-                            <ChevronsUpDown className="h-3.5 w-3.5 text-muted-foreground/60 shrink-0" />
-                        </DropdownMenuTrigger>
+                        {(() => {
+                            const st = activeSubTab || activeSubTabs[0]
+                            return st?.iconName ? (
+                                <DynamicIcon name={st.iconName} className="h-4 w-4 shrink-0 text-muted-foreground/70" />
+                            ) : null
+                        })()}
+                        <span className="whitespace-nowrap">
+                            {activeSubTab?.label || activeSubTabs[0]?.label || "—"}
+                        </span>
+                        <ChevronsUpDown className="h-3.5 w-3.5 text-muted-foreground/60 shrink-0" />
+                    </DropdownMenuTrigger>
 
-                        <DropdownMenuContent
-                            align="start"
-                            sideOffset={8}
-                            className="min-w-[200px] rounded-lg border-border/40 shadow-xl shadow-black/10 bg-popover/95 backdrop-blur-md p-1"
-                        >
-                            {activeSubTabs.map((sub) => {
+                    <DropdownMenuContent
+                        align="start"
+                        sideOffset={8}
+                        className="min-w-[200px] rounded-lg border-border/40 shadow-xl shadow-black/10 bg-popover/95 backdrop-blur-md p-1"
+                    >
+                        {activeSubTabs.map((sub) => {
                                 const isActive = sub.value === subActiveValue
                                 return (
                                     <DropdownMenuItem
@@ -247,18 +256,24 @@ export function HeaderNavDropdowns({ navigation, iconName }: HeaderNavDropdownsP
                                 "data-[state=open]:bg-muted/50"
                             )}
                         >
-                            <span className="whitespace-nowrap">
-                                {activeSubSubTab?.label || activeSubSubTabs[0]?.label || "—"}
-                            </span>
-                            <ChevronsUpDown className="h-3.5 w-3.5 text-muted-foreground/60 shrink-0" />
-                        </DropdownMenuTrigger>
+                        {(() => {
+                            const st = activeSubSubTab || activeSubSubTabs[0]
+                            return st?.iconName ? (
+                                <DynamicIcon name={st.iconName} className="h-4 w-4 shrink-0 text-muted-foreground/70" />
+                            ) : null
+                        })()}
+                        <span className="whitespace-nowrap">
+                            {activeSubSubTab?.label || activeSubSubTabs[0]?.label || "—"}
+                        </span>
+                        <ChevronsUpDown className="h-3.5 w-3.5 text-muted-foreground/60 shrink-0" />
+                    </DropdownMenuTrigger>
 
-                        <DropdownMenuContent
-                            align="start"
-                            sideOffset={8}
-                            className="min-w-[200px] rounded-lg border-border/40 shadow-xl shadow-black/10 bg-popover/95 backdrop-blur-md p-1"
-                        >
-                            {activeSubSubTabs.map((sub) => {
+                    <DropdownMenuContent
+                        align="start"
+                        sideOffset={8}
+                        className="min-w-[200px] rounded-lg border-border/40 shadow-xl shadow-black/10 bg-popover/95 backdrop-blur-md p-1"
+                    >
+                        {activeSubSubTabs.map((sub) => {
                                 const isActive = sub.value === subSubActiveValue
                                 return (
                                     <DropdownMenuItem
@@ -315,18 +330,24 @@ export function HeaderNavDropdowns({ navigation, iconName }: HeaderNavDropdownsP
                                 "data-[state=open]:bg-muted/50"
                             )}
                         >
-                            <span className="whitespace-nowrap">
-                                {activeSubSubSubTab?.label || activeSubSubSubTabs[0]?.label || "—"}
-                            </span>
-                            <ChevronsUpDown className="h-3.5 w-3.5 text-muted-foreground/60 shrink-0" />
-                        </DropdownMenuTrigger>
+                        {(() => {
+                            const st = activeSubSubSubTab || activeSubSubSubTabs[0]
+                            return st?.iconName ? (
+                                <DynamicIcon name={st.iconName} className="h-4 w-4 shrink-0 text-muted-foreground/70" />
+                            ) : null
+                        })()}
+                        <span className="whitespace-nowrap">
+                            {activeSubSubSubTab?.label || activeSubSubSubTabs[0]?.label || "—"}
+                        </span>
+                        <ChevronsUpDown className="h-3.5 w-3.5 text-muted-foreground/60 shrink-0" />
+                    </DropdownMenuTrigger>
 
-                        <DropdownMenuContent
-                            align="start"
-                            sideOffset={8}
-                            className="min-w-[200px] rounded-lg border-border/40 shadow-xl shadow-black/10 bg-popover/95 backdrop-blur-md p-1"
-                        >
-                            {activeSubSubSubTabs.map((sub) => {
+                    <DropdownMenuContent
+                        align="start"
+                        sideOffset={8}
+                        className="min-w-[200px] rounded-lg border-border/40 shadow-xl shadow-black/10 bg-popover/95 backdrop-blur-md p-1"
+                    >
+                        {activeSubSubSubTabs.map((sub) => {
                                 const isActive = sub.value === subSubSubActiveValue
                                 return (
                                     <DropdownMenuItem
