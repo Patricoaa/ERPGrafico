@@ -55,6 +55,14 @@ class PurchaseOrder(TransactionalDocument, TotalsCalculationMixin):
     supplier = models.ForeignKey('contacts.Contact', on_delete=models.PROTECT, related_name='purchase_orders')
     date = models.DateField(_("Fecha"), default=get_current_date)
     payment_method = models.CharField(_("Método de Pago"), max_length=20, choices=PaymentMethod.choices, default=PaymentMethod.CREDIT)
+    payment_method_ref = models.ForeignKey(
+        'treasury.PaymentMethod',
+        on_delete=models.PROTECT,
+        null=True, blank=True,
+        related_name='purchase_orders',
+        verbose_name=_("Método de Pago (Ref)"),
+        help_text=_("FK a treasury.PaymentMethod. Reemplaza el campo legacy payment_method.")
+    )
     warehouse = models.ForeignKey(Warehouse, on_delete=models.PROTECT, related_name='purchases', help_text="Bodega de recepción", null=True, blank=True)
 
     # Receiving fields

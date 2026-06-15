@@ -50,6 +50,8 @@ export interface LineChartConfig {
     showLegend?: boolean
     valueFormat?: string
     compact?: boolean
+    axisBottomLegend?: string
+    axisLeftLegend?: string
 }
 
 export interface PieChartConfig {
@@ -61,6 +63,7 @@ export interface PieChartConfig {
     enableArcLinkLabels?: boolean
     compact?: boolean
     arcLabel?: (d: { id: string; value: number }) => string
+    valueFormat?: "currency" | "number"
 }
 
 export type ChartConfig = BarChartConfig | LineChartConfig | PieChartConfig

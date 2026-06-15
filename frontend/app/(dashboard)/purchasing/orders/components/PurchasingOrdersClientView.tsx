@@ -69,10 +69,16 @@ export function PurchasingOrdersClientView({ viewMode, externalOpenCheckout, cre
     const analyticsPanel: AnalyticsPanelConfig = useMemo(() => {
         if (viewMode !== "orders") return { screen: { entityName: "", tabs: [] } }
 
-        const comboData = analyticsData.monthlyVolume.map((m, i) => ({
-            ...m,
-            avg: analyticsData.monthlyAvg[i]?.avg ?? 0,
-        }))
+        const lineData = [
+            {
+                id: "Total",
+                data: analyticsData.monthlyVolume.map((m) => ({ x: m.month, y: m.total })),
+            },
+            {
+                id: "Promedio",
+                data: analyticsData.monthlyAvg.map((m) => ({ x: m.month, y: m.avg })),
+            },
+        ]
 
         return {
             screen: {
@@ -100,16 +106,11 @@ export function PurchasingOrdersClientView({ viewMode, externalOpenCheckout, cre
                                                 label: "Volumen de Órdenes",
                                                 variant: "chart",
                                                 chart: {
-                                                        type: "bar-chart",
-                                                        data: comboData,
-                                                        keys: ["total"],
-                                                        indexBy: "month",
-                                                        valueFormat: "~s",
-                                                        enableGridY: true,
-                                                        lineOverlay: {
-                                                            dataKey: "avg",
-                                                            label: "Promedio",
-                                                        },
+                                                        type: "line-chart",
+                                                        data: lineData,
+                                                        enableArea: true,
+                                                        showLegend: true,
+                                                        valueFormat: "$,.0f",
                                                         axisBottomLegend: "Período",
                                                         axisLeftLegend: "Monto ($)",
                                                     },
@@ -165,6 +166,8 @@ export function PurchasingOrdersClientView({ viewMode, externalOpenCheckout, cre
                                                         keys: ["total"],
                                                         indexBy: "supplier",
                                                         valueFormat: "~s",
+                                                        axisBottomLegend: "Proveedor",
+                                                        axisLeftLegend: "Monto ($)",
                                                         lineOverlay: {
                                                             dataKey: "orderCount",
                                                             label: "Cantidad Órdenes",
@@ -225,6 +228,8 @@ export function PurchasingOrdersClientView({ viewMode, externalOpenCheckout, cre
                                                         data: analyticsData.ordersByWarehouse,
                                                         keys: ["count"],
                                                         indexBy: "warehouse",
+                                                        axisBottomLegend: "Almacén",
+                                                        axisLeftLegend: "Cantidad",
                                                     },
                                             },
                                         },

@@ -255,6 +255,7 @@ class TreasuryMovementSerializer(serializers.ModelSerializer):
     to_account_code = serializers.CharField(source='to_account.account.code', read_only=True, allow_null=True)
     
     payment_method_new_name = serializers.CharField(source='payment_method_new.name', read_only=True, allow_null=True)
+    payment_method_new_method_type = serializers.CharField(source='payment_method_new.method_type', read_only=True, allow_null=True)
 
     
     # Legacy/Display fields for frontend compatibility
