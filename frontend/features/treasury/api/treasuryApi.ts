@@ -333,6 +333,21 @@ export const treasuryApi = {
         return data
     },
 
+    updateUnbilledCharge: async (payload: {
+        id: number
+        amount?: number | string
+        charge_type?: string
+        description?: string
+        date?: string
+    }): Promise<PendingChargeRow> => {
+        const { data } = await api.post('/treasury/card-statements/update-charge/', payload)
+        return data
+    },
+
+    deleteUnbilledCharge: async (id: number): Promise<void> => {
+        await api.post('/treasury/card-statements/delete-charge/', { id })
+    },
+
     billUnbilledCharges: async (payload: {
         card_account: number
         period_year: number

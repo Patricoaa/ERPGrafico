@@ -2715,6 +2715,71 @@ class CreditCardStatementViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
             status=status.HTTP_201_CREATED,
         )
 
+    @action(detail=False, methods=['post'], url_path='update-charge')
+    def update_charge(self, request):
+        """Actualiza un cargo pendiente no facturado."""
+        from .models import CardPendingCharge
+        from .serializers import CardPendingChargeSerializer
+
+        charge_id = request.data.get('id')
+        if not charge_id:
+            return Response(
+                {'detail': 'id del cargo es requerido.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        try:
+            charge = CardPendingCharge.objects.get(pk=charge_id, is_billed=False)
+        except CardPendingCharge.DoesNotExist:
+            return Response(
+                {'detail': 'Cargo pendiente no encontrado o ya facturado.'},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        serializer = CardPendingChargeSerializer(
+            charge, data=request.data, partial=True,
+            context={'request': request},
+        )
+        if serializer.is_valid():
+            serializer.save()
+            data = serializer.data
+            return Response({
+                'id': data['id'],
+                'amount': str(data['amount']),
+                'date': data['date'].isoformat() if hasattr(data['date'], 'isoformat') else data['date'],
+                'charge_type': data['charge_type'],
+                'charge_type_display': data['charge_type_display'],
+                'description': data.get('description', ''),
+                'reference': '',
+                'source': 'pending',
+                'from_account_name': None,
+                'partner_name': None,
+            })
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    @action(detail=False, methods=['post'], url_path='delete-charge')
+    def delete_charge(self, request):
+        """Elimina un cargo pendiente no facturado."""
+        from .models import CardPendingCharge
+
+        charge_id = request.data.get('id')
+        if not charge_id:
+            return Response(
+                {'detail': 'id del cargo es requerido.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        try:
+            charge = CardPendingCharge.objects.get(pk=charge_id, is_billed=False)
+        except CardPendingCharge.DoesNotExist:
+            return Response(
+                {'detail': 'Cargo pendiente no encontrado o ya facturado.'},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        charge.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
     @action(detail=False, methods=['post'], url_path='bill-charges')
     def bill_charges(self, request):
         """Factura los cargos no facturados de una tarjeta de crédito."""

@@ -47,12 +47,12 @@ export function BankPageHeader({ bankId, breadcrumbs, title = "", description, s
                                         label: sv.label,
                                         iconName: sv.iconName,
                                         href: sv.value === 'cards'
-                                            ? `${baseHref}?subtab=${subtab || 'unbilled'}`
+                                            ? `${baseHref}/${subtab || 'unbilled'}`
                                             : baseHref,
                                         ...(sv.value === 'cards' && {
                                             subTabs: [
-                                                { value: "unbilled", label: "Cargos No Facturados", iconName: "file-text", href: `${baseHref}?subtab=unbilled` },
-                                                { value: "statements", label: "Cargos Facturados", iconName: "file-text", href: `${baseHref}?subtab=statements` },
+                                                { value: "unbilled", label: "Cargos No Facturados", iconName: "file-text", href: `${baseHref}/unbilled` },
+                                                { value: "statements", label: "Cargos Facturados", iconName: "file-text", href: `${baseHref}/statements` },
                                             ],
                                         }),
                                     }
