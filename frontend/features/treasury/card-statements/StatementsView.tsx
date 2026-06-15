@@ -2,7 +2,7 @@
 
 import { useState, useMemo } from 'react'
 import type { ColumnDef } from '@tanstack/react-table'
-import { CreditCard, AlertTriangle, Eye, Receipt } from 'lucide-react'
+import { CreditCard, AlertTriangle, Eye, Receipt, Wallet } from 'lucide-react'
 import {
     DataTableView, DataTableColumnHeader, DataCell,
     createActionsColumn, StatusBadge, MoneyDisplay, Skeleton, EmptyState, EntityCard,
@@ -13,6 +13,7 @@ import {
 import type { SearchDefinition } from '@/types/search'
 import { useCardStatements } from './hooks'
 import { StatementDetailModal } from './StatementDetailModal'
+import { PayStatementModal } from './PayStatementModal'
 import type { CreditCardStatement } from './types'
 import { useStatementsAnalyticsData } from './useStatementsAnalyticsData'
 
@@ -23,6 +24,7 @@ interface StatementsViewProps {
 
 export function StatementsView({ bankId, creditCardAccounts }: StatementsViewProps = { creditCardAccounts: [] }) {
     const [selectedId, setSelectedId] = useState<number | null>(null)
+    const [payingStatement, setPayingStatement] = useState<CreditCardStatement | null>(null)
 
     const searchDef: SearchDefinition = useMemo(() => ({
         fields: [
@@ -102,18 +104,6 @@ export function StatementsView({ bankId, creditCardAccounts }: StatementsViewPro
             ),
         },
         {
-            accessorKey: 'total_to_pay',
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Total a Pagar" className="justify-end" />,
-            cell: ({ row }) => (
-                <div className="flex justify-end">
-                    <MoneyDisplay
-                        amount={parseFloat(row.original.total_to_pay)}
-                        className="font-bold"
-                    />
-                </div>
-            ),
-        },
-        {
             accessorKey: 'due_date',
             header: ({ column }) => <DataTableColumnHeader column={column} title="Vencimiento" />,
             cell: ({ row }) => (
@@ -133,12 +123,22 @@ export function StatementsView({ bankId, creditCardAccounts }: StatementsViewPro
     ]
 
     function renderStatementActions(stmt: CreditCardStatement) {
+        const canPay = stmt.status !== 'PAID' && stmt.status !== 'CANCELED'
         return (
-            <DataCell.Action
-                icon={Eye}
-                title="Ver detalle"
-                onClick={() => setSelectedId(stmt.id)}
-            />
+            <>
+                {canPay && (
+                    <DataCell.Action
+                        icon={Wallet}
+                        title="Pagar"
+                        onClick={() => setPayingStatement(stmt)}
+                    />
+                )}
+                <DataCell.Action
+                    icon={Eye}
+                    title="Ver detalle"
+                    onClick={() => setSelectedId(stmt.id)}
+                />
+            </>
         )
     }
 
@@ -276,10 +276,6 @@ export function StatementsView({ bankId, creditCardAccounts }: StatementsViewPro
                                     value={<MoneyDisplay amount={parseFloat(stmt.billed_amount)} />}
                                 />
                                 <EntityCard.Field
-                                    label="Total a Pagar"
-                                    value={<MoneyDisplay amount={parseFloat(stmt.total_to_pay)} className="font-bold" />}
-                                />
-                                <EntityCard.Field
                                     label="Vencimiento"
                                     value={new Date(stmt.due_date).toLocaleDateString('es-CL')}
                                 />
@@ -296,6 +292,11 @@ export function StatementsView({ bankId, creditCardAccounts }: StatementsViewPro
                 statementId={selectedId}
                 open={selectedId != null}
                 onOpenChange={(open) => { if (!open) setSelectedId(null) }}
+            />
+            <PayStatementModal
+                statement={payingStatement}
+                open={payingStatement != null}
+                onOpenChange={(open) => { if (!open) setPayingStatement(null) }}
             />
         </div>
     )
