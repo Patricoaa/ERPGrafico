@@ -22,8 +22,8 @@ export const ordersApi = {
         api.get(`/sales/orders/${id}/`).then(r => r.data),
     searchSaleOrders: (params: { search?: string; limit?: string }) =>
         api.get('/sales/orders/', { params }).then(r => r.data),
-    annulSaleOrder: (id: number, reason: string = '') =>
-        api.post(`/sales/orders/${id}/annul/`, { force: false, reason }).then(r => r.data),
+    annulSaleOrder: (id: number, reason: string = '', force: boolean = false) =>
+        api.post(`/sales/orders/${id}/annul/`, { force, reason }).then(r => r.data),
     cancelSaleOrder: (id: number, reason: string = '') =>
         api.post(`/sales/orders/${id}/cancel/`, { reason }).then(r => r.data),
     getCancelSaleImpact: (id: number) =>
@@ -36,8 +36,8 @@ export const ordersApi = {
     // ── Purchasing ──
     getPurchaseOrder: (id: string | number) =>
         api.get(`/purchasing/orders/${id}/`).then(r => r.data),
-    annulPurchaseOrder: (id: number, reason: string = '') =>
-        api.post(`/purchasing/orders/${id}/annul/`, { force: false, reason }).then(r => r.data),
+    annulPurchaseOrder: (id: number, reason: string = '', force: boolean = false) =>
+        api.post(`/purchasing/orders/${id}/annul/`, { force, reason }).then(r => r.data),
     cancelPurchaseOrder: (id: number, reason: string = '') =>
         api.post(`/purchasing/orders/${id}/cancel/`, { reason }).then(r => r.data),
     getCancelPurchaseImpact: (id: number) =>

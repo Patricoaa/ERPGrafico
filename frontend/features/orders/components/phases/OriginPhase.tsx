@@ -45,7 +45,10 @@ export function OriginPhase({
 
     // Flujo unificado: cancel y annul pasan por el mismo modal de impacto;
     // el backend decide soft-cancel vs full-annul según el árbol de documentos.
-    const { requestCancel, modalProps } = useCancelOrderFlow(orderType, { onSuccess: onActionSuccess })
+    const { requestCancel, modalProps, isAnnulBlocked } = useCancelOrderFlow(
+        orderType,
+        { onSuccess: onActionSuccess, orderId: activeDoc?.id },
+    )
 
     const canCancelOrder = userPermissions.includes(
         isSale ? 'sales.delete_saleorder' : 'purchasing.delete_purchaseorder'
@@ -82,12 +85,12 @@ export function OriginPhase({
                     color: 'text-destructive hover:bg-destructive/10',
                     onClick: () => requestCancel(order?.id)
                 }] : []),
-                ...(canCancelOrder && order?.status !== 'CANCELLED' && order?.status !== 'DRAFT' ? [{
+                ...(canCancelOrder && order?.status !== 'CANCELLED' && order?.status !== 'DRAFT' && !isAnnulBlocked ? [{
                     icon: X,
                     title: 'Anular Orden',
                     color: 'text-destructive hover:bg-destructive/10',
                     onClick: () => requestCancel(order?.id)
-                }] : [])
+                }] : []),
             ]
         }
     ] : (activeInvoice ? [
