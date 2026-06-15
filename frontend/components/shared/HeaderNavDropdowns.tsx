@@ -63,12 +63,12 @@ export function HeaderNavDropdowns({ navigation, iconName }: HeaderNavDropdownsP
                             "hover:bg-muted/50 focus:outline-none focus-visible:ring-1 focus-visible:ring-primary/30"
                         )}
                     >
-                        {iconName && (
-                            <DynamicIcon
-                                name={iconName}
-                                className="h-4 w-4 shrink-0 text-primary/70"
-                            />
-                        )}
+                        {(() => {
+                            const modIcon = iconName || MODULE_REGISTRY[currentModuleId]?.iconName
+                            return modIcon ? (
+                                <DynamicIcon name={modIcon} className="h-4 w-4 shrink-0 text-primary/70" />
+                            ) : null
+                        })()}
                         <span className="whitespace-nowrap">{navigation.moduleName}</span>
                         <ChevronsUpDown className="h-3.5 w-3.5 text-muted-foreground/60 shrink-0" />
                     </button>

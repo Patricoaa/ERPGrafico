@@ -47,10 +47,6 @@ export function useStatementsAnalyticsData(
 
         const paymentEvolutionChart = [
             {
-                id: 'Total a Pagar',
-                data: sortedPayments.map(p => ({ x: p.due_date, y: parseFloat(p.total_to_pay) })),
-            },
-            {
                 id: 'Monto Pagado',
                 data: sortedPayments.map(p => ({ x: p.due_date, y: parseFloat(p.amount_paid) })),
             },
