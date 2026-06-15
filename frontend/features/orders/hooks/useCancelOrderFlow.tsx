@@ -11,6 +11,7 @@
  * duplicados y al annul directo sin confirmación (gap G-07 / G-14).
  */
 import { useState, useCallback } from 'react'
+import { useQuery } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import { getErrorMessage } from '@/lib/errors'
 import { ordersApi } from '../api/ordersApi'
@@ -80,12 +81,37 @@ function buildImpactDescription(impact: CancelImpact): React.ReactNode {
 
 export function useCancelOrderFlow(
     orderType: 'sale' | 'purchase',
-    options?: { onSuccess?: () => void },
+    options?: { onSuccess?: () => void; orderId?: number | null },
 ) {
     const cancelOrder = useCancelOrder(orderType)
+
+    const { data: impact } = useQuery({
+        queryKey: ['cancel-impact', orderType, options?.orderId],
+        queryFn: () => options?.orderId
+            ? (orderType === 'sale'
+                ? ordersApi.getCancelSaleImpact(options.orderId!)
+                : ordersApi.getCancelPurchaseImpact(options.orderId!))
+            : Promise.resolve(null),
+        enabled: !!options?.orderId,
+        staleTime: 30_000,
+    })
+
+    const isAnnulBlocked = impact?.has_folio_invoices === true
+        || (impact?.work_orders?.length ?? 0) > 0
+        || impact?.has_posted_payments === true
+
+    const annulBlockedReason = (() => {
+        if (!isAnnulBlocked) return ''
+        if (impact?.has_folio_invoices) return 'Debe emitir una Nota de Crédito/Débito para ajustar esta orden'
+        if ((impact?.work_orders?.length ?? 0) > 0) return 'Existen órdenes de trabajo asociadas. Anule o complete las OT primero'
+        if (impact?.has_posted_payments) return 'Existen pagos contabilizados. Debe reversarlos manualmente antes de anular'
+        return ''
+    })()
+
     const [modal, setModal] = useState<{
         open: boolean
         orderId: number | null
+        action: 'soft_cancel' | 'full_annul' | null
         description: React.ReactNode
         variant: 'destructive' | 'warning'
         confirmText: string
@@ -93,6 +119,7 @@ export function useCancelOrderFlow(
     }>({
         open: false,
         orderId: null,
+        action: null,
         description: null,
         variant: 'destructive',
         confirmText: 'Cancelar Orden',
@@ -109,6 +136,7 @@ export function useCancelOrderFlow(
             setModal({
                 open: true,
                 orderId,
+                action: impact.action as 'soft_cancel' | 'full_annul',
                 description: buildImpactDescription(impact),
                 variant: isAnnul ? 'warning' : 'destructive',
                 confirmText: isAnnul ? 'Anular Todo' : 'Cancelar Orden',
@@ -122,14 +150,21 @@ export function useCancelOrderFlow(
     const handleConfirm = useCallback(async (reason?: string) => {
         if (!modal.orderId) return
         try {
-            await cancelOrder.mutateAsync({ id: modal.orderId, reason })
+            if (modal.action === 'full_annul') {
+                const annulFn = orderType === 'sale'
+                    ? ordersApi.annulSaleOrder
+                    : ordersApi.annulPurchaseOrder
+                await annulFn(modal.orderId, reason ?? '', true)
+            } else {
+                await cancelOrder.mutateAsync({ id: modal.orderId, reason })
+            }
             setModal(prev => ({ ...prev, open: false, orderId: null }))
             options?.onSuccess?.()
         } catch (error: unknown) {
             toast.error(getErrorMessage(error) || 'Error al cancelar orden')
             throw error
         }
-    }, [modal.orderId, cancelOrder, options])
+    }, [modal.orderId, modal.action, orderType, cancelOrder, options])
 
     const modalProps: CancelFlowModalProps = {
         open: modal.open,
@@ -143,5 +178,5 @@ export function useCancelOrderFlow(
         reasonLabel: 'Motivo de la anulación',
     }
 
-    return { requestCancel, modalProps, isModalOpen: modal.open }
+    return { requestCancel, modalProps, isModalOpen: modal.open, impact, isAnnulBlocked, annulBlockedReason }
 }
