@@ -762,8 +762,14 @@ class TreasuryMovementViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
     def annul(self, request, pk=None):
         movement = self.get_object()
         reason = request.data.get('reason', '')
+        treasury_account_id = request.data.get('treasury_account_id')
+        amount = request.data.get('amount')
         try:
-            movement = TreasuryService.annul_movement(movement, user=request.user, reason=reason)
+            amount_dec = Decimal(str(amount)) if amount else None
+            movement = TreasuryService.annul_movement(
+                movement, user=request.user, reason=reason,
+                treasury_account_id=treasury_account_id, amount=amount_dec,
+            )
             return Response(TreasuryMovementSerializer(movement).data)
         except ValidationError as e:
             return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
