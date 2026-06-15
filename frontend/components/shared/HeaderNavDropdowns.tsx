@@ -51,14 +51,6 @@ export function HeaderNavDropdowns({ navigation, iconName }: HeaderNavDropdownsP
 
     return (
         <div className="flex items-center gap-0 min-w-0">
-            {/* ── Icon ── */}
-            {iconName && (
-                <DynamicIcon
-                    name={iconName}
-                    className="h-4 w-4 text-primary/70 shrink-0 mr-2"
-                />
-            )}
-
             {/* ── Module Name (Root) — Module Selector ── */}
             {navigation.moduleName && isModuleInRegistry && (
                 <div className="flex items-center">
@@ -74,6 +66,12 @@ export function HeaderNavDropdowns({ navigation, iconName }: HeaderNavDropdownsP
                                 "data-[state=open]:bg-muted/50"
                             )}
                         >
+                            {iconName && (
+                                <DynamicIcon
+                                    name={iconName}
+                                    className="h-4 w-4 shrink-0 text-primary/70"
+                                />
+                            )}
                             <span className="whitespace-nowrap">{navigation.moduleName}</span>
                             <ChevronsUpDown className="h-3.5 w-3.5 text-muted-foreground/60 shrink-0" />
                         </DropdownMenuTrigger>
@@ -157,12 +155,6 @@ export function HeaderNavDropdowns({ navigation, iconName }: HeaderNavDropdownsP
                             "data-[state=open]:bg-muted/50"
                         )}
                     >
-                        {activeTab?.iconName && (
-                            <DynamicIcon
-                                name={activeTab.iconName}
-                                className="h-4 w-4 shrink-0 text-primary/70"
-                            />
-                        )}
                         <span className="whitespace-nowrap">{activeTab?.label || "—"}</span>
                         <ChevronsUpDown className="h-3.5 w-3.5 text-muted-foreground/60 shrink-0" />
                     </DropdownMenuTrigger>
@@ -172,15 +164,10 @@ export function HeaderNavDropdowns({ navigation, iconName }: HeaderNavDropdownsP
                         sideOffset={8}
                         className="min-w-[200px] rounded-lg border-border/40 shadow-xl shadow-black/10 bg-popover/95 backdrop-blur-md p-1"
                     >
-                        {regularTabs.map((tab, idx) => {
+                        {regularTabs.map((tab) => {
                             const isActive = tab.value === activeValue
-                            const isConfig = tab.value === 'config' || tab.value === 'settings'
-                            
                             return (
                                 <React.Fragment key={tab.value}>
-                                    {isConfig && idx > 0 && (
-                                        <div className="h-px bg-border/40 my-1 mx-1" />
-                                    )}
                                     <DropdownMenuItem
                                         className={cn(
                                             "cursor-pointer rounded-md transition-colors p-0 focus:bg-primary/5",
