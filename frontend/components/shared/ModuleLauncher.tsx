@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect } from "react"
+import { createPortal } from "react-dom"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { X } from "lucide-react"
@@ -51,7 +52,7 @@ export function ModuleLauncher({ open, onClose }: ModuleLauncherProps) {
         return () => window.removeEventListener('keydown', handleKeyDown)
     }, [open, onClose])
 
-    return (
+    return createPortal(
         <AnimatePresence>
             {open && (
                 <motion.div
@@ -71,7 +72,7 @@ export function ModuleLauncher({ open, onClose }: ModuleLauncherProps) {
                         animate="visible"
                         exit="hidden"
                         transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
-                        className="relative max-w-5xl w-full mx-4 md:mx-8"
+                        className="relative max-w-6xl w-full mx-2 md:mx-4"
                         onClick={(e) => e.stopPropagation()}
                     >
                         <button
@@ -82,11 +83,11 @@ export function ModuleLauncher({ open, onClose }: ModuleLauncherProps) {
                             <X className="h-5 w-5" />
                         </button>
 
-                        <h2 className="text-sm font-bold tracking-tight text-muted-foreground uppercase mb-6 text-center">
+                        <h2 className="text-xs font-bold tracking-tight text-muted-foreground uppercase mb-4 text-center">
                             Seleccionar Módulo
                         </h2>
 
-                        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-4">
+                        <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-5 md:gap-6">
                             {MODULE_ORDER.map((id) => {
                                 const mod = MODULE_REGISTRY[id]
                                 if (!mod) return null
@@ -110,12 +111,12 @@ export function ModuleLauncher({ open, onClose }: ModuleLauncherProps) {
                                                 )}
                                             >
                                                 <div className={cn(
-                                                    "w-12 h-12 rounded-lg flex items-center justify-center transition-colors",
+                                                    "w-16 h-16 md:w-20 md:h-20 rounded-xl flex items-center justify-center transition-colors",
                                                     isActive
                                                         ? "bg-primary/10 text-primary"
                                                         : "bg-muted/50 text-muted-foreground group-hover:text-primary group-hover:bg-primary/5"
                                                 )}>
-                                                    <DynamicIcon name={getModuleIconName(id)} className="h-6 w-6" />
+                                                    <DynamicIcon name={getModuleIconName(id)} className="h-8 w-8 md:h-10 md:w-10" />
                                                 </div>
                                                 <span className={cn(
                                                     "text-sm font-bold tracking-tight text-center",
@@ -135,6 +136,7 @@ export function ModuleLauncher({ open, onClose }: ModuleLauncherProps) {
                     </motion.div>
                 </motion.div>
             )}
-        </AnimatePresence>
+        </AnimatePresence>,
+        document.body
     )
 }
