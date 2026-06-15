@@ -1,7 +1,8 @@
 "use client"
 import React from "react"
-import { LucideIcon, Inbox, SearchX, Receipt, Package, Users, Database, Monitor, Layers, Landmark, ShoppingCart, Truck } from "lucide-react"
+import { LucideIcon, Inbox, SearchX, Receipt, Package, Users, Database, Monitor, Layers, Landmark } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { getEntityIcon } from "@/lib/entity-registry"
 
 export type EmptyStateContext = 'search' | 'inventory' | 'finance' | 'users' | 'generic' | 'database' | 'production' | 'pos' | 'bom' | 'treasury' | 'sale' | 'purchase'
 export type EmptyStateVariant = 'full' | 'compact' | 'minimal'
@@ -27,6 +28,16 @@ interface EmptyStateProps {
     className?: string
 }
 
+const CONTEXT_TO_ENTITY_LABEL: Partial<Record<EmptyStateContext, string>> = {
+    inventory: 'inventory.product',
+    finance: 'finance.bankjournal',
+    production: 'production.workorder',
+    bom: 'production.bom',
+    treasury: 'treasury.treasurymovement',
+    sale: 'sales.saleorder',
+    purchase: 'purchasing.purchaseorder',
+}
+
 const CONTEXT_CONFIG: Record<EmptyStateContext, { icon: LucideIcon; title: string }> = {
     generic: { icon: Inbox, title: "Sin datos disponibles" },
     search: { icon: SearchX, title: "Sin resultados" },
@@ -38,8 +49,8 @@ const CONTEXT_CONFIG: Record<EmptyStateContext, { icon: LucideIcon; title: strin
     pos: { icon: Monitor, title: "Sin sesiones o transacciones" },
     bom: { icon: Layers, title: "Sin componentes de fabricación" },
     treasury: { icon: Landmark, title: "Sin movimientos de caja" },
-    sale: { icon: ShoppingCart, title: "Sin órdenes de venta" },
-    purchase: { icon: Truck, title: "Sin órdenes de compra" },
+    sale: { icon: Package, title: "Sin órdenes de venta" },
+    purchase: { icon: Package, title: "Sin órdenes de compra" },
 }
 
 /**
@@ -62,7 +73,9 @@ export function EmptyState({
     className,
 }: EmptyStateProps) {
     const config = CONTEXT_CONFIG[context] || CONTEXT_CONFIG.generic
-    const Icon = icon || config.icon
+    const entityLabel = CONTEXT_TO_ENTITY_LABEL[context]
+    const resolvedIcon = entityLabel ? getEntityIcon(entityLabel) : null
+    const Icon = icon || resolvedIcon || config.icon
     const displayTitle = title || (entityName ? `No hay ${config.title.toLowerCase()} para ${entityName}` : config.title)
 
     if (variant === 'minimal') {

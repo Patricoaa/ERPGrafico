@@ -11,6 +11,7 @@ import { createEmployee, updateEmployee } from '@/features/hr/api/hrApi'
 import type { Employee, EmployeeConceptAmount } from "@/types/hr"
 import { ActionSlideButton, CancelButton } from "@/components/shared"
 import { UserCog, CalendarCheck2, Plus, ShieldCheck, Printer } from "lucide-react"
+import { getEntityIcon } from "@/lib/entity-registry"
 import { ActivitySidebar } from "@/features/audit/components"
 import { FormSplitLayout } from "@/components/shared"
 
@@ -288,7 +289,7 @@ export function EmployeeDrawer({ open, onOpenChange, employee, onSaved, trigger,
             <Drawer
                 open={open}
                 onOpenChange={onOpenChange}
-                icon={UserCog}
+                icon={getEntityIcon('hr.employee')}
                 title={<span>{drawerTitle}</span>}
                 headerActions={(mode === 'view' || mode === 'edit') && employee?.id && <Button variant="ghost" size="icon" onClick={() => handlePrint()}><Printer className="h-4 w-4" /></Button>}
                 subtitle={employee ? `Ficha de Personal • ${employee.display_id} • ${employee.contact_detail?.name}` : "Ficha de Personal • Recursos Humanos"}

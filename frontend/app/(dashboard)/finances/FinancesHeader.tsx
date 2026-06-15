@@ -2,7 +2,7 @@
 
 import { usePathname, useSearchParams } from "next/navigation"
 import { PageHeader } from "@/components/shared"
-import { getModuleIconName } from "@/lib/module-registry"
+import { getEntityIconName } from "@/lib/entity-registry"
 
 export const FINANCES_TABS = [
     {
@@ -43,7 +43,7 @@ export const FINANCES_TABS = [
         href: "/finances/partners",
         subTabs: [
             { value: "composition", label: "Composición", iconName: "users", href: "/finances/partners/composition" },
-            { value: "distributions", label: "Utilidades", iconName: "pie-chart", href: "/finances/partners/distributions" },
+            { value: "distributions", label: "Utilidades", iconName: getEntityIconName('contacts.profitdistributionresolution'), href: "/finances/partners/distributions" },
             { value: "config", label: "Arquitectura", iconName: "settings", href: "/finances/partners/config" },
         ]
     },
@@ -93,10 +93,10 @@ export function FinancesHeader() {
         }
         if (activeValue === 'partners') {
             if (subActiveValue === 'config') return { title: "Arquitectura Contable de Socios", description: "Configure las cuentas maestras para el Modelo Híbrido de Capital.", iconName: "settings" as const }
-            if (subActiveValue === 'distributions') return { title: "Distribución de Utilidades", description: "Gestión de actas, resolución de dividendos y reinversiones.", iconName: "pie-chart" as const }
+            if (subActiveValue === 'distributions') return { title: "Distribución de Utilidades", description: "Gestión de actas, resolución de dividendos y reinversiones.", iconName: getEntityIconName('contacts.profitdistributionresolution') }
             return { title: "Composición Societaria", description: "Gestión de capital suscrito y pagado por los socios.", iconName: "users" as const }
         }
-        return { title: "Finanzas", description: "", iconName: getModuleIconName('finances') ?? "pie-chart" }
+        return { title: "Finanzas", description: "", iconName: getEntityIconName('finance.bankjournal') ?? "pie-chart" }
     }
 
     const config = getHeaderConfig()

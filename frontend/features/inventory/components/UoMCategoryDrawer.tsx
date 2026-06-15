@@ -9,7 +9,8 @@ import {
     Form,
     FormField,
 } from "@/components/ui/form"
-import { Ruler, Printer } from "lucide-react"
+import { Printer } from "lucide-react"
+import { getEntityIcon } from "@/lib/entity-registry"
 import { Button } from "@/components/ui/button"
 import { ActivitySidebar } from "@/features/audit/components"
 import { showApiError } from "@/lib/errors"
@@ -162,7 +163,7 @@ export function UoMCategoryDrawer({ open: openProp, onOpenChange, initialData, o
                 side="left"
                 defaultSize={width}
                 mode={mode}
-                icon={Ruler}
+                icon={getEntityIcon('inventory.uomcategory')}
                 title={<span>{drawerTitle}</span>}
                 headerActions={(mode === 'view' || mode === 'edit') && initialData?.id && <Button variant="ghost" size="icon" onClick={() => handlePrint()}><Printer className="h-4 w-4" /></Button>}
                 subtitle={initialData?.id ? "Modifique el nombre de la categoría y consulte el historial." : "Define un agrupador para unidades del mismo tipo."}

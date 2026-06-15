@@ -1,6 +1,7 @@
 "use client"
 
 import { ShoppingCart, FileText } from "lucide-react"
+import { getEntityIcon } from "@/lib/entity-registry"
 import { SalesOrdersView } from "@/features/sales"
 import { UnderlineTabs } from "@/components/shared"
 import {ScrollArea as ScrollAreaUI } from "@/components/ui/scroll-area"
@@ -45,7 +46,7 @@ export function SalesOrdersDrawer({ open, onOpenChange, posSessionId }: SalesOrd
             onOpenChange={handleOpenChange}
             title={viewMode === 'orders' ? 'Notas de Ventas' : 'Notas Crédito / Débito'}
             subtitle={<>Historial <span className="opacity-30">|</span> Documentos emitidos</>}
-            icon={viewMode === 'orders' ? ShoppingCart : FileText}
+            icon={getEntityIcon('pos.session')}
             side="bottom"
             boundary="screen"
             showOverlay

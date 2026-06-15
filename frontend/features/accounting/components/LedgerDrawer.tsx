@@ -4,6 +4,7 @@ import React, { useState, useEffect } from "react"
 import { useRouter, usePathname, useSearchParams } from "next/navigation"
 import { useServerDate } from "@/hooks/useServerDate"
 import { Book, ArrowUpRight, ArrowDownRight, Scale, Calculator, Eye, Trash2 } from "lucide-react"
+import { getEntityIcon } from "@/lib/entity-registry"
 import { ActionConfirmModal, DataCell, DataTable, DataTableColumnHeader, DateRangeFilter, Drawer, IconButton, MoneyDisplay, SkeletonShell, createActionsColumn } from '@/components/shared'
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 import { ColumnDef } from "@tanstack/react-table"
@@ -96,7 +97,7 @@ export function LedgerDrawer({ accountId, accountName, accountCode, trigger }: L
                 onOpenChange={setOpen}
                 title="Libro Mayor"
                 subtitle={`${accountCode} | ${accountName}`}
-                icon={Book}
+                icon={getEntityIcon('accounting.account')}
                 side="left"
                 boundary="embedded"
                 resizable={false}

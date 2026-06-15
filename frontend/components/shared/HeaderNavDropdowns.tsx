@@ -12,7 +12,7 @@ import {
     DropdownMenuItem,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { MODULE_REGISTRY } from "@/lib/module-registry"
+import { MODULE_REGISTRY, getModuleIconName } from "@/lib/module-registry"
 import { ModuleLauncher } from "@/components/shared/ModuleLauncher"
 import type { NavigationConfig } from "@/components/providers/HeaderProvider"
 
@@ -64,7 +64,7 @@ export function HeaderNavDropdowns({ navigation, iconName }: HeaderNavDropdownsP
                         )}
                     >
                         {(() => {
-                            const modIcon = iconName || MODULE_REGISTRY[currentModuleId]?.iconName
+                            const modIcon = iconName || getModuleIconName(currentModuleId)
                             return modIcon ? (
                                 <DynamicIcon name={modIcon} className="h-4 w-4 shrink-0 text-primary/70" />
                             ) : null

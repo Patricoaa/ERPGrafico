@@ -10,7 +10,8 @@ import { createPayroll, getEmployees } from '@/features/hr/api/hrApi'
 import type { Employee } from "@/types/hr"
 
 import { Form, FormField } from "@/components/ui/form"
-import { Plus, FileText } from "lucide-react"
+import { FileText } from "lucide-react"
+import { getEntityIcon } from "@/lib/entity-registry"
 import { CancelButton, Drawer, FormFooter, LabeledInput, LabeledSelect, SkeletonShell, SubmitButton } from '@/components/shared'
 import { formDrawerWidth } from "@/lib/form-widths"
 
@@ -94,7 +95,7 @@ export function CreatePayrollDrawer({ open, onOpenChange, onSaved, trigger }: Cr
             open={open}
             onOpenChange={onOpenChange}
             side="left"
-            icon={Plus}
+            icon={getEntityIcon('hr.payroll')}
             title="Nueva Liquidación"
             subtitle="RRHH • Emisión Mensual"
             defaultSize={formDrawerWidth("medium", false)}

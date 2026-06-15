@@ -1,7 +1,7 @@
 "use client"
 
 import { Drawer, SkeletonShell, StatusBadge } from "@/components/shared"
-import { FileText } from "lucide-react"
+import { getEntityIcon } from "@/lib/entity-registry"
 import { useF29Detail } from "../hooks/useTaxQueries"
 
 interface F29DeclarationDrawerProps {
@@ -22,7 +22,7 @@ export function F29DeclarationDrawer({ declarationId, open, onOpenChange }: F29D
             boundary="embedded"
             defaultSize="50%"
             title={declaration ? `Declaración F29 — ${declaration.period_display || declaration.id}` : "Declaración F29"}
-            icon={FileText}
+            icon={getEntityIcon('tax.f29declaration')}
         >
             {isLoading ? (
                 <SkeletonShell isLoading={true} ariaLabel="Cargando declaración" />

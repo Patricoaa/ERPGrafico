@@ -15,7 +15,8 @@ import { Button } from "@/components/ui/button"
 import { CancelButton, ActionSlideButton } from "@/components/shared"
 import { Form, FormField } from "@/components/ui/form"
 import { Drawer, LabeledInput, LabeledSelect, PeriodValidationDateInput, FormFooter, FormSplitLayout } from "@/components/shared"
-import { WalletCards, Printer } from "lucide-react"
+import { Printer } from "lucide-react"
+import { getEntityIcon } from "@/lib/entity-registry"
 import { useReactToPrint } from "react-to-print"
 import { PrintableLayout } from "@/features/_shared/transaction-drawer"
 import type { DrawerMode } from "@/features/_shared/drawer/types"
@@ -136,7 +137,7 @@ export function AdvanceDrawer({ open, onOpenChange, advance, employees: employee
                 onOpenChange={onOpenChange}
                 side="left"
                 defaultSize={width}
-                icon={WalletCards}
+                icon={getEntityIcon('hr.salaryadvance')}
                 title={<span>{drawerTitle}</span>}
                 headerActions={(mode === 'view' || mode === 'edit') && advance?.id && <Button variant="ghost" size="icon" onClick={() => handlePrint()}><Printer className="h-4 w-4" /></Button>}
                 subtitle={advance ? "Revise y modifique los datos del anticipo solicitado." : "Registre una entrega de dinero a cuenta de la próxima liquidación."}

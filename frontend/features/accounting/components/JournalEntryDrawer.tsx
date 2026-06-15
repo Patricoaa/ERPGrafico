@@ -6,7 +6,8 @@ import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { JournalEntryInitialData } from "@/types/forms"
 import * as z from "zod"
-import { Plus, Pencil, BookOpen, Printer, ExternalLink } from "lucide-react"
+import { Plus, Pencil, Printer, ExternalLink } from "lucide-react"
+import { getEntityIcon } from "@/lib/entity-registry"
 import Link from "next/link"
 import { format } from "date-fns"
 import {
@@ -520,7 +521,7 @@ export function JournalEntryDrawer({
                 side="left"
                 defaultSize={width}
                 mode={mode}
-                icon={BookOpen}
+                icon={getEntityIcon('accounting.journalentry')}
                 title={<span>{drawerTitle}</span>}
                 headerActions={showPrintable && <Button variant="ghost" size="icon" onClick={() => handlePrint()}><Printer className="h-4 w-4" /></Button>}
                 subtitle={drawerSubtitle}

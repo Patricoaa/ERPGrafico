@@ -11,6 +11,7 @@ import {
 
 import { TableBody, TableCell, TableRow } from "@/components/ui/table"
 import { Trash2, Save, Workflow, Box, CheckCircle2, Truck, Package, Printer } from "lucide-react"
+import { getEntityIcon } from "@/lib/entity-registry"
 import { ProductSelector } from "@/components/selectors/ProductSelector"
 import { AdvancedContactSelector } from "@/components/selectors/AdvancedContactSelector"
 import { UoMSelector } from "@/components/selectors/UoMSelector"
@@ -334,7 +335,7 @@ export function BOMDrawer({
                 side="left"
                 defaultSize={formDrawerWidth("complex", !!bomToEdit)}
                 mode={mode}
-                icon={Workflow}
+                icon={getEntityIcon('production.bom')}
                 title={<span>{drawerTitle}</span>}
                 headerActions={(mode === 'view' || mode === 'edit') && bomToEdit?.id && <Button variant="ghost" size="icon" onClick={() => handlePrint()}><Printer className="h-4 w-4" /></Button>}
                 subtitle={

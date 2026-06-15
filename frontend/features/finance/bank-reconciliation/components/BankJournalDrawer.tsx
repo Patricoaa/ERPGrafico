@@ -12,7 +12,8 @@ import {
 import { Button } from "@/components/ui/button"
 import { financeApi } from "../../api/financeApi"
 import { AccountSelector } from "@/components/selectors/AccountSelector"
-import { WalletCards, Printer } from "lucide-react"
+import { Printer } from "lucide-react"
+import { getEntityIcon } from "@/lib/entity-registry"
 import { Drawer, LabeledInput, LabeledSelect, FormFooter, CancelButton, ActionSlideButton } from "@/components/shared"
 import { formDrawerWidth } from "@/lib/form-widths"
 import { useReactToPrint } from "react-to-print"
@@ -133,7 +134,7 @@ export function BankJournalDrawer({ auditSidebar, onSuccess, initialData, open: 
                 side="left"
                 defaultSize={width}
                 mode={mode}
-                icon={WalletCards}
+                icon={getEntityIcon('finance.bankjournal')}
                 title={<span>{drawerTitle}</span>}
                 headerActions={(mode === 'view' || mode === 'edit') && (initialData as any)?.id && <Button variant="ghost" size="icon" onClick={() => handlePrint()}><Printer className="h-4 w-4" /></Button>}
                 subtitle={initialData ? `${(initialData as any).code || ""} • ${form.watch("name") || ""}` : "Tesorería • Configuración de Caja o Banco"}

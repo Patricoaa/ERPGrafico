@@ -13,7 +13,8 @@ import {
 } from "@/components/ui/form"
 import { Button } from "@/components/ui/button"
 import { useWarehouseMutations } from "../hooks/useWarehouseMutations"
-import { List, Printer } from "lucide-react"
+import { Printer } from "lucide-react"
+import { getEntityIcon } from "@/lib/entity-registry"
 import { ActionSlideButton } from "@/components/shared"
 import { ActivitySidebar } from "@/features/audit/components"
 import { formDrawerWidth } from "@/lib/form-widths"
@@ -212,7 +213,7 @@ export function WarehouseDrawer({ onSuccess, initialData, open: openProp, onOpen
                 side="left"
                 defaultSize={width}
                 mode={mode}
-                icon={List}
+                icon={getEntityIcon('inventory.warehouse')}
                 title={<span>{drawerTitle}</span>}
                 headerActions={(mode === 'view' || mode === 'edit') && initialData?.id && <Button variant="ghost" size="icon" onClick={() => handlePrint()}><Printer className="h-4 w-4" /></Button>}
                 subtitle={

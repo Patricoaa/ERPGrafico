@@ -1,7 +1,7 @@
 "use client"
 
 import { Drawer, MoneyDisplay, SkeletonShell, StatusBadge } from "@/components/shared"
-import { BookOpen } from "lucide-react"
+import { getEntityIcon } from "@/lib/entity-registry"
 import { useBankStatement } from "../hooks/useBankStatement"
 
 interface BankStatementData {
@@ -33,7 +33,7 @@ export function BankStatementDrawer({ statementId, open, onOpenChange }: BankSta
             defaultSize="55%"
             title={statement ? `Cartola ${statement.display_id || statement.id}` : "Cartola Bancaria"}
             subtitle={statement?.treasury_account_name}
-            icon={BookOpen}
+            icon={getEntityIcon('treasury.bankstatement')}
         >
             {isLoading ? (
                 <SkeletonShell isLoading={true} ariaLabel="Cargando cartola" />
