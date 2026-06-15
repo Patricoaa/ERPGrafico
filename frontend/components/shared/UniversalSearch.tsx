@@ -117,12 +117,9 @@ export function UniversalSearch() {
                 type="button"
                 onClick={() => setOpen(true)}
                 aria-label="Búsqueda universal (Ctrl+K)"
-                className="group flex h-9 items-center justify-center gap-1.5 rounded-md border border-border/60 bg-muted/30 px-3 text-xs text-muted-foreground/60 transition-all hover:bg-muted/50 hover:text-foreground hover:ring-2 hover:ring-primary/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/20 w-9 sm:w-auto"
+                className="group flex h-9 w-9 items-center justify-center rounded-md border border-border/60 bg-muted/30 text-muted-foreground/60 transition-all hover:bg-muted/50 hover:text-foreground hover:ring-2 hover:ring-primary/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/20"
             >
                 <Search className="size-3.5 shrink-0 transition-colors group-hover:text-foreground" aria-hidden />
-                <span className="hidden sm:inline">Buscar...</span>
-                <span className="pointer-events-none hidden select-none items-center gap-1 font-mono text-[9px] font-medium text-muted-foreground/40 md:flex">
-                </span>
             </button>
 
             <Dialog open={open} onOpenChange={setOpen}>
