@@ -9,14 +9,16 @@ import { PrintableLayout } from "@/features/_shared/transaction-drawer"
 import { usePurchaseReturn } from "../hooks/usePurchasing"
 
 interface PurchaseReturnDrawerProps {
-    returnId: number | null
+    returnId?: number | null
+    id?: number | null
     open: boolean
     onOpenChange: (open: boolean) => void
     onSuccess?: () => void
 }
 
-export function PurchaseReturnDrawer({ returnId, open, onOpenChange }: PurchaseReturnDrawerProps) {
-    const { returnData, isLoading } = usePurchaseReturn(returnId, open)
+export function PurchaseReturnDrawer({ returnId, id, open, onOpenChange }: PurchaseReturnDrawerProps) {
+    const entityId = returnId ?? id ?? null
+    const { returnData, isLoading } = usePurchaseReturn(entityId, open)
     const printRef = useRef<HTMLDivElement>(null)
     const handlePrint = useReactToPrint({ contentRef: printRef })
 

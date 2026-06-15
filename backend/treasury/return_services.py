@@ -95,7 +95,7 @@ class TreasuryReturnService:
             movement_type=movement_type,
             payment_method=payment.payment_method,
             amount=amount, 
-            reference=f"DEVOLUCIÓN {payment.reference}",
+            reference=f"DEV-{payment.id}",
             contact=payment.contact,
             invoice=payment.invoice,
             sale_order=payment.sale_order,
@@ -124,7 +124,7 @@ class TreasuryReturnService:
             entry = JournalEntry.objects.create(
                 date=return_movement.date,
                 description=f"Devolución Pago Cliente - {payment.contact.name if payment.contact else 'Cliente'}",
-                reference=f"DEV-MOV-{payment.id}",
+                reference=f"DEV-JE-{payment.id}",
                 status=JournalEntry.State.DRAFT,
                 source_content_type=ContentType.objects.get_for_model(TreasuryMovement),
                 source_object_id=return_movement.id,
@@ -158,7 +158,7 @@ class TreasuryReturnService:
             entry = JournalEntry.objects.create(
                 date=return_movement.date,
                 description=f"Devolución Pago Proveedor - {payment.contact.name if payment.contact else 'Proveedor'}",
-                reference=f"DEV-MOV-{payment.id}",
+                reference=f"DEV-JE-{payment.id}",
                 status=JournalEntry.State.DRAFT,
                 source_content_type=ContentType.objects.get_for_model(TreasuryMovement),
                 source_object_id=return_movement.id,

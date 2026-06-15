@@ -126,7 +126,7 @@ export function LogisticsPhase({
                 number: formatEntity(isSale ? 'DES' : 'REC', (doc.number as string) || (doc.id as number), doc.display_id as string),
                 icon: Package,
                 id: doc.id as number,
-                docType: (doc.docType as string) || (isSale ? 'sale_delivery' : 'inventory'),
+                docType: (doc.docType as string) || (isSale ? 'sale_delivery' : 'purchase_receipt'),
                 status: doc.status as string,
                 actions: [
                     ...(canAnnulLogistics && doc.status !== 'CANCELLED' && invoices.some((inv: Order) => inv.status === 'DRAFT') ? [{
