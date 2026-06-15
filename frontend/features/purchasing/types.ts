@@ -23,6 +23,17 @@ export interface InvoiceDetail {
     document_attachment: string | null
 }
 
+export interface SerializedPayment {
+    id: number
+    payment_method: string
+    payment_method_display: string
+    payment_method_new_name: string | null
+    payment_method_new_method_type: string | null
+    amount: string
+    movement_type: string
+    date: string
+}
+
 export interface PurchaseOrderAPI {
     id: number
     number: string
@@ -49,6 +60,9 @@ export interface PurchaseOrderAPI {
     notes: string
     supplier_reference?: string
     payment_method?: string
+    payment_method_ref_name?: string | null
+    payment_method_ref_method_type?: string | null
+    serialized_payments?: SerializedPayment[]
     lines: PurchaseOrderLineAPI[]
     work_order?: number | null
     work_order_number?: string | null

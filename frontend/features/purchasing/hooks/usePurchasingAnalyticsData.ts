@@ -21,17 +21,29 @@ const RECEIVING_COLORS: Record<string, string> = {
 const PAYMENT_METHOD_COLORS: Record<string, string> = {
     CASH: "#22c55e",
     CARD: "#3b82f6",
-    TRANSFER: "#8b5cf6",
+    DEBIT_CARD: "#3b82f6",
+    CREDIT_CARD: "#8b5cf6",
+    CARD_TERMINAL: "#06b6d4",
+    TRANSFER: "#a855f7",
     CHECK: "#f59e0b",
     CREDIT: "#ef4444",
+    WRITE_OFF: "#6b7280",
+    CREDIT_BALANCE: "#ec4899",
+    OTHER: "#9ca3af",
 }
 
 const PAYMENT_METHOD_LABELS: Record<string, string> = {
     CASH: "Efectivo",
     CARD: "Tarjeta",
+    DEBIT_CARD: "Tarjeta Débito",
+    CREDIT_CARD: "Tarjeta Crédito",
+    CARD_TERMINAL: "POS Integrado",
     TRANSFER: "Transferencia",
     CHECK: "Cheque",
     CREDIT: "Crédito",
+    WRITE_OFF: "Castigo",
+    CREDIT_BALANCE: "Saldo a Favor",
+    OTHER: "Otro",
 }
 
 const CATEGORICAL = [
@@ -201,7 +213,25 @@ export function usePurchasingAnalyticsData(
             .sort((a, b) => b.value - a.value)
 
         // ── Payment method distribution ────────────────────
-        const paymentMethodGroups = groupBy(filtered, (o) => (o as any).payment_method || "CREDIT")
+        function resolvePaymentMethod(o: PurchaseOrderAPI): string {
+            const refMethodType = o.payment_method_ref_method_type
+            if (refMethodType && refMethodType in PAYMENT_METHOD_LABELS) {
+                return refMethodType
+            }
+            const payments = o.serialized_payments
+            if (payments && payments.length > 0) {
+                const methodType = payments[0].payment_method_new_method_type
+                if (methodType && methodType in PAYMENT_METHOD_LABELS) {
+                    return methodType
+                }
+                const legacy = payments[0].payment_method
+                if (legacy && legacy in PAYMENT_METHOD_LABELS && legacy !== "CREDIT") {
+                    return legacy
+                }
+            }
+            return "CREDIT"
+        }
+        const paymentMethodGroups = groupBy(filtered, resolvePaymentMethod)
         const paymentMethodDistribution = Object.entries(paymentMethodGroups)
             .map(([id, items]) => ({
                 id: PAYMENT_METHOD_LABELS[id] ?? id,

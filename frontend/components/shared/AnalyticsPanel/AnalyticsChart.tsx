@@ -39,6 +39,8 @@ function BarChartRenderer(props: BarChartConfig) {
     const pit = props.compact ? 4 : 16
     const showLegend = props.showLegend ?? true
     const legendPad = showLegend && !props.compact ? 24 : 0
+    const axisBottomPad = props.axisBottomLegend ? 20 : 0
+    const axisLeftPad = props.axisLeftLegend ? 96 : 0
     const axes = props.compact
         ? { axisBottom: null, axisLeft: null }
         : {
@@ -55,7 +57,7 @@ function BarChartRenderer(props: BarChartConfig) {
                 format: props.valueFormat ?? "$,.0f",
                 legend: props.axisLeftLegend,
                 legendPosition: "middle" as const,
-                legendOffset: -48,
+                legendOffset: -140,
             },
         }
 
@@ -86,7 +88,7 @@ function BarChartRenderer(props: BarChartConfig) {
                 indexBy={props.indexBy}
                 padding={0.15}
                 borderRadius={props.borderRadius ?? 4}
-                margin={{ top: pit + legendPad, right: pit, bottom: 28, left: 64 }}
+                margin={{ top: pit + legendPad, right: pit, bottom: 28 + axisBottomPad, left: 64 + axisLeftPad }}
                 valueFormat={props.valueFormat}
                 enableLabel={false}
                 colors={chartColors}
@@ -105,18 +107,33 @@ function LineChartRenderer(props: LineChartConfig) {
     const pit = props.compact ? 4 : 16
     const showLegend = props.showLegend ?? true
     const legendPad = showLegend && !props.compact ? 24 : 0
+    const axisBottomPad = props.axisBottomLegend ? 20 : 0
+    const axisLeftPad = props.axisLeftLegend ? 96 : 0
     const axes = props.compact
         ? { axisBottom: null, axisLeft: null }
         : {
-            axisBottom: { tickSize: 0, tickPadding: 8 },
-            axisLeft: { tickSize: 0, tickPadding: 8, format: props.valueFormat ?? "$,.0f" },
+            axisBottom: {
+                tickSize: 0,
+                tickPadding: 8,
+                legend: props.axisBottomLegend,
+                legendPosition: "middle" as const,
+                legendOffset: 36,
+            },
+            axisLeft: {
+                tickSize: 0,
+                tickPadding: 8,
+                format: props.valueFormat ?? "$,.0f",
+                legend: props.axisLeftLegend,
+                legendPosition: "middle" as const,
+                legendOffset: -140,
+            },
         }
 
     return (
         <div className="flex-1 min-h-0 w-full relative">
             <LazyResponsiveLine
                 data={props.data}
-                margin={{ top: pit + legendPad, right: pit, bottom: 28, left: 64 }}
+                margin={{ top: pit + legendPad, right: pit, bottom: 28 + axisBottomPad, left: 64 + axisLeftPad }}
                 curve="linear"
                 lineWidth={props.compact ? 3 : 4}
                 pointSize={props.compact ? 0 : 4}
@@ -179,9 +196,14 @@ function PieChartRenderer(props: PieChartConfig) {
                 legends={showLegend ? [{ ...defaultLegend }] : []}
                 tooltip={({ datum }) => {
                     const val = Number(datum.value)
-                    const formatted = Number.isFinite(val)
-                        ? '$' + Math.round(val).toLocaleString('es-CL')
-                        : String(val)
+                    let formatted: string
+                    if (!Number.isFinite(val)) {
+                        formatted = String(val)
+                    } else if (props.valueFormat === "currency") {
+                        formatted = '$' + Math.round(val).toLocaleString('es-CL')
+                    } else {
+                        formatted = val.toLocaleString('es-CL')
+                    }
                     return (
                         <div className="bg-popover text-popover-foreground border border-border rounded-md px-3 py-1.5 text-xs shadow-sm whitespace-nowrap">
                             <span className="font-medium">{String(datum.id)}</span>

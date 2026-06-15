@@ -65,6 +65,8 @@ class PurchaseOrderSerializer(serializers.ModelSerializer):
     is_invoiced = serializers.SerializerMethodField()
     invoice_details = serializers.SerializerMethodField()
     serialized_payments = TreasuryMovementSerializer(source='payments', many=True, read_only=True)
+    payment_method_ref_name = serializers.CharField(source='payment_method_ref.name', read_only=True, allow_null=True)
+    payment_method_ref_method_type = serializers.CharField(source='payment_method_ref.method_type', read_only=True, allow_null=True)
     work_order_number = serializers.CharField(source='work_order.number', read_only=True, allow_null=True)
     related_documents = serializers.SerializerMethodField()
     actual_receipt_date = serializers.SerializerMethodField()
@@ -77,6 +79,7 @@ class PurchaseOrderSerializer(serializers.ModelSerializer):
             'id', 'number', 'display_id', 'supplier', 'supplier_name', 'warehouse', 'warehouse_name',
             'date', 'status', 'receiving_status', 'receipt_date', 'notes', 'total_net', 'total_tax', 'total', 'total_paid', 
             'pending_amount', 'is_invoiced', 'invoice_details', 'serialized_payments', 'payment_method',
+            'payment_method_ref_name', 'payment_method_ref_method_type',
             'work_order', 'work_order_number', 'related_documents', 'lines', 'created_at', 'updated_at',
             'actual_receipt_date',
         ]
@@ -225,32 +228,47 @@ class PurchaseOrderSerializer(serializers.ModelSerializer):
 
 class WritePurchaseOrderSerializer(serializers.ModelSerializer):
     lines = PurchaseLineSerializer(many=True)
+    payment_method_id = serializers.IntegerField(required=False, allow_null=True, write_only=True)
 
     class Meta:
         model = PurchaseOrder
-        fields = ['id', 'supplier', 'warehouse', 'work_order', 'notes', 'lines', 'supplier_reference', 'payment_method']
+        fields = ['id', 'supplier', 'warehouse', 'work_order', 'notes', 'lines', 'supplier_reference', 'payment_method', 'payment_method_id']
         read_only_fields = ['id', 'number', 'status']
 
     def create(self, validated_data):
         lines_data = validated_data.pop('lines')
-        order = PurchaseOrder.objects.create(**validated_data)
-        
+        payment_method_id = validated_data.pop('payment_method_id', None)
+
+        pm_ref = None
+        if payment_method_id:
+            from treasury.models import PaymentMethod as TreasuryPM
+            pm_ref = TreasuryPM.objects.filter(id=payment_method_id).first()
+
+        order = PurchaseOrder.objects.create(**validated_data, payment_method_ref=pm_ref)
+
         self._save_lines(order, lines_data)
         order.recalculate_totals()
-        
+
         return order
 
     def update(self, instance, validated_data):
         lines_data = validated_data.pop('lines', None)
-        
+        payment_method_id = validated_data.pop('payment_method_id', None)
+
+        if payment_method_id:
+            from treasury.models import PaymentMethod as TreasuryPM
+            pm_ref = TreasuryPM.objects.filter(id=payment_method_id).first()
+            if pm_ref:
+                instance.payment_method_ref = pm_ref
+
         # Update simple fields
         for attr, value in validated_data.items():
             setattr(instance, attr, value)
-            
+
         if lines_data is not None:
             self._save_lines(instance, lines_data)
             instance.recalculate_totals()
-            
+
         instance.save()
         return instance
 

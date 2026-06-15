@@ -1091,6 +1091,9 @@ class PurchasingService:
             if payment_method_id:
                 from treasury.models import PaymentMethod as PM
                 payment_method_inst = PM.objects.filter(id=payment_method_id).first()
+                if payment_method_inst and order.payment_method_ref_id != payment_method_inst.id:
+                    order.payment_method_ref = payment_method_inst
+                    order.save(update_fields=['payment_method_ref'])
 
             # Asegurar que installments sea int
             if not isinstance(installments, int):
