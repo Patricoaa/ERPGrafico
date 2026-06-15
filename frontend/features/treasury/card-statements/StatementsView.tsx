@@ -196,7 +196,7 @@ export function StatementsView({ bankId, creditCardAccounts }: StatementsViewPro
                                                     content: hubData.costBreakdownDonut.length > 0 ? {
                                                         type: 'stat-card',
                                                         config: {
-                                                            label: 'Composición de Costos',
+                                                             label: 'Composición del Estado de Cuenta',
                                                             variant: 'chart',
                                                             chart: {
                                                                 type: 'pie-chart',

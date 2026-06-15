@@ -55,14 +55,13 @@ export function useStatementsAnalyticsData(
         const purchaseGroupData = [...groups]
             .sort((a, b) => (b.effective_cost_pct ?? 0) - (a.effective_cost_pct ?? 0))
 
-        const totalAmount = groups.reduce((sum, g) => sum + parseFloat(g.total_amount), 0)
-        const totalInterest = groups.reduce((sum, g) => sum + parseFloat(g.total_interest), 0)
-        const totalFees = costs.reduce((sum, c) => sum + parseFloat(c.fees), 0)
+        const totalPrincipal = groups.reduce((sum, g) => sum + parseFloat(g.total_amount), 0)
+        const totalCharges = groups.reduce((sum, g) => sum + parseFloat(g.total_interest), 0)
+            + costs.reduce((sum, c) => sum + parseFloat(c.fees) + parseFloat(c.interest), 0)
 
         const costBreakdownDonut = [
-            { id: 'Capital', value: totalAmount, color: 'var(--chart-1)' },
-            { id: 'Intereses', value: totalInterest, color: 'var(--chart-2)' },
-            { id: 'Comisiones', value: totalFees, color: 'var(--chart-3)' },
+            { id: 'Cuotas', value: totalPrincipal, color: 'var(--chart-1)' },
+            { id: 'Cargos', value: totalCharges, color: 'var(--chart-3)' },
         ].filter(d => d.value > 0)
 
         return {
