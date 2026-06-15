@@ -130,6 +130,14 @@ function LineChartRenderer(props: LineChartConfig) {
                 enableGridY={false}
                 theme={nivoTheme}
                 legends={showLegend ? [{ ...defaultLegend }] : []}
+                useMesh
+                crosshairType="cross"
+                tooltip={({ point }) => (
+                    <div className="bg-popover text-popover-foreground border border-border rounded-md px-3 py-1.5 text-xs shadow-sm whitespace-nowrap">
+                        <span className="font-medium">{String(point.data.xFormatted)}</span>
+                        <span className="ml-2 font-bold">{String(point.data.yFormatted)}</span>
+                    </div>
+                )}
                 {...axes}
             />
         </div>

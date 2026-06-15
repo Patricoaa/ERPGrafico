@@ -165,7 +165,7 @@ export function StatementsView({ bankId, creditCardAccounts }: StatementsViewPro
                                             sections: [
                                                 {
                                                     id: 'payment-evolution',
-                                                    content: hubData.paymentEvolutionChart[0]?.data.length ? {
+                                                    content: hubData.paymentEvolutionChart[0]?.data.some(d => d.y > 0) ? {
                                                         type: 'stat-card',
                                                         config: {
                                                             label: 'Evolución de Pagos por Estado de Cuenta',
@@ -175,7 +175,7 @@ export function StatementsView({ bankId, creditCardAccounts }: StatementsViewPro
                                                                 data: hubData.paymentEvolutionChart,
                                                                 enableArea: true,
                                                                 showLegend: true,
-                                                                valueFormat: ' >-$s',
+                                                                 valueFormat: '$~s',
                                                             },
                                                         },
                                                     } : {
