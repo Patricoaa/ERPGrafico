@@ -664,6 +664,7 @@ class CardPendingCharge(models.Model):
         TAX = 'TAX', _('Impuesto')
         FEE = 'FEE', _('Cargo')
         INSURANCE = 'INSURANCE', _('Seguro')
+        INTEREST = 'INTEREST', _('Interés')
         OTHER = 'OTHER', _('Otro')
 
     card_account = models.ForeignKey(

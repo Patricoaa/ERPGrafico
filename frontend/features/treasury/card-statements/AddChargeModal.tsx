@@ -29,6 +29,7 @@ const CHARGE_TYPES = [
     { value: 'TAX', label: 'Impuesto' },
     { value: 'FEE', label: 'Cargo' },
     { value: 'INSURANCE', label: 'Seguro' },
+    { value: 'INTEREST', label: 'Interés' },
     { value: 'OTHER', label: 'Otro' },
 ]
 

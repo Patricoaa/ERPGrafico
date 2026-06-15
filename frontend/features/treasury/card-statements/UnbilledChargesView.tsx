@@ -40,6 +40,7 @@ const chargeTypeColorMap: Record<string, string> = {
     TAX: 'bg-destructive text-destructive-foreground',
     FEE: 'bg-info text-info-foreground',
     INSURANCE: 'bg-accent text-accent-foreground',
+    INTEREST: 'bg-success text-success-foreground',
     OTHER: 'bg-muted text-muted-foreground',
 }
 
@@ -48,6 +49,7 @@ const CHARGE_TYPE_COLORS: Record<string, string> = {
     TAX: "#ef4444",
     FEE: "#3b82f6",
     INSURANCE: "#8b5cf6",
+    INTEREST: "#10b981",
     OTHER: "#6b7280",
 }
 
