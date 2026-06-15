@@ -95,14 +95,32 @@ export interface StatementInstallment {
     group_display_id: string | null
     partner_name: string | null
     total_installments: number | null
+    purchase_order_id?: number | null
+    purchase_order_display_id?: string | null
+}
+
+export interface CardPendingCharge {
+    id: number
+    card_account: number
+    amount: string
+    charge_type: string
+    charge_type_display: string
+    description: string
+    date: string
+    is_billed: boolean
+    billed_in_statement: number | null
+    journal_entry: number | null
+    created_by: number | null
+    created_at: string
 }
 
 export interface StatementChargesResponse {
     movements: TreasuryMovement[]
     installments: StatementInstallment[]
+    pending_charges?: CardPendingCharge[]
 }
 
-export type StatementChargeSource = 'movement' | 'installment'
+export type StatementChargeSource = 'movement' | 'installment' | 'pending'
 
 export interface StatementChargeRow {
     id: string
@@ -119,4 +137,5 @@ export interface StatementChargeRow {
     movementTypeDisplay: string | null
     originalMovement: TreasuryMovement | null
     originalInstallment: StatementInstallment | null
+    originalPendingCharge: CardPendingCharge | null
 }

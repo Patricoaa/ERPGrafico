@@ -226,7 +226,12 @@ export function UnbilledChargesView({
                 if (item.source !== 'installment' || !item.originalInstallment) return null
                 const inst = item.originalInstallment
                 return (
-                    <div className="flex justify-center w-full">
+                    <div className="flex flex-col items-center gap-0.5 w-full">
+                        {inst.partner_name && (
+                            <span className="text-[10px] text-muted-foreground truncate max-w-[140px] leading-tight">
+                                {inst.partner_name}
+                            </span>
+                        )}
                         <button
                             type="button"
                             onClick={(e) => {
