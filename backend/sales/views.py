@@ -16,6 +16,7 @@ from .services import SalesService
 from inventory.models import Warehouse
 from django.core.exceptions import ValidationError
 from decimal import Decimal
+from django.utils import timezone
 
 from core.mixins import BulkImportMixin
 from core.mixins import AuditHistoryMixin
@@ -308,6 +309,11 @@ class SaleOrderViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
             'requires_reason': action_kind == 'full_annul',
             'action': action_kind,
         }
+        from tax.services import TaxPeriodService, AccountingPeriodService
+        today = timezone.now().date()
+        impact['period_open'] = not (
+            TaxPeriodService.is_period_closed(today) or AccountingPeriodService.is_period_closed(today)
+        )
         return Response(impact)
 
     @action(detail=True, methods=['post'])

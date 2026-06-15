@@ -28,6 +28,7 @@ export interface CancelImpact {
     has_confirmed_receipts?: boolean
     has_posted_payments: boolean
     has_folio_invoices?: boolean
+    period_open?: boolean
     requires_reason?: boolean
     action: string
 }
@@ -99,12 +100,14 @@ export function useCancelOrderFlow(
     const isAnnulBlocked = impact?.has_folio_invoices === true
         || (impact?.work_orders?.length ?? 0) > 0
         || impact?.has_posted_payments === true
+        || impact?.period_open === false
 
     const annulBlockedReason = (() => {
         if (!isAnnulBlocked) return ''
         if (impact?.has_folio_invoices) return 'Debe emitir una Nota de Crédito/Débito para ajustar esta orden'
         if ((impact?.work_orders?.length ?? 0) > 0) return 'Existen órdenes de trabajo asociadas. Anule o complete las OT primero'
         if (impact?.has_posted_payments) return 'Existen pagos contabilizados. Debe reversarlos manualmente antes de anular'
+        if (impact?.period_open === false) return 'El período contable o tributario actual está cerrado. No se pueden anular documentos'
         return ''
     })()
 
