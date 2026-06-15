@@ -54,17 +54,17 @@ export const searchableEntityRoutes: Record<string, string> = {
     // Inventory
     // categories/warehouses/stock-moves viven en tabs dentro de otras páginas — T-99
     'inventory.product':         '/inventory/products',
-    'inventory.productcategory': '/inventory/products?tab=categories',
-    'inventory.warehouse':       '/inventory/stock?tab=warehouses',
-    'inventory.stockmove':       '/inventory/stock?tab=movements',
+    'inventory.productcategory': '/inventory/products/categories',
+    'inventory.warehouse':       '/inventory/stock/warehouses',
+    'inventory.stockmove':       '/inventory/stock/movements',
 
     // Treasury
-    'treasury.treasurymovement': '/treasury/operaciones?tab=movements',
-    'treasury.treasuryaccount':  '/treasury/accounts',
+    'treasury.treasurymovement': '/treasury/operaciones/movements',
+    'treasury.treasuryaccount':  '/treasury/operaciones/accounts',
     // possession: vive en /sales/sessions (POSSessionsView) — T-99
     'treasury.possession':       '/sales/sessions',
     // bankstatement: vive en /treasury/reconciliation tab=statements — T-99
-    'treasury.bankstatement':    '/treasury/reconciliation?tab=statements',
+    'treasury.bankstatement':    '/treasury/reconciliation/statements',
 
     // HR
     'hr.employee': '/hr/employees',

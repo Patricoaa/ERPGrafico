@@ -1,26 +1,23 @@
 "use client"
 
-import { usePathname, useSearchParams } from "next/navigation"
+import { usePathname } from "next/navigation"
 import { PageHeader } from "@/components/shared"
 import { getModuleIconName } from "@/lib/module-registry"
 
 export function InventoryHeader() {
     const pathname = usePathname()
-    const searchParams = useSearchParams()
 
     const segments = pathname.split('/').filter(Boolean)
     const currentSegment = segments[1] || 'products'
 
     const activeValue = currentSegment === 'settings' ? 'config' : currentSegment
 
-    // Sub-tab params still live in ?tab= for within-route navigation
-    const subTabParam = searchParams.get('tab')
-    // Determine subActiveValue based on route + query param
+    // Determine subActiveValue from path segments
     const subActiveValue = (() => {
-        if (activeValue === 'config') return subTabParam || 'accounts'
-        if (activeValue === 'products') return subTabParam || 'products'
-        if (activeValue === 'stock') return subTabParam || 'report'
-        if (activeValue === 'uoms') return subTabParam || 'units'
+        if (activeValue === 'config') return segments[2] || 'accounts'
+        if (activeValue === 'products') return segments[2] || 'products'
+        if (activeValue === 'stock') return segments[2] || 'report'
+        if (activeValue === 'uoms') return segments[2] || 'units'
         return undefined
     })()
 
@@ -31,10 +28,10 @@ export function InventoryHeader() {
             iconName: "package",
             href: "/inventory/products",
             subTabs: [
-                { value: "products", label: "Catálogo", iconName: "package", href: "/inventory/products?tab=products" },
-                { value: "categories", label: "Categorías", iconName: "layout-grid", href: "/inventory/products?tab=categories" },
-                { value: "pricing-rules", label: "Precios", iconName: "banknote", href: "/inventory/products?tab=pricing-rules" },
-                { value: "subscriptions", label: "Suscripciones", iconName: "calendar-clock", href: "/inventory/products?tab=subscriptions" },
+                { value: "products", label: "Catálogo", iconName: "package", href: "/inventory/products" },
+                { value: "categories", label: "Categorías", iconName: "layout-grid", href: "/inventory/products/categories" },
+                { value: "pricing-rules", label: "Precios", iconName: "banknote", href: "/inventory/products/pricing-rules" },
+                { value: "subscriptions", label: "Suscripciones", iconName: "calendar-clock", href: "/inventory/products/subscriptions" },
             ]
         },
         {
@@ -43,9 +40,9 @@ export function InventoryHeader() {
             iconName: "warehouse",
             href: "/inventory/stock",
             subTabs: [
-                { value: "report", label: "Reporte", iconName: "file-text", href: "/inventory/stock?tab=report" },
-                { value: "movements", label: "Movimientos", iconName: "arrow-left-right", href: "/inventory/stock?tab=movements" },
-                { value: "warehouses", label: "Almacenes", iconName: "warehouse", href: "/inventory/stock?tab=warehouses" },
+                { value: "report", label: "Reporte", iconName: "file-text", href: "/inventory/stock/report" },
+                { value: "movements", label: "Movimientos", iconName: "arrow-left-right", href: "/inventory/stock/movements" },
+                { value: "warehouses", label: "Almacenes", iconName: "warehouse", href: "/inventory/stock/warehouses" },
             ]
         },
         {
@@ -54,8 +51,8 @@ export function InventoryHeader() {
             iconName: "scale",
             href: "/inventory/uoms",
             subTabs: [
-                { value: "units", label: "Unidades de Medida", iconName: "scale", href: "/inventory/uoms?tab=units" },
-                { value: "categories", label: "Categorías de Medida", iconName: "layout-grid", href: "/inventory/uoms?tab=categories" },
+                { value: "units", label: "Unidades de Medida", iconName: "scale", href: "/inventory/uoms/units" },
+                { value: "categories", label: "Categorías de Medida", iconName: "layout-grid", href: "/inventory/uoms/categories" },
             ]
         },
         { value: "attributes", label: "Atributos", iconName: "tags", href: "/inventory/attributes" },
@@ -65,16 +62,16 @@ export function InventoryHeader() {
             iconName: "settings",
             href: "/inventory/settings",
             subTabs: [
-                { value: "accounts", label: "Cuentas", href: "/inventory/settings?tab=accounts", iconName: "package" },
-                { value: "adjustments", label: "Ajustes", href: "/inventory/settings?tab=adjustments", iconName: "arrow-left-right" },
-                { value: "cogs", label: "Costo Ventas", href: "/inventory/settings?tab=cogs", iconName: "dollar-sign" },
+                { value: "accounts", label: "Cuentas", href: "/inventory/settings/accounts", iconName: "package" },
+                { value: "adjustments", label: "Ajustes", href: "/inventory/settings/adjustments", iconName: "arrow-left-right" },
+                { value: "cogs", label: "Costo Ventas", href: "/inventory/settings/cogs", iconName: "dollar-sign" },
             ]
         },
     ]
 
     const navigation = {
         moduleName: "Inventario",
-        moduleHref: "/inventory/products?tab=products",
+        moduleHref: "/inventory/products",
         tabs,
         activeValue,
         subActiveValue,

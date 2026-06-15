@@ -1,12 +1,11 @@
 "use client"
 
-import { usePathname, useSearchParams } from "next/navigation"
+import { usePathname } from "next/navigation"
 import { PageHeader } from "@/components/shared"
 import { getModuleIconName } from "@/lib/module-registry"
 
 export function HRHeader() {
     const pathname = usePathname()
-    const searchParams = useSearchParams()
     
     // Determine active view from pathname
     // e.g. /hr/employees -> employees
@@ -16,7 +15,7 @@ export function HRHeader() {
     const currentSegment = segments[1] || 'employees' 
     
     const activeValue = currentSegment === 'settings' ? 'config' : currentSegment
-    const subActiveValue = currentSegment === 'settings' ? (searchParams.get('tab') || 'global') : undefined
+    const subActiveValue = currentSegment === 'settings' ? (segments[2] || 'global') : undefined
 
     const tabs = [
         { value: "employees", label: "Nómina Personal", iconName: "users-2", href: "/hr/employees" },
@@ -29,9 +28,9 @@ export function HRHeader() {
             iconName: "settings", 
             href: "/hr/settings",
             subTabs: [
-                { value: "global", label: "Globales", href: "/hr/settings?tab=global", iconName: "settings-2" },
-                { value: "concepts", label: "Conceptos", href: "/hr/settings?tab=concepts", iconName: "alert-circle" },
-                { value: "previsional", label: "Previsión", href: "/hr/settings?tab=previsional", iconName: "loader-2" }
+                { value: "global", label: "Globales", href: "/hr/settings/global", iconName: "settings-2" },
+                { value: "concepts", label: "Conceptos", href: "/hr/settings/concepts", iconName: "alert-circle" },
+                { value: "previsional", label: "Previsión", href: "/hr/settings/previsional", iconName: "loader-2" }
             ]
         },
     ]

@@ -35,7 +35,7 @@ export function DashboardKPIs({ data, loading }: DashboardKPIsProps) {
                 subtext="Movimientos por procesar"
                 valueSize="xl"
                 accent="warning"
-                href="/treasury/reconciliation?tab=statements&filter=in_progress"
+                href="/treasury/reconciliation?filter=in_progress"
             />
 
             <StatCard
@@ -69,7 +69,7 @@ export function DashboardKPIs({ data, loading }: DashboardKPIsProps) {
                 icon={FileText}
                 valueSize="xl"
                 accent="primary"
-                href="/treasury/reconciliation?tab=statements"
+                href="/treasury/reconciliation"
             >
                 <div className="flex justify-between text-xs font-bold text-muted-foreground mt-2 uppercase tracking-wider">
                     <span className="text-success">{statements.confirmed} confirmados</span>

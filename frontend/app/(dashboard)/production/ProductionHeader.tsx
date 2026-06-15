@@ -1,18 +1,17 @@
 "use client"
 
-import { usePathname, useSearchParams } from "next/navigation"
+import { usePathname } from "next/navigation"
 import { PageHeader } from "@/components/shared"
 import { getModuleIconName } from "@/lib/module-registry"
 
 export function ProductionHeader() {
     const pathname = usePathname()
-    const searchParams = useSearchParams()
     
     const segments = pathname.split('/').filter(Boolean)
     const currentSegment = segments[1] || 'orders'
     
     const activeValue = currentSegment === 'settings' ? 'config' : currentSegment
-    const subActiveValue = currentSegment === 'settings' ? (searchParams.get('tab') || 'global') : undefined
+    const subActiveValue = currentSegment === 'settings' ? (segments[2] || 'global') : undefined
 
     const tabs = [
         { value: "orders", label: "Órdenes de Trabajo", iconName: "printer", href: "/production/orders" },

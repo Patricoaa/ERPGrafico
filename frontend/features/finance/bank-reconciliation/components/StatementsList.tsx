@@ -88,14 +88,14 @@ export function StatementsList({ externalOpen = false, createAction, bankId, acc
         refetch()
         setImportModalOpen(false)
         if (!accounts) {
-            router.replace('/treasury/reconciliation?tab=statements')
+            router.replace('/treasury/reconciliation')
         }
     }
 
     const handleModalChange = (open: boolean) => {
         setImportModalOpen(open)
         if (!open && !accounts) {
-            router.replace('/treasury/reconciliation?tab=statements')
+            router.replace('/treasury/reconciliation')
         }
     }
 
