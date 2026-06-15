@@ -15,7 +15,7 @@ from decimal import Decimal
 from typing import TYPE_CHECKING
 from datetime import date as _date
 
-from django.db.models import Sum, Q, Count
+from django.db.models import Sum, Q, Count, Prefetch
 
 from .models import CreditCardStatement, TreasuryMovement, CardPurchaseGroup
 
@@ -253,8 +253,9 @@ class CardAnalyticsService:
         limit: int = 20,
     ) -> list[dict]:
         """
-        Recent purchase groups with cost breakdown (interest, total
-        payable, effective monthly rate).
+        Recent purchase groups with cost breakdown limited to billed
+        installments only.  `total_amount` reflects only installments
+        where `is_billed=True`; interest is prorated proportionally.
 
         Returns::
 
@@ -274,7 +275,9 @@ class CardAnalyticsService:
         from datetime import timedelta
 
         since = (now() - timedelta(days=months * 31)).date()
-        qs = CardPurchaseGroup.objects.select_related('partner')
+        qs = CardPurchaseGroup.objects.select_related('partner').prefetch_related(
+            Prefetch('schedule', queryset=CardPurchaseInstallment.objects.filter(is_billed=True)),
+        )
         if card_account is not None:
             qs = qs.filter(card_account=card_account)
         qs = qs.filter(created_at__date__gte=since)
@@ -283,21 +286,28 @@ class CardAnalyticsService:
 
         result = []
         for g in qs:
-            total_interest = g.total_interest
-            total_payable = g.total_payable
+            billed_inst = [inst for inst in g.schedule.all() if inst.is_billed]
+            billed_principal = sum((inst.principal_amount for inst in billed_inst), Decimal('0'))
+            billed_count = len(billed_inst)
+            if billed_principal == 0:
+                continue
+
+            ratio = billed_principal / g.total_amount if g.total_amount > 0 else Decimal('0')
+            prorated_interest = (g.total_interest * ratio).quantize(Decimal('0.01'))
+            prorated_payable = billed_principal + prorated_interest
             effective_cost_pct = float(
-                (total_interest / g.total_amount * 100).quantize(Decimal('0.01'))
-            ) if g.total_amount > 0 else None
+                (prorated_interest / billed_principal * 100).quantize(Decimal('0.01'))
+            )
 
             result.append({
                 'group_id': g.id,
                 'display_id': g.display_id,
                 'partner_name': g.partner.name if g.partner else None,
-                'total_amount': str(g.total_amount),
-                'installments': g.installments,
+                'total_amount': str(billed_principal),
+                'installments': billed_count,
                 'monthly_rate': str(g.monthly_rate),
-                'total_interest': str(total_interest),
-                'total_payable': str(total_payable),
+                'total_interest': str(prorated_interest),
+                'total_payable': str(prorated_payable),
                 'effective_cost_pct': effective_cost_pct,
             })
 
