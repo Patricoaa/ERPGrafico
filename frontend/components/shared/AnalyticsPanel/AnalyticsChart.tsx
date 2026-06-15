@@ -52,7 +52,7 @@ function BarChartRenderer(props: BarChartConfig) {
             axisLeft: {
                 tickSize: 0,
                 tickPadding: 8,
-                format: props.valueFormat ?? "~s",
+                format: props.valueFormat ?? "$,.0f",
                 legend: props.axisLeftLegend,
                 legendPosition: "middle" as const,
                 legendOffset: -48,
@@ -86,7 +86,7 @@ function BarChartRenderer(props: BarChartConfig) {
                 indexBy={props.indexBy}
                 padding={0.15}
                 borderRadius={props.borderRadius ?? 4}
-                margin={{ top: pit + legendPad, right: pit, bottom: 28, left: 36 }}
+                margin={{ top: pit + legendPad, right: pit, bottom: 28, left: 64 }}
                 valueFormat={props.valueFormat}
                 enableLabel={false}
                 colors={chartColors}
@@ -109,14 +109,14 @@ function LineChartRenderer(props: LineChartConfig) {
         ? { axisBottom: null, axisLeft: null }
         : {
             axisBottom: { tickSize: 0, tickPadding: 8 },
-            axisLeft: { tickSize: 0, tickPadding: 8, format: props.valueFormat ?? "~s" },
+            axisLeft: { tickSize: 0, tickPadding: 8, format: props.valueFormat ?? "$,.0f" },
         }
 
     return (
         <div className="flex-1 min-h-0 w-full relative">
             <LazyResponsiveLine
                 data={props.data}
-                margin={{ top: pit + legendPad, right: pit, bottom: 28, left: 36 }}
+                margin={{ top: pit + legendPad, right: pit, bottom: 28, left: 64 }}
                 curve="linear"
                 lineWidth={props.compact ? 3 : 4}
                 pointSize={props.compact ? 0 : 4}
@@ -132,12 +132,18 @@ function LineChartRenderer(props: LineChartConfig) {
                 legends={showLegend ? [{ ...defaultLegend }] : []}
                 useMesh
                 crosshairType="cross"
-                tooltip={({ point }) => (
-                    <div className="bg-popover text-popover-foreground border border-border rounded-md px-3 py-1.5 text-xs shadow-sm whitespace-nowrap">
-                        <span className="font-medium">{String(point.data.xFormatted)}</span>
-                        <span className="ml-2 font-bold">{String(point.data.yFormatted)}</span>
-                    </div>
-                )}
+                tooltip={({ point }) => {
+                    const yVal = Number(point.data.y)
+                    const yFormatted = Number.isFinite(yVal)
+                        ? '$' + Math.round(yVal).toLocaleString('es-CL')
+                        : String(point.data.yFormatted)
+                    return (
+                        <div className="bg-popover text-popover-foreground border border-border rounded-md px-3 py-1.5 text-xs shadow-sm whitespace-nowrap">
+                            <span className="font-medium">{String(point.data.xFormatted)}</span>
+                            <span className="ml-2 font-bold">{yFormatted}</span>
+                        </div>
+                    )
+                }}
                 {...axes}
             />
         </div>
@@ -158,7 +164,7 @@ function PieChartRenderer(props: PieChartConfig) {
                 cornerRadius={0}
                 borderWidth={2}
                 borderColor={{ theme: "background" }}
-                enableArcLinkLabels={props.compact ? false : (props.enableLabels ?? false)}
+                enableArcLinkLabels={props.enableArcLinkLabels ?? false}
                 arcLinkLabelsOffset={4}
                 arcLinkLabelsThickness={1}
                 arcLinkLabelsTextOffset={4}
@@ -171,6 +177,18 @@ function PieChartRenderer(props: PieChartConfig) {
                 colors={{ datum: "data.color" }}
                 theme={nivoTheme}
                 legends={showLegend ? [{ ...defaultLegend }] : []}
+                tooltip={({ datum }) => {
+                    const val = Number(datum.value)
+                    const formatted = Number.isFinite(val)
+                        ? '$' + Math.round(val).toLocaleString('es-CL')
+                        : String(val)
+                    return (
+                        <div className="bg-popover text-popover-foreground border border-border rounded-md px-3 py-1.5 text-xs shadow-sm whitespace-nowrap">
+                            <span className="font-medium">{String(datum.id)}</span>
+                            <span className="ml-2 font-bold">{formatted}</span>
+                        </div>
+                    )
+                }}
             />
         </div>
     )

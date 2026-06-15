@@ -44,6 +44,7 @@ export function useCardStatementMutations() {
 
     const invalidate = () => {
         queryClient.invalidateQueries({ queryKey: STMT_KEYS.all })
+        queryClient.invalidateQueries({ queryKey: ['card-analytics'] })
     }
 
     const create = useMutation({

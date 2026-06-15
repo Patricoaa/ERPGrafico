@@ -1,7 +1,7 @@
 "use client"
 
 import { User, Settings, LogOut, Bell, Store, Calculator, Inbox } from "lucide-react"
-import { EmptyState } from '@/components/shared'
+import { EmptyState, UniversalSearch } from '@/components/shared'
 import { useRouter } from "next/navigation"
 import { useAuth } from "@/contexts/AuthContext"
 import { toast } from "sonner"
@@ -132,6 +132,9 @@ export function UserActions({ isInboxOpen, onInboxToggle }: UserActionsProps) {
     return (
         <div className="flex items-center gap-2">
             <TooltipProvider delayDuration={0}>
+                {/* Universal Search */}
+                <UniversalSearch />
+
                 {/* POS Action */}
                 <PermissionGuard permission="sales.view_dashboard_sales">
                     <Tooltip>
