@@ -56,8 +56,7 @@ export function useStatementsAnalyticsData(
             .sort((a, b) => (b.effective_cost_pct ?? 0) - (a.effective_cost_pct ?? 0))
 
         const totalPrincipal = groups.reduce((sum, g) => sum + parseFloat(g.total_amount), 0)
-        const totalCharges = groups.reduce((sum, g) => sum + parseFloat(g.total_interest), 0)
-            + costs.reduce((sum, c) => sum + parseFloat(c.fees) + parseFloat(c.interest), 0)
+        const totalCharges = costs.reduce((sum, c) => sum + parseFloat(c.fees) + parseFloat(c.interest), 0)
 
         const costBreakdownDonut = [
             { id: 'Cuotas', value: totalPrincipal, color: 'var(--chart-1)' },
