@@ -292,10 +292,7 @@ export function SmartSearchBar({ searchDef, placeholder = 'Buscar...', className
               <button
                 type="button"
                 onClick={(e) => { e.stopPropagation(); removeFilter(chip.key) }}
-                className={cn(
-                  'rounded-full p-0.5 transition-colors ml-0.5 -mr-1 flex items-center justify-center shrink-0',
-                  chip.isGlobalSearch ? 'hover:bg-foreground/10' : 'hover:bg-primary/20',
-                )}
+                className="rounded-full p-0.5 ml-0.5 -mr-1 flex items-center justify-center shrink-0"
                 aria-label={`Eliminar filtro ${chip.label}`}
               >
                 <X className="h-2.5 w-2.5" />

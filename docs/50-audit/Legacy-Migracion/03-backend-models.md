@@ -21,7 +21,7 @@ backend/
     │   ├── orders.py
     │   ├── payments.py
     │   └── base.py          ← conexión, batching, errores
-    ├── adapters.py          ← LegacySaleNoteAsSaleOrderShape
+    │                          (sin adapters.py — reemplazado por LegacySaleNoteSerializer en serializers.py)
     ├── services/
     │   ├── register_payment.py  ← LegacyPaymentRegistration
     │   └── work_order_builder.py
@@ -73,19 +73,20 @@ backend/
 
 **Decisión**: NO es `Contact` porque semánticamente es un proveedor externo (no un cliente). Si en el futuro se necesita que un LegacyVendor sea también cliente, se crea `Contact` aparte y se vincula con GFK (no en este alcance).
 
-### 1.3 `LegacySaleNote` — N=7.960
+### 1.3 `LegacySaleNote` — N=7.980
 
 | Campo | Tipo | Constraint | Notas |
 |---|---|---|---|
 | `id` | BigAutoField | PK | |
 | `legacy_external_id` | IntegerField | NOT NULL, UNIQUE | el `id` legacy (≠ PK vivo) |
-| `legacy_number` | CharField(20) | NOT NULL | el `numero` humano (ej. "12.345") |
+| `legacy_number` | CharField(20) | NOT NULL, **no único** | el `folio` legacy (109 vacíos, 1.966 distintos) — solo display |
 | `issue_date` | DateField | NOT NULL | el `fecha` legacy |
 | `customer` | ForeignKey(`contacts.Contact`) | NOT NULL, **PROTECT** | cliente de la NV |
 | `related_contact` | ForeignKey(`contacts.Contact`) | NULL, **PROTECT** | cliente del cliente (solo vendor externo) |
 | `vendor` | ForeignKey(`legacy.LegacyVendor`) | NOT NULL, **PROTECT** | |
 | `category_snapshot` | CharField(64) | NOT NULL | "Impresion Digital" (texto, no FK) |
-| `description` | TextField | NOT NULL | el `descripcion_texto` legacy |
+| `description` | TextField | NOT NULL | el `descripcion` legacy (línea corta) |
+| `notes` | TextField | NULL | el `detalles` legacy (texto largo; 7.379 con contenido) |
 | `quantity` | PositiveIntegerField | NOT NULL | |
 | `net_price` | DecimalField(12, 0) | NOT NULL | CLP sin IVA |
 | `tax_amount` | DecimalField(12, 0) | NOT NULL | CLP IVA |
@@ -102,14 +103,16 @@ backend/
 - `indexes = [Index(fields=['issue_date']), Index(fields=['status']), Index(fields=['customer'])]`
 - `ordering = ['-issue_date', '-legacy_external_id']`
 
-#### 1.3.1 Mapeo `estado` legacy → `status` vivo
+#### 1.3.1 Mapeo de estado legacy → `status` vivo
 
-| Legacy `estado` | `status` | `is_pending` | `dispatched_at` |
-|---|---|---|---|
-| `despachado` | `DISPATCHED` | False | `fecha` |
-| `no_despachado` | `IN_PRODUCTION` | False | NULL |
-| `pendiente` | `PENDING` | True | NULL |
-| `anulada` | (omitido) | — | — |
+> El legacy **no tiene un único campo `estado`**: usa `estado_trabajo` + `estado_despachado` (1:1). Solo existen 2 combos y **no hay `anulada`** (ver `00` §3.1).
+
+| `estado_trabajo` / `estado_despachado` | Filas | `status` | `is_pending` | `dispatched_at` |
+|---|---|---|---|---|
+| `terminado` / `despachado` | 7.960 | `DISPATCHED` | False | `fecha_ingreso` |
+| `pendiente` / `no despachado` | 20 | `PENDING` | True | NULL |
+
+Como solo se usan `DISPATCHED` y `PENDING`, los demás valores de `status.choices` quedan disponibles para consistencia con `SaleOrder` pero no se generan en el import. **Nuevo campo** `notes` (TextField, NULL) en `LegacySaleNote` para preservar `ordenes.detalles` (7.379/7.980 con contenido). `legacy_number` (= `folio`) **no es único** y trae 109 vacíos → solo display.
 
 ### 1.4 `LegacyPayment` — N=8.556
 
@@ -120,7 +123,7 @@ backend/
 | `legacy_external_id` | IntegerField | NOT NULL, UNIQUE | el `id` legacy |
 | `paid_at` | DateField | NOT NULL | |
 | `amount` | DecimalField(12, 0) | NOT NULL | CLP |
-| `method` | CharField(20) | NOT NULL, choices=[`efectivo`, `transferencia`, `cheque`] | |
+| `method` | CharField(20) | NOT NULL, choices=[`efectivo`, `transferencia`, `tarjeta`] | NO existe `cheque` en el legacy |
 | `created_at` | DateTimeField | NOT NULL, auto_now_add | |
 | `updated_at` | DateTimeField | NOT NULL, auto_now | |
 
@@ -137,7 +140,7 @@ backend/
 | `registered_by` | ForeignKey(`auth.User`) | NOT NULL, **PROTECT** | |
 | `paid_at` | DateField | NOT NULL | |
 | `amount` | DecimalField(12, 0) | NOT NULL | CLP |
-| `method` | CharField(20) | NOT NULL, choices=[`efectivo`, `transferencia`, `cheque`] | |
+| `method` | CharField(20) | NOT NULL, choices=[`efectivo`, `transferencia`, `tarjeta`] | NO existe `cheque` en el legacy |
 | `notes` | TextField | NULL | opcional |
 | `idempotency_key` | CharField(64) | NULL, UNIQUE | del header `Idempotency-Key` |
 | `created_at` | DateTimeField | NOT NULL, auto_now_add | |
@@ -203,44 +206,51 @@ backend/
 
 Esta migración se ejecuta DESPUÉS de que `0001` haya creado los 6 modelos. Crea:
 
-### 3.1 UoM mínima
+> ⚠️ **CORREGIDO contra el esquema real de `inventory`** (`inventory/models.py`). Errores del plan previo: `UoM` **no tiene `code`** y exige `category` (FK NOT NULL); `Warehouse` **no tiene `is_default`**; `Product` **no tiene `default_warehouse`** (es `receiving_warehouse`), exige `category` (`ProductCategory`, PROTECT, NOT NULL) y su campo de tipo es `product_type` con enum `Product.Type` (no `Product.ProductType`).
+
+### 3.1 UoMCategory + UoM mínima
 
 ```python
+uom_cat, _ = UoMCategory.objects.get_or_create(name='Unidad')
 uom, _ = UoM.objects.get_or_create(
-    code='UN',
-    defaults={'name': 'Unidad'},
+    name='Unidad',
+    defaults={'category': uom_cat, 'uom_type': UoM.Type.REFERENCE, 'ratio': 1},
 )
 ```
 
-**Validación previa**: si existe una UoM con `code='UN'` pero `name != 'Unidad'`, falla ruidosamente con `CommandError("UoM UN existe con nombre distinto. Renombre o ajuste esta migración.")`.
+`UoM` no tiene `code`: se identifica por `name`. Requiere `category` (CASCADE, NOT NULL).
 
 ### 3.2 Warehouse mínimo
 
 ```python
 wh, _ = Warehouse.objects.get_or_create(
     code='LEGACY-DEFAULT',
-    defaults={'name': 'Bodega Legacy Default', 'is_default': False},
+    defaults={'name': 'Bodega Legacy Default'},  # no existe `is_default`
 )
 ```
 
-Misma validación ruidosa.
-
-### 3.3 Producto servicio `LEGACY-OT-PRODUCT`
+### 3.3 ProductCategory + Producto servicio `LEGACY-OT-PRODUCT`
 
 ```python
-product, _ = Product.objects.get_or_create(
+prod_cat, _ = ProductCategory.objects.get_or_create(name='Legacy')
+product, created = Product.objects.get_or_create(
     code='LEGACY-OT-PRODUCT',
     defaults={
         'name': 'Servicio OT Legacy (importación histórica)',
-        'type': Product.ProductType.SERVICE,
+        'product_type': Product.Type.SERVICE,   # enum real: Product.Type
+        'category': prod_cat,                    # FK obligatoria (PROTECT)
         'uom': uom,
         'is_active': True,
-        'default_warehouse': wh,
     },
 )
+# Validación ruidosa: si ya existe con otro tipo, abortar.
+if not created and product.product_type != Product.Type.SERVICE:
+    raise CommandError(
+        "LEGACY-OT-PRODUCT existe con product_type != SERVICE. Revise antes de migrar."
+    )
 ```
 
-Misma validación ruidosa. Si el `Product` ya existe pero NO es `SERVICE`, falla.
+> El `warehouse` de las OTs históricas se toma de `Warehouse` (`code='LEGACY-DEFAULT'`) en el builder, **no** del producto (`Product` no tiene `default_warehouse`).
 
 ### 3.4 Forward + reverse
 

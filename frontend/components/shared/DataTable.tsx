@@ -27,7 +27,7 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { LucideIcon } from "lucide-react"
 import { ScrollArea } from "@/components/ui/scroll-area"
 
-import { BulkActionButtons, BulkActionDock, DataTablePagination, DataTableToolbar, EmptyState, SkeletonShell, type BulkAction, type EntityHubActionConfig } from '@/components/shared'
+import { BulkActionButtons, BulkActionDock, DataTablePagination, DataTableToolbar, EmptyState, SkeletonShell, type BulkAction, type AnalyticsPanelConfig } from '@/components/shared'
 import { resolveEmptyState, type DataTableEmptyState } from './emptyStateResolver'
 
 export interface DataTableProps<TData, TValue> {
@@ -64,8 +64,8 @@ export interface DataTableProps<TData, TValue> {
         value: string
         onValueChange: (value: string) => void
     }
-    /** Optional entity hub button in the toolbar button group */
-    entityHubAction?: EntityHubActionConfig
+    /** Optional analytics panel button in the toolbar button group */
+    analyticsPanel?: AnalyticsPanelConfig
     onRowClick?: (row: TData) => void
     /** Layout variant. Use 'embedded' when the table lives inside a card/panel (no outer border, compact toolbar). Use 'standalone' for full-page tables with border. Use 'minimal' for simple display tables inside tabs/detail panels (no toolbar, no pagination). Use 'compact' for dense CSS Grid tables inside modals/drawers (no toolbar, no pagination, no border). */
     variant?: 'standalone' | 'embedded' | 'minimal' | 'compact'
@@ -178,7 +178,7 @@ export function DataTable<TData, TValue>({
     rightAction,
     showToolbarSort,
     tabs,
-    entityHubAction,
+    analyticsPanel,
     onRowClick,
     variant,
     isLoading = false,
@@ -331,7 +331,7 @@ export function DataTable<TData, TValue>({
         createAction ||
         (viewOptions && viewOptions.length > 0) ||
         showToolbarSort ||
-        entityHubAction ||
+        analyticsPanel ||
         rightButtonGroupAction
     )
     const selectedRows = table.getSelectedRowModel().rows
@@ -382,7 +382,7 @@ export function DataTable<TData, TValue>({
                         createAction={createAction}
                         rightButtonGroupAction={rightButtonGroupAction}
                         tabs={tabs}
-                        entityHubAction={entityHubAction}
+                        analyticsPanel={analyticsPanel}
                     />
                 )}
 
@@ -712,7 +712,7 @@ export function DataTable<TData, TValue>({
                             createAction={createAction}
                             rightButtonGroupAction={rightButtonGroupAction}
                             tabs={tabs}
-                            entityHubAction={entityHubAction}
+                            analyticsPanel={analyticsPanel}
                         />
                     </div>
                 )}
@@ -805,7 +805,7 @@ export function DataTable<TData, TValue>({
                         createAction={createAction}
                         rightButtonGroupAction={rightButtonGroupAction}
                         tabs={tabs}
-                        entityHubAction={entityHubAction}
+                        analyticsPanel={analyticsPanel}
                     />
                 </div>
             )}

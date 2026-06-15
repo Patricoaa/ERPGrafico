@@ -15,8 +15,7 @@ backend/legacy/__init__.py                  (vacío)
 backend/legacy/apps.py
 backend/legacy/permissions.py               (se completa en T04; placeholder en T01)
 backend/legacy/exceptions.py
-backend/legacy/adapters.py                 (vacío por ahora)
-backend/legacy/serializers.py              (vacío por ahora)
+backend/legacy/serializers.py              (LegacySaleNoteSerializer; vacío por ahora)
 backend/legacy/views.py                     (vacío por ahora)
 backend/legacy/urls.py                      (vacío por ahora)
 backend/legacy/admin.py                     (placeholder)

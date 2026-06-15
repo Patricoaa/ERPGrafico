@@ -16,16 +16,18 @@
 
 ## 1. `importers/orders.py`
 
-Ver `04-backend-import-pipeline.md` §4 para el código completo. Resumen de la query:
+Ver `04-backend-import-pipeline.md` §4 (reescrito con columnas reales) para el código completo. Query con **columnas reales**:
 
 ```sql
-SELECT o.id, o.numero, o.cliente_id, o.vendedor_id, o.categoria_id,
-       o.descripcion_texto, o.cantidad, o.precio_neto, o.iva,
-       o.precio_total, o.despachado, o.pendiente, o.fecha, o.estado
+SELECT o.id, o.folio, o.cliente_id, o.vendedor_id, o.categoria_id,
+       o.descripcion, o.detalles, o.cantidad, o.precio_neto, o.iva,
+       o.precio_total, o.estado_trabajo, o.estado_despachado, o.fecha_ingreso
 FROM ordenes o
-WHERE o.estado != 'anulada'
+WHERE o.deleted_at IS NULL
 ORDER BY o.id
 ```
+
+> No existen `numero`/`descripcion_texto`/`despachado`/`pendiente`/`fecha`/`estado`, ni el estado `anulada`.
 
 **Constantes**:
 
@@ -38,9 +40,9 @@ CATEGORIES = {
     5: 'Fotocopias y encuadernado',
 }
 
+# Por estado_trabajo (1:1 con estado_despachado). Solo 2 combos reales.
 LEGACY_STATUS_MAP = {
-    'despachado': ('DISPATCHED', False),
-    'no_despachado': ('IN_PRODUCTION', False),
+    'terminado': ('DISPATCHED', False),
     'pendiente': ('PENDING', True),
 }
 ```
@@ -68,8 +70,9 @@ if opts['stage'] in ('orders', 'all'):
 Ver `phases/phase-3-sale-notes.md` §"Tests de muestra":
 
 ```python
-def test_creates_for_despachado(): ...
-def test_skips_anulada(): ...
+def test_creates_for_terminado(): ...        # estado_trabajo='terminado' → DISPATCHED
+def test_creates_for_pendiente(): ...         # estado_trabajo='pendiente' → PENDING
+def test_skips_deleted(): ...                 # deleted_at IS NOT NULL se omite
 def test_unknown_category_fails_loudly(): ...
 def test_idempotente(): ...
 def test_vendor_resolution_works(): ...
@@ -78,9 +81,9 @@ def test_dispatched_at_set_correctly(): ...
 
 ## DoD
 
-- [ ] `python manage.py import_legacy_dump --stage=orders --dsn=...` importa 7.960 NVs.
-- [ ] 20 anuladas omitidas.
-- [ ] 7.740 con `status='DISPATCHED'`, 200 con `IN_PRODUCTION`, 20 con `PENDING`.
+- [ ] `python manage.py import_legacy_dump --stage=orders --dsn=...` importa 7.980 NVs.
+- [ ] No hay anuladas (estado inexistente); 0 filiales borradas a omitir hoy.
+- [ ] 7.960 con `status='DISPATCHED'`, 20 con `PENDING`.
 - [ ] Re-ejecución es idempotente.
 
 ## Comandos de verificación

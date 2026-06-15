@@ -37,14 +37,16 @@ def validate_work_order_dependencies():
     except Product.DoesNotExist:
         raise CommandError('Product LEGACY-OT-PRODUCT no existe. Ejecuta `migrate legacy.0002` primero.')
 
-    if product.type != 'SERVICE':
-        raise CommandError(f"LEGACY-OT-PRODUCT existe pero con type='{product.type}'. Debe ser SERVICE.")
+    if product.product_type != 'SERVICE':   # campo real: product_type (no type)
+        raise CommandError(f"LEGACY-OT-PRODUCT existe pero con product_type='{product.product_type}'. Debe ser SERVICE.")
 
     if not product.uom_id:
         raise CommandError('LEGACY-OT-PRODUCT no tiene uom asignada.')
 
-    if not product.default_warehouse_id:
-        raise CommandError('LEGACY-OT-PRODUCT no tiene default_warehouse asignada.')
+    # El warehouse de la OT se toma de Warehouse(code='LEGACY-DEFAULT'), no del producto
+    # (Product no tiene `default_warehouse`).
+    if not Warehouse.objects.filter(code='LEGACY-DEFAULT').exists():
+        raise CommandError('Warehouse LEGACY-DEFAULT no existe. Ejecuta `migrate legacy.0002` primero.')
 
     return product
 ```

@@ -14,6 +14,8 @@
 
 ## Implementación
 
+> Los `SaleOrder` vivos **nunca** son legacy. Las NVs legacy se serializan con `LegacySaleNoteSerializer` (T24), no pasan por este serializer. Por eso `is_legacy`/`legacy_external_id` son constantes aquí — existen solo para mantener el mismo shape JSON en la lista unificada.
+
 ```python
 # backend/sales/serializers.py
 class SaleOrderSerializer(serializers.ModelSerializer):
@@ -26,14 +28,11 @@ class SaleOrderSerializer(serializers.ModelSerializer):
         # ... resto ...
 
     def get_is_legacy(self, obj):
-        # El adapter ya tiene is_legacy; el modelo SaleOrder no.
-        return getattr(obj, 'is_legacy', False)
+        return False
 
     def get_legacy_external_id(self, obj):
-        return getattr(obj, 'legacy_external_id', None)
+        return None
 ```
-
-**Por qué `getattr` y no `hasattr` directamente**: más conciso, no rompe si el atributo no existe.
 
 ## Tests
 
@@ -43,20 +42,15 @@ def test_serializer_is_legacy_false_for_normal(api_client):
     s = SaleOrderSerializer(order)
     assert s.data['is_legacy'] is False
     assert s.data['legacy_external_id'] is None
-
-def test_serializer_is_legacy_true_for_adapter():
-    note = LegacySaleNoteFactory()
-    adapter = LegacySaleNoteAsSaleOrderShape(note)
-    s = SaleOrderSerializer(adapter)
-    assert s.data['is_legacy'] is True
-    assert s.data['legacy_external_id'] == note.legacy_external_id
 ```
+
+> El caso `is_legacy=True` se prueba en T24 (`LegacySaleNoteSerializer`), no aquí.
 
 ## DoD
 
 - [ ] SaleOrder vivo: `is_legacy=False`, `legacy_external_id=None`.
-- [ ] Adapter LegacySaleNote: `is_legacy=True`, `legacy_external_id=<id>`.
-- [ ] 2+ tests pasan.
+- [ ] El shape incluye ambos campos (consumido por el frontend igual que en NVs legacy).
+- [ ] Test pasa.
 
 ## Comandos de verificación
 

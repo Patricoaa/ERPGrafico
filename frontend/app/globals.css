@@ -206,7 +206,7 @@
 
   /* Industry graphic tokens — dark mode */
   --mark-color: oklch(0.98 0.01 240 / 0.25);
-  --grid-line-color: oklch(0.98 0.01 240 / 0.04);
+  --grid-line-color: oklch(0.98 0.01 240 / 0.025);
   --separator-industry: 2px dashed oklch(0.98 0.01 240 / 0.25);
 }
 }
@@ -382,7 +382,7 @@
    */
   --mark-color: oklch(0.40 0.01 240 / 0.40);
   --mark-color-active: var(--primary);
-  --grid-line-color: oklch(0.12 0.02 240 / 0.10);
+  --grid-line-color: oklch(0.12 0.02 240 / 0.06);
   --grid-line-size: 80px;
   --separator-industry: 2px dashed oklch(0.12 0.02 240 / 0.20);
   --pantone-swatch-size: 24px;
