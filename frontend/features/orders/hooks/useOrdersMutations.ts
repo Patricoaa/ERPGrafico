@@ -75,23 +75,6 @@ export function useProcessLogistics() {
     })
 }
 
-// ─── Order mutations ──────────────────────────────────────────────────────────
-
-export function useAnnulOrder(orderType: 'sale' | 'purchase') {
-    const queryClient = useQueryClient()
-    return useMutation({
-        mutationFn: ({ id, reason }: { id: number; reason?: string }) =>
-            orderType === 'purchase'
-                ? ordersApi.annulPurchaseOrder(id, reason ?? '')
-                : ordersApi.annulSaleOrder(id, reason ?? ''),
-        onSuccess: () => {
-            toast.success('Orden anulada correctamente')
-            queryClient.invalidateQueries({ queryKey: SALES_KEYS.all })
-            queryClient.invalidateQueries({ queryKey: PURCHASING_KEYS.all })
-        },
-    })
-}
-
 export function useCancelOrder(orderType: 'sale' | 'purchase') {
     const queryClient = useQueryClient()
     return useMutation({

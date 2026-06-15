@@ -691,11 +691,6 @@ class SalesService:
         return delivery
 
     @staticmethod
-    def annul_sale_order(order: SaleOrder, force: bool = False):
-        """Deprecated: Use SaleOrderService().cancel() instead."""
-        from core.services.document import DocumentRegistry
-        return DocumentRegistry.for_instance(order).cancel(order, user=None, force=force)
-    @staticmethod
     @transaction.atomic
     def create_note(order: SaleOrder, note_type: str, amount_net: Decimal, amount_tax: Decimal, 
                     document_number: str, document_attachment=None, return_items=None, original_invoice_id=None,

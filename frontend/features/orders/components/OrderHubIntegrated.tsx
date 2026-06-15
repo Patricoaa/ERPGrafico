@@ -7,8 +7,6 @@ import { ProductionPhase } from "./phases/ProductionPhase"
 import { LogisticsPhase } from "./phases/LogisticsPhase"
 import { BillingPhase } from "./phases/BillingPhase"
 import { TreasuryPhase } from "./phases/TreasuryPhase"
-import { saleOrderActions } from '@/features/sales/actions'
-import { purchaseOrderActions } from '@/features/purchasing/actions'
 import { getHubStatuses } from '@/features/orders/utils/status'
 import { Order, Payment } from "../types"
 import { StatusBadge } from "@/components/shared"
@@ -66,8 +64,6 @@ export function OrderHubIntegrated({
         payments,
         globalStatus
     } = data
-
-    const registry = (type === 'purchase' || type === 'obligation') ? purchaseOrderActions : saleOrderActions
 
     // Determine which phases are visible
     const visiblePhases = useMemo(() => {

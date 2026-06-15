@@ -6,7 +6,6 @@ export {
     useConfirmInvoice,
     useCreateInvoiceFromOrder,
     useProcessLogistics,
-    useAnnulOrder,
     useCancelOrder,
     useAnnulLogistics,
     useRegisterPaymentMovement,

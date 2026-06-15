@@ -8,7 +8,6 @@ import {
     X,
     Eye,
     Package,
-    Trash2,
     FileEdit,
     RotateCcw,
     PackageMinus,
@@ -400,22 +399,6 @@ export const saleOrderActions: ActionRegistry<any> = {
                 icon: Eye,
                 requiredPermissions: ['production.view_workorder'],
                 checkAvailability: (order) => (order.work_orders?.length || 0) > 0
-            },
-            {
-                id: 'cancel-order',
-                label: 'Cancelar Orden',
-                icon: Trash2,
-                requiredPermissions: ['sales.delete_saleorder'],
-                checkAvailability: (order) => order.status === 'DRAFT',
-                variant: 'destructive'
-            },
-            {
-                id: 'annul-order',
-                label: 'Anular Orden',
-                icon: Trash2,
-                requiredPermissions: ['sales.delete_saleorder'],
-                checkAvailability: (order) => order.status !== 'CANCELLED' && order.status !== 'DRAFT',
-                variant: 'destructive'
             }
         ]
     }

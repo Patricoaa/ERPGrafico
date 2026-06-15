@@ -989,12 +989,6 @@ class PurchasingService:
         return receipt
 
     @staticmethod
-    def annul_purchase_order(order: PurchaseOrder, force: bool = False):
-        """Deprecated: Use PurchaseOrderService().cancel() instead."""
-        from core.services.document import DocumentRegistry
-        return DocumentRegistry.for_instance(order).cancel(order, user=None, force=force)
-
-    @staticmethod
     def purchase_checkout(*args, **kwargs):
         """
         Wrapper that secures the transaction against 'double-clicks' via DistributedLock.

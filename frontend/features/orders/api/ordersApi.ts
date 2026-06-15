@@ -28,8 +28,6 @@ export const ordersApi = {
         api.post(`/sales/orders/${id}/cancel/`, { reason }).then(r => r.data),
     getCancelSaleImpact: (id: number) =>
         api.get(`/sales/orders/${id}/cancel_impact/`).then(r => r.data),
-    deleteSaleOrder: (id: number) =>
-        api.delete(`/sales/orders/${id}/`).then(r => r.data),
     annulSaleDelivery: (id: number, reason: string = '') =>
         api.post(`/sales/deliveries/${id}/annul/`, { reason }).then(r => r.data),
     annulSaleReturn: (id: number, reason: string = '') =>
@@ -44,8 +42,6 @@ export const ordersApi = {
         api.post(`/purchasing/orders/${id}/cancel/`, { reason }).then(r => r.data),
     getCancelPurchaseImpact: (id: number) =>
         api.get(`/purchasing/orders/${id}/cancel_impact/`).then(r => r.data),
-    deletePurchaseOrder: (id: number) =>
-        api.delete(`/purchasing/orders/${id}/`).then(r => r.data),
     annulPurchaseReceipt: (id: number, reason: string = '') =>
         api.post(`/purchasing/receipts/${id}/annul/`, { reason }).then(r => r.data),
     annulPurchaseReturn: (id: number, reason: string = '') =>

@@ -8,7 +8,6 @@ import {
     X,
     Eye,
     FileEdit,
-    Trash2,
     RotateCcw,
     PackageMinus,
     DollarSign,
@@ -354,23 +353,6 @@ export const purchaseOrderActions: ActionRegistry<any> = {
         id: 'management',
         label: 'Gestión',
         icon: X,
-        actions: [
-            {
-                id: 'cancel-order',
-                label: 'Cancelar Orden',
-                icon: Trash2,
-                requiredPermissions: ['purchasing.delete_purchaseorder'],
-                checkAvailability: (order) => order.status === 'DRAFT',
-                variant: 'destructive'
-            },
-            {
-                id: 'annul-order',
-                label: 'Anular Orden',
-                icon: Trash2,
-                requiredPermissions: ['purchasing.delete_purchaseorder'],
-                checkAvailability: (order) => order.status !== 'CANCELLED' && order.status !== 'DRAFT',
-                variant: 'destructive'
-            }
-        ]
+        actions: []
     }
 }

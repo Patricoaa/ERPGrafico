@@ -5,8 +5,6 @@ import { toast } from "sonner"
 import { useCancelOrderFlow } from "../../hooks/useCancelOrderFlow"
 import { useRouter } from "next/navigation"
 import { ActionConfirmModal } from '@/components/shared'
-import { saleOrderActions } from '@/features/sales/actions'
-import { purchaseOrderActions } from '@/features/purchasing/actions'
 import { Order, OrderLine, PhaseDocument } from "../../types"
 
 interface OriginPhaseProps {
@@ -42,7 +40,6 @@ export function OriginPhase({
     userPermissions
 }: OriginPhaseProps) {
     const isSale = type === 'sale'
-    const registry = isSale ? saleOrderActions : purchaseOrderActions
     const router = useRouter()
     const orderType = type === 'obligation' ? 'purchase' : type
 
