@@ -43,8 +43,8 @@
 ## Decisiones tomadas en esta fase
 
 1. **`BigAutoField` PK** en todos los modelos legacy (consistencia con `SaleOrder`).
-2. **`UoM` y `Warehouse` con `code` fijo** (`'UN'` y `'LEGACY-DEFAULT'`) y validación ruidosa si existen con otro nombre.
-3. **`LEGACY-OT-PRODUCT`** es `type=SERVICE` con `uom=UN` y `default_warehouse=LEGACY-DEFAULT`.
+2. **`UoM` (por `name='Unidad'`, **no** tiene `code`; requiere `category`) y `Warehouse` (`code='LEGACY-DEFAULT'`, sin `is_default`)**. Ver `03` §3.
+3. **`LEGACY-OT-PRODUCT`** es `product_type=SERVICE` con `category` y `uom` asignadas (Product **no** tiene `default_warehouse`; el warehouse de la OT se toma de `LEGACY-DEFAULT`).
 4. **Grupo `legacy-admins`** es el único que recibe los 3 permisos automáticamente.
 5. **`registry` solo registra `LegacyImport`** — los otros 5 modelos no son entry points.
 

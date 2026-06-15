@@ -29,42 +29,42 @@ from django.db import migrations
 
 
 def seed_legacy_dependencies(apps, schema_editor):
+    UoMCategory = apps.get_model('inventory', 'UoMCategory')
     UoM = apps.get_model('inventory', 'UoM')
     Warehouse = apps.get_model('inventory', 'Warehouse')
+    ProductCategory = apps.get_model('inventory', 'ProductCategory')
     Product = apps.get_model('inventory', 'Product')
 
-    # UoM
-    uom_qs = UoM.objects.filter(code='UN')
-    if uom_qs.exists():
-        if uom_qs.first().name != 'Unidad':
-            raise RuntimeError(
-                f"UoM con code='UN' existe pero con name='{uom_qs.first().name}'. "
-                "Renombre o ajuste esta migración."
-            )
-        uom = uom_qs.first()
-    else:
-        uom = UoM.objects.create(code='UN', name='Unidad')
+    # UoM: NO tiene `code`; se identifica por `name` y exige `category` (FK NOT NULL).
+    uom_cat, _ = UoMCategory.objects.get_or_create(name='Unidad')
+    uom, _ = UoM.objects.get_or_create(
+        name='Unidad',
+        defaults={'category': uom_cat, 'uom_type': 'REFERENCE', 'ratio': 1},
+    )
 
-    # Warehouse
-    wh_qs = Warehouse.objects.filter(code='LEGACY-DEFAULT')
-    if wh_qs.exists():
-        wh = wh_qs.first()
-    else:
-        wh = Warehouse.objects.create(code='LEGACY-DEFAULT', name='Bodega Legacy Default', is_default=False)
+    # Warehouse: NO tiene `is_default`.
+    wh, _ = Warehouse.objects.get_or_create(
+        code='LEGACY-DEFAULT',
+        defaults={'name': 'Bodega Legacy Default'},
+    )
 
-    # Product
+    # Product: exige `category` (ProductCategory, PROTECT, NOT NULL); campo de tipo
+    # es `product_type` (no `type`); NO existe `default_warehouse`.
+    prod_cat, _ = ProductCategory.objects.get_or_create(name='Legacy')
     prod_qs = Product.objects.filter(code='LEGACY-OT-PRODUCT')
     if prod_qs.exists():
         prod = prod_qs.first()
-        if prod.type != 'SERVICE':
-            raise RuntimeError(f"LEGACY-OT-PRODUCT existe pero con type='{prod.type}'. Debe ser SERVICE.")
+        if prod.product_type != 'SERVICE':
+            raise RuntimeError(
+                f"LEGACY-OT-PRODUCT existe pero con product_type='{prod.product_type}'. Debe ser SERVICE."
+            )
     else:
         prod = Product.objects.create(
             code='LEGACY-OT-PRODUCT',
             name='Servicio OT Legacy (importación histórica)',
-            type='SERVICE',
+            product_type='SERVICE',
+            category=prod_cat,
             uom=uom,
-            default_warehouse=wh,
             is_active=True,
         )
 
@@ -81,18 +81,19 @@ class Migration(migrations.Migration):
 ## DoD
 
 - [ ] `python manage.py migrate legacy` aplica 0001 y 0002 sin error.
-- [ ] Existe `Product.objects.get(code='LEGACY-OT-PRODUCT')` con `type='SERVICE'`, `uom.code='UN'`, `default_warehouse.code='LEGACY-DEFAULT'`.
-- [ ] Si `UoM(code='UN')` ya existe con otro `name`, la migración falla con mensaje claro.
+- [ ] Existe `Product.objects.get(code='LEGACY-OT-PRODUCT')` con `product_type='SERVICE'`, `category` asignada y `uom` (name='Unidad').
+- [ ] Existe `Warehouse.objects.get(code='LEGACY-DEFAULT')` (el builder de OT toma de aquí el warehouse).
+- [ ] Si `LEGACY-OT-PRODUCT` ya existe con otro `product_type`, la migración falla con mensaje claro.
 
 ## Comandos de verificación
 
 ```bash
 python manage.py migrate legacy
-python manage.py shell -c "from inventory.models import Product; p = Product.objects.get(code='LEGACY-OT-PRODUCT'); print(p, p.uom, p.default_warehouse)"
+python manage.py shell -c "from inventory.models import Product; p = Product.objects.get(code='LEGACY-OT-PRODUCT'); print(p, p.product_type, p.uom, p.category)"
 ```
 
 ## Riesgos
 
 - **Migración ruidosa** en producción: requiere coordinar deploy con el equipo.
-- **`type='SERVICE'`** es literal string. Si el modelo usa `ProductType.SERVICE`, ajustar.
+- **Campos reales** (verificado): `UoM` sin `code` (+`category` requerida); `Warehouse` sin `is_default`; `Product.product_type` (no `type`), `category` requerida (PROTECT), sin `default_warehouse`.
 - **Idempotencia**: si se ejecuta 2 veces, no falla (todo es `get_or_create` con validación).

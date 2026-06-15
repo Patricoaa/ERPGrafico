@@ -14,48 +14,57 @@
 
 ## Implementación
 
+> Cada tipo se serializa con **su propio** serializer (`SaleOrderSerializer` para vivos, `LegacySaleNoteSerializer` para legacy), que emiten el mismo shape JSON. No se usa adapter. Código autoritativo: `05` §1.3.
+
 ```python
 # backend/sales/views.py
+from legacy.models import LegacySaleNote
+from legacy.serializers import LegacySaleNoteSerializer
+
 class SaleOrderViewSet(...):
     def list(self, request, *args, **kwargs):
         include = _get_include(request)
-        qs = self.filter_queryset(self.get_queryset())
-        items = list(qs)
+        live_qs = self.filter_queryset(self.get_queryset())
 
-        if 'legacy' in include and request.user.has_perm('legacy.view_legacy'):
-            from legacy.models import LegacySaleNote
-            from legacy.adapters import LegacySaleNoteAsSaleOrderShape
-            legacy_qs = self.filter_legacy_queryset(LegacySaleNote.objects.all(), request)
-            items += [LegacySaleNoteAsSaleOrderShape(n) for n in legacy_qs]
+        if not ('legacy' in include and request.user.has_perm('legacy.view_legacy')):
+            return super().list(request, *args, **kwargs)
 
-        items = self.sort_items(items, request)
-        page = self.paginate_queryset(items)
-        serializer = self.get_serializer(page, many=True)
-        return self.get_paginated_response(serializer.data)
+        legacy_qs = self._filter_legacy(
+            LegacySaleNote.objects.select_related('customer', 'vendor', 'work_order'),
+            request,
+        )
+        merged = self._sort_merged(
+            [('live', o) for o in live_qs] + [('legacy', n) for n in legacy_qs],
+            request,
+        )
+        page = self.paginate_queryset(merged)
+        ctx = self.get_serializer_context()
+        data = [
+            (SaleOrderSerializer if kind == 'live' else LegacySaleNoteSerializer)(o, context=ctx).data
+            for kind, o in page
+        ]
+        return self.get_paginated_response(data)
 
-    def filter_legacy_queryset(self, qs, request):
-        """Hook para que el override del frontend pueda agregar filtros."""
-        return qs  # default: sin filtros adicionales
+    def _sort_merged(self, items, request):
+        """Ordena por la key común `date` DESC (SaleOrder.date / LegacySaleNote.issue_date)."""
+        def key(pair):
+            _, o = pair
+            return getattr(o, 'date', None) or getattr(o, 'issue_date', None)
+        return sorted(items, key=key, reverse=True)
 
-    def sort_items(self, items, request):
-        """Ordena por issue_date DESC."""
-        return sorted(items, key=lambda x: getattr(x, 'issue_date', None) or x.created_at.date(), reverse=True)
+    def _filter_legacy(self, qs, request):
+        """Traduce los filtros/búsqueda de DRF al queryset de LegacySaleNote.
+        Sin esto, los items legacy ignorarían `?customer=`, `?search=`, rango de fecha, etc."""
+        customer_id = request.query_params.get('customer')
+        if customer_id:
+            qs = qs.filter(customer_id=customer_id)
+        # ... traducir search / status / rango de fecha según los filtros del viewset vivo ...
+        return qs
 ```
 
 ## Filtrado legacy
 
-Por ahora no se filtra legacy con `customer_id` (sería costoso). Se acepta que `?customer=X` filtra solo `SaleOrder` vivos.
-
-Si en el futuro se quiere filtrar legacy también, se hace un override en `filter_legacy_queryset`:
-
-```python
-def filter_legacy_queryset(self, qs, request):
-    customer_id = request.query_params.get('customer')
-    if customer_id:
-        from django.db.models import Q
-        return qs.filter(Q(customer_id=customer_id) | Q(related_contact_id=customer_id))
-    return qs
-```
+A diferencia del plan previo, los filtros **sí** deben aplicarse al queryset legacy en `_filter_legacy` (si no, `?customer=X` mostraría todas las NVs legacy). Como `customer` es siempre el cliente real (sin swap de vendor), basta `customer_id=` — ya no hay `related_contact` que considerar.
 
 ## Tests
 
@@ -85,7 +94,8 @@ def test_list_excludes_legacy_without_permission(api_client, regular_user):
 - [ ] `?include=legacy` con permiso → unión SaleOrder + LegacySaleNote.
 - [ ] `?include=none` → solo SaleOrder.
 - [ ] `?include=legacy` sin permiso → solo SaleOrder (filtrado silencioso).
-- [ ] Orden: `issue_date DESC` para ambos tipos.
+- [ ] Orden: por `date`/`issue_date` DESC para ambos tipos.
+- [ ] `?customer=X` filtra también las NVs legacy (vía `_filter_legacy`).
 - [ ] 3+ tests pasan.
 
 ## Comandos de verificación
@@ -96,5 +106,5 @@ pytest backend/sales/tests/test_api_legacy.py -v
 
 ## Riesgos
 
-- **Performance**: 7.960 NVs adicionales en la lista → ~2 MB de memoria. Aceptable.
-- **Sort**: si el adapter no tiene `issue_date`, fallback a `created_at.date()`. Ya cubierto.
+- **Performance**: con `include=legacy` se materializan las NVs legacy que pasen el filtro (~7.980 si no hay filtro) en memoria. Medir (`08` §6); evaluar `UNION` SQL si degrada.
+- **Filtros**: `_filter_legacy` debe replicar los filtros/search/orden del viewset vivo, o los items legacy los ignoran.

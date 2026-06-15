@@ -12,7 +12,7 @@ El proyecto está cerrado cuando:
 - [ ] `npm run type-check` y `npm run lint` verdes en `frontend/`.
 - [ ] `scripts/smoke_legacy_import.sh` ejecuta 3 stages sin error.
 - [ ] `scripts/smoke_legacy_api.sh` ejecuta 5 curls con respuestas correctas.
-- [ ] Reconciliación: 2.843 clientes + 137 vendedores + 7.960 NVs + 8.556 pagos + 7.960 OTs = 21.557 filas.
+- [ ] Reconciliación: 2.843 clientes + 137 vendedores + **7.980** NVs + 8.556 pagos + **7.980** OTs = **27.496** filas (no hay NVs anuladas que excluir).
 - [ ] 0 regresiones en `pytest backend/sales backend/contacts backend/production backend/treasury`.
 - [ ] Búsqueda global incluye NVs legacy y excluye contactos legacy (verificado manualmente).
 - [ ] UI muestra el chip `<LegacyBadge />` en los lugares correctos (verificado con 1 caso).
@@ -27,7 +27,7 @@ El proyecto está cerrado cuando:
 |---|---|
 | `backend/legacy/tests/test_models.py` | Constraints, defaults, choices, `unique_together`, FKs. |
 | `backend/legacy/tests/test_importers.py` | Import completo sobre fixture de 100 filas; idempotencia; RUT inválido; estado `anulada`. |
-| `backend/legacy/tests/test_adapters.py` | Adapter expone todos los atributos esperados. |
+| `backend/legacy/tests/test_serializers.py` | `LegacySaleNoteSerializer` emite el mismo shape que `SaleOrderSerializer`; `pending_amount` no negativo. |
 | `backend/legacy/tests/test_api.py` | 8+ tests (ver `05-backend-api.md` §11). |
 | `backend/legacy/tests/test_permissions.py` | 4+ tests (ver `07-permissions.md` §8). |
 | `backend/legacy/tests/test_work_order_builder.py` | Builder crea OT con `current_stage=FINISHED` y `is_blocked=False`. |
@@ -66,9 +66,9 @@ set -euo pipefail
 
 echo "==> 1. contacts"
 python manage.py import_legacy_dump --stage=contacts --dsn="$LEGACY_DSN" 2>&1 | tee /tmp/smoke-contacts.log
-EXPECTED_CONTACTS=2843
-ACTUAL=$(python manage.py shell -c "from contacts.models import Contact; print(Contact.objects.count())")
-[[ "$ACTUAL" == "$EXPECTED_CONTACTS" ]] || { echo "FAIL: contacts $ACTUAL != $EXPECTED_CONTACTS"; exit 1; }
+# Asserta ContactLegacyOrigin (no Contact, que puede incluir contactos vivos preexistentes)
+ACTUAL=$(python manage.py shell -c "from legacy.models import ContactLegacyOrigin; print(ContactLegacyOrigin.objects.count())")
+[[ "$ACTUAL" == "2843" ]] || { echo "FAIL: ContactLegacyOrigin $ACTUAL != 2843"; exit 1; }
 
 echo "==> 2. vendors"
 python manage.py import_legacy_dump --stage=vendors --dsn="$LEGACY_DSN" 2>&1 | tee /tmp/smoke-vendors.log
@@ -78,7 +78,7 @@ ACTUAL=$(python manage.py shell -c "from legacy.models import LegacyVendor; prin
 echo "==> 3. orders"
 python manage.py import_legacy_dump --stage=orders --dsn="$LEGACY_DSN" 2>&1 | tee /tmp/smoke-orders.log
 ACTUAL=$(python manage.py shell -c "from legacy.models import LegacySaleNote; print(LegacySaleNote.objects.count())")
-[[ "$ACTUAL" == "7960" ]] || { echo "FAIL: orders $ACTUAL != 7960"; exit 1; }
+[[ "$ACTUAL" == "7980" ]] || { echo "FAIL: orders $ACTUAL != 7980"; exit 1; }
 
 echo "==> 4. payments"
 python manage.py import_legacy_dump --stage=payments --dsn="$LEGACY_DSN" 2>&1 | tee /tmp/smoke-payments.log
@@ -136,9 +136,9 @@ Tras el import completo, la BD destino debe tener:
 | `contacts_contact` | ≥ 2.843 (puede haber más si había contactos vivos) | `SELECT COUNT(*) FROM contacts_contact;` |
 | `legacy_contactorigin` | 2.843 | `SELECT COUNT(*) FROM legacy_contactorigin;` |
 | `legacy_legacyvendor` | 137 | `SELECT COUNT(*) FROM legacy_legacyvendor;` |
-| `legacy_legacysalenote` | 7.960 | `SELECT COUNT(*) FROM legacy_legacysalenote;` |
+| `legacy_legacysalenote` | **7.980** | `SELECT COUNT(*) FROM legacy_legacysalenote;` |
 | `legacy_legacypayment` | 8.556 | `SELECT COUNT(*) FROM legacy_legacypayment;` |
-| `production_workorder` (con `is_manual=True` y `current_stage='FINISHED'`) | ≥ 7.960 (puede haber más OTs manuales no-legacy) | `SELECT COUNT(*) FROM production_workorder WHERE is_manual=true AND current_stage='FINISHED';` |
+| `production_workorder` (con `is_manual=True` y `current_stage='FINISHED'`) | ≥ **7.980** (puede haber más OTs manuales no-legacy) | `SELECT COUNT(*) FROM production_workorder WHERE is_manual=true AND current_stage='FINISHED';` |
 | `legacy_legacyimport` (con status='COMPLETED') | ≥ 1 | `SELECT COUNT(*) FROM legacy_legacyimport WHERE status='COMPLETED';` |
 
 **Comando de reconciliación**:
@@ -160,7 +160,7 @@ print('LegacyImport (COMPLETED):', LegacyImport.objects.filter(status='COMPLETED
 # Validación cruzada
 assert ContactLegacyOrigin.objects.count() == 2843
 assert LegacyVendor.objects.count() == 137
-assert LegacySaleNote.objects.count() == 7960
+assert LegacySaleNote.objects.count() == 7980
 assert LegacyPayment.objects.count() == 8556
 print('OK: reconciliación cuadrada')
 PY
@@ -168,14 +168,16 @@ PY
 
 ## 5. Reporte de riesgos (snapshot 2026-06-02)
 
-| Riesgo | Valor real | Acción |
+| Riesgo | Valor real (verificado 2026-06-13) | Acción |
 |---|---|---|
-| RUT inválido | 1/2.843 | `tax_id_exception=True` + `raw_tax_id` preservado |
-| NVs anuladas | 20/7.980 | Omitidas del import; logueadas |
-| NVs sin pagos | 31/7.960 | Importadas con 0 `LegacyPayment` (visible en UI como "Saldo pendiente") |
-| NVs con múltiples pagos | 607/7.960 | Importadas como N `LegacyPayment` por NV |
-| Forma de pago ≠ efectivo | ~50/8.556 | Importadas con `method='transferencia'` o `'cheque'` |
-| OTs con `transition_to` fallida | 0 esperado | Fallback `needs_manual_finalize=True` + log |
+| RUT inválido (módulo 11) | sin confirmar (2.843 RUT únicos y no vacíos) | Validar módulo 11 al importar; `tax_id_exception=True` + placeholder `LEGACY-<id>` + `raw_tax_id` |
+| NVs anuladas | **0 (no existe el estado `anulada`)** | Nada que omitir; todas las 7.980 se importan |
+| NVs sin pagos | 31/7.980 | Importadas con 0 `LegacyPayment` (UI: "Saldo pendiente") |
+| NVs con múltiples pagos | 607/7.980 | N `LegacyPayment` por NV |
+| **NVs sobrepagadas** (Σ pagos > total) | **7/7.980** | `pending_amount` se clampa a 0 (no negativo) |
+| Método de pago ≠ efectivo | **62/8.556** (transferencia 53 + **tarjeta** 9) | `method ∈ {efectivo, transferencia, tarjeta}` — **no existe `cheque`** |
+| Soft-delete | columnas `deleted_at` existen (hoy 0 filas) | Importers filtran `WHERE deleted_at IS NULL` |
+| OT histórica creada directa en `FINISHED` | 0 esperado | No se usa `create_manual`; verificar signals/validación de `WorkOrder.save()` en T14 |
 
 ## 6. Lo que NO se valida automáticamente
 

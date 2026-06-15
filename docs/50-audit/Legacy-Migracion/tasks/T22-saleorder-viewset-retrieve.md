@@ -23,15 +23,16 @@ class SaleOrderViewSet(...):
         except Http404:
             if request.user.has_perm('legacy.view_legacy'):
                 from legacy.models import LegacySaleNote
-                from legacy.adapters import LegacySaleNoteAsSaleOrderShape
+                from legacy.serializers import LegacySaleNoteSerializer
                 try:
                     note = LegacySaleNote.objects.select_related(
-                        'customer', 'related_contact', 'vendor', 'work_order'
+                        'customer', 'vendor', 'work_order'
                     ).get(pk=kwargs['pk'])
                 except LegacySaleNote.DoesNotExist:
                     raise Http404
-                adapter = LegacySaleNoteAsSaleOrderShape(note)
-                return Response(self.get_serializer(adapter).data)
+                return Response(
+                    LegacySaleNoteSerializer(note, context=self.get_serializer_context()).data
+                )
             raise Http404
 ```
 

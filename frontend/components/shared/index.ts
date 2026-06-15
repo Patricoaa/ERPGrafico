@@ -62,6 +62,7 @@ export * from './UnderlineTabs';
 export * from './FormFooter';
 export * from './FormSplitLayout';
 export * from './EmptyState';
+export * from './ModuleLauncher';
 
 
 // Industrial Identity

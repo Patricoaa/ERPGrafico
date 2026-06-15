@@ -7,7 +7,6 @@ export { AddChargeModal } from './AddChargeModal'
 export { BillChargesModal } from './BillChargesModal'
 export { useCardStatements, useCardStatement, useStatementCharges, useCardStatementMutations } from './hooks'
 export { useUnbilledAnalyticsData } from './useUnbilledAnalyticsData'
-export { useTcHubData } from './useTcHubData'
 export { useStatementsAnalyticsData } from './useStatementsAnalyticsData'
 export { cardStatementsApi } from './api'
 export type {

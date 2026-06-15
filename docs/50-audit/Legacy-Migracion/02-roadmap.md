@@ -7,10 +7,10 @@
 ```
 Fase 1 (Foundation)        →  app `legacy` + 6 modelos + 1 data migration ruidosa + 3 permisos
 Fase 2 (Contacts/Vendors)  →  import de clientes + vendedores + resolución de duplicados
-Fase 3 (Sale Notes)        →  import de las 7.960 NVs vivas (excluye anuladas)
-Fase 4 (Work Orders)       →  builder de 7.960 OTs manuales finalizadas (no bloqueadas)
+Fase 3 (Sale Notes)        →  import de las 7.980 NVs (todas vivas; no hay anuladas)
+Fase 4 (Work Orders)       →  builder de 7.980 OTs históricas finalizadas (sin create_manual; no bloqueadas)
 Fase 5 (Payments)          →  import de 8.556 pagos históricos + endpoint de pago nuevo
-Fase 6 (Unified API)       →  ?include=legacy, serializer, viewset dual-PK, adapter
+Fase 6 (Unified API)       →  ?include=legacy, LegacySaleNoteSerializer, viewset dual-PK
 Fase 7 (Frontend)          →  LegacyBadge + helper + 4 vistas/drawers + search global
 Fase 8 (Validation)        →  ADR final, smoke scripts, reconciliación, deprecación doc
 ```
@@ -35,17 +35,17 @@ Fase 8 (Validation)        →  ADR final, smoke scripts, reconciliación, depre
 ### [Phase 3 — Sale Notes](phases/phase-3-sale-notes.md)
 **Tasks**: T08, T09, T10
 **DoD**:
-- `--stage=orders --dry-run` lista 7.960 NVs.
-- Importa sin error; `LegacySaleNote` count = 7.960; 20 anuladas omitidas.
+- `--stage=orders --dry-run` lista 7.980 NVs.
+- Importa sin error; `LegacySaleNote` count = 7.980 (no hay anuladas que omitir).
 - Mapeo vendor interno/externo funciona: un test de muestra verifica ambos casos.
 
 ### [Phase 4 — Work Orders](phases/phase-4-work-orders.md)
-**Tasks**: T11, T12, T13, T14
+**Tasks**: T11, T14
 **DoD**:
-- Una OT por NV legacy, con `current_stage=FINISHED` y descripción con `legacy_external_id`.
-- **NO** hay OTs en estado bloqueado.
+- Una OT por NV legacy, creada **directamente** en `status=FINISHED` + `current_stage=FINISHED` (sin `WorkOrderService.create_manual`, que rechaza productos SERVICE y generaría 7.980 tareas de workflow), con descripción que incluye `legacy_external_id`.
+- **NO** hay OTs en estado bloqueado ni tareas de workflow nuevas generadas por el import.
 - `pytest backend/production/tests` pasa (no regresiones).
-- `WorkOrderService.create_manual` se invoca con `uom` y `warehouse` no nulos (validados en T14).
+- T14 valida: `WorkOrder.save()` asigna `number` y no dispara signals con efectos colaterales sobre OTs nacidas en `FINISHED`.
 
 ### [Phase 5 — Payments](phases/phase-5-payments.md)
 **Tasks**: T15, T16, T17, T18
@@ -78,8 +78,8 @@ Fase 8 (Validation)        →  ADR final, smoke scripts, reconciliación, depre
 - ADR-0029 firmado y numerado.
 - `scripts/smoke_legacy_import.sh` ejecuta los 3 stages y reporta conteos.
 - `scripts/smoke_legacy_api.sh` ejecuta 5 curls y verifica shape.
-- Reconciliación: 2.843 clientes + 137 vendedores + 7.960 NVs + 8.556 pagos + 7.960 OTs = 21.557 filas creadas.
-- Reporte de riesgos: 1 RUT inválido + 20 NVs anuladas + 31 NVs sin pagos.
+- Reconciliación: 2.843 clientes + 137 vendedores + 7.980 NVs + 8.556 pagos + 7.980 OTs = 27.496 filas creadas.
+- Reporte de riesgos: RUT inválido por confirmar (módulo 11) + 31 NVs sin pagos + 7 NVs sobrepagadas + 62 pagos no-efectivo (transferencia/tarjeta).
 
 ## Pre-flight por fase (antes de empezar)
 

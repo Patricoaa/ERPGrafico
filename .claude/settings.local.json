@@ -118,7 +118,8 @@
       "Bash(venv/bin/python -m pytest core/tests/test_cancel_annul_integration.py::TestCancelSaleOrderIntegration::test_001_draft_cancel_no_children -q)",
       "Bash(venv/bin/python -m pytest core/tests/test_cancel_annul_integration.py -q)",
       "Bash(python3 -c \"import django; print\\(django.__version__\\)\")",
-      "Bash(CACHE_BACKEND=locmem CHANNEL_BACKEND=locmem venv/bin/python -m pytest core/tests/test_deletion_policy_consistency.py -q)"
+      "Bash(CACHE_BACKEND=locmem CHANNEL_BACKEND=locmem venv/bin/python -m pytest core/tests/test_deletion_policy_consistency.py -q)",
+      "Bash(python3 -c \"import json,sys; d=json.load\\(sys.stdin\\); print\\('GLOBAL mcpServers:', list\\(d.get\\('mcpServers',{}\\).keys\\(\\)\\)\\); proj=d.get\\('projects',{}\\).get\\('/home/pato/Nextcloud/Pato/Aplicaciones/ERPGrafico',{}\\); print\\('PROJECT mcpServers:', list\\(proj.get\\('mcpServers',{}\\).keys\\(\\)\\)\\)\")"
     ],
     "additionalDirectories": [
       "/home/pato/Nextcloud/Pato/Aplicaciones/ERPGrafico/frontend/features/workflow"

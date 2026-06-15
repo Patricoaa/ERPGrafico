@@ -45,19 +45,19 @@
 3. **NO** se usa `TreasuryMovement` para pagos nuevos legacy: el usuario fue explícito en que NO se concilie con bancos ni se cree `journal_entry`.
 4. **Permisos compuestos**: `legacy.pay_pending_legacy` AND `treasury.add_treasurymovement`. Sin ambos → 403.
 5. **Idempotency-Key** requerido en `POST /api/legacy/sale-notes/<id>/register-payment/`. Se guarda en `LegacyPaymentRegistration.idempotency_key` (UNIQUE).
-6. **31 NVs sin pagos** se importan con 0 `LegacyPayment` (visible en UI como "Saldo pendiente").
-7. **`forma_pago` mapping**: `'efectivo'`, `'transferencia'`, `'cheque'` se preservan tal cual (CharField choices).
-8. **`abono` y `amount`** son `DecimalField(12, 0)` (CLP sin centavos).
+6. **31 NVs sin pagos** se importan con 0 `LegacyPayment` (visible en UI como "Saldo pendiente"); **7 NVs sobrepagadas** → saldo se clampa a 0.
+7. **`metodo` mapping**: `'efectivo'`, `'transferencia'`, `'tarjeta'` se preservan tal cual (no existe `'cheque'`).
+8. **`monto` y `amount`** son enteros CLP (`DecimalField(12, 0)` / sin centavos).
 
 ## Mapeo legacy → ERPGrafico
 
 | Legacy `pagos` | `LegacyPayment` | `LegacyPaymentRegistration` (nuevo) |
 |---|---|---|
 | `id` | `legacy_external_id` | — |
-| `orden_id` | FK → `LegacySaleNote` (vía `legacy_external_id` lookup) | — |
-| `fecha` | `paid_at` | `paid_at` |
-| `abono` | `amount` | `amount` |
-| `forma_pago` | `method` | `method` |
+| `orden_id` | FK → `LegacySaleNote` (vía `legacy_external_id`, filtro en Python) | — |
+| `fecha` | `paid_at` (timestamp → date) | `paid_at` |
+| `monto` | `amount` | `amount` |
+| `metodo` | `method` (efectivo/transferencia/tarjeta) | `method` |
 | `created_at` | (auto) | (auto) |
 | — | — | `registered_by` (auth.User) |
 | — | — | `idempotency_key` |

@@ -28,7 +28,7 @@
 - [ ] ADR-0029 firmado por los 3 revisores (backend, frontend, PO).
 - [ ] `bash scripts/smoke_legacy_import.sh` ejecuta 4 stages + idempotencia y termina con `OK: smoke import completo`.
 - [ ] `bash scripts/smoke_legacy_api.sh` ejecuta 5 curls y termina con `OK: smoke API completo`.
-- [ ] Reconciliación cuadra: 2.843 clientes + 137 vendedores + 7.960 NVs + 8.556 pagos + 7.960 OTs.
+- [ ] Reconciliación cuadra: 2.843 clientes + 137 vendedores + 7.980 NVs + 8.556 pagos + 7.980 OTs = 27.496.
 - [ ] `pytest` verde en `backend/`.
 - [ ] `npm run type-check` y `npm run lint` verdes en `frontend/`.
 - [ ] Tag de release pusheado.
@@ -83,11 +83,11 @@ Ver `08-testing-and-validation.md` §3 para el código completo.
 | Tabla | Esperado | Real | OK |
 |---|---|---|---|
 | contacts_contact | ≥ 2843 | <n> | ✅ |
-| legacy_contactorigin | 2843 | <n> | ✅ |
+| legacy_contactlegacyorigin | 2843 | <n> | ✅ |
 | legacy_legacyvendor | 137 | <n> | ✅ |
-| legacy_legacysalenote | 7960 | <n> | ✅ |
+| legacy_legacysalenote | 7980 | <n> | ✅ |
 | legacy_legacypayment | 8556 | <n> | ✅ |
-| production_workorder (manual FINISHED con sale_note) | 7960 | <n> | ✅ |
+| production_workorder (legacy: is_manual FINISHED) | 7980 | <n> | ✅ |
 | legacy_legacyimport (COMPLETED) | ≥ 1 | <n> | ✅ |
 
 ## Riesgos materializados
@@ -139,7 +139,7 @@ Cuando se decida re-importar todas las NVs como `SaleOrder` real.
 ## Tag de release
 
 ```bash
-git tag -a vX.Y.Z+legacy-import -m "Migración de NVs legacy completada (7.960 NVs + 8.556 pagos + 7.960 OTs + 2.843 clientes + 137 vendedores)"
+git tag -a vX.Y.Z+legacy-import -m "Migración de NVs legacy completada (7.980 NVs + 8.556 pagos + 7.980 OTs + 2.843 clientes + 137 vendedores)"
 git push origin vX.Y.Z+legacy-import
 ```
 

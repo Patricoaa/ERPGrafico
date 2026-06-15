@@ -1,6 +1,8 @@
 # Phase 3 — Sale Notes
 
-> Importación de las 7.960 NVs legacy (excluyendo las 20 anuladas). Decisión manual vs auto WorkOrder. Mapeo de vendor interno/externo.
+> Importación de las **7.980** NVs legacy (todas vivas; **no hay anuladas**). Decisión manual vs auto WorkOrder.
+
+> ⚠️ **REESCRITO — ver `00` §1.4/§3.1 y `04` §4 (autoritativos).** Columnas reales: `descripcion`/`detalles`/`folio`/`fecha_ingreso`/`estado_trabajo`+`estado_despachado` (no `descripcion_texto`/`numero`/`fecha`/`estado`). **No existe `anulada`** ni el estado `IN_PRODUCTION` (solo `terminado`→DISPATCHED y `pendiente`→PENDING). El swap "vendor externo como customer" **se elimina**: `customer = cliente real` siempre.
 
 ## Precondiciones
 
@@ -25,54 +27,42 @@
 
 ## DoD de la fase
 
-- [ ] `python manage.py import_legacy_dump --stage=orders --dry-run` lista 7.960 NVs.
-- [ ] `python manage.py import_legacy_dump --stage=orders` importa; `LegacySaleNote.objects.count() == 7960`.
-- [ ] `LegacySaleNote.objects.filter(status='DISPATCHED').count() == 7740` (despachado).
-- [ ] `LegacySaleNote.objects.filter(status='IN_PRODUCTION').count() == 200` (no_despachado).
-- [ ] `LegacySaleNote.objects.filter(status='PENDING').count() == 20` (pendiente).
-- [ ] 20 NVs anuladas NO están en la BD.
-- [ ] 1 NV (la de RUT inválido) tiene `customer` con `tax_id_exception=True`.
+- [ ] `python manage.py import_legacy_dump --stage=orders --dry-run` lista 7.980 NVs.
+- [ ] `python manage.py import_legacy_dump --stage=orders` importa; `LegacySaleNote.objects.count() == 7980`.
+- [ ] `LegacySaleNote.objects.filter(status='DISPATCHED').count() == 7960` (terminado/despachado).
+- [ ] `LegacySaleNote.objects.filter(status='PENDING').count() == 20` (pendiente/no despachado).
+- [ ] No hay NVs anuladas (estado inexistente en el legacy).
 - [ ] `pytest backend/legacy/tests/test_order_importer.py -v` pasa.
 
 ## Decisiones tomadas en esta fase
 
 1. **Categorías hardcodeadas** en el importer (no se consulta `legacy.categorias`): más simple, más auditable, fail-fast si aparece categoría 6.
-2. **Estado `anulada` se OMITE** (no se crea `LegacySaleNote` con `status='CANCELLED'`).
-3. **Vendor `interno`** (futuro): `customer=cliente`, `related_contact=None`, vendor queda en la NV como referencia.
-4. **Vendor `externo`** (100% del dataset actual): `customer=vendor (como Contact)`, `related_contact=cliente original`.
-5. **`descripcion_texto` se preserva tal cual** (no se intenta parsear).
-6. **`dispatched_at`** se setea con `fecha` (sin hora) si `despachado=True`.
-7. **`is_pending`** se preserva como flag adicional.
-8. **Work order se difiere a Phase 4**: en este import solo se crea `LegacySaleNote`; la OT se crea en T11–T13.
+2. **No hay estado `anulada`** en el legacy → no se omite nada; se filtra solo `deleted_at IS NULL` (hoy 0 filas).
+3. **`customer = cliente real` siempre**; `vendor` es solo referencia a `LegacyVendor`. (Se elimina el swap "vendor externo como customer"; ver `04` §4.1.)
+4. **`description` = `descripcion`** (línea corta); **`notes` = `detalles`** (texto largo, 7.379 con contenido). No se parsea.
+5. **`dispatched_at`** se setea con `fecha_ingreso` (sin hora) si `estado_despachado='despachado'`.
+6. **`is_pending`** = True cuando `estado_trabajo='pendiente'`.
+7. **`legacy_number` = `folio`** (no único, 109 vacíos) — solo display.
+8. **Work order se difiere a Phase 4**: en este import solo se crea `LegacySaleNote`; la OT se crea en T11.
 
 ## Mapeo de estados legacy
 
-| `ordenes.estado` | `LegacySaleNote.status` | `is_pending` | `dispatched_at` |
+| `estado_trabajo` / `estado_despachado` | `LegacySaleNote.status` | `is_pending` | `dispatched_at` |
 |---|---|---|---|
-| `despachado` | `DISPATCHED` | `False` | `fecha` |
-| `no_despachado` | `IN_PRODUCTION` | `False` | `NULL` |
-| `pendiente` | `PENDING` | `True` | `NULL` |
-| `anulada` | (omitido) | — | — |
+| `terminado` / `despachado` (7.960) | `DISPATCHED` | `False` | `fecha_ingreso` |
+| `pendiente` / `no despachado` (20) | `PENDING` | `True` | `NULL` |
+
+(Solo 2 combos reales, 1:1. No existen `IN_PRODUCTION` ni `anulada`.)
 
 ## Mapeo de vendor/customer
 
 ```python
 def map_vendor_customer(customer_id, vendor):
-    if vendor.category == 'interno':
-        return customer_id, None, vendor
-    else:  # 'externo'
-        return vendor_as_contact(vendor), customer_id, vendor
+    # customer = cliente real SIEMPRE; vendor = LegacyVendor (referencia).
+    return customer_id, None, vendor
 ```
 
-**`vendor_as_contact`**: crea (o recupera) un `Contact` "sombra" para el vendor, con:
-- `name = vendor.name`
-- `tax_id = ''` (los vendors externos no tienen RUT)
-- `email = ''`
-- `phone = ''`
-- `address = ''`
-- Marcado con `ContactLegacyOrigin(source_table='vendedores', legacy_external_id=vendor.id, ...)`.
-
-Esto permite que el frontend muestre el vendor como "cliente" sin que sea un `Contact` real.
+> ⚠️ Se **elimina** `vendor_as_contact` y el swap del plan previo: como 137/137 vendedores son `externo`, ese swap dejaría a ninguna NV con su cliente real como `customer` (y colisionaría con los 122 RUT compartidos, dado que `Contact.tax_id` es único). Detalle en `04` §4.1.
 
 ## Cache de lookups
 
@@ -93,20 +83,20 @@ vendor_map = {v.legacy_external_id: v.id for v in LegacyVendor.objects.all()}
 ## Tests de muestra
 
 ```python
-def test_creates_lazysalenote_for_despachado():
-    # 1 NV despachado → 1 LegacySaleNote con status='DISPATCHED'
+def test_creates_note_for_terminado():
+    # estado_trabajo='terminado' → LegacySaleNote status='DISPATCHED', dispatched_at set
     ...
 
-def test_skips_anulada():
-    # 1 NV anulada → 0 LegacySaleNote
+def test_creates_note_for_pendiente():
+    # estado_trabajo='pendiente' → status='PENDING', is_pending=True, dispatched_at=None
     ...
 
-def test_vendor_externo_makes_related_contact():
-    # 1 NV con vendor externo → customer=vendor_contact, related_contact=cliente
+def test_skips_deleted():
+    # deleted_at IS NOT NULL → 0 LegacySaleNote
     ...
 
-def test_vendor_interno_keeps_related_contact_none():
-    # Mock: vendor con category='interno' → customer=cliente, related_contact=None
+def test_customer_is_real_client():
+    # customer = cliente real; related_contact=None (sin swap de vendor)
     ...
 
 def test_unknown_category_fails_loudly():
@@ -121,7 +111,7 @@ def test_unknown_category_fails_loudly():
 | Categoría 6+ aparece en el dataset | Falla ruidosamente, fila se cuenta en `rows_failed` |
 | Cliente legacy no tiene `ContactLegacyOrigin` | Se cuenta en `rows_failed` con log explicativo |
 | Vendor legacy no existe en `LegacyVendor` | Idem |
-| `descripcion_texto` con caracteres raros | Se guarda tal cual (TextField acepta UTF-8) |
+| `descripcion`/`detalles` con caracteres raros | Se guardan tal cual (TextField acepta UTF-8) |
 | Memoria del cache | 2 MB → OK |
 
 ## Comandos de verificación rápida
@@ -136,16 +126,14 @@ python manage.py import_legacy_dump --stage=orders --dsn="$LEGACY_DSN"
 # 3. Verificar
 python manage.py shell <<'PY'
 from legacy.models import LegacySaleNote
-print('Total:', LegacySaleNote.objects.count())
-print('DISPATCHED:', LegacySaleNote.objects.filter(status='DISPATCHED').count())
-print('IN_PRODUCTION:', LegacySaleNote.objects.filter(status='IN_PRODUCTION').count())
-print('PENDING:', LegacySaleNote.objects.filter(status='PENDING').count())
-print('Con related_contact:', LegacySaleNote.objects.exclude(related_contact=None).count())
+print('Total:', LegacySaleNote.objects.count())          # 7980
+print('DISPATCHED:', LegacySaleNote.objects.filter(status='DISPATCHED').count())  # 7960
+print('PENDING:', LegacySaleNote.objects.filter(status='PENDING').count())        # 20
 PY
 
 # 4. Idempotencia
 python manage.py import_legacy_dump --stage=orders --dsn="$LEGACY_DSN"
-# Debe seguir en 7960
+# Debe seguir en 7980
 
 # 5. Tests
 pytest backend/legacy/tests/test_order_importer.py -v
@@ -154,7 +142,7 @@ pytest backend/legacy/tests/test_order_importer.py -v
 ## Salida para la Phase 4
 
 Al cerrar Phase 3, ya se puede:
-- Crear WorkOrders manuales para cada `LegacySaleNote` (Phase 4 T11–T13).
+- Crear WorkOrders para cada `LegacySaleNote` (Phase 4 T11).
 - Importar pagos históricos vinculados a las NVs (Phase 5 T15).
 
 **No** se puede aún:

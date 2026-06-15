@@ -1,6 +1,6 @@
 # Phase 6 — Unified API
 
-> `?include=legacy` (default-on) en `SaleOrderViewSet` y `ContactViewSet`. Adapter de salida. Dual-PK resolution en `retrieve`.
+> `?include=legacy` (default-on) en `SaleOrderViewSet` y `ContactViewSet`. **`LegacySaleNoteSerializer`** dedicado (mismo shape que `SaleOrderSerializer`). Dual-PK resolution en `retrieve`. Código autoritativo: `05-backend-api.md`.
 
 ## Precondiciones
 
@@ -17,18 +17,18 @@
 | [T21](../tasks/T21-saleorder-viewset-list.md) | Extender list | Unión `SaleOrder ∪ LegacySaleNote` |
 | [T22](../tasks/T22-saleorder-viewset-retrieve.md) | Dual-PK retrieve | Try/except Http404 |
 | [T23](../tasks/T23-contact-serializer-extension.md) | Extender ContactSerializer | `is_legacy` |
-| [T24](../tasks/T24-adapter-legacy-sale-note.md) | Adapter | `LegacySaleNoteAsSaleOrderShape` |
+| [T24](../tasks/T24-legacy-sale-note-serializer.md) | Serializer dedicado | `LegacySaleNoteSerializer` |
 | [T25](../tasks/T25-registry-entries.md) | Registry | Solo `legacy.legacyimport` |
 
 ## Entregables
 
-- `backend/legacy/adapters.py` con `LegacySaleNoteAsSaleOrderShape`.
-- `backend/sales/serializers.py` extendido con `is_legacy` + `legacy_external_id`.
-- `backend/sales/views.py` extendido con `_get_include`, `list` y `retrieve` modificados.
+- `backend/legacy/serializers.py` con `LegacySaleNoteSerializer` (mismo shape que `SaleOrderSerializer`).
+- `backend/sales/serializers.py` extendido con `is_legacy` (=False) + `legacy_external_id` (=None) para mantener el shape unificado.
+- `backend/sales/views.py` extendido con `_get_include`, `list` y `retrieve` modificados (cada tipo con su serializer).
 - `backend/contacts/serializers.py` extendido con `is_legacy`.
 - `backend/contacts/views.py` con `select_related('legacy_origin')` en `get_queryset`.
 - `backend/core/registry.py` con entry para `legacy.legacyimport`.
-- Tests: `test_sale_order_api_legacy.py`, `test_contact_api_legacy.py`, `test_adapters.py`.
+- Tests: `test_sale_order_api_legacy.py`, `test_contact_api_legacy.py`, `test_serializers.py`.
 
 ## DoD de la fase
 
@@ -47,57 +47,33 @@
 2. **`?include=none`** desactiva explícitamente la unión.
 3. **`?include=invalid_value`** → 400 con error claro.
 4. **Permisos filtran silenciosamente**: el usuario sin `legacy.view_legacy` no ve NVs legacy, pero la request sigue siendo 200.
-5. **Dual-PK retrieve**: primero intenta como `SaleOrder`; si falla, intenta como `LegacySaleNote` (con permiso).
-6. **Adapter `LegacySaleNoteAsSaleOrderShape`**: duck-typing puro, sin herencia.
-7. **`is_legacy` se calcula en serializer**, no en el modelo `SaleOrder`.
+5. **Dual-PK retrieve**: primero intenta como `SaleOrder`; si falla, intenta como `LegacySaleNote` (con permiso), serializada con `LegacySaleNoteSerializer`.
+6. **Serializer dedicado `LegacySaleNoteSerializer`** (no adapter): emite el mismo shape JSON que `SaleOrderSerializer` con `source=` para alinear nombres (`date`/`total_net`/…). Pasar un objeto ajeno por `SaleOrderSerializer` (ModelSerializer) revienta en sus method-fields/relaciones; ver `05` §2.
+7. **`is_legacy` en `SaleOrderSerializer`** es `False` constante (los `SaleOrder` vivos nunca son legacy); en `LegacySaleNoteSerializer` es `True`.
 8. **`Contact.is_legacy` se calcula con `hasattr(obj, 'legacy_origin')`** (1 query si se hace `select_related`).
 
-## Adapter
+## Serializer dedicado (reemplaza al adapter)
+
+`LegacySaleNoteSerializer` emite el mismo shape JSON que `SaleOrderSerializer` (ver T24 y `05` §2 para el código completo):
 
 ```python
-# backend/legacy/adapters.py
-class LegacySaleNoteAsSaleOrderShape:
-    def __init__(self, note):
-        self._n = note
-
-    @property
-    def id(self): return self._n.id
-    @property
-    def number(self): return self._n.legacy_number
-    @property
-    def issue_date(self): return self._n.issue_date
-    @property
-    def customer(self): return self._n.customer
-    @property
-    def related_contact(self): return self._n.related_contact
-    @property
-    def vendor(self): return self._n.vendor
-    @property
-    def status(self): return self._n.status
-    @property
-    def net_price(self): return self._n.net_price
-    @property
-    def tax_amount(self): return self._n.tax_amount
-    @property
-    def total_price(self): return self._n.total_price
-    @property
-    def description(self): return self._n.description
-    @property
-    def is_legacy(self): return True
-    @property
-    def legacy_external_id(self): return self._n.legacy_external_id
-    @property
-    def work_order(self): return self._n.work_order
-    @property
-    def created_at(self): return self._n.created_at
-    @property
-    def updated_at(self): return self._n.updated_at
+# backend/legacy/serializers.py
+class LegacySaleNoteSerializer(serializers.ModelSerializer):
+    customer_name = serializers.CharField(source='customer.name', read_only=True)
+    date = serializers.DateField(source='issue_date', read_only=True)
+    total_net = serializers.IntegerField(source='net_price', read_only=True)
+    total_tax = serializers.IntegerField(source='tax_amount', read_only=True)
+    total = serializers.IntegerField(source='total_price', read_only=True)
+    total_paid = serializers.SerializerMethodField()
+    pending_amount = serializers.SerializerMethodField()
+    is_legacy = serializers.SerializerMethodField()
+    # ... (fields completos en T24)
 ```
 
-## Extensión de serializers
+## Extensión de serializers vivos
 
 ```python
-# SaleOrderSerializer
+# SaleOrderSerializer (los SaleOrder vivos nunca son legacy)
 class SaleOrderSerializer(serializers.ModelSerializer):
     is_legacy = serializers.SerializerMethodField()
     legacy_external_id = serializers.SerializerMethodField()
@@ -107,10 +83,10 @@ class SaleOrderSerializer(serializers.ModelSerializer):
         fields = [..., 'is_legacy', 'legacy_external_id']
 
     def get_is_legacy(self, obj):
-        return getattr(obj, 'is_legacy', False)
+        return False
 
     def get_legacy_external_id(self, obj):
-        return getattr(obj, 'legacy_external_id', None)
+        return None
 ```
 
 ```python
@@ -123,7 +99,7 @@ class ContactSerializer(serializers.ModelSerializer):
         fields = [..., 'is_legacy']
 
     def get_is_legacy(self, obj):
-        return hasattr(obj, 'legacy_origin')
+        return hasattr(obj, 'legacy_origin')  # OneToOne reverse; usar select_related
 ```
 
 ## Extensión de viewsets
@@ -139,19 +115,28 @@ def _get_include(request):
 
 def list(self, request, *args, **kwargs):
     include = _get_include(request)
-    qs = self.filter_queryset(self.get_queryset())
-    items = list(qs)
+    live_qs = self.filter_queryset(self.get_queryset())
 
-    if 'legacy' in include and request.user.has_perm('legacy.view_legacy'):
-        from legacy.models import LegacySaleNote
-        from legacy.adapters import LegacySaleNoteAsSaleOrderShape
-        legacy_qs = self.filter_legacy_queryset(LegacySaleNote.objects.all(), request)
-        items += [LegacySaleNoteAsSaleOrderShape(n) for n in legacy_qs]
+    if not ('legacy' in include and request.user.has_perm('legacy.view_legacy')):
+        return super().list(request, *args, **kwargs)  # camino normal
 
-    items = self.sort_items(items, request)
-    page = self.paginate_queryset(items)
-    serializer = self.get_serializer(page, many=True)
-    return self.get_paginated_response(serializer.data)
+    # Cada tipo con su propio serializer (mismo shape JSON).
+    legacy_qs = self._filter_legacy(
+        LegacySaleNote.objects.select_related('customer', 'vendor', 'work_order'),
+        request,
+    )
+    merged = self._sort_merged(
+        [('live', o) for o in live_qs] + [('legacy', n) for n in legacy_qs],
+        request,
+    )
+    page = self.paginate_queryset(merged)
+    data = [
+        SaleOrderSerializer(o, context=self.get_serializer_context()).data
+        if kind == 'live' else
+        LegacySaleNoteSerializer(o, context=self.get_serializer_context()).data
+        for kind, o in page
+    ]
+    return self.get_paginated_response(data)
 
 
 def retrieve(self, request, *args, **kwargs):
@@ -159,18 +144,20 @@ def retrieve(self, request, *args, **kwargs):
         return super().retrieve(request, *args, **kwargs)
     except Http404:
         if request.user.has_perm('legacy.view_legacy'):
-            from legacy.models import LegacySaleNote
-            from legacy.adapters import LegacySaleNoteAsSaleOrderShape
+            from legacy.serializers import LegacySaleNoteSerializer
             try:
                 note = LegacySaleNote.objects.select_related(
-                    'customer', 'related_contact', 'vendor', 'work_order'
+                    'customer', 'vendor', 'work_order'
                 ).get(pk=kwargs['pk'])
             except LegacySaleNote.DoesNotExist:
                 raise Http404
-            adapter = LegacySaleNoteAsSaleOrderShape(note)
-            return Response(self.get_serializer(adapter).data)
+            return Response(
+                LegacySaleNoteSerializer(note, context=self.get_serializer_context()).data
+            )
         raise Http404
 ```
+
+> ⚠️ **Limitaciones del merge** (ver `05` §1.3): `_filter_legacy` debe traducir los filtros/búsqueda/orden de DRF al queryset de `LegacySaleNote` (no se aplican solos); `_sort_merged` ordena por una key común (recomendado `date` desc). Con `include=legacy` se materializan las NVs legacy que pasen el filtro — medir performance (`08` §6).
 
 ## Registry
 
@@ -227,11 +214,11 @@ def test_invalid_include_value(api_client, admin_user):
 
 | Riesgo | Mitigación |
 |---|---|
-| Performance: 7.960 NVs adicionales en la lista | Paginación ya existente; `?include=none` para performance crítico |
+| Performance: ~7.980 NVs adicionales en la lista | Medir (`08` §6); `?include=none` para performance crítico; evaluar `UNION` SQL si degrada |
 | Conflicto de PK entre `SaleOrder` y `LegacySaleNote` | `BigAutoField` con seeds distintos; colisión imposible |
-| Sort: legacy y vivos con `issue_date` diferentes | Sort por `issue_date DESC` funciona para ambos |
-| Filter: `customer=X` no filtra legacy | Helper `filter_legacy_queryset` agrega el filtro legacy |
-| N+1 en `legacy_qs` | `select_related('customer', 'related_contact', 'vendor', 'work_order')` |
+| Sort: legacy y vivos con fechas distintas | `_sort_merged` ordena por key común `date` (=`issue_date`) DESC |
+| Filter/search no aplica a legacy | `_filter_legacy` traduce los query-params al queryset de `LegacySaleNote` |
+| N+1 en `legacy_qs` | `select_related('customer', 'vendor', 'work_order')` |
 
 ## Comandos de verificación rápida
 

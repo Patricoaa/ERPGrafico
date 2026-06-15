@@ -100,7 +100,7 @@ export interface TrendData {
     value: string
 }
 
-export interface PurchasingHubData {
+export interface PurchasingAnalyticsData {
     totalVolume: number
     totalPending: number
     totalPaid: number
@@ -136,11 +136,11 @@ export interface PurchasingHubData {
     }>
 }
 
-export function usePurchasingHubData(
+export function usePurchasingAnalyticsData(
     orders: PurchaseOrderAPI[],
     dateRange?: { from: string; to: string } | null,
     granularity?: "day" | "month" | "year",
-): PurchasingHubData {
+): PurchasingAnalyticsData {
     return useMemo(() => {
         // ── Filter by date range ───────────────────────────
         let filtered = orders

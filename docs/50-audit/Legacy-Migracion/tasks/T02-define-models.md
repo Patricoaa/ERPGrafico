@@ -77,8 +77,8 @@ class LegacySaleNote(TimeStampedModel):
 
 
 class LegacyPayment(TimeStampedModel):
-    EFECTIVO = 'efectivo'; TRANSFERENCIA = 'transferencia'; CHEQUE = 'cheque'
-    METHOD_CHOICES = [(EFECTIVO, 'Efectivo'), (TRANSFERENCIA, 'Transferencia'), (CHEQUE, 'Cheque')]
+    EFECTIVO = 'efectivo'; TRANSFERENCIA = 'transferencia'; TARJETA = 'tarjeta'  # no existe 'cheque'
+    METHOD_CHOICES = [(EFECTIVO, 'Efectivo'), (TRANSFERENCIA, 'Transferencia'), (TARJETA, 'Tarjeta')]
 
     sale_note = models.ForeignKey(LegacySaleNote, on_delete=models.CASCADE, related_name='legacy_payments')
     legacy_external_id = models.IntegerField(unique=True)
@@ -137,5 +137,5 @@ python manage.py check
 
 ## Riesgos
 
-- **`WorkOrder` aún no tiene `related_name='legacy_sale_note'`** (se agrega en T12). Si falla, ajustar orden: T12 antes de T02.
+- **Relación OT↔NV**: vive en `LegacySaleNote.work_order` (`OneToOneField → production.WorkOrder`, `null=True`, `on_delete=SET_NULL`), definida aquí en T02. **No** se agrega FK ni `related_name` en `WorkOrder` (el reverse por defecto `wo.legacysalenote` basta).
 - **`TimeStampedModel`**: si no existe la base abstracta, se reemplaza por `models.Model` + `created_at`/`updated_at` manuales.

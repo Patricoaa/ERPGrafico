@@ -10,7 +10,7 @@
 
 ## Contexto
 
-ERPGrafico necesita importar **7.980 notas de venta** (2015–2026) desde un sistema legacy de imprenta. Los usuarios quieren:
+ERPGrafico necesita importar **7.980 notas de venta** (**2017–2026**) desde un sistema legacy de imprenta. Los usuarios quieren:
 
 - Buscar NVs legacy en el mismo listado que NVs nuevas.
 - Ver una NV legacy (read-only) en el mismo drawer que NVs nuevas.
@@ -18,11 +18,11 @@ ERPGrafico necesita importar **7.980 notas de venta** (2015–2026) desde un sis
 - Mantener trazabilidad: saber qué vino del legacy.
 - No queremos un fork del módulo de ventas ni vistas paralelas.
 
-El sistema legacy no tiene soft-delete, no tiene historial, no tiene categorías dinámicas, y tiene un modelo de datos muy chato (1 NV = 1 línea textual).
+El sistema legacy **sí tiene `deleted_at`** (soft-delete, hoy 0 filas borradas), no tiene historial, no tiene categorías dinámicas, y tiene un modelo de datos muy chato (1 NV = 1 línea `descripcion` + `detalles`).
 
 ## Decisión
 
-Se crea una **app backend `legacy`** con 6 modelos y un *adapter* de salida. El frontend **no** tiene `features/legacy/`; solo se modifica `features/sales` y `features/contacts` para reconocer el flag `is_legacy` y mostrar 1 chip + modo read-only en el drawer.
+Se crea una **app backend `legacy`** con 6 modelos y un *serializer de salida* dedicado (`LegacySaleNoteSerializer`, que emite el mismo shape JSON que `SaleOrderSerializer`). El frontend **no** tiene `features/legacy/`; solo se modifica `features/sales` y `features/contacts` para reconocer el flag `is_legacy` y mostrar 1 chip + modo read-only en el drawer.
 
 ### Backend
 
@@ -71,7 +71,7 @@ Ventajas:
 
 Desventajas:
 - Más código que la opción A.
-- Hay que mantener el adapter de salida.
+- Hay que mantener el serializer de salida (`LegacySaleNoteSerializer`) en sync con el shape de `SaleOrderSerializer`.
 
 ### Opción C: `feature_flags` + branch en `SaleOrder` (RECHAZADA)
 
@@ -97,13 +97,13 @@ Desventajas:
 - El usuario ve una sola lista, un solo drawer, un solo flujo de pago nuevo.
 - El equipo de ventas no necesita entrenamiento especial.
 - La importación es idempotente y se puede re-ejecutar.
-- El adapter de salida es < 100 LOC.
+- El serializer de salida es < 100 LOC.
 - El frontend no se ramifica: solo se añaden 1 prop y 1 chip.
 
 ### Negativas
 
 - Hay que mantener `LegacySaleNote` en sync con `SaleOrder` cuando el modelo de ventas evolucione (e.g., agregar `project_id`).
-- El adapter es un punto único de cambio: cualquier nueva propiedad en `SaleOrder` requiere decisión: ¿se duplica en `LegacySaleNote` o se omite?
+- El serializer es un punto único de cambio: cualquier nueva propiedad en `SaleOrderSerializer` requiere decisión: ¿se replica en `LegacySaleNoteSerializer` o se omite?
 - La búsqueda global es asimétrica (NVs sí, contactos no).
 
 ## Compliance con invariants globales
@@ -144,6 +144,6 @@ Requiere:
 
 - [02-roadmap.md](02-roadmap.md) — fases de implementación.
 - [03-backend-models.md](03-backend-models.md) — detalle de los 6 modelos.
-- [05-backend-api.md](05-backend-api.md) — detalle de endpoints y adapter.
+- [05-backend-api.md](05-backend-api.md) — detalle de endpoints y `LegacySaleNoteSerializer`.
 - [06-frontend-unified-ui.md](06-frontend-unified-ui.md) — detalle de cambios UI.
 - ADR-0014: DecimalField con `decimal_places=0` para CLP.
