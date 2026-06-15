@@ -1,6 +1,6 @@
 "use client"
 
-import { useMemo, useState } from 'react'
+import { useMemo, useState, useEffect } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import {
@@ -26,10 +26,12 @@ import type { SearchDefinition } from '@/types/search'
 import { treasuryApi } from '../api/treasuryApi'
 import type { PendingChargeRow, UpcomingInstallment, UnbilledItemRow } from '../types'
 import { mapToUnbilledItemRows } from './utils'
-import { AddChargeModal } from './AddChargeModal'
+import { CardPendingChargeDrawer } from './CardPendingChargeDrawer'
 import { BillChargesModal } from './BillChargesModal'
 import { ResponsivePie } from "@nivo/pie"
 import { useHubPanel } from '@/components/providers'
+import { useSearchParams, usePathname, useRouter } from 'next/navigation'
+import { useEntityRouteActions } from '@/hooks/useEntityRouteActions'
 
 interface UnbilledChargesViewProps {
     creditCardAccounts: Array<{ id: number; name: string; currency: string }>
@@ -63,10 +65,16 @@ interface UnbilledSummary {
 export function UnbilledChargesView({
     creditCardAccounts,
 }: UnbilledChargesViewProps) {
-    const [showAddCharge, setShowAddCharge] = useState(false)
+    const [chargeDrawerOpen, setChargeDrawerOpen] = useState(false)
+    const [chargeToEdit, setChargeToEdit] = useState<PendingChargeRow | null>(null)
     const [showBillCharges, setShowBillCharges] = useState(false)
     const queryClient = useQueryClient()
     const { openHub } = useHubPanel()
+    const searchParams = useSearchParams()
+    const pathname = usePathname()
+    const router = useRouter()
+    const { selectedId, openSelected, clearActions } = useEntityRouteActions()
+    const isNewModal = searchParams.get('modal') === 'new'
 
     const searchDef: SearchDefinition = useMemo(() => ({
         fields: [
@@ -118,10 +126,49 @@ export function UnbilledChargesView({
         [charges, upcomingInstallments],
     )
 
-    const handleAddChargeSuccess = () => {
-        setShowAddCharge(false)
+    // ── Sync URL params with drawer state ─────────────────────────
+    useEffect(() => {
+        if (selectedId) {
+            const charge = charges.find(c => String(c.id) === selectedId)
+            if (charge) {
+                setChargeToEdit(charge)
+                setChargeDrawerOpen(true)
+            } else {
+                clearActions()
+            }
+        }
+    }, [selectedId, charges, clearActions])
+
+    useEffect(() => {
+        if (isNewModal) {
+            setChargeToEdit(null)
+            setChargeDrawerOpen(true)
+        }
+    }, [isNewModal])
+
+    const handleChargeDrawerOpenChange = (open: boolean) => {
+        setChargeDrawerOpen(open)
+        if (!open) {
+            setChargeToEdit(null)
+            clearActions()
+            if (isNewModal) {
+                const params = new URLSearchParams(searchParams.toString())
+                params.delete('modal')
+                const q = params.toString()
+                router.replace(q ? `${pathname}?${q}` : pathname, { scroll: false })
+            }
+        }
+    }
+
+    const handleChargeDrawerSuccess = () => {
+        handleChargeDrawerOpenChange(false)
         queryClient.invalidateQueries({ queryKey: ['unbilled-charges', selectedCardAccount] })
-        toast.success('Cargo agregado exitosamente')
+    }
+
+    const handleAddChargeClick = () => {
+        const params = new URLSearchParams(searchParams.toString())
+        params.set('modal', 'new')
+        router.push(`${pathname}?${params.toString()}`, { scroll: false })
     }
 
     const handleBillChargesSuccess = () => {
@@ -250,7 +297,7 @@ export function UnbilledChargesView({
                 <Receipt className="h-3.5 w-3.5 mr-2" />
                 Facturar Cargos
             </Button>
-            <Button className="rounded-md h-10 text-[10px] font-black uppercase tracking-widest" onClick={() => setShowAddCharge(true)}>
+            <Button className="rounded-md h-10 text-[10px] font-black uppercase tracking-widest" onClick={handleAddChargeClick}>
                 <Plus className="h-3.5 w-3.5 mr-2" />
                 Agregar Cargo
             </Button>
@@ -290,6 +337,11 @@ export function UnbilledChargesView({
                     data={mergedRows}
                     isLoading={isLoading}
                     variant="embedded"
+                    onRowClick={(row: UnbilledItemRow) => {
+                        if (row.source === 'pending' && row.originalPendingCharge) {
+                            openSelected(row.originalPendingCharge.id)
+                        }
+                    }}
                     analyticsPanel={{
                         screen: {
                             entityName: "Gestión TC",
@@ -484,15 +536,15 @@ export function UnbilledChargesView({
                 />
             </div>
 
-            {showAddCharge && (
-                <AddChargeModal
-                    cardAccountId={selectedCardAccount}
-                    cardAccountName={cardAccountName}
-                    currency={currency}
-                    onSuccess={handleAddChargeSuccess}
-                    onCancel={() => setShowAddCharge(false)}
-                />
-            )}
+            <CardPendingChargeDrawer
+                open={chargeDrawerOpen}
+                onOpenChange={handleChargeDrawerOpenChange}
+                cardAccountId={selectedCardAccount}
+                cardAccountName={cardAccountName}
+                currency={currency}
+                charge={chargeToEdit}
+                onSuccess={handleChargeDrawerSuccess}
+            />
 
             {showBillCharges && (
                 <BillChargesModal

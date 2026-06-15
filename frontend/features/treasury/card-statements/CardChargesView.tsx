@@ -1,7 +1,6 @@
 "use client"
 
 import { CreditCard } from 'lucide-react'
-import { useSearchParams } from 'next/navigation'
 import { EmptyState } from '@/components/shared'
 import { UnbilledChargesView } from './UnbilledChargesView'
 import { StatementsView } from './StatementsView'
@@ -13,11 +12,11 @@ interface CardChargesViewProps {
         name: string
         currency: string
     }>
+    subtab?: string
 }
 
-export function CardChargesView({ bankId, creditCardAccounts }: CardChargesViewProps) {
-    const searchParams = useSearchParams()
-    const activeSubTab = searchParams.get('subtab') || 'unbilled'
+export function CardChargesView({ bankId, creditCardAccounts, subtab }: CardChargesViewProps) {
+    const activeSubTab = subtab || 'unbilled'
 
     if (creditCardAccounts.length === 0) {
         return (

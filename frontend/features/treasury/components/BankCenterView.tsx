@@ -53,7 +53,7 @@ function useBankOverview(bankId: number | null) {
     })
 }
 
-export function BankCenterView({ bankId }: { bankId: number }) {
+export function BankCenterView({ bankId, subtab }: { bankId: number; subtab?: string }) {
     const pathname = usePathname()
     const segments = pathname.split('/').filter(Boolean)
     const activeTab = segments[3] || 'overview'
@@ -195,7 +195,7 @@ export function BankCenterView({ bankId }: { bankId: number }) {
 
             {activeTab === 'cards' && (
                 <div className="flex-1 min-h-0 flex flex-col">
-                    <CardChargesView bankId={bankId} creditCardAccounts={creditCardAccounts} />
+                    <CardChargesView bankId={bankId} creditCardAccounts={creditCardAccounts} subtab={subtab} />
                 </div>
             )}
 

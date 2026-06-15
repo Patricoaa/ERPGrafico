@@ -2,18 +2,16 @@ import { BankPageHeader, BankCenterView } from "@/features/treasury"
 
 export default async function BankCardsPage({
     params,
-    searchParams,
 }: {
-    params: Promise<{ bankId: string }>
-    searchParams: Promise<{ subtab?: string }>
+    params: Promise<{ bankId: string; cardSubtab?: string[] }>
 }) {
-    const { bankId } = await params
-    const { subtab } = await searchParams
+    const { bankId, cardSubtab } = await params
+    const subtab = cardSubtab?.[0] || 'unbilled'
     const id = Number(bankId)
     return (
         <div className="h-full flex flex-col">
             <BankPageHeader bankId={id} title="Tarjeta de crédito" subtab={subtab} />
-            <BankCenterView bankId={id} />
+            <BankCenterView bankId={id} subtab={subtab} />
         </div>
     )
 }
