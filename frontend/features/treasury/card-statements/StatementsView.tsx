@@ -2,11 +2,11 @@
 
 import { useState, useMemo } from 'react'
 import type { ColumnDef } from '@tanstack/react-table'
-import { CreditCard, AlertTriangle, Eye, BarChart3, DollarSign, Calendar, TrendingUp, Receipt, Activity } from 'lucide-react'
+import { CreditCard, AlertTriangle, Eye, Receipt } from 'lucide-react'
 import {
     DataTableView, DataTableColumnHeader, DataCell,
     createActionsColumn, StatusBadge, MoneyDisplay, Skeleton, EmptyState, EntityCard,
-    SmartSearchBar, StatCard, SummaryTable,
+    SmartSearchBar,
     useSmartSearch,
     UnderlineTabs,
 } from '@/components/shared'
@@ -57,42 +57,6 @@ export function StatementsView({ bankId, creditCardAccounts }: StatementsViewPro
     const { data: statements = [], isLoading, isError } = useCardStatements(
         Object.keys(params).length > 0 ? params : undefined,
     )
-
-    const totalDebt = useMemo(() => statements
-        .filter((s) => s.status === 'OPEN' || s.status === 'OVERDUE')
-        .reduce((sum, s) => sum + parseFloat(s.total_to_pay), 0),
-    [statements])
-
-    const openCount = useMemo(() => statements.filter((s) => s.status === 'OPEN').length, [statements])
-    const overdueCount = useMemo(() => statements.filter((s) => s.status === 'OVERDUE').length, [statements])
-    const nextDue = useMemo(() => statements
-        .filter((s) => s.status === 'OPEN' || s.status === 'OVERDUE')
-        .sort((a, b) => a.due_date.localeCompare(b.due_date))[0],
-    [statements])
-
-    const debtTrend = useMemo(() => {
-        const sorted = [...statements]
-            .sort((a, b) => a.period_year !== b.period_year
-                ? a.period_year - b.period_year
-                : a.period_month - b.period_month)
-        return [{
-            id: 'Deuda',
-            data: sorted.map(s => ({
-                x: `${String(s.period_month).padStart(2, '0')}/${String(s.period_year).slice(-2)}`,
-                y: parseFloat(s.total_to_pay),
-            })),
-        }]
-    }, [statements])
-
-    const averageDaysLate = useMemo(() => {
-        if (!hubData.analytics?.payment_performance?.length) return null
-        const lateDays = hubData.analytics.payment_performance
-            .map(p => p.days_late)
-            .filter((d): d is number => d != null && d > 0)
-        return lateDays.length > 0
-            ? Math.round(lateDays.reduce((s, d) => s + d, 0) / lateDays.length)
-            : null
-    }, [hubData.analytics?.payment_performance])
 
     if (isLoading) {
         return <Skeleton className="h-full" />
@@ -178,8 +142,6 @@ export function StatementsView({ bankId, creditCardAccounts }: StatementsViewPro
         )
     }
 
-    const fmt = (n: number) => new Intl.NumberFormat('es-CL', { maximumFractionDigits: 0 }).format(n)
-
     return (
         <div className="h-full flex flex-col">
             <div className="flex-1 min-h-0">
@@ -192,314 +154,63 @@ export function StatementsView({ bankId, creditCardAccounts }: StatementsViewPro
                         screen: {
                             entityName: "Gestión TC",
                             tabs: [
-                                // ── Tab 1: Resumen Ejecutivo ──
-                                {
-                                    value: 'resumen',
-                                    label: 'Resumen',
-                                    icon: BarChart3,
-                                    columns: [
-                                        {
-                                            id: 'col-main',
-                                            weight: 2,
-                                            sections: [
-                                                {
-                                                    id: 'kpi-row',
-                                                    colSpan: 3,
-                                                    content: {
-                                                        type: 'custom',
-                                                        render: (
-                                                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                                                                <StatCard
-                                                                    label="Deuda Total (Facturada)"
-                                                                    value={<MoneyDisplay amount={totalDebt} inline />}
-                                                                    icon={DollarSign}
-                                                                    accent="warning"
-                                                                    variant="fill"
-                                                                    valueSize="lg"
-                                                                />
-                                                                <StatCard
-                                                                    label="Abiertos"
-                                                                    value={String(openCount)}
-                                                                    icon={BarChart3}
-                                                                    accent="primary"
-                                                                    variant="fill"
-                                                                />
-                                                                <StatCard
-                                                                    label="Vencidos"
-                                                                    value={String(overdueCount)}
-                                                                    icon={AlertTriangle}
-                                                                    accent={overdueCount > 0 ? 'destructive' : 'success'}
-                                                                    variant="fill"
-                                                                />
-                                                            </div>
-                                                        ),
-                                                    },
-                                                },
-                                                {
-                                                    id: 'deuda-trend',
-                                                    colSpan: 3,
-                                                    content: {
-                                                        type: 'stat-card',
-                                                        config: {
-                                                            label: 'Evolución de Deuda Facturada',
-                                                            variant: 'chart',
-                                        chart: {
-                                                                        type: 'line-chart',
-                                                                        data: debtTrend,
-                                                                        enableArea: true,
-                                                                        showLegend: false,
-                                                                        valueFormat: ' >-$s',
-                                                                    },
-                                                        },
-                                                    },
-                                                },
-                                            ],
-                                        },
-                                        {
-                                            id: 'col-side',
-                                            weight: 1,
-                                            sections: [
-                                                {
-                                                    id: 'prox-vencimiento',
-                                                    content: {
-                                                        type: 'stat-card',
-                                                        config: {
-                                                            label: 'Próx. Vencimiento',
-                                                            value: nextDue ? new Date(nextDue.due_date).toLocaleDateString('es-CL') : '—',
-                                                            icon: Calendar,
-                                                            accent: 'info',
-                                                            variant: 'compact',
-                                                            subtext: nextDue
-                                                                ? `$${fmt(parseFloat(nextDue.total_to_pay))}`
-                                                                : undefined,
-                                                        },
-                                                    },
-                                                },
-                                                {
-                                                    id: 'resumen-financiero',
-                                                    content: {
-                                                        type: 'custom',
-                                                        render: (
-                                                            <SummaryTable
-                                                                rows={[
-                                                                    { label: 'Deuda Total', value: <span className="font-bold">${fmt(totalDebt)}</span> },
-                                                                    { label: 'Abiertos', value: <span className="font-bold">{openCount}</span> },
-                                                                    { label: 'Vencidos', value: <span className="font-bold">{overdueCount}</span> },
-                                                                    { label: 'Deuda Vencida', value: <span className="font-bold">${fmt(statements.filter(s => s.status === 'OVERDUE').reduce((s, st) => s + parseFloat(st.total_to_pay), 0))}</span> },
-                                                                    { label: 'Último Período', value: <span className="font-bold">{statements.length > 0 ? `${String(statements[0].period_month).padStart(2, '0')}/${statements[0].period_year}` : '—'}</span> },
-                                                                ]}
-                                                            />
-                                                        ),
-                                                    },
-                                                },
-                                            ],
-                                        },
-                                    ],
-                                },
-                                // ── Tab 2: Pagos ──
-                                {
-                                    value: 'pagos',
-                                    label: 'Pagos',
-                                    icon: TrendingUp,
-                                    columns: [
-                                        {
-                                            id: 'pagos-col-main',
-                                            weight: 2,
-                                            sections: [
-                                                {
-                                                    id: 'payment-trend',
-                                                    colSpan: 3,
-                                                    content: hubData.paymentPerformanceChart[0]?.data.length ? {
-                                                        type: 'stat-card',
-                                                        config: {
-                                                            label: 'Saldo Pendiente por Estado de Cuenta',
-                                                            variant: 'chart',
-                                            chart: {
-                                                                        type: 'line-chart',
-                                                                        data: hubData.paymentPerformanceChart,
-                                                                        enableArea: true,
-                                                                        showLegend: false,
-                                                                        valueFormat: ' >-$s',
-                                                                    },
-                                                        },
-                                                    } : {
-                                                        type: 'custom',
-                                                        render: (
-                                                            <p className="text-sm text-muted-foreground italic py-4 text-center">Sin datos de pagos</p>
-                                                        ),
-                                                    },
-                                                },
-                                                {
-                                                    id: 'payment-summary',
-                                                    colSpan: 3,
-                                                    content: hubData.analytics?.payment_performance?.length ? {
-                                                        type: 'custom',
-                                                        render: (
-                                                            <SummaryTable
-                                                                rows={hubData.analytics.payment_performance.slice(0, 8).map(p => ({
-                                                                    label: `${p.display_id} · ${new Date(p.due_date).toLocaleDateString('es-CL')}`,
-                                                                    value: (
-                                                                        <div className="flex items-center gap-2">
-                                                                            <StatusBadge
-                                                                                status={p.status === 'PAID' ? 'success' : p.status === 'OVERDUE' ? 'destructive' : 'warning'}
-                                                                                label={p.status === 'PAID' ? `Pagado $${fmt(parseFloat(p.amount_paid))}` : p.status === 'OVERDUE' ? `Vencido $${fmt(parseFloat(p.outstanding))}` : `Pendiente $${fmt(parseFloat(p.outstanding))}`}
-                                                                            />
-                                                                        </div>
-                                                                    ),
-                                                                }))}
-                                                            />
-                                                        ),
-                                                    } : {
-                                                        type: 'custom',
-                                                        render: (
-                                                            <p className="text-sm text-muted-foreground italic py-4 text-center">Sin historial de pagos</p>
-                                                        ),
-                                                    },
-                                                },
-                                            ],
-                                        },
-                                        {
-                                            id: 'pagos-col-side',
-                                            weight: 1,
-                                            sections: [
-                                                {
-                                                    id: 'pago-stats',
-                                                    content: hubData.analytics ? {
-                                                        type: 'custom',
-                                                        render: (
-                                                            <SummaryTable
-                                                                rows={[
-                                                                    { label: 'Statements Vencidos', value: <span className="font-bold">{overdueCount}</span> },
-                                                                    { label: 'Morosos con Interés', value: <span className="font-bold">
-                                                                        {hubData.analytics.payment_performance.filter(p => parseFloat(p.punitory_interest) > 0).length}
-                                                                    </span> },
-                                                                    { label: 'Total Interés Punitorio', value: <span className="font-bold">${fmt(
-                                                                        hubData.analytics.payment_performance.reduce((s, p) => s + parseFloat(p.punitory_interest), 0)
-                                                                    )}</span> },
-                                                                    { label: 'Atraso Promedio', value: <span className="font-bold">{averageDaysLate != null ? `${averageDaysLate} días` : '—'}</span> },
-                                                                ]}
-                                                            />
-                                                        ),
-                                                    } : {
-                                                        type: 'custom',
-                                                        render: (
-                                                            <p className="text-sm text-muted-foreground italic py-4 text-center">Cargando...</p>
-                                                        ),
-                                                    },
-                                                },
-                                            ],
-                                        },
-                                    ],
-                                },
-                                // ── Tab 3: Costos Financieros ──
                                 {
                                     value: 'costos',
-                                    label: 'Costos',
+                                    label: 'Cargos y Cuotas',
                                     icon: Receipt,
                                     columns: [
                                         {
-                                            id: 'costos-col-main',
-                                            weight: 2,
+                                            id: 'col-evolution',
+                                            weight: 1,
                                             sections: [
                                                 {
-                                                    id: 'financial-costs-bar',
-                                                    colSpan: 3,
-                                                    content: hubData.financialCostsChart.length > 0 ? {
+                                                    id: 'payment-evolution',
+                                                    content: hubData.paymentEvolutionChart[0]?.data.length ? {
                                                         type: 'stat-card',
                                                         config: {
-                                                            label: 'Intereses y Comisiones por Período',
+                                                            label: 'Evolución de Pagos por Estado de Cuenta',
                                                             variant: 'chart',
-                                            chart: {
-                                                                        type: 'bar-chart',
-                                                                        data: hubData.financialCostsChart.map(c => ({
-                                                                            period: c.period,
-                                                                            Intereses: c.interest,
-                                                                            Comisiones: c.fees,
-                                                                        })),
-                                                                        keys: ['Intereses', 'Comisiones'],
-                                                                        indexBy: 'period',
-                                                                        valueFormat: ' >-$s',
-                                                                        showLegend: true,
-                                                                        enableGridY: true,
-                                                                    },
+                                                            chart: {
+                                                                type: 'line-chart',
+                                                                data: hubData.paymentEvolutionChart,
+                                                                enableArea: true,
+                                                                showLegend: true,
+                                                                valueFormat: ' >-$s',
+                                                            },
                                                         },
                                                     } : {
                                                         type: 'custom',
                                                         render: (
-                                                            <p className="text-sm text-muted-foreground italic py-4 text-center">Sin datos de costos financieros</p>
-                                                        ),
-                                                    },
-                                                },
-                                                {
-                                                    id: 'costs-trend-line',
-                                                    colSpan: 3,
-                                                    content: hubData.financialCostsChart.length >= 2 ? {
-                                                        type: 'stat-card',
-                                                        config: {
-                                                            label: 'Evolución de Costos',
-                                                            variant: 'chart',
-                                            chart: {
-                                                                        type: 'line-chart',
-                                                                        data: [{
-                                                                            id: 'Costo Total',
-                                                                            data: hubData.financialCostsChart.map(c => ({ x: c.period, y: c.total })),
-                                                                        }],
-                                                                        enableArea: true,
-                                                                        showLegend: false,
-                                                                        valueFormat: ' >-$s',
-                                                                    },
-                                                        },
-                                                    } : {
-                                                        type: 'custom',
-                                                        render: (
-                                                            <p className="text-sm text-muted-foreground italic py-4 text-center">Datos insuficientes para tendencia</p>
+                                                            <p className="text-sm text-muted-foreground italic py-4 text-center">Sin datos históricos de pagos</p>
                                                         ),
                                                     },
                                                 },
                                             ],
                                         },
                                         {
-                                            id: 'costos-col-side',
+                                            id: 'col-cost',
                                             weight: 1,
                                             sections: [
                                                 {
-                                                    id: 'cost-summary',
-                                                    content: hubData.analytics ? {
-                                                        type: 'custom',
-                                                        render: (
-                                                            <SummaryTable
-                                                                rows={hubData.financialCostsChart.slice(-6).reverse().map(c => ({
-                                                                    label: c.period,
-                                                                    value: (
-                                                                        <div className="flex flex-col items-end gap-0.5">
-                                                                            <span className="text-xs font-bold">${fmt(c.total)}</span>
-                                                                            <span className="text-[10px] text-muted-foreground">
-                                                                                I: ${fmt(c.interest)} · C: ${fmt(c.fees)}
-                                                                            </span>
-                                                                        </div>
-                                                                    ),
-                                                                }))}
-                                                            />
-                                                        ),
+                                                    id: 'cost-breakdown-donut',
+                                                    content: hubData.costBreakdownDonut.length > 0 ? {
+                                                        type: 'stat-card',
+                                                        config: {
+                                                            label: 'Composición de Costos',
+                                                            variant: 'chart',
+                                                            chart: {
+                                                                type: 'pie-chart',
+                                                                data: hubData.costBreakdownDonut,
+                                                                innerRadius: 0.6,
+                                                                showLegend: true,
+                                                                enableLabels: true,
+                                                            },
+                                                        },
                                                     } : {
                                                         type: 'custom',
                                                         render: (
-                                                            <p className="text-sm text-muted-foreground italic py-4 text-center">Cargando...</p>
+                                                            <p className="text-sm text-muted-foreground italic py-4 text-center">Sin datos de costos</p>
                                                         ),
-                                                    },
-                                                },
-                                                {
-                                                    id: 'cost-trend-badge',
-                                                    content: {
-                                                        type: 'stat-card',
-                                                        config: {
-                                                            label: 'Tendencia de Costos',
-                                                            value: hubData.financialCostsTrend.value,
-                                                            icon: Activity,
-                                                            accent: hubData.financialCostsTrend.direction === 'up' ? 'destructive' : 'success',
-                                                            variant: 'compact',
-                                                            trend: hubData.financialCostsTrend,
-                                                        },
                                                     },
                                                 },
                                             ],

@@ -3,19 +3,20 @@
 import { useMemo } from "react"
 import { useQuery } from "@tanstack/react-query"
 import { treasuryApi } from "../api/treasuryApi"
-import type { TcHubAnalyticsResponse } from "./analyticsTypes"
+import type { TcHubAnalyticsResponse, PurchaseGroupAnalysisRow } from "./analyticsTypes"
 
-export interface TcTrendData {
-    direction: "up" | "down"
-    value: string
+export interface CostDonutItem {
+    id: string
+    value: number
+    color: string
 }
 
 export interface StatementsAnalyticsData {
     analytics: TcHubAnalyticsResponse | undefined
     analyticsLoading: boolean
-    paymentPerformanceChart: Array<{ id: string; data: Array<{ x: string; y: number }> }>
-    financialCostsChart: Array<{ period: string; interest: number; fees: number; total: number }>
-    financialCostsTrend: TcTrendData
+    paymentEvolutionChart: Array<{ id: string; data: Array<{ x: string; y: number }> }>
+    purchaseGroupData: PurchaseGroupAnalysisRow[]
+    costBreakdownDonut: CostDonutItem[]
 }
 
 export function useStatementsAnalyticsData(
@@ -35,42 +36,43 @@ export function useStatementsAnalyticsData(
     })
 
     return useMemo(() => {
-        const costs = analytics?.financial_costs ?? []
         const payments = analytics?.payment_performance ?? []
+        const groups = analytics?.purchase_group_analysis ?? []
+        const costs = analytics?.financial_costs ?? []
 
-        let financialCostsTrend: TcTrendData = { direction: "up", value: "—" }
-        if (costs.length >= 2) {
-            const curr = parseFloat(costs[costs.length - 1]?.total ?? "0")
-            const prev = parseFloat(costs[costs.length - 2]?.total ?? "0")
-            financialCostsTrend = {
-                direction: curr >= prev ? "up" : "down",
-                value: prev > 0 ? `${Math.round(((curr - prev) / prev) * 100)}%` : "—",
-            }
-        }
+        const sortedPayments = [...payments]
+            .sort((a, b) => new Date(a.due_date).getTime() - new Date(b.due_date).getTime())
 
-        const paymentPerformanceChart = [{
-            id: "Saldo Pendiente",
-            data: [...payments]
-                .reverse()
-                .map(p => ({
-                    x: p.due_date,
-                    y: parseFloat(p.outstanding),
-                })),
-        }]
+        const paymentEvolutionChart = [
+            {
+                id: 'Total a Pagar',
+                data: sortedPayments.map(p => ({ x: p.due_date, y: parseFloat(p.total_to_pay) })),
+            },
+            {
+                id: 'Monto Pagado',
+                data: sortedPayments.map(p => ({ x: p.due_date, y: parseFloat(p.amount_paid) })),
+            },
+        ]
 
-        const financialCostsChart = costs.map(c => ({
-            period: c.period,
-            interest: parseFloat(c.interest),
-            fees: parseFloat(c.fees),
-            total: parseFloat(c.total),
-        }))
+        const purchaseGroupData = [...groups]
+            .sort((a, b) => (b.effective_cost_pct ?? 0) - (a.effective_cost_pct ?? 0))
+
+        const totalAmount = groups.reduce((sum, g) => sum + parseFloat(g.total_amount), 0)
+        const totalInterest = groups.reduce((sum, g) => sum + parseFloat(g.total_interest), 0)
+        const totalFees = costs.reduce((sum, c) => sum + parseFloat(c.fees), 0)
+
+        const costBreakdownDonut = [
+            { id: 'Capital', value: totalAmount, color: 'var(--chart-1)' },
+            { id: 'Intereses', value: totalInterest, color: 'var(--chart-2)' },
+            { id: 'Comisiones', value: totalFees, color: 'var(--chart-3)' },
+        ].filter(d => d.value > 0)
 
         return {
             analytics,
             analyticsLoading,
-            paymentPerformanceChart,
-            financialCostsChart,
-            financialCostsTrend,
+            paymentEvolutionChart,
+            purchaseGroupData,
+            costBreakdownDonut,
         }
     }, [analytics, analyticsLoading])
 }
