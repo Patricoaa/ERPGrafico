@@ -17,13 +17,13 @@ export const MODULE_REGISTRY: Record<string, ModuleConfig> = {
   dashboard:   { id: "dashboard",   label: "Inicio",        icon: Home,          iconName: "home",          permission: null,                                         defaultUrl: "/" },
   accounting:  { id: "accounting",  label: "Contabilidad",  icon: Calculator,     iconName: "calculator",     permission: "accounting.view_dashboard_accounting",       defaultUrl: "/accounting/ledger" },
   billing:     { id: "billing",     label: "Facturación",   icon: Receipt,        iconName: "receipt",        permission: "billing.view_dashboard_billing",             defaultUrl: "/billing/sales?view=card" },
-  sales:       { id: "sales",       label: "Ventas",        icon: ShoppingCart,   iconName: "shopping-cart",   permission: "sales.view_dashboard_sales",                defaultUrl: "/sales/orders?tab=orders" },
+  sales:       { id: "sales",       label: "Ventas",        icon: ShoppingCart,   iconName: "shopping-cart",   permission: "sales.view_dashboard_sales",                defaultUrl: "/sales/orders" },
   contacts:    { id: "contacts",    label: "Contactos",     icon: Users,          iconName: "users",          permission: null,                                         defaultUrl: "/contacts" },
-  inventory:   { id: "inventory",   label: "Inventario",    icon: Package,        iconName: "package",        permission: "inventory.view_dashboard_inventory",        defaultUrl: "/inventory/products?tab=products" },
+  inventory:   { id: "inventory",   label: "Inventario",    icon: Package,        iconName: "package",        permission: "inventory.view_dashboard_inventory",        defaultUrl: "/inventory/products" },
   production:  { id: "production",  label: "Producción",    icon: Printer,        iconName: "printer",        permission: "production.view_dashboard_production",       defaultUrl: "/production/orders" },
-  treasury:    { id: "treasury",    label: "Tesorería",     icon: Banknote,       iconName: "banknote",       permission: "treasury.view_dashboard_treasury",          defaultUrl: "/treasury/operaciones?tab=movements" },
-  purchasing:  { id: "purchasing",  label: "Compras",       icon: ShoppingBag,    iconName: "shopping-bag",    permission: "purchasing.view_dashboard_purchasing",      defaultUrl: "/purchasing/orders?tab=orders" },
-  finances:    { id: "finances",    label: "Finanzas",      icon: PieChart,       iconName: "pie-chart",       permission: "finances.view_dashboard_finances",          defaultUrl: "/finances/statements?tab=bs" },
+  treasury:    { id: "treasury",    label: "Tesorería",     icon: Banknote,       iconName: "banknote",       permission: "treasury.view_dashboard_treasury",          defaultUrl: "/treasury/operaciones/movements" },
+  purchasing:  { id: "purchasing",  label: "Compras",       icon: ShoppingBag,    iconName: "shopping-bag",    permission: "purchasing.view_dashboard_purchasing",      defaultUrl: "/purchasing/orders" },
+  finances:    { id: "finances",    label: "Finanzas",      icon: PieChart,       iconName: "pie-chart",       permission: "finances.view_dashboard_finances",          defaultUrl: "/finances/statements/bs" },
   hr:          { id: "hr",          label: "RRHH",          icon: UserCog,        iconName: "user-cog",        permission: "hr.view_dashboard_hr",                     defaultUrl: "/hr/employees" },
 } as const
 

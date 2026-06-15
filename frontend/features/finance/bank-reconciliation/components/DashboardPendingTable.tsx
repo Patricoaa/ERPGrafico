@@ -110,7 +110,7 @@ export function DashboardPendingTable({ data, loading }: DashboardPendingTablePr
                     globalFilterFields={["description", "account"]}
                     rightAction={
                         <Button variant="ghost" size="sm" className="h-8 text-xs font-black uppercase tracking-widest border border-border/40" asChild>
-                            <Link href="/treasury/reconciliation?tab=statements&filter=in_progress">
+                            <Link href="/treasury/reconciliation?filter=in_progress">
                                 Ver Todo
                             </Link>
                         </Button>

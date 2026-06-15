@@ -1,17 +1,16 @@
 "use client"
 
-import { usePathname, useSearchParams } from "next/navigation"
+import { usePathname } from "next/navigation"
 import { PageHeader } from "@/components/shared"
 
 export function BillingHeader() {
     const pathname = usePathname()
-    const searchParams = useSearchParams()
     
     const segments = pathname.split('/').filter(Boolean)
     const currentSegment = segments[1] || 'sales'
     
     const activeValue = currentSegment === 'settings' ? 'config' : currentSegment
-    const subActiveValue = currentSegment === 'settings' ? (searchParams.get('tab') || 'accounts') : undefined
+    const subActiveValue = currentSegment === 'settings' ? (segments[2] || 'accounts') : undefined
 
     const tabs = [
         { value: "sales", label: "Emitidos (Ventas)", iconName: "receipt", href: "/billing/sales" },
@@ -22,8 +21,8 @@ export function BillingHeader() {
             iconName: "settings", 
             href: "/billing/settings",
             subTabs: [
-                { value: "accounts", label: "Cuentas", href: "/billing/settings?tab=accounts", iconName: "users" },
-                { value: "dtes", label: "Documentos", href: "/billing/settings?tab=dtes", iconName: "file-text" }
+                { value: "accounts", label: "Cuentas", href: "/billing/settings/accounts", iconName: "users" },
+                { value: "dtes", label: "Documentos", href: "/billing/settings/dtes", iconName: "file-text" }
             ]
         },
     ]

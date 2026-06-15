@@ -1,8 +1,8 @@
 import { redirect } from 'next/navigation'
 import { searchableEntityRoutes } from '@/lib/searchableEntityRoutes'
 
-// T-99 (F9): BankStatement → /treasury/reconciliation?tab=statements&selected=<id>
-// StatementsList está montada en la tab "statements" de /treasury/reconciliation.
+// T-99 (F9): BankStatement → /treasury/reconciliation?selected=<id>
+// StatementsList está montada en /treasury/reconciliation.
 // NOTA: StatementsList re-navega a /treasury/reconciliation/<id>/workbench al detectar
 // el ?selected= — esto es intencional: el workbench es la UI dedicada para statements. (ADR-0020)
 export default async function DetailPage({ params }: { params: Promise<{ id: string }> }) {

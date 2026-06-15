@@ -11,9 +11,9 @@ export const FINANCES_TABS = [
         iconName: "clipboard-list",
         href: "/finances/statements",
         subTabs: [
-            { value: "bs", label: "Balance", iconName: "file-text", href: "/finances/statements?tab=bs" },
-            { value: "pl", label: "Resultados", iconName: "bar-chart-2", href: "/finances/statements?tab=pl" },
-            { value: "cf", label: "Flujos", iconName: "trending-up", href: "/finances/statements?tab=cf" },
+            { value: "bs", label: "Balance", iconName: "file-text", href: "/finances/statements/bs" },
+            { value: "pl", label: "Resultados", iconName: "bar-chart-2", href: "/finances/statements/pl" },
+            { value: "cf", label: "Flujos", iconName: "trending-up", href: "/finances/statements/cf" },
         ]
     },
     {
@@ -22,8 +22,8 @@ export const FINANCES_TABS = [
         iconName: "line-chart",
         href: "/finances/analysis",
         subTabs: [
-            { value: "ratios", label: "Ratios Financieros", iconName: "pie-chart", href: "/finances/analysis?tab=ratios" },
-            { value: "bi", label: "Business Intelligence", iconName: "activity", href: "/finances/analysis?tab=bi" },
+            { value: "ratios", label: "Ratios Financieros", iconName: "pie-chart", href: "/finances/analysis/ratios" },
+            { value: "bi", label: "Business Intelligence", iconName: "activity", href: "/finances/analysis/bi" },
         ]
     },
     {
@@ -32,8 +32,8 @@ export const FINANCES_TABS = [
         iconName: "target",
         href: "/finances/budgets",
         subTabs: [
-            { value: "list", label: "Gestión", iconName: "list", href: "/finances/budgets?tab=list" },
-            { value: "versus", label: "Versus", iconName: "chart-bar", href: "/finances/budgets?tab=versus" },
+            { value: "list", label: "Gestión", iconName: "list", href: "/finances/budgets/list" },
+            { value: "versus", label: "Versus", iconName: "chart-bar", href: "/finances/budgets/versus" },
         ]
     },
     {
@@ -42,9 +42,9 @@ export const FINANCES_TABS = [
         iconName: "users",
         href: "/finances/partners",
         subTabs: [
-            { value: "composition", label: "Composición", iconName: "users", href: "/finances/partners?tab=composition" },
-            { value: "distributions", label: "Utilidades", iconName: "pie-chart", href: "/finances/partners?tab=distributions" },
-            { value: "config", label: "Arquitectura", iconName: "settings", href: "/finances/partners?tab=config" },
+            { value: "composition", label: "Composición", iconName: "users", href: "/finances/partners/composition" },
+            { value: "distributions", label: "Utilidades", iconName: "pie-chart", href: "/finances/partners/distributions" },
+            { value: "config", label: "Arquitectura", iconName: "settings", href: "/finances/partners/config" },
         ]
     },
     {
@@ -57,13 +57,12 @@ export const FINANCES_TABS = [
 
 export function FinancesHeader() {
     const pathname = usePathname()
-    const searchParams = useSearchParams()
 
     const segments = pathname.split('/').filter(Boolean)
     const currentSegment = segments[1] || 'statements'
 
     const activeValue = currentSegment
-    const subActiveValue = searchParams.get('tab') ?? undefined
+    const subActiveValue = segments[2] ?? undefined
 
     const navigation = {
         moduleName: "Finanzas",

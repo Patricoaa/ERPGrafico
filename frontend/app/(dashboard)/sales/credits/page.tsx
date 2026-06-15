@@ -1,8 +1,6 @@
 import { Metadata } from "next"
-import { Tabs } from "@/components/ui/tabs"
-import { redirect } from "next/navigation"
-import { FadeIn, ToolbarCreateButton } from '@/components/shared'
-import { CreditPortfolioView, BlacklistView } from "@/features/credits"
+import { CreditPortfolioView } from "@/features/credits"
+import { ToolbarCreateButton } from '@/components/shared'
 
 export const metadata: Metadata = {
     title: "Cartera de Créditos | ERPGrafico",
@@ -10,42 +8,20 @@ export const metadata: Metadata = {
 }
 
 interface PageProps {
-    searchParams: Promise<{ tab?: string; modal?: string }>
+    searchParams: Promise<{ modal?: string }>
 }
 
 export default async function CreditsPage({ searchParams }: PageProps) {
-    const resolvedParams = await searchParams
-    const activeTab = resolvedParams.tab || "portfolio"
-    const modalOpen = resolvedParams.modal === "new"
-
-    if (!resolvedParams.tab) {
-        redirect('/sales/credits?tab=portfolio')
-    }
-
-    const createAction = activeTab === 'portfolio' ? (
-        <ToolbarCreateButton
-            label="Asignar Crédito"
-            href="/sales/credits?tab=portfolio&modal=new"
-        />
-    ) : null
+    const { modal } = await searchParams
+    const createAction = (
+        <ToolbarCreateButton label="Asignar Crédito" href="/sales/credits/portfolio?modal=new" />
+    )
 
     return (
-        <div className="h-full flex flex-col">
-            <Tabs value={activeTab} className="h-full flex flex-col">
-                <div className="mt-0 outline-none flex-1 min-h-0">
-                    <FadeIn key={activeTab}>
-                        {activeTab === 'blacklist' ? (
-                            <BlacklistView />
-                        ) : (
-                            <CreditPortfolioView
-                                activeTab={activeTab as 'portfolio' | 'history'}
-                                externalOpen={modalOpen}
-                                createAction={createAction}
-                            />
-                        )}
-                    </FadeIn>
-                </div>
-            </Tabs>
-        </div>
+        <CreditPortfolioView
+            activeTab="portfolio"
+            externalOpen={modal === 'new'}
+            createAction={createAction}
+        />
     )
 }

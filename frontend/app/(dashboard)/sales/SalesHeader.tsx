@@ -1,13 +1,12 @@
 "use client"
 
-import { usePathname, useSearchParams } from "next/navigation"
+import { usePathname } from "next/navigation"
 import { PageHeader } from "@/components/shared"
 import { ENTITY_REGISTRY } from "@/lib/entity-registry"
 import { getModuleIconName } from "@/lib/module-registry"
 
 export function SalesHeader() {
     const pathname = usePathname()
-    const searchParams = useSearchParams()
 
     const segments = pathname.split('/').filter(Boolean)
     const currentSegment = segments[1] || 'orders'
@@ -21,18 +20,17 @@ export function SalesHeader() {
         settings: 'config',
     }
 
-    const tabParam = searchParams.get('tab')
     const activeValue = segmentToTab[currentSegment] || 'orders'
 
-    // Determine subActiveValue
+    // Determine subActiveValue from path segments
     const subActiveValue = (() => {
-        if (activeValue === 'config') return tabParam || 'income'
-        if (activeValue === 'orders') return tabParam || 'orders'
+        if (activeValue === 'config') return segments[2] || 'income'
+        if (activeValue === 'orders') return segments[2] || 'orders'
         if (activeValue === 'pos') {
             if (currentSegment === 'sessions') return 'sessions'
-            return tabParam || 'cajas'
+            return segments[2] || 'cajas'
         }
-        if (activeValue === 'credits') return tabParam || 'portfolio'
+        if (activeValue === 'credits') return segments[2] || 'portfolio'
         return undefined
     })()
 
@@ -43,17 +41,17 @@ export function SalesHeader() {
             iconName: "shopping-cart",
             href: "/sales/orders",
             subTabs: [
-                { value: "orders", label: ENTITY_REGISTRY['sales.saleorder']?.titlePlural || "Notas de Venta", href: "/sales/orders?tab=orders" },
-                { value: "notes", label: "Ajustes (N/C N/D)", href: "/sales/orders?tab=notes" },
+                { value: "orders", label: ENTITY_REGISTRY['sales.saleorder']?.titlePlural || "Notas de Venta", href: "/sales/orders" },
+                { value: "notes", label: "Ajustes (N/C N/D)", href: "/sales/orders/notes" },
             ]
         },
         {
             value: "pos",
             label: "POS",
             iconName: "banknote",
-            href: "/sales/pos?tab=cajas",
+            href: "/sales/pos/cajas",
             subTabs: [
-                { value: "cajas", label: "Cajas", href: "/sales/pos?tab=cajas" },
+                { value: "cajas", label: "Cajas", href: "/sales/pos/cajas" },
                 { value: "sessions", label: "Sesiones", href: "/sales/sessions" },
             ]
         },
@@ -63,9 +61,9 @@ export function SalesHeader() {
             iconName: "pie-chart",
             href: "/sales/credits",
             subTabs: [
-                { value: "portfolio", label: "Cartera", href: "/sales/credits?tab=portfolio" },
-                { value: "history", label: "Historial", href: "/sales/credits?tab=history" },
-                { value: "blacklist", label: "Lista Negra", href: "/sales/credits?tab=blacklist" },
+                { value: "portfolio", label: "Cartera", href: "/sales/credits/portfolio" },
+                { value: "history", label: "Historial", href: "/sales/credits/history" },
+                { value: "blacklist", label: "Lista Negra", href: "/sales/credits/blacklist" },
             ]
         },
         {
@@ -74,16 +72,16 @@ export function SalesHeader() {
             iconName: "settings",
             href: "/sales/settings",
             subTabs: [
-                { value: "income", label: "Ingresos", href: "/sales/settings?tab=income", iconName: "trending-up" },
-                { value: "credit", label: "Crédito", href: "/sales/settings?tab=credit", iconName: "credit-card" },
-                { value: "config_pos", label: "POS", href: "/sales/settings?tab=config_pos", iconName: "settings" },
+                { value: "income", label: "Ingresos", href: "/sales/settings/income", iconName: "trending-up" },
+                { value: "credit", label: "Crédito", href: "/sales/settings/credit", iconName: "credit-card" },
+                { value: "config-pos", label: "POS", href: "/sales/settings/config-pos", iconName: "settings" },
             ]
         },
     ]
 
     const navigation = {
         moduleName: "Ventas",
-        moduleHref: "/sales/orders?tab=orders",
+        moduleHref: "/sales/orders",
         tabs,
         activeValue,
         subActiveValue,

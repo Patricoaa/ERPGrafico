@@ -1,12 +1,11 @@
 "use client"
 
-import { usePathname, useSearchParams } from "next/navigation"
+import { usePathname } from "next/navigation"
 import { PageHeader } from "@/components/shared"
 import { getModuleIconName } from "@/lib/module-registry"
 
 export function AccountingHeader() {
     const pathname = usePathname()
-    const searchParams = useSearchParams()
 
     const segments = pathname.split('/').filter(Boolean)
     const currentSegment = segments[1] || 'ledger'
@@ -20,7 +19,7 @@ export function AccountingHeader() {
     }
 
     const activeValue = segmentToTab[currentSegment] || 'ledger'
-    const subActiveValue = searchParams.get('tab') ?? undefined
+    const subActiveValue = currentSegment === 'settings' ? (segments[2] || 'structure') : undefined
 
     const tabs = [
         { value: "ledger", label: "Plan de Cuentas", iconName: "list-tree", href: "/accounting/ledger" },
@@ -33,9 +32,9 @@ export function AccountingHeader() {
             iconName: "settings",
             href: "/accounting/settings",
             subTabs: [
-                { value: "structure", label: "Estructura Contable", href: "/accounting/settings?tab=structure", iconName: "settings-2" },
-                { value: "defaults", label: "Cuentas por Defecto", href: "/accounting/settings?tab=defaults", iconName: "book-open" },
-                { value: "tax", label: "Impuestos", href: "/accounting/settings?tab=tax", iconName: "receipt" }
+                { value: "structure", label: "Estructura Contable", href: "/accounting/settings/structure", iconName: "settings-2" },
+                { value: "defaults", label: "Cuentas por Defecto", href: "/accounting/settings/defaults", iconName: "book-open" },
+                { value: "tax", label: "Impuestos", href: "/accounting/settings/tax", iconName: "receipt" }
             ]
         },
     ]

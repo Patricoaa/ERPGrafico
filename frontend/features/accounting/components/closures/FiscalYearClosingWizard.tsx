@@ -247,7 +247,7 @@ export function FiscalYearClosingWizard({
                             className="bg-primary hover:bg-primary/90 text-primary-foreground font-bold uppercase tracking-widest text-[11px] h-11"
                             onClick={() => {
                                 onClose();
-                                window.location.href = `/settings/partners?tab=distributions&modal=new-distribution&yearId=${year}`;
+                                window.location.href = `/finances/partners/distributions?modal=new-distribution&yearId=${year}`;
                             }}
                             icon={<PieChart className="w-4 h-4 mr-2" />}
                         >
