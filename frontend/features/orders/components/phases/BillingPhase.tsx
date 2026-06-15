@@ -2,7 +2,7 @@ import { getErrorMessage } from "@/lib/errors"
 
 import { useState } from "react"
 import { PhaseCard } from "./PhaseCard"
-import { FileText, Trash2, X } from "lucide-react"
+import { FileText, Trash2, Ban } from "lucide-react"
 import { formatEntity } from '@/features/orders/utils/status'
 import { getDtePrefix, getDteLabel } from '@/lib/entity-registry'
 import { toast } from "sonner"
@@ -172,8 +172,8 @@ export function BillingPhase({
                                     color: 'text-destructive hover:bg-destructive/10',
                                     onClick: () => handleCancelDraft(Number(inv.id))
                                 }] : []),
-                                ...(canCancelInvoice && inv.status !== 'CANCELLED' && inv.status !== 'DRAFT' ? [{
-                                    icon: X,
+                                ...(canCancelInvoice && inv.status !== 'CANCELLED' && inv.status !== 'DRAFT' && (!inv.number || inv.number === 'Draft') ? [{
+                                    icon: Ban,
                                     title: 'Anular Documento',
                                     color: 'text-warning hover:bg-warning/10',
                                     onClick: () => handleAnnulDocument(Number(inv.id))
