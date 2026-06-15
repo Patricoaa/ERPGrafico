@@ -3,7 +3,7 @@ import { getErrorMessage } from "@/lib/errors"
 
 import { useState } from "react"
 import { PhaseCard } from "./PhaseCard"
-import { Banknote, Trash2, Gavel } from "lucide-react"
+import { Banknote, Trash2, Ban, Gavel } from "lucide-react"
 import { formatEntity } from '@/features/orders/utils/status'
 import { cn } from "@/lib/utils"
 import { toast } from "sonner"
@@ -116,10 +116,16 @@ export function TreasuryPhase({
                         amount: p.amount,
                         documentReference: p.reference,
                         actions: [
-                            ...(canCancelPayment && p.status !== 'CANCELLED' ? [{
+                            ...(canCancelPayment && p.status !== 'CANCELLED' && p.status !== 'POSTED' ? [{
                                 icon: Trash2,
-                                title: p.status === 'POSTED' ? 'Anular Pago' : 'Cancelar Pago',
+                                title: 'Cancelar Pago',
                                 color: 'text-destructive hover:bg-destructive/10',
+                                onClick: () => p.id && handleDeletePayment(Number(p.id))
+                            }] : []),
+                            ...(canCancelPayment && p.status === 'POSTED' ? [{
+                                icon: Ban,
+                                title: 'Anular Pago',
+                                color: 'text-warning hover:bg-warning/10',
                                 onClick: () => p.id && handleDeletePayment(Number(p.id))
                             }] : [])
                         ]

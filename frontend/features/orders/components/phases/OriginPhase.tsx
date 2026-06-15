@@ -1,5 +1,5 @@
 import { PhaseCard } from "./PhaseCard"
-import { FileText, Trash2, X, Edit, TrendingUp } from "lucide-react"
+import { FileText, Trash2, Ban, Edit, TrendingUp } from "lucide-react"
 import { formatEntity } from '@/features/orders/utils/status'
 import { toast } from "sonner"
 import { useCancelOrderFlow } from "../../hooks/useCancelOrderFlow"
@@ -86,7 +86,7 @@ export function OriginPhase({
                     onClick: () => requestCancel(order?.id)
                 }] : []),
                 ...(canCancelOrder && order?.status !== 'CANCELLED' && order?.status !== 'DRAFT' && !isAnnulBlocked ? [{
-                    icon: X,
+                    icon: Ban,
                     title: 'Anular Orden',
                     color: 'text-destructive hover:bg-destructive/10',
                     onClick: () => requestCancel(order?.id)
