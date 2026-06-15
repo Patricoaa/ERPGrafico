@@ -3,7 +3,8 @@
 import React from 'react'
 import { Drawer, StatusBadge, SkeletonShell, FormSplitLayout } from '@/components/shared'
 import { Button } from '@/components/ui/button'
-import { Printer, FileText } from 'lucide-react'
+import { Printer } from 'lucide-react'
+import { getEntityIcon } from "@/lib/entity-registry"
 import { useSaleOrder } from '@/features/sales/hooks/useSalesOrders'
 import { useReactToPrint } from 'react-to-print'
 import { useRef } from 'react'
@@ -52,7 +53,7 @@ export function SaleOrderDrawer({ id, open, onOpenChange, mode = 'view', orderId
                 onOpenChange={onOpenChange}
                 side="left"
                 defaultSize="50%"
-                icon={FileText}
+                icon={getEntityIcon('sales.saleorder')}
                 title={<span>{order?.number ?? 'Nota de Venta'}</span>}
                 headerActions={<Button variant="ghost" size="icon" onClick={() => handlePrint()}><Printer className="h-4 w-4" /></Button>}
                 subtitle={order?.customer_name}

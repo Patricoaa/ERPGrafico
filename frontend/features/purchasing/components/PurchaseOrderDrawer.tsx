@@ -3,7 +3,8 @@
 import React, { useRef } from 'react'
 import { Drawer, StatusBadge, SkeletonShell, FormSplitLayout } from '@/components/shared'
 import { Button } from '@/components/ui/button'
-import { Printer, ShoppingCart } from 'lucide-react'
+import { Printer } from 'lucide-react'
+import { getEntityIcon } from "@/lib/entity-registry"
 import { useReactToPrint } from 'react-to-print'
 import { formatCurrency } from '@/lib/money'
 import { formatPlainDate } from '@/lib/utils'
@@ -53,7 +54,7 @@ export function PurchaseOrderDrawer({ id, open, onOpenChange, mode = 'view', pur
         onOpenChange={onOpenChange}
         side="left"
         defaultSize="50%"
-        icon={ShoppingCart}
+        icon={getEntityIcon('purchasing.purchaseorder')}
         title={<span>{displayId}</span>}
         headerActions={<Button variant="ghost" size="icon" onClick={() => handlePrint()}><Printer className="h-4 w-4" /></Button>}
         subtitle={contactName}

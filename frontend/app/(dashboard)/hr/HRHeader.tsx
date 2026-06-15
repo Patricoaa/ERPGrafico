@@ -2,7 +2,7 @@
 
 import { usePathname } from "next/navigation"
 import { PageHeader } from "@/components/shared"
-import { getModuleIconName } from "@/lib/module-registry"
+import { getEntityIconName } from "@/lib/entity-registry"
 
 export function HRHeader() {
     const pathname = usePathname()
@@ -18,10 +18,10 @@ export function HRHeader() {
     const subActiveValue = currentSegment === 'settings' ? (segments[2] || 'global') : undefined
 
     const tabs = [
-        { value: "employees", label: "Nómina Personal", iconName: "users-2", href: "/hr/employees" },
-        { value: "absences", label: "Inasistencias", iconName: "calendar-off", href: "/hr/absences" },
-        { value: "advances", label: "Anticipos", iconName: "hand-coins", href: "/hr/advances" },
-        { value: "payrolls", label: "Liquidaciones", iconName: "file-spreadsheet", href: "/hr/payrolls" },
+        { value: "employees", label: "Nómina Personal", iconName: getEntityIconName('hr.employee'), href: "/hr/employees" },
+        { value: "absences", label: "Inasistencias", iconName: getEntityIconName('hr.absence'), href: "/hr/absences" },
+        { value: "advances", label: "Anticipos", iconName: getEntityIconName('hr.salaryadvance'), href: "/hr/advances" },
+        { value: "payrolls", label: "Liquidaciones", iconName: getEntityIconName('hr.payroll'), href: "/hr/payrolls" },
         { 
             value: "config", 
             label: "Configuración", 
@@ -56,7 +56,7 @@ export function HRHeader() {
             case 'payrolls':
                 return { title: "Liquidaciones y Remuneraciones", description: "Cálculo de haberes, descuentos y generación de pagos.", icon: "file-spreadsheet" }
             default:
-                return { title: "RRHH", description: "", icon: getModuleIconName('hr') ?? "user-cog" }
+                return { title: "RRHH", description: "", icon: getEntityIconName('hr.employee') ?? "user-cog" }
         }
     }
 

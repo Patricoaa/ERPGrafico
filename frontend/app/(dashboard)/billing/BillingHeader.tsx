@@ -2,6 +2,7 @@
 
 import { usePathname } from "next/navigation"
 import { PageHeader } from "@/components/shared"
+import { getEntityIconName } from "@/lib/entity-registry"
 
 export function BillingHeader() {
     const pathname = usePathname()
@@ -13,8 +14,8 @@ export function BillingHeader() {
     const subActiveValue = currentSegment === 'settings' ? (segments[2] || 'accounts') : undefined
 
     const tabs = [
-        { value: "sales", label: "Emitidos (Ventas)", iconName: "receipt", href: "/billing/sales" },
-        { value: "purchases", label: "Recibidos (Compras)", iconName: "file-badge", href: "/billing/purchases" },
+        { value: "sales", label: "Emitidos (Ventas)", iconName: getEntityIconName('billing.invoice'), href: "/billing/sales" },
+        { value: "purchases", label: "Recibidos (Compras)", iconName: getEntityIconName('billing.purchaseinvoice'), href: "/billing/purchases" },
         { 
             value: "config", 
             label: "Configuración", 
@@ -42,7 +43,7 @@ export function BillingHeader() {
             description: activeValue === 'sales'
                 ? "Gestión de boletas, facturas y notas de venta emitidas a clientes."
                 : "Recepción y cuadratura de facturas y notas de crédito de proveedores.",
-            iconName: (activeValue === 'sales' ? "receipt" : "file-badge"),
+            iconName: getEntityIconName(activeValue === 'sales' ? 'billing.invoice' : 'billing.purchaseinvoice'),
         }
     }
 

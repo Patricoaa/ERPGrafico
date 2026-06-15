@@ -13,7 +13,8 @@ import {
 import { Button } from "@/components/ui/button"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from "@/components/ui/tooltip"
-import { Ruler, ChevronDown, Search, Check, Plus, Printer } from "lucide-react"
+import { ChevronDown, Search, Check, Plus, Printer } from "lucide-react"
+import { getEntityIcon } from "@/lib/entity-registry"
 import { ActionSlideButton } from "@/components/shared"
 import { ActivitySidebar } from "@/features/audit/components"
 import { useUoMs, type UoM } from "@/features/inventory/hooks/useUoMs"
@@ -163,7 +164,7 @@ export function UoMDrawer({ open: openProp, onOpenChange, initialData, onSuccess
                 side="left"
                 defaultSize={width}
                 mode={mode}
-                icon={Ruler}
+                icon={getEntityIcon('inventory.uom')}
                 title={<span>{drawerTitle}</span>}
                 headerActions={(mode === 'view' || mode === 'edit') && initialData?.id && <Button variant="ghost" size="icon" onClick={() => handlePrint()}><Printer className="h-4 w-4" /></Button>}
                 subtitle={initialData?.id ? "Modifique los parámetros de conversión y consulte el historial." : "Configure el nombre, categoría y ratio de conversión."}

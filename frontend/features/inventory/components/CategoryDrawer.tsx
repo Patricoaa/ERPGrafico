@@ -17,6 +17,7 @@ import { useCategoryMutations } from "../hooks/useCategoryMutations"
 import { AccountSelector, CategorySelector } from "@/components/selectors"
 import * as LucideIcons from "lucide-react"
 import { Check, Printer } from "lucide-react"
+import { getEntityIcon } from "@/lib/entity-registry"
 import { formDrawerWidth } from "@/lib/form-widths"
 
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
@@ -469,7 +470,7 @@ export function CategoryDrawer({
                 side="left"
                 defaultSize={width}
                 mode={mode}
-                icon={LucideIcons.Tag}
+                icon={getEntityIcon('inventory.category')}
                 title={<span>{drawerTitle}</span>}
                 headerActions={(mode === 'view' || mode === 'edit') && initialData?.id && <Button variant="ghost" size="icon" onClick={() => handlePrint()}><Printer className="h-4 w-4" /></Button>}
                 subtitle={

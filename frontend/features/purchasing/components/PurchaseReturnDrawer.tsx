@@ -2,6 +2,7 @@
 
 import React, { useRef } from "react"
 import { Drawer, SkeletonShell, StatusBadge } from "@/components/shared"
+import { getEntityIcon } from "@/lib/entity-registry"
 import { Button } from "@/components/ui/button"
 import { Printer, Undo2 } from "lucide-react"
 import { useReactToPrint } from "react-to-print"
@@ -70,7 +71,7 @@ export function PurchaseReturnDrawer({ returnId, id, open, onOpenChange }: Purch
                 title={<span>{returnData ? `Devolución ${(returnData as any).number}` : "Devolución de Compra"}</span>}
                 headerActions={<Button variant="ghost" size="icon" onClick={() => handlePrint()}><Printer className="h-4 w-4" /></Button>}
                 subtitle={(returnData as any)?.supplier_name}
-                icon={Undo2}
+                icon={getEntityIcon('purchasing.purchasereturn')}
 
             >
                 {isLoading ? (

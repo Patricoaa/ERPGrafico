@@ -3,7 +3,7 @@
 import { usePathname } from "next/navigation"
 import { useMemo } from "react"
 import { PageHeader } from "@/components/shared"
-import { getModuleIconName } from "@/lib/module-registry"
+import { getEntityIconName } from "@/lib/entity-registry"
 import { useBanks } from "@/features/treasury"
 
 export function TreasuryHeader() {
@@ -55,10 +55,10 @@ export function TreasuryHeader() {
             iconName: "banknote",
             href: "/treasury/operaciones/movements",
             subTabs: [
-                { value: "movements", label: "Movimientos", href: "/treasury/operaciones/movements", iconName: "banknote" },
-                { value: "accounts", label: "Cuentas de Tesorería", href: "/treasury/operaciones/accounts", iconName: "landmark" },
-                { value: "methods", label: "Métodos de Pago", href: "/treasury/operaciones/methods", iconName: "credit-card" },
-                { value: "checks", label: "Cheques Recibidos", href: "/treasury/operaciones/checks", iconName: "check-square" },
+                { value: "movements", label: "Movimientos", href: "/treasury/operaciones/movements", iconName: getEntityIconName('treasury.treasurymovement') },
+                { value: "accounts", label: "Cuentas de Tesorería", href: "/treasury/operaciones/accounts", iconName: getEntityIconName('treasury.treasuryaccount') },
+                { value: "methods", label: "Métodos de Pago", href: "/treasury/operaciones/methods", iconName: getEntityIconName('treasury.paymentmethod') },
+                { value: "checks", label: "Cheques Recibidos", href: "/treasury/operaciones/checks", iconName: getEntityIconName('treasury.check') },
             ]
         },
         {
@@ -74,9 +74,9 @@ export function TreasuryHeader() {
             iconName: "cpu",
             href: "/treasury/terminal-cobro/providers",
             subTabs: [
-                { value: "providers", label: "Proveedores", iconName: "building2", href: "/treasury/terminal-cobro/providers" },
-                { value: "devices", label: "Dispositivos", iconName: "smartphone", href: "/treasury/terminal-cobro/devices" },
-                { value: "batches", label: "Lotes de Pago", iconName: "credit-card", href: "/treasury/terminal-cobro/batches" },
+                { value: "providers", label: "Proveedores", iconName: getEntityIconName('treasury.terminalprovider'), href: "/treasury/terminal-cobro/providers" },
+                { value: "devices", label: "Dispositivos", iconName: getEntityIconName('treasury.terminaldevice'), href: "/treasury/terminal-cobro/devices" },
+                { value: "batches", label: "Lotes de Pago", iconName: getEntityIconName('treasury.terminalbatch'), href: "/treasury/terminal-cobro/batches" },
             ]
         },
         {
@@ -113,10 +113,10 @@ export function TreasuryHeader() {
             return { title: "Cuentas Contables", description: "Gestione las cuentas contables para conciliación, arqueo y gastos financieros.", iconName: "arrow-left-right" as const }
         }
         if (activeValue === 'operaciones') {
-            if (subActiveValue === 'accounts') return { title: "Cuentas de Tesorería", description: "Registre y configure sus cuentas bancarias y de efectivo.", iconName: "landmark" as const }
-            if (subActiveValue === 'methods') return { title: "Métodos de Pago", description: "Configure los medios de pago aceptados y sus cuentas vinculadas.", iconName: "credit-card" as const }
-            if (subActiveValue === 'checks') return { title: "Gestión de Cheques", description: "Registre, deposite y gestione cheques recibidos y propios.", iconName: "check-square" as const }
-            return { title: "Movimientos de Tesorería", description: "Registro histórico de ingresos, egresos y traslados de fondos.", iconName: "banknote" as const }
+            if (subActiveValue === 'accounts') return { title: "Cuentas de Tesorería", description: "Registre y configure sus cuentas bancarias y de efectivo.", iconName: getEntityIconName('treasury.treasuryaccount') }
+            if (subActiveValue === 'methods') return { title: "Métodos de Pago", description: "Configure los medios de pago aceptados y sus cuentas vinculadas.", iconName: getEntityIconName('treasury.paymentmethod') }
+            if (subActiveValue === 'checks') return { title: "Gestión de Cheques", description: "Registre, deposite y gestione cheques recibidos y propios.", iconName: getEntityIconName('treasury.check') }
+            return { title: "Movimientos de Tesorería", description: "Registro histórico de ingresos, egresos y traslados de fondos.", iconName: getEntityIconName('treasury.treasurymovement') }
         }
         if (activeValue === 'centro-bancos') {
             const bankIdSegment = segments[2]
@@ -131,11 +131,11 @@ export function TreasuryHeader() {
             return { title: "Centro de Bancos", description: "Vista consolidada de todos sus bancos, productos financieros y vencimientos.", iconName: "landmark" as const }
         }
         if (activeValue === 'terminal-cobro') {
-            if (subActiveValue === 'batches') return { title: "Lotes de Pago", description: "Gestión de cierres diarios y liquidaciones de tarjetas.", iconName: "credit-card" as const }
-            if (subActiveValue === 'devices') return { title: "Dispositivos de Pago", description: "Gestione los terminales físicos de cobro y su vinculación con proveedores.", iconName: "smartphone" as const }
-            return { title: "Proveedores de Pago", description: "Configuración de cuentas y comisiones por proveedor (TUU, Transbank, etc.).", iconName: "building2" as const }
+            if (subActiveValue === 'batches') return { title: "Lotes de Pago", description: "Gestión de cierres diarios y liquidaciones de tarjetas.", iconName: getEntityIconName('treasury.terminalbatch') }
+            if (subActiveValue === 'devices') return { title: "Dispositivos de Pago", description: "Gestione los terminales físicos de cobro y su vinculación con proveedores.", iconName: getEntityIconName('treasury.terminaldevice') }
+            return { title: "Proveedores de Pago", description: "Configuración de cuentas y comisiones por proveedor (TUU, Transbank, etc.).", iconName: getEntityIconName('treasury.terminalprovider') }
         }
-        return { title: "Tesorería", description: "", iconName: getModuleIconName('treasury') ?? "banknote" }
+        return { title: "Tesorería", description: "", iconName: getEntityIconName('treasury.treasurymovement') ?? "banknote" }
     }
 
     const config = getHeaderConfig()

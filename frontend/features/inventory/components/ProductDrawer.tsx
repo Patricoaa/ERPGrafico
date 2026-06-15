@@ -12,6 +12,7 @@ import { useUoMs } from "../hooks/useUoMs"
 import { useWarehouses } from "../hooks/useWarehouses"
 import { useProductPricingRules } from "../hooks/usePricingRules"
 import {ShoppingCart, Package, Truck, Layers, Factory, DollarSign, Printer} from "lucide-react"
+import { getEntityIcon } from "@/lib/entity-registry"
 import { showApiError } from "@/lib/errors"
 import { Form } from "@/components/ui/form"
 
@@ -811,7 +812,7 @@ export function ProductDrawer({ sidebar, open, onOpenChange, initialData, onSucc
                 }}
                 defaultSize={width}
                 className="h-[90vh]"
-                icon={Package}
+                icon={getEntityIcon('inventory.product')}
                 title={<span>{drawerTitle}</span>}
                 headerActions={(mode === 'view' || mode === 'edit') && initialData?.id && <Button variant="ghost" size="icon" onClick={() => handlePrint()}><Printer className="h-4 w-4" /></Button>}
                 subtitle={initialData ? form.watch("name") : "Maestro de Producto"}

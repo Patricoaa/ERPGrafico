@@ -4,7 +4,8 @@ import { useState, useEffect, useRef } from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
-import { Plus, BookOpen, Printer } from "lucide-react"
+import { Plus, Printer } from "lucide-react"
+import { getEntityIcon } from "@/lib/entity-registry"
 import {
     Form,
     FormField,
@@ -288,7 +289,7 @@ export function AccountDrawer({
                 onOpenChange={setOpen}
                 side="left"
                 defaultSize={width}
-                icon={BookOpen}
+                icon={getEntityIcon('accounting.account')}
                 title={<span>{drawerTitle}</span>}
                 headerActions={(mode === 'view' || mode === 'edit') && !!initialData?.id && <Button variant="ghost" size="icon" onClick={() => handlePrint()}><Printer className="h-4 w-4" /></Button>}
                 subtitle={drawerSubtitle}

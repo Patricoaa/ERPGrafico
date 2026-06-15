@@ -2,8 +2,7 @@
 
 import { usePathname } from "next/navigation"
 import { PageHeader } from "@/components/shared"
-import { ENTITY_REGISTRY } from "@/lib/entity-registry"
-import { getModuleIconName } from "@/lib/module-registry"
+import { getEntityIconName } from "@/lib/entity-registry"
 
 export function SalesHeader() {
     const pathname = usePathname()
@@ -38,10 +37,10 @@ export function SalesHeader() {
         {
             value: "orders",
             label: "Órdenes",
-            iconName: "shopping-cart",
+            iconName: getEntityIconName('sales.saleorder'),
             href: "/sales/orders",
             subTabs: [
-                { value: "orders", label: ENTITY_REGISTRY['sales.saleorder']?.titlePlural || "Notas de Venta", href: "/sales/orders" },
+                { value: "orders", label: "Notas de Venta", href: "/sales/orders" },
                 { value: "notes", label: "Ajustes (N/C N/D)", href: "/sales/orders/notes" },
             ]
         },
@@ -100,9 +99,9 @@ export function SalesHeader() {
         }
         if (activeValue === 'orders') {
             if (subActiveValue === 'notes') return { title: "Notas de Crédito y Débito", description: "Gestión de devoluciones, correcciones de facturación y ajustes de cuenta.", iconName: "file-text" as const }
-            return { title: ENTITY_REGISTRY['sales.saleorder']?.titlePlural || "Notas de Venta", description: "Seguimiento de pedidos, estados de fabricación y logística de entregas.", iconName: "shopping-cart" as const }
+            return { title: "Notas de Venta", description: "Seguimiento de pedidos, estados de fabricación y logística de entregas.", iconName: getEntityIconName('sales.saleorder') }
         }
-        return { title: "Ventas", description: "", iconName: getModuleIconName('sales') ?? "shopping-cart" }
+        return { title: "Ventas", description: "", iconName: getEntityIconName('sales.saleorder') ?? "shopping-cart" }
     }
 
     const config = getHeaderConfig()

@@ -7,7 +7,7 @@ import { X } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { DynamicIcon } from "@/components/shared"
 import { PermissionGuard } from "@/components/auth/PermissionGuard"
-import { MODULE_REGISTRY, MODULE_ORDER, getModuleDefaultUrl } from "@/lib/module-registry"
+import { MODULE_REGISTRY, MODULE_ORDER, getModuleDefaultUrl, getModuleIconName } from "@/lib/module-registry"
 import { motion, AnimatePresence } from "framer-motion"
 
 interface ModuleLauncherProps {
@@ -61,7 +61,7 @@ export function ModuleLauncher({ open, onClose }: ModuleLauncherProps) {
                     animate="visible"
                     exit="hidden"
                     transition={{ duration: 0.15 }}
-                    className="fixed inset-0 z-50 flex items-center justify-center bg-background/90 backdrop-blur-sm"
+                    className="fixed inset-0 z-[9999] flex items-center justify-center bg-background/90 backdrop-blur-sm"
                     onClick={onClose}
                 >
                     <motion.div
@@ -115,7 +115,7 @@ export function ModuleLauncher({ open, onClose }: ModuleLauncherProps) {
                                                         ? "bg-primary/10 text-primary"
                                                         : "bg-muted/50 text-muted-foreground group-hover:text-primary group-hover:bg-primary/5"
                                                 )}>
-                                                    <DynamicIcon name={mod.iconName} className="h-6 w-6" />
+                                                    <DynamicIcon name={getModuleIconName(id)} className="h-6 w-6" />
                                                 </div>
                                                 <span className={cn(
                                                     "text-sm font-bold tracking-tight text-center",

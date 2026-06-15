@@ -2,11 +2,11 @@
 
 
 import { PageHeader } from "@/components/shared"
-import { getModuleIconName } from "@/lib/module-registry"
+import { getEntityIconName } from "@/lib/entity-registry"
 
 export function ContactsHeader() {
     const tabs = [
-        { value: "contacts", label: "Directorio", iconName: "users-2", href: "/contacts" },
+        { value: "contacts", label: "Directorio", iconName: getEntityIconName('contacts.contact'), href: "/contacts" },
         { value: "config", label: "Configuración", iconName: "settings", href: "/contacts/settings" },
     ]
 
@@ -21,7 +21,7 @@ export function ContactsHeader() {
         <PageHeader
             title="Contactos"
             description="Directorio de clientes, proveedores y contactos."
-            iconName={getModuleIconName('contacts') ?? "users"}
+            iconName={getEntityIconName('contacts.contact') ?? "users"}
             variant="minimal"
             navigation={navigation}
         />
