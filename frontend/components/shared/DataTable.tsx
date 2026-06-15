@@ -35,6 +35,7 @@ export interface DataTableProps<TData, TValue> {
     data: TData[]
     defaultPageSize?: number
     pageSizeOptions?: number[]
+    hideToolbar?: boolean
     filterColumn?: string
     searchPlaceholder?: string
     globalFilterFields?: string[]
@@ -163,6 +164,7 @@ export function DataTable<TData, TValue>({
     data,
     defaultPageSize = 20,
     pageSizeOptions = DEFAULT_PAGE_SIZE_OPTIONS,
+    hideToolbar = false,
     filterColumn,
     searchPlaceholder,
     globalFilterFields,
@@ -320,7 +322,7 @@ export function DataTable<TData, TValue>({
         }
     }, [internalRowSelection, onRowSelectionChange])
 
-    const showToolbar = !isMinimal && !isCompact && (
+    const showToolbar = !hideToolbar && !isMinimal && !isCompact && (
         tabs ||
         leftAction ||
         filterColumn || globalFilterFields ||

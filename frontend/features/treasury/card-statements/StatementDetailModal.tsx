@@ -27,10 +27,11 @@ export function StatementDetailModal({ statementId, open, onOpenChange }: Statem
 
     const movements = chargesResponse?.movements ?? []
     const installments = chargesResponse?.installments ?? []
+    const pendingCharges = chargesResponse?.pending_charges ?? []
 
     const mergedRows = useMemo(
-        () => mapToStatementChargeRows(movements, installments),
-        [movements, installments],
+        () => mapToStatementChargeRows(movements, installments, pendingCharges),
+        [movements, installments, pendingCharges],
     )
 
     if (!open || !statementId) return null
@@ -63,16 +64,26 @@ export function StatementDetailModal({ statementId, open, onOpenChange }: Statem
             cell: ({ row }) => {
                 const item = row.original
                 const group = item.purchaseGroupDetail
+                const inst = item.originalInstallment
                 return (
                     <div className="flex flex-col items-start gap-0.5">
                         <span className="text-xs font-medium">
                             {item.source === 'installment'
-                                ? `Cuota #${item.installmentNumber} de ${item.totalInstallments}`
-                                : item.reference || `Movimiento #${item.originalMovement?.id}`}
+                                ? `Cuota #${item.installmentNumber} de ${item.totalInstallments}${inst?.partner_name ? ` — ${inst.partner_name}` : ''}`
+                                : item.source === 'pending'
+                                    ? `${item.movementTypeDisplay || 'Cargo'}${item.reference ? `: ${item.reference}` : ''}`
+                                    : item.reference
+                                        ? item.reference
+                                        : item.movementTypeDisplay || `Movimiento #${item.originalMovement?.id}`}
                         </span>
-                        {item.source === 'installment' && item.reference && (
+                        {item.source === 'installment' && (
+                            <span className="text-[10px] text-muted-foreground truncate max-w-[250px]">
+                                {[inst?.purchase_order_display_id, item.reference].filter(Boolean).join(' — ') || inst?.partner_name}
+                            </span>
+                        )}
+                        {item.source === 'pending' && item.date && (
                             <span className="text-[10px] text-muted-foreground">
-                                {item.reference}
+                                {new Date(item.date).toLocaleDateString('es-CL', { year: 'numeric', month: 'long' })}
                             </span>
                         )}
                         {item.source === 'movement' && item.notes && (
@@ -229,8 +240,7 @@ export function StatementDetailModal({ statementId, open, onOpenChange }: Statem
                                     data={mergedRows}
                                     isLoading={chargesLoading}
                                     variant="embedded"
-                                    filterColumn="reference"
-                                    searchPlaceholder="Buscar..."
+                                    hideToolbar
                                     emptyState={{
                                         context: 'treasury',
                                         icon: ShoppingCart,

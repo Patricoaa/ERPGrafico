@@ -6,6 +6,7 @@ import type {
 import type {
     StatementInstallment,
     StatementChargeRow,
+    CardPendingCharge,
 } from './types'
 import type { TreasuryMovement } from '../types'
 
@@ -57,6 +58,7 @@ export function mapToUnbilledItemRows(
 export function mapToStatementChargeRows(
     movements: TreasuryMovement[],
     installments: StatementInstallment[],
+    pendingCharges: CardPendingCharge[] = [],
 ): StatementChargeRow[] {
     const movementRows: StatementChargeRow[] = movements.map(m => ({
         id: `movement-${m.id}`,
@@ -73,6 +75,7 @@ export function mapToStatementChargeRows(
         movementTypeDisplay: m.movement_type_display,
         originalMovement: m,
         originalInstallment: null,
+        originalPendingCharge: null,
     }))
 
     const installmentRows: StatementChargeRow[] = installments.map(i => ({
@@ -90,9 +93,28 @@ export function mapToStatementChargeRows(
         movementTypeDisplay: 'Cuota programada',
         originalMovement: null,
         originalInstallment: i,
+        originalPendingCharge: null,
     }))
 
-    return [...movementRows, ...installmentRows].sort(
+    const pendingRows: StatementChargeRow[] = pendingCharges.map(c => ({
+        id: `pending-${c.id}`,
+        source: 'pending' as const,
+        date: c.date,
+        reference: c.description || null,
+        notes: c.description || null,
+        amount: Number(c.amount),
+        installmentNumber: null,
+        totalInstallments: null,
+        purchaseGroupDetail: null,
+        partnerName: null,
+        movementType: c.charge_type,
+        movementTypeDisplay: c.charge_type_display,
+        originalMovement: null,
+        originalInstallment: null,
+        originalPendingCharge: c,
+    }))
+
+    return [...movementRows, ...installmentRows, ...pendingRows].sort(
         (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime(),
     )
 }
