@@ -8,7 +8,10 @@ import { formatEntity } from '@/features/orders/utils/status'
 import { cn } from "@/lib/utils"
 import { toast } from "sonner"
 import { useCancelPayment, useAnnulPayment } from "../../hooks/useOrdersMutations"
-import { ActionConfirmModal } from '@/components/shared'
+import { ActionConfirmModal, BaseModal, CancelButton, LabeledInput } from '@/components/shared'
+import { Button } from "@/components/ui/button"
+import { Textarea } from "@/components/ui/textarea"
+import { PaymentMethodCardSelector, PaymentData } from "@/features/treasury/components/PaymentMethodCardSelector"
 import { saleOrderActions } from '@/features/sales/actions'
 import { purchaseOrderActions } from '@/features/purchasing/actions'
 import { Order, PhaseDocument, Payment } from "../../types"
@@ -63,34 +66,61 @@ export function TreasuryPhase({
         onConfirm: () => { }
     })
 
+    const [annulPaymentState, setAnnulPaymentState] = useState<{
+        open: boolean
+        paymentId: number
+        paymentAmount: number
+    }>({ open: false, paymentId: 0, paymentAmount: 0 })
+
+    const [annulPaymentData, setAnnulPaymentData] = useState<PaymentData>({
+        method: null,
+        amount: 0,
+        treasuryAccountId: null,
+        paymentMethodId: null,
+    })
+
+    const [annulReason, setAnnulReason] = useState("")
+    const [isAnnuling, setIsAnnuling] = useState(false)
+
     const canCancelPayment = userPermissions.includes('treasury.delete_treasurymovement')
 
     const handleDeletePayment = (id: number) => {
         const isPosted = payments.find(p => Number(p.id) === id)?.status === 'POSTED'
-        setConfirmModal({
-            open: true,
-            title: isPosted ? "Anular Pago" : "Cancelar Pago",
-            variant: "destructive",
-            confirmText: isPosted ? "Anular" : "Cancelar",
-            requireReason: isPosted,
-            onConfirm: async (reason?: string) => {
-                try {
-                    if (isPosted) {
-                        await annulPayment.mutateAsync({ id, reason })
-                    } else {
+        if (isPosted) {
+            const payment = payments.find(p => Number(p.id) === id)
+            setAnnulPaymentState({
+                open: true,
+                paymentId: id,
+                paymentAmount: Number(payment?.amount || 0),
+            })
+            setAnnulPaymentData({
+                method: null,
+                amount: Number(payment?.amount || 0),
+                treasuryAccountId: null,
+                paymentMethodId: null,
+            })
+            setAnnulReason("")
+            setIsAnnuling(false)
+        } else {
+            setConfirmModal({
+                open: true,
+                title: "Cancelar Pago",
+                variant: "destructive",
+                confirmText: "Cancelar",
+                requireReason: false,
+                onConfirm: async (reason?: string) => {
+                    try {
                         await cancelPayment.mutateAsync({ id, reason })
+                        setConfirmModal(prev => ({ ...prev, open: false }))
+                        onActionSuccess?.()
+                    } catch (error: unknown) {
+                        toast.error(getErrorMessage(error) || "Error al cancelar el pago")
+                        throw error
                     }
-                    setConfirmModal(prev => ({ ...prev, open: false }))
-                    onActionSuccess?.()
-                } catch (error: unknown) {
-                    toast.error(getErrorMessage(error) || "Error al cancelar/anular el pago")
-                    throw error
-                }
-            },
-            description: isPosted
-                ? "El pago está contabilizado: se generará un asiento de reversión."
-                : "¿Está seguro de que desea cancelar este pago?"
-        })
+                },
+                description: "¿Está seguro de que desea cancelar este pago?"
+            })
+        }
     }
 
     return (
@@ -178,6 +208,87 @@ export function TreasuryPhase({
                 requireReason={confirmModal.requireReason}
                 reasonLabel="Motivo de la anulación"
             />
+
+            {/* Anular pago POSTED — modal con selector de cuenta + motivo */}
+            <BaseModal
+                open={annulPaymentState.open}
+                onOpenChange={(open) => setAnnulPaymentState(prev => ({ ...prev, open }))}
+                title={
+                    <span className="flex items-center gap-2">
+                        <Ban className="h-5 w-5 text-warning" />
+                        Anular Pago
+                    </span>
+                }
+                size="lg"
+                footer={
+                    <div className="flex w-full gap-2">
+                        <CancelButton onClick={() => setAnnulPaymentState(prev => ({ ...prev, open: false }))} className="flex-1" />
+                        <Button
+                            className="flex-[2] bg-warning hover:bg-warning/90 h-12 text-lg font-bold"
+                            onClick={async () => {
+                                setIsAnnuling(true)
+                                try {
+                                    await annulPayment.mutateAsync({
+                                        id: annulPaymentState.paymentId,
+                                        reason: annulReason,
+                                        treasuryAccountId: annulPaymentData.treasuryAccountId
+                                            ? Number(annulPaymentData.treasuryAccountId) : undefined,
+                                        amount: annulPaymentData.amount || undefined,
+                                    })
+                                    setAnnulPaymentState(prev => ({ ...prev, open: false }))
+                                    onActionSuccess?.()
+                                } catch (error: unknown) {
+                                    toast.error(getErrorMessage(error) || "Error al anular el pago")
+                                } finally {
+                                    setIsAnnuling(false)
+                                }
+                            }}
+                            disabled={
+                                isAnnuling ||
+                                !annulReason.trim() ||
+                                (annulPaymentData.amount > 0 && !annulPaymentData.treasuryAccountId)
+                            }
+                        >
+                            {isAnnuling ? 'Anulando...' : 'Anular con Devolución'}
+                        </Button>
+                    </div>
+                }
+            >
+                <div className="py-2 space-y-6">
+                    <PaymentMethodCardSelector
+                        operation={isSale ? 'sales' : 'purchases'}
+                        total={annulPaymentState.paymentAmount}
+                        paymentData={annulPaymentData}
+                        onPaymentDataChange={setAnnulPaymentData}
+                        compactMode={true}
+                        labels={{
+                            totalLabel: 'Total del Pago',
+                            amountLabel: 'Monto a Devolver',
+                            differencePositiveLabel: 'Diferencia',
+                            differenceNegativeLabel: 'Deuda Pendiente',
+                            amountModalTitle: 'Monto a devolver',
+                            amountModalDescription: 'Ingrese el monto a devolver en esta anulación.',
+                        }}
+                        methodTitle={
+                            <p className="text-xs text-muted-foreground font-medium mb-1">
+                                Seleccione el método y la cuenta donde se registrará la devolución.
+                            </p>
+                        }
+                    />
+                    <div className="flex flex-col gap-1.5">
+                        <label className="text-xs font-medium text-foreground">
+                            Motivo de la anulación <span className="text-destructive">*</span>
+                        </label>
+                        <Textarea
+                            value={annulReason}
+                            onChange={(e) => setAnnulReason(e.target.value)}
+                            placeholder="Indique el motivo de la anulación y devolución..."
+                            rows={3}
+                            disabled={isAnnuling}
+                        />
+                    </div>
+                </div>
+            </BaseModal>
         </>
     )
 }

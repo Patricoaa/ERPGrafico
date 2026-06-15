@@ -667,10 +667,14 @@ class TreasuryService:
 
     @staticmethod
     @transaction.atomic
-    def annul_movement(movement: TreasuryMovement, user=None, reason: str = ''):
+    def annul_movement(movement: TreasuryMovement, user=None, reason: str = '',
+                       treasury_account_id: int = None, amount: Decimal = None):
         """
         Annuls a movement: reverses its POSTED journal entry (reversal dated
         today, original untouched) and marks it as CANCELLED.
+
+        If treasury_account_id is provided, also creates a return TreasuryMovement
+        to track where the refund is deposited to / taken from.
         """
         from core.services.document import lock_document
         lock_document(movement)
@@ -692,7 +696,6 @@ class TreasuryService:
                   description=f"Anulación Movimiento {movement.id}",
              )
         elif movement.journal_entry:
-             # JE aún en borrador — no hay nada que reversar, solo limpiar
              je = movement.journal_entry
              movement.journal_entry = None
              movement.save(update_fields=['journal_entry'])
@@ -700,6 +703,63 @@ class TreasuryService:
                   je.delete()
              except ProtectedError:
                   pass
+
+        # ── Return movement ──────────────────────────────────────────────
+        if treasury_account_id:
+            refund_amount = amount or movement.amount
+            if refund_amount <= 0:
+                raise ValidationError("El monto a devolver debe ser mayor a cero.")
+            if refund_amount > movement.amount:
+                raise ValidationError(
+                    f"El monto a devolver ({refund_amount}) excede el monto del pago ({movement.amount})."
+                )
+
+            try:
+                treasury_acc = TreasuryAccount.objects.get(pk=treasury_account_id)
+            except TreasuryAccount.DoesNotExist:
+                raise ValidationError("La cuenta de tesorería seleccionada no existe.")
+
+            # Determine return direction
+            if movement.sale_order:
+                return_type = 'OUTBOUND'
+                from_account = treasury_acc
+                to_account = None
+            elif movement.purchase_order:
+                return_type = 'INBOUND'
+                from_account = None
+                to_account = treasury_acc
+            else:
+                # Fallback: invert original direction
+                return_type = 'OUTBOUND' if movement.movement_type == 'INBOUND' else 'INBOUND'
+                from_account = treasury_acc if return_type == 'OUTBOUND' else None
+                to_account = treasury_acc if return_type == 'INBOUND' else None
+
+            return_movement = TreasuryMovement.objects.create(
+                movement_type=return_type,
+                payment_method=movement.payment_method,
+                amount=refund_amount,
+                reference=f"DEV-{movement.id}",
+                contact=movement.contact,
+                invoice=movement.invoice,
+                sale_order=movement.sale_order,
+                purchase_order=movement.purchase_order,
+                from_account=from_account,
+                to_account=to_account,
+                date=timezone.now().date(),
+                notes=f"Devolución por anulación: {reason}",
+            )
+
+            # Update pending_amount
+            if movement.sale_order:
+                movement.sale_order.pending_amount = (
+                    (movement.sale_order.pending_amount or 0) + refund_amount
+                )
+                movement.sale_order.save()
+            elif movement.purchase_order:
+                movement.purchase_order.pending_amount = (
+                    (movement.purchase_order.pending_amount or 0) + refund_amount
+                )
+                movement.purchase_order.save()
 
         movement.status = TreasuryMovement.MovementStatus.CANCELLED
         movement.save()

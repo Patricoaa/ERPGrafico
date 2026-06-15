@@ -29,6 +29,7 @@ import {
     useCreateInvoiceFromOrder,
     useConfirmInvoice,
     useRegisterPaymentMovement,
+    useRegisterPaymentReturn,
 } from "../hooks/useOrdersMutations"
 import { useCancelOrderFlow } from "../hooks/useCancelOrderFlow"
 
@@ -89,6 +90,7 @@ export const ActionCategory = forwardRef(({
     const createInvoiceFromOrder = useCreateInvoiceFromOrder()
     const confirmInvoice = useConfirmInvoice()
     const registerPaymentMovement = useRegisterPaymentMovement()
+    const registerPaymentReturn = useRegisterPaymentReturn()
     const { modalProps: cancelModalProps, isModalOpen: isCancelModalOpen } =
         useCancelOrderFlow(isSale ? 'sale' : 'purchase', { onSuccess: onActionSuccess })
 
@@ -201,16 +203,51 @@ export const ActionCategory = forwardRef(({
     const handlePaymentConfirm = async (data: Record<string, unknown>) => {
         setIsProcessing(true)
         try {
+            // ── Return flow (register-payment-return) ──────────────────────
+            if (activeModal === 'register-payment-return') {
+                const isInvoice = !!order?.dte_type
+
+                // For NOTA_CREDITO: create a new refund payment (current behavior)
+                if (isInvoice && order.dte_type === 'NOTA_CREDITO') {
+                    const payload = {
+                        ...data,
+                        payment_type: isSale ? 'OUTBOUND' : 'INBOUND',
+                        partner: (order?.customer || order?.supplier)?.id || (isSale ? order?.customer_id : order?.supplier_id),
+                        ...(posSessionId ? { pos_session_id: posSessionId } : {})
+                    };
+                    (payload as Record<string, unknown>).invoice = order.id
+                    await registerPaymentMovement.mutateAsync(payload)
+                } else {
+                    // DRAFT invoice + posted payments: return the first posted payment
+                    const payments = order?.related_documents?.payments || []
+                    const firstPosted = payments.find((p: any) => p.journal_entry?.state === 'POSTED')
+                    const paymentId = firstPosted?.id
+                    if (!paymentId) {
+                        toast.error("No se encontró un pago contabilizado para devolver.")
+                        return
+                    }
+                    await registerPaymentReturn.mutateAsync({
+                        paymentId: Number(paymentId),
+                        amount: data.amount as number,
+                        treasuryAccountId: data.treasury_account_id
+                            ? Number(data.treasury_account_id) : null,
+                    })
+                }
+
+                closeModal()
+                onActionSuccess?.()
+                return
+            }
+
+            // ── Standard payment flow ──────────────────────────────────────
             const isInvoice = !!order?.dte_type
             const installments = data.installments as number | undefined
             const isCardPurchase = data.paymentMethod === 'CREDIT_CARD' && installments && installments > 1
 
             if (isCardPurchase) {
-                // Call card-purchase endpoint for credit card installments
                 const { treasuryApi } = await import("@/features/treasury/api/treasuryApi")
                 const fromAccountId = parseInt(data.treasury_account_id as string)
                 const partnerId = (order?.customer || order?.supplier)?.id || (isSale ? order?.customer_id : order?.supplier_id)
-                
                 await treasuryApi.createCardPurchase({
                     amount: data.amount as string | number,
                     from_account: fromAccountId,
@@ -222,7 +259,6 @@ export const ActionCategory = forwardRef(({
                     client_reference: `ORDER-${order?.id}`,
                 })
             } else {
-                // Standard payment flow
                 const payload = {
                     ...data,
                     payment_type: isSale ?
@@ -231,13 +267,11 @@ export const ActionCategory = forwardRef(({
                     partner: (order?.customer || order?.supplier)?.id || (isSale ? order?.customer_id : order?.supplier_id),
                     ...(posSessionId ? { pos_session_id: posSessionId } : {})
                 }
-
                 if (isInvoice) {
                     (payload as Record<string, unknown>).invoice = order.id
                 } else {
                     (payload as Record<string, unknown>)[isSale ? 'sale_order' : 'purchase_order'] = order?.id
                 }
-
                 await registerPaymentMovement.mutateAsync(payload)
             }
 
@@ -378,6 +412,7 @@ export const ActionCategory = forwardRef(({
                     pendingAmount={Number(order?.pending_amount ?? order?.total ?? 0)}
                     onConfirm={handlePaymentConfirm}
                     isPurchase={isPurchase}
+                    isRefund={activeModal === 'register-payment-return'}
                     title={activeModal === 'register-payment-return' ? (isSale ? "Registrar Reembolso a Cliente" : "Registrar Reembolso de Proveedor") : undefined}
                     posSessionId={posSessionId}
                     customerCreditBalance={(order?.customer as any)?.credit_balance || (order?.customer_name as any)?.credit_balance || 0}

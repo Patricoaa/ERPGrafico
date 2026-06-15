@@ -132,10 +132,33 @@ export function useRegisterPaymentMovement() {
 export function useAnnulPayment() {
     const queryClient = useQueryClient()
     return useMutation({
-        mutationFn: ({ id, reason }: { id: number; reason?: string }) =>
-            ordersApi.annulPayment(id, reason ?? ''),
+        mutationFn: ({ id, reason, treasuryAccountId, amount }: {
+            id: number; reason?: string; treasuryAccountId?: number; amount?: number
+        }) =>
+            ordersApi.annulPayment(id, reason ?? '', treasuryAccountId, amount),
         onSuccess: () => {
             toast.success('Pago anulado correctamente')
+            queryClient.invalidateQueries({ queryKey: PAYMENTS_KEYS.all })
+            queryClient.invalidateQueries({ queryKey: MOVEMENTS_KEYS.all })
+            queryClient.invalidateQueries({ queryKey: SALES_KEYS.all })
+            queryClient.invalidateQueries({ queryKey: PURCHASING_KEYS.all })
+        },
+    })
+}
+
+export function useRegisterPaymentReturn() {
+    const queryClient = useQueryClient()
+    return useMutation({
+        mutationFn: ({ paymentId, amount, reason, treasuryAccountId }: {
+            paymentId: number; amount: number; reason?: string; treasuryAccountId?: number | null
+        }) =>
+            ordersApi.registerPaymentReturn(paymentId, {
+                amount,
+                reason: reason ?? '',
+                treasury_account_id: treasuryAccountId,
+            }),
+        onSuccess: () => {
+            toast.success('Devolución de pago registrada correctamente')
             queryClient.invalidateQueries({ queryKey: PAYMENTS_KEYS.all })
             queryClient.invalidateQueries({ queryKey: MOVEMENTS_KEYS.all })
             queryClient.invalidateQueries({ queryKey: SALES_KEYS.all })
