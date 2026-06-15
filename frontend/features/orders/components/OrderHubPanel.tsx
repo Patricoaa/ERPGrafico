@@ -171,6 +171,7 @@ export function OrderHubPanel({
                     id={Number(detailsModal.id)}
                     open={detailsModal.open}
                     onOpenChange={(open) => !open && closeDetails()}
+                    saleOrderId={detailsModal.type === 'sale_delivery' ? activeDoc?.id : undefined}
                 />
             </div>
         </TooltipProvider>

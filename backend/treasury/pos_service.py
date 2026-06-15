@@ -174,7 +174,7 @@ class POSService:
                 pos_session=session,
                 created_by=user,
                 notes=f"Retiro de cierre sesión #{session.id}",
-                reference=f"Retiro de Cierre POS - Sesión #{session.id}",
+                reference=f"POS-RETIRO-{session.id}",
             )
 
         # Clean up draft carts
@@ -269,7 +269,7 @@ def _apply_opening_fund_adjustment(
         pos_session=session,
         notes=full_notes,
         justify_reason=justify_reason,
-        reference=f"Ajuste de Apertura POS ({label}) - Sesión #{session.id}",
+        reference=f"POS-AJUSTE-{session.id}",
     )
 
 
@@ -313,5 +313,5 @@ def _create_difference_movement(
         pos_session=session,
         notes=f"Ajuste al Cierre: {notes or 'Sin observaciones'}",
         justify_reason=justify_reason,
-        reference=f"{surplus_label} de Caja ({justify_reason}) - Sesión #{session.id}",
+        reference=f"POS-EXCEDENTE-{session.id}",
     )

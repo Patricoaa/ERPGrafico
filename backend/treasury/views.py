@@ -1601,8 +1601,9 @@ class POSSessionViewSet(viewsets.ModelViewSet):
                     pos_session=session,
                     notes=notes,
                     justify_reason=move_type,
-                    reference=f"Movimiento Manual POS ({move_type})"
                 )
+                movement.reference = f"POS-MANUAL-{movement.id}"
+                movement.save(update_fields=['reference'])
                 
                 # Session totals are updated via _update_pos_session in create_movement
                 session.refresh_from_db()

@@ -597,7 +597,7 @@ class MatchingService:
                 from django.contrib.contenttypes.models import ContentType
                 transfer_entry = JournalEntry.objects.create(
                     date=line.transaction_date,
-                    reference=f"Transferencia Conciliación {line.statement.display_id}",
+                    reference=f"RECON-TRF-{line.statement.id}",
                     description=f"Movimiento de fondos por conciliación ({p.get_payment_method_display()})",
                     status=JournalEntry.State.DRAFT,
                     source_content_type=ContentType.objects.get_for_model(line.statement._meta.model),

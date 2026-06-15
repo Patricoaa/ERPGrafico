@@ -111,7 +111,7 @@ class DifferenceService:
         
         entry = JournalEntry.objects.create(
             date=accounting_date or line.transaction_date,
-            reference=f"Ajuste {line.statement.display_id} #{line.line_number}",
+            reference=f"AJ-{line.statement.display_id}-{line.line_number}",
             description=f"{difference_label} - {notes}" if notes else difference_label,
             status=initial_status,
             source_content_type=ContentType.objects.get_for_model(BankStatement),

@@ -4,6 +4,7 @@ import { SkeletonShell } from '@/components/shared'
 export const DRAWER_MAP: Record<string, React.LazyExoticComponent<React.ComponentType<any>>> = {
   sale_order: React.lazy(() => import('@/features/sales/components/SaleOrderDrawer').then(m => ({ default: m.SaleOrderDrawer }))),
   purchase_order: React.lazy(() => import('@/features/purchasing/components/PurchaseOrderDrawer').then(m => ({ default: m.PurchaseOrderDrawer }))),
+  service_obligation: React.lazy(() => import('@/features/purchasing/components/PurchaseOrderDrawer').then(m => ({ default: m.PurchaseOrderDrawer }))),
   invoice: React.lazy(() => import('@/features/billing/components/InvoiceDrawer').then(m => ({ default: m.InvoiceDrawer }))),
   work_order: React.lazy(() => import('@/features/production/components/WorkOrderWizard').then(m => ({ default: m.WorkOrderWizard }))),
   sale_delivery: React.lazy(() => import('@/features/sales/components/SaleDeliveryDrawer').then(m => ({ default: m.SaleDeliveryDrawer }))),

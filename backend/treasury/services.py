@@ -899,7 +899,7 @@ class TerminalBatchService:
         entry = JournalEntry.objects.create(
             date=batch.settlement_date,
             description=description,
-            reference=batch.display_id,
+            reference=f"LIQ-JE-{batch.id}",
             status=JournalEntry.State.DRAFT,
             source_content_type=source_ct,
             source_object_id=source_oid,
@@ -956,7 +956,7 @@ class TerminalBatchService:
             to_account=deposit_treasury,
             payment_method_new=payment_method,
             contact=provider.supplier,
-            reference=f"Liquidación {batch.display_id}",
+            reference=f"LIQ-{batch.display_id}",
             notes=f"Liquidación terminal {provider.name} - Ventas {sales_date} (Bruto: ${gross_amount}, Comisión: ${commission_total})",
             terminal_batch=batch,
             created_by=user,

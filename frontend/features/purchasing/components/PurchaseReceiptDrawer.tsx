@@ -10,14 +10,16 @@ import { PrintableLayout } from "@/features/_shared/transaction-drawer"
 import { usePurchaseReceipt } from "../hooks/usePurchasing"
 
 interface PurchaseReceiptDrawerProps {
-    receiptId: number | null
+    receiptId?: number | null
+    id?: number | null
     open: boolean
     onOpenChange: (open: boolean) => void
     onSuccess?: () => void
 }
 
-export function PurchaseReceiptDrawer({ receiptId, open, onOpenChange }: PurchaseReceiptDrawerProps) {
-    const { receipt, isLoading } = usePurchaseReceipt(receiptId, open)
+export function PurchaseReceiptDrawer({ receiptId, id, open, onOpenChange }: PurchaseReceiptDrawerProps) {
+    const entityId = receiptId ?? id ?? null
+    const { receipt, isLoading } = usePurchaseReceipt(entityId, open)
     const printRef = useRef<HTMLDivElement>(null)
     const handlePrint = useReactToPrint({ contentRef: printRef })
 
