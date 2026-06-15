@@ -203,7 +203,7 @@ export function StatementsView({ bankId, creditCardAccounts }: StatementsViewPro
                                                                 data: hubData.costBreakdownDonut,
                                                                 innerRadius: 0.6,
                                                                 showLegend: true,
-                                                                enableLabels: true,
+                                                                 enableLabels: false,
                                                             },
                                                         },
                                                     } : {
