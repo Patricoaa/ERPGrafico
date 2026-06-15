@@ -349,7 +349,7 @@ export const treasuryApi = {
     // ========== Card Analytics (decision-oriented hub) ==========
 
     getCardAnalytics: async (
-        params?: { card_account?: number; months?: number },
+        params?: { card_account?: number; months?: number; granularity?: string },
     ): Promise<import('@/features/treasury/card-statements/analyticsTypes').TcHubAnalyticsResponse> => {
         const { data } = await api.get('/treasury/card-statements/analytics/', { params })
         return data

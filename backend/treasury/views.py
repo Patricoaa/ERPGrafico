@@ -2795,6 +2795,8 @@ class CreditCardStatementViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
         Query params:
           - card_account (opcional): filtrar por cuenta específica.
           - months (opcional, default 12): ventana de meses históricos.
+          - granularity (opcional, default 'month'): agrupación temporal
+            ('day', 'month', 'year') para payment_performance.
         """
         from .card_analytics import CardAnalyticsService
         from .models import TreasuryAccount
@@ -2802,6 +2804,7 @@ class CreditCardStatementViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
         card_account_id = request.query_params.get('card_account')
         months_str = request.query_params.get('months', '12')
         months = max(1, int(months_str)) if months_str.isdigit() else 12
+        granularity = request.query_params.get('granularity', 'month')
 
         card_account = None
         if card_account_id:
@@ -2816,6 +2819,7 @@ class CreditCardStatementViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
         data = CardAnalyticsService.get_consolidated_hub_data(
             card_account=card_account,
             months=months,
+            granularity=granularity,
         )
         return Response(data)
 

@@ -86,24 +86,28 @@ class CardAnalyticsService:
     def get_payment_performance(
         card_account: TreasuryAccount | None = None,
         months: int = 12,
+        granularity: str = 'month',
     ) -> list[dict]:
         """
         Payment history across statements: how much was due, how much
         was paid, how late (days), and punitory interest accrued.
 
-        Returns list ordered by due_date descending::
+        When `granularity` is 'month' or 'year', rows are aggregated
+        by period summing total_to_pay, amount_paid, outstanding.
+
+        Returns list ordered by period ascending::
 
             {
-                'statement_id': int,
-                'display_id': str,
+                'statement_id': int | None,
+                'display_id': str | None,
                 'due_date': str,
                 'total_to_pay': str,
                 'amount_paid': str,
                 'outstanding': str,
                 'paid_at': str | None,
                 'days_late': int | None,
-                'status': str,
-                'punitory_interest': str,
+                'status': str | None,
+                'punitory_interest': str | None,
             }
         """
         from .card_service import CardService
@@ -126,18 +130,58 @@ class CardAnalyticsService:
 
             punitory = CardService.compute_punitory_interest(stmt)
 
+            if granularity == 'month':
+                period_key = f"{due.year}-{due.month:02d}"
+            elif granularity == 'year':
+                period_key = str(due.year)
+            else:
+                period_key = due.isoformat()
+
             result.append({
+                'period_key': period_key,
                 'statement_id': stmt.id,
                 'display_id': stmt.display_id,
                 'due_date': due.isoformat(),
-                'total_to_pay': str(stmt.total_to_pay),
-                'amount_paid': str(stmt.amount_paid),
-                'outstanding': str(stmt.outstanding_balance),
+                'total_to_pay': stmt.total_to_pay,
+                'amount_paid': stmt.amount_paid,
+                'outstanding': stmt.outstanding_balance,
                 'paid_at': paid.isoformat() if paid else None,
                 'days_late': days_late,
                 'status': stmt.status,
                 'punitory_interest': str(punitory),
             })
+
+        # Aggregate by period_key if granularity is month or year
+        if granularity in ('month', 'year'):
+            from collections import OrderedDict
+            buckets: dict[str, dict] = OrderedDict()
+            for r in result:
+                pk = r['period_key']
+                if pk not in buckets:
+                    buckets[pk] = {
+                        'due_date': pk,
+                        'total_to_pay': Decimal('0'),
+                        'amount_paid': Decimal('0'),
+                        'outstanding': Decimal('0'),
+                    }
+                buckets[pk]['total_to_pay'] += r['total_to_pay']
+                buckets[pk]['amount_paid'] += r['amount_paid']
+                buckets[pk]['outstanding'] += r['outstanding']
+            result = [
+                {
+                    'statement_id': None,
+                    'display_id': None,
+                    'due_date': v['due_date'],
+                    'total_to_pay': str(v['total_to_pay']),
+                    'amount_paid': str(v['amount_paid']),
+                    'outstanding': str(v['outstanding']),
+                    'paid_at': None,
+                    'days_late': None,
+                    'status': None,
+                    'punitory_interest': None,
+                }
+                for v in buckets.values()
+            ]
 
         return result
 
@@ -205,6 +249,7 @@ class CardAnalyticsService:
     @staticmethod
     def get_purchase_group_analysis(
         card_account: TreasuryAccount | None = None,
+        months: int = 12,
         limit: int = 20,
     ) -> list[dict]:
         """
@@ -225,10 +270,16 @@ class CardAnalyticsService:
                 'effective_cost_pct': float | None,
             }
         """
+        from django.utils.timezone import now
+        from datetime import timedelta
+
+        since = (now() - timedelta(days=months * 31)).date()
         qs = CardPurchaseGroup.objects.select_related('partner')
         if card_account is not None:
             qs = qs.filter(card_account=card_account)
-        qs = qs.order_by('-created_at')[:limit]
+        qs = qs.filter(created_at__date__gte=since)
+        qs = qs.filter(schedule__is_billed=True)
+        qs = qs.order_by('-created_at').distinct()[:limit]
 
         result = []
         for g in qs:
@@ -258,6 +309,7 @@ class CardAnalyticsService:
     def get_consolidated_hub_data(
         card_account: TreasuryAccount | None = None,
         months: int = 12,
+        granularity: str = 'month',
     ) -> dict:
         """
         Single response aggregating all analytics dimensions for the
@@ -273,13 +325,13 @@ class CardAnalyticsService:
             card_account=card_account, months=months,
         )
         payment_performance = CardAnalyticsService.get_payment_performance(
-            card_account=card_account, months=months,
+            card_account=card_account, months=months, granularity=granularity,
         )
         credit_utilization = CardAnalyticsService.get_credit_utilization(
             card_account=card_account,
         )
         purchase_group_analysis = CardAnalyticsService.get_purchase_group_analysis(
-            card_account=card_account,
+            card_account=card_account, months=months,
         )
 
         # Summary KPIs

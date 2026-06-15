@@ -22,15 +22,17 @@ export interface StatementsAnalyticsData {
 export function useStatementsAnalyticsData(
     cardAccountId: number | null,
     months: number = 12,
+    granularity: string = 'month',
 ): StatementsAnalyticsData {
     const {
         data: analytics,
         isLoading: analyticsLoading,
     } = useQuery({
-        queryKey: ['card-analytics', cardAccountId, months],
+        queryKey: ['card-analytics', cardAccountId, months, granularity],
         queryFn: () => treasuryApi.getCardAnalytics({
             card_account: cardAccountId ?? undefined,
             months,
+            granularity,
         }),
         enabled: cardAccountId != null,
     })
