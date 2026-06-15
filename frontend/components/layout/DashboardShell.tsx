@@ -11,7 +11,7 @@ import { UserActions } from "@/components/layout/UserActions"
 import { useHeader } from "@/components/providers/HeaderProvider"
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion"
 import { Skeleton } from "@/components/ui/skeleton"
-import { HeaderNavDropdowns, PageHeaderSkeleton, UniversalSearch } from '@/components/shared'
+import { HeaderNavDropdowns, PageHeaderSkeleton } from '@/components/shared'
 import { Loader2 } from "lucide-react"
 import { DynamicIcon } from '@/components/shared'
 
@@ -131,9 +131,8 @@ function DashboardShellInner({ children }: { children: React.ReactNode }) {
                     </AnimatePresence>
                 </div>
 
-                {/* Right: Universal Search + UserActions */}
+                {/* Right: UserActions */}
                 <div className="flex-none flex items-center gap-3">
-                    <UniversalSearch />
                     <UserActions isInboxOpen={isInboxOpen} onInboxToggle={handleInboxToggle} />
                 </div>
             </div>

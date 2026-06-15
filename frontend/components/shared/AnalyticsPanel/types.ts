@@ -58,6 +58,7 @@ export interface PieChartConfig {
     innerRadius?: number
     showLegend?: boolean
     enableLabels?: boolean
+    enableArcLinkLabels?: boolean
     compact?: boolean
     arcLabel?: (d: { id: string; value: number }) => string
 }

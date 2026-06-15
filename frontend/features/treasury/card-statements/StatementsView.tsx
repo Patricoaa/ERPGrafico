@@ -175,7 +175,7 @@ export function StatementsView({ bankId, creditCardAccounts }: StatementsViewPro
                                                                 data: hubData.paymentEvolutionChart,
                                                                 enableArea: true,
                                                                 showLegend: true,
-                                                                 valueFormat: '$~s',
+                                                                 valueFormat: '$,.0f',
                                                             },
                                                         },
                                                     } : {
@@ -203,7 +203,12 @@ export function StatementsView({ bankId, creditCardAccounts }: StatementsViewPro
                                                                 data: hubData.costBreakdownDonut,
                                                                 innerRadius: 0.6,
                                                                 showLegend: true,
-                                                                 enableLabels: false,
+                                                                enableLabels: true,
+                                                                enableArcLinkLabels: false,
+                                                                arcLabel: (d: { value: number }) => {
+                                                                    const total = hubData.costBreakdownDonut.reduce((s, item) => s + item.value, 0);
+                                                                    return total > 0 ? `${Math.round((d.value / total) * 100)}%` : '';
+                                                                },
                                                             },
                                                         },
                                                     } : {

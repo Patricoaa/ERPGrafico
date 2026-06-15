@@ -17,7 +17,7 @@ from datetime import date as _date
 
 from django.db.models import Sum, Q, Count, Prefetch
 
-from .models import CreditCardStatement, TreasuryMovement, CardPurchaseGroup
+from .models import CreditCardStatement, TreasuryMovement, CardPurchaseGroup, CardPurchaseInstallment
 
 if TYPE_CHECKING:
     from .models import TreasuryAccount
@@ -368,6 +368,19 @@ class CardAnalyticsService:
             summary = CardService.get_unbilled_summary(card_account)
             total_unbilled = Decimal(str(summary['total']))
 
+        # Total billed amount within the same time window (for composition breakdown).
+        from django.utils.timezone import now
+        from datetime import timedelta
+        since = (now() - timedelta(days=months * 31)).date()
+        billed_qs = CreditCardStatement.objects.filter(
+            cut_off_date__gte=since,
+        ).exclude(status=CreditCardStatement.Status.CANCELED)
+        if card_account is not None:
+            billed_qs = billed_qs.filter(card_account=card_account)
+        total_billed = billed_qs.aggregate(
+            total=Sum('billed_amount'),
+        )['total'] or Decimal('0')
+
         return {
             'financial_costs': financial_costs,
             'payment_performance': payment_performance,
@@ -385,5 +398,6 @@ class CardAnalyticsService:
                         if p.get('days_late') and p['days_late'] > 0
                     )
                 ),
+                'total_billed': str(total_billed),
             },
         }

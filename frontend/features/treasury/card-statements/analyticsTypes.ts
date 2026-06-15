@@ -66,6 +66,7 @@ export interface TcSummaryKpis {
     open_statements: number
     overdue_statements: number
     total_past_due: string
+    total_billed?: string
 }
 
 // ── Consolidated response from the analytics endpoint ──────────

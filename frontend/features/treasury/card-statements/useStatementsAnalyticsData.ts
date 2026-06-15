@@ -57,11 +57,15 @@ export function useStatementsAnalyticsData(
 
         const totalPrincipal = groups.reduce((sum, g) => sum + parseFloat(g.total_amount), 0)
         const totalCharges = costs.reduce((sum, c) => sum + parseFloat(c.fees) + parseFloat(c.interest), 0)
+        const totalBilled = analytics?.summary?.total_billed ? parseFloat(analytics.summary.total_billed) : 0
+
+        const otherCharges = Math.max(0, totalBilled - totalPrincipal)
 
         const costBreakdownDonut = [
             { id: 'Cuotas', value: totalPrincipal, color: 'var(--chart-1)' },
-            { id: 'Cargos', value: totalCharges, color: 'var(--chart-3)' },
-        ].filter(d => d.value > 0)
+            ...(otherCharges > 0 ? [{ id: 'Otros Cargos', value: otherCharges, color: 'var(--chart-4)' as string }] : []),
+            ...(totalCharges > 0 ? [{ id: 'Intereses/Comisiones', value: totalCharges, color: 'var(--chart-3)' as string }] : []),
+        ]
 
         return {
             analytics,
