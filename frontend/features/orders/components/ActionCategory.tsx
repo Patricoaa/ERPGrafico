@@ -89,7 +89,7 @@ export const ActionCategory = forwardRef(({
     const createInvoiceFromOrder = useCreateInvoiceFromOrder()
     const confirmInvoice = useConfirmInvoice()
     const registerPaymentMovement = useRegisterPaymentMovement()
-    const { requestCancel, modalProps: cancelModalProps, isModalOpen: isCancelModalOpen } =
+    const { modalProps: cancelModalProps, isModalOpen: isCancelModalOpen } =
         useCancelOrderFlow(isSale ? 'sale' : 'purchase', { onSuccess: onActionSuccess })
 
     // Notify parent about modal state changes without clobbering other instances
@@ -169,11 +169,6 @@ export const ActionCategory = forwardRef(({
                 break
             case 'regenerate-document':
                 handleRegenerateDocument()
-                break
-            case 'cancel-order':
-            case 'annul-order':
-                if (order?.id) requestCancel(order.id)
-                else toast.error("Error: No se pudo identificar la orden")
                 break
             default:
                 console.warn(`No handler for action: ${actionId}`)
