@@ -213,7 +213,10 @@ function CartItemComponent({
             {/* Actions */}
             <TableCell className="py-2 align-top">
                 {posMode === 'SHOPPING' && (
-                    <div className="opacity-0 group-hover:opacity-100 transition-opacity">
+                    <div className={cn(
+                        "transition-opacity",
+                        isTouchMode ? "opacity-100" : "opacity-0 group-hover:opacity-100"
+                    )}>
                         <DataCell.Action
                             action="delete"
                             onClick={() => onRemove(item.cartItemId)}
