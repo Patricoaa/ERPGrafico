@@ -2,16 +2,11 @@
 import { formatCurrency } from "@/lib/money"
 
 import { showApiError } from "@/lib/errors"
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo } from "react"
 import { Button } from "@/components/ui/button"
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from "@/components/ui/select"
-import {Loader2, AlertTriangle} from "lucide-react"
+import { Label } from "@/components/ui/label"
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+import { Loader2, AlertTriangle, Search, ChevronDown, Check } from "lucide-react"
 import { toast } from "sonner"
 import { posApi } from "../api/posApi"
 import { BaseModal, Numpad } from '@/components/shared'
@@ -22,6 +17,7 @@ import { cn } from "@/lib/utils"
 import { POSReport, type POSReportData } from "./POSReport"
 
 import type { POSSession, POSSessionAudit, AccountingSettings, TreasuryAccount } from "@/types/pos"
+import { CLOSE_DEFICIT_OPTIONS, CLOSE_SURPLUS_OPTIONS, type JustifyOption } from "@/features/pos/utils/reasons"
 
 interface SessionCloseModalProps {
     open: boolean
@@ -48,6 +44,7 @@ export function SessionCloseModal({
     // Fund validation states
     const [selectedAccount, setSelectedAccount] = useState<TreasuryAccount | null>(null)
     const [insufficientFunds, setInsufficientFunds] = useState(false)
+    const [justifySearchTerm, setJustifySearchTerm] = useState("")
 
     // Sync withdrawalAmount with actualCash by default
     useEffect(() => {
@@ -100,14 +97,12 @@ export function SessionCloseModal({
     useEffect(() => {
         if (justifyTargetId && justifyReason === 'TRANSFER') {
             posApi.getTreasuryAccount(Number(justifyTargetId))
-                .then(data => {
+                .then((data: TreasuryAccount) => {
                     requestAnimationFrame(() => {
                         setSelectedAccount(data)
-                        // Validate funds for surplus (diff > 0 = money coming IN, source account needs money)
-                        if (diff > 0 && (data as any).current_balance !== undefined) {
-                            const available = (data as any).current_balance as number
+                        if (diff > 0 && data.current_balance !== undefined) {
                             const needed = Math.abs(diff)
-                            setInsufficientFunds(available < needed)
+                            setInsufficientFunds(data.current_balance < needed)
                         } else {
                             setInsufficientFunds(false)
                         }
@@ -212,16 +207,11 @@ export function SessionCloseModal({
 
                             <div className="flex justify-center">
                                 <div className="w-full bg-muted/30 p-4 rounded-md">
-                                    <div className="text-right mb-4">
-                                        <div className="text-xs font-bold uppercase text-muted-foreground">Efectivo Contado</div>
-                                        <div className="text-3xl font-black font-mono tracking-tight text-primary">
-                                            {formatCurrency(parseFloat(actualCash) || 0)}
-                                        </div>
-                                    </div>
                                     <Numpad
                                         value={actualCash}
                                         onChange={setActualCash}
-                                        hideDisplay={true}
+                                        label="Efectivo Contado"
+                                        displayValue={formatCurrency(parseFloat(actualCash) || 0)}
                                         allowDecimal={true}
                                         className="w-full max-w-full shadow-none border-0 p-0"
                                         onConfirm={handleNext}
@@ -249,7 +239,24 @@ export function SessionCloseModal({
                             </div>
                         </div>
 
-                        {hasDiff ? (
+                        {(() => {
+                            const closeReasons = diff < 0
+                                ? (() => {
+                                    let opts = [...CLOSE_DEFICIT_OPTIONS]
+                                    if (!accountingSettings?.pos_partner_withdrawal_account) opts = opts.filter(o => o.value !== 'PARTNER_WITHDRAWAL')
+                                    if (!accountingSettings?.pos_theft_account) opts = opts.filter(o => o.value !== 'THEFT')
+                                    if (!accountingSettings?.pos_rounding_adjustment_account) opts = opts.filter(o => o.value !== 'ROUNDING')
+                                    return opts
+                                })()
+                                : (() => {
+                                    let opts = [...CLOSE_SURPLUS_OPTIONS]
+                                    if (!accountingSettings?.pos_rounding_adjustment_account) opts = opts.filter(o => o.value !== 'ROUNDING')
+                                    return opts
+                                })()
+
+                            const selectedLabel = closeReasons.find(r => r.value === justifyReason)?.label
+
+                            return hasDiff ? (
                             <div className="bg-warning/10 border border-warning/20 rounded-md p-4 space-y-3">
                                 <div className="flex items-center gap-2 text-warning font-bold">
                                     <AlertTriangle className="h-4 w-4" />
@@ -259,61 +266,72 @@ export function SessionCloseModal({
                                     <span>{diff > 0 ? "Sobrante" : "Faltante"}:</span>
                                     <span className="font-bold text-lg">{formatCurrency(Math.abs(diff))}</span>
                                 </div>
-                                <LabeledContainer label="Motivo" required>
-                                    <Select value={justifyReason} onValueChange={setJustifyReason}>
-                                        <SelectTrigger className="border-0 shadow-none focus-visible:ring-0 bg-background h-9">
-                                            <SelectValue placeholder="Seleccione motivo..." />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            {diff < 0 ? (
-                                                <>
-                                                    <div className="px-2 py-1.5 text-xs font-bold text-muted-foreground uppercase bg-muted/50">Motivos de Salida (Faltante)</div>
-                                                    <SelectItem value="COUNTING_ERROR">Error de Conteo / Ajuste</SelectItem>
-                                                    <SelectItem value="CASHBACK">Vuelto Incorrecto</SelectItem>
-                                                    <SelectItem value="TRANSFER">Traspaso (Dinero retirado)</SelectItem>
-                                                    {accountingSettings?.pos_partner_withdrawal_account && (
-                                                        <SelectItem value="PARTNER_WITHDRAWAL">Retiro Socio</SelectItem>
+                                <div className="space-y-1">
+                                    <Label className="text-xs">Motivo (Requerido)</Label>
+                                    <Popover onOpenChange={(open) => { if (!open) setJustifySearchTerm("") }}>
+                                        <PopoverTrigger asChild>
+                                            <Button
+                                                variant="outline"
+                                                role="combobox"
+                                                className="w-full justify-between h-9 bg-background font-normal"
+                                            >
+                                                {selectedLabel || "Seleccione motivo..."}
+                                                <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                                            </Button>
+                                        </PopoverTrigger>
+                                        <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0">
+                                            <div className="p-2">
+                                                <div className="flex items-center px-3 border rounded-md mb-2 bg-background">
+                                                    <Search className="mr-2 h-4 w-4 shrink-0 opacity-50" />
+                                                    <input
+                                                        className="flex h-10 w-full rounded-md bg-transparent py-3 text-sm outline-none placeholder:text-muted-foreground"
+                                                        placeholder="Buscar motivo..."
+                                                        value={justifySearchTerm}
+                                                        onChange={(e) => setJustifySearchTerm(e.target.value)}
+                                                    />
+                                                </div>
+                                                <div className="max-h-[200px] overflow-y-auto space-y-1">
+                                                    {closeReasons
+                                                        .filter(r => !justifySearchTerm || r.label.toLowerCase().includes(justifySearchTerm.toLowerCase()))
+                                                        .map((opt) => (
+                                                            <div
+                                                                key={opt.value}
+                                                                className={cn(
+                                                                    "relative flex cursor-pointer select-none items-center rounded-sm px-2 py-2 text-sm outline-none hover:bg-accent hover:text-accent-foreground",
+                                                                    justifyReason === opt.value && "bg-accent"
+                                                                )}
+                                                                onClick={() => {
+                                                                    setJustifyReason(opt.value)
+                                                                    setJustifySearchTerm("")
+                                                                    document.body.click()
+                                                                }}
+                                                            >
+                                                                <span>{opt.label}</span>
+                                                                {justifyReason === opt.value && <Check className="ml-auto h-4 w-4 opacity-100" />}
+                                                            </div>
+                                                        ))}
+                                                    {closeReasons.length > 0 && justifySearchTerm && !closeReasons.some(r => r.label.toLowerCase().includes(justifySearchTerm.toLowerCase())) && (
+                                                        <div className="px-2 py-4 text-center text-sm text-muted-foreground">Sin resultados</div>
                                                     )}
-                                                    {accountingSettings?.pos_theft_account && (
-                                                        <SelectItem value="THEFT">Faltante / Robo</SelectItem>
-                                                    )}
-                                                    {accountingSettings?.pos_rounding_adjustment_account && (
-                                                        <SelectItem value="ROUNDING">Redondeo</SelectItem>
-                                                    )}
-                                                    <SelectItem value="SYSTEM_ERROR">Error de Sistema</SelectItem>
-                                                </>
-                                            ) : (
-                                                <>
-                                                    <div className="px-2 py-1.5 text-xs font-bold text-muted-foreground uppercase bg-muted/50">Motivos de Ingreso (Sobrante)</div>
-                                                    <SelectItem value="COUNTING_ERROR">Error de Conteo / Ajuste</SelectItem>
-                                                    <SelectItem value="TIP">Propina</SelectItem>
-                                                    <SelectItem value="TRANSFER">Traspaso (Dinero ingresado)</SelectItem>
-                                                    {accountingSettings?.pos_rounding_adjustment_account && (
-                                                        <SelectItem value="ROUNDING">Redondeo</SelectItem>
-                                                    )}
-                                                    <SelectItem value="SYSTEM_ERROR">Error de Sistema</SelectItem>
-                                                </>
-                                            )}
-                                        </SelectContent>
-                                    </Select>
-                                </LabeledContainer>
+                                                </div>
+                                            </div>
+                                        </PopoverContent>
+                                    </Popover>
+                                </div>
 
-                                {/* Dynamic selector for Transfer justification */}
                                 {justifyReason === 'TRANSFER' && (
                                     <div className="space-y-2 animate-in fade-in slide-in-from-top-2">
-                                        <LabeledContainer
-                                            label={diff < 0 ? 'Cuenta de Destino (¿A dónde se llevó el dinero?)' : 'Cuenta de Origen (¿De dónde vino el dinero?)'}
-                                        >
-                                            <TreasuryAccountSelector
-                                                value={justifyTargetId}
-                                                onChange={setJustifyTargetId}
-                                                placeholder={diff < 0 ? "Seleccione destino..." : "Seleccione origen..."}
-                                                excludeId={typeof session.treasury_account === 'object' ? session.treasury_account.id : session.treasury_account}
-                                                type="CASH"
-                                            />
-                                        </LabeledContainer>
+                                        <Label className="text-xs">
+                                            {diff < 0 ? 'Cuenta de Destino (¿A dónde se llevó el dinero?)' : 'Cuenta de Origen (¿De dónde vino el dinero?)'}
+                                        </Label>
+                                        <TreasuryAccountSelector
+                                            value={justifyTargetId}
+                                            onChange={setJustifyTargetId}
+                                            placeholder={diff < 0 ? "Seleccione destino..." : "Seleccione origen..."}
+                                            excludeId={typeof session.treasury_account === 'object' ? session.treasury_account.id : session.treasury_account}
+                                            type="CASH"
+                                        />
 
-                                        {/* Insufficient funds warning */}
                                         {insufficientFunds && selectedAccount && (
                                             <div className="bg-destructive/10 border border-destructive/20 rounded-md p-3 space-y-1">
                                                 <div className="flex items-start gap-2">
@@ -321,9 +339,9 @@ export function SessionCloseModal({
                                                     <div className="text-sm text-destructive">
                                                         <div className="font-bold">Fondos Insuficientes</div>
                                                         <div className="text-xs mt-1 space-y-0.5">
-                                                            <div>Disponible en {selectedAccount.name as string}: {formatCurrency((selectedAccount.current_balance as number) || 0)}</div>
+                                                            <div>Disponible en {selectedAccount.name}: {formatCurrency(selectedAccount.current_balance || 0)}</div>
                                                             <div>Necesario: {formatCurrency(Math.abs(diff))}</div>
-                                                            <div className="font-semibold">Faltante: {formatCurrency(Math.abs(diff) - ((selectedAccount.current_balance as number) || 0))}</div>
+                                                            <div className="font-semibold">Faltante: {formatCurrency(Math.abs(diff) - (selectedAccount.current_balance || 0))}</div>
                                                         </div>
                                                     </div>
                                                 </div>
@@ -332,13 +350,15 @@ export function SessionCloseModal({
                                     </div>
                                 )}
                             </div>
-                        ) : (
-                            <div className="text-center p-6 bg-success/10 text-success rounded-md">
-                                <span className="text-4xl block mb-2">✨</span>
-                                <div className="font-bold">¡Cierre Perfecto!</div>
-                                <div className="text-sm opacity-80">El efectivo coincide exactamente con el sistema.</div>
-                            </div>
-                        )}
+                            ) : (
+                                <div className="text-center p-6 bg-success/10 text-success rounded-md">
+                                    <span className="text-4xl block mb-2">✨</span>
+                                    <div className="font-bold">¡Cierre Perfecto!</div>
+                                    <div className="text-sm opacity-80">El efectivo coincide exactamente con el sistema.</div>
+                                </div>
+                            )}
+                        )()
+                        }
 
                         <div className="flex gap-2">
                             <Button variant="ghost" onClick={handlePrev}>Modificar Conteo</Button>
@@ -401,16 +421,11 @@ export function SessionCloseModal({
                     <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-300">
                         <div className="p-4 bg-muted/20 rounded-md space-y-4">
                             <div className="space-y-4">
-                                <div className="text-right">
-                                    <div className="text-xs font-bold uppercase text-muted-foreground">Monto a Retirar</div>
-                                    <div className="text-3xl font-black font-mono tracking-tight text-primary">
-                                        {formatCurrency(parseFloat(withdrawalAmount) || 0)}
-                                    </div>
-                                </div>
                                 <Numpad
                                     value={withdrawalAmount}
                                     onChange={setWithdrawalAmount}
-                                    hideDisplay={true}
+                                    label="Monto a Retirar"
+                                    displayValue={formatCurrency(parseFloat(withdrawalAmount) || 0)}
                                     allowDecimal={true}
                                     className="w-full max-w-full shadow-none border-0 p-0"
                                     onConfirm={handleCloseSession}

@@ -455,51 +455,39 @@ export function PaymentMethodCardSelector({
                 }
             >
                 <div className="flex flex-col items-center gap-4 overflow-y-auto">
-                    <div className="text-[clamp(1rem,4vw,2.25rem)] font-black tracking-tight text-primary bg-primary/5 px-6 py-2 rounded-lg border-2 border-primary/10 shadow-sm w-full text-center">
-                        <MoneyDisplay amount={tempAmount || 0} inline />
-                    </div>
-
-                    <div className="grid grid-cols-3 lg:gap-1.5 gap-1 w-full">
-                        {[50, 100, 500, 1000, 2000, 5000, 10000, 20000].map(val => (
-                            <Button
-                                key={val}
-                                variant="outline"
-                                size="sm"
-                                className="h-9 lg:h-11 text-xs lg:text-sm font-bold"
-                                onClick={() => {
-                                    const current = parseFloat(tempAmount) || 0;
-                                    let newAmount = current + val;
-
-                                    // For purchases, limit to total
-                                    if (operation === 'purchases' && newAmount > total) {
-                                        newAmount = total;
-                                    }
-
-                                    setTempAmount(newAmount.toString());
-                                }}
-                            >
-                                +{formatMoney(val)}
-                            </Button>
-                        ))}
-                        <Button
-                            variant="outline"
-                            size="sm"
-                            className="h-9 lg:h-11 text-xs lg:text-sm font-bold border-primary text-primary"
-                            onClick={() => setTempAmount(total.toString())}
-                        >
-                            Exacto
-                        </Button>
-                    </div>
-
                     <Numpad
                         value={tempAmount}
                         onChange={setTempAmount}
                         onConfirm={handleAmountConfirm}
                         onClose={() => setIsAmountModalOpen(false)}
                         allowDecimal={false}
-                        hideDisplay={true}
                         hideConfirm
                         className="border-none shadow-none p-0 w-full max-w-none"
+                        displayValue={formatMoney(parseFloat(tempAmount) || 0)}
+                        quickAmounts={[
+                            ...[50, 100, 500, 1000, 2000, 5000, 10000, 20000].map(val => ({
+                                label: `+${formatMoney(val)}`,
+                                value: val,
+                                action: 'add' as const,
+                            })),
+                            { label: 'Exacto', value: total, action: 'set' as const },
+                        ]}
+                        onQuickAmountAction={(qa) => {
+                            let newAmount: number
+                            if (qa.action === 'add') {
+                                const current = parseFloat(tempAmount) || 0
+                                newAmount = current + qa.value
+                                if (operation === 'purchases' && newAmount > total) {
+                                    newAmount = total
+                                }
+                            } else {
+                                newAmount = qa.value
+                            }
+                            if (operation === 'sales' && paymentData.method === 'CREDIT_BALANCE' && newAmount > customerCreditBalance) {
+                                newAmount = customerCreditBalance
+                            }
+                            setTempAmount(newAmount.toString())
+                        }}
                     />
                 </div>
             </BaseModal>
