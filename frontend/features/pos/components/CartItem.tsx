@@ -142,14 +142,14 @@ function CartItemComponent({
                         <TooltipContent side="top">{item.name}</TooltipContent>
                     </Tooltip>
                     <div className="flex items-center gap-1.5 text-muted-foreground flex-wrap">
-                        <span className={isTouchMode ? "text-xs" : "text-[10px]"}>{formatCurrency(item.unit_price_gross)}/u</span>
+                        <span className={isTouchMode ? "text-[10px]" : "text-[9px]"}>{formatCurrency(item.unit_price_gross)}/u</span>
                         {originalProduct?.is_dynamic_pricing && (
-                            <button onClick={() => isTouchMode && onOpenNumpad(item.cartItemId, 'price', item.unit_price_gross || 0)} className={cn("text-primary underline-offset-2 hover:underline", isTouchMode ? "text-xs" : "text-[10px]")} type="button">
+                            <button onClick={() => isTouchMode && onOpenNumpad(item.cartItemId, 'price', item.unit_price_gross || 0)} className={cn("text-primary underline-offset-2 hover:underline", isTouchMode ? "text-[10px]" : "text-[9px]")} type="button">
                                 Editar
                             </button>
                         )}
-                        <span className={isTouchMode ? "text-xs" : "text-[10px]"}>•</span>
-                        <span className={isTouchMode ? "text-xs" : "text-[10px]"}>Neto: {formatCurrency(item.unit_price_net)}</span>
+                        <span className={isTouchMode ? "text-[10px]" : "text-[9px]"}>•</span>
+                        <span className={isTouchMode ? "text-[10px]" : "text-[9px]"}>Neto: {formatCurrency(item.unit_price_net)}</span>
                     </div>
                 </div>
 
@@ -158,7 +158,7 @@ function CartItemComponent({
                         <button
                             className={cn(
                                 "rounded-full border-2 border-primary/20 hover:border-primary hover:bg-primary/5 shrink-0 flex items-center justify-center transition-colors disabled:opacity-30 disabled:pointer-events-none",
-                                isTouchMode ? "min-h-[44px] min-w-[44px]" : "h-8 w-8"
+                                isTouchMode ? "min-h-[36px] min-w-[36px]" : "h-8 w-8"
                             )}
                             {...(isTouchMode ? {
                                 onPointerDown: (e: React.PointerEvent) => { e.preventDefault(); startLongPress(-1) },
@@ -199,7 +199,7 @@ function CartItemComponent({
                         <button
                             className={cn(
                                 "rounded-full border-2 border-primary/20 hover:border-primary hover:bg-primary/5 shrink-0 flex items-center justify-center transition-colors disabled:opacity-30 disabled:pointer-events-none",
-                                isTouchMode ? "min-h-[44px] min-w-[44px]" : "h-8 w-8"
+                                isTouchMode ? "min-h-[36px] min-w-[36px]" : "h-8 w-8"
                             )}
                             {...(isTouchMode ? {
                                 onPointerDown: (e: React.PointerEvent) => { e.preventDefault(); startLongPress(1) },
@@ -236,7 +236,7 @@ function CartItemComponent({
                 <div className="flex items-start gap-1.5 justify-self-end">
                     <div className="flex flex-col items-end">
                         <span className="text-sm font-bold text-primary leading-none">{formatCurrency(item.total_gross)}</span>
-                        <span className={cn("text-muted-foreground font-medium leading-tight", isTouchMode ? "text-xs" : "text-[10px]")}>
+                        <span className={cn("text-muted-foreground leading-none", isTouchMode ? "text-[10px]" : "text-[9px]")}>
                             Neto {formatCurrency(item.total_net)}
                         </span>
                         {showLineDiscount && (

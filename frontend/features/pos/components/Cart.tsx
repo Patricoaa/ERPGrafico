@@ -274,7 +274,7 @@ export function Cart({
 
                         {/* Line Discounts (Sum of all per-item discounts) */}
                         {(totals.line_discount_total || 0) > 0 && (
-                            <div className="flex justify-between text-xs text-muted-foreground/80 italic">
+                            <div className="flex justify-between text-xs text-muted-foreground">
                                 <span>Descuentos por Línea</span>
                                 <span>-{formatCurrency(totals.line_discount_total || 0)}</span>
                             </div>

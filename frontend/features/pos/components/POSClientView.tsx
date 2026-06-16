@@ -550,7 +550,7 @@ export function POSClientView() {
                     </div>
                 )}
 
-                <div className="md:col-span-12 lg:col-span-6 flex flex-col min-h-0">
+                <div className="md:col-span-12 lg:col-span-7 flex flex-col min-h-0">
                     <AnimatePresence mode="wait">
                         {posMode === 'SHOPPING' ? (
                             <motion.div key="shop" initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, scale: 0.98 }} className="flex-1 flex flex-col min-h-0">
@@ -596,7 +596,7 @@ export function POSClientView() {
                     </AnimatePresence>
                 </div>
 
-                <div className="md:col-span-12 lg:col-span-6 flex flex-col min-h-0">
+                <div className="md:col-span-12 lg:col-span-5 flex flex-col min-h-0">
                     <Cart
                         items={items}
                         products={filteredProducts}
