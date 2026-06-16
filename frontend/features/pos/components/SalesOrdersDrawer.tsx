@@ -1,6 +1,6 @@
 "use client"
 
-import { ShoppingCart, FileText, X } from "lucide-react"
+import { ShoppingCart, FileText } from "lucide-react"
 import { getEntityIcon } from "@/lib/entity-registry"
 import { SalesOrdersView } from "@/features/sales"
 import { UnderlineTabs } from "@/components/shared"
@@ -105,29 +105,16 @@ export function SalesOrdersDrawer({ open, onOpenChange, posSessionId }: SalesOrd
 
                         {/* Embedded HUB Panel */}
                         {selectedId && (
-                            <div className="w-1/2 border-l border-border pl-4 flex flex-col min-h-0">
-                                <div className="flex items-center justify-between mb-2 shrink-0">
-                                    <span className="text-xs font-bold uppercase text-muted-foreground tracking-wider">
-                                        {viewMode === 'orders' ? 'Detalle de Venta' : 'Detalle de Nota'}
-                                    </span>
-                                    <button
-                                        onClick={() => setSelectedId(null)}
-                                        className="h-6 w-6 flex items-center justify-center rounded-md text-muted-foreground/50 hover:text-foreground hover:bg-accent transition-colors"
-                                    >
-                                        <X className="h-3.5 w-3.5" />
-                                    </button>
-                                </div>
-                                <div className="flex-1 min-h-0 overflow-hidden rounded-md border border-border/50 bg-card">
-                                    <OrderHubPanel
-                                        orderId={viewMode === 'orders' ? selectedId : undefined}
-                                        invoiceId={viewMode === 'notes' ? selectedId : undefined}
-                                        type="sale"
-                                        onClose={() => setSelectedId(null)}
-                                        onActionSuccess={handleActionSuccess}
-                                        posSessionId={posSessionId}
-                                        showHeader={false}
-                                    />
-                                </div>
+                            <div className="w-1/2 border-l border-border pl-4 flex flex-col min-h-0 overflow-hidden">
+                                <OrderHubPanel
+                                    orderId={viewMode === 'orders' ? selectedId : undefined}
+                                    invoiceId={viewMode === 'notes' ? selectedId : undefined}
+                                    type="sale"
+                                    onClose={() => setSelectedId(null)}
+                                    onActionSuccess={handleActionSuccess}
+                                    posSessionId={posSessionId}
+                                    showHeader={false}
+                                />
                             </div>
                         )}
                     </div>
