@@ -112,7 +112,7 @@ export function InitialCapitalModal({ open, onOpenChange, onSuccess }: InitialCa
             }
         >
             <div className="space-y-6">
-                <Alert variant="default" className="bg-primary/10/50 border-primary/20">
+                <Alert variant="primary">
                     <Info className="h-4 w-4 text-primary" />
                     <AlertTitle className="text-primary text-xs font-bold uppercase tracking-wider">Aviso Contable</AlertTitle>
                     <AlertDescription className="text-primary text-xs">

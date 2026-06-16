@@ -307,7 +307,7 @@ export function CreateDistributionFlow({ open, onOpenChange, onSuccess, initialR
                         />
                     </div>
 
-                    <Alert className="bg-primary/5 border-primary/20">
+                    <Alert variant="primary">
                         <CalendarCheck2 className="h-5 w-5 text-primary" />
                         <AlertTitle className="text-primary font-bold uppercase text-[10px]">Automatización Activa</AlertTitle>
                         <AlertDescription className="text-foreground/80 font-medium text-[10px] leading-relaxed">

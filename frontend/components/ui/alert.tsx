@@ -12,6 +12,12 @@ const alertVariants = cva(
                     "border-destructive/50 text-destructive [&>svg]:text-destructive",
                 warning:
                     "border-warning/50 text-warning [&>svg]:text-warning",
+                info:
+                    "border-info/50 text-info [&>svg]:text-info",
+                success:
+                    "border-success/50 text-success [&>svg]:text-success",
+                primary:
+                    "border-primary/50 text-primary [&>svg]:text-primary",
             },
         },
         defaultVariants: {
