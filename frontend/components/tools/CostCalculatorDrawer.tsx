@@ -1,23 +1,20 @@
 "use client"
 
 import React, { useState } from "react"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Card } from "@/components/ui/card"
-import { Trash2, Calculator, Info } from "lucide-react"
-import { Drawer, DynamicIcon } from '@/components/shared'
+import { Trash2, Calculator, Info, Minus, Plus } from "lucide-react"
+import { Drawer } from '@/components/shared'
 import { ProductSelector } from "@/components/shared"
 import { toast } from "sonner"
 import { formatCurrency } from "@/lib/money"
-import { resolveMediaUrl } from "@/lib/api"
 
 import {
     POSSearchSkeleton,
     POSGridSkeleton,
     POSCartItemsSkeleton
-} from "@/features/pos/components/skeletons/POSLayoutSkeleton"
+} from "@/features/pos"
 
 interface Product {
     id: number
@@ -218,16 +215,8 @@ export function CostCalculatorDrawer({ open, onOpenChange }: CostCalculatorDrawe
                 </div>
 
                 {/* Panel Derecho: Selección */}
-                <div className="w-[40%] flex flex-col p-4 gap-4 min-h-0">
+                <div className="w-[45%] flex flex-col p-4 gap-4 min-h-0">
                     <Card className="flex-1 flex flex-col min-h-0 overflow-hidden shadow-none border">
-                        {/* List Header */}
-                        <div className="grid grid-cols-12 gap-2 px-6 py-2 border-b text-[10px] font-bold uppercase text-muted-foreground/60 tracking-widest shrink-0">
-                            <div className="col-span-6">Descripción</div>
-                            <div className="col-span-2 text-center">Cantidad</div>
-                            <div className="col-span-2">Unidad</div>
-                            <div className="col-span-2 text-right">Subtotal</div>
-                        </div>
-
                         <ScrollArea className="flex-1">
                             {loading ? (
                                 <POSCartItemsSkeleton count={6} />
@@ -244,65 +233,71 @@ export function CostCalculatorDrawer({ open, onOpenChange }: CostCalculatorDrawe
                                     </div>
                                 </div>
                             ) : (
-                                <div className="divide-y pb-2">
+                                <div className="flex flex-col gap-2 p-3">
                                     {selectedItems.map((item, index) => (
-                                        <div key={item.id} className="grid grid-cols-12 gap-2 px-6 py-3 items-center group hover:bg-primary/5 transition-colors">
-                                            <div className="col-span-6 flex items-center gap-3 min-w-0">
-                                                <div className="w-8 h-8 rounded-sm bg-muted flex-shrink-0 flex items-center justify-center overflow-hidden border">
-                                                    {item.product.image ? (
-                                                        <img src={resolveMediaUrl(item.product.image) ?? undefined} className="w-full h-full object-cover" />
-                                                    ) : (
-                                                        <DynamicIcon
-                                                            name={(typeof item.product.category === 'object' ? item.product.category?.icon : categories.find(c => c.id === item.product.category)?.icon) || "Package"}
-                                                            className="h-4 w-4 text-muted-foreground/20"
-                                                        />
-                                                    )}
+                                        <div key={item.id} className="flex flex-col gap-1 p-3 rounded-lg border border-border/40 bg-card/5 group">
+                                            <div className="grid grid-cols-[1fr_auto_1fr_auto_auto_auto] gap-x-1 items-start">
+                                                <div className="flex flex-col">
+                                                    <span className="text-xs font-bold truncate">{item.product.name}</span>
+                                                    <span className="text-[10px] text-muted-foreground font-medium">{formatCurrency(item.unit_cost)}/u</span>
                                                 </div>
-                                                <div className="min-w-0">
-                                                    <p className="text-xs font-bold truncate leading-none mb-1">{item.product.name}</p>
-                                                    <p className="text-[9px] text-muted-foreground uppercase font-medium">
-                                                        {item.product.internal_code} • {formatCurrency(item.unit_cost)}
-                                                    </p>
+
+                                                <div className="flex flex-col items-center">
+                                                    <div className="flex items-center gap-0">
+                                                        <button
+                                                            className="rounded-full h-8 w-8 border-2 border-primary/20 hover:border-primary hover:bg-primary/5 shrink-0 flex items-center justify-center transition-colors disabled:opacity-30 disabled:pointer-events-none"
+                                                            onClick={() => {
+                                                                const qty = Math.max(0.01, item.quantity - 1)
+                                                                updateQuantity(item.id, qty)
+                                                            }}
+                                                            disabled={item.quantity <= 0.01}
+                                                            type="button"
+                                                        >
+                                                            <Minus className="h-3.5 w-3.5 text-muted-foreground" />
+                                                        </button>
+
+                                                        <span className="w-10 text-center text-sm font-bold">{item.quantity}</span>
+
+                                                        <button
+                                                            className="rounded-full h-8 w-8 border-2 border-primary/20 hover:border-primary hover:bg-primary/5 shrink-0 flex items-center justify-center transition-colors"
+                                                            onClick={() => updateQuantity(item.id, item.quantity + 1)}
+                                                            type="button"
+                                                        >
+                                                            <Plus className="h-3.5 w-3.5 text-muted-foreground" />
+                                                        </button>
+                                                    </div>
+                                                    <div className="flex justify-center mt-0.5">
+                                                        <Select value={String(item.uom_id ?? '')} onValueChange={val => updateUom(item.id, parseInt(val))}>
+                                                            <SelectTrigger className="h-5 text-[9px] border-muted-foreground/20 px-1.5 py-0 bg-background min-w-0">
+                                                                <SelectValue />
+                                                            </SelectTrigger>
+                                                            <SelectContent>
+                                                                {(item.product.available_uoms || []).map(uom => (
+                                                                    <SelectItem key={uom.id} value={String(uom.id)} className="text-[9px] py-0.5">
+                                                                        {uom.name}
+                                                                    </SelectItem>
+                                                                ))}
+                                                            </SelectContent>
+                                                        </Select>
+                                                    </div>
                                                 </div>
-                                            </div>
-                                            <div className="col-span-2">
-                                                <Input
-                                                    type="number"
-                                                    min="0"
-                                                    step="0.01"
-                                                    value={item.quantity}
-                                                    onChange={e => updateQuantity(item.id, parseFloat(e.target.value) || 0)}
-                                                    className="h-7 px-1 text-center font-bold text-xs border-muted-foreground/20 focus-visible:ring-primary"
-                                                />
-                                            </div>
-                                            <div className="col-span-2">
-                                                <Select value={String(item.uom_id ?? '')} onValueChange={val => updateUom(item.id, parseInt(val))}>
-                                                    <SelectTrigger className="h-7 text-[10px] border-muted-foreground/20 px-2 bg-background">
-                                                        <SelectValue />
-                                                    </SelectTrigger>
-                                                    <SelectContent>
-                                                        {(item.product.available_uoms || []).map(uom => (
-                                                            <SelectItem key={uom.id} value={String(uom.id)} className="text-[10px]">
-                                                                {uom.name}
-                                                            </SelectItem>
-                                                        ))}
-                                                    </SelectContent>
-                                                </Select>
-                                            </div>
-                                            <div className="col-span-2 flex items-center justify-end gap-2 pr-1">
-                                                <div className="text-right">
-                                                    <p className="text-xs font-black text-primary">
-                                                        {formatCurrency(item.subtotal)}
-                                                    </p>
+
+                                                <div />
+                                                <div />
+
+                                                <div className="flex flex-col items-end ml-6">
+                                                    <span className="text-sm font-bold text-primary leading-none">{formatCurrency(item.subtotal)}</span>
                                                 </div>
-                                                <Button
-                                                    variant="ghost"
-                                                    size="icon"
-                                                    onClick={() => removeItem(item.id)}
-                                                    className="h-6 w-6 rounded-sm text-muted-foreground hover:text-destructive hover:bg-destructive/10 opacity-0 group-hover:opacity-100 transition-all shrink-0"
-                                                >
-                                                    <Trash2 className="h-3 w-3" />
-                                                </Button>
+
+                                                <div>
+                                                    <button
+                                                        className="flex items-center justify-center text-muted-foreground hover:text-destructive transition-all h-8 w-8 rounded-full hover:bg-destructive/10"
+                                                        onClick={() => removeItem(item.id)}
+                                                        type="button"
+                                                    >
+                                                        <Trash2 className="h-4 w-4" />
+                                                    </button>
+                                                </div>
                                             </div>
                                         </div>
                                     ))}

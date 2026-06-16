@@ -5,117 +5,119 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Skeleton } from "@/components/ui/skeleton"
 import { CardSkeleton } from "@/components/shared"
 
-export function POSHeaderSkeleton() {
-    return (
-        <div className="flex items-center justify-between py-1 px-1 mb-2 relative min-h-[56px] border-b pb-2">
-            <div className="flex items-center gap-4 flex-1">
-                <Skeleton className="h-7 w-48" />
-                <div className="hidden sm:flex items-center gap-2">
-                    <Skeleton className="h-5 w-20" />
-                    <Skeleton className="h-5 w-32" />
-                </div>
-            </div>
-
-            <div className="flex-1 flex justify-center px-4">
-                <Skeleton className="w-full max-w-sm h-6 rounded-full" />
-            </div>
-
-            <div className="flex items-center gap-2 flex-1 justify-end">
-                <div className="hidden lg:flex items-center gap-1 mr-2">
-                    {Array.from({ length: 3 }).map((_, i) => (
-                        <Skeleton key={i} className="h-8 w-10" />
-                    ))}
-                </div>
-                <Skeleton className="h-9 w-24" />
-            </div>
-        </div>
-    )
-}
-
 export function POSSearchSkeleton() {
     return (
-        <div className="p-4 border-b bg-background/50 space-y-4">
+        <div className="px-2 pt-1.5 pb-1.5 border-b bg-background/50 space-y-2">
             <Skeleton className="h-10 w-full rounded-lg" />
-            <div className="flex gap-2 overflow-hidden">
-                {Array.from({ length: 6 }).map((_, i) => (
-                    <Skeleton key={i} className="h-8 w-24 rounded-full shrink-0" />
-                ))}
-            </div>
         </div>
     )
 }
 
 export function POSGridSkeleton({ count = 12 }: { count?: number }) {
     return (
-        <CardSkeleton 
-            variant="product" 
-            count={count} 
-            gridClassName="grid-cols-2 lg:grid-cols-4 p-4" 
+        <CardSkeleton
+            variant="product"
+            count={count}
+            gridClassName="grid-cols-2 lg:grid-cols-4 px-1.5 pt-1.5 pb-0"
         />
     )
 }
 
 export function POSCartItemsSkeleton({ count = 4 }: { count?: number }) {
     return (
-        <div className="flex-1 overflow-hidden p-4">
-            <CardSkeleton variant="compact" count={count} className="gap-4" />
+        <div className="flex flex-col gap-2 p-3">
+            {Array.from({ length: count }).map((_, i) => (
+                <div key={i} className="flex flex-col gap-2 p-3 rounded-lg border border-border/40 bg-card/5">
+                    <div className="flex justify-between items-start">
+                        <Skeleton className="h-3 w-32" />
+                        <Skeleton className="h-4 w-16" />
+                    </div>
+                    <div className="flex items-center gap-1">
+                        <Skeleton className="h-2.5 w-20" />
+                        <Skeleton className="h-2.5 w-24" />
+                    </div>
+                    <div className="flex items-center gap-1">
+                        <Skeleton className="h-8 w-8 rounded-full" />
+                        <Skeleton className="h-8 w-12" />
+                        <Skeleton className="h-8 w-8 rounded-full" />
+                    </div>
+                    <Skeleton className="h-3 w-16" />
+                </div>
+            ))}
         </div>
-    )
-}
-
-export function POSCartSkeleton() {
-    return (
-        <Card className="flex-1 flex flex-col overflow-hidden border bg-background/50 shadow-sm">
-            <CardContent className="p-0 flex-1 flex flex-col overflow-hidden">
-                <div className="px-6 pt-4 pb-4 border-b bg-background/50 flex flex-col justify-center h-[88px] shrink-0 gap-2">
-                    <div className="flex justify-between items-center">
-                        <Skeleton className="h-6 w-32" />
-                        <Skeleton className="h-5 w-16" />
-                    </div>
-                    <Skeleton className="h-3 w-24" />
-                </div>
-
-                <POSCartItemsSkeleton count={4} />
-
-                <div className="p-4 bg-muted/20 border-t space-y-4">
-                    <Skeleton className="h-20 w-full rounded-lg" />
-                    <Skeleton className="h-12 w-full" />
-                    <div className="space-y-2 pt-2">
-                        <div className="flex justify-between">
-                            <Skeleton className="h-3 w-20" />
-                            <Skeleton className="h-3 w-16" />
-                        </div>
-                        <div className="flex justify-between">
-                            <Skeleton className="h-3 w-14" />
-                            <Skeleton className="h-3 w-12" />
-                        </div>
-                        <div className="flex justify-between pt-2 border-t">
-                            <Skeleton className="h-6 w-16" />
-                            <Skeleton className="h-6 w-24" />
-                        </div>
-                    </div>
-                    <Skeleton className="h-16 w-full" />
-                </div>
-            </CardContent>
-        </Card>
     )
 }
 
 export function POSLayoutSkeleton() {
     return (
-        <div className="flex-1 p-4 pt-2 flex flex-col gap-2 overflow-hidden bg-background">
-            <POSHeaderSkeleton />
+        <div role="status" aria-label="Cargando punto de venta" className="flex-1 p-3 pt-1.5 flex flex-col gap-1.5 overflow-hidden animate-in fade-in duration-500">
+            <div className="flex items-center justify-between py-0.5 px-1 mb-1 relative min-h-[44px]">
+                <div className="flex items-center gap-4 flex-1">
+                    <Skeleton className="h-6 w-48" />
+                </div>
 
-            <div className="relative grid grid-cols-1 md:grid-cols-12 gap-4 flex-1 min-h-0 overflow-hidden">
-                <div className="md:col-span-12 lg:col-span-7 flex flex-col min-h-0">
-                    <Card className="flex-1 flex flex-col overflow-hidden bg-muted/10 border">
+                <div className="flex-1 flex justify-center px-4" />
+
+                <div className="flex items-center gap-2 flex-1 justify-end">
+                    <div className="hidden lg:flex items-center gap-1 mr-2">
+                        {Array.from({ length: 4 }).map((_, i) => (
+                            <Skeleton key={i} className="h-10 min-w-[40px] rounded-md" />
+                        ))}
+                    </div>
+                    <Skeleton className="h-10 w-10 rounded-full shrink-0" />
+                    <Skeleton className="h-10 w-20 rounded-md" />
+                </div>
+            </div>
+
+            <div className="relative grid grid-cols-1 md:grid-cols-12 gap-3 flex-1 min-h-0 overflow-hidden">
+                <div className="md:col-span-12 lg:col-span-6 flex flex-col min-h-0">
+                    <Card className="flex-1 flex flex-col overflow-hidden bg-muted/10 border py-1.5">
                         <POSSearchSkeleton />
-                        <POSGridSkeleton count={12} />
+                        <div className="flex-1 px-1.5 pt-1.5 pb-0">
+                            <POSGridSkeleton count={12} />
+                        </div>
                     </Card>
                 </div>
 
-                <div className="md:col-span-12 lg:col-span-5 flex flex-col min-h-0">
-                    <POSCartSkeleton />
+                <div className="md:col-span-12 lg:col-span-6 flex flex-col min-h-0">
+                    <Card className="py-2 flex-1 flex flex-col overflow-hidden border bg-background/50 shadow-sm rounded-md">
+                        <CardContent className="p-0 flex-1 flex flex-col overflow-hidden">
+                            <div className="px-4 py-1.5 border-b bg-background/50 shrink-0">
+                                <div className="flex justify-between items-center h-10">
+                                    <div className="flex items-center gap-2">
+                                        <Skeleton className="h-5 w-40" />
+                                        <Skeleton className="h-2.5 w-28" />
+                                    </div>
+                                    <Skeleton className="h-5 w-16 rounded-sm" />
+                                </div>
+                            </div>
+
+                            <div className="flex-1 overflow-auto bg-background/50">
+                                <POSCartItemsSkeleton count={3} />
+                            </div>
+
+                            <div className="p-3 bg-muted/20 border-t space-y-3">
+                                <Skeleton className="h-10 w-full rounded-md" />
+
+                                <div className="space-y-0.5">
+                                    <div className="flex justify-between">
+                                        <Skeleton className="h-3 w-20" />
+                                        <Skeleton className="h-3 w-16" />
+                                    </div>
+                                    <div className="flex justify-between">
+                                        <Skeleton className="h-3 w-14" />
+                                        <Skeleton className="h-3 w-12" />
+                                    </div>
+                                    <div className="flex justify-between pt-1.5 border-t">
+                                        <Skeleton className="h-5 w-16" />
+                                        <Skeleton className="h-5 w-24" />
+                                    </div>
+                                </div>
+
+                                <Skeleton className="h-12 w-full rounded-md" />
+                            </div>
+                        </CardContent>
+                    </Card>
                 </div>
             </div>
         </div>

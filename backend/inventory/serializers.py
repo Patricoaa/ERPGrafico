@@ -372,7 +372,7 @@ class ProductSerializer(serializers.ModelSerializer):
         if not obj.uom:
             return []
         from .services import UoMService
-        uoms = UoMService.get_allowed_uoms_for_context(obj, 'bom')
+        uoms = UoMService.get_allowed_uoms_for_context(obj, 'sale')
         return UoMSerializer(uoms, many=True).data
 
     def validate(self, data):
