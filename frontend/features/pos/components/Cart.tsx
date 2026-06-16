@@ -138,7 +138,7 @@ export function Cart({
                         </div>
                     ) : (
                         /* Cards Content */
-                        <div className="flex flex-col gap-2 p-3">
+                        <div className={cn("flex flex-col p-3", isTouchMode ? "gap-3" : "gap-2")}>
                             {items.map((item) => {
                                 const originalProduct = products.find(p => p.id === item.id)
                                 const maxQty = limits[`cart_${item.cartItemId}`]
