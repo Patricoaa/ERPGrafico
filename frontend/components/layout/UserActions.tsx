@@ -262,7 +262,7 @@ export function UserActions({ isInboxOpen, onInboxToggle }: UserActionsProps) {
                             <DropdownMenuTrigger asChild>
                                 <motion.button
                                     whileTap={{ scale: 0.95 }}
-                                    className="relative h-10 w-10 flex items-center justify-center rounded-md text-foreground/50 hover:bg-accent hover:text-accent-foreground transition-all duration-200 bg-transparent border-none shadow-none"
+                                    className="relative h-10 w-10 flex items-center justify-center rounded-md text-foreground/50 hover:bg-accent hover:text-accent-foreground transition-all duration-200 bg-transparent border border-border/60"
                                 >
                                     <Avatar className="h-full w-full rounded-md bg-transparent">
                                         <AvatarFallback className="bg-transparent text-current font-heading font-black text-[10px] rounded-md">
@@ -297,7 +297,7 @@ export function UserActions({ isInboxOpen, onInboxToggle }: UserActionsProps) {
                         <DropdownMenuSeparator />
                         <DropdownMenuItem onClick={handleLogout} className="text-destructive focus:text-destructive cursor-pointer">
                             <LogOut className="mr-3 h-4 w-4" />
-                            <span className="font-bold text-xs">Salir</span>
+                            <span className="font-bold text-xs">Cerrar Sesión</span>
                         </DropdownMenuItem>
                     </DropdownMenuContent>
                 </DropdownMenu>
