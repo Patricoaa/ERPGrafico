@@ -1201,7 +1201,13 @@ class BillingService:
 
              # Annul payments in cascade
              for movement in posted_payments:
-                 TreasuryService.annul_movement(movement, user=user, reason=reason)
+                  TreasuryService.annul_movement(
+                      movement, user=user, reason=reason,
+                      treasury_account_id=(
+                          movement.to_account_id if movement.movement_type == 'INBOUND'
+                          else movement.from_account_id
+                      ),
+                  )
 
         # 1. Reverse Accounting Entry
         if invoice.journal_entry:
