@@ -21,15 +21,22 @@ interface SalesOrdersViewProps {
     posSessionId?: number | null
     onActionSuccess?: () => void
     hideStatusInCards?: boolean
+    onSelectOrder?: (id: number | null) => void
+    selectedId?: number | null
 }
 
-export function SalesOrdersView({ viewMode, posSessionId, onActionSuccess, hideStatusInCards }: SalesOrdersViewProps) {
+export function SalesOrdersView({ viewMode, posSessionId, onActionSuccess, hideStatusInCards, onSelectOrder, selectedId }: SalesOrdersViewProps) {
     const { openHub, closeHub, hubConfig, isHubOpen } = useHubPanel()
     const router = useRouter()
     const searchParams = useSearchParams()
     const pathname = usePathname()
 
     const toggleSelection = (id: number) => {
+        if (onSelectOrder) {
+            const isSelected = selectedId === id
+            onSelectOrder(isSelected ? null : id)
+            return
+        }
         const isSelected = viewMode === "orders" ? hubConfig?.orderId === id : hubConfig?.invoiceId === id
         const params = new URLSearchParams(searchParams.toString())
 
@@ -107,15 +114,15 @@ export function SalesOrdersView({ viewMode, posSessionId, onActionSuccess, hideS
             enableHiding: false,
             cell: ({ row }) => {
                 const item = row.original
-                const isSelected = hubConfig?.orderId === item.id
+                const isSelected = onSelectOrder ? selectedId === item.id : (hubConfig?.orderId === item.id && isHubOpen)
                 return (
                     <div className="flex justify-end pr-2">
                         <DataCell.Action
-                            icon={isSelected && isHubOpen ? ArrowLeft : ArrowRight}
-                            title={isSelected && isHubOpen ? "Cerrar Panel" : "Abrir Panel"}
+                            icon={isSelected ? ArrowLeft : ArrowRight}
+                            title={isSelected ? "Cerrar Panel" : "Abrir Panel"}
                             className={cn(
                                 "transition-all",
-                                isSelected && isHubOpen
+                                isSelected
                                     ? "text-primary animate-in fade-in slide-in-from-right-1 duration-300"
                                     : "text-muted-foreground/30 hover:text-primary hover:translate-x-0.5"
                             )}
@@ -167,7 +174,7 @@ export function SalesOrdersView({ viewMode, posSessionId, onActionSuccess, hideS
             enableHiding: false,
             cell: ({ row }) => {
                 const item = row.original
-                const isSelected = hubConfig?.invoiceId === item.id
+                const isSelected = onSelectOrder ? selectedId === item.id : (hubConfig?.invoiceId === item.id && isHubOpen)
                 return (
                     <div className="flex justify-end pr-2">
                         <DataCell.Action
@@ -192,6 +199,7 @@ export function SalesOrdersView({ viewMode, posSessionId, onActionSuccess, hideS
 
     const getSelectionId = (item: any) => {
         const id = Number(item.id)
+        if (onSelectOrder) return selectedId === id
         return viewMode === 'orders' ? hubConfig?.orderId === id : hubConfig?.invoiceId === id
     }
 
@@ -212,7 +220,7 @@ export function SalesOrdersView({ viewMode, posSessionId, onActionSuccess, hideS
                     showToolbarSort={true}
                     defaultPageSize={20}
                     isSelected={(data: any) => !!getSelectionId(data)}
-                    isHubOpen={isHubOpen}
+                    isHubOpen={onSelectOrder ? !!selectedId : isHubOpen}
                     isFiltered={isFiltered}
                     emptyState={{
                         context: viewMode === 'orders' ? "sale" : "finance",
