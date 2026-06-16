@@ -148,6 +148,7 @@ class SaleOrderSerializer(serializers.ModelSerializer):
     production_progress = serializers.SerializerMethodField()
     has_pending_work_orders = serializers.SerializerMethodField()
     pos_session_display = serializers.SerializerMethodField()
+    lines = serializers.SerializerMethodField()
 
     def get_pos_session_display(self, obj):
         return str(obj.pos_session) if obj.pos_session else None

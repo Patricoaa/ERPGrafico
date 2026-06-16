@@ -148,10 +148,11 @@ class SaleOrderFilterSet(django_filters.FilterSet):
     customer_name = django_filters.CharFilter(field_name='customer__name', lookup_expr='icontains')
     date_after = django_filters.DateFilter(field_name='date', lookup_expr='gte')
     date_before = django_filters.DateFilter(field_name='date', lookup_expr='lte')
+    pos_session = django_filters.NumberFilter(field_name='pos_session_id')
 
     class Meta:
         model = SaleOrder
-        fields = ['status']
+        fields = ['status', 'pos_session']
 
 
 class SaleOrderViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
