@@ -37,6 +37,7 @@ export interface Product {
     sale_uom?: number
     uom_name?: string
     allowed_sale_uoms?: number[]
+    available_uoms?: Array<{ id: number; name: string; category: number; ratio: string | number; uom_type?: string; category_name?: string }>
     // Variant fields
     variant_display_name?: string
     attribute_values_data?: {

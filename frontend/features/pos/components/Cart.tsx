@@ -8,7 +8,7 @@ import { Card, CardContent } from '@/components/ui/card'
 import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from '@/components/ui/accordion'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import {Table, TableBody, TableHead, TableHeader, TableRow} from '@/components/ui/table'
+
 import {ShoppingCart, Zap, Clock, User, FileText, Truck, Calendar} from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { CartItem } from './CartItem'
@@ -103,28 +103,23 @@ export function Cart({
         <Card className="py-2 flex-1 flex flex-col overflow-hidden border bg-background/50 shadow-sm rounded-md">
             <CardContent className="p-0 flex-1 flex flex-col overflow-hidden">
                 {/* Header */}
-                <div className="px-4 pt-3 pb-2 border-b bg-background/50 flex flex-col justify-center rounded-t-md shrink-0 gap-1">
-                    <div className="flex justify-between items-center">
-                        <span className="font-bold text-lg tracking-tight">Resumen de Venta</span>
-                        <div className="flex items-center gap-2">
-                            <span className="text-[8px] font-black bg-primary text-primary-foreground px-1.5 py-0.5 rounded-sm uppercase tracking-tighter">
-                                {items.length} Items
-                            </span>
-                        </div>
-                    </div>
-
-                    <div className="flex justify-between items-center">
-                        <div className="flex items-center gap-2">
+                <div className="px-4 py-1.5 border-b bg-background/50 shrink-0">
+                    <div className={cn("flex justify-between items-center gap-2", isTouchPOS ? "h-12" : "h-9")}>
+                        <div className="flex items-center gap-2 min-w-0">
+                            <span className="font-bold text-lg tracking-tight whitespace-nowrap">Resumen de Venta</span>
                             {lastSaved && (
-                                <div className="flex items-center text-[9px] text-muted-foreground font-medium gap-1 opacity-80">
+                                <div className="flex items-center text-[9px] text-muted-foreground font-medium gap-1 opacity-80 whitespace-nowrap">
                                     <Clock className="h-2.5 w-2.5" />
                                     <span>
                                         {saving ? "Guardando..." : `Sincronizado: ${lastSaved.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`}
                                     </span>
+                                    {saving && <div className="h-0.5 w-10 bg-primary/20 rounded-full overflow-hidden"><div className="h-full bg-primary animate-progress-buffer w-1/3"></div></div>}
                                 </div>
                             )}
                         </div>
-                        {saving && <div className="h-0.5 w-10 bg-primary/20 rounded-full overflow-hidden"><div className="h-full bg-primary animate-progress-buffer w-1/3"></div></div>}
+                        <span className="text-[10px] font-black bg-primary text-primary-foreground px-1.5 py-0.5 rounded-sm uppercase tracking-tighter shrink-0">
+                            {items.length} Items
+                        </span>
                     </div>
                 </div>
 
@@ -142,46 +137,31 @@ export function Cart({
                             </div>
                         </div>
                     ) : (
-                        /* Table Content ... */
-                        <Table>
-                            <TableHeader className="bg-background/50 sticky top-0 z-10">
-                                <TableRow className="hover:bg-transparent shadow-[0_1px_0_hsl(var(--border)_/_0.5)] border-0">
-                                    <TableHead className={cn("text-xs py-2 h-[34px]", showLineDiscounts ? "w-[20%]" : "w-[25%]")}>Producto</TableHead>
-                                    <TableHead className="w-[12%] text-xs py-2 text-center h-[34px]">Cantidad</TableHead>
-                                    <TableHead className="w-[13%] text-xs py-2 text-center h-[34px]">Unidad</TableHead>
-                                    <TableHead className="w-[15%] text-xs py-2 text-right h-[34px]">Precio Unit.</TableHead>
-                                    {showLineDiscounts && (
-                                        <TableHead className="w-[15%] text-xs py-2 text-right text-primary/80 h-[34px]">Dscto.</TableHead>
-                                    )}
-                                    <TableHead className="w-[15%] text-xs py-2 text-right h-[34px]">Total</TableHead>
-                                    <TableHead className="w-[5%] py-2 h-[34px]"></TableHead>
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {items.map((item) => {
-                                    const originalProduct = products.find(p => p.id === item.id)
-                                    const maxQty = limits[`cart_${item.cartItemId}`]
+                        /* Cards Content */
+                        <div className="flex flex-col gap-2 p-3">
+                            {items.map((item) => {
+                                const originalProduct = products.find(p => p.id === item.id)
+                                const maxQty = limits[`cart_${item.cartItemId}`]
 
-                                    return (
-                                        <CartItem
-                                            key={item.cartItemId}
-                                            item={item}
-                                            originalProduct={originalProduct}
-                                            uoms={uoms}
-                                            maxQty={maxQty}
-                                            onQuantityChange={onItemQuantityChange}
-                                            onUomChange={onItemUomChange}
-                                            onPriceChange={onItemPriceChange}
-                                            onDiscountChange={onItemDiscountChange}
-                                            onRemove={onItemRemove}
-                                            onOpenNumpad={onOpenNumpad}
-                                            showLineDiscount={showLineDiscounts}
-                                            posMode={posMode}
-                                        />
-                                    )
-                                })}
-                            </TableBody>
-                        </Table>
+                                return (
+                                    <CartItem
+                                        key={item.cartItemId}
+                                        item={item}
+                                        originalProduct={originalProduct}
+                                        uoms={uoms}
+                                        maxQty={maxQty}
+                                        onQuantityChange={onItemQuantityChange}
+                                        onUomChange={onItemUomChange}
+                                        onPriceChange={onItemPriceChange}
+                                        onDiscountChange={onItemDiscountChange}
+                                        onRemove={onItemRemove}
+                                        onOpenNumpad={onOpenNumpad}
+                                        showLineDiscount={showLineDiscounts}
+                                        posMode={posMode}
+                                    />
+                                )
+                            })}
+                        </div>
                     )}
                 </div>
 
@@ -264,9 +244,9 @@ export function Cart({
                             {/* Partner Withdrawal */}
                             {onWithdrawClick && items.length > 0 && items.every(i => i.track_inventory) && (
                                 <Button
-                                    variant="outline"
+                                    variant="default"
                                     className={cn(
-                                        "w-full font-bold border-warning/40 text-warning hover:bg-warning hover:text-warning-foreground transition-all",
+                                        "w-full font-bold bg-warning text-warning-foreground hover:bg-warning/90 shadow-sm",
                                         isTouchPOS ? "h-14 text-base" : "h-10 text-sm"
                                     )}
                                     onClick={onWithdrawClick}
@@ -310,18 +290,16 @@ export function Cart({
                                     Descuento Global
                                 </span>
                                 {showTotalDiscounts ? (
-                                    <Input
-                                        type="number"
+                                    <button
                                         className={cn(
-                                            "h-7 w-20 text-right text-xs bg-background/50 border border-border/50 focus-visible:ring-1 focus-visible:ring-primary shadow-none px-2 rounded-sm",
-                                            (totalDiscountAmount || 0) > 0 && "text-primary font-bold"
+                                            "text-xs font-semibold cursor-pointer underline underline-offset-2 hover:text-primary text-right",
+                                            (totalDiscountAmount || 0) > 0 ? "text-primary font-bold" : "text-muted-foreground"
                                         )}
-                                        value={totalDiscountAmount || ""}
-                                        placeholder="0"
-                                        onClick={() => isTouchMode && onOpenNumpad('cart', 'discount', totalDiscountAmount || 0)}
-                                        readOnly={isTouchMode}
-                                        onChange={(e) => onTotalDiscountChange?.(parseFloat(e.target.value) || 0)}
-                                    />
+                                        onClick={() => onOpenNumpad('cart', 'discount', totalDiscountAmount || 0)}
+                                        type="button"
+                                    >
+                                        {totalDiscountAmount ? formatCurrency(totalDiscountAmount) : "$0"}
+                                    </button>
                                 ) : (
                                     <span className={cn(
                                         "font-medium",

@@ -17,6 +17,7 @@ import { Layers, Zap, DollarSign, Calendar, Printer } from "lucide-react"
 import { PricingUtils } from '@/features/inventory/utils/pricing'
 import { ProductSelector } from "@/components/selectors/ProductSelector"
 import { UoMSelector } from "@/components/selectors/UoMSelector"
+import { useSingleProduct } from "@/features/inventory/hooks/useProductSearch"
 import { Drawer, CancelButton, LabeledInput, LabeledSelect, LabeledSwitch, PeriodValidationDateInput, FormSection, FormFooter, FormSplitLayout, SkeletonShell, ActionSlideButton } from "@/components/shared"
 import { Button } from "@/components/ui/button"
 import { formDrawerWidth } from "@/lib/form-widths"
@@ -69,6 +70,8 @@ export function PricingRuleDrawer({ auditSidebar, initialData, onSuccess, open, 
     const { savePricingRule } = usePricingRuleMutations()
     const isFetchingInitialData = open && isUoMsLoading
     const [selectedProductObj, setSelectedProductObj] = useState<any>(null)
+    const { product: loadedProduct } = useSingleProduct(productId ?? null)
+    const effectiveProduct = selectedProductObj || loadedProduct || null
 
     const mode: DrawerMode = modeProp ?? (initialData ? 'edit' : 'create')
     const isView = mode === 'view'
@@ -226,8 +229,8 @@ export function PricingRuleDrawer({ auditSidebar, initialData, onSuccess, open, 
                         <UoMSelector
                             label="Unidad (Filtro)"
                             variant="standalone"
-                            product={selectedProductObj}
-                            context="sale"
+                            product={effectiveProduct}
+                            context="purchase"
                             uoms={uoms as unknown as UoM[]}
                             value={field.value?.toString() || ""}
                             onChange={(val) => field.onChange(val ? parseInt(val) : null)}
@@ -414,6 +417,7 @@ export function PricingRuleDrawer({ auditSidebar, initialData, onSuccess, open, 
                             }}
                             label="Válida Hasta (Opcional)"
                             validationType="tax"
+                            required={false}
                         />
                     )}
                 />
