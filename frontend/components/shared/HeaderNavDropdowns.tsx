@@ -12,8 +12,7 @@ import {
     DropdownMenuItem,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { MODULE_REGISTRY, getModuleIconName } from "@/lib/module-registry"
-import { ModuleLauncher } from "@/components/shared/ModuleLauncher"
+import { getModuleIconName } from "@/lib/module-registry"
 import type { NavigationConfig } from "@/components/providers/HeaderProvider"
 
 interface HeaderNavDropdownsProps {
@@ -34,11 +33,9 @@ export function HeaderNavDropdowns({ navigation, iconName }: HeaderNavDropdownsP
     const pathname = usePathname()
     const segments = pathname.split('/').filter(Boolean)
     const currentModuleId = segments[0] || 'dashboard'
-    const isModuleInRegistry = !!MODULE_REGISTRY[currentModuleId]
 
     // Track which dropdown is open for exclusive behavior
-    const [openDropdown, setOpenDropdown] = useState<'module' | 'primary' | 'secondary' | 'tertiary' | 'quaternary' | null>(null)
-    const [isModuleLauncherOpen, setIsModuleLauncherOpen] = useState(false)
+    const [openDropdown, setOpenDropdown] = useState<'primary' | 'secondary' | 'tertiary' | 'quaternary' | null>(null)
 
     // Separate config tab from regular tabs
     const regularTabs = (tabs || [])
@@ -52,49 +49,18 @@ export function HeaderNavDropdowns({ navigation, iconName }: HeaderNavDropdownsP
 
     return (
         <div className="flex items-center gap-0 min-w-0">
-            {/* ── Module Name (Root) — Module Selector (full-screen launcher) ── */}
-            {navigation.moduleName && isModuleInRegistry && (
+            {/* ── Module Name (Root) — static display ── */}
+            {navigation.moduleName && (
                 <div className="flex items-center">
-                    <button
-                        onClick={() => setIsModuleLauncherOpen(true)}
-                        className={cn(
-                            "flex items-center gap-1.5 px-2 py-1.5 -ml-2 rounded-md transition-colors cursor-pointer",
-                            "text-sm font-semibold tracking-tight text-muted-foreground",
-                            "hover:bg-muted/50 focus:outline-none focus-visible:ring-1 focus-visible:ring-primary/30"
-                        )}
-                    >
-                        {(() => {
-                            const modIcon = iconName || getModuleIconName(currentModuleId)
-                            return modIcon ? (
-                                <DynamicIcon name={modIcon} className="h-4 w-4 shrink-0 text-primary/70" />
-                            ) : null
-                        })()}
-                        <span className="whitespace-nowrap">{navigation.moduleName}</span>
-                        <ChevronsUpDown className="h-3.5 w-3.5 text-muted-foreground/60 shrink-0" />
-                    </button>
-                    <span className="text-border/60 mx-1.5 text-sm select-none">/</span>
-                    <ModuleLauncher
-                        open={isModuleLauncherOpen}
-                        onClose={() => setIsModuleLauncherOpen(false)}
-                    />
-                </div>
-            )}
-
-            {/* ── Module Name (Root) — Static fallback for non-registry modules (e.g. Settings) ── */}
-            {navigation.moduleName && !isModuleInRegistry && (
-                <div className="flex items-center">
-                    {navigation.moduleHref ? (
-                        <Link
-                            href={navigation.moduleHref}
-                            className="text-sm font-semibold tracking-tight text-muted-foreground hover:text-foreground transition-colors"
-                        >
-                            {navigation.moduleName}
-                        </Link>
-                    ) : (
-                        <span className="text-sm font-semibold tracking-tight text-muted-foreground">
-                            {navigation.moduleName}
-                        </span>
-                    )}
+                    {(() => {
+                        const modIcon = iconName || getModuleIconName(currentModuleId)
+                        return modIcon ? (
+                            <DynamicIcon name={modIcon} className="h-4 w-4 shrink-0 text-primary/70 mr-1.5" />
+                        ) : null
+                    })()}
+                    <span className="text-sm font-semibold tracking-tight text-muted-foreground">
+                        {navigation.moduleName}
+                    </span>
                     <span className="text-border/60 mx-1.5 text-sm select-none">/</span>
                 </div>
             )}
