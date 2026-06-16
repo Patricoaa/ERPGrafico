@@ -9,7 +9,6 @@ import { BillingPhase } from "./phases/BillingPhase"
 import { TreasuryPhase } from "./phases/TreasuryPhase"
 import { getHubStatuses } from '@/features/orders/utils/status'
 import { Order, Payment } from "../types"
-import { StatusBadge } from "@/components/shared"
 import type { LucideIcon } from "lucide-react"
 
 interface OrderHubData {
@@ -109,12 +108,11 @@ export function OrderHubIntegrated({
 
     const togglePhase = useCallback((phaseId: string) => (isOpen: boolean) => {
         setOpenPhases(prev => {
-            const next = new Set(prev)
             if (isOpen) {
-                next.add(phaseId)
-            } else {
-                next.delete(phaseId)
+                return new Set([phaseId])
             }
+            const next = new Set(prev)
+            next.delete(phaseId)
             return next
         })
     }, [])
@@ -125,26 +123,6 @@ export function OrderHubIntegrated({
         <TooltipProvider delayDuration={150}>
             <div className="flex flex-col w-full min-h-full pb-8">
                 <div className="flex flex-col gap-2.5 w-full">
-                    {/* Contact & Status — metadata, not a HUB phase */}
-                    {(activeDoc.customer_name || activeDoc.supplier_name || globalStatus) && (
-                        <div className="flex items-center justify-between px-1 pb-1">
-                            <span className="text-xs text-muted-foreground font-medium truncate max-w-[200px]">
-                                {typeof activeDoc.customer_name === 'string'
-                                    ? activeDoc.customer_name
-                                    : activeDoc.customer_name?.name || activeDoc.supplier_name}
-                            </span>
-                            {globalStatus && (
-                                <StatusBadge
-                                    status={globalStatus.status === 'success' ? 'SUCCESS' : globalStatus.status === 'active' ? 'IN_PROGRESS' : globalStatus.status === 'cancelled' ? 'CANCELLED' : 'NEUTRAL'}
-                                    label={globalStatus.label}
-                                    icon={globalStatus.icon}
-                                    size="xs"
-                                    className="rounded-md shrink-0"
-                                />
-                            )}
-                        </div>
-                    )}
-
                     {/* 1. Origen */}
                     <OriginPhase
                         isNoteMode={!!isNoteMode}
