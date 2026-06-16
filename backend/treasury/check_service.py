@@ -273,6 +273,58 @@ class CheckService:
         CheckService._recompute_invoice_status(check)
         return check
 
+    @staticmethod
+    @transaction.atomic
+    def void_and_return_movement(
+        check: Check,
+        *,
+        notes: str = "",
+    ) -> TreasuryMovement:
+        """
+        Like void() but returns the reversal TreasuryMovement instead of the Check.
+        The reversal movement is created with is_pending_registration=True so the
+        caller can create its own JournalEntry (used by payment-return flows that
+        need a custom JE structure).
+        """
+        CheckService._assert_transition(check, Check.Status.VOIDED)
+        from .services import TreasuryService
+
+        if check.direction == Check.Direction.RECEIVED and check.receipt_movement:
+            movement = TreasuryService.create_movement(
+                amount=check.amount,
+                movement_type=TreasuryMovement.Type.OUTBOUND,
+                payment_method=TreasuryMovement.Method.OTHER,
+                from_account=check.portfolio_account,
+                date=timezone.now().date(),
+                invoice=_obj_or_none("billing.Invoice", check.invoice_id),
+                sale_order=_obj_or_none("sales.SaleOrder", check.sale_order_id),
+                partner=check.counterparty,
+                notes=f"Anulación {check.display_id}",
+                is_pending_registration=True,
+            )
+        elif check.direction == Check.Direction.ISSUED and check.issued_check_account:
+            movement = TreasuryService.create_movement(
+                amount=check.amount,
+                movement_type=TreasuryMovement.Type.INBOUND,
+                payment_method=TreasuryMovement.Method.OTHER,
+                to_account=check.issued_check_account,
+                date=timezone.now().date(),
+                partner=check.counterparty,
+                notes=f"Reversa emisión {check.display_id} (anulación)",
+                is_pending_registration=True,
+            )
+        else:
+            raise ValidationError(
+                "No se puede anular el cheque: no tiene movimiento asociado."
+            )
+
+        check.status = Check.Status.VOIDED
+        if notes:
+            check.notes = (check.notes + "\n" + notes).strip()
+        check.save()
+        CheckService._recompute_invoice_status(check)
+        return movement
+
     # ── Cheques propios girados (direction=ISSUED) ───────────────────────
 
     @staticmethod

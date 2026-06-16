@@ -3,6 +3,7 @@ from django.core.exceptions import ValidationError
 from django.utils import timezone
 from django.contrib.contenttypes.models import ContentType
 from treasury.models import TreasuryMovement
+from treasury.check_service import CheckService
 from accounting.models import JournalEntry, JournalItem, AccountingSettings
 from accounting.services import JournalEntryService
 from decimal import Decimal
@@ -90,26 +91,30 @@ class TreasuryReturnService:
                  movement_type = 'INBOUND'
                  to_account = resolved_account
 
-        # 3. Create return movement
-        return_movement = TreasuryMovement.objects.create(
-            movement_type=movement_type,
-            payment_method=payment.payment_method,
-            amount=amount, 
-            reference=f"DEV-{payment.id}",
-            contact=payment.contact,
-            invoice=payment.invoice,
-            sale_order=payment.sale_order,
-            purchase_order=payment.purchase_order,
-            from_account=from_account,
-            to_account=to_account,
-            transaction_number=f"DEV-{payment.transaction_number}" if payment.transaction_number else None,
-            notes=f"Devolución de pago: {reason}",
-            date=return_date or timezone.now().date(),
-            created_by=payment.created_by # Or current user? we lack request.user here. Keep original or None?
-                                         # The original service didn't set created_by explicitly on Payment but Payment might not have had it.
-                                         # TreasuryMovement requires created_by? Not in arguments I edited. But nice to have.
-                                         # Let's leave it blank or same as payment for now if nullable.
-        )
+        # 3. Check if original payment is a Check → route through CheckService
+        from treasury.models import Check
+        check = getattr(payment, 'check_receipt', None)
+        if check:
+            return_movement = CheckService.void_and_return_movement(check, notes=reason)
+            from_account = return_movement.from_account
+            to_account = return_movement.to_account
+        else:
+            # 3. Generic return movement (no check involved)
+            return_movement = TreasuryMovement.objects.create(
+                movement_type=movement_type,
+                payment_method=payment.payment_method,
+                amount=amount,
+                reference=f"DEV-{payment.id}",
+                contact=payment.contact,
+                invoice=payment.invoice,
+                sale_order=payment.sale_order,
+                purchase_order=payment.purchase_order,
+                from_account=from_account,
+                to_account=to_account,
+                transaction_number=f"DEV-{payment.transaction_number}" if payment.transaction_number else None,
+                notes=f"Devolución de pago: {reason}",
+                date=return_date or timezone.now().date(),
+            )
         
         # 4. Create accounting entry (separate reversal entry)
         settings = AccountingSettings.get_solo()

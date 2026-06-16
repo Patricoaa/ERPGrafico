@@ -88,8 +88,12 @@ class TreasuryMovement(models.Model):
 
     class Method(models.TextChoices):
         CASH = 'CASH', _('Efectivo')
-        CARD = 'CARD', _('Tarjeta')
+        CARD = 'CARD', _('Tarjeta (Manual)')
+        DEBIT_CARD = 'DEBIT_CARD', _('Tarjeta Débito Empresa')
+        CREDIT_CARD = 'CREDIT_CARD', _('Tarjeta Crédito Empresa')
+        CARD_TERMINAL = 'CARD_TERMINAL', _('Tarjeta (Terminal de cobro)')
         TRANSFER = 'TRANSFER', _('Transferencia')
+        CHECK = 'CHECK', _('Cheque')
         CREDIT = 'CREDIT', _('Crédito')
         WRITE_OFF = 'WRITE_OFF', _('Castigo de Deuda')
         CREDIT_BALANCE = 'CREDIT_BALANCE', _('Saldo a Favor')
@@ -1622,7 +1626,7 @@ class PaymentMethod(models.Model):
         CARD = 'CARD', _('Tarjeta (Manual)')
         DEBIT_CARD = 'DEBIT_CARD', _('Tarjeta Débito Empresa')
         CREDIT_CARD = 'CREDIT_CARD', _('Tarjeta Crédito Empresa')
-        CARD_TERMINAL = 'CARD_TERMINAL', _('Tarjeta (Terminal POS Integrado)')
+        CARD_TERMINAL = 'CARD_TERMINAL', _('Tarjeta (Terminal de cobro)')
         TRANSFER = 'TRANSFER', _('Transferencia Bancaria')
         CHECK = 'CHECK', _('Cheque')
 

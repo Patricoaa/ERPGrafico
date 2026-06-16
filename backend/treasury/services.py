@@ -9,6 +9,7 @@ from datetime import datetime
 from dateutil.relativedelta import relativedelta
 from decimal import Decimal, ROUND_HALF_UP
 from .models import TreasuryMovement, TreasuryAccount, TerminalBatch, PaymentMethod
+from .check_service import CheckService
 from accounting.models import JournalEntry, JournalItem, AccountingSettings
 from accounting.services import JournalEntryService
 
@@ -214,34 +215,38 @@ class TreasuryService:
         is_sale = allocated is not None and allocated.is_sale_document()
 
         if movement.movement_type == TreasuryMovement.Type.INBOUND:
-             if is_sale:
-                 if movement.payment_method == TreasuryMovement.Method.CASH:
-                     pos_session.total_cash_sales += amount
-                 elif movement.payment_method == TreasuryMovement.Method.CARD:
-                     pos_session.total_card_sales += amount
-                 elif movement.payment_method == TreasuryMovement.Method.TRANSFER:
-                     pos_session.total_transfer_sales += amount
-                 elif movement.payment_method == TreasuryMovement.Method.CREDIT:
-                     pos_session.total_credit_sales += amount
-                 elif movement.payment_method == TreasuryMovement.Method.OTHER:
-                     if 'CHEQUE' in (movement.reference or '').upper() or movement.payment_method_new_id is None:
-                         pos_session.total_check_sales += amount
-                     else:
-                         pos_session.total_other_cash_inflow += amount
-             else:
-                 pos_session.total_other_cash_inflow += amount
+            if is_sale:
+                if movement.payment_method in (
+                    TreasuryMovement.Method.CARD,
+                    TreasuryMovement.Method.DEBIT_CARD,
+                    TreasuryMovement.Method.CREDIT_CARD,
+                    TreasuryMovement.Method.CARD_TERMINAL,
+                ):
+                    pos_session.total_card_sales += amount
+                elif movement.payment_method == TreasuryMovement.Method.CASH:
+                    pos_session.total_cash_sales += amount
+                elif movement.payment_method == TreasuryMovement.Method.CHECK:
+                    pos_session.total_check_sales += amount
+                elif movement.payment_method == TreasuryMovement.Method.TRANSFER:
+                    pos_session.total_transfer_sales += amount
+                elif movement.payment_method == TreasuryMovement.Method.CREDIT:
+                    pos_session.total_credit_sales += amount
+                else:
+                    pos_session.total_other_cash_inflow += amount
+            else:
+                pos_session.total_other_cash_inflow += amount
 
         elif movement.movement_type == TreasuryMovement.Type.OUTBOUND:
-             if not is_sale:
-                 pos_session.total_other_cash_outflow += amount
+            if not is_sale:
+                pos_session.total_other_cash_outflow += amount
         
         elif movement.movement_type == TreasuryMovement.Type.TRANSFER:
-             session_treasury_id = pos_session.treasury_account_id or (pos_session.terminal.default_treasury_account_id if pos_session.terminal else None)
-             if session_treasury_id:
-                 if movement.to_account_id == session_treasury_id:
-                     pos_session.total_other_cash_inflow += amount
-                 elif movement.from_account_id == session_treasury_id:
-                     pos_session.total_other_cash_outflow += amount
+            session_treasury_id = pos_session.treasury_account_id or (pos_session.terminal.default_treasury_account_id if pos_session.terminal else None)
+            if session_treasury_id:
+                if movement.to_account_id == session_treasury_id:
+                    pos_session.total_other_cash_inflow += amount
+                elif movement.from_account_id == session_treasury_id:
+                    pos_session.total_other_cash_outflow += amount
 
         pos_session.save()
 
@@ -719,36 +724,47 @@ class TreasuryService:
             except TreasuryAccount.DoesNotExist:
                 raise ValidationError("La cuenta de tesorería seleccionada no existe.")
 
-            # Determine return direction
-            if movement.sale_order:
-                return_type = 'OUTBOUND'
-                from_account = treasury_acc
-                to_account = None
-            elif movement.purchase_order:
-                return_type = 'INBOUND'
-                from_account = None
-                to_account = treasury_acc
-            else:
-                # Fallback: invert original direction
-                return_type = 'OUTBOUND' if movement.movement_type == 'INBOUND' else 'INBOUND'
-                from_account = treasury_acc if return_type == 'OUTBOUND' else None
-                to_account = treasury_acc if return_type == 'INBOUND' else None
+            # Check if original movement is a Check → route through CheckService
+            from treasury.models import Check
+            check = getattr(movement, 'check_receipt', None)
 
-            return_movement = TreasuryMovement.objects.create(
-                movement_type=return_type,
-                payment_method=movement.payment_method,
-                amount=refund_amount,
-                reference=f"DEV-{movement.id}",
-                contact=movement.contact,
-                invoice=movement.invoice,
-                sale_order=movement.sale_order,
-                purchase_order=movement.purchase_order,
-                from_account=from_account,
-                to_account=to_account,
-                payment_method_new=movement.payment_method_new,
-                date=timezone.now().date(),
-                notes=f"Devolución por anulación: {reason}",
-            )
+            if check:
+                return_movement = CheckService.void_and_return_movement(
+                    check, notes=reason,
+                )
+                from_account = return_movement.from_account
+                to_account = return_movement.to_account
+            else:
+                # Determine return direction (non-check)
+                if movement.sale_order:
+                    return_type = 'OUTBOUND'
+                    from_account = treasury_acc
+                    to_account = None
+                elif movement.purchase_order:
+                    return_type = 'INBOUND'
+                    from_account = None
+                    to_account = treasury_acc
+                else:
+                    # Fallback: invert original direction
+                    return_type = 'OUTBOUND' if movement.movement_type == 'INBOUND' else 'INBOUND'
+                    from_account = treasury_acc if return_type == 'OUTBOUND' else None
+                    to_account = treasury_acc if return_type == 'INBOUND' else None
+
+                return_movement = TreasuryMovement.objects.create(
+                    movement_type=return_type,
+                    payment_method=movement.payment_method,
+                    amount=refund_amount,
+                    reference=f"DEV-{movement.id}",
+                    contact=movement.contact,
+                    invoice=movement.invoice,
+                    sale_order=movement.sale_order,
+                    purchase_order=movement.purchase_order,
+                    from_account=from_account,
+                    to_account=to_account,
+                    payment_method_new=movement.payment_method_new,
+                    date=timezone.now().date(),
+                    notes=f"Devolución por anulación: {reason}",
+                )
 
             # ── Journal entry for the return movement ──────────────────
             settings = AccountingSettings.get_solo()
