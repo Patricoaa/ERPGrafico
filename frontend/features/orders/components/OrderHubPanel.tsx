@@ -29,6 +29,7 @@ export interface OrderHubPanelProps {
     onClose?: () => void
     onActionSuccess?: () => void
     onEdit?: (orderId: number) => void
+    onOpenDetail?: (docType: string, docId: number | string) => void
     posSessionId?: number | null
     showHeader?: boolean
 }
@@ -40,6 +41,7 @@ export function OrderHubPanel({
     onClose,
     onActionSuccess,
     onEdit,
+    onOpenDetail,
     posSessionId = null,
     showHeader = false,
 }: OrderHubPanelProps) {
@@ -54,6 +56,10 @@ export function OrderHubPanel({
     const openDetails = (docType: string, docId: number | string) => {
         if (docType === 'work_order') {
             openEntity('production.workorder', Number(docId))
+            return
+        }
+        if (onOpenDetail) {
+            onOpenDetail(docType, docId)
             return
         }
         setDetailsModal({ open: true, type: docType, id: docId })
@@ -166,13 +172,15 @@ export function OrderHubPanel({
                 </ScrollArea>
 
                 {/* Shared Modal for viewing Details */}
-                <LazyDrawer
-                    type={detailsModal.type}
-                    id={Number(detailsModal.id)}
-                    open={detailsModal.open}
-                    onOpenChange={(open) => !open && closeDetails()}
-                    saleOrderId={detailsModal.type === 'sale_delivery' ? activeDoc?.id : undefined}
-                />
+                {!onOpenDetail && (
+                    <LazyDrawer
+                        type={detailsModal.type}
+                        id={Number(detailsModal.id)}
+                        open={detailsModal.open}
+                        onOpenChange={(open) => !open && closeDetails()}
+                        saleOrderId={detailsModal.type === 'sale_delivery' ? activeDoc?.id : undefined}
+                    />
+                )}
             </div>
         </TooltipProvider>
     )
