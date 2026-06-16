@@ -1101,7 +1101,13 @@ class SaleOrderService(DocumentService):
             if movement.status == TreasuryMovement.MovementStatus.DRAFT and not je_posted:
                 TreasuryService.cancel_movement(movement, user=user, reason=reason)
             else:
-                TreasuryService.annul_movement(movement, user=user, reason=reason)
+                TreasuryService.annul_movement(
+                    movement, user=user, reason=reason,
+                    treasury_account_id=(
+                        movement.to_account_id if movement.movement_type == 'INBOUND'
+                        else movement.from_account_id
+                    ),
+                )
 
         # 4. Handle Work Orders — annul with stage-limit/consumption validations.
         # Si una OT superó la etapa límite, ValidationError aborta toda la anulación.

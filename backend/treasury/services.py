@@ -745,9 +745,65 @@ class TreasuryService:
                 purchase_order=movement.purchase_order,
                 from_account=from_account,
                 to_account=to_account,
+                payment_method_new=movement.payment_method_new,
                 date=timezone.now().date(),
                 notes=f"Devolución por anulación: {reason}",
             )
+
+            # ── Journal entry for the return movement ──────────────────
+            settings = AccountingSettings.get_solo()
+
+            if movement.sale_order:
+                partner_account = movement.contact.account_receivable or settings.default_receivable_account
+                treasury_acc_ref = from_account
+                entry_desc = f"Devolución pago cliente - {movement.contact.name if movement.contact else ''}"
+            elif movement.purchase_order:
+                partner_account = movement.contact.account_payable or settings.default_payable_account
+                treasury_acc_ref = to_account
+                entry_desc = f"Devolución pago proveedor - {movement.contact.name if movement.contact else ''}"
+
+            if movement.sale_order or movement.purchase_order:
+                entry = JournalEntry.objects.create(
+                    date=return_movement.date,
+                    description=entry_desc,
+                    reference=f"DEV-JE-{movement.id}",
+                    status=JournalEntry.State.DRAFT,
+                    source_content_type=ContentType.objects.get_for_model(TreasuryMovement),
+                    source_object_id=return_movement.id,
+                )
+
+                if movement.sale_order:
+                    # Debit: Receivable, Credit: Treasury
+                    JournalItem.objects.create(
+                        entry=entry, account=partner_account,
+                        debit=refund_amount, credit=0,
+                        partner=movement.contact,
+                        label=f"Devolución pago - {reason}",
+                    )
+                    JournalItem.objects.create(
+                        entry=entry,
+                        account=treasury_acc_ref.account if hasattr(treasury_acc_ref, 'account') else treasury_acc_ref,
+                        debit=0, credit=refund_amount,
+                        label="Salida efectivo - Devolución",
+                    )
+                else:
+                    # Debit: Treasury, Credit: Payable
+                    JournalItem.objects.create(
+                        entry=entry,
+                        account=treasury_acc_ref.account if hasattr(treasury_acc_ref, 'account') else treasury_acc_ref,
+                        debit=refund_amount, credit=0,
+                        label="Entrada efectivo - Devolución",
+                    )
+                    JournalItem.objects.create(
+                        entry=entry, account=partner_account,
+                        debit=0, credit=refund_amount,
+                        partner=movement.contact,
+                        label=f"Devolución pago - {reason}",
+                    )
+
+                JournalEntryService.post_entry(entry)
+                return_movement.journal_entry = entry
+                return_movement.save()
 
             # Update pending_amount
             if movement.sale_order:
