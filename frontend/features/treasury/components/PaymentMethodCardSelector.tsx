@@ -14,7 +14,7 @@ import { LabeledInput, LabeledSelect, MoneyDisplay } from "@/components/shared"
 import { formatMoney } from "@/lib/money"
 
 export interface PaymentData {
-    method: 'CASH' | 'CARD' | 'CARD_TERMINAL' | 'CREDIT_CARD' | 'TRANSFER' | 'CHECK' | 'CREDIT_BALANCE' | null
+    method: 'CASH' | 'CARD' | 'CARD_TERMINAL' | 'CREDIT_CARD' | 'DEBIT_CARD' | 'TRANSFER' | 'CHECK' | 'CREDIT_BALANCE' | null
     amount: number
     treasuryAccountId: string | null
     paymentMethodId: number | null
@@ -92,6 +92,8 @@ export function PaymentMethodCardSelector({
                 return allowedMethods.some(m => m.method_type === 'CARD')
             case 'CREDIT_CARD':
                 return allowedMethods.some(m => m.method_type === 'CREDIT_CARD')
+            case 'DEBIT_CARD':
+                return allowedMethods.some(m => m.method_type === 'DEBIT_CARD')
             case 'CARD_TERMINAL':
                 return allowedMethods.some(m => m.method_type === 'CARD_TERMINAL' && m.is_terminal_integration)
             case 'TRANSFER':
@@ -157,6 +159,7 @@ export function PaymentMethodCardSelector({
             if (paymentData.method === 'CASH') return m.method_type === 'CASH'
             if (paymentData.method === 'CARD') return m.method_type === 'CARD'
             if (paymentData.method === 'CREDIT_CARD') return m.method_type === 'CREDIT_CARD'
+            if (paymentData.method === 'DEBIT_CARD') return m.method_type === 'DEBIT_CARD'
             if (paymentData.method === 'CARD_TERMINAL') return m.method_type === 'CARD_TERMINAL'
             if (paymentData.method === 'TRANSFER') return m.method_type === 'TRANSFER'
             if (paymentData.method === 'CHECK') return m.method_type === 'CHECK'
@@ -211,6 +214,13 @@ export function PaymentMethodCardSelector({
                 icon: CreditCard,
                 color: 'text-primary',
                 isAllowed: isMethodAllowed('CREDIT_CARD')
+            },
+            {
+                id: 'DEBIT_CARD',
+                label: 'T. Débito',
+                icon: CreditCard,
+                color: 'text-primary',
+                isAllowed: isMethodAllowed('DEBIT_CARD')
             },
             {
                 id: 'CARD_TERMINAL',
@@ -371,6 +381,12 @@ export function PaymentMethodCardSelector({
                                                 />
                                         )}
 
+                                        {m.id === 'DEBIT_CARD' && (
+                                            <p className="text-xs text-muted-foreground">
+                                                Débito directo desde la cuenta vinculada.
+                                            </p>
+                                        )}
+
                                         {m.id === 'CHECK' && (
                                             <>
                                                 <LabeledSelect
@@ -394,9 +410,9 @@ export function PaymentMethodCardSelector({
                                             </>
                                         )}
 
-                                        {(paymentData.method === 'CREDIT_CARD' || methodsForType.filter(m => m.treasury_account != null).length > 1) && (
+                                        {(paymentData.method === 'CREDIT_CARD' || paymentData.method === 'DEBIT_CARD' || methodsForType.filter(m => m.treasury_account != null).length > 1) && (
                                             <LabeledSelect
-                                                label={paymentData.method === 'TRANSFER' ? 'Banco / Cuenta' : paymentData.method === 'CREDIT_CARD' ? 'Tarjeta de Crédito' : 'Cuenta'}
+                                                label={paymentData.method === 'TRANSFER' ? 'Banco / Cuenta' : paymentData.method === 'CREDIT_CARD' ? 'Tarjeta de Crédito' : paymentData.method === 'DEBIT_CARD' ? 'Tarjeta Débito' : 'Cuenta'}
                                                 value={paymentData.treasuryAccountId || ""}
                                                 onChange={(val) => {
                                                     const selectedMethod = methodsForType.find(m => String(m.treasury_account) === val)
