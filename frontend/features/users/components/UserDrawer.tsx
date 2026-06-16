@@ -9,6 +9,7 @@ import { UserInitialData } from "@/types/forms"
 import * as z from "zod"
 import { toast } from "sonner"
 import { usersApi } from "../api/usersApi"
+import { useSingleUser } from "../hooks/useUserSearch"
 import { Button } from "@/components/ui/button"
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
 import { Plus, User, ShieldCheck, Printer } from "lucide-react"
@@ -58,9 +59,13 @@ export function UserDrawer({ auditSidebar, initialData, onSuccess, trigger, open
     const printRef = useRef<HTMLDivElement>(null)
     const handlePrint = useReactToPrint({ contentRef: printRef })
 
-    // Helper to parse groups from initialData
+    const userId = initialData?.id ?? null
+    const { user: apiUser, loading: userLoading } = useSingleUser(userId)
+
+    // Helper to parse groups from initialData or API data
     const parsedInitialValues = useMemo(() => {
-        const rawGroups = initialData?.groups || []
+        const source = apiUser ?? initialData ?? {}
+        const rawGroups = source.groups || []
         const groups: string[] = rawGroups.map((g) => (typeof g === 'string' ? g : g.name))
         const systemRoles = ['ADMIN', 'MANAGER', 'OPERATOR', 'READ_ONLY']
 
@@ -68,14 +73,14 @@ export function UserDrawer({ auditSidebar, initialData, onSuccess, trigger, open
         const functionalGroups = groups.filter((g) => !systemRoles.includes(g))
 
         return {
-            username: initialData?.username || "",
+            username: initialData?.username || apiUser?.username || "",
             primary_role: primaryRole,
             functional_groups: functionalGroups,
-            contact: Number(initialData?.contact || 0),
+            contact: Number(source.contact || 0),
             password: "",
-            is_active: initialData?.is_active ?? true,
+            is_active: source.is_active ?? true,
         }
-    }, [initialData])
+    }, [apiUser, initialData])
 
     const form = useForm<UserFormValues>({
         resolver: zodResolver(userSchema),
@@ -113,7 +118,7 @@ export function UserDrawer({ auditSidebar, initialData, onSuccess, trigger, open
         fetchDisplayData()
     }, [open])
 
-    const isFetchingInitialData = open && isFetchingDeps
+    const isFetchingInitialData = open && (isFetchingDeps || userLoading)
 
     // Sync form values with initialData when modal opens or initialData changes
     const lastResetId = useRef<string | number | undefined>(undefined)
@@ -208,8 +213,8 @@ export function UserDrawer({ auditSidebar, initialData, onSuccess, trigger, open
     const headerSlot = (
         <EntityHeader
             entityLabel="core.user"
-            data={initialData}
-            action={initialData ? 'edit' : 'create'}
+            data={apiUser ?? initialData}
+            action={isView ? 'view' : initialData ? 'edit' : 'create'}
             className="border-none px-6 py-4 bg-muted/5 print:hidden"
         />
     )
