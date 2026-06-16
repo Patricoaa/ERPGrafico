@@ -36,6 +36,7 @@ export interface SessionControlHandle {
     showMoveDialog: () => void
     requestCloseSession: () => void
     disconnectSharedSession: () => void
+    openSessionDialog: () => void
 }
 
 export const SessionControl = forwardRef<SessionControlHandle, SessionControlProps>(({ onSessionChange, hideSessionInfo = false, session }, ref) => {
@@ -46,8 +47,11 @@ export const SessionControl = forwardRef<SessionControlHandle, SessionControlPro
     const [moveDialogOpen, setMoveDialogOpen] = useState(false)
     const [reportData, setReportData] = useState<POSReportData | null>(null)
     const [reportType, setReportType] = useState<"X" | "Z">("X")
+    const [lastAudit, setLastAudit] = useState<POSSessionAudit | null>(null)
     const [terminals, setTerminals] = useState<POSTerminal[]>([])
     const [availableSessions, setAvailableSessions] = useState<POSSession[]>([])
+    const [dataLoading, setDataLoading] = useState(false)
+    const [dataError, setDataError] = useState(false)
 
     // Open session form state
     const [selectedTerminalId, setSelectedTerminalId] = useState<string>("")
@@ -61,6 +65,7 @@ export const SessionControl = forwardRef<SessionControlHandle, SessionControlPro
     const [openingSelectedAccount, setOpeningSelectedAccount] = useState<TreasuryAccount | null>(null)
     const [openingInsufficientFunds, setOpeningInsufficientFunds] = useState(false)
     const [justifySearchTerm, setJustifySearchTerm] = useState("")
+    const [openingJustifyOpen, setOpeningJustifyOpen] = useState(false)
 
     const selectedTerminal = useMemo(() => terminals.find(t => t.id === parseInt(selectedTerminalId)), [terminals, selectedTerminalId])
     const expectedBalance = selectedTerminal?.default_treasury_account_balance || 0
@@ -83,12 +88,20 @@ export const SessionControl = forwardRef<SessionControlHandle, SessionControlPro
     // 3: Initial Fund (Numpad)
     // 4: Confirmation
 
+    const loadInitialData = () => {
+        setDataLoading(true)
+        setDataError(false)
+        Promise.all([
+            fetchTerminals(),
+            fetchAvailableSessions(),
+        ]).finally(() => setDataLoading(false))
+    }
+
     useEffect(() => {
         if (openDialogOpen) {
             requestAnimationFrame(() => {
                 setWizardStep(1)
-                fetchAvailableSessions()
-                fetchTerminals()
+                loadInitialData()
                 // Fetch accounting settings for justification logic
                 posApi.getAccountingSettings()
                     .then(data => requestAnimationFrame(() => setAccountingSettings(data)))
@@ -102,33 +115,66 @@ export const SessionControl = forwardRef<SessionControlHandle, SessionControlPro
 
     // Fetch selected account for transfer validation during opening
     useEffect(() => {
-        if (openingJustifyTargetId && openingJustifyReason === 'TRANSFER' && selectedTerminalId) {
-            posApi.getTreasuryAccount(Number(openingJustifyTargetId))
-                .then((data: TreasuryAccount) => {
-                    requestAnimationFrame(() => {
-                        setOpeningSelectedAccount(data)
-                        if (openingDiff > 0 && data.current_balance !== undefined) {
-                            const needed = Math.abs(openingDiff)
-                            setOpeningInsufficientFunds(data.current_balance < needed)
-                        } else {
+        if (openingJustifyReason === 'TRANSFER' && selectedTerminalId) {
+            const accountId = openingDiff > 0
+                ? openingJustifyTargetId
+                : fundSourceId
+
+            if (openingDiff < 0 && fundSourceId) {
+                // Deficit: cash went TO target; check if POS treasury had enough to send
+                posApi.getTreasuryAccount(Number(fundSourceId))
+                    .then((data: TreasuryAccount) => {
+                        requestAnimationFrame(() => {
+                            setOpeningSelectedAccount(data)
+                            if (data.current_balance !== undefined) {
+                                const needed = Math.abs(openingDiff)
+                                setOpeningInsufficientFunds(data.current_balance < needed)
+                            } else {
+                                setOpeningInsufficientFunds(false)
+                            }
+                        })
+                    })
+                    .catch(err => {
+                        console.error("Failed to load treasury account", err)
+                        requestAnimationFrame(() => {
+                            setOpeningSelectedAccount(null)
                             setOpeningInsufficientFunds(false)
-                        }
+                        })
                     })
-                })
-                .catch(err => {
-                    console.error("Failed to load account", err)
-                    requestAnimationFrame(() => {
-                        setOpeningSelectedAccount(null)
-                        setOpeningInsufficientFunds(false)
+            } else if (openingDiff > 0 && openingJustifyTargetId) {
+                // Surplus: cash came FROM target; check if that account had enough
+                posApi.getTreasuryAccount(Number(openingJustifyTargetId))
+                    .then((data: TreasuryAccount) => {
+                        requestAnimationFrame(() => {
+                            setOpeningSelectedAccount(data)
+                            if (data.current_balance !== undefined) {
+                                const needed = Math.abs(openingDiff)
+                                setOpeningInsufficientFunds(data.current_balance < needed)
+                            } else {
+                                setOpeningInsufficientFunds(false)
+                            }
+                        })
                     })
+                    .catch(err => {
+                        console.error("Failed to load account", err)
+                        requestAnimationFrame(() => {
+                            setOpeningSelectedAccount(null)
+                            setOpeningInsufficientFunds(false)
+                        })
+                    })
+            } else {
+                requestAnimationFrame(() => {
+                    setOpeningSelectedAccount(null)
+                    setOpeningInsufficientFunds(false)
                 })
+            }
         } else {
             requestAnimationFrame(() => {
                 setOpeningSelectedAccount(null)
                 setOpeningInsufficientFunds(false)
             })
         }
-    }, [openingJustifyTargetId, openingJustifyReason, selectedTerminalId, openingDiff])
+    }, [openingJustifyTargetId, openingJustifyReason, selectedTerminalId, openingDiff, fundSourceId])
 
     const handleRequestClose = () => {
         setCloseDialogOpen(true)
@@ -152,7 +198,8 @@ export const SessionControl = forwardRef<SessionControlHandle, SessionControlPro
         },
         showMoveDialog: () => setMoveDialogOpen(true),
         requestCloseSession: handleRequestClose,
-        disconnectSharedSession: handleDisconnect
+        disconnectSharedSession: handleDisconnect,
+        openSessionDialog: () => setOpenDialogOpen(true)
     }))
     // Fetch current session on mount (uncontrolled mode fallback)
     useEffect(() => {
@@ -179,8 +226,11 @@ export const SessionControl = forwardRef<SessionControlHandle, SessionControlPro
         const handleKeyDown = (e: KeyboardEvent) => {
             if (e.key === "Enter" && !e.shiftKey && !e.ctrlKey && !e.metaKey) {
                 // Determine which action to trigger based on open dialogs
-                if (openDialogOpen && selectedTerminalId && wizardStep === 4) {
-                    if (!(openingDiff !== 0 && !openingJustifyReason)) {
+                if (openDialogOpen && selectedTerminalId && wizardStep === 4 && !submitting) {
+                    const canSubmit = !(openingDiff !== 0 && !openingJustifyReason)
+                        && !(openingJustifyReason === 'TRANSFER' && !openingJustifyTargetId)
+                        && !openingInsufficientFunds
+                    if (canSubmit) {
                         handleOpenSession()
                     }
                 }
@@ -190,7 +240,7 @@ export const SessionControl = forwardRef<SessionControlHandle, SessionControlPro
 
         window.addEventListener("keydown", handleKeyDown)
         return () => window.removeEventListener("keydown", handleKeyDown)
-    }, [openDialogOpen, moveDialogOpen, selectedTerminalId, openingBalance, openingJustifyReason, terminals, wizardStep])
+    }, [openDialogOpen, moveDialogOpen, selectedTerminalId, openingBalance, openingJustifyReason, terminals, wizardStep, submitting, openingInsufficientFunds, openingJustifyTargetId])
 
     const fetchSharedSession = async (id: number) => {
         try {
@@ -222,6 +272,7 @@ export const SessionControl = forwardRef<SessionControlHandle, SessionControlPro
             }
         } catch (error) {
             console.error("Error fetching current session:", error)
+            toast.error("Error al verificar sesión activa")
         } finally {
             setLoading(false)
         }
@@ -245,17 +296,9 @@ export const SessionControl = forwardRef<SessionControlHandle, SessionControlPro
             setAvailableSessions(results)
         } catch (error) {
             console.error("Error fetching available sessions:", error)
+            toast.error("Error al cargar sesiones activas")
         }
     }
-
-    useEffect(() => {
-        if (openDialogOpen) {
-            requestAnimationFrame(() => {
-                fetchAvailableSessions()
-                fetchTerminals()
-            })
-        }
-    }, [openDialogOpen])
 
     // Autofill Fund Source from Terminal Default (Keep balance at 0 as requested)
     useEffect(() => {
@@ -332,17 +375,20 @@ export const SessionControl = forwardRef<SessionControlHandle, SessionControlPro
     const handleSessionCloseSuccess = async (audit: POSSessionAudit) => {
         if (!session) return
 
+        setLastAudit(audit)
+
+        localStorage.removeItem('shared_pos_session_id')
+        onSessionChange?.(null)
+        setIsSharedSession(false)
+
         try {
             const summaryData = await posApi.getSessionSummary(session.id)
             setReportData(summaryData)
             setReportType("Z")
             setReportDialogOpen(true)
-
-            localStorage.removeItem('shared_pos_session_id')
-            onSessionChange?.(null)
-            setIsSharedSession(false)
         } catch (error) {
             console.error("Error fetching Z report:", error)
+            toast.error("Sesión cerrada correctamente, pero no se pudo cargar el reporte Z")
         }
     }
 
@@ -399,6 +445,19 @@ export const SessionControl = forwardRef<SessionControlHandle, SessionControlPro
     const renderWizardStep = () => {
         switch (wizardStep) {
             case 1: // Context / Actions
+                if (dataLoading) {
+                    return (
+                        <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-300">
+                            <div className="text-center space-y-2 mb-6">
+                                <h3 className="text-lg font-bold">Bienvenido a la terminal de POS</h3>
+                            </div>
+                            <div className="flex items-center justify-center py-12">
+                                <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                                <span className="ml-3 text-sm text-muted-foreground">Cargando terminales...</span>
+                            </div>
+                        </div>
+                    )
+                }
                 return (
                     <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-300">
                         <div className="text-center space-y-2 mb-6">
@@ -454,13 +513,34 @@ export const SessionControl = forwardRef<SessionControlHandle, SessionControlPro
                 )
 
             case 2: // Terminal Selection
+                const freeTerminals = terminals.filter(t => !availableSessions.some(s => s.terminal === t.id))
+                if (freeTerminals.length === 0 && !dataLoading) {
+                    return (
+                        <div className="space-y-4 animate-in fade-in slide-in-from-right-4 duration-300">
+                            <div className="text-center mb-4">
+                                <h3 className="font-bold">Seleccione Terminal POS</h3>
+                            </div>
+                            <div className="flex flex-col items-center justify-center py-8 gap-3 text-center">
+                                <AlertTriangle className="h-8 w-8 text-muted-foreground" />
+                                <p className="text-sm text-muted-foreground">No hay terminales disponibles</p>
+                                <p className="text-xs text-muted-foreground">
+                                    Todas las terminales están ocupadas o no se pudieron cargar.
+                                </p>
+                                <Button variant="outline" size="sm" onClick={loadInitialData}>
+                                    Reintentar
+                                </Button>
+                            </div>
+                            <Button variant="ghost" onClick={handlePrevStep} className="w-full">Volver</Button>
+                        </div>
+                    )
+                }
                 return (
                     <div className="space-y-4 animate-in fade-in slide-in-from-right-4 duration-300">
                         <div className="text-center mb-4">
                             <h3 className="font-bold">Seleccione Terminal POS</h3>
                         </div>
                         <div className="grid gap-2 max-h-[300px] overflow-y-auto">
-                            {terminals.filter(t => !availableSessions.some(s => s.terminal === t.id)).map(t => (
+                            {freeTerminals.map(t => (
                                 <Button
                                     key={t.id}
                                     variant={selectedTerminalId === t.id.toString() ? "default" : "outline"}
@@ -573,7 +653,7 @@ export const SessionControl = forwardRef<SessionControlHandle, SessionControlPro
                                     </div>
                                     <div className="space-y-1">
                                         <Label className="text-xs">Motivo (Requerido)</Label>
-                                        <Popover onOpenChange={(open) => { if (!open) setJustifySearchTerm("") }}>
+                                        <Popover open={openingJustifyOpen} onOpenChange={(open) => { setOpeningJustifyOpen(open); if (!open) setJustifySearchTerm("") }}>
                                             <PopoverTrigger asChild>
                                                 <Button
                                                     variant="outline"
@@ -608,7 +688,7 @@ export const SessionControl = forwardRef<SessionControlHandle, SessionControlPro
                                                                     onClick={() => {
                                                                         setOpeningJustifyReason(opt.value)
                                                                         setJustifySearchTerm("")
-                                                                        document.body.click()
+                                                                        setOpeningJustifyOpen(false)
                                                                     }}
                                                                 >
                                                                     <span>{opt.label}</span>
@@ -737,7 +817,7 @@ export const SessionControl = forwardRef<SessionControlHandle, SessionControlPro
                     open={openDialogOpen}
                     onOpenChange={setOpenDialogOpen}
                     size="lg"
-                    title="Control de Sesión de Caja"
+                    title={wizardStep === 1 ? "Nueva Sesión" : wizardStep === 2 ? "Seleccionar Terminal" : wizardStep === 3 ? "Fondo Inicial" : wizardStep === 4 ? "Confirmar Apertura" : wizardStep === 10 ? "Unirse a Sesión" : "Control de Sesión"}
                 >
                     <div className="py-2">
                         {renderWizardStep()}
@@ -776,7 +856,7 @@ export const SessionControl = forwardRef<SessionControlHandle, SessionControlPro
 
             {reportDialogOpen && (
                 <div className="fixed inset-0 z-[100] bg-overlay/50 flex items-center justify-center p-4 animate-in fade-in duration-200 print:hidden text-foreground">
-                    <div className="w-full max-w-sm animate-in zoom-in-95 duration-200">
+                    <div className="w-full max-w-sm animate-in zoom-in-95 duration-200 space-y-3">
                         {reportData && (
                             <POSReport
                                 data={reportData}
@@ -784,6 +864,25 @@ export const SessionControl = forwardRef<SessionControlHandle, SessionControlPro
                                 title={reportType === 'Z' ? 'Informe de Cierre (Z)' : 'Informe Parcial (X)'}
                                 onClose={() => setReportDialogOpen(false)}
                             />
+                        )}
+                        {lastAudit && reportType === 'Z' && (
+                            <div className="bg-card border rounded-md p-4 space-y-2 shadow-sm text-sm">
+                                <div className="font-bold text-xs uppercase text-muted-foreground">Resultado del Conteo</div>
+                                <div className="flex justify-between">
+                                    <span>Esperado:</span>
+                                    <span className="font-mono">{formatCurrency(Number(lastAudit.expected_amount))}</span>
+                                </div>
+                                <div className="flex justify-between">
+                                    <span>Real:</span>
+                                    <span className="font-mono">{formatCurrency(Number(lastAudit.actual_amount))}</span>
+                                </div>
+                                <div className="flex justify-between font-bold border-t pt-2">
+                                    <span>Diferencia:</span>
+                                    <span className={cn("font-mono", Number(lastAudit.difference) !== 0 ? "text-warning" : "text-success")}>
+                                        {formatCurrency(Number(lastAudit.difference))}
+                                    </span>
+                                </div>
+                            </div>
                         )}
                     </div>
                 </div>

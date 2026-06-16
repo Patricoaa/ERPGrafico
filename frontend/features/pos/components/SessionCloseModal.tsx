@@ -45,6 +45,7 @@ export function SessionCloseModal({
     const [selectedAccount, setSelectedAccount] = useState<TreasuryAccount | null>(null)
     const [insufficientFunds, setInsufficientFunds] = useState(false)
     const [justifySearchTerm, setJustifySearchTerm] = useState("")
+    const [justifyOpen, setJustifyOpen] = useState(false)
 
     // Sync withdrawalAmount with actualCash by default
     useEffect(() => {
@@ -54,6 +55,7 @@ export function SessionCloseModal({
     const [step, setStep] = useState(1)
 
     const [accountingSettings, setAccountingSettings] = useState<AccountingSettings | null>(null)
+    const [settingsLoading, setSettingsLoading] = useState(false)
 
     // Derived values for validation and display
     const actual = parseFloat(actualCash) || 0
@@ -81,24 +83,32 @@ export function SessionCloseModal({
     const [fullReportData, setFullReportData] = useState<POSReportData | null>(null)
     useEffect(() => {
         if (open && session) {
+            let cancelled = false
             requestAnimationFrame(() => {
+                if (cancelled) return
+                setSettingsLoading(true)
                 posApi.getAccountingSettings()
-                    .then(data => requestAnimationFrame(() => setAccountingSettings(data)))
-                    .catch(err => console.error("Failed to load accounting settings", err))
+                    .then(data => { if (!cancelled) requestAnimationFrame(() => setAccountingSettings(data)) })
+                    .catch(err => { if (!cancelled) console.error("Failed to load accounting settings", err) })
+                    .finally(() => { if (!cancelled) requestAnimationFrame(() => setSettingsLoading(false)) })
 
                 posApi.getSessionSummary(session.id)
-                    .then(data => requestAnimationFrame(() => setFullReportData(data)))
-                    .catch(err => console.error("Failed to load sumary", err))
+                    .then(data => { if (!cancelled) requestAnimationFrame(() => setFullReportData(data)) })
+                    .catch(err => { if (!cancelled) console.error("Failed to load sumary", err) })
             })
+            return () => { cancelled = true }
         }
     }, [open, session])
 
     // Fetch selected account details when justifyTargetId changes
     useEffect(() => {
+        let cancelled = false
         if (justifyTargetId && justifyReason === 'TRANSFER') {
             posApi.getTreasuryAccount(Number(justifyTargetId))
                 .then((data: TreasuryAccount) => {
+                    if (cancelled) return
                     requestAnimationFrame(() => {
+                        if (cancelled) return
                         setSelectedAccount(data)
                         if (diff > 0 && data.current_balance !== undefined) {
                             const needed = Math.abs(diff)
@@ -109,31 +119,35 @@ export function SessionCloseModal({
                     })
                 })
                 .catch(err => {
+                    if (cancelled) return
                     console.error("Failed to load account details", err)
                     requestAnimationFrame(() => {
+                        if (cancelled) return
                         setSelectedAccount(null)
                         setInsufficientFunds(false)
                     })
                 })
         } else {
             requestAnimationFrame(() => {
+                if (cancelled) return
                 setSelectedAccount(null)
                 setInsufficientFunds(false)
             })
         }
+        return () => { cancelled = true }
     }, [justifyTargetId, justifyReason, diff])
 
     const handleNext = () => setStep(p => p + 1)
     const handlePrev = () => setStep(p => p - 1)
 
-    const handleCloseSession = async () => {
+    const handleCloseSession = async (overrides?: { withdrawal_amount?: number }) => {
         if (!session) return
 
         setSubmitting(true)
         try {
             const closeData = await posApi.closeSession(session.id, {
                 actual_cash: parseFloat(actualCash) || 0,
-                withdrawal_amount: parseFloat(withdrawalAmount) || 0,
+                withdrawal_amount: overrides?.withdrawal_amount ?? (parseFloat(withdrawalAmount) || 0),
                 notes: closeNotes,
                 cash_destination_id: cashDestinationId,
                 justify_reason: justifyReason || undefined,
@@ -268,52 +282,66 @@ export function SessionCloseModal({
                                 </div>
                                 <div className="space-y-1">
                                     <Label className="text-xs">Motivo (Requerido)</Label>
-                                    <Popover onOpenChange={(open) => { if (!open) setJustifySearchTerm("") }}>
+                                    <Popover open={justifyOpen} onOpenChange={(open) => { setJustifyOpen(open); if (!open) setJustifySearchTerm("") }}>
                                         <PopoverTrigger asChild>
                                             <Button
                                                 variant="outline"
                                                 role="combobox"
                                                 className="w-full justify-between h-9 bg-background font-normal"
+                                                disabled={settingsLoading}
                                             >
-                                                {selectedLabel || "Seleccione motivo..."}
+                                                {settingsLoading ? (
+                                                    <><Loader2 className="h-4 w-4 animate-spin mr-2" />Cargando...</>
+                                                ) : (
+                                                    <>{selectedLabel || "Seleccione motivo..."}</>
+                                                )}
                                                 <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                                             </Button>
                                         </PopoverTrigger>
                                         <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0">
                                             <div className="p-2">
-                                                <div className="flex items-center px-3 border rounded-md mb-2 bg-background">
-                                                    <Search className="mr-2 h-4 w-4 shrink-0 opacity-50" />
-                                                    <input
-                                                        className="flex h-10 w-full rounded-md bg-transparent py-3 text-sm outline-none placeholder:text-muted-foreground"
-                                                        placeholder="Buscar motivo..."
-                                                        value={justifySearchTerm}
-                                                        onChange={(e) => setJustifySearchTerm(e.target.value)}
-                                                    />
-                                                </div>
-                                                <div className="max-h-[200px] overflow-y-auto space-y-1">
-                                                    {closeReasons
-                                                        .filter(r => !justifySearchTerm || r.label.toLowerCase().includes(justifySearchTerm.toLowerCase()))
-                                                        .map((opt) => (
-                                                            <div
-                                                                key={opt.value}
-                                                                className={cn(
-                                                                    "relative flex cursor-pointer select-none items-center rounded-sm px-2 py-2 text-sm outline-none hover:bg-accent hover:text-accent-foreground",
-                                                                    justifyReason === opt.value && "bg-accent"
-                                                                )}
-                                                                onClick={() => {
-                                                                    setJustifyReason(opt.value)
-                                                                    setJustifySearchTerm("")
-                                                                    document.body.click()
-                                                                }}
-                                                            >
-                                                                <span>{opt.label}</span>
-                                                                {justifyReason === opt.value && <Check className="ml-auto h-4 w-4 opacity-100" />}
-                                                            </div>
-                                                        ))}
-                                                    {closeReasons.length > 0 && justifySearchTerm && !closeReasons.some(r => r.label.toLowerCase().includes(justifySearchTerm.toLowerCase())) && (
-                                                        <div className="px-2 py-4 text-center text-sm text-muted-foreground">Sin resultados</div>
-                                                    )}
-                                                </div>
+                                                {settingsLoading ? (
+                                                    <div className="flex items-center justify-center py-6">
+                                                        <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+                                                        <span className="ml-2 text-sm text-muted-foreground">Cargando opciones...</span>
+                                                    </div>
+                                                ) : (
+                                                    <>
+                                                        <div className="flex items-center px-3 border rounded-md mb-2 bg-background">
+                                                            <Search className="mr-2 h-4 w-4 shrink-0 opacity-50" />
+                                                            <input
+                                                                className="flex h-10 w-full rounded-md bg-transparent py-3 text-sm outline-none placeholder:text-muted-foreground"
+                                                                placeholder="Buscar motivo..."
+                                                                value={justifySearchTerm}
+                                                                onChange={(e) => setJustifySearchTerm(e.target.value)}
+                                                            />
+                                                        </div>
+                                                        <div className="max-h-[200px] overflow-y-auto space-y-1">
+                                                            {closeReasons
+                                                                .filter(r => !justifySearchTerm || r.label.toLowerCase().includes(justifySearchTerm.toLowerCase()))
+                                                                .map((opt) => (
+                                                                    <div
+                                                                        key={opt.value}
+                                                                        className={cn(
+                                                                            "relative flex cursor-pointer select-none items-center rounded-sm px-2 py-2 text-sm outline-none hover:bg-accent hover:text-accent-foreground",
+                                                                            justifyReason === opt.value && "bg-accent"
+                                                                        )}
+                                                                        onClick={() => {
+                                                                            setJustifyReason(opt.value)
+                                                                            setJustifySearchTerm("")
+                                                                            setJustifyOpen(false)
+                                                                        }}
+                                                                    >
+                                                                        <span>{opt.label}</span>
+                                                                        {justifyReason === opt.value && <Check className="ml-auto h-4 w-4 opacity-100" />}
+                                                                    </div>
+                                                                ))}
+                                                            {closeReasons.length > 0 && justifySearchTerm && !closeReasons.some(r => r.label.toLowerCase().includes(justifySearchTerm.toLowerCase())) && (
+                                                                <div className="px-2 py-4 text-center text-sm text-muted-foreground">Sin resultados</div>
+                                                            )}
+                                                        </div>
+                                                    </>
+                                                )}
                                             </div>
                                         </PopoverContent>
                                     </Popover>
@@ -360,7 +388,18 @@ export function SessionCloseModal({
                         )()
                         }
 
-                        <div className="flex gap-2">
+                            <div className="space-y-1">
+                                <Label className="text-xs">Notas (opcional)</Label>
+                                <textarea
+                                    className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm placeholder:text-muted-foreground outline-none focus:border-ring resize-none"
+                                    rows={2}
+                                    placeholder="Comentarios sobre el cierre..."
+                                    value={closeNotes}
+                                    onChange={(e) => setCloseNotes(e.target.value)}
+                                />
+                            </div>
+
+                            <div className="flex gap-2">
                             <Button variant="ghost" onClick={handlePrev}>Modificar Conteo</Button>
                             <Button
                                 className="flex-1"
@@ -392,11 +431,7 @@ export function SessionCloseModal({
                             <Button
                                 variant="outline"
                                 className="h-20 flex flex-col items-center justify-center border-2 hover:border-success hover:bg-success/5 group"
-                                onClick={() => {
-                                    setWithdrawalAmount("0")
-                                    // Use a timeout to ensure state is updated before call
-                                    setTimeout(handleCloseSession, 50)
-                                }}
+                                onClick={() => handleCloseSession({ withdrawal_amount: 0 })}
                                 disabled={submitting}
                             >
                                 {submitting ? (
@@ -428,7 +463,13 @@ export function SessionCloseModal({
                                     displayValue={formatCurrency(parseFloat(withdrawalAmount) || 0)}
                                     allowDecimal={true}
                                     className="w-full max-w-full shadow-none border-0 p-0"
-                                    onConfirm={handleCloseSession}
+                                    onConfirm={() => {
+                                        if (parseFloat(withdrawalAmount) > 0 && !cashDestinationId) {
+                                            toast.error("Seleccione un destino para el retiro antes de finalizar")
+                                            return
+                                        }
+                                        handleCloseSession()
+                                    }}
                                     confirmLabel="Finalizar Cierre"
                                     onExactAmount={() => setWithdrawalAmount(actualCash)}
                                     exactAmountLabel={`Retirar Todo (${formatCurrency(actual)})`}
@@ -480,6 +521,7 @@ export function SessionCloseModal({
             )}
             hideScrollArea={true}
             contentClassName="p-4 sm:p-6"
+            onEscapeKeyDown={(e: KeyboardEvent) => e.preventDefault()}
         >
             {renderStepContent()}
         </BaseModal>
