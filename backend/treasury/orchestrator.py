@@ -25,10 +25,10 @@ if TYPE_CHECKING:
 # Mapa de conversión desde PaymentMethod.Type → TreasuryMovement.Method (legacy enum).
 # CHECK → se maneja por separado (CheckService), fallback a OTHER
 _LEGACY_METHOD_MAP: dict[str, str] = {
-    "CARD_TERMINAL": TreasuryMovement.Method.CARD,
-    "DEBIT_CARD": TreasuryMovement.Method.CARD,
-    "CREDIT_CARD": TreasuryMovement.Method.CARD,
-    "CHECK": TreasuryMovement.Method.OTHER,
+    "CARD_TERMINAL": TreasuryMovement.Method.CARD_TERMINAL,
+    "DEBIT_CARD": TreasuryMovement.Method.DEBIT_CARD,
+    "CREDIT_CARD": TreasuryMovement.Method.CREDIT_CARD,
+    "CHECK": TreasuryMovement.Method.CHECK,
     "CASH": TreasuryMovement.Method.CASH,
     "CARD": TreasuryMovement.Method.CARD,
     "TRANSFER": TreasuryMovement.Method.TRANSFER,

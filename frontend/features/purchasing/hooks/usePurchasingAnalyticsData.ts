@@ -37,7 +37,7 @@ const PAYMENT_METHOD_LABELS: Record<string, string> = {
     CARD: "Tarjeta",
     DEBIT_CARD: "Tarjeta Débito",
     CREDIT_CARD: "Tarjeta Crédito",
-    CARD_TERMINAL: "POS Integrado",
+    CARD_TERMINAL: "Tarjeta (Terminal de cobro)",
     TRANSFER: "Transferencia",
     CHECK: "Cheque",
     CREDIT: "Crédito",

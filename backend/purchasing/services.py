@@ -1074,10 +1074,6 @@ class PurchasingService:
         # 3. Register Payment (if not CREDIT)
         payment = None
         if payment_method != 'CREDIT':
-            # Map CREDIT_CARD → CARD for legacy consistency (orchestrator resolves via PaymentMethod FK)
-            if payment_method == 'CREDIT_CARD':
-                payment_method = 'CARD'
-
             payment_amount = Decimal(str(amount)) if amount is not None and str(amount) != '' else order.total
             
             # Resolve PaymentMethod FK — required for PaymentOrchestrator path.
