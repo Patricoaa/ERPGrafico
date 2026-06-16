@@ -1,12 +1,11 @@
 "use client"
 
-import { memo, useState } from 'react'
+import { memo, useState, useRef, useEffect, useCallback } from 'react'
 import { Input } from '@/components/ui/input'
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { cn } from '@/lib/utils'
 import { formatCurrency } from "@/lib/money"
-import { useDeviceContext } from '@/hooks/useDeviceContext'
 import { useTouchMode } from '@/hooks/useTouchMode'
 import { Trash2, Minus, Plus } from 'lucide-react'
 import type { CartItem as CartItemType, Product, UoM } from '@/types/pos'
@@ -27,8 +26,6 @@ interface CartItemProps {
     posMode?: 'SHOPPING' | 'CHECKOUT'
 }
 
-const stepperBtnClass = "rounded-full h-8 w-8 border-2 border-primary/20 hover:border-primary hover:bg-primary/5 shrink-0 flex items-center justify-center transition-colors disabled:opacity-30 disabled:pointer-events-none"
-
 function CartItemComponent({
     item,
     originalProduct,
@@ -43,8 +40,8 @@ function CartItemComponent({
     showLineDiscount,
     posMode = 'SHOPPING'
 }: CartItemProps) {
-    const { isTouchPOS } = useDeviceContext()
     const { isTouchMode } = useTouchMode()
+
     const itemUom = uoms.find(u => u.id === item.uom)
 
     const saleUoms: EntityUoM[] = originalProduct?.available_uoms?.length
@@ -58,16 +55,60 @@ function CartItemComponent({
     const hasMultipleUoms = saleUoms.length > 1
     const [uomDialogOpen, setUomDialogOpen] = useState(false)
 
+    const qtyRef = useRef(item.qty)
+    const maxQtyRef = useRef(maxQty)
+    const cartItemIdRef = useRef(item.cartItemId)
+    const onQuantityChangeRef = useRef(onQuantityChange)
+    const longPressRef = useRef<ReturnType<typeof setInterval> | null>(null)
+
+    useEffect(() => {
+        qtyRef.current = item.qty
+        maxQtyRef.current = maxQty
+        cartItemIdRef.current = item.cartItemId
+        onQuantityChangeRef.current = onQuantityChange
+    })
+
+    const startLongPress = useCallback((delta: number) => {
+        const currentQty = qtyRef.current
+        const currentMax = maxQtyRef.current
+        const newQty = Math.max(0.01, currentQty + delta)
+        if (currentMax !== undefined && currentMax !== Infinity && newQty > currentMax) return
+        onQuantityChangeRef.current(cartItemIdRef.current, newQty)
+
+        const interval = setInterval(() => {
+            const latestQty = qtyRef.current
+            const latestMax = maxQtyRef.current
+            const nextQty = Math.max(0.01, latestQty + delta)
+            if (latestMax !== undefined && latestMax !== Infinity && nextQty > latestMax) {
+                clearInterval(interval)
+                longPressRef.current = null
+                return
+            }
+            onQuantityChangeRef.current(cartItemIdRef.current, nextQty)
+        }, 120)
+        longPressRef.current = interval
+    }, [])
+
+    const clearLongPress = useCallback(() => {
+        if (longPressRef.current) {
+            clearInterval(longPressRef.current)
+            longPressRef.current = null
+        }
+    }, [])
+
+    useEffect(() => {
+        return () => {
+            if (longPressRef.current) {
+                clearInterval(longPressRef.current)
+            }
+        }
+    }, [])
+
     const handleUomChange = async (newUomId: string) => {
         const newUom = uoms.find(u => u.id.toString() === newUomId)
         if (newUom) {
             onUomChange(item.cartItemId, parseInt(newUomId), newUom.name)
         }
-    }
-
-    const handlePriceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const newGross = parseFloat(e.target.value) || 0
-        onPriceChange(item.cartItemId, newGross)
     }
 
     const handleDiscountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -86,113 +127,173 @@ function CartItemComponent({
     const isOverLimit = maxQty !== undefined && maxQty !== Infinity && item.qty > maxQty
 
     return (
-        <div className="flex flex-col gap-1 p-3 rounded-lg border border-border/40 bg-card/5 group">
-            <div className="grid grid-cols-[1fr_auto_1fr_auto_auto] gap-x-1 items-start">
-                <div className="flex flex-col">
+        <div
+            className="flex flex-col gap-1.5 p-3 rounded-lg border border-border/40 bg-card/5 group"
+            style={isTouchMode ? { touchAction: 'manipulation' } : undefined}
+        >
+            <div className="grid grid-cols-[1fr_auto_1fr] items-start gap-2">
+                <div className="flex flex-col min-w-0">
                     <Tooltip>
                         <TooltipTrigger asChild>
-                            <span className="font-bold text-xs truncate block cursor-default">
+                            <span className={cn("font-bold truncate block cursor-default", isTouchMode ? "text-sm" : "text-xs")}>
                                 {item.name}
                             </span>
                         </TooltipTrigger>
                         <TooltipContent side="top">{item.name}</TooltipContent>
                     </Tooltip>
-                    <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground flex-wrap">
-                        <span>{formatCurrency(item.unit_price_gross)}/u</span>
+                    <div className="flex items-center gap-1.5 text-muted-foreground flex-wrap">
+                        <span className={isTouchMode ? "text-xs" : "text-[10px]"}>{formatCurrency(item.unit_price_gross)}/u</span>
                         {originalProduct?.is_dynamic_pricing && (
-                            <button onClick={() => isTouchMode && onOpenNumpad(item.cartItemId, 'price', item.unit_price_gross || 0)} className="text-primary underline-offset-2 hover:underline" type="button">Editar</button>
+                            <button onClick={() => isTouchMode && onOpenNumpad(item.cartItemId, 'price', item.unit_price_gross || 0)} className={cn("text-primary underline-offset-2 hover:underline", isTouchMode ? "text-xs" : "text-[10px]")} type="button">
+                                Editar
+                            </button>
                         )}
-                        <span>•</span>
-                        <span>Neto: {formatCurrency(item.unit_price_net)}</span>
+                        <span className={isTouchMode ? "text-xs" : "text-[10px]"}>•</span>
+                        <span className={isTouchMode ? "text-xs" : "text-[10px]"}>Neto: {formatCurrency(item.unit_price_net)}</span>
                     </div>
-                    {maxQty !== undefined && maxQty !== Infinity && (
-                        <span className={cn("text-[10px]", isOverLimit ? "text-destructive font-semibold" : "text-muted-foreground")}>MAX:{maxQty}</span>
-                    )}
                 </div>
 
                 <div className="flex flex-col items-center gap-0">
-                    <div className="flex items-center gap-1">
-                        <button className={stepperBtnClass} onClick={() => handleQtyStep(-1)} disabled={item.qty <= 0.01} type="button">
-                            <Minus className="h-3 w-3 text-muted-foreground" />
+                    <div className="flex items-start gap-1">
+                        <button
+                            className={cn(
+                                "rounded-full border-2 border-primary/20 hover:border-primary hover:bg-primary/5 shrink-0 flex items-center justify-center transition-colors disabled:opacity-30 disabled:pointer-events-none",
+                                isTouchMode ? "min-h-[44px] min-w-[44px]" : "h-8 w-8"
+                            )}
+                            {...(isTouchMode ? {
+                                onPointerDown: (e: React.PointerEvent) => { e.preventDefault(); startLongPress(-1) },
+                                onPointerUp: clearLongPress,
+                                onPointerLeave: clearLongPress,
+                            } : {
+                                onClick: () => handleQtyStep(-1),
+                            })}
+                            disabled={item.qty <= 0.01}
+                            type="button"
+                        >
+                            <Minus className={cn("text-muted-foreground", isTouchMode ? "h-5 w-5" : "h-3 w-3")} />
                         </button>
-                        {isTouchMode ? (
-                            <div className="w-10 text-center cursor-pointer select-none" onClick={() => onOpenNumpad(item.cartItemId, 'qty', item.qty)}>
-                                <span className={cn("text-sm font-black leading-none", isOverLimit && "text-destructive")}>{item.qty}</span>
-                            </div>
-                        ) : (
-                            <Input type="number" className={cn("h-7 w-10 text-center text-xs font-bold bg-background border-none focus-visible:ring-1 focus-visible:ring-primary shadow-none p-0", isOverLimit && "text-destructive")} value={item.qty} onChange={(e) => onQuantityChange(item.cartItemId, e.target.value)} min="0.01" />
-                        )}
-                        <button className={stepperBtnClass} onClick={() => handleQtyStep(1)} disabled={maxQty !== undefined && maxQty !== Infinity && item.qty >= maxQty} type="button">
-                            <Plus className="h-3 w-3 text-muted-foreground" />
+
+                        <div className="flex flex-col items-center gap-0">
+                            {isTouchMode ? (
+                                <div className="min-w-[48px] text-center cursor-pointer select-none" onClick={() => onOpenNumpad(item.cartItemId, 'qty', item.qty)}>
+                                    <span className={cn("font-black leading-none", isOverLimit && "text-destructive", isTouchMode ? "text-base" : "text-sm")}>
+                                        {item.qty}
+                                    </span>
+                                </div>
+                            ) : (
+                                <Input
+                                    type="number"
+                                    className={cn("h-7 w-10 text-center font-bold bg-background border-none focus-visible:ring-1 focus-visible:ring-primary shadow-none p-0", isOverLimit && "text-destructive", "text-xs")}
+                                    value={item.qty}
+                                    onChange={(e) => onQuantityChange(item.cartItemId, e.target.value)}
+                                    min="0.01"
+                                />
+                            )}
+                            {maxQty !== undefined && maxQty !== Infinity && (
+                                <span className={cn("leading-none mt-px", isOverLimit ? "text-destructive font-semibold" : "text-muted-foreground", isTouchMode ? "text-[10px]" : "text-[9px]")}>
+                                    MAX:{maxQty}
+                                </span>
+                            )}
+                        </div>
+
+                        <button
+                            className={cn(
+                                "rounded-full border-2 border-primary/20 hover:border-primary hover:bg-primary/5 shrink-0 flex items-center justify-center transition-colors disabled:opacity-30 disabled:pointer-events-none",
+                                isTouchMode ? "min-h-[44px] min-w-[44px]" : "h-8 w-8"
+                            )}
+                            {...(isTouchMode ? {
+                                onPointerDown: (e: React.PointerEvent) => { e.preventDefault(); startLongPress(1) },
+                                onPointerUp: clearLongPress,
+                                onPointerLeave: clearLongPress,
+                            } : {
+                                onClick: () => handleQtyStep(1),
+                            })}
+                            disabled={maxQty !== undefined && maxQty !== Infinity && item.qty >= maxQty}
+                            type="button"
+                        >
+                            <Plus className={cn("text-muted-foreground", isTouchMode ? "h-5 w-5" : "h-3 w-3")} />
                         </button>
-                    </div>
-                    <button
-                        type="button"
-                        className={cn(
-                            "text-[11px] font-semibold underline underline-offset-2 whitespace-nowrap leading-[0] p-0 m-0 border-none bg-transparent h-[13px] flex items-start pt-px",
-                            hasMultipleUoms
-                                ? "text-muted-foreground hover:text-primary cursor-pointer"
-                                : "text-muted-foreground/60"
-                        )}
-                        onClick={() => hasMultipleUoms && setUomDialogOpen(true)}
-                        disabled={!hasMultipleUoms}
-                    >
-                        {item.uom_name}
-                    </button>
-                    <Dialog open={uomDialogOpen} onOpenChange={setUomDialogOpen}>
-                        <DialogContent className="w-[240px] rounded-lg">
-                            <DialogHeader>
-                                <DialogTitle>Unidad</DialogTitle>
-                            </DialogHeader>
-                            <div className="flex flex-col gap-0.5">
-                                {saleUoms.map(uom => (
-                                    <button
-                                        key={uom.id}
-                                        type="button"
-                                        className={cn(
-                                            "w-full text-left px-3 py-2 text-sm rounded-md hover:bg-accent transition-colors",
-                                            item.uom === uom.id && "bg-accent font-semibold"
-                                        )}
-                                        onClick={() => {
-                                            handleUomChange(String(uom.id))
-                                            setUomDialogOpen(false)
-                                        }}
-                                    >
-                                        {uom.name}
-                                    </button>
-                                ))}
-                            </div>
-                        </DialogContent>
-                    </Dialog>
-                </div> 
 
-                <div />
-
-                <div className="flex flex-col items-end ml-6">
-                    <span className="text-sm font-bold text-primary leading-none">{formatCurrency(item.total_gross)}</span>
-                    <span className="text-[10px] text-muted-foreground font-medium leading-tight">Neto {formatCurrency(item.total_net)}</span>
-                    {showLineDiscount && (
-                        isTouchMode ? (
-                            <button className="text-[11px] font-semibold text-foreground cursor-pointer underline underline-offset-2 hover:text-primary whitespace-nowrap" onClick={() => onOpenNumpad(item.cartItemId, 'discount', item.discount_amount || 0)} type="button">
-                                Dscto: {item.discount_amount ? formatCurrency(item.discount_amount) : "$0"}
+                        {hasMultipleUoms ? (
+                            <button
+                                type="button"
+                                className={cn(
+                                    "font-semibold underline underline-offset-2 whitespace-nowrap border-none bg-transparent text-muted-foreground hover:text-primary cursor-pointer flex items-center",
+                                    isTouchMode ? "text-xs min-h-[36px] px-2" : "text-[11px] h-[13px] pt-px"
+                                )}
+                                onClick={() => setUomDialogOpen(true)}
+                            >
+                                {item.uom_name}
                             </button>
                         ) : (
-                            <div className="flex items-center gap-0.5 justify-end">
-                                <span className="text-[10px] font-semibold text-muted-foreground">Dscto:</span>
-                                <Input type="number" className={cn("h-7 w-16 text-right text-xs bg-background border border-muted-foreground/30 rounded focus-visible:ring-1 focus-visible:ring-primary p-0 pr-1", (item.discount_amount || 0) > 0 && "text-primary font-bold")} value={item.discount_amount || ""} placeholder="0" onChange={handleDiscountChange} />
-                            </div>
-                        )
-                    )}
+                            <span className={cn("text-muted-foreground/60", isTouchMode ? "text-xs" : "text-[11px]")}>
+                                {item.uom_name}
+                            </span>
+                        )}
+                    </div>
                 </div>
 
-                <div>
+                <div className="flex items-start gap-1.5 justify-self-end">
+                    <div className="flex flex-col items-end">
+                        <span className="text-sm font-bold text-primary leading-none">{formatCurrency(item.total_gross)}</span>
+                        <span className={cn("text-muted-foreground font-medium leading-tight", isTouchMode ? "text-xs" : "text-[10px]")}>
+                            Neto {formatCurrency(item.total_net)}
+                        </span>
+                        {showLineDiscount && (
+                            isTouchMode ? (
+                                <button className={cn("font-semibold text-foreground cursor-pointer underline underline-offset-2 hover:text-primary whitespace-nowrap flex items-center", isTouchMode ? "text-xs min-h-[36px] px-0" : "text-[11px]")} onClick={() => onOpenNumpad(item.cartItemId, 'discount', item.discount_amount || 0)} type="button">
+                                    Dscto: {item.discount_amount ? formatCurrency(item.discount_amount) : "$0"}
+                                </button>
+                            ) : (
+                                <div className="flex items-center gap-0.5 mt-0.5">
+                                    <span className="text-[10px] font-semibold text-muted-foreground">Dscto:</span>
+                                    <Input type="number" className={cn("h-6 w-16 text-right text-xs bg-background border border-muted-foreground/30 rounded focus-visible:ring-1 focus-visible:ring-primary p-0 pr-1", (item.discount_amount || 0) > 0 && "text-primary font-bold")} value={item.discount_amount || ""} placeholder="0" onChange={handleDiscountChange} />
+                                </div>
+                            )
+                        )}
+                    </div>
                     {posMode === 'SHOPPING' && (
-                        <button className={cn("flex items-center justify-center text-muted-foreground hover:text-destructive transition-all h-8 w-8 rounded-full hover:bg-destructive/10", isTouchMode ? "opacity-100" : "opacity-0 group-hover:opacity-100")} onClick={() => onRemove(item.cartItemId)} type="button">
-                            <Trash2 className="h-4 w-4" />
+                        <button
+                            className={cn(
+                                "flex items-center justify-center text-muted-foreground hover:text-destructive transition-all rounded-full hover:bg-destructive/10 shrink-0",
+                                isTouchMode
+                                    ? "min-h-[44px] min-w-[44px] opacity-100"
+                                    : "h-8 w-8 opacity-0 group-hover:opacity-100"
+                            )}
+                            onClick={() => onRemove(item.cartItemId)}
+                            type="button"
+                        >
+                            <Trash2 className={isTouchMode ? "h-5 w-5" : "h-4 w-4"} />
                         </button>
                     )}
                 </div>
             </div>
+
+            <Dialog open={uomDialogOpen} onOpenChange={setUomDialogOpen}>
+                <DialogContent className="w-[240px] rounded-lg">
+                    <DialogHeader>
+                        <DialogTitle>Unidad</DialogTitle>
+                    </DialogHeader>
+                    <div className="flex flex-col gap-0.5">
+                        {saleUoms.map(uom => (
+                            <button
+                                key={uom.id}
+                                type="button"
+                                className={cn(
+                                    "w-full text-left px-3 py-2 text-sm rounded-md hover:bg-accent transition-colors",
+                                    item.uom === uom.id && "bg-accent font-semibold"
+                                )}
+                                onClick={() => {
+                                    handleUomChange(String(uom.id))
+                                    setUomDialogOpen(false)
+                                }}
+                            >
+                                {uom.name}
+                            </button>
+                        ))}
+                    </div>
+                </DialogContent>
+            </Dialog>
         </div>
     )
 }
