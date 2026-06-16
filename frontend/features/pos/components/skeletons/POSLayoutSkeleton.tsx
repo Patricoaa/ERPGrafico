@@ -8,7 +8,7 @@ import { CardSkeleton } from "@/components/shared"
 export function POSSearchSkeleton() {
     return (
         <div className="px-2 pt-1.5 pb-1.5 border-b bg-background/50 space-y-2">
-            <Skeleton className="h-10 w-full rounded-lg" />
+            <Skeleton className="h-10 w-full rounded-sm" />
         </div>
     )
 }
@@ -27,7 +27,7 @@ export function POSCartItemsSkeleton({ count = 4 }: { count?: number }) {
     return (
         <div className="flex flex-col gap-2 p-3">
             {Array.from({ length: count }).map((_, i) => (
-                <div key={i} className="flex flex-col gap-2 p-3 rounded-lg border border-border/40 bg-card/5">
+                <div key={i} className="flex flex-col gap-2 p-3 rounded-sm border border-border/40 bg-card">
                     <div className="flex justify-between items-start">
                         <Skeleton className="h-3 w-32" />
                         <Skeleton className="h-4 w-16" />
@@ -61,11 +61,11 @@ export function POSLayoutSkeleton() {
                 <div className="flex items-center gap-2 flex-1 justify-end">
                     <div className="hidden lg:flex items-center gap-1 mr-2">
                         {Array.from({ length: 4 }).map((_, i) => (
-                            <Skeleton key={i} className="h-10 min-w-[40px] rounded-md" />
+                            <Skeleton key={i} className="h-10 min-w-[40px] rounded-sm" />
                         ))}
                     </div>
                     <Skeleton className="h-10 w-10 rounded-full shrink-0" />
-                    <Skeleton className="h-10 w-20 rounded-md" />
+                    <Skeleton className="h-10 w-20 rounded-sm" />
                 </div>
             </div>
 
@@ -88,7 +88,7 @@ export function POSLayoutSkeleton() {
                                         <Skeleton className="h-5 w-40" />
                                         <Skeleton className="h-2.5 w-28" />
                                     </div>
-                                    <Skeleton className="h-5 w-16 rounded-sm" />
+                                    <Skeleton className="h-5 w-16 rounded-full" />
                                 </div>
                             </div>
 
@@ -97,7 +97,7 @@ export function POSLayoutSkeleton() {
                             </div>
 
                             <div className="p-3 bg-muted/20 border-t space-y-3">
-                                <Skeleton className="h-10 w-full rounded-md" />
+                                <Skeleton className="h-10 w-full rounded-sm" />
 
                                 <div className="space-y-0.5">
                                     <div className="flex justify-between">
@@ -114,7 +114,7 @@ export function POSLayoutSkeleton() {
                                     </div>
                                 </div>
 
-                                <Skeleton className="h-12 w-full rounded-md" />
+                                <Skeleton className="h-12 w-full rounded-sm" />
                             </div>
                         </CardContent>
                     </Card>

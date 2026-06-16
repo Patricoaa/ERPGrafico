@@ -818,7 +818,6 @@ export function DividendPaymentModal({ open, onOpenChange, onSuccess, initialPar
                     />
                     {isOverflow && (
                         <Alert variant="warning">
-                            <AlertTriangle className="h-4 w-4 text-warning" />
                             <AlertDescription className="text-[9px] text-warning leading-tight">
                                 El monto excede el saldo de dividendos. El excedente de <strong>{formatCurrency(amountNum - dividendBalance)}</strong> se registrará como un <strong>Retiro Provisorio</strong>.
                             </AlertDescription>

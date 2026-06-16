@@ -7,7 +7,6 @@ import { Button } from "@/components/ui/button"
 
 import { cn } from "@/lib/utils"
 import {
-    AlertTriangle,
     CheckCircle2,
     ClipboardList,
     Package,
@@ -253,7 +252,6 @@ export function RectificationStep({ order, onChange }: RectificationStepProps) {
             {/* Impact alert when there are changes */}
             {hasMeaningfulChanges && (
                 <Alert variant="warning">
-                    <AlertTriangle className="h-4 w-4 text-warning" />
                     <AlertDescription className="text-sm text-warning font-medium">
                         Las cantidades han sido modificadas. Al finalizar, se crearán movimientos de inventario compensatorios y se recalcularán los costos de producción.
                     </AlertDescription>
@@ -488,7 +486,6 @@ export function RectificationStep({ order, onChange }: RectificationStepProps) {
 
                     {parseFloat(actualProducedQty) !== parseFloat(plannedProducedQty) && actualProducedQty !== "" && (
                         <Alert variant="warning">
-                            <AlertTriangle className="h-3.5 w-3.5 text-warning" />
                             <AlertDescription className="text-xs text-warning font-medium">
                                 El cambio en la cantidad producida recalculará el <strong>Costo Promedio Ponderado (WAC)</strong> del producto terminado en inventario.
                             </AlertDescription>

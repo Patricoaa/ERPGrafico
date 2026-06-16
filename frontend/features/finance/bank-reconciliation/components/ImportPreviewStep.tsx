@@ -2,7 +2,7 @@
 
 import React from "react"
 import { formatCurrency } from "@/lib/money"
-import { AlertCircle, CheckCircle2, AlertTriangle, Calendar, FileText, DollarSign, Wallet } from "lucide-react"
+import { CheckCircle2, Calendar, FileText, DollarSign, Wallet } from "lucide-react"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import {DataTable, DataCell, FormSection} from "@/components/shared"
 import type { ColumnDef } from "@tanstack/react-table"
@@ -65,7 +65,6 @@ export default function ImportPreviewStep({ data, isLoading }: ImportPreviewStep
 
             {data.is_duplicate && (
                 <Alert variant="warning">
-                    <AlertTriangle className="h-4 w-4" />
                     <AlertTitle className="text-xs font-black uppercase">Archivo Duplicado</AlertTitle>
                     <AlertDescription className="text-xs font-medium">
                         Este archivo exacto ya ha sido importado anteriormente. Puedes continuar si se trata de una rectificación, pero ten cuidado con duplicar transacciones.
@@ -104,7 +103,6 @@ export default function ImportPreviewStep({ data, isLoading }: ImportPreviewStep
 
             {hasErrors ? (
                 <Alert variant="destructive">
-                    <AlertCircle className="h-4 w-4" />
                     <AlertTitle className="text-xs font-black uppercase tracking-wider">Error Bloqueante</AlertTitle>
                     <AlertDescription className="text-xs mt-1">
                         La cartola contiene errores críticos y no puede ser importada en su estado actual.
@@ -115,16 +113,14 @@ export default function ImportPreviewStep({ data, isLoading }: ImportPreviewStep
                 </Alert>
             ) : hasWarnings ? (
                 <Alert variant="warning">
-                    <AlertTriangle className="h-4 w-4 text-warning" />
-                    <AlertTitle className="text-xs font-black uppercase tracking-wider text-warning">Advertencias</AlertTitle>
+                    <AlertTitle className="text-xs font-black uppercase tracking-wider">Advertencias</AlertTitle>
                     <AlertDescription className="text-xs mt-1 text-muted-foreground font-medium">
                         La cartola puede ser importada, pero se encontraron inconsistencias menores. Verifica la tabla de abajo.
                     </AlertDescription>
                 </Alert>
             ) : (
                 <Alert variant="success">
-                    <CheckCircle2 className="h-4 w-4 text-success" />
-                    <AlertTitle className="text-xs font-black uppercase tracking-wider text-success">Validación Exitosa</AlertTitle>
+                    <AlertTitle className="text-xs font-black uppercase tracking-wider">Validación Exitosa</AlertTitle>
                     <AlertDescription className="text-xs mt-1 text-muted-foreground font-medium">
                         Todo parece estar en orden. La cartola puede ser importada.
                     </AlertDescription>

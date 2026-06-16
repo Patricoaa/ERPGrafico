@@ -377,7 +377,7 @@ export function PartnerContributionWizard({
                     </div>
 
                     {assetTotalValue > 0 && (
-                        <Alert variant="success" className="py-2">
+                        <Alert variant="success" className="py-2" icon={null}>
                             <div className="flex items-center justify-between w-full">
                                 <div className="flex items-center gap-2 text-success">
                                     <ArrowDownCircle className="h-4 w-4" />

@@ -372,7 +372,7 @@ export function PartnerWithdrawalWizard({
                         />
                     </div>
 
-                    <Alert variant="destructive" className="py-2">
+                    <Alert variant="destructive" className="py-2" icon={null}>
                         <div className="flex items-center gap-2 text-destructive">
                             <AlertTriangle className="h-4 w-4" />
                             <span className="text-[10px] font-black uppercase tracking-widest">Atención: Esta operación disminuye el stock disponible.</span>

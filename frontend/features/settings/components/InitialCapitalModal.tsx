@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input"
 import { toast } from "sonner"
 import { partnersApi } from "@/features/contacts/api/partnersApi"
 import { AdvancedContactSelector } from "@/components/selectors/AdvancedContactSelector"
-import {Trash2, Users, Info} from "lucide-react"
+import {Trash2, Users} from "lucide-react"
 
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 
@@ -113,9 +113,8 @@ export function InitialCapitalModal({ open, onOpenChange, onSuccess }: InitialCa
         >
             <div className="space-y-6">
                 <Alert variant="primary">
-                    <Info className="h-4 w-4 text-primary" />
-                    <AlertTitle className="text-primary text-xs font-bold uppercase tracking-wider">Aviso Contable</AlertTitle>
-                    <AlertDescription className="text-primary text-xs">
+                    <AlertTitle className="text-xs font-bold uppercase tracking-wider">Aviso Contable</AlertTitle>
+                    <AlertDescription className="text-xs">
                         Esta acción generará un asiento de **Suscripción de Capital**, debitando la cuenta de **Capital por Cobrar Socios** (Activo) y acreditando la cuenta de **Capital Social** (Patrimonio), manteniendo la trazabilidad individual por socio.
                         Los aportes físicos de bienes se deben registrar posteriormente.
                     </AlertDescription>

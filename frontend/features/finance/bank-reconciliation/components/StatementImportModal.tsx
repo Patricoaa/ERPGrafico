@@ -10,7 +10,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { LabeledSelect, GenericWizard, WizardStep, FormSection, DocumentAttachmentDropzone, LabeledInput } from "@/components/shared"
 import { TreasuryAccountSelector } from "@/components/selectors/TreasuryAccountSelector"
-import {FileUp, Columns, Table as TableIcon, AlertCircle, CheckCircle2, FileSearch, Landmark, SlidersHorizontal} from "lucide-react"
+import {FileUp, Columns, Table as TableIcon, CheckCircle2, FileSearch, Landmark, SlidersHorizontal} from "lucide-react"
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 import { financeApi } from "../../api/financeApi"
 import { cn } from "@/lib/utils"
@@ -322,8 +322,7 @@ export default function StatementImportModal({ open, onOpenChange, onSuccess, de
                         {error && (
                             <div className="animate-in fade-in slide-in-from-top-2">
                                 <Alert variant="destructive" className="rounded-lg">
-                                    <AlertCircle className="h-4 w-4 text-destructive" />
-                                    <AlertDescription className="text-xs font-bold uppercase text-destructive/80 leading-relaxed">
+                                    <AlertDescription className="text-xs font-bold uppercase leading-relaxed">
                                         {error}
                                     </AlertDescription>
                                 </Alert>
@@ -496,8 +495,7 @@ export default function StatementImportModal({ open, onOpenChange, onSuccess, de
                     {error && (
                         <div className="max-w-xl mx-auto animate-in fade-in slide-in-from-top-2">
                             <Alert variant="destructive" className="rounded-lg">
-                                <AlertCircle className="h-4 w-4 text-destructive" />
-                                <AlertDescription className="text-xs font-bold uppercase text-destructive/80 leading-relaxed">
+                                <AlertDescription className="text-xs font-bold uppercase leading-relaxed">
                                     {error}
                                 </AlertDescription>
                             </Alert>

@@ -97,14 +97,14 @@ function ProductGridComponent({
                 return (
                     <Card
                         className={cn(
-                            "group cursor-pointer hover:shadow-md transition-all border overflow-hidden flex flex-col h-full rounded-xl p-2 bg-card",
+                            "group cursor-pointer hover:shadow-md transition-all border overflow-hidden flex flex-col h-full rounded-md p-2 bg-card",
                             isTouchPOS && "active:scale-95",
                             isDisabled && "opacity-50 grayscale cursor-not-allowed"
                         )}
                         onClick={() => !isDisabled && onProductClick(product)}
                     >
                         <div className={cn(
-                            "aspect-square bg-muted/20 rounded-lg flex items-center justify-center relative overflow-hidden border shadow-sm",
+                            "aspect-square bg-muted/20 rounded-sm flex items-center justify-center relative overflow-hidden border shadow-sm",
                             isTouchPOS && "min-h-[120px]"
                         )}>
                             {product.image ? (

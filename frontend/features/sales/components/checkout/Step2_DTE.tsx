@@ -5,7 +5,6 @@ import { Label } from "@/components/ui/label"
 import {
     FileText,
     Receipt,
-    AlertCircle,
 } from "lucide-react"
 import { useEffect, useMemo } from "react"
 import { cn } from "@/lib/utils"
@@ -189,7 +188,6 @@ export function Step2_DTE({
 
             {isDefaultCustomer && (
                 <Alert variant="info">
-                    <AlertCircle className="h-4 w-4" />
                     <AlertDescription className="text-xs font-medium">
                         El cliente por defecto solo permite emisión de{" "}
                         <strong>Boleta Electrónica</strong>.
@@ -199,7 +197,6 @@ export function Step2_DTE({
 
             {dteData.type !== "BOLETA" && !dteData.isPending && (!dteData.attachment || !dteData.number) && (
                 <Alert variant="warning">
-                    <AlertCircle className="h-4 w-4" />
                     <AlertDescription className="text-xs font-medium">
                         El folio y el adjunto son requeridos para registrar este tipo de documento.
                     </AlertDescription>
@@ -208,7 +205,6 @@ export function Step2_DTE({
 
             {dteData.type === "BOLETA" && (
                 <Alert variant="info">
-                    <AlertCircle className="h-4 w-4" />
                     <AlertDescription className="text-xs font-medium">
                         El sistema asignará el siguiente folio disponible automáticamente al
                         finalizar la venta.

@@ -6,10 +6,8 @@ import { Card } from '@/components/ui/card';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import {
     ShieldCheck,
-    ShieldAlert,
     CheckCircle2,
     AlertTriangle,
-    FileText,
     Scale,
     Settings2,
     PieChart,
@@ -62,7 +60,6 @@ export function FiscalYearClosingWizard({
                 <div className="space-y-6">
                     {preview && !preview.is_balanced ? (
                         <Alert variant="destructive" className="border-2">
-                            <ShieldAlert className="h-5 w-5" />
                             <AlertTitle className="font-bold uppercase">Error de Cuadratura</AlertTitle>
                             <AlertDescription className="font-medium mt-1 flex flex-col gap-3 text-xs">
                                 <p>El Balance de Comprobación presenta descuadres. No se puede proceder con el cierre.</p>
@@ -77,8 +74,7 @@ export function FiscalYearClosingWizard({
                         </Alert>
                     ) : preview ? (
                         <Alert variant="success">
-                            <ShieldCheck className="h-5 w-5 text-success" />
-                            <AlertTitle className="text-success font-bold uppercase">Balance Cuadrado</AlertTitle>
+                            <AlertTitle className="font-bold uppercase">Balance Cuadrado</AlertTitle>
                             <AlertDescription className="text-success/80 font-medium flex flex-col gap-3 text-xs">
                                 <p>Se ha verificado la integridad de la partida doble para el ejercicio {year}.</p>
                                 <Button 
@@ -161,8 +157,7 @@ export function FiscalYearClosingWizard({
             component: preview ? (
                 <div className="space-y-6">
                         <Alert variant="primary">
-                        <FileText className="h-5 w-5 text-primary" />
-                        <AlertTitle className="font-bold uppercase text-primary">Asignación Automática</AlertTitle>
+                        <AlertTitle className="font-bold uppercase">Asignación Automática</AlertTitle>
                         <AlertDescription className="text-foreground/80 font-medium text-xs">
                             El sistema identificó la cuenta patrimonial configurada para recibir el resultado.
                         </AlertDescription>
@@ -209,7 +204,6 @@ export function FiscalYearClosingWizard({
                     </div>
 
                     <Alert variant="warning">
-                        <AlertTriangle className="h-5 w-5 text-warning" />
                         <AlertTitle className="text-warning-foreground font-extrabold uppercase tracking-tight">Advertencia</AlertTitle>
                         <AlertDescription className="text-warning-foreground/90 text-[10px] font-medium mt-1 leading-relaxed">
                             Esta acción generará el asiento de cierre y bloqueará todos los periodos del año {year}.

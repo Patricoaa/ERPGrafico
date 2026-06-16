@@ -257,7 +257,6 @@ export function AdjustmentForm({
 
                     {periodStatus?.is_closed && (
                         <Alert variant="destructive" className="py-2 mb-2">
-                            <ShieldAlert className="h-4 w-4" />
                             <AlertTitle className="text-xs font-bold mb-1">Periodo Cerrado</AlertTitle>
                             <AlertDescription className="text-xs opacity-90">
                                 El periodo contable actual (<strong>{periodStatus.period_name}</strong>) está cerrado. No podrá guardar este ajuste.
@@ -530,8 +529,7 @@ export function AdjustmentForm({
                                 {/* Conversion Alert / Info */}
                                 {conversion && baseUoM && (
                                     <Alert variant="primary" className="animate-in slide-in-from-top-2 duration-300">
-                                        <Info className="h-4 w-4 text-primary" />
-                                        <AlertTitle className="text-[10px] font-bold uppercase text-primary mb-0.5">Conversión Automática</AlertTitle>
+                                        <AlertTitle className="text-[10px] font-bold uppercase mb-0.5">Conversión Automática</AlertTitle>
                                         <AlertDescription className="text-[11px] leading-tight">
                                             Se registrará como <span className="font-black">{conversion.qty.toFixed(4).replace(/\.?0+$/, '')} {baseUoM.name}</span> a un costo base de <span className="font-black">${conversion.cost.toFixed(2)}</span>.
                                         </AlertDescription>

@@ -113,8 +113,8 @@ export function ModuleLauncher({ open, onClose }: ModuleLauncherProps) {
                                                 <div className={cn(
                                                     "w-16 h-16 md:w-20 md:h-20 rounded-xl flex items-center justify-center transition-colors",
                                                     isActive
-                                                        ? "bg-primary/10 text-primary"
-                                                        : "bg-muted/50 text-muted-foreground group-hover:text-primary group-hover:bg-primary/5"
+                                                        ? "text-primary"
+                                                        : "text-muted-foreground group-hover:text-primary"
                                                 )}>
                                                     <DynamicIcon name={getModuleIconName(id)} className="h-8 w-8 md:h-10 md:w-10" />
                                                 </div>
