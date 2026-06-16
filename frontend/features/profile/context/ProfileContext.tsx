@@ -2,11 +2,12 @@
 
 import { createContext, useContext, type ReactNode } from "react"
 import type { MyProfile } from "@/types/profile"
+import type { ContactMini } from "@/types/hr"
 
 interface ProfileContextValue {
     profile: MyProfile
     isPartner: boolean
-    contactDetail: MyProfile["contact_detail"] | MyProfile["employee"]["contact_detail"] | undefined
+    contactDetail: ContactMini | null | undefined
 }
 
 const ProfileContext = createContext<ProfileContextValue | null>(null)
