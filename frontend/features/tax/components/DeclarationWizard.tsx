@@ -290,7 +290,7 @@ export function DeclarationWizard({ isOpen, onOpenChange, periodId, onSuccess, e
                         </section>
                     </div>
                     {calcData?.drafts_summary && (calcData.drafts_summary.invoices.length > 0 || calcData.drafts_summary.entries.length > 0) && (
-                        <Alert variant="default" className="border-warning/30 bg-warning/5 rounded-md p-6">
+                        <Alert variant="warning">
                             <AlertCircle className="h-5 w-5 text-warning" />
                             <div className="space-y-4 w-full">
                                 <AlertTitle className="text-sm font-black uppercase tracking-widest text-warning/90">Documentos en Borrador</AlertTitle>

@@ -252,7 +252,7 @@ export function RectificationStep({ order, onChange }: RectificationStepProps) {
 
             {/* Impact alert when there are changes */}
             {hasMeaningfulChanges && (
-                <Alert className="border-warning/30 bg-warning/5">
+                <Alert variant="warning">
                     <AlertTriangle className="h-4 w-4 text-warning" />
                     <AlertDescription className="text-sm text-warning font-medium">
                         Las cantidades han sido modificadas. Al finalizar, se crearán movimientos de inventario compensatorios y se recalcularán los costos de producción.
@@ -487,7 +487,7 @@ export function RectificationStep({ order, onChange }: RectificationStepProps) {
                     </div>
 
                     {parseFloat(actualProducedQty) !== parseFloat(plannedProducedQty) && actualProducedQty !== "" && (
-                        <Alert className="border-warning/30 bg-warning/5 py-2.5">
+                        <Alert variant="warning">
                             <AlertTriangle className="h-3.5 w-3.5 text-warning" />
                             <AlertDescription className="text-xs text-warning font-medium">
                                 El cambio en la cantidad producida recalculará el <strong>Costo Promedio Ponderado (WAC)</strong> del producto terminado en inventario.

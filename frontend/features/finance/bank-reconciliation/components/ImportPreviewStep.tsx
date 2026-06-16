@@ -64,7 +64,7 @@ export default function ImportPreviewStep({ data, isLoading }: ImportPreviewStep
             <FormSection title="Resumen de la Cartola" icon={FileText} />
 
             {data.is_duplicate && (
-                <Alert className="border-warning/50 bg-warning/10 text-warning">
+                <Alert variant="warning">
                     <AlertTriangle className="h-4 w-4" />
                     <AlertTitle className="text-xs font-black uppercase">Archivo Duplicado</AlertTitle>
                     <AlertDescription className="text-xs font-medium">
@@ -114,7 +114,7 @@ export default function ImportPreviewStep({ data, isLoading }: ImportPreviewStep
                     </AlertDescription>
                 </Alert>
             ) : hasWarnings ? (
-                <Alert className="border-warning/50 bg-warning/5 text-warning-foreground">
+                <Alert variant="warning">
                     <AlertTriangle className="h-4 w-4 text-warning" />
                     <AlertTitle className="text-xs font-black uppercase tracking-wider text-warning">Advertencias</AlertTitle>
                     <AlertDescription className="text-xs mt-1 text-muted-foreground font-medium">
