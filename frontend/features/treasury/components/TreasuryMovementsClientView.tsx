@@ -279,17 +279,6 @@ export function TreasuryMovementsClientView({ externalOpen, createAction }: Trea
                 )
             },
         },
-        {
-            accessorKey: "created_by_name",
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Usuario" className="justify-center" />,
-            cell: ({ row }) => {
-                const m = row.original
-                if (!m.created_by) return <DataCell.Secondary>-</DataCell.Secondary>
-                return (
-                    <DataCell.Text>{m.created_by_name}</DataCell.Text>
-                )
-            },
-        },
         createActionsColumn<TreasuryMovement>({
             renderActions: (item) => (
                 <DataCell.Action action="detail" onClick={() => handleViewDetails(item.id)} />
