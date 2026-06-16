@@ -11,8 +11,8 @@ import { UserActions } from "@/components/layout/UserActions"
 import { useHeader } from "@/components/providers/HeaderProvider"
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion"
 import { Skeleton } from "@/components/ui/skeleton"
-import { HeaderNavDropdowns, PageHeaderSkeleton } from '@/components/shared'
-import { Loader2 } from "lucide-react"
+import { HeaderNavDropdowns, PageHeaderSkeleton, ModuleLauncher } from '@/components/shared'
+import { Loader2, Menu } from "lucide-react"
 import { DynamicIcon } from '@/components/shared'
 
 // Lazy load: solo se compila al abrir el inbox, no en la carga inicial de cada página
@@ -26,6 +26,7 @@ function DashboardShellInner({ children }: { children: React.ReactNode }) {
     const shouldReduceMotion = useReducedMotion()
 
     const [isInboxOpen, setIsInboxOpen] = useState(false)
+    const [isModuleLauncherOpen, setIsModuleLauncherOpen] = useState(false)
 
     const { config } = useHeader()
     const { isHubEffectivelyOpen } = useHubPanel()
@@ -54,6 +55,19 @@ function DashboardShellInner({ children }: { children: React.ReactNode }) {
         <div className="relative h-screen bg-background overflow-hidden font-sans">
             {/* ── TOP BAR ────────────────────────────────────────────── */}
             <div className="absolute top-0 left-0 right-0 h-16 flex items-center bg-background z-30 gap-3 px-4 md:px-6">
+                {/* Hamburger: always-visible module selector trigger */}
+                <button
+                    onClick={() => setIsModuleLauncherOpen(true)}
+                    className="flex-none flex items-center justify-center w-9 h-9 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors cursor-pointer focus:outline-none focus-visible:ring-1 focus-visible:ring-primary/30"
+                    aria-label="Seleccionar módulo"
+                >
+                    <Menu className="h-5 w-5" />
+                </button>
+                <ModuleLauncher
+                    open={isModuleLauncherOpen}
+                    onClose={() => setIsModuleLauncherOpen(false)}
+                />
+
                 {/* Left: page title & meta — fills remaining space */}
                 <div className="flex-1 flex items-center gap-4 min-w-0 pointer-events-none">
                     <AnimatePresence mode="wait">
