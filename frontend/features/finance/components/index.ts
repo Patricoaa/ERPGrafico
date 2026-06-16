@@ -9,5 +9,5 @@ export * from './FinancialStatementTable';
 export * from './RatiosView';
 export * from './StatementsView';
 export * from './AccountDrawer';
-export * from './PaymentDrawer';
+
 export * from './TransactionNumberDrawer';

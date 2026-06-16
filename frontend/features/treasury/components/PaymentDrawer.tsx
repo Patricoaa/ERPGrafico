@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/form"
 import { Button } from "@/components/ui/button"
 import { toast } from "sonner"
-import { financeApi } from "../api/financeApi"
+import { financeApi } from "@/features/finance/api/financeApi"
 import { AdvancedContactSelector } from "@/components/selectors/AdvancedContactSelector"
 import { TreasuryAccountSelector } from "@/components/selectors/TreasuryAccountSelector"
 import { CreditCard, Landmark, Wallet, ClipboardList, Printer, ArrowRightLeft, Hash } from "lucide-react"
@@ -23,10 +23,9 @@ import { useReactToPrint } from "react-to-print"
 import { PrintableLayout } from "@/features/_shared/transaction-drawer"
 import { formatCurrency } from "@/lib/money"
 import { ActivitySidebar } from "@/features/audit/components"
-import { usePayment } from "@/features/finance/hooks/usePayment"
+import { usePayment } from "@/features/treasury/hooks/usePayment"
 import type { DrawerMode } from "@/features/_shared/drawer/types"
 
-// schema and types remain the same
 const paymentSchema = z.object({
     payment_type: z.enum(["INBOUND", "OUTBOUND"]),
     payment_method: z.enum(["CASH", "DEBIT_CARD", "CREDIT_CARD", "TRANSFER", "CHECK"]),
@@ -134,7 +133,6 @@ export function PaymentDrawer({
 
     const availableMethods = methodsData as PaymentMethodOption[]
 
-    // Auto-select first available payment method when methods load
     useEffect(() => {
         if (availableMethods.length > 0) {
             const currentPM = form.getValues("payment_method_new")
@@ -147,7 +145,6 @@ export function PaymentDrawer({
         }
     }, [availableMethods, treasuryAccountId, form])
 
-    // Sync view data into form for read-only mode
     useEffect(() => {
         if (isViewMode && paymentData) {
             form.reset({

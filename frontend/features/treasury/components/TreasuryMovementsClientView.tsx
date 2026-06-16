@@ -18,7 +18,7 @@ import { useSelectedEntity } from "@/hooks/useSelectedEntity"
 import { createEntityCardView } from "@/lib/view-helpers"
 
 // Lazy load heavy components
-import { PaymentDrawer } from "@/features/finance/components/PaymentDrawer"
+import { CashMovementDrawer } from "@/features/treasury/components/CashMovementDrawer"
 const CashMovementModal = lazy(() => import("./CashMovementModal"))
 
 interface TreasuryMovement {
@@ -286,11 +286,7 @@ export function TreasuryMovementsClientView({ externalOpen, createAction }: Trea
                 const m = row.original
                 if (!m.created_by) return <DataCell.Secondary>-</DataCell.Secondary>
                 return (
-                    <DataCell.Entity
-                        entityLabel="core.user"
-                        data={{ id: m.created_by, username: m.created_by_name }}
-                        size="sm"
-                    />
+                    <DataCell.Text>{m.created_by_name}</DataCell.Text>
                 )
             },
         },
@@ -406,9 +402,8 @@ export function TreasuryMovementsClientView({ externalOpen, createAction }: Trea
 
             <SkeletonShell isLoading={isLoading} ariaLabel="Cargando vista de detalle de movimiento">
                 {selectedMovementId && (
-                    <PaymentDrawer
-                        paymentId={selectedMovementId}
-                        mode="view"
+                    <CashMovementDrawer
+                        id={selectedMovementId}
                         open={detailsOpen}
                         onOpenChange={(open) => {
                             setDetailsOpen(open)

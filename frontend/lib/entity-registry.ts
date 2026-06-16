@@ -250,6 +250,7 @@ export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
     shortTemplate: 'TRX-{id}',
     listUrl: '/treasury/operaciones/movements',
     detailUrlPattern: '/treasury/operaciones/movements?selected={id}',
+    hasDrawer: true,
     viewPolicy: { availableViews: ['list', 'grid'], defaultView: 'list', cardComponent: 'entity-compact', gridLayout: 'multi-column' },
   },
   'treasury.unbilled-charge': {
