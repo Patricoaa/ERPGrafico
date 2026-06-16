@@ -188,7 +188,7 @@ export function Step2_DTE({
             )}
 
             {isDefaultCustomer && (
-                <Alert variant="warning">
+                <Alert variant="info">
                     <AlertCircle className="h-4 w-4" />
                     <AlertDescription className="text-xs font-medium">
                         El cliente por defecto solo permite emisión de{" "}
