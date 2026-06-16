@@ -10,21 +10,28 @@ import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { PrintableReceipt, BaseModal } from '@/components/shared'
 import { useDeviceContext } from '@/hooks/useDeviceContext'
-import { Loader2, LayoutGrid, FileText, ChevronDown, BarChart3, Save, Lock, Unlock, ArrowRightLeft, LogOut, ShoppingCart, Wallet } from 'lucide-react'
+import { Loader2, FileText, BarChart3, Save, Lock, Unlock, ArrowRightLeft, LogOut, ShoppingCart, Wallet, Check, Printer } from 'lucide-react'
 import { AnimatePresence, motion } from 'framer-motion'
 import {
     DropdownMenu,
     DropdownMenuContent,
     DropdownMenuItem,
-    DropdownMenuCheckboxItem,
+    DropdownMenuLabel,
     DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
+import { Switch } from '@/components/ui/switch'
+import { Avatar, AvatarFallback } from '@/components/ui/avatar'
+import {
+    Tooltip,
+    TooltipContent,
+    TooltipProvider,
+    TooltipTrigger,
+} from '@/components/ui/tooltip'
 import { toast } from 'sonner'
 import { posApi } from '../api/posApi'
 import * as Validation from '@/features/pos/utils/validation'
 import { cn } from "@/lib/utils"
-import { Check, Printer } from 'lucide-react'
 import { isPOSProductDisabled } from '@/features/pos/utils/product-availability'
 
 import { usePOS } from '@/features/pos/contexts/POSContext'
@@ -401,16 +408,7 @@ export function POSClientView() {
                     <h2 className="text-lg font-bold tracking-tight">
                         {currentSession?.terminal_name || "Punto de Venta"}
                     </h2>
-                    {currentSession?.status === 'OPEN' && (
-                        <div className="hidden sm:flex items-center gap-1.5">
-                            <span className="border border-primary/20 bg-primary/5 text-primary tracking-widest px-1.5 py-0.5 h-5 flex items-center text-[9px] font-bold uppercase transition-colors rounded-sm">
-                                #{currentSession.id}
-                            </span>
-                            <span className="border border-success/30 bg-success/5 text-success px-1.5 py-0.5 h-5 flex items-center text-[9px] font-medium uppercase rounded-sm">
-                                {user?.first_name} {user?.last_name}
-                            </span>
-                        </div>
-                    )}
+
                 </div>
 
                 {/* Middle: Steps Header */}
@@ -449,7 +447,7 @@ export function POSClientView() {
                                             variant="outline"
                                             size="sm"
                                             className={cn(
-                                                "h-7 min-w-[40px] px-2 text-[10px] font-mono font-bold transition-all duration-300 gap-1.5 relative rounded-sm",
+                                                "h-10 min-w-[40px] px-2 text-[10px] font-mono font-bold transition-all duration-300 gap-1.5 relative rounded-md",
                                                 currentDraftId === d.id ? "bg-primary/5 border-primary text-primary shadow-sm border-solid ring-1 ring-primary/20" : "border-dashed text-muted-foreground",
                                                 isSaving && currentDraftId === d.id && "animate-pulse opacity-70",
                                                 lockedByOther && "border-destructive/40 opacity-60",
@@ -472,58 +470,62 @@ export function POSClientView() {
                                     )
                                 })}
                                 {currentDraftId === null && items.length > 0 && (
-                                    <span className="h-7 border border-dashed border-muted-foreground/30 text-[9px] px-2 opacity-50 bg-muted/20 flex items-center justify-center rounded-sm text-muted-foreground uppercase font-bold tracking-widest">
+                                    <span className="h-10 border border-dashed border-muted-foreground/30 text-[9px] px-2 opacity-50 bg-muted/20 flex items-center justify-center rounded-md text-muted-foreground uppercase font-bold tracking-widest">
                                         Nuevo...
                                     </span>
                                 )}
                             </div>
                         )
                     })()}
+                    <TooltipProvider delayDuration={0}>
                     <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                            <Button variant="outline" size="sm" className="gap-2 h-7 px-3 text-xs">
-                                <LayoutGrid className="h-3.5 w-3.5" />
-                                <span className="hidden sm:inline">Menú</span>
-                                <ChevronDown className="h-3 w-3 opacity-50" />
-                            </Button>
-                        </DropdownMenuTrigger>
+                        <Tooltip>
+                            <TooltipTrigger asChild>
+                                <DropdownMenuTrigger asChild>
+                                    <motion.button
+                                        whileTap={{ scale: 0.95 }}
+                                        className="relative h-10 w-10 flex items-center justify-center rounded-full text-foreground/50 hover:bg-accent hover:text-accent-foreground transition-all duration-200 bg-transparent border border-border/60"
+                                    >
+                                        <Avatar className="h-full w-full rounded-full bg-transparent">
+                                            <AvatarFallback className="bg-transparent text-current font-heading font-black text-[10px] rounded-full">
+                                                {user?.username?.substring(0, 2).toUpperCase() || 'US'}
+                                            </AvatarFallback>
+                                        </Avatar>
+                                    </motion.button>
+                                </DropdownMenuTrigger>
+                            </TooltipTrigger>
+                            <TooltipContent side="bottom">
+                                Menú
+                            </TooltipContent>
+                        </Tooltip>
                         <DropdownMenuContent align="end" className="w-56">
-                            <DropdownMenuCheckboxItem checked={isTouchMode} onCheckedChange={toggleTouchMode}>
-                                Modo Táctil (Numpad)
-                            </DropdownMenuCheckboxItem>
+                            <DropdownMenuLabel className="font-normal py-3">
+                                <div className="flex flex-col">
+                                    <p className="text-sm font-bold text-foreground">{user?.first_name ? `${user.first_name} ${user.last_name || ''}`.trim() : (user?.username || 'Usuario')}</p>
+                                    <p className="text-[10px] uppercase text-muted-foreground">{user?.groups?.[0] || ''}</p>
+                                    {currentSession?.id && (
+                                        <p className="text-[10px] font-mono font-bold text-primary mt-1">Sesión #{currentSession.id}</p>
+                                    )}
+                                </div>
+                            </DropdownMenuLabel>
                             <DropdownMenuSeparator />
-                            <DropdownMenuItem onClick={() => setDraftsListOpen(true)}><Save className="mr-2 h-4 w-4" />Ver Borradores</DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => sessionControlRef.current?.showXReport()}><BarChart3 className="mr-2 h-4 w-4" />Reporte Parcial</DropdownMenuItem>
+                            <div className="flex items-center justify-between px-2 py-1.5">
+                                <span className="text-xs font-medium">Modo Táctil</span>
+                                <Switch checked={isTouchMode} onCheckedChange={toggleTouchMode} />
+                            </div>
+                            <DropdownMenuSeparator />
                             <DropdownMenuItem onClick={() => setOrdersModalOpen(true)}><FileText className="mr-2 h-4 w-4" />Notas de Venta</DropdownMenuItem>
-
-                            {/* Partner Withdrawal Option */}
-                            {items.length > 0 && (
-                                <DropdownMenuItem
-                                    onClick={() => setWithdrawDialogOpen(true)}
-                                    disabled={items.some(i => !i.track_inventory)}
-                                    className="font-bold text-warning focus:text-warning"
-                                >
-                                    <ShoppingCart className="mr-2 h-4 w-4" />
-                                    Retiro de Socio
-                                </DropdownMenuItem>
-                            )}
-
-                            {currentSession?.status === 'OPEN' && (
-                                <>
-                                    <DropdownMenuItem onClick={() => sessionControlRef.current?.showMoveDialog()}><ArrowRightLeft className="mr-2 h-4 w-4" />Movimiento de Caja</DropdownMenuItem>
-                                    <DropdownMenuItem onClick={() => sessionControlRef.current?.requestCloseSession()} className="text-destructive focus:text-destructive">
-                                        <Lock className="mr-2 h-4 w-4" />
-                                        Cerrar Caja
-                                    </DropdownMenuItem>
-                                </>
-                            )}
+                            <DropdownMenuItem onClick={() => sessionControlRef.current?.showMoveDialog()}><ArrowRightLeft className="mr-2 h-4 w-4" />Movimiento de Caja</DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => sessionControlRef.current?.showXReport()}><BarChart3 className="mr-2 h-4 w-4" />Reporte de la Sesión</DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => setDraftsListOpen(true)}><Save className="mr-2 h-4 w-4" />Ver Borradores</DropdownMenuItem>
                             <DropdownMenuSeparator />
-                            <DropdownMenuItem onClick={() => window.location.href = '/'} className="text-primary font-bold">
-                                <LogOut className="mr-2 h-4 w-4 rotate-180" />
-                                Volver al ERP
+                            <DropdownMenuItem onClick={() => sessionControlRef.current?.requestCloseSession()} className="text-destructive focus:text-destructive">
+                                <Lock className="mr-2 h-4 w-4" />
+                                Cerrar Caja
                             </DropdownMenuItem>
                         </DropdownMenuContent>
                     </DropdownMenu>
+                    </TooltipProvider>
                     <SessionControl ref={sessionControlRef} onSessionChange={setCurrentSession} session={currentSession ?? undefined} hideSessionInfo />
                 </div>
             </div>
@@ -613,6 +615,7 @@ export function POSClientView() {
                         onItemRemove={removeFromCart}
                         onOpenNumpad={handleOpenNumpad}
                         onQuickSale={handleQuickSale}
+                        onWithdrawClick={() => setWithdrawDialogOpen(true)}
                         onConfirmSale={handleConfirmSale}
                         totalDiscountAmount={totalDiscountAmount}
                         onTotalDiscountChange={setTotalDiscountAmount}

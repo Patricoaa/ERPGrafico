@@ -47,6 +47,7 @@ interface CartProps {
     onItemRemove: (cartItemId: string) => void
     onOpenNumpad: (cartItemId: string | 'cart', field: 'qty' | 'price' | 'discount', currentValue: number) => void
     onQuickSale: () => void
+    onWithdrawClick?: () => void
     onConfirmSale: () => void
     posMode?: 'SHOPPING' | 'CHECKOUT'
     wizardState?: WizardState | null
@@ -70,6 +71,7 @@ export function Cart({
     onItemRemove,
     onOpenNumpad,
     onQuickSale,
+    onWithdrawClick,
     onConfirmSale,
     totalDiscountAmount = 0,
     onTotalDiscountChange,
@@ -240,23 +242,43 @@ export function Cart({
                     {/* Status Bar removed from here */}
 
                     {posMode === 'SHOPPING' && (
-                        /* Quick Sale Button */
-                        <Button
-                            variant="outline"
-                            className={cn(
-                                "w-full font-bold border-primary text-primary hover:bg-primary hover:text-primary-foreground transition-all",
-                                isTouchPOS ? "h-14 text-base" : "h-10 text-sm"
+                        <>
+                            {/* Quick Sale Button */}
+                            <Button
+                                variant="outline"
+                                className={cn(
+                                    "w-full font-bold border-primary text-primary hover:bg-primary hover:text-primary-foreground transition-all",
+                                    isTouchPOS ? "h-14 text-base" : "h-10 text-sm"
+                                )}
+                                disabled={loading || items.length === 0 || !canQuickSale.allowed}
+                                onClick={onQuickSale}
+                                title={!canQuickSale.allowed ? canQuickSale.reason : "Venta rápida: Saltar directo a pago con BOLETA"}
+                            >
+                                <Zap className={cn(
+                                    "mr-2",
+                                    isTouchPOS ? "h-6 w-6" : "h-5 w-5"
+                                )} />
+                                {!canQuickSale.allowed ? canQuickSale.reason : "Venta Rápida"}
+                            </Button>
+
+                            {/* Partner Withdrawal */}
+                            {onWithdrawClick && items.length > 0 && items.every(i => i.track_inventory) && (
+                                <Button
+                                    variant="outline"
+                                    className={cn(
+                                        "w-full font-bold border-warning/40 text-warning hover:bg-warning hover:text-warning-foreground transition-all",
+                                        isTouchPOS ? "h-14 text-base" : "h-10 text-sm"
+                                    )}
+                                    onClick={onWithdrawClick}
+                                >
+                                    <ShoppingCart className={cn(
+                                        "mr-2",
+                                        isTouchPOS ? "h-6 w-6" : "h-5 w-5"
+                                    )} />
+                                    Retiro de Socio
+                                </Button>
                             )}
-                            disabled={loading || items.length === 0 || !canQuickSale.allowed}
-                            onClick={onQuickSale}
-                            title={!canQuickSale.allowed ? canQuickSale.reason : "Venta rápida: Saltar directo a pago con BOLETA"}
-                        >
-                            <Zap className={cn(
-                                "mr-2",
-                                isTouchPOS ? "h-6 w-6" : "h-5 w-5"
-                            )} />
-                            {!canQuickSale.allowed ? canQuickSale.reason : "Venta Rápida"}
-                        </Button>
+                        </>
                     )}
 
                     {/* Totals */}
