@@ -2,7 +2,7 @@
 import { formatCurrency } from "@/lib/money"
 
 import { showApiError } from "@/lib/errors"
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo } from "react"
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
 
@@ -16,13 +16,13 @@ import { toast } from "sonner"
 import { posApi } from "../api/posApi"
 import { POSReport, type POSReportData } from "@/features/pos/components/POSReport"
 import { SessionCloseModal } from "@/features/pos/components/SessionCloseModal"
-import { ActionConfirmModal, BaseModal, Numpad } from '@/components/shared'
+import { BaseModal, Numpad } from '@/components/shared'
 import { TreasuryAccountSelector } from "@/components/selectors/TreasuryAccountSelector"
 import { forwardRef, useImperativeHandle } from "react"
 
-import { useConfirmAction } from "@/hooks/useConfirmAction"
 import { cn } from "@/lib/utils"
 import type { POSSession, POSTerminal, AccountingSettings, TreasuryAccount, POSSessionAudit } from "@/types/pos"
+import { DEFICIT_OPTIONS, SURPLUS_OPTIONS, type JustifyOption } from "@/features/pos/utils/reasons"
 
 interface SessionControlProps {
     onSessionChange?: (session: POSSession | null) => void
@@ -39,8 +39,7 @@ export interface SessionControlHandle {
 }
 
 export const SessionControl = forwardRef<SessionControlHandle, SessionControlProps>(({ onSessionChange, hideSessionInfo = false, session }, ref) => {
-    const [currentSession, setCurrentSession] = useState<POSSession | null>(session || null)
-    const [loading, setLoading] = useState(!session)
+    const [loading, setLoading] = useState(session === undefined)
     const [openDialogOpen, setOpenDialogOpen] = useState(false)
     const [closeDialogOpen, setCloseDialogOpen] = useState(false)
     const [reportDialogOpen, setReportDialogOpen] = useState(false)
@@ -61,6 +60,12 @@ export const SessionControl = forwardRef<SessionControlHandle, SessionControlPro
     // Fund validation for session opening
     const [openingSelectedAccount, setOpeningSelectedAccount] = useState<TreasuryAccount | null>(null)
     const [openingInsufficientFunds, setOpeningInsufficientFunds] = useState(false)
+    const [justifySearchTerm, setJustifySearchTerm] = useState("")
+
+    const selectedTerminal = useMemo(() => terminals.find(t => t.id === parseInt(selectedTerminalId)), [terminals, selectedTerminalId])
+    const expectedBalance = selectedTerminal?.default_treasury_account_balance || 0
+    const actualBalance = parseFloat(openingBalance) || 0
+    const openingDiff = actualBalance - expectedBalance
 
     // Shared session selection
     const [selectedSharedSessionId, setSelectedSharedSessionId] = useState<string>("")
@@ -98,19 +103,13 @@ export const SessionControl = forwardRef<SessionControlHandle, SessionControlPro
     // Fetch selected account for transfer validation during opening
     useEffect(() => {
         if (openingJustifyTargetId && openingJustifyReason === 'TRANSFER' && selectedTerminalId) {
-            const terminal = terminals.find(t => t.id === parseInt(selectedTerminalId))
-            const expected = terminal?.default_treasury_account_balance || 0
-            const actual = parseFloat(openingBalance) || 0
-            const diff = actual - expected
-
             posApi.getTreasuryAccount(Number(openingJustifyTargetId))
-                .then(data => {
+                .then((data: TreasuryAccount) => {
                     requestAnimationFrame(() => {
                         setOpeningSelectedAccount(data)
-                        if (diff > 0 && (data as any).current_balance !== undefined) {
-                            const available = (data as any).current_balance as number
-                            const needed = Math.abs(diff)
-                            setOpeningInsufficientFunds(available < needed)
+                        if (openingDiff > 0 && data.current_balance !== undefined) {
+                            const needed = Math.abs(openingDiff)
+                            setOpeningInsufficientFunds(data.current_balance < needed)
                         } else {
                             setOpeningInsufficientFunds(false)
                         }
@@ -129,19 +128,15 @@ export const SessionControl = forwardRef<SessionControlHandle, SessionControlPro
                 setOpeningInsufficientFunds(false)
             })
         }
-    }, [openingJustifyTargetId, openingJustifyReason, selectedTerminalId, openingBalance, terminals])
-
-    const closeSessionConfirm = useConfirmAction(async () => {
-        setCloseDialogOpen(true)
-    })
+    }, [openingJustifyTargetId, openingJustifyReason, selectedTerminalId, openingDiff])
 
     const handleRequestClose = () => {
-        closeSessionConfirm.requestConfirm()
+        setCloseDialogOpen(true)
     }
 
     useImperativeHandle(ref, () => ({
         showXReport: () => {
-            if (currentSession) {
+            if (session) {
                 handleShowXReport()
             } else {
                 toast.error("No hay una sesión activa para generar el reporte")
@@ -159,25 +154,22 @@ export const SessionControl = forwardRef<SessionControlHandle, SessionControlPro
         requestCloseSession: handleRequestClose,
         disconnectSharedSession: handleDisconnect
     }))
-    // Fetch current session on mount (or shared session)
+    // Fetch current session on mount (uncontrolled mode fallback)
     useEffect(() => {
-        const storedSharedId = localStorage.getItem('shared_pos_session_id')
         if (session !== undefined) {
-            requestAnimationFrame(() => {
-                setCurrentSession(session)
-                setLoading(false)
-            })
+            setLoading(false)
             return
         }
 
+        const storedSharedId = localStorage.getItem('shared_pos_session_id')
         if (storedSharedId) {
             fetchSharedSession(parseInt(storedSharedId))
         } else {
             fetchCurrentSession()
         }
-    }, [session]) // Removed all other dependencies to prevent re-initialization
+    }, [session])
 
-    // Fetch terminals on mount (separate from session initialization)
+    // Fetch terminals on mount
     useEffect(() => {
         fetchTerminals()
     }, [])
@@ -188,11 +180,7 @@ export const SessionControl = forwardRef<SessionControlHandle, SessionControlPro
             if (e.key === "Enter" && !e.shiftKey && !e.ctrlKey && !e.metaKey) {
                 // Determine which action to trigger based on open dialogs
                 if (openDialogOpen && selectedTerminalId && wizardStep === 4) {
-                    const terminal = terminals.find(t => t.id === parseInt(selectedTerminalId))
-                    const expected = terminal?.default_treasury_account_balance || 0
-                    const actual = parseFloat(openingBalance) || 0
-                    const diff = actual - expected
-                    if (!(diff !== 0 && !openingJustifyReason)) {
+                    if (!(openingDiff !== 0 && !openingJustifyReason)) {
                         handleOpenSession()
                     }
                 }
@@ -204,34 +192,15 @@ export const SessionControl = forwardRef<SessionControlHandle, SessionControlPro
         return () => window.removeEventListener("keydown", handleKeyDown)
     }, [openDialogOpen, moveDialogOpen, selectedTerminalId, openingBalance, openingJustifyReason, terminals, wizardStep])
 
-    // Sync state when session prop changes (controlled mode)
-    // Sync local state when prop changes - Use ID comparison to avoid loops
-    useEffect(() => {
-        if (session !== undefined) {
-            // Only update if IDs differ to prevent feedback loops with context
-            if (session?.id !== currentSession?.id || (session === null && currentSession !== null) || (session !== null && currentSession === null)) {
-                requestAnimationFrame(() => {
-                    setCurrentSession(session)
-                    // If we now have an active session, clear any stale report modal
-                    if (session && session.status === 'OPEN') {
-                        setReportDialogOpen(false)
-                    }
-                })
-            }
-        }
-    }, [session, currentSession?.id])
-
     const fetchSharedSession = async (id: number) => {
         try {
             const sessionData = await posApi.getSession(id)
             if (sessionData && (sessionData as any).status === 'OPEN') {
-                setCurrentSession(sessionData)
                 onSessionChange?.(sessionData)
                 setIsSharedSession(true)
             } else {
-                // Invalid or closed
                 localStorage.removeItem('shared_pos_session_id')
-                fetchCurrentSession() // Fallback to personal session check
+                fetchCurrentSession()
             }
         } catch (error) {
             console.error("Error fetching shared session:", error)
@@ -246,11 +215,9 @@ export const SessionControl = forwardRef<SessionControlHandle, SessionControlPro
         try {
             const sessionData = await posApi.getCurrentSession()
             if (sessionData && (sessionData as any).id) {
-                setCurrentSession(sessionData)
                 onSessionChange?.(sessionData)
                 setIsSharedSession(false)
             } else {
-                setCurrentSession(null)
                 onSessionChange?.(null)
             }
         } catch (error) {
@@ -323,13 +290,11 @@ export const SessionControl = forwardRef<SessionControlHandle, SessionControlPro
                 justify_target_id: openingJustifyTargetId ? parseInt(openingJustifyTargetId) : null
             })
 
-            setCurrentSession(sessionData)
             onSessionChange?.(sessionData)
             setIsSharedSession(false)
             setOpenDialogOpen(false)
             setReportDialogOpen(false)
             toast.success("Caja abierta correctamente")
-            // Clear any stale shared session
             localStorage.removeItem('shared_pos_session_id')
         } catch (error: unknown) {
             showApiError(error, "Error al abrir caja")
@@ -344,43 +309,36 @@ export const SessionControl = forwardRef<SessionControlHandle, SessionControlPro
             return
         }
 
-        const session = availableSessions.find(s => s.id === parseInt(selectedSharedSessionId))
-        if (session) {
-            localStorage.setItem('shared_pos_session_id', session.id.toString())
-            setCurrentSession(session)
-            // onSessionChange passed here
-            onSessionChange?.(session)
+        const foundSession = availableSessions.find(s => s.id === parseInt(selectedSharedSessionId))
+        if (foundSession) {
+            localStorage.setItem('shared_pos_session_id', foundSession.id.toString())
+            onSessionChange?.(foundSession)
             setIsSharedSession(true)
             setOpenDialogOpen(false)
             setReportDialogOpen(false)
-            toast.success(`Unido a la sesión de ${session.user_name}`)
+            toast.success(`Unido a la sesión de ${foundSession.user_name}`)
         }
     }
 
     const handleDisconnect = () => {
         localStorage.removeItem('shared_pos_session_id')
-        setCurrentSession(null)
         onSessionChange?.(null)
         setIsSharedSession(false)
         toast.info("Desconectado de la sesión compartida")
-        // Optionally fetch personal session again
         setLoading(true)
         fetchCurrentSession()
     }
 
     const handleSessionCloseSuccess = async (audit: POSSessionAudit) => {
-        // Immediately fetch summary for Z Report
-        if (!currentSession) return
+        if (!session) return
 
         try {
-            const summaryData = await posApi.getSessionSummary(currentSession.id)
+            const summaryData = await posApi.getSessionSummary(session.id)
             setReportData(summaryData)
             setReportType("Z")
             setReportDialogOpen(true)
 
-            // Reset session state
             localStorage.removeItem('shared_pos_session_id')
-            setCurrentSession(null)
             onSessionChange?.(null)
             setIsSharedSession(false)
         } catch (error) {
@@ -389,11 +347,11 @@ export const SessionControl = forwardRef<SessionControlHandle, SessionControlPro
     }
 
     const handleShowXReport = async () => {
-        if (!currentSession) return
+        if (!session) return
 
         setLoading(true)
         try {
-            const reportData = await posApi.getSessionSummary(currentSession.id)
+            const reportData = await posApi.getSessionSummary(session.id)
             setReportData(reportData)
             setReportType("X")
             setReportDialogOpen(true)
@@ -406,11 +364,11 @@ export const SessionControl = forwardRef<SessionControlHandle, SessionControlPro
     }
 
     const handleRegisterManualMovement = async (data: MovementData) => {
-        if (!currentSession) return
+        if (!session) return
 
         setSubmitting(true)
         try {
-            const moveResult = await posApi.registerManualMovement(currentSession.id, {
+            const moveResult = await posApi.registerManualMovement(session.id, {
                 type: data.moveType,
                 amount: data.amount,
                 notes: data.notes,
@@ -418,7 +376,6 @@ export const SessionControl = forwardRef<SessionControlHandle, SessionControlPro
                 is_inflow: data.impact === 'TRANSFER' ? data.isInflowForce : (data.impact === 'IN')
             })
 
-            setCurrentSession((moveResult as any).session)
             onSessionChange?.((moveResult as any).session)
             setMoveDialogOpen(false)
             toast.success((moveResult as any).message)
@@ -543,16 +500,11 @@ export const SessionControl = forwardRef<SessionControlHandle, SessionControlPro
 
                         <div className="flex justify-center">
                             <div className="w-full max-w-sm bg-muted/30 p-4 rounded-md">
-                                <div className="text-right mb-4">
-                                    <div className="text-xs font-bold uppercase text-muted-foreground">Monto Ingresado</div>
-                                    <div className="text-3xl font-black font-mono tracking-tight text-primary">
-                                        {formatCurrency(parseFloat(openingBalance) || 0)}
-                                    </div>
-                                </div>
                                 <Numpad
                                     value={openingBalance}
                                     onChange={setOpeningBalance}
-                                    hideDisplay={true}
+                                    label="Monto Ingresado"
+                                    displayValue={formatCurrency(parseFloat(openingBalance) || 0)}
                                     allowDecimal={true}
                                     className="w-full max-w-full shadow-none border-0 p-0"
                                     onConfirm={handleNextStep}
@@ -578,162 +530,132 @@ export const SessionControl = forwardRef<SessionControlHandle, SessionControlPro
                 )
 
             case 4: // Confirmation & Justification
-                const term = terminals.find(t => t.id === parseInt(selectedTerminalId))
-                const expected = term?.default_treasury_account_balance || 0
-                const actual = parseFloat(openingBalance) || 0
-                const diff = actual - expected
-                const hasDiff = diff !== 0
-
                 return (
                     <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-300">
                         <div className="text-center">
                             <Unlock className="h-6 w-6 text-muted-foreground" />
                             <h3 className="font-bold text-xl">Confirmar Apertura</h3>
-                            <p className="text-muted-foreground">{term?.name}</p>
+                            <p className="text-muted-foreground">{selectedTerminal?.name}</p>
                         </div>
 
                         <div className="bg-card border rounded-md p-4 space-y-3 shadow-sm">
                             <div className="flex justify-between items-center text-sm">
                                 <span className="text-muted-foreground">Fondo en Sistema:</span>
-                                <span className="font-medium">{formatCurrency(expected)}</span>
+                                <span className="font-medium">{formatCurrency(expectedBalance)}</span>
                             </div>
                             <div className="flex justify-between items-center text-lg font-bold border-t pt-2">
                                 <span>Fondo Contado:</span>
-                                <span className="text-primary">{formatCurrency(actual)}</span>
+                                <span className="text-primary">{formatCurrency(actualBalance)}</span>
                             </div>
                         </div>
 
-                        {hasDiff && (
-                            <div className="bg-warning/10 border border-warning/20 rounded-md p-4 space-y-3">
-                                <div className="flex items-center gap-2 text-warning font-bold">
-                                    <AlertTriangle className="h-4 w-4" />
-                                    <span>Se detectó una diferencia</span>
-                                </div>
-                                <div className="flex justify-between text-sm">
-                                    <span>{diff > 0 ? "Sobrante" : "Faltante"}:</span>
-                                    <span className="font-bold">{formatCurrency(Math.abs(diff))}</span>
-                                </div>
-                                <div className="space-y-1">
-                                    <Label className="text-xs">Motivo (Requerido)</Label>
-                                    <Popover>
-                                        <PopoverTrigger asChild>
-                                            <Button
-                                                variant="outline"
-                                                role="combobox"
-                                                className="w-full justify-between h-9 bg-background font-normal"
-                                            >
-                                                {openingJustifyReason
-                                                    ? (diff < 0
-                                                        ? [
-                                                            { value: "COUNTING_ERROR", label: "Error de Conteo / Ajuste" },
-                                                            { value: "TRANSFER", label: "Traspaso (Dinero enviado a otra caja)" },
-                                                            { value: "PARTNER_WITHDRAWAL", label: "Retiro Socio" },
-                                                            { value: "THEFT", label: "Faltante / Robo" },
-                                                            { value: "SYSTEM_ERROR", label: "Error de Sistema" },
-                                                        ].find(opt => opt.value === openingJustifyReason)?.label
-                                                        : [
-                                                            { value: "COUNTING_ERROR", label: "Error de Conteo / Ajuste" },
-                                                            { value: "TIP", label: "Propina" },
-                                                            { value: "TRANSFER", label: "Traspaso (Dinero recibido de otra caja)" },
-                                                            { value: "OTHER_IN", label: "Otro Depósito" },
-                                                            { value: "SYSTEM_ERROR", label: "Error de Sistema" },
-                                                        ].find(opt => opt.value === openingJustifyReason)?.label
-                                                    ) || "Seleccione motivo..."
-                                                    : "Seleccione motivo..."}
-                                                <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                                            </Button>
-                                        </PopoverTrigger>
-                                        <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0">
-                                            <div className="p-2">
-                                                <div className="flex items-center px-3 border rounded-md mb-2 bg-background">
-                                                    <Search className="mr-2 h-4 w-4 shrink-0 opacity-50" />
-                                                    <input
-                                                        className="flex h-10 w-full rounded-md bg-transparent py-3 text-sm outline-none placeholder:text-muted-foreground"
-                                                        placeholder="Buscar motivo..."
-                                                        onChange={(e) => {
-                                                            const val = e.target.value.toLowerCase()
-                                                            const inputs = document.querySelectorAll('.justify-popover-item')
-                                                            inputs.forEach((el) => {
-                                                                if (el.textContent?.toLowerCase().includes(val)) {
-                                                                    (el as HTMLElement).style.display = 'flex'
-                                                                } else {
-                                                                    (el as HTMLElement).style.display = 'none'
-                                                                }
-                                                            })
-                                                        }}
-                                                    />
+                        {(() => {
+                            const reasons = openingDiff < 0
+                                ? (() => {
+                                    let opts = [...DEFICIT_OPTIONS]
+                                    if (!accountingSettings?.pos_partner_withdrawal_account) opts = opts.filter(o => o.value !== 'PARTNER_WITHDRAWAL')
+                                    if (!accountingSettings?.pos_theft_account) opts = opts.filter(o => o.value !== 'THEFT')
+                                    return opts
+                                })()
+                                : [...SURPLUS_OPTIONS]
+
+                            const selectedLabel = reasons.find(r => r.value === openingJustifyReason)?.label
+
+                            return openingDiff !== 0 && (
+                                <div className="bg-warning/10 border border-warning/20 rounded-md p-4 space-y-3">
+                                    <div className="flex items-center gap-2 text-warning font-bold">
+                                        <AlertTriangle className="h-4 w-4" />
+                                        <span>Se detectó una diferencia</span>
+                                    </div>
+                                    <div className="flex justify-between text-sm">
+                                        <span>{openingDiff > 0 ? "Sobrante" : "Faltante"}:</span>
+                                        <span className="font-bold">{formatCurrency(Math.abs(openingDiff))}</span>
+                                    </div>
+                                    <div className="space-y-1">
+                                        <Label className="text-xs">Motivo (Requerido)</Label>
+                                        <Popover onOpenChange={(open) => { if (!open) setJustifySearchTerm("") }}>
+                                            <PopoverTrigger asChild>
+                                                <Button
+                                                    variant="outline"
+                                                    role="combobox"
+                                                    className="w-full justify-between h-9 bg-background font-normal"
+                                                >
+                                                    {selectedLabel || "Seleccione motivo..."}
+                                                    <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                                                </Button>
+                                            </PopoverTrigger>
+                                            <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0">
+                                                <div className="p-2">
+                                                    <div className="flex items-center px-3 border rounded-md mb-2 bg-background">
+                                                        <Search className="mr-2 h-4 w-4 shrink-0 opacity-50" />
+                                                        <input
+                                                            className="flex h-10 w-full rounded-md bg-transparent py-3 text-sm outline-none placeholder:text-muted-foreground"
+                                                            placeholder="Buscar motivo..."
+                                                            value={justifySearchTerm}
+                                                            onChange={(e) => setJustifySearchTerm(e.target.value)}
+                                                        />
+                                                    </div>
+                                                    <div className="max-h-[200px] overflow-y-auto space-y-1">
+                                                        {reasons
+                                                            .filter(r => !justifySearchTerm || r.label.toLowerCase().includes(justifySearchTerm.toLowerCase()))
+                                                            .map((opt) => (
+                                                                <div
+                                                                    key={opt.value}
+                                                                    className={cn(
+                                                                        "relative flex cursor-pointer select-none items-center rounded-sm px-2 py-2 text-sm outline-none hover:bg-accent hover:text-accent-foreground",
+                                                                        openingJustifyReason === opt.value && "bg-accent"
+                                                                    )}
+                                                                    onClick={() => {
+                                                                        setOpeningJustifyReason(opt.value)
+                                                                        setJustifySearchTerm("")
+                                                                        document.body.click()
+                                                                    }}
+                                                                >
+                                                                    <span>{opt.label}</span>
+                                                                    {openingJustifyReason === opt.value && <Check className="ml-auto h-4 w-4 opacity-100" />}
+                                                                </div>
+                                                            ))}
+                                                        {reasons.length > 0 && justifySearchTerm && !reasons.some(r => r.label.toLowerCase().includes(justifySearchTerm.toLowerCase())) && (
+                                                            <div className="px-2 py-4 text-center text-sm text-muted-foreground">Sin resultados</div>
+                                                        )}
+                                                    </div>
                                                 </div>
-                                                <div className="max-h-[200px] overflow-y-auto space-y-1">
-                                                    {(diff < 0
-                                                        ? [
-                                                            { value: "COUNTING_ERROR", label: "Error de Conteo (Ajuste)" },
-                                                            { value: "TRANSFER", label: "Traspaso (Dinero Enviado)" },
-                                                            ...(accountingSettings?.pos_partner_withdrawal_account ? [{ value: "PARTNER_WITHDRAWAL", label: "Retiro Socio" }] : []),
-                                                            ...(accountingSettings?.pos_theft_account ? [{ value: "THEFT", label: "Faltante / Robo" }] : []),
-                                                            { value: "SYSTEM_ERROR", label: "Error de Sistema" },
-                                                        ]
-                                                        : [
-                                                            { value: "COUNTING_ERROR", label: "Error de Conteo (Ajuste)" },
-                                                            { value: "TIP", label: "Propina" },
-                                                            { value: "TRANSFER", label: "Traspaso (Dinero Recibido)" },
-                                                            { value: "OTHER_IN", label: "Otro Depósito" },
-                                                            { value: "SYSTEM_ERROR", label: "Error de Sistema" },
-                                                        ]).map((opt) => (
-                                                            <div
-                                                                key={opt.value}
-                                                                className={cn(
-                                                                    "justify-popover-item relative flex cursor-pointer select-none items-center rounded-sm px-2 py-2 text-sm outline-none hover:bg-accent hover:text-accent-foreground",
-                                                                    openingJustifyReason === opt.value && "bg-accent"
-                                                                )}
-                                                                onClick={() => {
-                                                                    setOpeningJustifyReason(opt.value)
-                                                                    document.body.click()
-                                                                }}
-                                                            >
-                                                                <span>{opt.label}</span>
-                                                                {openingJustifyReason === opt.value && <Check className="ml-auto h-4 w-4 opacity-100" />}
+                                            </PopoverContent>
+                                        </Popover>
+                                    </div>
+
+                                    {openingJustifyReason === 'TRANSFER' && (
+                                        <div className="space-y-2 animate-in fade-in slide-in-from-top-2">
+                                            <Label className="text-xs">
+                                                {openingDiff < 0 ? 'Cuenta de Destino (¿A dónde se fue?)' : 'Cuenta de Origen (¿De dónde vino?)'}
+                                            </Label>
+                                            <TreasuryAccountSelector
+                                                value={openingJustifyTargetId}
+                                                onChange={setOpeningJustifyTargetId}
+                                                placeholder={openingDiff < 0 ? "Seleccione destino..." : "Seleccione origen..."}
+                                                excludeId={selectedTerminal?.default_treasury_account}
+                                            />
+
+                                            {openingInsufficientFunds && openingSelectedAccount && (
+                                                <div className="bg-destructive/10 border border-destructive/20 rounded-md p-3 space-y-1">
+                                                    <div className="flex items-start gap-2">
+                                                        <AlertTriangle className="h-4 w-4 text-destructive mt-0.5 flex-shrink-0" />
+                                                        <div className="text-sm text-destructive">
+                                                            <div className="font-bold">Fondos Insuficientes</div>
+                                                            <div className="text-xs mt-1 space-y-0.5">
+                                                                <div>Disponible en {openingSelectedAccount.name}: {formatCurrency(openingSelectedAccount.current_balance || 0)}</div>
+                                                                <div>Necesario: {formatCurrency(Math.abs(openingDiff))}</div>
+                                                                <div className="font-semibold">Faltante: {formatCurrency(Math.abs(openingDiff) - (openingSelectedAccount.current_balance || 0))}</div>
                                                             </div>
-                                                        ))
-                                                    }
-                                                </div>
-                                            </div>
-                                        </PopoverContent>
-                                    </Popover>
-                                </div>
-
-                                {/* Dynamic selector for Transfer justification */}
-                                {openingJustifyReason === 'TRANSFER' && (
-                                    <div className="space-y-2 animate-in fade-in slide-in-from-top-2">
-                                        <Label className="text-xs">
-                                            {diff < 0 ? 'Cuenta de Destino (¿A dónde se fue?)' : 'Cuenta de Origen (¿De dónde vino?)'}
-                                        </Label>
-                                        <TreasuryAccountSelector
-                                            value={openingJustifyTargetId}
-                                            onChange={setOpeningJustifyTargetId}
-                                            placeholder={diff < 0 ? "Seleccione destino..." : "Seleccione origen..."}
-                                            excludeId={term?.default_treasury_account}
-                                        />
-
-                                        {/* Insufficient funds warning */}
-                                        {openingInsufficientFunds && openingSelectedAccount && (
-                                            <div className="bg-destructive/10 border border-destructive/20 rounded-md p-3 space-y-1">
-                                                <div className="flex items-start gap-2">
-                                                    <AlertTriangle className="h-4 w-4 text-destructive mt-0.5 flex-shrink-0" />
-                                                    <div className="text-sm text-destructive">
-                                                        <div className="font-bold">Fondos Insuficientes</div>
-                                                        <div className="text-xs mt-1 space-y-0.5">
-                                                            <div>Disponible en {openingSelectedAccount.name as string}: {formatCurrency((openingSelectedAccount.current_balance as number) || 0)}</div>
-                                                            <div>Necesario: {formatCurrency(Math.abs(diff))}</div>
-                                                            <div className="font-semibold">Faltante: {formatCurrency(Math.abs(diff) - ((openingSelectedAccount.current_balance as number) || 0))}</div>
                                                         </div>
                                                     </div>
                                                 </div>
-                                            </div>
-                                        )}
-                                    </div>
-                                )}
-                            </div>
-                        )}
+                                            )}
+                                        </div>
+                                    )}
+                                </div>
+                            )
+                        })()}
 
                         <div className="flex gap-2">
                             <Button variant="ghost" onClick={handlePrevStep} className="flex-1">Corregir</Button>
@@ -742,7 +664,7 @@ export const SessionControl = forwardRef<SessionControlHandle, SessionControlPro
                                 className="flex-[2]"
                                 disabled={
                                     submitting ||
-                                    (hasDiff && !openingJustifyReason) ||
+                                    (openingDiff !== 0 && !openingJustifyReason) ||
                                     (openingJustifyReason === 'TRANSFER' && !openingJustifyTargetId) ||
                                     openingInsufficientFunds
                                 }
@@ -790,7 +712,16 @@ export const SessionControl = forwardRef<SessionControlHandle, SessionControlPro
         }
     }
 
-    if (!currentSession || currentSession.status !== 'OPEN') {
+    if (loading) {
+        return (
+            <Button variant="default" disabled className="gap-2">
+                <Loader2 className="h-4 w-4 animate-spin" />
+                Cargando...
+            </Button>
+        )
+    }
+
+    if (!session || session.status !== 'OPEN') {
         return (
             <>
                 <Button
@@ -816,12 +747,10 @@ export const SessionControl = forwardRef<SessionControlHandle, SessionControlPro
         )
     }
 
-    // Keep existing return for Active Session...
     return (
         <>
             <div className="flex items-center gap-2">
-                {!hideSessionInfo && (
-
+                {!hideSessionInfo && session && (
                     <>
                         <span className={cn(
                             "gap-1 px-3 py-1.5 flex items-center text-[10px] font-bold uppercase rounded-sm border",
@@ -833,20 +762,18 @@ export const SessionControl = forwardRef<SessionControlHandle, SessionControlPro
 
                         <div className="flex flex-col md:flex-row md:items-center gap-1 md:gap-3 mr-2">
                             <span className="text-sm font-medium">
-                                {currentSession.treasury_account_name}
+                                {session.treasury_account_name}
                             </span>
                             {isSharedSession && (
                                 <span className="text-xs text-muted-foreground">
-                                    (Titular: {currentSession.user_name})
+                                    (Titular: {session.user_name})
                                 </span>
                             )}
                         </div>
                     </>
                 )}
-
             </div>
 
-            {/* Custom Overlay for POS Reports (X and Z) - Simplified as requested */}
             {reportDialogOpen && (
                 <div className="fixed inset-0 z-[100] bg-overlay/50 flex items-center justify-center p-4 animate-in fade-in duration-200 print:hidden text-foreground">
                     <div className="w-full max-w-sm animate-in zoom-in-95 duration-200">
@@ -862,36 +789,28 @@ export const SessionControl = forwardRef<SessionControlHandle, SessionControlPro
                 </div>
             )}
 
-            {/* Session Close Modal - Using shared component */}
-            {currentSession && (
+            {session && (
                 <SessionCloseModal
                     open={closeDialogOpen}
                     onOpenChange={setCloseDialogOpen}
-                    session={currentSession}
+                    session={session}
                     onSuccess={handleSessionCloseSuccess}
                 />
             )}
 
-            {moveDialogOpen && currentSession && (
+            {moveDialogOpen && session && (
                 <MovementWizard
                     open={moveDialogOpen}
                     onOpenChange={setMoveDialogOpen}
                     context="pos"
-                    fixedAccountId={typeof currentSession.treasury_account === 'object' ? currentSession.treasury_account?.id : (currentSession.treasury_account as number || undefined)}
-                    fixedAccountName={currentSession.treasury_account_name}
-                    maxOutboundAmount={currentSession.expected_cash}
+                    fixedAccountId={typeof session.treasury_account === 'object' ? session.treasury_account?.id : (session.treasury_account as number || undefined)}
+                    fixedAccountName={session.treasury_account_name}
+                    maxOutboundAmount={session.expected_cash}
                     onComplete={handleRegisterManualMovement}
                     onCancel={() => setMoveDialogOpen(false)}
                 />
             )}
-            <ActionConfirmModal
-                open={closeSessionConfirm.isOpen}
-                onOpenChange={(open) => { if (!open) closeSessionConfirm.cancel() }}
-                onConfirm={closeSessionConfirm.confirm}
-                title="Cerrar Caja (Irreversible)"
-                description="⚠️ ATENCIÓN: Cerrar la sesión es IRREVERSIBLE. Se generará el Reporte Z (cierre definitivo) y no podrá revertir esta acción. ¿Está seguro de que desea continuar?"
-                variant="destructive"
-            />
+
         </>
     )
 })
