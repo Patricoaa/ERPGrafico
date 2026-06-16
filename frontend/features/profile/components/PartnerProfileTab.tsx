@@ -27,7 +27,7 @@ import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "@/
 import { cn } from "@/lib/utils"
 import {SkeletonShell} from "@/components/shared"
 
-import { PaymentDrawer } from "@/features/finance/components/PaymentDrawer"
+import { PaymentDrawer } from "@/features/treasury/components/PaymentDrawer"
 
 interface Props {
     contactId: number;

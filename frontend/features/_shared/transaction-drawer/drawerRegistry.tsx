@@ -10,7 +10,7 @@ export const DRAWER_MAP: Record<string, React.LazyExoticComponent<React.Componen
   sale_delivery: React.lazy(() => import('@/features/sales/components/SaleDeliveryDrawer').then(m => ({ default: m.SaleDeliveryDrawer }))),
   purchase_receipt: React.lazy(() => import('@/features/purchasing/components/PurchaseReceiptDrawer').then(m => ({ default: m.PurchaseReceiptDrawer }))),
   purchase_return: React.lazy(() => import('@/features/purchasing/components/PurchaseReturnDrawer').then(m => ({ default: m.PurchaseReturnDrawer }))),
-  payment: React.lazy(() => import('@/features/finance/components/PaymentDrawer').then(m => ({ default: m.PaymentDrawer }))),
+  payment: React.lazy(() => import('@/features/treasury/components/PaymentDrawer').then(m => ({ default: m.PaymentDrawer }))),
   journal_entry: React.lazy(() => import('@/features/accounting/components/JournalEntryDrawer').then(m => ({ default: m.JournalEntryDrawer }))),
   cash_movement: React.lazy(() => import('@/features/treasury/components/CashMovementDrawer').then(m => ({ default: m.CashMovementDrawer }))),
   terminal_batch: React.lazy(() => import('@/features/treasury/components/TerminalBatchDrawer').then(m => ({ default: m.TerminalBatchDrawer }))),

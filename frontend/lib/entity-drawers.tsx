@@ -126,7 +126,7 @@ const BankJournalDrawer = dynamic(
 )
 
 const PaymentDrawer = dynamic(
-    () => import("@/features/finance").then((m) => m.PaymentDrawer),
+    () => import("@/features/treasury").then((m) => m.PaymentDrawer),
     { ssr: false, loading: () => skeleton("pago") }
 )
 
