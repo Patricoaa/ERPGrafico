@@ -10,7 +10,7 @@ import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { PrintableReceipt, BaseModal } from '@/components/shared'
 import { useDeviceContext } from '@/hooks/useDeviceContext'
-import { Loader2, LayoutGrid, FileText, ChevronDown, BarChart3, Save, Lock, ArrowRightLeft, LogOut, ShoppingCart, Wallet } from 'lucide-react'
+import { Loader2, LayoutGrid, FileText, ChevronDown, BarChart3, Save, Lock, Unlock, ArrowRightLeft, LogOut, ShoppingCart, Wallet } from 'lucide-react'
 import { AnimatePresence, motion } from 'framer-motion'
 import {
     DropdownMenu,
@@ -535,7 +535,15 @@ export function POSClientView() {
                             <Lock className="h-12 w-12 text-primary mx-auto mb-2" />
                             <h3 className="text-2xl font-bold">Caja Cerrada</h3>
                             <p className="text-muted-foreground">Debe abrir una sesión de caja para realizar ventas.</p>
-                            <SessionControl onSessionChange={setCurrentSession} session={currentSession ?? undefined} />
+                            <Button
+                                variant="default"
+                                size="lg"
+                                className="gap-2"
+                                onClick={() => sessionControlRef.current?.openSessionDialog()}
+                            >
+                                <Unlock className="h-4 w-4" />
+                                Abrir Caja
+                            </Button>
                         </Card>
                     </div>
                 )}
