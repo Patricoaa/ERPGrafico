@@ -153,7 +153,7 @@ export function AddPartnerModal({ open, onOpenChange, onSuccess }: AddPartnerMod
                     />
                 </div>
 
-                <Alert className="bg-primary/5 border-primary/20">
+                <Alert variant="primary">
                     <Info className="h-4 w-4 text-primary" />
                     <AlertDescription className="text-xs text-primary">
                         Esta acción registrará la suscripción formal de capital. Los aportes reales (efectivo/activos) deben cargarse a través del Libro Auxiliar o Tesorería.

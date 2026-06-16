@@ -256,7 +256,7 @@ export function AdjustmentForm({
                 <form id="adjustment-form" onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 px-6 pb-6 pt-6">
 
                     {periodStatus?.is_closed && (
-                        <Alert variant="destructive" className="bg-destructive/5 border-destructive/20 text-destructive py-2 mb-2">
+                        <Alert variant="destructive" className="py-2 mb-2">
                             <ShieldAlert className="h-4 w-4" />
                             <AlertTitle className="text-xs font-bold mb-1">Periodo Cerrado</AlertTitle>
                             <AlertDescription className="text-xs opacity-90">
@@ -529,7 +529,7 @@ export function AdjustmentForm({
 
                                 {/* Conversion Alert / Info */}
                                 {conversion && baseUoM && (
-                                    <Alert className="bg-primary/5 border-primary/20 animate-in slide-in-from-top-2 duration-300">
+                                    <Alert variant="primary" className="animate-in slide-in-from-top-2 duration-300">
                                         <Info className="h-4 w-4 text-primary" />
                                         <AlertTitle className="text-[10px] font-bold uppercase text-primary mb-0.5">Conversión Automática</AlertTitle>
                                         <AlertDescription className="text-[11px] leading-tight">

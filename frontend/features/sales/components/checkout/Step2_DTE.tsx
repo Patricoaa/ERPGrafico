@@ -207,7 +207,7 @@ export function Step2_DTE({
             )}
 
             {dteData.type === "BOLETA" && (
-                <Alert className="bg-info/10 border-info/30 text-info [&>svg]:text-info">
+                <Alert variant="info">
                     <AlertCircle className="h-4 w-4" />
                     <AlertDescription className="text-xs font-medium">
                         El sistema asignará el siguiente folio disponible automáticamente al

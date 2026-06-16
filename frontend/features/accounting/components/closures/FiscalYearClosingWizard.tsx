@@ -76,7 +76,7 @@ export function FiscalYearClosingWizard({
                             </AlertDescription>
                         </Alert>
                     ) : preview ? (
-                        <Alert className="bg-success/5 border-success/20">
+                        <Alert variant="success">
                             <ShieldCheck className="h-5 w-5 text-success" />
                             <AlertTitle className="text-success font-bold uppercase">Balance Cuadrado</AlertTitle>
                             <AlertDescription className="text-success/80 font-medium flex flex-col gap-3 text-xs">
@@ -160,7 +160,7 @@ export function FiscalYearClosingWizard({
             isValid: true,
             component: preview ? (
                 <div className="space-y-6">
-                    <Alert className="bg-primary/5 border-primary/20">
+                        <Alert variant="primary">
                         <FileText className="h-5 w-5 text-primary" />
                         <AlertTitle className="font-bold uppercase text-primary">Asignación Automática</AlertTitle>
                         <AlertDescription className="text-foreground/80 font-medium text-xs">

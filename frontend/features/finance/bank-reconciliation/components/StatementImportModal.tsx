@@ -321,7 +321,7 @@ export default function StatementImportModal({ open, onOpenChange, onSuccess, de
 
                         {error && (
                             <div className="animate-in fade-in slide-in-from-top-2">
-                                <Alert variant="destructive" className="rounded-lg border-destructive/20 bg-destructive/5">
+                                <Alert variant="destructive" className="rounded-lg">
                                     <AlertCircle className="h-4 w-4 text-destructive" />
                                     <AlertDescription className="text-xs font-bold uppercase text-destructive/80 leading-relaxed">
                                         {error}
@@ -495,7 +495,7 @@ export default function StatementImportModal({ open, onOpenChange, onSuccess, de
 
                     {error && (
                         <div className="max-w-xl mx-auto animate-in fade-in slide-in-from-top-2">
-                            <Alert variant="destructive" className="rounded-lg border-destructive/20 bg-destructive/5">
+                            <Alert variant="destructive" className="rounded-lg">
                                 <AlertCircle className="h-4 w-4 text-destructive" />
                                 <AlertDescription className="text-xs font-bold uppercase text-destructive/80 leading-relaxed">
                                     {error}

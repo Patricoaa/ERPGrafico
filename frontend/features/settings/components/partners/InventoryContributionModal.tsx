@@ -359,7 +359,7 @@ export function InventoryContributionModal({
                 </div>
 
                 {conversion && baseUoM && (
-                    <Alert className="bg-info/5 border-info/20 text-info py-2">
+                    <Alert variant="info" className="py-2">
                         <Info className="h-4 w-4 text-info" />
                         <AlertDescription className="text-xs ml-2">
                             Se registrará formalmente como <strong>{conversion.qty.toFixed(4)} {baseUoM.name}</strong> a un costo base de <strong>{formatCurrency(conversion.cost)} c/u</strong>.

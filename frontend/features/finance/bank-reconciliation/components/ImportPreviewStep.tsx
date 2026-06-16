@@ -103,7 +103,7 @@ export default function ImportPreviewStep({ data, isLoading }: ImportPreviewStep
             <FormSection title="Resultados de Validación" icon={CheckCircle2} />
 
             {hasErrors ? (
-                <Alert variant="destructive" className="border-destructive/30 bg-destructive/5">
+                <Alert variant="destructive">
                     <AlertCircle className="h-4 w-4" />
                     <AlertTitle className="text-xs font-black uppercase tracking-wider">Error Bloqueante</AlertTitle>
                     <AlertDescription className="text-xs mt-1">
@@ -122,7 +122,7 @@ export default function ImportPreviewStep({ data, isLoading }: ImportPreviewStep
                     </AlertDescription>
                 </Alert>
             ) : (
-                <Alert className="border-success/30 bg-success/5">
+                <Alert variant="success">
                     <CheckCircle2 className="h-4 w-4 text-success" />
                     <AlertTitle className="text-xs font-black uppercase tracking-wider text-success">Validación Exitosa</AlertTitle>
                     <AlertDescription className="text-xs mt-1 text-muted-foreground font-medium">
