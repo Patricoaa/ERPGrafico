@@ -147,7 +147,7 @@ export function OriginPhase({
                             {line.product_name || line.description}
                         </span>
                         <span className="shrink-0 font-black text-primary text-[11px]">
-                            {Math.round(line.quantity as number)} {line.uom_name || line.unit_name || 'un'}
+                            {Math.round(parseFloat(String(line.quantity || 0)))} {line.uom_name || line.unit_name || 'un'}
                         </span>
                     </div>
                 ))}
