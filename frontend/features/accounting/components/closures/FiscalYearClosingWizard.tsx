@@ -208,7 +208,7 @@ export function FiscalYearClosingWizard({
                         </div>
                     </div>
 
-                    <Alert variant="default" className="bg-warning/10 border-warning/20">
+                    <Alert variant="warning">
                         <AlertTriangle className="h-5 w-5 text-warning" />
                         <AlertTitle className="text-warning-foreground font-extrabold uppercase tracking-tight">Advertencia</AlertTitle>
                         <AlertDescription className="text-warning-foreground/90 text-[10px] font-medium mt-1 leading-relaxed">

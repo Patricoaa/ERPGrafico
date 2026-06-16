@@ -188,7 +188,7 @@ export function Step2_DTE({
             )}
 
             {isDefaultCustomer && (
-                <Alert className="bg-warning/10 border-warning/30 text-warning [&>svg]:text-warning">
+                <Alert variant="warning">
                     <AlertCircle className="h-4 w-4" />
                     <AlertDescription className="text-xs font-medium">
                         El cliente por defecto solo permite emisión de{" "}
@@ -198,7 +198,7 @@ export function Step2_DTE({
             )}
 
             {dteData.type !== "BOLETA" && !dteData.isPending && (!dteData.attachment || !dteData.number) && (
-                <Alert className="bg-warning/10 border-warning/30 text-warning [&>svg]:text-warning">
+                <Alert variant="warning">
                     <AlertCircle className="h-4 w-4" />
                     <AlertDescription className="text-xs font-medium">
                         El folio y el adjunto son requeridos para registrar este tipo de documento.
