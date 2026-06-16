@@ -8,7 +8,6 @@ import {
     ArrowDownCircle,
     ArrowUpCircle,
     Users,
-    Info,
     Warehouse as WarehouseIcon
 } from "lucide-react"
 
@@ -360,8 +359,7 @@ export function InventoryContributionModal({
 
                 {conversion && baseUoM && (
                     <Alert variant="info" className="py-2">
-                        <Info className="h-4 w-4 text-info" />
-                        <AlertDescription className="text-xs ml-2">
+                        <AlertDescription className="text-xs">
                             Se registrará formalmente como <strong>{conversion.qty.toFixed(4)} {baseUoM.name}</strong> a un costo base de <strong>{formatCurrency(conversion.cost)} c/u</strong>.
                         </AlertDescription>
                     </Alert>

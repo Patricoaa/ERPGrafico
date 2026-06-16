@@ -244,7 +244,7 @@ export function DraftCartsList({
                             {lockedByOther && (
                                 <Tooltip>
                                     <TooltipTrigger asChild>
-                                        <span className="h-4 px-1.5 text-[9px] font-bold uppercase rounded-sm border bg-destructive/10 text-destructive border-destructive/30 gap-1 flex items-center shrink-0 cursor-help">
+                                        <span className="h-4 px-1.5 text-[9px] font-bold uppercase rounded-full border bg-destructive/10 text-destructive border-destructive/30 gap-1 flex items-center shrink-0 cursor-help">
                                             <Lock className="h-2.5 w-2.5" />
                                             {lockInfo?.lockedByName || 'En uso'}
                                         </span>
@@ -256,31 +256,31 @@ export function DraftCartsList({
                                 </Tooltip>
                             )}
                             {lockInfo?.isOwnLock && (
-                                <span className="h-4 px-1.5 text-[9px] font-bold uppercase rounded-sm border bg-primary/10 text-primary border-primary/30 gap-1 flex items-center shrink-0">
+                                <span className="h-4 px-1.5 text-[9px] font-bold uppercase rounded-full border bg-primary/10 text-primary border-primary/30 gap-1 flex items-center shrink-0">
                                     <Lock className="h-2.5 w-2.5" />
                                     Tú
                                 </span>
                             )}
                             {draft.wizard_state?.isWaitingPayment && !lockedByOther && (
-                                <span className="h-4 px-1.5 text-[9px] font-bold uppercase rounded-sm border bg-warning/10 text-warning border-warning/20 gap-1 flex items-center shrink-0 shadow-sm">
+                                <span className="h-4 px-1.5 text-[9px] font-bold uppercase rounded-full border bg-warning/10 text-warning border-warning/20 gap-1 flex items-center shrink-0 shadow-sm">
                                     <Wallet className="h-2.5 w-2.5" />
                                     Por Pagar
                                 </span>
                             )}
                             {draft.wizard_state?.step && !draft.wizard_state?.isWaitingPayment && !lockedByOther && (
-                                <span className="h-4 px-1.5 text-[9px] font-bold uppercase rounded-sm border bg-warning/10 text-warning border-warning/20 gap-1 flex items-center shrink-0">
+                                <span className="h-4 px-1.5 text-[9px] font-bold uppercase rounded-full border bg-warning/10 text-warning border-warning/20 gap-1 flex items-center shrink-0">
                                     <ClipboardCheck className="h-2.5 w-2.5" />
                                     P{draft.wizard_state.step}
                                 </span>
                             )}
                             {draft.wizard_state?.isWaitingApproval && (
-                                <span className="h-4 px-1.5 text-[9px] font-bold uppercase rounded-sm border bg-primary/10 text-primary border-primary/20 gap-1 flex items-center shrink-0">
+                                <span className="h-4 px-1.5 text-[9px] font-bold uppercase rounded-full border bg-primary/10 text-primary border-primary/20 gap-1 flex items-center shrink-0">
                                     <Loader2 className="h-2.5 w-2.5 animate-spin" />
                                     Auth
                                 </span>
                             )}
                             {draft.wizard_state?.isApproved && (
-                                <span className="h-4 px-1.5 text-[9px] font-bold uppercase rounded-sm border bg-success/10 text-success border-success/20 gap-1 flex items-center shrink-0">
+                                <span className="h-4 px-1.5 text-[9px] font-bold uppercase rounded-full border bg-success/10 text-success border-success/20 gap-1 flex items-center shrink-0">
                                     <ClipboardCheck className="h-2.5 w-2.5" />
                                     OK
                                 </span>
@@ -327,7 +327,7 @@ export function DraftCartsList({
                     <Archive className="h-4 w-4 mr-2" />
                     Ver Borradores
                     {drafts.length > 0 && (
-                        <span className="ml-2 text-[9px] font-bold uppercase px-1.5 py-0.5 rounded-sm border border-muted-foreground/20 bg-muted/30 text-muted-foreground">
+                        <span className="ml-2 text-[9px] font-bold uppercase px-1.5 py-0.5 rounded-full border border-muted-foreground/20 bg-muted/30 text-muted-foreground">
                             {drafts.length}
                         </span>
                     )}
@@ -343,7 +343,7 @@ export function DraftCartsList({
                         <Archive className="h-4 w-4 text-muted-foreground" />
                         <span>Borradores</span>
                         {drafts.length > 0 && (
-                            <span className="text-[10px] h-4 px-1.5 font-bold bg-muted text-muted-foreground rounded-sm border border-muted-foreground/20 leading-none flex items-center">
+                            <span className="text-[10px] h-4 px-1.5 font-bold bg-muted text-muted-foreground rounded-full border border-muted-foreground/20 leading-none flex items-center">
                                 {drafts.length}
                             </span>
                         )}

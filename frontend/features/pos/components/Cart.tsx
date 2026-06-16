@@ -117,7 +117,7 @@ export function Cart({
                                 </div>
                             )}
                         </div>
-                        <span className="text-[10px] font-black bg-primary text-primary-foreground px-1.5 py-0.5 rounded-sm uppercase tracking-tighter shrink-0">
+                        <span className="text-[10px] font-black bg-primary text-primary-foreground px-1.5 py-0.5 rounded-full uppercase tracking-tighter shrink-0">
                             {items.length} Items
                         </span>
                     </div>
@@ -169,7 +169,7 @@ export function Cart({
                 <div className="p-3 bg-muted/20 border-t space-y-3">
                     {/* Sale Metadata Summary (Collapsible Accordion) */}
                     {(wizardState?.selectedCustomerName || dteType || deliveryType) && (
-                        <Accordion type="single" collapsible className="border border-border/50 rounded-sm">
+                        <Accordion type="single" collapsible className="border border-border/50 rounded-md">
                             <AccordionItem value="details" className="border-0">
                                 <AccordionTrigger className="px-2 py-1.5 text-[10px] font-bold uppercase tracking-wider text-muted-foreground hover:no-underline hover:bg-muted/30 [&[data-state=open]>svg]:-rotate-180 gap-2">
                                     <span>Detalles de Venta</span>
@@ -190,7 +190,7 @@ export function Cart({
                                                     <FileText className="h-3 w-3 text-primary" />
                                                     <span>Documento</span>
                                                 </div>
-                                                <span className="text-[9px] font-bold uppercase px-1.5 py-0.5 rounded-sm border border-primary/20 bg-primary/10 text-primary">
+                                                <span className="text-[9px] font-bold uppercase px-1.5 py-0.5 rounded-full border border-primary/20 bg-primary/10 text-primary">
                                                     {getDteLabel(dteType)}
                                                 </span>
                                             </div>
@@ -203,7 +203,7 @@ export function Cart({
                                                     <span>Logística</span>
                                                 </div>
                                                 <div className="flex items-center gap-1">
-                                                    <span className="text-[9px] font-bold uppercase px-1.5 py-0.5 rounded-sm border border-success/20 bg-success/10 text-success">
+                                                    <span className="text-[9px] font-bold uppercase px-1.5 py-0.5 rounded-full border border-success/20 bg-success/10 text-success">
                                                         {getDeliveryLabel(deliveryType)}
                                                     </span>
                                                     <span className="text-[10px] text-muted-foreground flex items-center gap-1 ml-1 font-mono font-medium">

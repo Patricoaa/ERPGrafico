@@ -558,7 +558,7 @@ export const SessionControl = forwardRef<SessionControlHandle, SessionControlPro
                                         <div className="text-xs opacity-70">{t.location}</div>
                                     </div>
                                     {t.default_treasury_account_balance > 0 && (
-                                        <span className="ml-auto text-[9px] font-bold uppercase px-1.5 py-0.5 rounded-sm border border-muted-foreground/20 bg-muted/30 text-muted-foreground">
+                                        <span className="ml-auto text-[9px] font-bold uppercase px-1.5 py-0.5 rounded-full border border-muted-foreground/20 bg-muted/30 text-muted-foreground">
                                             Base: {formatCurrency(t.default_treasury_account_balance)}
                                         </span>
                                     )}
@@ -666,10 +666,10 @@ export const SessionControl = forwardRef<SessionControlHandle, SessionControlPro
                                             </PopoverTrigger>
                                             <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0">
                                                 <div className="p-2">
-                                                    <div className="flex items-center px-3 border rounded-md mb-2 bg-background">
+                                                    <div className="flex items-center px-3 border rounded-sm mb-2 bg-background">
                                                         <Search className="mr-2 h-4 w-4 shrink-0 opacity-50" />
                                                         <input
-                                                            className="flex h-10 w-full rounded-md bg-transparent py-3 text-sm outline-none placeholder:text-muted-foreground"
+                                                            className="flex h-10 w-full rounded-sm bg-transparent py-3 text-sm outline-none placeholder:text-muted-foreground"
                                                             placeholder="Buscar motivo..."
                                                             value={justifySearchTerm}
                                                             onChange={(e) => setJustifySearchTerm(e.target.value)}
@@ -774,7 +774,7 @@ export const SessionControl = forwardRef<SessionControlHandle, SessionControlPro
                                     <div className="text-left w-full">
                                         <div className="font-bold flex justify-between">
                                             <span>{session.treasury_account_name}</span>
-                                            <span className="text-[10px] h-5 px-1.5 font-bold uppercase rounded-sm border border-muted-foreground/20 bg-muted/10 text-muted-foreground flex items-center">{session.user_name}</span>
+                                            <span className="text-[10px] h-5 px-1.5 font-bold uppercase rounded-full border border-muted-foreground/20 bg-muted/10 text-muted-foreground flex items-center">{session.user_name}</span>
                                         </div>
                                         <div className="text-xs opacity-70 mt-1">Abierta: {new Date(session.opened_at).toLocaleTimeString()}</div>
                                     </div>
@@ -833,7 +833,7 @@ export const SessionControl = forwardRef<SessionControlHandle, SessionControlPro
                 {!hideSessionInfo && session && (
                     <>
                         <span className={cn(
-                            "gap-1 px-3 py-1.5 flex items-center text-[10px] font-bold uppercase rounded-sm border",
+                            "gap-1 px-3 py-1.5 flex items-center text-[10px] font-bold uppercase rounded-full border",
                             isSharedSession ? 'bg-primary/10 text-primary border-primary/20' : 'border-success/30 text-success bg-success/5'
                         )}>
                             <div className={cn("h-2 w-2 rounded-full animate-pulse", isSharedSession ? 'bg-primary' : 'bg-success')} />

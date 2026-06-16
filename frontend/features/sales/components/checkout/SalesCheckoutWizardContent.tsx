@@ -783,7 +783,7 @@ export function SalesCheckoutWizardContent({
 
                         {/* Credit Approval Alert */}
                         {creditApprovalRequired && (
-                            <Alert variant={isApproved ? "success" : "warning"} className="mb-4 border-l-4 rounded-none shadow-sm">
+                            <Alert variant={isApproved ? "success" : "warning"} className="mb-4 border-l-4 rounded-none shadow-sm" icon={null}>
                                 <div className="flex items-start gap-4">
                                     <div className={cn(
                                         "p-2 rounded-sm",
@@ -852,7 +852,7 @@ export function SalesCheckoutWizardContent({
                         )}
 
                         {securityErrorMessage && (
-                            <Alert variant="destructive" className="mb-4 border-l-4 rounded-none shadow-sm">
+                            <Alert variant="destructive" className="mb-4 border-l-4 rounded-none shadow-sm" icon={null}>
                                 <div className="flex items-start gap-4">
                                     <div className="p-2 rounded-sm bg-destructive/10">
                                         <ShieldAlert className="h-4 w-4 text-destructive" />

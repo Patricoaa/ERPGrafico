@@ -16,7 +16,6 @@ import {
     Calculator,
     CheckCircle2,
     Wallet,
-    CalendarCheck2
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import {
@@ -308,8 +307,7 @@ export function CreateDistributionFlow({ open, onOpenChange, onSuccess, initialR
                     </div>
 
                     <Alert variant="primary">
-                        <CalendarCheck2 className="h-5 w-5 text-primary" />
-                        <AlertTitle className="text-primary font-bold uppercase text-[10px]">Automatización Activa</AlertTitle>
+                        <AlertTitle className="font-bold uppercase text-[10px]">Automatización Activa</AlertTitle>
                         <AlertDescription className="text-foreground/80 font-medium text-[10px] leading-relaxed">
                             El sistema calculará la participación exacta a la fecha de resolución y descontará automáticamente los <strong>retiros provisorios</strong> detectados en la contabilidad del ejercicio.
                         </AlertDescription>

@@ -10,7 +10,7 @@ import { DataTable, LabeledInput, LabeledContainer, PeriodValidationDateInput, D
 import { partnersApi } from "@/features/contacts/api/partnersApi"
 import { Partner } from "@/features/contacts/types/partner"
 import { toast } from "sonner"
-import {UserPlus, Info, TrendingDown} from "lucide-react"
+import {UserPlus, TrendingDown} from "lucide-react"
 import { AdvancedContactSelector } from "@/components/selectors/AdvancedContactSelector"
 
 import { Alert, AlertDescription } from "@/components/ui/alert"
@@ -154,8 +154,7 @@ export function AddPartnerModal({ open, onOpenChange, onSuccess }: AddPartnerMod
                 </div>
 
                 <Alert variant="primary">
-                    <Info className="h-4 w-4 text-primary" />
-                    <AlertDescription className="text-xs text-primary">
+                    <AlertDescription className="text-xs">
                         Esta acción registrará la suscripción formal de capital. Los aportes reales (efectivo/activos) deben cargarse a través del Libro Auxiliar o Tesorería.
                     </AlertDescription>
                 </Alert>

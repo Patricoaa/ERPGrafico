@@ -128,7 +128,7 @@ function CartItemComponent({
 
     return (
         <div
-            className="flex flex-col gap-1.5 p-3 rounded-lg border border-border/40 bg-card/5 group"
+            className="flex flex-col gap-1.5 p-3 rounded-sm border border-border/40 bg-card group"
             style={isTouchMode ? { touchAction: 'manipulation' } : undefined}
         >
             <div className="grid grid-cols-[1fr_auto_1fr] items-start gap-2">
@@ -280,7 +280,7 @@ function CartItemComponent({
                                 key={uom.id}
                                 type="button"
                                 className={cn(
-                                    "w-full text-left px-3 py-2 text-sm rounded-md hover:bg-accent transition-colors",
+                                    "w-full text-left px-3 py-2 text-sm rounded-sm hover:bg-accent transition-colors",
                                     item.uom === uom.id && "bg-accent font-semibold"
                                 )}
                                 onClick={() => {

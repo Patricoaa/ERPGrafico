@@ -307,10 +307,10 @@ export function SessionCloseModal({
                                                     </div>
                                                 ) : (
                                                     <>
-                                                        <div className="flex items-center px-3 border rounded-md mb-2 bg-background">
+                                                        <div className="flex items-center px-3 border rounded-sm mb-2 bg-background">
                                                             <Search className="mr-2 h-4 w-4 shrink-0 opacity-50" />
                                                             <input
-                                                                className="flex h-10 w-full rounded-md bg-transparent py-3 text-sm outline-none placeholder:text-muted-foreground"
+                                                                className="flex h-10 w-full rounded-sm bg-transparent py-3 text-sm outline-none placeholder:text-muted-foreground"
                                                                 placeholder="Buscar motivo..."
                                                                 value={justifySearchTerm}
                                                                 onChange={(e) => setJustifySearchTerm(e.target.value)}
@@ -390,9 +390,9 @@ export function SessionCloseModal({
 
                             <div className="space-y-1">
                                 <Label className="text-xs">Notas (opcional)</Label>
-                                <textarea
-                                    className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm placeholder:text-muted-foreground outline-none focus:border-ring resize-none"
-                                    rows={2}
+<textarea
+                                                                    className="flex w-full rounded-sm border border-input bg-background px-3 py-2 text-sm placeholder:text-muted-foreground outline-none focus:border-ring resize-none"
+                                                                    rows={2}
                                     placeholder="Comentarios sobre el cierre..."
                                     value={closeNotes}
                                     onChange={(e) => setCloseNotes(e.target.value)}

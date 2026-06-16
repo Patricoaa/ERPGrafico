@@ -46,7 +46,7 @@ export function SearchBar({
     return (
         <div
             className={cn(
-                'group flex items-center gap-1.5 rounded-md transition-all border border-border/60',
+                'group flex items-center gap-1.5 rounded-sm transition-all border border-border/60',
                 'bg-background',
                 'hover:bg-muted/50 hover:text-foreground hover:ring-2 hover:ring-primary/10',
                 'focus-within:bg-muted/50 focus-within:ring-2 focus-within:ring-primary/20',
@@ -78,7 +78,7 @@ export function SearchBar({
                 <button
                     type="button"
                     onClick={() => onChange('')}
-                    className="shrink-0 rounded-md p-1 text-muted-foreground/40 hover:text-foreground transition-colors"
+                    className="shrink-0 rounded-sm p-1 text-muted-foreground/40 hover:text-foreground transition-colors"
                     aria-label="Limpiar búsqueda"
                 >
                     <X className={isTouchDevice ? 'size-4' : 'size-3'} />

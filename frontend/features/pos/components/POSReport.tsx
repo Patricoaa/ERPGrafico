@@ -99,7 +99,7 @@ export function POSReport({ data, title, type = "X", onClose }: POSReportProps) 
 
     return (
         <div id="pos-report-printable" className={cn(
-            "w-full max-w-[380px] mx-auto bg-card p-6 shadow-2xl border border-border/50 text-card-foreground font-sans relative rounded-lg animate-in zoom-in-95 duration-200",
+            "w-full max-w-[380px] mx-auto bg-card p-6 shadow-2xl border border-border/50 text-card-foreground font-sans relative rounded-md animate-in zoom-in-95 duration-200",
             "print:shadow-none print:border-none print:p-0 print:w-[80mm]"
         )}>
             {/* Close Button */}
@@ -204,7 +204,7 @@ export function POSReport({ data, title, type = "X", onClose }: POSReportProps) 
             <div className="mt-6 flex justify-center print:hidden">
                 <Button
                     onClick={handlePrint}
-                    className="bg-primary text-primary-foreground hover:bg-primary/90 font-black uppercase tracking-widest text-[10px] h-10 px-8 rounded-md shadow-lg border-2 border-primary/20"
+                    className="bg-primary text-primary-foreground hover:bg-primary/90 font-black uppercase tracking-widest text-[10px] h-10 px-8 rounded-sm shadow-lg border-2 border-primary/20"
                 >
                     <Printer className="mr-2 h-4 w-4" />
                     Imprimir Informe

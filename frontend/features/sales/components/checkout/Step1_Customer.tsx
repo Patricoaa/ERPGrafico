@@ -51,7 +51,7 @@ export function Step1_Customer({
         <div className="space-y-6">
             {/* Pending Debts Banner */}
             {pendingDebts && pendingDebts.length > 0 && (
-                <Alert variant="warning">
+                <Alert variant="warning" icon={null}>
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                         <div className="flex items-center gap-3">
                             <FileWarning className="h-3.5 w-3.5 text-muted-foreground" />

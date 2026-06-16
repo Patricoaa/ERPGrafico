@@ -11,7 +11,6 @@ import {
     ArrowDownLeft,
     HandCoins,
     History,
-    AlertCircle,
 } from "lucide-react"
 import { toast } from "sonner"
 import { useTaxCalculation, useCreateDeclaration, useRegisterDeclaration, useClosePeriod } from "../hooks/useTaxMutations"
@@ -291,7 +290,6 @@ export function DeclarationWizard({ isOpen, onOpenChange, periodId, onSuccess, e
                     </div>
                     {calcData?.drafts_summary && (calcData.drafts_summary.invoices.length > 0 || calcData.drafts_summary.entries.length > 0) && (
                         <Alert variant="warning">
-                            <AlertCircle className="h-5 w-5 text-warning" />
                             <div className="space-y-4 w-full">
                                 <AlertTitle className="text-sm font-black uppercase tracking-widest text-warning/90">Documentos en Borrador</AlertTitle>
                                 <AlertDescription className="text-xs text-warning/70 font-medium">Hay pendientes que no se incluyeron. Se recomienda procesarlos.</AlertDescription>

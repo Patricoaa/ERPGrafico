@@ -447,7 +447,7 @@ export function POSClientView() {
                                             variant="outline"
                                             size="sm"
                                             className={cn(
-                                                "h-10 min-w-[40px] px-2 text-[10px] font-mono font-bold transition-all duration-300 gap-1.5 relative rounded-md",
+                                                "h-10 min-w-[40px] px-2 text-[10px] font-mono font-bold transition-all duration-300 gap-1.5 relative rounded-sm",
                                                 currentDraftId === d.id ? "bg-primary/5 border-primary text-primary shadow-sm border-solid ring-1 ring-primary/20" : "border-dashed text-muted-foreground",
                                                 isSaving && currentDraftId === d.id && "animate-pulse opacity-70",
                                                 lockedByOther && "border-destructive/40 opacity-60",
@@ -470,7 +470,7 @@ export function POSClientView() {
                                     )
                                 })}
                                 {currentDraftId === null && items.length > 0 && (
-                                    <span className="h-10 border border-dashed border-muted-foreground/30 text-[9px] px-2 opacity-50 bg-muted/20 flex items-center justify-center rounded-md text-muted-foreground uppercase font-bold tracking-widest">
+                                    <span className="h-10 border border-dashed border-muted-foreground/30 text-[9px] px-2 opacity-50 bg-muted/20 flex items-center justify-center rounded-sm text-muted-foreground uppercase font-bold tracking-widest">
                                         Nuevo...
                                     </span>
                                 )}
