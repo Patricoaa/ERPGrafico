@@ -59,7 +59,7 @@ def env(db):
         name='AR W', code='1.1.02.030', account_type=AccountType.ASSET,
     )
     customer = Contact.objects.create(
-        name='Cliente W', tax_id='76.444.444-4', account_receivable=ar,
+        name='Cliente W', tax_id='76.444.444-4',
     )
     inv = Invoice.objects.create(
         contact=customer, date=date(2026, 6, 1), number='FAC-W-FUND-1',

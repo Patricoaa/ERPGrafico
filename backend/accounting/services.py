@@ -318,7 +318,6 @@ class AccountingService:
             'partner_capital_receivable_account': '1.1.05.01',
             
             # Cuentas de inventario
-            'default_inventory_account': '1.1.03.01',  # Mantener para compatibilidad
             'storable_inventory_account': '1.1.03.01',  # NUEVO
             'manufacturable_inventory_account': '1.1.03.01',  # NUEVO
             'default_consumable_account': '5.2.05',
@@ -412,7 +411,7 @@ class AccountingMapper:
         """
         SaleOrder: Receivable (Dr) vs Revenue (Cr) + Tax (Cr)
         """
-        receivable_account = order.customer.account_receivable or settings.default_receivable_account
+        receivable_account = settings.default_receivable_account
         if not receivable_account:
              raise ValidationError("Falta configuración de cuenta por cobrar.")
 
@@ -457,7 +456,7 @@ class AccountingMapper:
         """
         PurchaseOrder: Stock Input Bridge (Cr) vs Expense/Inventory (Dr) + Tax (Dr)
         """
-        payable_account = order.supplier.account_payable or settings.default_payable_account
+        payable_account = settings.default_payable_account
         # For Orders we usually use the "Stock Input Bridge" or direct inventory
         clearing_account = settings.stock_input_account or settings.default_payable_account
         
@@ -522,7 +521,7 @@ class AccountingMapper:
                     
                     if not bom_lines:
                          # Fallback if BOM has no lines
-                         inventory_account = product.get_asset_account or settings.default_inventory_account
+                         inventory_account = product.get_asset_account 
                          if not inventory_account:
                             raise ValidationError(f"Falta configuración de cuenta de inventario para el producto {product.internal_code}.")
                          credits[inventory_account] = credits.get(inventory_account, Decimal('0.00')) + line.total_cost
@@ -545,7 +544,7 @@ class AccountingMapper:
                         comp_cost = (base_comp_qty * component.cost_price).quantize(Decimal('0.01'))
                         
                         # Asset account for this specific component
-                        comp_inventory_account = component.get_asset_account or settings.default_inventory_account
+                        comp_inventory_account = component.get_asset_account 
                         if not comp_inventory_account:
                              raise ValidationError(f"Falta configuración de cuenta de inventario para el componente {component.internal_code}.")
                         
@@ -556,17 +555,17 @@ class AccountingMapper:
                     diff = line.total_cost - line_total_accounted
                     if diff != 0:
                         last_comp = bom_lines[-1].component
-                        last_acc = last_comp.get_asset_account or settings.default_inventory_account
+                        last_acc = last_comp.get_asset_account 
                         credits[last_acc] = credits.get(last_acc, Decimal('0.00')) + diff
                 else:
                     # No active BOM, fallback to finished product's inventory account
-                    inventory_account = product.get_asset_account or settings.default_inventory_account
+                    inventory_account = product.get_asset_account 
                     if not inventory_account:
                         raise ValidationError(f"Falta configuración de cuenta de inventario para el producto {product.internal_code}.")
                     credits[inventory_account] = credits.get(inventory_account, Decimal('0.00')) + line.total_cost
             else:
                 # Standard case (Tracked Inventory or Service with explicit cost)
-                inventory_account = product.get_asset_account or settings.default_inventory_account
+                inventory_account = product.get_asset_account 
                 if not inventory_account:
                     raise ValidationError(f"Falta configuración de cuenta de inventario para el producto {product.internal_code}.")
                 credits[inventory_account] = credits.get(inventory_account, Decimal('0.00')) + line.total_cost
@@ -592,7 +591,7 @@ class AccountingMapper:
         Modified to support tax-exempt documents (no IVA)
         """
         order = invoice.sale_order
-        receivable_account = order.customer.account_receivable or settings.default_receivable_account
+        receivable_account = settings.default_receivable_account
         if not receivable_account:
              raise ValidationError("Falta configuración de cuenta por cobrar.")
 
@@ -653,8 +652,8 @@ class AccountingMapper:
         Modified to support tax-exempt documents (no IVA)
         """
         order = invoice.purchase_order
-        payable_account = order.supplier.account_payable or settings.default_payable_account
-        stock_input_account = settings.stock_input_account or settings.default_inventory_account
+        payable_account = settings.default_payable_account
+        stock_input_account = settings.stock_input_account
         tax_account = settings.default_tax_receivable_account
         
         if not payable_account or not stock_input_account:
@@ -672,14 +671,40 @@ class AccountingMapper:
         if not is_tax_exempt:
             if is_boleta:
                 # BOLETAS: Tax is capitalized into inventory, Net goes to bridge
-                # This ensures balance even if receipt was recorded at Net
+                # Distribute tax by product type: inventory → asset, services → expense
                 if invoice.total_tax > 0:
-                    items.append({
-                        'account': settings.default_inventory_account,
-                        'debit': invoice.total_tax,
-                        'credit': Decimal('0.00'),
-                        'label': "IVA Capitalizado (Boleta)"
-                    })
+                    product_tax = Decimal('0')
+                    service_tax = Decimal('0')
+                    for line in order.lines.all():
+                        line_tax = (line.subtotal * (line.tax_rate / Decimal('100.0'))).quantize(Decimal('1'), rounding='ROUND_HALF_UP')
+                        if hasattr(line, 'product') and line.product.product_type in ('SERVICE', 'SUBSCRIPTION'):
+                            service_tax += line_tax
+                        else:
+                            product_tax += line_tax
+
+                    if product_tax > 0:
+                        inv_account = settings.storable_inventory_account or settings.manufacturable_inventory_account
+                        if not inv_account:
+                            raise ValidationError(
+                                "Falta cuenta de inventario para capitalizar IVA de Boleta. "
+                                "Configure storable_inventory_account o manufacturable_inventory_account."
+                            )
+                        items.append({
+                            'account': inv_account,
+                            'debit': product_tax,
+                            'credit': Decimal('0.00'),
+                            'label': "IVA Capitalizado - Productos"
+                        })
+
+                    if service_tax > 0:
+                        exp_account = settings.default_service_expense_account or settings.default_expense_account
+                        if exp_account:
+                            items.append({
+                                'account': exp_account,
+                                'debit': service_tax,
+                                'credit': Decimal('0.00'),
+                                'label': "IVA No Recuperable - Servicios"
+                            })
             else:
                 # FACTURAS: Record VAT as tax receivable
                 if invoice.total_tax > 0 and tax_account:
@@ -699,7 +724,7 @@ class AccountingMapper:
         Purchase Receipt: Inventory (Dr) vs Stock Input Bridge (Cr)
         """
         order = receipt.purchase_order
-        stock_input_account = settings.stock_input_account or settings.default_inventory_account
+        stock_input_account = settings.stock_input_account
         
         if not stock_input_account:
              raise ValidationError("Falta configuración de cuenta puente de entrada de stock.")
@@ -720,9 +745,6 @@ class AccountingMapper:
                      target_account = line.product.get_asset_account if not callable(line.product.get_asset_account) else line.product.get_asset_account()
             else:
                 target_account = line.product.get_asset_account if not callable(line.product.get_asset_account) else line.product.get_asset_account()
-            
-            if not target_account:
-                target_account = settings.default_inventory_account
             
             if not target_account:
                 continue

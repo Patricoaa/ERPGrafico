@@ -509,14 +509,6 @@ class AccountingSettings(TimeStampedModel):
         verbose_name=_("Cuenta de Gasto por Incobrabilidad"),
         help_text=_("Cuenta de gasto para castigar deudas incobrables.")
     )
-    default_inventory_account = models.ForeignKey(
-        Account, 
-        on_delete=models.SET_NULL, 
-        null=True, blank=True, 
-        related_name='settings_inventory',
-        verbose_name=_("Cuenta Inventario General (Deprecated)"),
-        help_text=_("⚠️ DEPRECATED: Use cuentas específicas por tipo de producto. Se mantiene como fallback.")
-    )
     
     # Stock Interim Accounts
     stock_input_account = models.ForeignKey(

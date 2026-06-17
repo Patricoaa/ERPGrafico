@@ -42,7 +42,7 @@ def test_boleta_vat_capitalization():
     items = JournalItem.objects.filter(entry=factura.journal_entry)
     
     tax_items = items.filter(account=settings.default_tax_receivable_account)
-    stock_items = items.filter(account=settings.stock_input_account or settings.default_inventory_account)
+    stock_items = items.filter(account=settings.stock_input_account)
     
     print(f"Factura entry id: {factura.journal_entry.id}")
     print(f"Tax items count: {tax_items.count()} (Expected: 1)")
@@ -54,7 +54,7 @@ def test_boleta_vat_capitalization():
     b_items = JournalItem.objects.filter(entry=boleta.journal_entry)
     
     b_tax_items = b_items.filter(account=settings.default_tax_receivable_account)
-    b_stock_items = b_items.filter(account=settings.stock_input_account or settings.default_inventory_account).last()
+    b_stock_items = b_items.filter(account=settings.stock_input_account).last()
     
     print(f"Boleta entry id: {boleta.journal_entry.id}")
     print(f"Tax items count: {b_tax_items.count()} (Expected: 0)")

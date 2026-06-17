@@ -56,10 +56,9 @@ def make_line(subtotal: Decimal, product=None) -> MagicMock:
     return line
 
 
-def make_customer(account_receivable=None) -> MagicMock:
+def make_customer() -> MagicMock:
     c = MagicMock()
     c.name = "Test Customer"
-    c.account_receivable = account_receivable or make_account("CxC")
     return c
 
 
@@ -257,7 +256,7 @@ class TestFacturaMakeJournalEntry:
         first = items[0]
         assert first['debit'] == Decimal('1190')
         assert first['credit'] == Decimal('0.00')
-        assert first['account'] == customer.account_receivable
+        assert first['account'] == make_account("CxC")
 
     def test_revenue_item_is_credit_net(self):
         invoice, settings, rev_acc, _ = self._make_basic_case()

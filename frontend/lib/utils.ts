@@ -158,7 +158,6 @@ export function translateFieldName(field: string): string {
     'auto_activate_subscription': 'Activar Suscripción Auto.',
     'is_indefinite': 'Contrato Indefinido',
     'contract_end_date': 'Fin de Contrato',
-    'income_account': 'Cuenta de Ingresos',
     'preferred_supplier': 'Proveedor Preferido',
     'active': 'Activo',
     'sale_price': 'Precio de Venta',

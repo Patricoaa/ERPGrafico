@@ -57,7 +57,6 @@ def fixture(db):
     from contacts.models import Contact
     supplier = Contact.objects.create(
         name='Proveedor Demo', tax_id='76.123.456-7',
-        account_payable=payable_acc,
     )
 
     return {

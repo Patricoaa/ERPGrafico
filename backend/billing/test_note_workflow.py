@@ -60,7 +60,7 @@ def comprehensive_setup(db):
         default_payable_account=acc_payable,
         default_revenue_account=acc_revenue,
         default_expense_account=acc_expense,
-        default_inventory_account=acc_inventory,
+        storable_inventory_account=acc_inventory,
         default_tax_payable_account=acc_tax_payable,
         default_tax_receivable_account=acc_tax_receivable
     )
@@ -72,12 +72,10 @@ def comprehensive_setup(db):
     customer = Contact.objects.create(
         name='Test Customer',
         is_customer=True,
-        account_receivable=acc_receivable
     )
     supplier = Contact.objects.create(
         name='Test Supplier',
         is_supplier=True,
-        account_payable=acc_payable
     )
     
     # Warehouse

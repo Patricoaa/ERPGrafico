@@ -64,7 +64,6 @@ def supplier(db):
     )
     return Contact.objects.create(
         name='Proveedor CP', tax_id='76.444.444-4',
-        account_payable=payable,
     )
 
 

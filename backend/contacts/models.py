@@ -46,27 +46,6 @@ class Contact(models.Model):
 
     history = HistoricalRecords()
     
-    # Accounting links
-    account_receivable = models.ForeignKey(
-        Account, 
-        on_delete=models.SET_NULL, 
-        null=True, 
-        blank=True, 
-        related_name='contact_receivables',
-        limit_choices_to={'account_type': AccountType.ASSET},
-        verbose_name=_("Cuenta por Cobrar")
-    )
-    
-    account_payable = models.ForeignKey(
-        Account, 
-        on_delete=models.SET_NULL, 
-        null=True, 
-        blank=True, 
-        related_name='contact_payables',
-        limit_choices_to={'account_type': AccountType.LIABILITY},
-        verbose_name=_("Cuenta por Pagar")
-    )
-
     is_default_customer = models.BooleanField(_("Cliente por Defecto"), default=False)
     is_default_vendor = models.BooleanField(_("Proveedor por Defecto"), default=False)
 
@@ -91,52 +70,6 @@ class Contact(models.Model):
         help_text=_("Cache desnormalizado del % vigente. Fuente de verdad: PartnerEquityStake.")
     )
     partner_since = models.DateField(_("Socio Desde"), null=True, blank=True)
-    partner_contribution_account = models.ForeignKey(
-        Account,
-        on_delete=models.SET_NULL,
-        null=True, blank=True,
-        related_name='partner_contribution_contacts',
-        limit_choices_to={'account_type': AccountType.EQUITY},
-        verbose_name=_("Cuenta de Aportes del Socio"),
-        help_text=_("Subcuenta para aportes de capital de este socio (3.1.02.XX).")
-    )
-    partner_provisional_withdrawal_account = models.ForeignKey(
-        Account,
-        on_delete=models.SET_NULL,
-        null=True, blank=True,
-        related_name='partner_prov_withdrawal_contacts',
-        limit_choices_to={'account_type': AccountType.EQUITY},
-        verbose_name=_("Cuenta Retiros Provisorios del Socio"),
-        help_text=_("Subcuenta (contra patrimonio) para retiros provisorios de este socio (3.1.05.XX).")
-    )
-    partner_earnings_account = models.ForeignKey(
-        Account,
-        on_delete=models.SET_NULL,
-        null=True, blank=True,
-        related_name='partner_earnings_contacts',
-        limit_choices_to={'account_type': AccountType.EQUITY},
-        verbose_name=_("Cuenta Utilidades del Socio"),
-        help_text=_("Subcuenta para utilidades del ejercicio asignadas a este socio (3.1.06.XX).")
-    )
-    partner_receivable_account = models.ForeignKey(
-        Account,
-        on_delete=models.SET_NULL,
-        null=True, blank=True,
-        related_name='partner_receivable_contacts',
-        limit_choices_to={'account_type': AccountType.ASSET},
-        verbose_name=_("Cuenta Capital por Cobrar"),
-        help_text=_("Subcuenta (activo) para capital suscrito pendiente de pago de este socio (1.1.05.XX).")
-    )
-    partner_dividends_payable_account = models.ForeignKey(
-        Account,
-        on_delete=models.SET_NULL,
-        null=True, blank=True,
-        related_name='partner_dividends_payable_contacts',
-        limit_choices_to={'account_type': AccountType.LIABILITY},
-        verbose_name=_("Cuenta Dividendos por Pagar"),
-        help_text=_("Subcuenta (pasivo) para dividendos pendientes de pago de este socio (2.1.07.XX).")
-    )
-
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

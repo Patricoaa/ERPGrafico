@@ -208,7 +208,7 @@ class FacturaStrategy(DTEStrategy):
 
         order = invoice.sale_order
         receivable_account = (
-            order.customer.account_receivable or settings.default_receivable_account
+            settings.default_receivable_account
         )
         if not receivable_account:
             raise ValidationError("Falta configuración de cuenta por cobrar.")
@@ -287,7 +287,7 @@ class BoletaStrategy(DTEStrategy):
 
         order = invoice.sale_order
         receivable_account = (
-            order.customer.account_receivable or settings.default_receivable_account
+            settings.default_receivable_account
         )
         if not receivable_account:
             raise ValidationError("Falta configuración de cuenta por cobrar.")
@@ -351,7 +351,7 @@ class FacturaExentaStrategy(DTEStrategy):
     def make_journal_entry(self, invoice: "Invoice", settings: "AccountingSettings") -> tuple[str, str, JournalItemList]:
         from django.core.exceptions import ValidationError
         order = invoice.sale_order
-        receivable_account = order.customer.account_receivable or settings.default_receivable_account
+        receivable_account = settings.default_receivable_account
         if not receivable_account:
             raise ValidationError("Falta configuración de cuenta por cobrar.")
 
@@ -402,7 +402,7 @@ class BoletaExentaStrategy(DTEStrategy):
         # El asiento es idéntico a Factura Exenta.
         from django.core.exceptions import ValidationError
         order = invoice.sale_order
-        receivable_account = order.customer.account_receivable or settings.default_receivable_account
+        receivable_account = settings.default_receivable_account
         if not receivable_account:
             raise ValidationError("Falta configuración de cuenta por cobrar.")
 
@@ -453,7 +453,7 @@ class ComprobantePagoStrategy(DTEStrategy):
         # como Boleta estándar.
         from django.core.exceptions import ValidationError
         order = invoice.sale_order
-        receivable_account = order.customer.account_receivable or settings.default_receivable_account
+        receivable_account = settings.default_receivable_account
         if not receivable_account:
             raise ValidationError("Falta configuración de cuenta por cobrar.")
 
@@ -511,8 +511,8 @@ class PurchaseInvStrategy(DTEStrategy):
     def make_journal_entry(self, invoice: "Invoice", settings: "AccountingSettings") -> tuple[str, str, JournalItemList]:
         from django.core.exceptions import ValidationError
         order = invoice.purchase_order
-        payable_account = order.supplier.account_payable or settings.default_payable_account
-        stock_input_account = settings.stock_input_account or settings.default_inventory_account
+        payable_account = settings.default_payable_account
+        stock_input_account = settings.stock_input_account
         tax_account = settings.default_tax_receivable_account
 
         if not payable_account or not stock_input_account:
@@ -561,9 +561,9 @@ def _note_journal_entry(invoice: "Invoice", settings: "AccountingSettings", is_c
     contact = workflow.corrected_invoice.contact
 
     if is_sale:
-        partner_account = (contact.account_receivable if contact else None) or settings.default_receivable_account
+        partner_account = settings.default_receivable_account
     else:
-        partner_account = (contact.account_payable if contact else None) or settings.default_payable_account
+        partner_account = settings.default_payable_account
 
     if not partner_account:
         partner_type = "por cobrar" if is_sale else "por pagar"
@@ -603,12 +603,12 @@ def _note_journal_entry(invoice: "Invoice", settings: "AccountingSettings", is_c
             line_amount += line_tax
 
         if product.product_type == 'SERVICE':
-            product_account = product.income_account or settings.default_service_revenue_account or settings.default_revenue_account
+            product_account = product.get_income_account or settings.default_revenue_account
         elif product.product_type == 'CONSUMABLE':
-            product_account = product.expense_account or settings.default_consumable_account or settings.default_expense_account
+            product_account = product.get_expense_account or settings.default_expense_account
         elif product.track_inventory:
             if is_sale:
-                product_account = product.income_account or settings.default_revenue_account
+                product_account = product.get_income_account or settings.default_revenue_account
             else:
                 product_account = settings.stock_input_account or settings.default_expense_account
         else:

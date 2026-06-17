@@ -122,7 +122,7 @@ class TreasuryReturnService:
         # Determine accounts based on payment type
         if payment.sale_order:
             # Sale payment return
-            partner_account = payment.contact.account_receivable or settings.default_receivable_account
+            partner_account = settings.default_receivable_account
             # Treasury Account to adjust
             treasury_acc = from_account
             
@@ -157,7 +157,7 @@ class TreasuryReturnService:
             
         elif payment.purchase_order:
             # Purchase payment return
-            partner_account = payment.contact.account_payable or settings.default_payable_account
+            partner_account = settings.default_payable_account
             treasury_acc = to_account
             
             entry = JournalEntry.objects.create(

@@ -109,9 +109,9 @@ class PartnerService:
             
         # Cr: Equity (Excess or direct contribution)
         if amount_to_equity_surplus > 0:
-            contribution_account = partner.partner_contribution_account
+            contribution_account = settings.partner_capital_contribution_account
             if not contribution_account:
-                 raise ValidationError(f"El socio {partner.name} no tiene cuenta de aportes asignada.")
+                 raise ValidationError(f"La cuenta de Aportes de Capital no está configurada globalmente.")
             
             JournalItem.objects.create(
                 entry=entry,
@@ -216,8 +216,8 @@ class PartnerService:
         dividend_balance = partner.partner_dividends_payable_balance
         
         # Resolve accounts
-        withdrawal_account = partner.partner_provisional_withdrawal_account
-        dividends_payable_account = partner.partner_dividends_payable_account or settings.partner_dividends_payable_account
+        withdrawal_account = settings.partner_provisional_withdrawal_account
+        dividends_payable_account = settings.partner_dividends_payable_account
         
         if amount > dividend_balance and not withdrawal_account:
             raise ValidationError(
@@ -391,9 +391,9 @@ class PartnerService:
             credit=0,
         )
         # Cr: Partner Specific Capital Account (Equity)
-        contribution_account = partner.partner_contribution_account
+        contribution_account = settings.partner_capital_contribution_account
         if not contribution_account:
-            raise ValidationError(f"El socio {partner.name} no tiene cuenta de capital asignada.")
+            raise ValidationError(f"La cuenta de Aportes de Capital no está configurada globalmente.")
 
         JournalItem.objects.create(
             entry=entry,
@@ -474,9 +474,9 @@ class PartnerService:
         )
         
         # Dr: Partner Specific Capital Account (Equity)
-        contribution_account = partner.partner_contribution_account
+        contribution_account = settings.partner_capital_contribution_account
         if not contribution_account:
-            raise ValidationError(f"El socio {partner.name} no tiene cuenta de capital asignada.")
+            raise ValidationError(f"La cuenta de Aportes de Capital no está configurada globalmente.")
 
         JournalItem.objects.create(
             entry=entry,
@@ -759,19 +759,17 @@ class PartnerService:
         settings = PartnerService._get_settings()
         
         # Accounts
-        retained_account = partner.partner_earnings_account
+        retained_account = settings.partner_retained_earnings_account
         if not retained_account:
-            retained_account = settings.default_retained_earnings_account
-            if not retained_account:
-                raise ValidationError(f"No hay cuenta de utilidades retenidas configurada para {partner.name}.")
+            raise ValidationError("La cuenta de Utilidades Retenidas no está configurada globalmente.")
                 
-        dividends_payable_account = partner.partner_dividends_payable_account or settings.partner_dividends_payable_account
+        dividends_payable_account = settings.partner_dividends_payable_account
         if amount_dividend > 0 and not dividends_payable_account:
             raise ValidationError("La cuenta de Dividendos por Pagar no está configurada.")
             
-        contribution_account = partner.partner_contribution_account
+        contribution_account = settings.partner_capital_contribution_account
         if amount_reinvest > 0 and not contribution_account:
-            raise ValidationError(f"La cuenta de Aportes de Capital no está configurada para {partner.name}.")
+            raise ValidationError("La cuenta de Aportes de Capital no está configurada globalmente.")
 
         # 1. Journal Entry
         entry = JournalEntry.objects.create(

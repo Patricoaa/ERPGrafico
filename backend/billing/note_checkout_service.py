@@ -700,15 +700,10 @@ class NoteCheckoutService:
         invoice.save()
         
         # Determine receivable/payable account
-        contact = workflow.corrected_invoice.contact
         if is_sale:
-            partner_account = (
-                contact.account_receivable if contact else None
-            ) or settings.default_receivable_account
+            partner_account = settings.default_receivable_account
         else:
-            partner_account = (
-                contact.account_payable if contact else None
-            ) or settings.default_payable_account
+            partner_account = settings.default_payable_account
         
         if not partner_account:
             partner_type = "por cobrar" if is_sale else "por pagar"
@@ -752,14 +747,14 @@ class NoteCheckoutService:
                 line_amount += line_tax
 
             if product.product_type == Product.Type.SERVICE:
-                product_account = product.income_account or settings.default_service_revenue_account or settings.default_revenue_account
+                product_account = product.get_income_account or settings.default_revenue_account
             elif product.product_type == Product.Type.CONSUMABLE:
-                product_account = product.expense_account or settings.default_consumable_account or settings.default_expense_account
+                product_account = product.get_expense_account or settings.default_expense_account
             elif product.track_inventory:
                 # For sales, reverse revenue. For purchases, reverse stock bridge/inventory.
                 # Here we handle the REVENUE/EXPENSE side first.
                 if is_sale:
-                    product_account = product.income_account or settings.default_revenue_account
+                    product_account = product.get_income_account or settings.default_revenue_account
                 else:
                     # Purchase return: Credit the "Inventory bridge" (liability) or Expense
                     product_account = settings.stock_input_account or settings.default_expense_account

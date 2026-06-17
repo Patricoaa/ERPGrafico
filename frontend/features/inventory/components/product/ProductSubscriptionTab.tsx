@@ -202,41 +202,7 @@ export function ProductSubscriptionTab({ form, isEditing }: ProductSubscriptionT
                             />
                         </div>
 
-                        <div className="col-span-1">
-                                <FormField
-                                    control={form.control}
-                                    name="income_account"
-                                    render={({ field, fieldState }) => (
-                                        <AccountSelector
-                                            label="Cuenta Ingreso"
-                                            error={fieldState.error?.message}
-                                            value={field.value}
-                                            onChange={field.onChange}
-                                            accountType="INCOME"
-                                            placeholder="Sel. cuenta..."
-                                        />
-                                    )}
-                                />
-                        </div>
-
-                        <div className="col-span-1">
-                                <FormField
-                                    control={form.control}
-                                    name="expense_account"
-                                    render={({ field, fieldState }) => (
-                                        <AccountSelector
-                                            label="Cuenta Gasto"
-                                            error={fieldState.error?.message}
-                                            value={field.value}
-                                            onChange={field.onChange}
-                                            accountType="EXPENSE"
-                                            placeholder="Sel. cuenta..."
-                                        />
-                                    )}
-                                />
-                        </div>
-
-                        {/* Validity Section integrated into Grid */}
+{/* Validity Section integrated into Grid */}
                         <div className="col-span-2 mt-4 space-y-4">
                             <FormSection title="Vigencia de Contrato" icon={Calendar} />
                             <FormField

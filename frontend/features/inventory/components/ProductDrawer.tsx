@@ -167,7 +167,7 @@ export function ProductDrawer({ sidebar, open, onOpenChange, initialData, onSucc
         const subFields = [
             'subscription_supplier', 'subscription_amount', 'recurrence_period',
             'subscription_start_date', 'payment_day_type', 'payment_day',
-            'payment_interval_days', 'default_invoice_type', 'income_account'
+            'payment_interval_days', 'default_invoice_type'
         ]
         subFields.forEach(field => {
             if (errors[field as keyof typeof errors]) {
@@ -346,8 +346,6 @@ export function ProductDrawer({ sidebar, open, onOpenChange, initialData, onSucc
                     auto_activate_subscription: initialData.auto_activate_subscription ?? true,
                     is_indefinite: initialData.is_indefinite ?? true,
                     contract_end_date: initialData.contract_end_date || "",
-                    income_account: typeof initialData.income_account === 'object' ? String((initialData.income_account as any)?.id) : String(initialData.income_account || ""),
-                    expense_account: typeof initialData.expense_account === 'object' ? String((initialData.expense_account as any)?.id) : String(initialData.expense_account || ""),
                     preferred_supplier: typeof initialData.preferred_supplier === 'object' ? String((initialData.preferred_supplier as any)?.id) : String(initialData.preferred_supplier || ""),
                 })
                 setImagePreview(resolveMediaUrl(initialData.image) || null)
@@ -387,8 +385,6 @@ export function ProductDrawer({ sidebar, open, onOpenChange, initialData, onSucc
                     parent_template: null,
                     attribute_values: [],
                     variant_display_name: "",
-                    income_account: "",
-                    expense_account: "",
                     preferred_supplier: "",
                 })
                 setImagePreview(null)
@@ -408,8 +404,6 @@ export function ProductDrawer({ sidebar, open, onOpenChange, initialData, onSucc
         sale_uom: "Unidad de Medida Venta",
         purchase_uom: "Unidad de Medida Compra",
         receiving_warehouse: "Bodega de Recepción",
-        income_account: "Cuenta de Ingresos",
-        expense_account: "Cuenta de Gastos",
         subscription_supplier: "Proveedor de Suscripción",
         recurrence_period: "Período de Facturación",
         subscription_amount: "Monto de Suscripción",
@@ -471,8 +465,6 @@ export function ProductDrawer({ sidebar, open, onOpenChange, initialData, onSucc
             appendValid('sale_uom', data.sale_uom)
             appendValid('purchase_uom', data.purchase_uom)
             appendValid('receiving_warehouse', data.receiving_warehouse)
-            appendValid('income_account', data.income_account)
-            appendValid('expense_account', data.expense_account)
 
             if (data.preferred_supplier && data.preferred_supplier !== 'undefined') {
                 formData.append('preferred_supplier', data.preferred_supplier)

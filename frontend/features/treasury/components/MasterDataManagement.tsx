@@ -43,6 +43,7 @@ const paymentMethodSchema = z.object({
     name: z.string().min(1, "El nombre es requerido"),
     method_type: z.string().min(1, "El tipo es requerido"),
     treasury_account: z.string().min(1, "La cuenta es requerida"),
+    settlement_account: z.string().nullable().optional(),
     requires_reference: z.boolean().default(false),
     allow_for_sales: z.boolean().default(true),
     allow_for_purchases: z.boolean().default(true),
@@ -607,6 +608,7 @@ function PaymentMethodModal({ open, onOpenChange, method, onSuccess }: PaymentMe
             name: "",
             method_type: "DEBIT_CARD",
             treasury_account: "",
+            settlement_account: null,
             requires_reference: false,
             allow_for_sales: true,
             allow_for_purchases: true,
@@ -618,11 +620,14 @@ function PaymentMethodModal({ open, onOpenChange, method, onSuccess }: PaymentMe
             setShowAdvanced(false)
             const acc = method?.treasury_account
             const accountId = acc ? (typeof acc === 'object' ? (acc as any).id.toString() : acc.toString()) : ""
+            const settlementAcc = method?.settlement_account
+            const settlementId = settlementAcc ? (typeof settlementAcc === 'object' ? (settlementAcc as any).id.toString() : settlementAcc.toString()) : null
 
             form.reset({
                 name: method?.name || "",
                 method_type: method?.method_type || "DEBIT_CARD",
                 treasury_account: accountId,
+                settlement_account: settlementId,
                 requires_reference: method?.requires_reference || false,
                 allow_for_sales: method?.allow_for_sales ?? true,
                 allow_for_purchases: method?.allow_for_purchases ?? true,
@@ -759,6 +764,27 @@ function PaymentMethodModal({ open, onOpenChange, method, onSuccess }: PaymentMe
                                         />
                                     )}
                                 />
+                            </div>
+                            <div className="col-span-2">
+                                <FormField
+                                    control={form.control}
+                                    name="settlement_account"
+                                    render={({ field, fieldState }) => (
+                                        <TreasuryAccountSelector
+                                            label="Cuenta de liquidación (destino real)"
+                                            value={field.value}
+                                            onChange={field.onChange}
+                                            error={fieldState.error?.message}
+                                            disabled={watchedType === "CARD_TERMINAL"}
+                                        />
+                                    )}
+                                />
+                                {watchedType !== "CARD_TERMINAL" && (
+                                    <p className="text-[9px] text-muted-foreground italic mt-1">Cuenta destino contable real. Para terminales integrados se auto-gestiona desde el proveedor.</p>
+                                )}
+                                {watchedType === "CARD_TERMINAL" && (
+                                    <p className="text-[9px] text-muted-foreground italic mt-1">Gestionado automáticamente por el proveedor del terminal.</p>
+                                )}
                             </div>
 
                             <div className="col-span-4">

@@ -97,7 +97,6 @@ def funded_checking(db, checking_account, user):
     )
     customer = Contact.objects.create(
         name='Cliente API', tax_id='76.333.333-3',
-        account_receivable=ar,
     )
     invoice = Invoice.objects.create(
         contact=customer, date=date(2026, 6, 1), number='FAC-API-FUND-1',

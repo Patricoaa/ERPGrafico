@@ -326,7 +326,7 @@ def test_pay_statement_transfers_bank_to_card(env):
         name='Proveedor Test', code='2.1.01.099', account_type=AccountType.LIABILITY
     )
     supplier = Contact.objects.create(
-        name='Proveedor Test', tax_id='76.999.999-9', account_payable=payable_acc,
+        name='Proveedor Test', tax_id='76.999.999-9',
     )
     TreasuryService.create_movement(
         amount=Decimal('300000'),
@@ -350,7 +350,6 @@ def test_pay_statement_transfers_bank_to_card(env):
     )
     customer = Contact.objects.create(
         name='Cliente Demo', tax_id='76.111.111-1',
-        account_receivable=customer_ar,
     )
     # INBOUND a banco con venta a cliente → Debe banco, Haber AR.
     from billing.models import Invoice
@@ -419,11 +418,10 @@ def test_pay_statement_idempotent(env):
         name='AR Demo', code='1.1.02.003', account_type=AccountType.ASSET
     )
     supplier = Contact.objects.create(
-        name='Proveedor Test', tax_id='76.999.999-9', account_payable=payable_acc,
+        name='Proveedor Test', tax_id='76.999.999-9',
     )
     customer = Contact.objects.create(
         name='Cliente Demo', tax_id='76.111.111-2',
-        account_receivable=customer_ar,
     )
     TreasuryService.create_movement(
         amount=Decimal('100000'),
@@ -484,11 +482,10 @@ def test_pay_statement_with_interest_and_fees(env):
         name='AR Demo', code='1.1.02.004', account_type=AccountType.ASSET
     )
     supplier = Contact.objects.create(
-        name='Proveedor Test', tax_id='76.999.999-9', account_payable=payable_acc,
+        name='Proveedor Test', tax_id='76.999.999-9',
     )
     customer = Contact.objects.create(
         name='Cliente Demo', tax_id='76.111.111-3',
-        account_receivable=customer_ar,
     )
     # Compras con tarjeta: 200.000 → sube deuda a 200.000
     TreasuryService.create_movement(
@@ -571,11 +568,10 @@ def test_cancel_statement_paid_raises(env):
         name='AR Demo', code='1.1.02.005', account_type=AccountType.ASSET
     )
     supplier = Contact.objects.create(
-        name='Proveedor Test', tax_id='76.999.999-9', account_payable=payable_acc,
+        name='Proveedor Test', tax_id='76.999.999-9',
     )
     customer = Contact.objects.create(
         name='Cliente Demo', tax_id='76.111.111-4',
-        account_receivable=customer_ar,
     )
     TreasuryService.create_movement(
         amount=Decimal('1000'),

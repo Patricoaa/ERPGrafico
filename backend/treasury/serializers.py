@@ -620,6 +620,7 @@ class PaymentTerminalProviderSerializer(serializers.ModelSerializer):
     class Meta:
         model = PaymentTerminalProvider
         fields = '__all__'
+        read_only_fields = ('bank_treasury_account',)
 
 
 class PaymentTerminalDeviceSerializer(serializers.ModelSerializer):

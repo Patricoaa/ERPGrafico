@@ -536,20 +536,6 @@ class Product(models.Model):
         help_text=_("Monto adicional (neto) sobre el precio del template. Solo aplica cuando el modo es SURCHARGE.")
     )
 
-    # Accounting Overrides
-    income_account = models.ForeignKey(
-        Account, on_delete=models.SET_NULL, null=True, blank=True, related_name='product_incomes',
-        limit_choices_to={'account_type': AccountType.INCOME},
-        verbose_name=_("Cuenta de Ingresos (Personalizada)"),
-        help_text=_("Sobreescribe la cuenta de la categoría para este producto.")
-    )
-    expense_account = models.ForeignKey(
-        Account, on_delete=models.SET_NULL, null=True, blank=True, related_name='product_expenses',
-        limit_choices_to={'account_type': AccountType.EXPENSE},
-        verbose_name=_("Cuenta de Gastos (Personalizada)"),
-        help_text=_("Sobreescribe la cuenta de la categoría para este producto.")
-    )
-
     is_active = models.BooleanField(_("Activo"), default=True, db_index=True, help_text=_("Desactivar para archivar el producto en lugar de eliminarlo."))
 
     created_at = models.DateTimeField(auto_now_add=True)
@@ -563,7 +549,7 @@ class Product(models.Model):
                     'fields': [
                         'name', 'code', 'category', 'product_type',
                         'sale_price', 'sale_price_gross', 'can_be_sold', 'can_be_purchased',
-                        'income_account', 'expense_account', 'is_active'
+                        'is_active'
                     ]
                 },
                 {
@@ -770,15 +756,14 @@ class Product(models.Model):
         # Express products and variants without an active BOM need validation
         return not self.has_active_bom()
 
-    # Helpers to get effective accounts (Product override > Category > Type-based > Fallback)
+    # Helpers to get effective accounts (Category > Type-based)
     @property
     def get_asset_account(self):
         """
         Returns the asset account for this product.
         Priority:
         1. Category-specific account (allows customization)
-        2. Type-specific account from settings
-        3. General inventory account (fallback)
+        2. Type-specific account from settings (storable/manufacturable)
         """
         from accounting.models import AccountingSettings
         
@@ -792,12 +777,10 @@ class Product(models.Model):
             return None
         
         if self.product_type == self.Type.STORABLE:
-            return (settings.storable_inventory_account or 
-                    settings.default_inventory_account)
+            return settings.storable_inventory_account
         
         elif self.product_type == self.Type.MANUFACTURABLE:
-            return (settings.manufacturable_inventory_account or 
-                    settings.default_inventory_account)
+            return settings.manufacturable_inventory_account
         
         elif self.product_type == self.Type.CONSUMABLE:
             return settings.default_consumable_account
@@ -812,13 +795,10 @@ class Product(models.Model):
         """
         Returns the income account for this product.
         Priority:
-        1. Product-specific override
-        2. Category-specific account
-        3. Type-specific account from settings
-        4. General revenue account (fallback)
+        1. Category-specific account
+        2. Type-specific account from settings
+        3. General revenue account (fallback)
         """
-        if self.income_account:
-            return self.income_account
         if self.category and self.category.income_account:
             return self.category.income_account
             
@@ -839,13 +819,10 @@ class Product(models.Model):
         """
         Returns the expense/cost account for this product.
         Priority:
-        1. Product-specific override
-        2. Category-specific account
-        3. Type-specific account from settings
-        4. General expense account (fallback)
+        1. Category-specific account
+        2. Type-specific account from settings
+        3. General expense account (fallback)
         """
-        if self.expense_account:
-            return self.expense_account
         if self.category and self.category.expense_account:
             return self.category.expense_account
             

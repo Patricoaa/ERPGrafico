@@ -113,7 +113,6 @@ def test_pay_statement_rejects_checking_with_insufficient_funds(env):
     )
     customer = Contact.objects.create(
         name='Cliente Val', tax_id='76.222.222-2',
-        account_receivable=customer_ar,
     )
     from billing.models import Invoice
     invoice = Invoice.objects.create(
@@ -142,7 +141,6 @@ def test_pay_statement_accepts_checking_with_exact_funds(env):
     )
     customer = Contact.objects.create(
         name='Cliente Val2', tax_id='76.222.222-3',
-        account_receivable=customer_ar,
     )
     from billing.models import Invoice
     invoice = Invoice.objects.create(
@@ -172,7 +170,6 @@ def test_pay_statement_accepts_cash(env):
     )
     customer = Contact.objects.create(
         name='Cliente Val3', tax_id='76.222.222-4',
-        account_receivable=customer_ar,
     )
     from billing.models import Invoice
     invoice = Invoice.objects.create(
