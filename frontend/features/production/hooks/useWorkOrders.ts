@@ -6,10 +6,10 @@ import { WORK_ORDERS_LIST_KEY } from './useWorkOrderMutations'
 
 export { WORK_ORDERS_LIST_KEY }
 
-export function useWorkOrders(filters?: FilterState & { my_tasks?: boolean }) {
+export function useWorkOrders(filters?: FilterState & { my_tasks?: boolean }, initialData?: WorkOrder[]) {
     const queryClient = useQueryClient()
 
-    const { data, isLoading, refetch } = useQuery({
+    const query = useQuery({
         queryKey: [WORK_ORDERS_LIST_KEY, filters],
         queryFn: async (): Promise<WorkOrder[]> => {
             const params = new URLSearchParams()
@@ -22,12 +22,19 @@ export function useWorkOrders(filters?: FilterState & { my_tasks?: boolean }) {
             return res.data
         },
         staleTime: 2 * 60 * 1000,
+        initialData,
+        placeholderData: (prev) => prev,
     })
+
+    const orders = query.data ?? []
+    const showSkeleton = query.isLoading && !orders.length
+    const isRefetching = query.isFetching && !showSkeleton
+    const refetch = query.refetch
 
     const invalidateList = () =>
         queryClient.invalidateQueries({ queryKey: [WORK_ORDERS_LIST_KEY] })
 
-    return { orders: data ?? [], isLoading, refetch, invalidateList }
+    return { orders, isLoading: showSkeleton, isRefetching, refetch, invalidateList }
 }
 
 export function useWorkOrder(id: string | number) {

@@ -2,7 +2,7 @@ import { showApiError } from "@/lib/errors"
 import { useQueryClient, useMutation, useQuery } from '@tanstack/react-query'
 import { contactsApi } from '../api/contactsApi'
 import { toast } from 'sonner'
-import { ContactFilters, ContactPayload } from '../types'
+import { ContactFilters, ContactPayload, Contact } from '../types'
 import { SALES_KEYS } from '@/features/sales/hooks/useSalesOrders'
 import { PURCHASING_KEYS } from '@/features/purchasing/hooks/usePurchasing'
 
@@ -10,18 +10,26 @@ import { CONTACTS_KEYS } from './queryKeys'
 
 export { CONTACTS_KEYS }
 
-export function useContacts({ filters }: { filters?: ContactFilters } = {}) {
+export function useContacts({ filters, initialData }: { filters?: ContactFilters, initialData?: Contact[] } = {}) {
     const queryClient = useQueryClient()
 
-    const { data: contacts, isLoading, refetch } = useQuery({
+    const query = useQuery({
         queryKey: CONTACTS_KEYS.list(filters || {}),
         queryFn: () => contactsApi.getContacts(filters),
         staleTime: 5 * 60 * 1000, // 5 min
+        initialData,
+        placeholderData: (prev) => prev,
     })
 
+    const contacts = query.data ?? []
+    const showSkeleton = query.isLoading && !contacts.length
+    const isRefetching = query.isFetching && !showSkeleton
+    const refetch = query.refetch
+
     return {
-        contacts: contacts ?? [],
-        isLoading,
+        contacts,
+        isLoading: showSkeleton,
+        isRefetching,
         refetch,
         ...useContactMutations()
     }

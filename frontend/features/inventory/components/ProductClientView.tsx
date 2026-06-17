@@ -34,9 +34,10 @@ interface ProductClientViewProps {
     externalOpen?: boolean
     onExternalOpenChange?: (open: boolean) => void
     createAction?: React.ReactNode
+    initialProducts?: Product[]
 }
 
-export function ProductClientView({ externalOpen, onExternalOpenChange, createAction }: ProductClientViewProps) {
+export function ProductClientView({ externalOpen, onExternalOpenChange, createAction, initialProducts }: ProductClientViewProps) {
     const { filters: smartFilters, isFiltered } = useSmartSearch(productSearchDef)
     const filters = useMemo<ProductFilters>(() => ({
         is_active: 'all',
@@ -45,7 +46,7 @@ export function ProductClientView({ externalOpen, onExternalOpenChange, createAc
         ...(smartFilters as Partial<ProductFilters>),
     }), [smartFilters])
 
-    const { products, isLoading, refetch, updateProduct } = useProducts({ filters })
+    const { products, isLoading, refetch, updateProduct } = useProducts({ filters, initialData: initialProducts })
     const [editingProduct, setEditingProduct] = useState<Product | null>(null)
     const [isFormOpen, setIsFormOpen] = useState(false)
 

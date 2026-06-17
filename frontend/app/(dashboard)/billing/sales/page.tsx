@@ -1,42 +1,31 @@
-"use client"
+import { serverFetch } from "@/lib/server-fetch"
+import type { Invoice } from "@/features/billing"
+import SalesInvoicesPageClient from "./SalesInvoicesPageClient"
 
-import { useEffect, useRef } from "react"
-import { useSearchParams, useRouter, usePathname } from "next/navigation"
-import { useHubPanel } from "@/components/providers/HubPanelProvider"
-import { SalesInvoicesClientView } from "@/features/billing"
+const FILTER_PARAMS = new Set(['search', 'status', 'dte_type', 'date_from', 'date_to', 'partner_name'])
 
-export default function SalesInvoicesPage() {
-    const searchParams = useSearchParams()
-    const router = useRouter()
-    const pathname = usePathname()
-    const { openHub, isHubOpen } = useHubPanel()
-    const hubEverOpenedRef = useRef(false)
-    const selectedId = searchParams.get('selected')
+interface PageProps {
+    searchParams: Promise<Record<string, string | undefined>>
+}
 
-    // 1. Open Hub panel if ?selected= is present
-    useEffect(() => {
-        if (selectedId) {
-            openHub({ invoiceId: Number(selectedId), orderId: null, type: 'sale' })
+export default async function SalesInvoicesPage({ searchParams }: PageProps) {
+    const params = await searchParams
+
+    const hasActiveFilters = Object.keys(params).some(k => FILTER_PARAMS.has(k))
+    let initialInvoices: Invoice[] | undefined
+    if (!hasActiveFilters) {
+        try {
+            initialInvoices = await serverFetch<Invoice[]>('billing/invoices/', {
+                params: {
+                    sale_order__isnull: 'false',
+                    page_size: '200',
+                },
+                revalidate: 10,
+            })
+        } catch {
+            // Client-side fetch handles fallback
         }
-    }, [selectedId, openHub])
+    }
 
-    // 2. Track when hub opens
-    useEffect(() => {
-        if (isHubOpen && selectedId) hubEverOpenedRef.current = true
-    }, [isHubOpen, selectedId])
-
-    // 3. Clean URL when hub closes
-    useEffect(() => {
-        if (hubEverOpenedRef.current && !isHubOpen && selectedId) {
-            const params = new URLSearchParams(searchParams.toString())
-            params.delete('selected')
-            const query = params.toString()
-            hubEverOpenedRef.current = false
-            router.replace(query ? `${pathname}?${query}` : pathname, { scroll: false })
-        }
-    }, [isHubOpen, selectedId, pathname, searchParams, router])
-
-    return (
-        <SalesInvoicesClientView />
-    )
+    return <SalesInvoicesPageClient initialInvoices={initialInvoices} />
 }

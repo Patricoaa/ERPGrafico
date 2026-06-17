@@ -2,7 +2,7 @@ from rest_framework import viewsets, status, filters
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from .serializers import (
-    ProductSerializer, ProductSimpleSerializer, ProductCategorySerializer, WarehouseSerializer,
+    ProductSerializer, ProductListSerializer, ProductSimpleSerializer, ProductCategorySerializer, WarehouseSerializer,
     StockMoveSerializer, UoMSerializer, UoMCategorySerializer, PricingRuleSerializer,
     CustomFieldTemplateSerializer, ProductCustomFieldSerializer, SubscriptionSerializer,
     ProductAttributeSerializer, ProductAttributeValueSerializer, ProductUoMPriceSerializer
@@ -29,6 +29,11 @@ class ProductViewSet(BulkImportMixin, AuditHistory, viewsets.ModelViewSet):
     filter_backends = [DjangoFilterBackend, filters.SearchFilter]
     filterset_class = ProductFilter
     search_fields = ['name', 'internal_code', 'code']
+
+    def get_serializer_class(self):
+        if self.action == 'list':
+            return ProductListSerializer
+        return ProductSerializer
 
     def get_queryset(self):
         user = self.request.user

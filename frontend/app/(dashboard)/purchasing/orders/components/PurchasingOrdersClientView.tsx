@@ -41,12 +41,14 @@ interface PurchasingOrdersClientViewProps {
     viewMode: 'orders' | 'notes'
     externalOpenCheckout?: boolean
     createAction?: React.ReactNode
+    initialOrders?: PurchaseOrderAPI[]
+    initialNotes?: Invoice[]
 }
 
-export function PurchasingOrdersClientView({ viewMode, externalOpenCheckout, createAction }: PurchasingOrdersClientViewProps) {
+export function PurchasingOrdersClientView({ viewMode, externalOpenCheckout, createAction, initialOrders, initialNotes }: PurchasingOrdersClientViewProps) {
     const { filters, isFiltered } = useSmartSearch(purchaseOrderSearchDef)
-    const { orders, isLoading: isLoadingOrders, refetch: fetchOrders, deleteOrder } = usePurchasingOrders(filters)
-    const { notes, isLoading: isLoadingNotes } = usePurchasingNotes()
+    const { orders, isLoading: isLoadingOrders, isRefetching, refetch: fetchOrders, deleteOrder } = usePurchasingOrders(filters, initialOrders)
+    const { notes, isLoading: isLoadingNotes } = usePurchasingNotes(initialNotes)
 
     const searchParams = useSearchParams()
     const router = useRouter()
@@ -586,6 +588,7 @@ export function PurchasingOrdersClientView({ viewMode, externalOpenCheckout, cre
                         onRowClick={(row: any) => toggleSelection(row.id)}
                         variant="embedded"
                         isLoading={viewMode === 'orders' ? isLoadingOrders : isLoadingNotes}
+                        isRefetching={viewMode === 'orders' ? isRefetching : undefined}
                         leftAction={<SmartSearchBar searchDef={purchaseOrderSearchDef} placeholder="Buscar por proveedor..." className="w-full" />}
                         showToolbarSort={true}
                         createAction={createAction}

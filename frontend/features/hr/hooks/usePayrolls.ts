@@ -6,8 +6,8 @@ import type { FilterState } from '@/components/shared'
 
 export const PAYROLLS_QUERY_KEY = ['hr', 'payrolls'] as const
 
-export function usePayrolls(filters?: FilterState) {
-    const { data, isLoading, refetch } = useQuery({
+export function usePayrolls(filters?: FilterState, initialData?: Payroll[]) {
+    const query = useQuery({
         queryKey: [...PAYROLLS_QUERY_KEY, filters],
         queryFn: (): Promise<Payroll[]> => {
             const params: Record<string, string> = {}
@@ -17,12 +17,20 @@ export function usePayrolls(filters?: FilterState) {
             return getPayrolls(Object.keys(params).length ? params : undefined)
         },
         staleTime: 2 * 60 * 1000,
+        initialData,
+        placeholderData: (prev) => prev,
     })
 
+    const payrolls = query.data ?? []
+    const showSkeleton = query.isLoading && !payrolls.length
+    const refetch = query.refetch
+    const isRefetching = query.isFetching && !showSkeleton
+
     return {
-        payrolls: data ?? [],
-        isLoading,
+        payrolls,
+        isLoading: showSkeleton,
         refetch,
+        isRefetching,
     }
 }
 

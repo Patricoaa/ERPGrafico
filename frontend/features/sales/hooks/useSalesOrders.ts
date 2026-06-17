@@ -2,22 +2,29 @@ import {showApiError} from "@/lib/errors"
 import { useQueryClient, useMutation, useQuery } from '@tanstack/react-query'
 import { salesApi } from '../api/salesApi'
 import { toast } from 'sonner'
-import { SaleOrderFilters, SaleOrderPayload } from '../types'
+import { SaleOrderFilters, SaleOrderPayload, SaleOrder } from '../types'
 import { useRealtime } from '@/features/realtime'
 
 import { SALES_KEYS } from './queryKeys'
 
 export { SALES_KEYS }
 
-export function useSalesOrders({ filters }: { filters?: SaleOrderFilters } = {}) {
+export function useSalesOrders({ filters, initialData }: { filters?: SaleOrderFilters, initialData?: SaleOrder[] } = {}) {
     const queryClient = useQueryClient()
     const { markLocalMutation } = useRealtime()
 
-    const { data: orders, isLoading, refetch } = useQuery({
+    const query = useQuery({
         queryKey: SALES_KEYS.orders(filters || {}),
         queryFn: () => salesApi.getOrders(filters),
         staleTime: 2 * 60 * 1000, // 2 min
+        initialData,
+        placeholderData: (prev) => prev,
     })
+
+    const orders = query.data ?? []
+    const showSkeleton = query.isLoading && !orders.length
+    const isRefetching = query.isFetching && !showSkeleton
+    const refetch = query.refetch
 
     const createMutation = useMutation({
         mutationFn: salesApi.createOrder,
@@ -93,8 +100,9 @@ export function useSalesOrders({ filters }: { filters?: SaleOrderFilters } = {})
     })
 
     return {
-        orders: orders ?? [],
-        isLoading,
+        orders,
+        isLoading: showSkeleton,
+        isRefetching,
         refetch,
         createOrder: createMutation.mutateAsync,
         updateOrder: updateMutation.mutateAsync,
