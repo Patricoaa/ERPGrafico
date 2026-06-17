@@ -3,7 +3,7 @@
 import { useState, useEffect, useMemo, type ReactNode } from "react"
 import { usePathname } from "next/navigation"
 import { Loader2 } from "lucide-react"
-import { PageHeader } from '@/components/shared'
+import { PageContainer, PageHeader } from '@/components/shared'
 import { ProfileProvider, useMyProfile, getMyProfile, ProfileSidePanel } from "@/features/profile"
 import type { MyProfile } from "@/types/profile"
 
@@ -81,10 +81,12 @@ function ProfileNavigation({ children }: { children: ReactNode }) {
 
     return (
         <>
-            <PageHeader title={title} description={description} iconName={iconName} variant="minimal" navigation={navigation} />
-            <div className="pt-4">
-                {children}
-            </div>
+            <PageContainer className="flex flex-col">
+                <PageHeader title={title} description={description} iconName={iconName} variant="minimal" navigation={navigation} />
+                <div className="h-full flex flex-col">
+                    {children}
+                </div>
+            </PageContainer>
             <ProfileSidePanel profile={profile} open={panelOpen} onOpenChange={setPanelOpen} />
         </>
     )
