@@ -4,19 +4,16 @@ import { useState, useEffect, useRef } from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
-import { ActionSlideButton, Drawer, EmptyState } from '@/components/shared'
+import { ActionSlideButton, Drawer } from '@/components/shared'
 import {
     Form,
     FormField,
-    FormMessage,
 } from "@/components/ui/form"
-import { Checkbox } from "@/components/ui/checkbox"
 import { settingsApi } from "../hooks"
 import { toast } from "sonner"
 import { MonitorSmartphone } from "lucide-react"
 import * as LucideIcons from "lucide-react"
-import { cn } from "@/lib/utils"
-import { CancelButton, LabeledInput, LabeledSelect, FormSection, FormFooter, FormSplitLayout, SkeletonShell } from "@/components/shared"
+import { CancelButton, LabeledInput, LabeledSelect, LabeledCheckboxGroup, FormSection, FormFooter, FormSplitLayout, SkeletonShell } from "@/components/shared"
 import { formDrawerWidth } from "@/lib/form-widths"
 
 import { ActivitySidebar } from "@/features/audit/components"
@@ -388,75 +385,55 @@ export function TerminalDrawer({ open, onOpenChange, terminal, onSuccess, mode: 
                                         <FormField
                                             control={form.control}
                                             name="allowed_treasury_account_ids"
-                                            render={({ field }) => (
-                                                <div className="relative group/field border rounded-lg p-4 bg-muted/10 shadow-sm transition-all duration-200 border-dashed hover:border-primary/30">
-                                                    <div className="absolute -top-2 left-2 px-1 bg-card text-[10px] font-black uppercase tracking-widest text-muted-foreground group-hover/field:text-primary transition-colors">
-                                                        Cuentas Permitidas
-                                                    </div>
-                                                    <div className="absolute top-2 right-2 px-1.5 py-0.5 rounded-full bg-muted/50 text-[9px] font-mono font-black text-muted-foreground uppercase opacity-70">
-                                                        {field.value.length} SELECCIONADAS
-                                                    </div>
-                                                    <div className="h-40 overflow-y-auto space-y-1.5 pr-2 scrollbar-thin pt-2">
-                                                        {treasuryAccounts.length === 0 ? (
-                                                            <EmptyState context="finance" variant="minimal" description="No hay cuentas configuradas" />
-                                                        ) : (
-                                                            treasuryAccounts.map((account) => {
-                                                                const isSelected = field.value.includes(account.id)
-                                                                return (
-                                                                    <div
-                                                                        key={account.id}
-                                                                        className={cn(
-                                                                            "flex items-center space-x-3 p-2 rounded-lg cursor-pointer border transition-all duration-200",
-                                                                            isSelected ? 'bg-primary/5 border-primary/30 shadow-sm' : 'hover:bg-accent border-transparent'
-                                                                        )}
-                                                                        onClick={() => !isView && toggleAccountSelection(
-                                                                            account.id,
-                                                                            field.value,
-                                                                            field.onChange,
-                                                                            form.getValues("default_treasury_account"),
-                                                                            (val) => form.setValue("default_treasury_account", val)
-                                                                        )}
-                                                                    >
-                                                                        <Checkbox
-                                                                            checked={isSelected}
-                                                                            disabled={isView}
-                                                                            onCheckedChange={() => !isView && toggleAccountSelection(
-                                                                                account.id,
-                                                                                field.value,
-                                                                                field.onChange,
-                                                                                form.getValues("default_treasury_account"),
-                                                                                (val) => form.setValue("default_treasury_account", val)
-                                                                            )}
-                                                                            className="h-4 w-4"
-                                                                        />
-                                                                        <div className="flex-1 flex items-center justify-between">
-                                                                            <span className="font-semibold text-sm text-foreground/90">{account.name}</span>
-                                                                            <div className="flex gap-1.5">
-                                                                                {account.allows_cash && (
-                                                                                    <span className="text-[10px] font-black text-success uppercase tracking-widest">
-                                                                                        Efectivo
-                                                                                    </span>
-                                                                                )}
-                                                                                {account.allows_card && (
-                                                                                    <span className="text-[10px] font-bold text-primary uppercase tracking-tighter">
-                                                                                        Tarjeta
-                                                                                    </span>
-                                                                                )}
-                                                                                {account.allows_transfer && (
-                                                                                    <span className="text-[10px] font-bold text-primary/60 uppercase tracking-tighter">
-                                                                                        Transf
-                                                                                    </span>
-                                                                                )}
-                                                                            </div>
-                                                                        </div>
-                                                                    </div>
+                                            render={({ field }) => {
+                                                const handleChange = (newValue: (string | number)[]) => {
+                                                    const oldSet = new Set<string | number>(field.value || [])
+                                                    for (const id of newValue) {
+                                                        if (!oldSet.has(id)) {
+                                                            const account = treasuryAccounts.find(a => a.id === id)
+                                                            if (account?.allows_cash) {
+                                                                const hasCash = (field.value || []).some((selectedId: number) =>
+                                                                    treasuryAccounts.find(a => a.id === selectedId)?.allows_cash
                                                                 )
-                                                            })
-                                                        )}
-                                                    </div>
-                                                    <FormMessage />
-                                                </div>
-                                            )}
+                                                                if (hasCash) {
+                                                                    toast.warning("Solo se permite una cuenta de efectivo por terminal.")
+                                                                    return
+                                                                }
+                                                            }
+                                                        }
+                                                    }
+                                                    const removed = (field.value || []).filter((id) => !newValue.includes(id))
+                                                    for (const id of removed) {
+                                                        if (form.getValues("default_treasury_account") === String(id)) {
+                                                            form.setValue("default_treasury_account", "")
+                                                        }
+                                                    }
+                                                    field.onChange(newValue)
+                                                }
+                                                return (
+                                                    <LabeledCheckboxGroup
+                                                        label="Cuentas Permitidas"
+                                                        items={treasuryAccounts.map((acc) => ({
+                                                            value: acc.id,
+                                                            label: acc.name,
+                                                            suffix: (
+                                                                <div className="flex gap-1.5">
+                                                                    {acc.allows_cash && <span className="text-[10px] font-black text-success uppercase tracking-widest">Efectivo</span>}
+                                                                    {acc.allows_card && <span className="text-[10px] font-bold text-primary uppercase tracking-tighter">Tarjeta</span>}
+                                                                    {acc.allows_transfer && <span className="text-[10px] font-bold text-primary/60 uppercase tracking-tighter">Transf</span>}
+                                                                </div>
+                                                            ),
+                                                        }))}
+                                                        value={field.value || []}
+                                                        onChange={handleChange}
+                                                        suffix={
+                                                            <span className="px-1.5 py-0.5 rounded-full bg-muted/50 text-[9px] font-mono font-black text-muted-foreground uppercase">
+                                                                {field.value.length} SELECCIONADAS
+                                                            </span>
+                                                        }
+                                                    />
+                                                )
+                                            }}
                                         />
 
                                         {form.watch("allowed_treasury_account_ids").length > 0 && (

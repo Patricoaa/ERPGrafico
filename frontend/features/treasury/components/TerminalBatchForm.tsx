@@ -7,7 +7,6 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
 import { useServerDate } from "@/hooks/useServerDate"
 import { Button } from "@/components/ui/button"
-import { Label } from "@/components/ui/label"
 import { EmptyState, LabeledSelect } from '@/components/shared'
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { format } from "date-fns"
@@ -16,12 +15,10 @@ import { Calculator, Search, ChevronDown, Check, MousePointerClick, Landmark } f
 import { DateRangeFilter } from "@/components/shared"
 import { toast } from "sonner"
 import { DateRange } from "react-day-picker"
-import { Checkbox } from "@/components/ui/checkbox"
 
-import { ScrollArea } from "@/components/ui/scroll-area"
 import { useTerminalProviders, usePaymentMethods, useTerminalMovements, useTerminalBatchMutations } from "@/features/treasury"
 
-import { Drawer, ActionSlideButton, CancelButton, SubmitButton, LabeledContainer, LabeledInput, FormFooter, FormSection, SkeletonShell } from "@/components/shared"
+import { Drawer, ActionSlideButton, CancelButton, SubmitButton, LabeledContainer, LabeledInput, LabeledCheckboxGroup, FormFooter, FormSection, SkeletonShell } from "@/components/shared"
 
 const terminalBatchSchema = z.object({
     providerId: z.string().min(1, "Seleccione un proveedor"),
@@ -449,68 +446,26 @@ function SaleSelectionModal({ open, onOpenChange, providerId, dateRange, onConfi
             )}
         >
             <SkeletonShell isLoading={loading} ariaLabel="Cargando ventas del proveedor">
-                <div className="py-2">
-                    <div className="flex items-center justify-between mb-4 px-2">
-                        <div className="flex items-center gap-2">
-                            <Checkbox
-                                id="select-all"
-                                checked={selectedIds.size === movements.length && movements.length > 0}
-                                onCheckedChange={toggleAll}
-                            />
-                            <Label htmlFor="select-all" className="text-sm font-bold cursor-pointer">
-                                Seleccionar Todas ({movements.length})
-                            </Label>
+                <LabeledCheckboxGroup
+                    label="Movimientos Pendientes"
+                    items={movements.map((m: any) => ({
+                        value: m.id,
+                        label: m.reference || 'Sin referencia',
+                        description: `${m.partner_name || 'Particular'} • ${format(new Date(m.date + 'T12:00:00'), "dd/MM/yyyy")}`,
+                        suffix: <span className="text-sm font-black">{formatCurrency(m.amount)}</span>,
+                    }))}
+                    value={Array.from(selectedIds)}
+                    onChange={(newValue) => setSelectedIds(new Set(newValue.map(Number)))}
+                    selectAll
+                    selectAllLabel={`Seleccionar Todas (${movements.length})`}
+                    footer={
+                        <div className="flex items-center justify-between">
+                            <span className="text-sm font-bold">Total Seleccionado</span>
+                            <span className="text-sm font-black text-income">{formatCurrency(totalSelected)}</span>
                         </div>
-                        <div className="text-sm font-black text-income">
-                            Total: {formatCurrency(totalSelected)}
-                        </div>
-                    </div>
-
-                    <div className="h-[300px] border rounded-md relative overflow-hidden">
-                        {movements.length === 0 ? (
-                            <div className="p-8">
-                                <EmptyState
-                                    context="search"
-                                    variant="compact"
-                                    description="No se encontraron ventas pendientes para esta fecha."
-                                />
-                            </div>
-                        ) : (
-                            <ScrollArea className="h-full">
-                                <div className="divide-y">
-                                    {movements.map((m) => (
-                                        <div
-                                            key={m.id}
-                                            className="flex items-center gap-4 p-3 hover:bg-muted/50 cursor-pointer"
-                                            onClick={() => toggleOne(m.id)}
-                                        >
-                                            <Checkbox
-                                                checked={selectedIds.has(m.id)}
-                                                onCheckedChange={() => toggleOne(m.id)}
-                                                onClick={(e) => e.stopPropagation()}
-                                            />
-                                            <div className="flex-1 min-w-0">
-                                                <div className="flex items-center gap-2">
-                                                    <p className="text-sm font-bold">{m.reference || 'Sin referencia'}</p>
-                                                </div>
-                                                <div className="flex items-center gap-2 text-[10px] text-muted-foreground uppercase">
-                                                    <span>{m.partner_name || 'Particular'}</span>
-                                                    <span>•</span>
-                                                    <span className="font-medium">{format(new Date(m.date + 'T12:00:00'), "dd/MM/yyyy")}</span>
-                                                </div>
-                                            </div>
-                                            <div className="text-right">
-                                                <p className="text-sm font-black">
-                                                    {formatCurrency(m.amount)}
-                                                </p>
-                                            </div>
-                                        </div>
-                                    ))}
-                                </div>
-                            </ScrollArea>
-                        )}
-                    </div>
-                </div>
+                    }
+                    maxHeight="300px"
+                />
             </SkeletonShell>
         </Drawer>
     )
