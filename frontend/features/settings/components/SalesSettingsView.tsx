@@ -13,32 +13,15 @@ import {
     User as UserIcon,
     Users as UsersIcon,
 } from "lucide-react"
-import { AccountSelector } from "@/components/selectors/AccountSelector"
 import { UserSelector } from "@/components/selectors/UserSelector"
 import { GroupSelector } from "@/components/selectors/GroupSelector"
-import {AutoSaveStatusBadge, LabeledInput, LabeledSwitch} from "@/components/shared"
+import {AccountField, AutoSaveStatusBadge, FadeIn, LabeledInput, LabeledSwitch, SkeletonShell} from "@/components/shared"
 import { SalesSettingsUpdatePayload } from "@/features/settings/types"
 import { cn } from "@/lib/utils"
 import { useAutoSaveForm } from "@/hooks/useAutoSaveForm"
 import { useUnsavedChangesGuard } from "@/hooks/useUnsavedChangesGuard"
 
 import { salesSchema, type SalesFormValues } from "./SalesSettingsView.schema"
-
-const AccountField = ({ form, name, label, accountType }: { form: UseFormReturn<SalesFormValues>, name: Path<SalesFormValues>, label: string, accountType: string | string[] }) => (
-    <FormField
-        control={form.control}
-        name={name}
-        render={({ field, fieldState }) => (
-            <AccountSelector
-                label={label}
-                value={field.value as string}
-                onChange={field.onChange}
-                accountType={accountType}
-                error={fieldState.error?.message}
-            />
-        )}
-    />
-)
 
 const DiscountPermissionControl = ({ form, userField, groupField }: { form: UseFormReturn<SalesFormValues>, userField: Path<SalesFormValues>, groupField: Path<SalesFormValues> }) => {
     const groupVal = form.watch(groupField)
@@ -111,7 +94,7 @@ const DiscountPermissionControl = ({ form, userField, groupField }: { form: UseF
 }
 
 export function SalesSettingsView({ activeTab = "income" }: { activeTab?: string }) {
-    const { settings, updateSettings } = useSalesSettings()
+    const { settings, isLoading, updateSettings } = useSalesSettings()
 
     const form = useForm<SalesFormValues>({
         resolver: zodResolver(salesSchema),
@@ -160,6 +143,8 @@ export function SalesSettingsView({ activeTab = "income" }: { activeTab?: string
 
     useUnsavedChangesGuard(status)
 
+    if (isLoading && !settings) return <SkeletonShell isLoading ariaLabel="Cargando configuración..." />
+
     return (
         <div className="max-w-6xl mx-auto space-y-6">
             <div className="flex justify-end">
@@ -172,8 +157,9 @@ export function SalesSettingsView({ activeTab = "income" }: { activeTab?: string
             </div>
             <Form {...form}>
                 <form className="mt-6 space-y-6">
+                    <FadeIn key={activeTab}>
                     {activeTab === "income" && (
-                        <div className="space-y-6 m-0 p-0 border-0 outline-none mt-4">
+                        <div className="space-y-6 m-0 p-0 border-0 outline-none mt-6">
                             <Card variant="transparent">
                                 <CardHeader>
                                     <CardTitle className="text-lg text-primary">Cuentas de Ingresos Naturales</CardTitle>
@@ -191,7 +177,7 @@ export function SalesSettingsView({ activeTab = "income" }: { activeTab?: string
                     )}
 
                     {activeTab === "credit" && (
-                        <div className="space-y-6 m-0 p-0 border-0 outline-none mt-4">
+                        <div className="space-y-6 m-0 p-0 border-0 outline-none mt-6">
                             <Card variant="transparent">
                                 <CardHeader>
                                     <CardTitle className="text-lg text-primary">Crédito y Cartera</CardTitle>
@@ -349,7 +335,7 @@ export function SalesSettingsView({ activeTab = "income" }: { activeTab?: string
                             </Card>
                         </div>
                     )}
-
+                    </FadeIn>
                 </form>
             </Form>
         </div>

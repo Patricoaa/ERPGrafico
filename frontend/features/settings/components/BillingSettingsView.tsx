@@ -1,21 +1,20 @@
 "use client"
 
 import React, {useEffect, useCallback} from "react"
-import { useForm, UseFormReturn, Path } from "react-hook-form"
+import { useForm, UseFormReturn } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useBillingSettings } from "@/features/settings"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Form, FormField, FormItem } from "@/components/ui/form"
 import { Check } from "lucide-react"
-import { AccountSelector } from "@/components/selectors/AccountSelector"
-import {AutoSaveStatusBadge, FadeIn} from "@/components/shared"
+import {AccountField, AutoSaveStatusBadge, FadeIn, SkeletonShell} from "@/components/shared"
 import { useAutoSaveForm } from "@/hooks/useAutoSaveForm"
 import { useUnsavedChangesGuard } from "@/hooks/useUnsavedChangesGuard"
 
 import { billingSchema, type BillingFormValues } from "./BillingSettingsView.schema"
 
 export const BillingSettingsView: React.FC<{ activeTab?: string }> = ({ activeTab = "accounts" }) => {
-    const { settings, updateSettings } = useBillingSettings()
+    const { settings, isLoading, updateSettings } = useBillingSettings()
 
     const form = useForm<BillingFormValues>({
         // ... (existing form config)
@@ -38,28 +37,7 @@ export const BillingSettingsView: React.FC<{ activeTab?: string }> = ({ activeTa
 
     useUnsavedChangesGuard(status)
 
-    // Update form when settings are loaded
-    useEffect(() => {
-        if (settings) {
-            const formattedSettings: Partial<BillingFormValues> = {}
-            const keys = Object.keys(billingSchema.shape) as (keyof BillingFormValues)[]
-
-            keys.forEach((key) => {
-                const val = settings[key]
-                if (val === null || val === undefined) {
-                    if (key === 'allowed_dte_types_emit' || key === 'allowed_dte_types_receive') {
-                        (formattedSettings as Record<string, unknown>)[key] = [];
-                    } else {
-                        (formattedSettings as Record<string, unknown>)[key] = null;
-                    }
-                } else {
-                    (formattedSettings as Record<string, unknown>)[key] = val
-                }
-            })
-
-            form.reset(formattedSettings as BillingFormValues)
-        }
-    }, [settings, form])
+    if (isLoading && !settings) return <SkeletonShell isLoading ariaLabel="Cargando configuración..." />
 
     return (
         <div className="max-w-6xl mx-auto space-y-6">
@@ -128,31 +106,6 @@ export const BillingSettingsView: React.FC<{ activeTab?: string }> = ({ activeTa
 }
 
 export default BillingSettingsView
-
-interface AccountFieldProps {
-    form: UseFormReturn<BillingFormValues>
-    name: Path<BillingFormValues>
-    label: string
-    accountType: string
-}
-
-function AccountField({ form, name, label, accountType }: AccountFieldProps) {
-    return (
-        <FormField
-            control={form.control}
-            name={name}
-            render={({ field, fieldState }) => (
-                <AccountSelector
-                    label={label}
-                    value={field.value as string}
-                    onChange={(val) => field.onChange(val)}
-                    accountType={accountType}
-                    error={fieldState.error?.message}
-                />
-            )}
-        />
-    )
-}
 
 interface DTEConfigCardProps {
     form: UseFormReturn<BillingFormValues>

@@ -11,7 +11,6 @@ import { Button } from "@/components/ui/button"
 import {
     Trash2,
     Settings2,
-    AlertCircle
 } from "lucide-react"
 
 import { ActionConfirmModal, ActionSlideButton, AutoSaveStatusBadge, BaseModal, Chip, FadeIn, LabeledInput, LabeledSelect, SkeletonShell, ToolbarCreateButton } from '@/components/shared'
@@ -212,10 +211,10 @@ export function HRSettingsView({ activeTab = "global" }: { activeTab?: string })
                         </div>
                         <Form {...globalForm}>
                             <div className="grid gap-6">
-                                <Card variant="transparent" className="border-2">
-                                    <CardHeader className="pb-4">
-                                        <CardTitle className="text-sm font-black uppercase text-primary tracking-widest">Indicadores Económicos</CardTitle>
-                                        <CardDescription className="text-[10px] uppercase font-bold">Valores oficiales para el cálculo mensual</CardDescription>
+                                <Card variant="transparent">
+                                    <CardHeader>
+                                        <CardTitle className="text-lg text-primary">Indicadores Económicos</CardTitle>
+                                        <CardDescription>Valores oficiales para el cálculo mensual</CardDescription>
                                     </CardHeader>
                                     <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-6">
                                         <FormField
@@ -262,13 +261,10 @@ export function HRSettingsView({ activeTab = "global" }: { activeTab?: string })
                                     </CardContent>
                                 </Card>
 
-                                <Card variant="transparent" className="border-2">
-                                    <CardHeader className="pb-4">
-                                        <CardTitle className="text-sm font-black uppercase text-primary tracking-widest flex items-center gap-2">
-                                            <AlertCircle className="h-4 w-4 opacity-50" />
-                                            Cuentas Consolidadas
-                                        </CardTitle>
-                                        <CardDescription className="text-[10px] uppercase font-bold">Cuentas contables de cierre de nómina centralizado</CardDescription>
+                                <Card variant="transparent">
+                                    <CardHeader>
+                                        <CardTitle className="text-lg text-primary">Cuentas Consolidadas</CardTitle>
+                                        <CardDescription>Cuentas contables de cierre de nómina centralizado</CardDescription>
                                     </CardHeader>
                                     <CardContent className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                                         <FormField
@@ -351,13 +347,13 @@ export function HRSettingsView({ activeTab = "global" }: { activeTab?: string })
 
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                             {afps.map((afp) => (
-                                <Card key={afp.id} variant="transparent" className="relative overflow-hidden group hover:border-primary/50 transition-all border-2">
+                                <Card key={afp.id} variant="transparent" className="relative overflow-hidden group hover:border-primary/50 transition-all">
                                     <div className="absolute top-0 right-0 p-2 opacity-0 group-hover:opacity-100 transition-opacity">
                                         <AFPDialog afp={afp} onSaved={fetchData} />
                                     </div>
                                     <CardHeader className="pb-2">
-                                        <CardTitle className="text-xs font-black uppercase tracking-tight">{afp.name}</CardTitle>
-                                        <CardDescription className="text-2xl font-black text-primary font-heading">
+                                        <CardTitle className="text-lg text-primary">{afp.name}</CardTitle>
+                                        <CardDescription className="text-2xl font-black text-primary">
                                             {afp.percentage}%
                                         </CardDescription>
                                     </CardHeader>

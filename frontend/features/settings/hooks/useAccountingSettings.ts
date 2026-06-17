@@ -1,15 +1,18 @@
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { toast } from 'sonner'
 import { settingsApi } from '../api/settingsApi'
-import { accountingSchema, defaultsSchema, taxSchema, type AccountingFormValues, type DefaultsFormValues, type TaxFormValues } from "@/features/settings/components/AccountingSettingsView.schema"
-import { purchasingSchema, type PurchasingFormValues } from "@/features/settings/components/PurchasingSettingsView.schema"
+import { accountingSchema, defaultsSchema, taxSchema, type AccountingFormValues, type DefaultsFormValues, type TaxFormValues } from "@/features/settings/schemas/accounting"
+import { purchasingSchema, type PurchasingFormValues } from "@/features/settings/schemas/purchasing"
 
-export const ACCOUNTING_SETTINGS_QUERY_KEY = ['accountingSettings']
+export const ACCOUNTING_SETTINGS_QUERY_KEY = ['accounting-settings']
 
 export function useAccountingSettings() {
+    const queryClient = useQueryClient()
+
     const { data: rawSettings = {} as Record<string, unknown>, isLoading, refetch } = useQuery({
         queryKey: ACCOUNTING_SETTINGS_QUERY_KEY,
         queryFn: () => settingsApi.getCurrentSettings().then(d => d as unknown as Record<string, unknown>),
-        staleTime: 10 * 60 * 1000, // 10 min — settings cambian raramente
+        staleTime: 10 * 60 * 1000,
     })
 
     const structure = (() => {
@@ -66,6 +69,21 @@ export function useAccountingSettings() {
         return formatted
     })()
 
+    const updateMutation = useMutation({
+        mutationFn: (payload: Record<string, unknown>) => settingsApi.updateCurrentSettings(payload),
+        onSuccess: () => {
+            toast.success('Configuración contable aplicada')
+            queryClient.invalidateQueries({ queryKey: ACCOUNTING_SETTINGS_QUERY_KEY })
+        },
+        onError: () => {
+            toast.error('Error al guardar cambios contables')
+        }
+    })
+
+    const updateSettings = async (payload: Record<string, unknown>) => {
+        await updateMutation.mutateAsync(payload)
+    }
+
     return {
         structure,
         defaults,
@@ -73,5 +91,7 @@ export function useAccountingSettings() {
         purchasing,
         refetch,
         isLoading,
+        saving: updateMutation.isPending,
+        updateSettings,
     }
 }

@@ -10,14 +10,14 @@ import { Form, FormField } from "@/components/ui/form"
 import { Tabs, TabsContent } from "@/components/ui/tabs"
 import {Loader2, Building2, RefreshCw, Palette, Mail, Phone, MapPin, Globe, Upload, Pencil} from "lucide-react"
 import ContactDrawer from "@/features/contacts/components/ContactDrawer"
-import { AutoSaveStatusBadge, DataCell, LabeledInput, LabeledSelect, FadeIn } from "@/components/shared"
+import { AutoSaveStatusBadge, DataCell, LabeledInput, LabeledSelect, FadeIn, SkeletonShell } from "@/components/shared"
 import { Button } from "@/components/ui/button"
 import { formatRUT } from "@/lib/utils/format"
 import { cn } from "@/lib/utils"
 import { useAutoSaveForm } from "@/hooks/useAutoSaveForm"
 import { useUnsavedChangesGuard } from "@/hooks/useUnsavedChangesGuard"
 
-import { resolveMediaUrl } from "@/features/settings/api/settingsApi"
+import { resolveMediaUrl } from "@/lib/api"
 import { CompanySettings } from "@/features/settings/types"
 import { contactsApi } from "@/features/contacts/api/contactsApi"
 
@@ -25,7 +25,7 @@ import {companySchema, type CompanyFormValues } from "./CompanySettingsView.sche
 import { Contact } from "@/features/contacts/types"
 
 export function CompanySettingsView({ activeTab }: { activeTab: string }) {
-    const { settings, updateSettings } = useCompanySettings()
+    const { settings, isLoading, updateSettings } = useCompanySettings()
 
     const [syncing, setSyncing] = useState(false)
     const [contacts, setContacts] = useState<Contact[]>([])
@@ -84,10 +84,6 @@ export function CompanySettingsView({ activeTab }: { activeTab: string }) {
 
     useUnsavedChangesGuard(status)
 
-    const linkedContactId = form.watch("contact")
-    const isLinked = !!linkedContactId
-    const selectedContact = contacts.find(c => c.id === linkedContactId)
-
     const syncFromContact = useCallback(async (customId?: number | null) => {
         const idToSync = customId !== undefined ? customId : form.getValues("contact")
         if (!idToSync) return
@@ -114,6 +110,12 @@ export function CompanySettingsView({ activeTab }: { activeTab: string }) {
             setSyncing(false)
         }
     }, [form])
+
+    if (isLoading && !settings) return <SkeletonShell isLoading ariaLabel="Cargando configuración..." />
+
+    const linkedContactId = form.watch("contact")
+    const isLinked = !!linkedContactId
+    const selectedContact = contacts.find(c => c.id === linkedContactId)
 
     const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0]
@@ -143,8 +145,8 @@ export function CompanySettingsView({ activeTab }: { activeTab: string }) {
     }
 
     return (
-        <>
-            <div className="flex justify-end mb-4">
+        <div className="max-w-6xl mx-auto space-y-6">
+            <div className="flex justify-end">
                 <AutoSaveStatusBadge
                     status={status}
                     invalidReason={invalidReason}
@@ -153,6 +155,7 @@ export function CompanySettingsView({ activeTab }: { activeTab: string }) {
                 />
             </div>
             <Form {...form}>
+                <form className="space-y-6">
                 <Tabs value={activeTab} className="w-full h-full m-0 p-0 border-0 outline-none">
                     <FadeIn key={activeTab}>
                         <TabsContent value="general" className="space-y-6">
@@ -445,6 +448,7 @@ export function CompanySettingsView({ activeTab }: { activeTab: string }) {
                         </TabsContent>
                     </FadeIn>
                 </Tabs>
+                </form>
 
                 <ContactDrawer
                     open={isEditContactOpen}
@@ -455,6 +459,6 @@ export function CompanySettingsView({ activeTab }: { activeTab: string }) {
                     }}
                 />
             </Form>
-        </>
+        </div>
     )
 }
