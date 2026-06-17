@@ -45,10 +45,12 @@ export function GroupManagement({ externalOpen, onExternalOpenChange, createActi
                 <DataTableColumnHeader column={column} title="Nombre del Grupo" />
             ),
             cell: ({ row }) => (
-                <div className="flex items-center gap-2 font-medium text-xs">
-                    <Users className="h-4 w-4 text-muted-foreground" />
-                    {row.getValue("name")}
-                </div>
+                <DataCell.Text>
+                    <span className="flex items-center gap-2">
+                        <Users className="h-4 w-4 text-muted-foreground shrink-0" />
+                        {row.getValue("name")}
+                    </span>
+                </DataCell.Text>
             ),
         },
         {
