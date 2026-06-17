@@ -13,6 +13,7 @@ import { useSingleUser } from "../hooks/useUserSearch"
 import { Button } from "@/components/ui/button"
 import { Form, FormField } from "@/components/ui/form"
 import { Plus, User, ShieldCheck, Printer } from "lucide-react"
+import { ActivitySidebar } from "@/features/audit/components"
 import { Drawer, CancelButton, ActionSlideButton, LabeledInput, LabeledCheckboxGroup, FormSection, UnderlineTabs, UnderlineTabsContent, type TabItem, FormSplitLayout, FormFooter, LabeledSelect, LabeledSwitch, SkeletonShell } from "@/components/shared"
 import { AdvancedContactSelector } from "@/components/selectors/AdvancedContactSelector"
 import { AppGroup } from "@/types/entities"
@@ -35,7 +36,6 @@ const userSchema = z.object({
 type UserFormValues = z.infer<typeof userSchema>
 
 interface UserDrawerProps {
-    auditSidebar?: React.ReactNode
     initialData?: UserInitialData
     onSuccess?: () => void
     trigger?: React.ReactNode
@@ -44,7 +44,7 @@ interface UserDrawerProps {
     mode?: DrawerMode
 }
 
-export function UserDrawer({ auditSidebar, initialData, onSuccess, trigger, open: controlledOpen, onOpenChange: setControlledOpen, mode: modeProp }: UserDrawerProps) {
+export function UserDrawer({ initialData, onSuccess, trigger, open: controlledOpen, onOpenChange: setControlledOpen, mode: modeProp }: UserDrawerProps) {
     const [internalOpen, setInternalOpen] = useState(false)
     const isControlled = controlledOpen !== undefined
     const open = isControlled ? controlledOpen : internalOpen
@@ -87,7 +87,7 @@ export function UserDrawer({ auditSidebar, initialData, onSuccess, trigger, open
         defaultValues: parsedInitialValues
     })
 
-    const width = formDrawerWidth("master", !!initialData?.id)
+    const width = formDrawerWidth("medium", !!initialData?.id)
 
     // Fetch static data once when opened
     useEffect(() => {
@@ -271,108 +271,104 @@ export function UserDrawer({ auditSidebar, initialData, onSuccess, trigger, open
                     />
                 )}
             >
-                <SkeletonShell isLoading={isFetchingInitialData} ariaLabel="Cargando formulario de usuario" className="flex-1 flex flex-col">
+                <SkeletonShell isLoading={isFetchingInitialData} ariaLabel="Cargando formulario de usuario" className="flex-1 flex flex-col h-full">
                     <Form {...form}>
-                        <form id="user-form" onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 px-6 pb-6 pt-6">
+                        <form id="user-form" onSubmit={form.handleSubmit(onSubmit)} className="flex-1 w-full h-full flex flex-col overflow-visible min-h-0">
                             <fieldset disabled={isView} className="contents">
-                                <UnderlineTabs
-                                    items={tabItems}
-                                    value={activeTab}
-                                    onValueChange={setActiveTab}
-                                    orientation="horizontal"
-                                    variant="underline"
-                                    contentClassName="bg-transparent"
-                                    className="flex-1"
-                                >
-                                    <fieldset disabled={loading} className="flex-1 min-w-0 flex flex-col h-full min-h-0">
-                                        <UnderlineTabsContent value="general" className="mt-0 data-[state=active]:flex data-[state=active]:flex-1 data-[state=active]:flex-col data-[state=active]:min-h-0 overflow-hidden outline-none">
-                                            <FormSplitLayout sidebar={auditSidebar} showSidebar={!!initialData?.id} className="p-0">
-                                                <div className="p-6 lg:p-8 space-y-8 overflow-y-auto scrollbar-thin h-full">
-                                                    <div className="space-y-8">
-                                                        <div className="space-y-4">
-                                                            <FormSection title="Vinculación y Cuenta" icon={User} />
-                                                            <div className="grid grid-cols-4 gap-6">
+                                <FormSplitLayout sidebar={initialData?.id ? <ActivitySidebar entityId={initialData.id.toString()} entityType="user" /> : undefined} showSidebar={!!initialData?.id} className="min-w-0 h-full overflow-hidden p-0">
+                                    <UnderlineTabs
+                                        items={tabItems}
+                                        value={activeTab}
+                                        onValueChange={setActiveTab}
+                                        orientation="horizontal"
+                                        variant="underline"
+                                        contentClassName="bg-transparent"
+                                        className="flex-1"
+                                    >
+                                        <fieldset disabled={loading} className="flex-1 min-w-0 flex flex-col h-full min-h-0">
+                                            <UnderlineTabsContent value="general" className="mt-0 pt-6 px-6 pb-8 data-[state=active]:flex data-[state=active]:flex-1 data-[state=active]:flex-col data-[state=active]:min-h-0 overflow-y-auto scrollbar-thin">
+                                                <div className="space-y-8">
+                                                    <div className="space-y-4">
+                                                        <FormSection title="Vinculación y Cuenta" icon={User} />
+                                                        <div className="grid grid-cols-4 gap-6">
+                                                            <FormField
+                                                                control={form.control}
+                                                                name="contact"
+                                                                render={({ field, fieldState }) => (
+                                                                    <div className="col-span-4">
+                                                                        <AdvancedContactSelector
+                                                                            label="Contacto Vinculado"
+                                                                            error={fieldState.error?.message}
+                                                                            required
+                                                                            value={field.value?.toString() || ""}
+                                                                            onChange={(val) => field.onChange(val ? parseInt(val) : 0)}
+                                                                            disabled={!!initialData}
+                                                                        />
+                                                                    </div>
+                                                                )}
+                                                            />
+                                                            <div className="col-span-4">
                                                                 <FormField
                                                                     control={form.control}
-                                                                    name="contact"
+                                                                    name="username"
                                                                     render={({ field, fieldState }) => (
-                                                                        <div className="col-span-4">
-                                                                            <AdvancedContactSelector
-                                                                                label="Contacto Vinculado"
-                                                                                error={fieldState.error?.message}
-                                                                                required
-                                                                                value={field.value?.toString() || ""}
-                                                                                onChange={(val) => field.onChange(val ? parseInt(val) : 0)}
-                                                                                disabled={!!initialData}
-                                                                            />
-                                                                        </div>
+                                                                        <LabeledInput
+                                                                            label="Nombre de Usuario"
+                                                                            required
+                                                                            disabled={!!initialData}
+                                                                            placeholder="ej: pmartinez"
+                                                                            error={fieldState.error?.message}
+                                                                            hint={initialData ? "Identificador único de sistema" : undefined}
+                                                                            {...field}
+                                                                        />
                                                                     )}
                                                                 />
-                                                                <div className="col-span-4">
-                                                                    <FormField
-                                                                        control={form.control}
-                                                                        name="username"
-                                                                        render={({ field, fieldState }) => (
-                                                                            <LabeledInput
-                                                                                label="Nombre de Usuario"
-                                                                                required
-                                                                                disabled={!!initialData}
-                                                                                placeholder="ej: pmartinez"
-                                                                                error={fieldState.error?.message}
-                                                                                hint={initialData ? "Identificador único de sistema" : undefined}
-                                                                                {...field}
-                                                                            />
-                                                                        )}
-                                                                    />
-                                                                </div>
                                                             </div>
                                                         </div>
-                                                        <div className="space-y-4">
-                                                            <FormSection title="Seguridad y Acceso" icon={ShieldCheck} />
-                                                            <div className="grid grid-cols-4 gap-6">
-                                                                <div className="col-span-2">
-                                                                    <FormField
-                                                                        control={form.control}
-                                                                        name="password"
-                                                                        render={({ field, fieldState }) => (
-                                                                            <LabeledInput
-                                                                                label={`Contraseña Credencial${initialData ? " (Cambiar)" : ""}`}
-                                                                                required={!initialData}
-                                                                                type="password"
-                                                                                placeholder="••••••••"
-                                                                                hint={!initialData ? "Mínimo 6 caracteres" : "Dejar en blanco para mantener"}
-                                                                                error={fieldState.error?.message}
-                                                                                {...field}
-                                                                            />
-                                                                        )}
-                                                                    />
-                                                                </div>
-                                                                <div className="col-span-2">
-                                                                    <FormField
-                                                                        control={form.control}
-                                                                        name="is_active"
-                                                                        render={({ field }) => (
-                                                                            <LabeledSwitch
-                                                                                label="Estado del Acceso"
-                                                                                description={field.value ? "ACTIVO" : "INACTIVO"}
-                                                                                checked={field.value}
-                                                                                onCheckedChange={field.onChange}
-                                                                                icon={<ShieldCheck className={cn("h-4 w-4 transition-colors", field.value ? "text-success" : "text-muted-foreground/30")} />}
-                                                                                className={cn(field.value ? "bg-success/5 border-success/20 shadow-sm" : "border-dashed")}
-                                                                            />
-                                                                        )}
-                                                                    />
-                                                                </div>
+                                                    </div>
+                                                    <div className="space-y-4">
+                                                        <FormSection title="Seguridad y Acceso" icon={ShieldCheck} />
+                                                        <div className="grid grid-cols-4 gap-6">
+                                                            <div className="col-span-2">
+                                                                <FormField
+                                                                    control={form.control}
+                                                                    name="password"
+                                                                    render={({ field, fieldState }) => (
+                                                                        <LabeledInput
+                                                                            label={`Contraseña Credencial${initialData ? " (Cambiar)" : ""}`}
+                                                                            required={!initialData}
+                                                                            type="password"
+                                                                            placeholder="••••••••"
+                                                                            hint={!initialData ? "Mínimo 6 caracteres" : "Dejar en blanco para mantener"}
+                                                                            error={fieldState.error?.message}
+                                                                            {...field}
+                                                                        />
+                                                                    )}
+                                                                />
+                                                            </div>
+                                                            <div className="col-span-2">
+                                                                <FormField
+                                                                    control={form.control}
+                                                                    name="is_active"
+                                                                    render={({ field }) => (
+                                                                        <LabeledSwitch
+                                                                            label="Estado del Acceso"
+                                                                            description={field.value ? "ACTIVO" : "INACTIVO"}
+                                                                            checked={field.value}
+                                                                            onCheckedChange={field.onChange}
+                                                                            icon={<ShieldCheck className={cn("h-4 w-4 transition-colors", field.value ? "text-success" : "text-muted-foreground/30")} />}
+                                                                            className={cn(field.value ? "bg-success/5 border-success/20 shadow-sm" : "border-dashed")}
+                                                                        />
+                                                                    )}
+                                                                />
                                                             </div>
                                                         </div>
                                                     </div>
                                                 </div>
-                                            </FormSplitLayout>
-                                        </UnderlineTabsContent>
-                                        <UnderlineTabsContent value="permissions" className="mt-0 data-[state=active]:flex data-[state=active]:flex-1 data-[state=active]:flex-col data-[state=active]:min-h-0 overflow-hidden outline-none">
-                                            <FormSplitLayout sidebar={auditSidebar} showSidebar={!!initialData?.id} className="p-0">
-                                                <div className="p-6 lg:p-8 space-y-8 overflow-y-auto scrollbar-thin h-full">
-                                                    <div className="space-y-8">
+                                            </UnderlineTabsContent>
+                                            <UnderlineTabsContent value="permissions" className="mt-0 pt-6 px-6 pb-8 data-[state=active]:flex data-[state=active]:flex-1 data-[state=active]:flex-col data-[state=active]:min-h-0 overflow-hidden">
+                                                <div className="flex flex-col flex-1 min-h-0 gap-8">
+                                                    <div className="shrink-0">
                                                         <FormField
                                                             control={form.control}
                                                             name="primary_role"
@@ -387,6 +383,8 @@ export function UserDrawer({ auditSidebar, initialData, onSuccess, trigger, open
                                                                 />
                                                             )}
                                                         />
+                                                    </div>
+                                                    <div className="flex-1 min-h-0 overflow-y-auto scrollbar-thin">
                                                         <FormField
                                                             control={form.control}
                                                             name="functional_groups"
@@ -397,15 +395,16 @@ export function UserDrawer({ auditSidebar, initialData, onSuccess, trigger, open
                                                                      items={availableGroups.map((g) => ({ value: g.name, label: g.name }))}
                                                                      value={field.value || []}
                                                                      onChange={field.onChange}
+                                                                     maxHeight="none"
                                                                  />
                                                             )}
                                                         />
                                                     </div>
                                                 </div>
-                                            </FormSplitLayout>
-                                        </UnderlineTabsContent>
-                                    </fieldset>
-                                </UnderlineTabs>
+                                            </UnderlineTabsContent>
+                                        </fieldset>
+                                    </UnderlineTabs>
+                                </FormSplitLayout>
                             </fieldset>
                         </form>
                     </Form>
