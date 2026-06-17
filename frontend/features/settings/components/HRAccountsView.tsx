@@ -11,7 +11,7 @@ import { AutoSaveStatusBadge, SkeletonShell, UnderlineTabs, UnderlineTabsContent
 import { AccountSelector } from "@/components/selectors/AccountSelector"
 import { useAutoSaveForm } from "@/hooks/useAutoSaveForm"
 import { useUnsavedChangesGuard } from "@/hooks/useUnsavedChangesGuard"
-import { getGlobalHRSettings, updateGlobalHRSettings } from "@/features/hr/api/hrApi"
+import { useAccountingSettings } from "@/features/settings/hooks/useAccountingSettings"
 
 const hrAccountsSchema = z.object({
     account_remuneraciones_por_pagar: z.string().nullable(),
@@ -32,8 +32,8 @@ const DEFAULT_VALUES: HRAccountsFormValues = {
 }
 
 export function HRAccountsView() {
-    const [settings, setSettings] = useState<HRAccountsFormValues | null>(null)
-    const [isLoading, setIsLoading] = useState(true)
+    const { hr, isLoading, updateSettings } = useAccountingSettings()
+    const [initialized, setInitialized] = useState(false)
     const [activeTab, setActiveTab] = useState("consolidated")
 
     const form = useForm<HRAccountsFormValues>({
@@ -42,31 +42,25 @@ export function HRAccountsView() {
     })
 
     useEffect(() => {
-        ;(async () => {
-            try {
-                const data = await getGlobalHRSettings()
-                const formatted: HRAccountsFormValues = {
-                    account_remuneraciones_por_pagar: data.account_remuneraciones_por_pagar?.toString() || null,
-                    account_previred_por_pagar: data.account_previred_por_pagar?.toString() || null,
-                    account_anticipos: data.account_anticipos?.toString() || null,
-                }
-                setSettings(formatted)
-                form.reset(formatted)
-            } catch {
-                toast.error("Error al cargar configuración de RRHH")
-            } finally {
-                setIsLoading(false)
+        if (!isLoading && hr && !initialized) {
+            const formatted: HRAccountsFormValues = {
+                account_remuneraciones_por_pagar: hr.account_remuneraciones_por_pagar || null,
+                account_previred_por_pagar: hr.account_previred_por_pagar || null,
+                account_anticipos: hr.account_anticipos || null,
             }
-        })()
-    }, [form])
+            form.reset(formatted)
+            setInitialized(true)
+        }
+    }, [hr, isLoading, initialized, form])
 
     const onSave = useCallback(async (data: HRAccountsFormValues) => {
-        await updateGlobalHRSettings({
+        const payload: Record<string, unknown> = {
             account_remuneraciones_por_pagar: data.account_remuneraciones_por_pagar ? parseInt(data.account_remuneraciones_por_pagar) : null,
             account_previred_por_pagar: data.account_previred_por_pagar ? parseInt(data.account_previred_por_pagar) : null,
             account_anticipos: data.account_anticipos ? parseInt(data.account_anticipos) : null,
-        })
-    }, [])
+        }
+        await updateSettings(payload)
+    }, [updateSettings])
 
     const { status, invalidReason, lastSavedAt, retry } = useAutoSaveForm({
         form,
@@ -76,7 +70,7 @@ export function HRAccountsView() {
 
     useUnsavedChangesGuard(status)
 
-    if (isLoading && !settings) return <SkeletonShell isLoading ariaLabel="Cargando configuración de RRHH..." />
+    if (isLoading && !initialized) return <SkeletonShell isLoading ariaLabel="Cargando configuración de RRHH..." />
 
     return (
         <div className="space-y-6">

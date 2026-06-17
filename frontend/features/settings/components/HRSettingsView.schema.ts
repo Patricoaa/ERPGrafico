@@ -4,9 +4,6 @@ export const globalSettingsSchema = z.object({
     uf_current_value: z.string(),
     utm_current_value: z.string(),
     min_wage_value: z.string(),
-    account_remuneraciones_por_pagar: z.string().nullable(),
-    account_previred_por_pagar: z.string().nullable(),
-    account_anticipos: z.string().nullable(),
 })
 
 export const conceptSchema = z.object({

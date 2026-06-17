@@ -126,6 +126,13 @@ export interface InventorySettings {
 
 export type InventorySettingsUpdatePayload = Partial<InventorySettings>
  
+ // HR / Payroll Default Accounts
+ export interface HRSettings {
+     account_remuneraciones_por_pagar: string | null
+     account_previred_por_pagar: string | null
+     account_anticipos: string | null
+ }
+
  // Partner Equity Settings
  export interface PartnerSettings {
      // Account Mappings (Equity)
@@ -158,7 +165,7 @@ export type InventorySettingsUpdatePayload = Partial<InventorySettings>
  export type PartnerSettingsUpdatePayload = Partial<PartnerSettings>
  
  // Combined settings type
- export type AccountingSettings = SalesSettings & BillingSettings & InventorySettings & TreasurySettings & PartnerSettings
+ export type AccountingSettings = SalesSettings & BillingSettings & InventorySettings & TreasurySettings & PartnerSettings & HRSettings
  export type AccountingSettingsUpdatePayload = Partial<AccountingSettings>
 
 // Company Settings

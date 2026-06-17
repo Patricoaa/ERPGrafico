@@ -25,32 +25,12 @@ class GlobalHRSettings(TimeStampedModel):
         help_text=_("Valor del sueldo mínimo legal para el período.")
     )
     
-    # Cuentas Contables Globales (Pasivos de pago)
-    account_remuneraciones_por_pagar = models.ForeignKey(
-        'accounting.Account', on_delete=models.SET_NULL, null=True, blank=True,
-        related_name='hr_global_rem_por_pagar',
-        verbose_name=_("Cuenta Remuneraciones por Pagar"),
-        help_text=_("Pasivo con el trabajador por su sueldo líquido.")
-    )
-    account_previred_por_pagar = models.ForeignKey(
-        'accounting.Account', on_delete=models.SET_NULL, null=True, blank=True,
-        related_name='hr_global_previred_por_pagar',
-        verbose_name=_("Cuenta Obligaciones Previred por Pagar"),
-        help_text=_("Pasivo consolidado para pagos a instituciones previsionales.")
-    )
-    account_anticipos = models.ForeignKey(
-        'accounting.Account', on_delete=models.SET_NULL, null=True, blank=True,
-        related_name='hr_global_anticipos',
-        verbose_name=_("Cuenta Anticipos de Remuneraciones"),
-        help_text=_("Cuenta de activo para registrar adelantos a trabajadores.")
-    )
-
     class Meta:
         verbose_name = _("Parámetros Globales RRHH")
         verbose_name_plural = _("Parámetros Globales RRHH")
 
     class FormMeta:
-        exclude_fields = []  # Sin campos sensibles — sólo valores UF/UTM y cuentas contables FK.
+        exclude_fields = []  # Sin campos sensibles — sólo valores UF/UTM.
 
     def __str__(self):
         return "Configuración Global RRHH"

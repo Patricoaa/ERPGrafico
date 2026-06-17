@@ -56,9 +56,6 @@ export function HRSettingsView({ activeTab = "global" }: { activeTab?: string })
             uf_current_value: "0",
             utm_current_value: "0",
             min_wage_value: "0",
-            account_remuneraciones_por_pagar: null,
-            account_previred_por_pagar: null,
-            account_anticipos: null,
         }
     })
 
@@ -74,9 +71,6 @@ export function HRSettingsView({ activeTab = "global" }: { activeTab?: string })
                 uf_current_value: settings.uf_current_value,
                 utm_current_value: settings.utm_current_value,
                 min_wage_value: settings.min_wage_value || "500000",
-                account_remuneraciones_por_pagar: settings.account_remuneraciones_por_pagar?.toString() || null,
-                account_previred_por_pagar: settings.account_previred_por_pagar?.toString() || null,
-                account_anticipos: settings.account_anticipos?.toString() || null,
             })
             setConcepts(conceptsData)
             setAfps(afpsData)
@@ -115,13 +109,7 @@ export function HRSettingsView({ activeTab = "global" }: { activeTab?: string })
     })
 
     const onSaveGlobal = useCallback(async (data: GlobalHRFormValues) => {
-        const convertedData = {
-            ...data,
-            account_remuneraciones_por_pagar: data.account_remuneraciones_por_pagar ? Number(data.account_remuneraciones_por_pagar) : null,
-            account_previred_por_pagar: data.account_previred_por_pagar ? Number(data.account_previred_por_pagar) : null,
-            account_anticipos: data.account_anticipos ? Number(data.account_anticipos) : null,
-        }
-        await updateGlobalHRSettings(convertedData)
+        await updateGlobalHRSettings(data)
     }, [])
 
     const { status: globalStatus, invalidReason: globalInvalidReason, lastSavedAt: globalLastSavedAt, retry: globalRetry } = useAutoSaveForm({
@@ -261,50 +249,7 @@ export function HRSettingsView({ activeTab = "global" }: { activeTab?: string })
                                     </CardContent>
                                 </Card>
 
-                                <Card variant="transparent">
-                                    <CardHeader>
-                                        <CardTitle className="text-lg text-primary">Cuentas Consolidadas</CardTitle>
-                                        <CardDescription>Cuentas contables de cierre de nómina centralizado</CardDescription>
-                                    </CardHeader>
-                                    <CardContent className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                                        <FormField
-                                            control={globalForm.control}
-                                            name="account_remuneraciones_por_pagar"
-                                            render={({ field }) => (
-                                                <AccountSelector
-                                                    label="Remuneraciones por Pagar (Líquido)"
-                                                    value={field.value}
-                                                    onChange={field.onChange}
-                                                    accountType="LIABILITY"
-                                                />
-                                            )}
-                                        />
-                                        <FormField
-                                            control={globalForm.control}
-                                            name="account_previred_por_pagar"
-                                            render={({ field }) => (
-                                                <AccountSelector
-                                                    label="Obligaciones Previred (Pasivo)"
-                                                    value={field.value}
-                                                    onChange={field.onChange}
-                                                    accountType="LIABILITY"
-                                                />
-                                            )}
-                                        />
-                                        <FormField
-                                            control={globalForm.control}
-                                            name="account_anticipos"
-                                            render={({ field }) => (
-                                                <AccountSelector
-                                                    label="Anticipos de Remuneraciones (Activo)"
-                                                    value={field.value}
-                                                    onChange={field.onChange}
-                                                    accountType="ASSET"
-                                                />
-                                            )}
-                                        />
-                                    </CardContent>
-                                </Card>
+
                             </div>
                         </Form>
                     </div>
