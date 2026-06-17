@@ -1,9 +1,8 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import { settingsApi } from '../api/settingsApi'
+import { ACCOUNTING_SETTINGS_QUERY_KEY } from './useAccountingSettings'
 import type { InventorySettings, InventorySettingsUpdatePayload } from '../types'
-
-export const INVENTORY_SETTINGS_QUERY_KEY = ['settings-inventory']
 
 interface UseInventorySettingsReturn {
     settings: InventorySettings
@@ -20,7 +19,7 @@ export function useInventorySettings(): UseInventorySettingsReturn {
     const queryClient = useQueryClient()
 
     const { data: settings, isLoading, refetch } = useQuery({
-        queryKey: INVENTORY_SETTINGS_QUERY_KEY,
+        queryKey: ACCOUNTING_SETTINGS_QUERY_KEY,
         queryFn: settingsApi.getInventorySettings,
         staleTime: 10 * 60 * 1000, // 10 min
     })
@@ -31,7 +30,7 @@ export function useInventorySettings(): UseInventorySettingsReturn {
         },
         onSuccess: () => {
             toast.success('Configuración de inventario aplicada')
-            queryClient.invalidateQueries({ queryKey: INVENTORY_SETTINGS_QUERY_KEY })
+            queryClient.invalidateQueries({ queryKey: ACCOUNTING_SETTINGS_QUERY_KEY })
         },
         onError: () => {
             toast.error('Error al guardar cambios')

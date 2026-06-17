@@ -30,6 +30,7 @@ export function useCompanySettings(): UseCompanySettingsReturn {
             return settingsApi.updateCompanySettings(payload)
         },
         onSuccess: () => {
+            toast.success('Configuración de empresa aplicada')
             queryClient.invalidateQueries({ queryKey: COMPANY_SETTINGS_QUERY_KEY })
         },
         onError: () => {

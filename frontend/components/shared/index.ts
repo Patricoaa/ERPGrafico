@@ -95,6 +95,7 @@ export * from './NotchedButton';
 export * from './MultiTagInput';
 export * from './MultiSelectTagInput';
 export * from './PeriodValidationDateInput';
+export * from './AccountField';
 export * from './AccountingLinesTable';
 export * from './FormLineItemsTable';
 

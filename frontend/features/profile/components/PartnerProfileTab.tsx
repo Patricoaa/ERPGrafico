@@ -4,19 +4,16 @@ import { formatPlainDate } from "@/lib/utils";
 import React, {useEffect, useState} from "react"
 import { useRouter, usePathname, useSearchParams } from "next/navigation"
 import { toast } from "sonner"
-import { Card, CardContent } from "@/components/ui/card"
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Chip, FadeIn, MoneyDisplay, StatCard } from '@/components/shared'
 import { DataTable } from '@/components/shared'
 import { DataTableColumnHeader } from '@/components/shared'
 import { createActionsColumn, DataCell } from '@/components/shared'
 import {
-    Activity,
     CalendarDays,
-    Wallet,
     User,
     FileText,
     Building2,
-    Briefcase,
     Eye
 } from "lucide-react"
 import { ColumnDef } from "@tanstack/react-table"
@@ -159,17 +156,12 @@ export function PartnerProfileTab({ contactId }: Props) {
                 {/* Section 1: Metrics & Summary */}
                 <AccordionItem value="summary" className="border-none">
                     <FadeIn yOffset={10}>
-                        <Card variant="transparent" className="border-2 overflow-hidden">
-                            <AccordionTrigger className="hover:no-underline px-4 py-3 border-b bg-transparent [&[data-state=open]>div>svg]:rotate-180">
-                                <div className="flex items-center gap-3">
-                                    <Wallet className="h-5 w-5" />
-                                    <div className="text-left">
-                                        <h3 className="text-sm font-bold tracking-tight">Resumen Patrimonial</h3>
-                                        <p className="text-[10px] text-muted-foreground uppercase tracking-widest font-normal">
-                                            Estado de capitalización neta
-                                        </p>
-                                    </div>
-                                </div>
+                        <Card variant="transparent">
+                            <AccordionTrigger className="hover:no-underline py-0">
+                                <CardHeader className="w-full">
+                                    <CardTitle className="text-lg text-primary">Resumen Patrimonial</CardTitle>
+                                    <CardDescription>Estado de capitalización neta</CardDescription>
+                                </CardHeader>
                             </AccordionTrigger>
                             <AccordionContent className="p-0 border-t-0">
                                 <CardContent className="p-6">
@@ -201,17 +193,12 @@ export function PartnerProfileTab({ contactId }: Props) {
                 {/* Section 2: Societal Info */}
                 <AccordionItem value="info" className="border-none">
                     <FadeIn delay={0.1} yOffset={10}>
-                        <Card variant="transparent" className="border-2 overflow-hidden">
-                            <AccordionTrigger className="hover:no-underline px-4 py-3 border-b bg-transparent [&[data-state=open]>div>svg]:rotate-180">
-                                <div className="flex items-center gap-3">
-                                    <Briefcase className="h-5 w-5" />
-                                    <div className="text-left">
-                                        <h3 className="text-sm font-bold tracking-tight">Información Societaria</h3>
-                                        <p className="text-[10px] text-muted-foreground uppercase tracking-widest font-normal">
-                                            Identificación y cuentas vinculadas
-                                        </p>
-                                    </div>
-                                </div>
+                        <Card variant="transparent">
+                            <AccordionTrigger className="hover:no-underline py-0">
+                                <CardHeader className="w-full">
+                                    <CardTitle className="text-lg text-primary">Información Societaria</CardTitle>
+                                    <CardDescription>Identificación y cuentas vinculadas</CardDescription>
+                                </CardHeader>
                             </AccordionTrigger>
                             <AccordionContent className="p-0 border-t-0">
                                 <CardContent className="p-6">
@@ -238,17 +225,12 @@ export function PartnerProfileTab({ contactId }: Props) {
                 {/* Section 3: History */}
                 <AccordionItem value="history" className="border-none">
                     <FadeIn delay={0.2} yOffset={10}>
-                        <Card variant="transparent" className="border-2 overflow-hidden">
-                            <AccordionTrigger className="hover:no-underline px-4 py-3 border-b bg-transparent [&[data-state=open]>div>svg]:rotate-180">
-                                <div className="flex items-center gap-3">
-                                    <Activity className="h-5 w-5" />
-                                    <div className="text-left">
-                                        <h3 className="text-sm font-bold tracking-tight">Historial de Capital</h3>
-                                        <p className="text-[10px] text-muted-foreground uppercase tracking-widest font-normal">
-                                            Resumen de movimientos históricos
-                                        </p>
-                                    </div>
-                                </div>
+                        <Card variant="transparent">
+                            <AccordionTrigger className="hover:no-underline py-0">
+                                <CardHeader className="w-full">
+                                    <CardTitle className="text-lg text-primary">Historial de Capital</CardTitle>
+                                    <CardDescription>Resumen de movimientos históricos</CardDescription>
+                                </CardHeader>
                             </AccordionTrigger>
                             <AccordionContent className="p-0 border-t-0">
                                 <DataTable

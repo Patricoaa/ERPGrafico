@@ -13,7 +13,7 @@ import type {Payroll} from "@/types/hr"
 import { Tabs, TabsContent } from "@/components/ui/tabs"
 import { Button } from "@/components/ui/button"
 import { ActionSlideButton, Chip, FadeIn, MoneyDisplay, StatusBadge } from '@/components/shared'
-import { Card, CardContent } from "@/components/ui/card"
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { DataTable } from '@/components/shared'
 import { DataTableColumnHeader } from '@/components/shared'
 import { Checkbox } from "@/components/ui/checkbox"
@@ -22,7 +22,7 @@ import { ColumnDef } from "@tanstack/react-table"
 import { Form, FormField } from "@/components/ui/form"
 import { cn } from "@/lib/utils"
 import {
-    Loader2, User, ShieldCheck, KeyRound, Mail, BadgeCheck,
+    Loader2, User, ShieldCheck, KeyRound, Mail,
     Building2, Briefcase, Calendar, CreditCard, Wallet,
     FileDown, Download, Eye, Clock, CheckCircle2, FileText,
     ChevronDown, ChevronRight, Sun, Moon, Monitor
@@ -126,7 +126,7 @@ export function ProfileView({ activeTab, activeSubTab = "employee", initialProfi
     }
 
     return (
-        <Tabs value={activeTab} className="space-y-4">
+        <Tabs value={activeTab} className="max-w-6xl mx-auto space-y-6">
             <div className="pt-0">
                 <TabsContent value="account" className="mt-0 outline-none space-y-6">
                     <AccountTab user={profile.user} activeSubTab={activeSubTab} />
@@ -191,23 +191,18 @@ function ThemeSelectionCard() {
     const { changeTheme, isSyncing } = useThemeSync()
 
     return (
-        <Card className="border-2 overflow-hidden relative rounded-xl">
-            <div className="px-4 py-3 border-b flex justify-between items-center">
-                <div className="flex items-center gap-3">
-                    <Monitor className="h-5 w-5 text-primary" />
-                    <div>
-                        <h3 className="text-sm font-bold tracking-tight">Tema & Apariencia</h3>
-                        <p className="text-[10px] text-muted-foreground uppercase tracking-widest font-black">
-                            Personalice su entorno de trabajo visual
-                        </p>
-                    </div>
+        <Card>
+            <CardHeader>
+                <div className="flex items-center justify-between">
+                    <CardTitle className="text-lg text-primary">Tema & Apariencia</CardTitle>
+                    {isSyncing && (
+                        <span className="text-[9px] uppercase tracking-widest font-black text-primary animate-pulse">
+                            Sincronizando...
+                        </span>
+                    )}
                 </div>
-                {isSyncing && (
-                    <span className="text-[9px] uppercase tracking-widest font-black text-primary animate-pulse">
-                        Sincronizando...
-                    </span>
-                )}
-            </div>
+                <CardDescription>Personalice su entorno de trabajo visual</CardDescription>
+            </CardHeader>
             <CardContent className="p-6">
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     {/* Opción Claro */}
@@ -303,16 +298,11 @@ function PasswordChangeCard() {
     }
 
     return (
-        <Card variant="transparent" className="border-2 overflow-hidden">
-            <div className="px-4 py-3 border-b bg-transparent">
-                <div className="flex items-center gap-3">
-                    <KeyRound className="h-5 w-5" />
-                    <div>
-                        <h3 className="text-sm font-bold tracking-tight">Cambiar Contraseña</h3>
-                        <p className="text-[10px] text-muted-foreground uppercase tracking-widest">Actualice sus credenciales de acceso</p>
-                    </div>
-                </div>
-            </div>
+        <Card variant="transparent">
+            <CardHeader>
+                <CardTitle className="text-lg text-primary">Cambiar Contraseña</CardTitle>
+                <CardDescription>Actualice sus credenciales de acceso</CardDescription>
+            </CardHeader>
             <CardContent className="p-6">
                 <Form {...form}>
                     <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
@@ -596,18 +586,13 @@ function PersonalTab({
             {/* Sub-tab 1: Ficha de Empleado */}
             {activeSubTab === "employee" && (
                 <FadeIn yOffset={10}>
-                    <Card variant="transparent" className="border-2 overflow-hidden">
-                        <div className="px-4 py-3 border-b bg-transparent">
-                            <div className="flex items-center gap-3">
-                                <BadgeCheck className="h-5 w-5 text-primary" />
-                                <div>
-                                    <h3 className="text-sm font-bold tracking-tight">Ficha de Empleado</h3>
-                                    <p className="text-[10px] text-muted-foreground uppercase tracking-widest font-normal">
-                                        {employee.display_id} <span className="opacity-30">|</span> {employee.status_display}
-                                    </p>
-                                </div>
-                            </div>
-                        </div>
+                    <Card variant="transparent">
+                        <CardHeader>
+                            <CardTitle className="text-lg text-primary">Ficha de Empleado</CardTitle>
+                            <CardDescription>
+                                {employee.display_id} <span className="opacity-30">|</span> {employee.status_display}
+                            </CardDescription>
+                        </CardHeader>
                         <CardContent className="p-6">
                             {/* Contact Info */}
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -661,20 +646,13 @@ function PersonalTab({
             {/* Sub-tab 2: Liquidaciones */}
             {activeSubTab === "payrolls" && (
                 <FadeIn delay={0.1} yOffset={10}>
-                    <Card variant="transparent" className="border-2 overflow-hidden">
-                        <div className="px-4 py-3 border-b bg-transparent">
-                            <div className="flex items-center justify-between w-full">
-                                <div className="flex items-center gap-3">
-                                    <FileText className="h-5 w-5 text-primary" />
-                                    <div>
-                                        <h3 className="text-sm font-bold tracking-tight">Historial de Liquidaciones</h3>
-                                        <p className="text-[10px] text-muted-foreground uppercase tracking-widest font-normal">
-                                            {payrolls.length} liquidación(es) registrada(s)
-                                        </p>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
+                    <Card variant="transparent">
+                        <CardHeader>
+                            <CardTitle className="text-lg text-primary">Historial de Liquidaciones</CardTitle>
+                            <CardDescription>
+                                {payrolls.length} liquidación(es) registrada(s)
+                            </CardDescription>
+                        </CardHeader>
                         <CardContent className="p-0">
                             {selectedPayrolls.length > 0 && (
                                 <div className="px-6 py-2 border-b bg-muted/10 flex justify-end">
@@ -743,18 +721,13 @@ function PersonalTab({
             {/* Sub-tab 3: Pagos */}
             {activeSubTab === "payments" && (
                 <FadeIn delay={0.2} yOffset={10}>
-                    <Card variant="transparent" className="border-2 overflow-hidden">
-                        <div className="px-4 py-3 border-b bg-transparent">
-                            <div className="flex items-center gap-3">
-                                <CreditCard className="h-5 w-5 text-primary" />
-                                <div>
-                                    <h3 className="text-sm font-bold tracking-tight">Historial de Pagos y Anticipos</h3>
-                                    <p className="text-[10px] text-muted-foreground uppercase tracking-widest font-normal">
-                                        {unifiedPayments.length} transacción(es) registrada(s)
-                                    </p>
-                                </div>
-                            </div>
-                        </div>
+                    <Card variant="transparent">
+                        <CardHeader>
+                            <CardTitle className="text-lg text-primary">Historial de Pagos y Anticipos</CardTitle>
+                            <CardDescription>
+                                {unifiedPayments.length} transacción(es) registrada(s)
+                            </CardDescription>
+                        </CardHeader>
                         <CardContent className="p-0">
                             <div className="px-0">
                                 {unifiedPayments.length > 0 ? (
@@ -819,16 +792,11 @@ function PinChangeCard() {
     }
 
     return (
-        <Card variant="transparent" className="border-2 overflow-hidden">
-            <div className="px-4 py-3 border-b bg-transparent">
-                <div className="flex items-center gap-3">
-                    <Wallet className="h-5 w-5" />
-                    <div>
-                        <h3 className="text-sm font-bold tracking-tight">Pin de Seguridad POS</h3>
-                        <p className="text-[10px] text-muted-foreground uppercase tracking-widest">Defina su PIN para operaciones en Punto de Venta</p>
-                    </div>
-                </div>
-            </div>
+        <Card variant="transparent">
+            <CardHeader>
+                <CardTitle className="text-lg text-primary">Pin de Seguridad POS</CardTitle>
+                <CardDescription>Defina su PIN para operaciones en Punto de Venta</CardDescription>
+            </CardHeader>
             <CardContent className="p-6">
                 <Form {...form}>
                     <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">

@@ -1,14 +1,13 @@
 "use client"
 
 import React, {useEffect, useCallback} from "react"
-import { useForm, UseFormReturn, Path } from "react-hook-form"
+import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 
 import { useInventorySettings } from "@/features/settings"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Form, FormControl, FormField, FormItem, FormMessage } from "@/components/ui/form"
-import { AutoSaveStatusBadge, LabeledSelect } from "@/components/shared"
-import { AccountSelector } from "@/components/selectors/AccountSelector"
+import { Form, FormField } from "@/components/ui/form"
+import { AccountField, AutoSaveStatusBadge, FadeIn, LabeledSelect, SkeletonShell } from "@/components/shared"
 import { inventorySchema, type InventoryFormValues } from "./InventorySettingsView.schema"
 import { useAutoSaveForm } from "@/hooks/useAutoSaveForm"
 import { useUnsavedChangesGuard } from "@/hooks/useUnsavedChangesGuard"
@@ -18,7 +17,7 @@ interface InventorySettingsViewProps {
 }
 
 export const InventorySettingsView: React.FC<InventorySettingsViewProps> = ({ activeTab = "accounts" }) => {
-    const { settings, updateSettings } = useInventorySettings()
+    const { settings, isLoading, updateSettings } = useInventorySettings()
 
     const form = useForm<InventoryFormValues>({
         // ... (existing form config)
@@ -65,6 +64,8 @@ export const InventorySettingsView: React.FC<InventorySettingsViewProps> = ({ ac
 
     useUnsavedChangesGuard(status)
 
+    if (isLoading && !settings) return <SkeletonShell isLoading ariaLabel="Cargando configuración..." />
+
     return (
         <div className="max-w-6xl mx-auto space-y-6">
             <div className="flex justify-end">
@@ -77,8 +78,9 @@ export const InventorySettingsView: React.FC<InventorySettingsViewProps> = ({ ac
             </div>
             <Form {...form}>
                 <form className="mt-6 space-y-6">
+                    <FadeIn key={activeTab}>
                     {activeTab === "accounts" && (
-                        <div className="space-y-6 m-0 p-0 border-0 outline-none mt-4">
+                        <div className="space-y-6 m-0 p-0 border-0 outline-none mt-6">
                             <Card variant="transparent">
                                 <CardHeader>
                                     <CardTitle className="text-lg text-primary">Cuentas por Tipo de Producto</CardTitle>
@@ -107,7 +109,7 @@ export const InventorySettingsView: React.FC<InventorySettingsViewProps> = ({ ac
                     )}
 
                     {activeTab === "adjustments" && (
-                        <div className="space-y-6 m-0 p-0 border-0 outline-none mt-4">
+                        <div className="space-y-6 m-0 p-0 border-0 outline-none mt-6">
                             <Card variant="transparent">
                                 <CardHeader>
                                     <CardTitle className="text-lg text-primary">Cuentas de Ajuste</CardTitle>
@@ -149,7 +151,7 @@ export const InventorySettingsView: React.FC<InventorySettingsViewProps> = ({ ac
                     )}
 
                     {activeTab === "cogs" && (
-                        <div className="space-y-6 m-0 p-0 border-0 outline-none mt-4">
+                        <div className="space-y-6 m-0 p-0 border-0 outline-none mt-6">
                             <Card variant="transparent">
                                 <CardHeader>
                                     <CardTitle className="text-lg text-primary">Costo de Ventas (COGS)</CardTitle>
@@ -162,6 +164,7 @@ export const InventorySettingsView: React.FC<InventorySettingsViewProps> = ({ ac
                             </Card>
                         </div>
                     )}
+                    </FadeIn>
                 </form>
             </Form>
         </div>
@@ -169,32 +172,3 @@ export const InventorySettingsView: React.FC<InventorySettingsViewProps> = ({ ac
 }
 
 export default InventorySettingsView
-
-interface AccountFieldProps {
-    form: UseFormReturn<InventoryFormValues>
-    name: Path<InventoryFormValues>
-    label: string
-    accountType: string
-}
-
-function AccountField({ form, name, label, accountType }: AccountFieldProps) {
-    return (
-        <FormField
-            control={form.control}
-            name={name}
-            render={({ field }) => (
-                <FormItem>
-                    <p className="text-[10px] font-bold uppercase text-muted-foreground">{label}</p>
-                    <FormControl>
-                        <AccountSelector
-                            value={field.value as string}
-                            onChange={(val) => field.onChange(val)}
-                            accountType={accountType}
-                        />
-                    </FormControl>
-                    <FormMessage />
-                </FormItem>
-            )}
-        />
-    )
-}

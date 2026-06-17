@@ -1,19 +1,17 @@
 "use client"
 
-import React, { useCallback } from "react"
+import React, { useCallback, useEffect } from "react"
 import { useForm, UseFormReturn, Path } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 
-import { settingsApi } from "../hooks"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Form, FormField } from "@/components/ui/form"
-import { Banknote, ArrowLeftRight, Settings2, Smartphone, CheckSquare, Receipt } from "lucide-react"
-import {AutoSaveStatusBadge, FadeIn} from "@/components/shared"
-import { AccountSelector } from "@/components/selectors/AccountSelector"
+
+import {AccountField, AutoSaveStatusBadge, FadeIn, SkeletonShell} from "@/components/shared"
 import { useAutoSaveForm } from "@/hooks/useAutoSaveForm"
 import { useUnsavedChangesGuard } from "@/hooks/useUnsavedChangesGuard"
 
-import { treasurySchema, type TreasuryFormValues } from "./TreasurySettingsView.schema"
+import { treasurySchema, type TreasuryFormValues } from "@/features/settings/schemas/treasury"
 
 interface TreasurySettingsViewProps {
     activeTab: string
@@ -52,16 +50,20 @@ const DEFAULT_VALUES: TreasuryFormValues = {
 import { useTreasurySettings } from "@/features/settings/hooks/useTreasurySettings"
 
 export function TreasurySettingsView({ activeTab = "conciliation" }: TreasurySettingsViewProps) {
-    const { settings } = useTreasurySettings()
+    const { settings, isLoading, updateSettings } = useTreasurySettings()
 
     const form = useForm<TreasuryFormValues>({
         resolver: zodResolver(treasurySchema),
-        defaultValues: settings || DEFAULT_VALUES,
+        defaultValues: DEFAULT_VALUES,
     })
 
+    useEffect(() => {
+        if (settings) form.reset(settings)
+    }, [settings, form])
+
     const onSave = useCallback(async (data: TreasuryFormValues) => {
-        await settingsApi.updateCurrentSettings(data)
-    }, [])
+        await updateSettings(data)
+    }, [updateSettings])
 
     const { status, invalidReason, lastSavedAt, retry } = useAutoSaveForm({
         form,
@@ -70,6 +72,8 @@ export function TreasurySettingsView({ activeTab = "conciliation" }: TreasurySet
     })
 
     useUnsavedChangesGuard(status)
+
+    if (isLoading && !settings) return <SkeletonShell isLoading ariaLabel="Cargando configuración..." />
 
     return (
         <div className="max-w-6xl mx-auto space-y-6">
@@ -86,16 +90,13 @@ export function TreasurySettingsView({ activeTab = "conciliation" }: TreasurySet
                     <FadeIn key={activeTab}>
                         {activeTab === "conciliation" && (
                             <div className="m-0 p-0 border-0 outline-none mt-6">
-                                <Card variant="transparent" className="border-2">
-                                    <CardHeader className="pb-4">
-                                        <div className="flex items-center gap-2">
-                                            <ArrowLeftRight className="h-4 w-4 text-primary opacity-50" />
-                                            <CardTitle className="text-sm font-black uppercase text-primary tracking-widest">Cuentas de Conciliación Bancaria</CardTitle>
-                                        </div>
-                                        <CardDescription className="text-[10px] uppercase font-bold text-muted-foreground italic">Identificadores para ajustes automáticos en conciliación por lotes</CardDescription>
+                                <Card variant="transparent">
+                                    <CardHeader>
+                                        <CardTitle className="text-lg text-primary">Cuentas de Conciliación Bancaria</CardTitle>
+                                        <CardDescription>Identificadores para ajustes automáticos en conciliación por lotes</CardDescription>
                                     </CardHeader>
                                     <CardContent>
-                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                             <AccountField form={form} name="bank_commission_account" label="Gasto Comisiones Bancarias" accountType="EXPENSE" />
                                             <AccountField form={form} name="interest_income_account" label="Ingreso por Intereses" accountType="INCOME" />
                                             <AccountField form={form} name="exchange_difference_account" label="Diferencia de Cambio (M.E)" accountType="" />
@@ -110,16 +111,13 @@ export function TreasurySettingsView({ activeTab = "conciliation" }: TreasurySet
 
                         {activeTab === "audit" && (
                             <div className="m-0 p-0 border-0 outline-none mt-6">
-                                <Card variant="transparent" className="border-2">
-                                    <CardHeader className="pb-4">
-                                        <div className="flex items-center gap-2">
-                                            <Banknote className="h-4 w-4 text-primary opacity-50" />
-                                            <CardTitle className="text-sm font-black uppercase text-primary tracking-widest">Diferencias de Cierre de Caja (Arqueo)</CardTitle>
-                                        </div>
-                                        <CardDescription className="text-[10px] uppercase font-bold text-muted-foreground italic">Control de discrepancias entre saldo teórico y físico en POS</CardDescription>
+                                <Card variant="transparent">
+                                    <CardHeader>
+                                        <CardTitle className="text-lg text-primary">Diferencias de Cierre de Caja (Arqueo)</CardTitle>
+                                        <CardDescription>Control de discrepancias entre saldo teórico y físico en POS</CardDescription>
                                     </CardHeader>
                                     <CardContent>
-                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                             <AccountField form={form} name="pos_cash_difference_gain_account" label="Sobrante de Caja (Ganancia)" accountType="INCOME" />
                                             <AccountField form={form} name="pos_cash_difference_loss_account" label="Faltante de Caja (Pérdida)" accountType="EXPENSE" />
                                         </div>
@@ -130,33 +128,21 @@ export function TreasurySettingsView({ activeTab = "conciliation" }: TreasurySet
 
                         {activeTab === "movements" && (
                             <div className="m-0 p-0 border-0 outline-none mt-6">
-                                <Card variant="transparent" className="border-2">
-                                    <CardHeader className="pb-4">
-                                        <div className="flex items-center gap-2">
-                                            <Settings2 className="h-4 w-4 text-primary opacity-50" />
-                                            <CardTitle className="text-sm font-black uppercase text-primary tracking-widest">Cuentas para Movimientos Manuales</CardTitle>
-                                        </div>
-                                        <CardDescription className="text-[10px] uppercase font-bold text-muted-foreground italic">Configuración de ingresos y egresos ad-hoc del módulo POS</CardDescription>
+                                <Card variant="transparent">
+                                    <CardHeader>
+                                        <CardTitle className="text-lg text-primary">Cuentas para Movimientos Manuales</CardTitle>
+                                        <CardDescription>Configuración de ingresos y egresos ad-hoc del módulo POS</CardDescription>
                                     </CardHeader>
                                     <CardContent className="space-y-8">
-                                        <div>
-                                            <p className="text-[10px] font-black uppercase text-muted-foreground/60 mb-6 border-b-2 border-primary/10 pb-1 w-fit tracking-tighter">Depósitos y Entradas de Efectivo</p>
-                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
-                                                <AccountField form={form} name="pos_tip_account" label="Recaudación Propinas" accountType="INCOME" />
-                                                <AccountField form={form} name="pos_other_inflow_account" label="Otros Ingresos Operativos" accountType="INCOME" />
-                                                <AccountField form={form} name="pos_counting_error_account" label="Ajuste Error de Conteo (Sobrante)" accountType="INCOME" />
-                                                <AccountField form={form} name="pos_system_error_account" label="Ajuste Operativo (Corrección)" accountType="EXPENSE" />
-                                            </div>
-                                        </div>
-
-                                        <div>
-                                            <p className="text-[10px] font-black uppercase text-muted-foreground/60 mb-6 border-b-2 border-primary/10 pb-1 w-fit tracking-tighter">Retiros y Salidas de Efectivo</p>
-                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
-                                                <AccountField form={form} name="pos_theft_account" label="Pérdidas / Merma de Efectivo" accountType="EXPENSE" />
-                                                <AccountField form={form} name="pos_rounding_adjustment_account" label="Redondeo de Pago" accountType="EXPENSE" />
-                                                <AccountField form={form} name="pos_cashback_error_account" label="Faltante por Vuelto Incorrecto" accountType="EXPENSE" />
-                                                <AccountField form={form} name="pos_other_outflow_account" label="Egresos Varios de Caja" accountType="EXPENSE" />
-                                            </div>
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                            <AccountField form={form} name="pos_tip_account" label="Recaudación Propinas" accountType="INCOME" />
+                                            <AccountField form={form} name="pos_other_inflow_account" label="Otros Ingresos Operativos" accountType="INCOME" />
+                                            <AccountField form={form} name="pos_counting_error_account" label="Ajuste Error de Conteo (Sobrante)" accountType="INCOME" />
+                                            <AccountField form={form} name="pos_system_error_account" label="Ajuste Operativo (Corrección)" accountType="EXPENSE" />
+                                            <AccountField form={form} name="pos_theft_account" label="Pérdidas / Merma de Efectivo" accountType="EXPENSE" />
+                                            <AccountField form={form} name="pos_rounding_adjustment_account" label="Redondeo de Pago" accountType="EXPENSE" />
+                                            <AccountField form={form} name="pos_cashback_error_account" label="Faltante por Vuelto Incorrecto" accountType="EXPENSE" />
+                                            <AccountField form={form} name="pos_other_outflow_account" label="Egresos Varios de Caja" accountType="EXPENSE" />
                                         </div>
                                     </CardContent>
                                 </Card>
@@ -165,16 +151,13 @@ export function TreasurySettingsView({ activeTab = "conciliation" }: TreasurySet
 
                         {activeTab === "terminals" && (
                             <div className="m-0 p-0 border-0 outline-none mt-6">
-                                <Card variant="transparent" className="border-2">
-                                    <CardHeader className="pb-4">
-                                        <div className="flex items-center gap-2">
-                                            <Smartphone className="h-4 w-4 text-primary opacity-50" />
-                                            <CardTitle className="text-sm font-black uppercase text-primary tracking-widest">Cuentas Puente de Terminales</CardTitle>
-                                        </div>
-                                        <CardDescription className="text-[10px] uppercase font-bold text-muted-foreground italic">Cuentas para comisiones de terminales de pago sin factura</CardDescription>
+                                <Card variant="transparent">
+                                    <CardHeader>
+                                        <CardTitle className="text-lg text-primary">Cuentas Puente de Terminales</CardTitle>
+                                        <CardDescription>Cuentas para comisiones de terminales de pago sin factura</CardDescription>
                                     </CardHeader>
                                     <CardContent>
-                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                             <AccountField form={form} name="terminal_commission_bridge_account" label="Puente Comisión Neto" accountType="ASSET" />
                                             <AccountField form={form} name="terminal_iva_bridge_account" label="Puente IVA Comisión" accountType="ASSET" />
                                         </div>
@@ -185,16 +168,13 @@ export function TreasurySettingsView({ activeTab = "conciliation" }: TreasurySet
 
                         {activeTab === "checks" && (
                             <div className="m-0 p-0 border-0 outline-none mt-6">
-                                <Card variant="transparent" className="border-2">
-                                    <CardHeader className="pb-4">
-                                        <div className="flex items-center gap-2">
-                                            <CheckSquare className="h-4 w-4 text-primary opacity-50" />
-                                            <CardTitle className="text-sm font-black uppercase text-primary tracking-widest">Cuentas de Cheques</CardTitle>
-                                        </div>
-                                        <CardDescription className="text-[10px] uppercase font-bold text-muted-foreground italic">Cuentas puente para contabilización de cheques recibidos y emitidos</CardDescription>
+                                <Card variant="transparent">
+                                    <CardHeader>
+                                        <CardTitle className="text-lg text-primary">Cuentas de Cheques</CardTitle>
+                                        <CardDescription>Cuentas puente para contabilización de cheques recibidos y emitidos</CardDescription>
                                     </CardHeader>
                                     <CardContent>
-                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                             <AccountField form={form} name="check_portfolio_account" label="Cheques en Cartera (Documentos por Cobrar)" accountType="ASSET" />
                                             <AccountField form={form} name="issued_checks_account" label="Cheques Girados por Pagar (Pasivo)" accountType="LIABILITY" />
                                         </div>
@@ -205,16 +185,13 @@ export function TreasurySettingsView({ activeTab = "conciliation" }: TreasurySet
 
                         {activeTab === "financial" && (
                             <div className="m-0 p-0 border-0 outline-none mt-6">
-                                <Card variant="transparent" className="border-2">
-                                    <CardHeader className="pb-4">
-                                        <div className="flex items-center gap-2">
-                                            <Receipt className="h-4 w-4 text-primary opacity-50" />
-                                            <CardTitle className="text-sm font-black uppercase text-primary tracking-widest">Cuentas de Gasto Financiero</CardTitle>
-                                        </div>
-                                        <CardDescription className="text-[10px] uppercase font-bold text-muted-foreground italic">Cuentas contables para intereses, seguros y comisiones bancarias</CardDescription>
+                                <Card variant="transparent">
+                                    <CardHeader>
+                                        <CardTitle className="text-lg text-primary">Cuentas de Gasto Financiero</CardTitle>
+                                        <CardDescription>Cuentas contables para intereses, seguros y comisiones bancarias</CardDescription>
                                     </CardHeader>
                                     <CardContent>
-                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                             <AccountField form={form} name="interest_expense_account" label="Gasto por Intereses (Préstamos / Tarjeta)" accountType="EXPENSE" />
                                             <AccountField form={form} name="insurance_expense_account" label="Gasto por Seguros (Desgravamen / Cesantía)" accountType="EXPENSE" />
                                             <AccountField form={form} name="interest_payable_account" label="Intereses por Pagar (Pasivo Devengado)" accountType="LIABILITY" />
@@ -233,27 +210,4 @@ export function TreasurySettingsView({ activeTab = "conciliation" }: TreasurySet
     )
 }
 
-interface AccountFieldProps {
-    form: UseFormReturn<TreasuryFormValues>
-    name: Path<TreasuryFormValues>
-    label: string
-    accountType: string
-}
 
-function AccountField({ form, name, label, accountType }: AccountFieldProps) {
-    return (
-        <FormField
-            control={form.control}
-            name={name}
-            render={({ field, fieldState }) => (
-                <AccountSelector
-                    label={label}
-                    value={field.value as string}
-                    onChange={(val) => field.onChange(val)}
-                    accountType={accountType}
-                    error={fieldState.error?.message}
-                />
-            )}
-        />
-    )
-}

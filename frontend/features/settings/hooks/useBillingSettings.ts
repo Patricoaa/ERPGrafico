@@ -1,9 +1,8 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import { settingsApi } from '../api/settingsApi'
+import { ACCOUNTING_SETTINGS_QUERY_KEY } from './useAccountingSettings'
 import type { BillingSettings, BillingSettingsUpdatePayload } from '../types'
-
-export const BILLING_SETTINGS_QUERY_KEY = ['settings-billing']
 
 interface UseBillingSettingsReturn {
     settings: BillingSettings
@@ -15,7 +14,7 @@ interface UseBillingSettingsReturn {
 
 export function useBillingSettingsQuery() {
     const { data: settings, isLoading, refetch } = useQuery({
-        queryKey: BILLING_SETTINGS_QUERY_KEY,
+        queryKey: ACCOUNTING_SETTINGS_QUERY_KEY,
         queryFn: settingsApi.getBillingSettings,
         staleTime: 1000 * 60 * 5,
     })
@@ -30,7 +29,7 @@ export function useBillingSettings(): UseBillingSettingsReturn {
     const queryClient = useQueryClient()
 
     const { data: settings, isLoading, refetch } = useQuery({
-        queryKey: BILLING_SETTINGS_QUERY_KEY,
+        queryKey: ACCOUNTING_SETTINGS_QUERY_KEY,
         queryFn: settingsApi.getBillingSettings,
     })
 
@@ -40,7 +39,7 @@ export function useBillingSettings(): UseBillingSettingsReturn {
         },
         onSuccess: () => {
             toast.success('Configuración de facturación aplicada')
-            queryClient.invalidateQueries({ queryKey: BILLING_SETTINGS_QUERY_KEY })
+            queryClient.invalidateQueries({ queryKey: ACCOUNTING_SETTINGS_QUERY_KEY })
         },
         onError: () => {
             toast.error('Error al guardar cambios')

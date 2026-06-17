@@ -49,7 +49,7 @@ import { format } from "date-fns"
 import { es } from "date-fns/locale"
 
 export default function SettingsPage() {
-    const { data: status, isLoading } = useSystemStatus()
+    const { status, isLoading } = useSystemStatus()
     
     const feVersion = getFrontendVersion()
     const feHash = getGitHash()
