@@ -79,6 +79,7 @@ export interface DataTableProps<TData, TValue> {
     /** Render callback for the actions cell in compact variant. Receives the row data and returns a ReactNode. Occupies the last grid track. */
     renderRowActions?: (row: TData) => React.ReactNode
     isLoading?: boolean
+    isRefetching?: boolean
     skeletonRows?: number
     renderSubComponent?: (row: Row<TData>) => React.ReactNode
     hidePagination?: boolean
@@ -184,6 +185,7 @@ export function DataTable<TData, TValue>({
     onRowClick,
     variant,
     isLoading = false,
+    isRefetching = false,
     skeletonRows,
     renderSubComponent,
     hidePagination = false,
@@ -814,7 +816,18 @@ export function DataTable<TData, TValue>({
             {renderCustomView ? (
                 renderCustomView(table)
             ) : (
-                <div className={cn(!noBorder && "rounded-md border")}>
+                <div className={cn("relative", !noBorder && "rounded-md border")}>
+                    <AnimatePresence>
+                        {isRefetching && (
+                            <motion.div
+                                initial={{ scaleX: 0 }}
+                                animate={{ scaleX: 1 }}
+                                exit={{ scaleX: 0 }}
+                                transition={{ duration: 0.3, ease: "easeInOut" }}
+                                className="absolute top-0 left-0 right-0 h-0.5 bg-primary origin-left"
+                            />
+                        )}
+                    </AnimatePresence>
                     <Table containerClassName={cn(
                         !isInModal && "max-h-[calc(100vh-260px)] overflow-y-auto custom-scrollbar"
                     )}>

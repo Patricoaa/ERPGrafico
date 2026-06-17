@@ -98,6 +98,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     };
 
     const logout = () => {
+        // Clear backend HttpOnly cookie
+        api.post('/logout/').catch(() => {
+            // Best-effort: cookie also expires after max-age
+        });
         localStorage.removeItem("access_token");
         localStorage.removeItem("refresh_token");
         setUser(null);

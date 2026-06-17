@@ -1,20 +1,29 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import type { FilterState } from '@/components/shared'
+import type { Invoice } from '@/features/billing/types'
 
 import { purchasingApi } from '../api/purchasingApi'
+import type { PurchaseOrderAPI } from '../types'
 import { PURCHASING_KEYS } from './queryKeys'
 
 export { PURCHASING_KEYS }
 
-export function usePurchasingOrders(filters?: FilterState) {
+export function usePurchasingOrders(filters?: FilterState, initialData?: PurchaseOrderAPI[]) {
     const queryClient = useQueryClient()
 
-    const { data: orders, isLoading, refetch } = useQuery({
+    const query = useQuery({
         queryKey: [...PURCHASING_KEYS.orders(), filters],
         queryFn: () => purchasingApi.getOrders(filters),
         staleTime: 2 * 60 * 1000,
+        initialData,
+        placeholderData: (prev) => prev,
     })
+
+    const orders = query.data ?? []
+    const showSkeleton = query.isLoading && !orders.length
+    const isRefetching = query.isFetching && !showSkeleton
+    const refetch = query.refetch
 
     const deleteMutation = useMutation({
         mutationFn: (id: number) => purchasingApi.deleteOrder(id),
@@ -25,20 +34,28 @@ export function usePurchasingOrders(filters?: FilterState) {
     })
 
     return {
-        orders: orders ?? [],
-        isLoading,
+        orders,
+        isLoading: showSkeleton,
+        isRefetching,
         refetch,
         deleteOrder: deleteMutation.mutateAsync,
     }
 }
 
-export function usePurchasingNotes() {
-    const { data: notes, isLoading, refetch } = useQuery({
+export function usePurchasingNotes(initialData?: Invoice[]) {
+    const query = useQuery({
         queryKey: PURCHASING_KEYS.notes(),
         queryFn: () => purchasingApi.getNotes(),
+        initialData,
+        placeholderData: (prev) => prev,
     })
 
-    return { notes: notes ?? [], isLoading, refetch }
+    const notes = query.data ?? []
+    const showSkeleton = query.isLoading && !notes.length
+    const isRefetching = query.isFetching && !showSkeleton
+    const refetch = query.refetch
+
+    return { notes, isLoading: showSkeleton, isRefetching, refetch }
 }
 
 export function usePurchasingOrder(id: number) {

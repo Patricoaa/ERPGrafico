@@ -21,9 +21,9 @@ import { useConfirmAction } from "@/hooks/useConfirmAction"
 
 import { getDtePrefix } from "@/lib/entity-registry"
 
-export function SalesInvoicesClientView() {
+export function SalesInvoicesClientView({ initialInvoices }: { initialInvoices?: Invoice[] }) {
     const { filters, isFiltered } = useSmartSearch(invoiceSearchDef)
-    const { invoices, isLoading, refetch, annulInvoice } = useInvoices({ filters: { ...filters, mode: 'sale' } })
+    const { invoices, isLoading, isRefetching, refetch, annulInvoice } = useInvoices({ filters: { ...filters, mode: 'sale' }, initialData: initialInvoices })
     const { openHub, closeHub, hubConfig, isHubOpen } = useHubPanel()
     const [notingInvoice, setNotingInvoice] = useState<Invoice | null>(null)
     const [payingInv, setPayingInv] = useState<Invoice | null>(null)
@@ -164,6 +164,7 @@ export function SalesInvoicesClientView() {
                     columns={columns}
                     data={invoices}
                     isLoading={isLoading}
+                    isRefetching={isRefetching}
                     onRowClick={(row: Invoice) => toggleSelection(row)}
                     variant="embedded"
                     leftAction={<SmartSearchBar searchDef={invoiceSearchDef} placeholder="Buscar facturas..." className="w-full" />}

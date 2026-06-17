@@ -23,9 +23,10 @@ interface SalesOrdersViewProps {
     hideStatusInCards?: boolean
     onSelectOrder?: (id: number | null) => void
     selectedId?: number | null
+    initialOrders?: SaleOrder[]
 }
 
-export function SalesOrdersView({ viewMode, posSessionId, onActionSuccess, hideStatusInCards, onSelectOrder, selectedId }: SalesOrdersViewProps) {
+export function SalesOrdersView({ viewMode, posSessionId, onActionSuccess, hideStatusInCards, onSelectOrder, selectedId, initialOrders }: SalesOrdersViewProps) {
     const { openHub, closeHub, hubConfig, isHubOpen } = useHubPanel()
     const router = useRouter()
     const searchParams = useSearchParams()
@@ -51,11 +52,12 @@ export function SalesOrdersView({ viewMode, posSessionId, onActionSuccess, hideS
     }
 
     const { filters: smartFilters, isFiltered } = useSmartSearch(salesOrderSearchDef)
-    const { orders, isLoading: isLoadingOrders, refetch: refetchOrders } = useSalesOrders({
+    const { orders, isLoading: isLoadingOrders, isRefetching, refetch: refetchOrders } = useSalesOrders({
         filters: {
             ...(smartFilters as SaleOrderFilters),
             pos_session: posSessionId || undefined,
-        }
+        },
+        initialData: initialOrders,
     })
     const { notes, isLoading: isLoadingNotes, refetch: refetchNotes } = useSalesNotes({
         filters: {
@@ -213,6 +215,7 @@ export function SalesOrdersView({ viewMode, posSessionId, onActionSuccess, hideS
                     onRowClick={(row: any) => toggleSelection(row.id)}
                     variant="embedded"
                     isLoading={viewMode === 'orders' ? isLoadingOrders : isLoadingNotes}
+                    isRefetching={viewMode === 'orders' ? isRefetching : undefined}
                     leftAction={viewMode === 'orders'
                         ? <SmartSearchBar searchDef={salesOrderSearchDef} placeholder="Buscar órdenes..." />
                         : <SmartSearchBar searchDef={salesNoteSearchDef} placeholder="Buscar notas..." />

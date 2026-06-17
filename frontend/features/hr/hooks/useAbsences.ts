@@ -5,8 +5,8 @@ import type { FilterState } from '@/components/shared'
 
 export const ABSENCES_QUERY_KEY = ['hr', 'absences'] as const
 
-export function useAbsences(filters?: FilterState) {
-    const { data, isLoading, refetch } = useQuery({
+export function useAbsences(filters?: FilterState, initialData?: Absence[]) {
+    const query = useQuery({
         queryKey: [...ABSENCES_QUERY_KEY, filters],
         queryFn: (): Promise<Absence[]> => {
             const params: Record<string, string> = {}
@@ -16,11 +16,19 @@ export function useAbsences(filters?: FilterState) {
             return getAbsences(Object.keys(params).length ? params : undefined)
         },
         staleTime: 2 * 60 * 1000,
+        initialData,
+        placeholderData: (prev) => prev,
     })
 
+    const absences = query.data ?? []
+    const showSkeleton = query.isLoading && !absences.length
+    const refetch = query.refetch
+    const isRefetching = query.isFetching && !showSkeleton
+
     return {
-        absences: data ?? [],
-        isLoading,
+        absences,
+        isLoading: showSkeleton,
         refetch,
+        isRefetching,
     }
 }

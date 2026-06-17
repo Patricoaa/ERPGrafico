@@ -54,8 +54,8 @@ export function useBOMs(params: { product_id?: string | number, parent_id?: stri
     }
 }
 
-export function useAllBOMs(filters?: FilterState) {
-    const { data, isLoading, refetch } = useQuery({
+export function useAllBOMs(filters?: FilterState, initialData?: BOM[]) {
+    const query = useQuery({
         queryKey: [...ALL_BOMS_QUERY_KEY, filters],
         queryFn: async (): Promise<BOM[]> => {
             const params = new URLSearchParams()
@@ -65,8 +65,16 @@ export function useAllBOMs(filters?: FilterState) {
             return res.data
         },
         staleTime: 5 * 60 * 1000,
+        initialData,
+        placeholderData: (prev) => prev,
     })
-    return { boms: data ?? [], isLoading, refetch }
+
+    const boms = query.data ?? []
+    const showSkeleton = query.isLoading && !boms.length
+    const refetch = query.refetch
+    const isRefetching = query.isFetching && !showSkeleton
+
+    return { boms, isLoading: showSkeleton, isRefetching, refetch }
 }
 
 export function useProductionVariants(parentId: number | string | undefined) {

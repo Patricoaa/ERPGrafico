@@ -5,8 +5,8 @@ import type { FilterState } from '@/components/shared'
 
 export const EMPLOYEES_QUERY_KEY = ['hr', 'employees'] as const
 
-export function useEmployees(filters?: FilterState) {
-    const { data, isLoading, refetch } = useQuery({
+export function useEmployees(filters?: FilterState, initialData?: Employee[]) {
+    const query = useQuery({
         queryKey: [...EMPLOYEES_QUERY_KEY, filters],
         queryFn: (): Promise<Employee[]> => {
             const params: Record<string, string> = {}
@@ -15,12 +15,20 @@ export function useEmployees(filters?: FilterState) {
             return getEmployees(Object.keys(params).length ? params : undefined)
         },
         staleTime: 2 * 60 * 1000,
+        initialData,
+        placeholderData: (prev) => prev,
     })
 
+    const employees = query.data ?? []
+    const showSkeleton = query.isLoading && !employees.length
+    const refetch = query.refetch
+    const isRefetching = query.isFetching && !showSkeleton
+
     return {
-        employees: data ?? [],
-        isLoading,
+        employees,
+        isLoading: showSkeleton,
         refetch,
+        isRefetching,
     }
 }
 

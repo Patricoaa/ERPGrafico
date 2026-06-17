@@ -1,59 +1,30 @@
-"use client"
+import { serverFetch } from "@/lib/server-fetch"
+import type { SaleOrder } from "@/features/sales"
+import SalesOrdersPageClient from "./SalesOrdersPageClient"
 
-import { useEffect, useRef } from "react"
-import { useSearchParams, useRouter, usePathname } from "next/navigation"
-import { useHubPanel } from "@/components/providers/HubPanelProvider"
-import { SalesOrdersClientView } from "@/features/sales"
+const FILTER_PARAMS = new Set(['customer_name', 'status', 'date_after', 'date_before'])
 
-export default function SalesOrdersPage() {
-    const searchParams = useSearchParams()
-    const router = useRouter()
-    const pathname = usePathname()
-    const legacyId = searchParams.get('id')
-    const selectedId = searchParams.get('selected')
-    const { openHub, isHubOpen } = useHubPanel()
+interface PageProps {
+    searchParams: Promise<Record<string, string | undefined>>
+}
 
-    // 1. Backward compatibility for legacy ?id=
-    useEffect(() => {
-        if (legacyId) {
-            router.replace(`/sales/orders/${legacyId}`)
+export default async function SalesOrdersPage({ searchParams }: PageProps) {
+    const params = await searchParams
+
+    const hasActiveFilters = Object.keys(params).some(k => FILTER_PARAMS.has(k))
+    let initialOrders: SaleOrder[] | undefined
+    if (!hasActiveFilters) {
+        try {
+            initialOrders = await serverFetch<SaleOrder[]>('sales/orders/', {
+                params: {
+                    page_size: '200',
+                },
+                revalidate: 10,
+            })
+        } catch {
+            // Client-side fetch handles fallback
         }
-    }, [legacyId, router])
-
-    // 2. Open Hub panel if ?selected= is present (ADR-0020 equivalent for Orders)
-    const hubEverOpenedRef = useRef(false)
-
-    useEffect(() => {
-        if (selectedId) {
-            openHub({ orderId: Number(selectedId), type: 'sale' })
-        }
-    }, [selectedId, openHub])
-
-    // Track when the hub successfully opens
-    useEffect(() => {
-        if (isHubOpen && selectedId) hubEverOpenedRef.current = true
-    }, [isHubOpen, selectedId])
-
-    // 3. Clean up URL when hub closes (only if it was actually opened first)
-    useEffect(() => {
-        if (hubEverOpenedRef.current && !isHubOpen && selectedId) {
-            const params = new URLSearchParams(searchParams.toString())
-            params.delete('selected')
-            const query = params.toString()
-            hubEverOpenedRef.current = false
-            router.replace(query ? `${pathname}?${query}` : pathname, { scroll: false })
-        }
-    }, [isHubOpen, selectedId, pathname, searchParams, router])
-
-    if (legacyId) {
-        return <div className="p-8 text-center text-muted-foreground">Redirigiendo...</div>
     }
 
-    return (
-        <div className="h-full flex flex-col">
-            <div className="flex-1 min-h-0">
-                <SalesOrdersClientView viewMode="orders" />
-            </div>
-        </div>
-    )
+    return <SalesOrdersPageClient initialOrders={initialOrders} />
 }

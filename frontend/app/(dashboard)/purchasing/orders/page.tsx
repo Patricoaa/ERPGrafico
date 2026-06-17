@@ -1,58 +1,44 @@
-"use client"
+import { serverFetch } from "@/lib/server-fetch"
+import type { PurchaseOrderAPI } from "@/features/purchasing"
+import type { Invoice } from "@/features/billing"
+import PurchasingPageClient from "./PurchasingPageClient"
 
-import { useEffect, useState, useRef, use } from "react"
-import { ToolbarCreateButton } from '@/components/shared'
-import { useSearchParams, useRouter, usePathname } from "next/navigation"
-import { useHubPanel } from "@/components/providers/HubPanelProvider"
-import { PurchasingOrdersClientView } from "./components/PurchasingOrdersClientView"
+const FILTER_PARAMS = new Set(['search', 'status', 'date_from', 'date_to'])
 
 interface PageProps {
-    searchParams: Promise<{ modal?: string, selected?: string }>
+    searchParams: Promise<Record<string, string | undefined>>
 }
 
-export default function PurchaseOrdersPage({ searchParams }: PageProps) {
-    const params = use(searchParams)
-    const modalOpen = params.modal === 'new'
-    
-    const router = useRouter()
-    const pathname = usePathname()
-    const nextSearchParams = useSearchParams()
-    
-    const selectedId = nextSearchParams.get('selected')
-    const { openHub, isHubOpen } = useHubPanel()
-    const hubEverOpenedRef = useRef(false)
+export default async function PurchaseOrdersPage({ searchParams }: PageProps) {
+    const params = await searchParams
 
-    // 1. Open Hub panel if ?selected= is present
-    useEffect(() => {
-        if (selectedId) {
-            openHub({ orderId: Number(selectedId), type: 'purchase' })
+    const hasActiveFilters = Object.keys(params).some(k => FILTER_PARAMS.has(k))
+    let initialOrders: PurchaseOrderAPI[] | undefined
+    let initialNotes: Invoice[] | undefined
+
+    if (!hasActiveFilters) {
+        try {
+            initialOrders = await serverFetch<PurchaseOrderAPI[]>('purchasing/orders/', {
+                params: { page_size: '200' },
+                revalidate: 10,
+            })
+        } catch {
+            // Client-side fetch handles fallback
         }
-    }, [selectedId, openHub])
 
-    // 2. Track when the hub successfully opens
-    useEffect(() => {
-        if (isHubOpen && selectedId) hubEverOpenedRef.current = true
-    }, [isHubOpen, selectedId])
-
-    // 3. Clean up URL when hub closes (only if it was actually opened first)
-    useEffect(() => {
-        if (hubEverOpenedRef.current && !isHubOpen && selectedId) {
-            const urlParams = new URLSearchParams(nextSearchParams.toString())
-            urlParams.delete('selected')
-            const query = urlParams.toString()
-            hubEverOpenedRef.current = false
-            router.replace(query ? `${pathname}?${query}` : pathname, { scroll: false })
+        try {
+            initialNotes = await serverFetch<Invoice[]>('billing/invoices/', {
+                params: {
+                    dte_type__in: 'NOTA_CREDITO,NOTA_DEBITO',
+                    purchase_order__isnull: 'false',
+                    page_size: '50',
+                },
+                revalidate: 10,
+            })
+        } catch {
+            // Client-side fetch handles fallback
         }
-    }, [isHubOpen, selectedId, pathname, nextSearchParams, router])
+    }
 
-    const createAction = (
-        <ToolbarCreateButton
-            label="Nueva Orden"
-            href="/purchasing/orders?modal=new"
-        />
-    )
-
-    return (
-        <PurchasingOrdersClientView viewMode="orders" externalOpenCheckout={modalOpen} createAction={createAction} />
-    )
+    return <PurchasingPageClient initialOrders={initialOrders} initialNotes={initialNotes} />
 }

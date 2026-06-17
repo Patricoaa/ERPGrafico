@@ -2,7 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import { inventoryApi } from '../api/inventoryApi'
 import { useRealtime } from '@/features/realtime'
-import type { ProductFilters, ProductUpdatePayload } from '../types'
+import type { Product, ProductFilters, ProductUpdatePayload } from '../types'
 import { BOMS_QUERY_KEY, PRODUCTS_KEYS, PRODUCTS_QUERY_KEY } from './queryKeys'
 
 // Re-export for backward compatibility with external consumers that still
@@ -11,16 +11,24 @@ export { PRODUCTS_QUERY_KEY, PRODUCTS_KEYS }
 
 interface UseProductsProps {
     filters?: ProductFilters
+    initialData?: Product[]
 }
 
-export function useProducts({ filters }: UseProductsProps = {}) {
+export function useProducts({ filters, initialData }: UseProductsProps = {}) {
     const queryClient = useQueryClient()
     const { markLocalMutation } = useRealtime()
 
-    const { data: products, isLoading, refetch } = useQuery({
+    const query = useQuery({
         queryKey: PRODUCTS_KEYS.list(filters),
         queryFn: () => inventoryApi.getProducts(filters),
+        initialData,
+        placeholderData: (prev) => prev,
     })
+
+    const products = query.data ?? []
+    const showSkeleton = query.isLoading && !products.length
+    const isRefetching = query.isFetching && !showSkeleton
+    const refetch = query.refetch
 
     const invalidateProductsAndBoms = () => {
         // Cover both list AND detail queries — invalidating `PRODUCTS_KEYS.all`
@@ -91,8 +99,9 @@ export function useProducts({ filters }: UseProductsProps = {}) {
         })
 
     return {
-        products: products ?? [],
-        isLoading,
+        products,
+        isLoading: showSkeleton,
+        isRefetching,
         refetch,
         fetchProductById,
         updateProduct: updateProductMutation.mutateAsync,

@@ -23,11 +23,15 @@ const ActionConfirmModal = lazy(() => import("@/components/shared/ActionConfirmM
 interface ContactsClientViewProps {
     isNewModalOpen?: boolean
     createAction?: React.ReactNode
+    initialContacts?: Contact[]
 }
 
-export function ContactsClientView({ isNewModalOpen = false, createAction }: ContactsClientViewProps) {
+export function ContactsClientView({ isNewModalOpen = false, createAction, initialContacts }: ContactsClientViewProps) {
     const { filters: smartFilters, isFiltered } = useSmartSearch(contactSearchDef)
-    const { contacts, isLoading, deleteContact } = useContacts({ filters: smartFilters as ContactFilters })
+    const { contacts, isLoading, isRefetching, deleteContact } = useContacts({
+        filters: smartFilters as ContactFilters,
+        initialData: initialContacts,
+    })
     const [selectedContact, setSelectedContact] = useState<Contact | null>(null)
     const [modalOpen, setModalOpen] = useState(false)
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
@@ -223,6 +227,7 @@ export function ContactsClientView({ isNewModalOpen = false, createAction }: Con
                         columns={columns}
                         data={contacts}
                         isLoading={isLoading}
+                        isRefetching={isRefetching}
                         variant="embedded"
                         leftAction={<SmartSearchBar searchDef={contactSearchDef} placeholder="Buscar por nombre, RUT o tipo..." className="w-full" />}
                         defaultPageSize={20}

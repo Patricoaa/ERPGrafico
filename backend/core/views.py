@@ -6,6 +6,7 @@ from rest_framework.decorators import action, api_view
 from rest_framework.response import Response
 from rest_framework_simplejwt.views import TokenRefreshView, TokenObtainPairView
 from django.contrib.auth.models import Group
+from django.conf import settings
 from .models import User, CompanySettings, ActionLog, Attachment
 from .serializers import (
     UserSerializer, CompanySettingsSerializer, CustomTokenRefreshSerializer,
@@ -25,6 +26,22 @@ from accounting.models import JournalEntry
 
 class CustomTokenRefreshView(TokenRefreshView):
     serializer_class = CustomTokenRefreshSerializer
+
+    def post(self, request, *args, **kwargs):
+        response = super().post(request, *args, **kwargs)
+        if response.status_code == 200:
+            access_token = response.data.get('access')
+            if access_token:
+                response.set_cookie(
+                    'access_token',
+                    access_token,
+                    httponly=True,
+                    secure=not settings.DEBUG,
+                    samesite='Strict',
+                    max_age=1800,
+                    path='/',
+                )
+        return response
 
 class CustomTokenObtainPairView(TokenObtainPairView):
     def post(self, request, *args, **kwargs):
@@ -49,6 +66,22 @@ class CustomTokenObtainPairView(TokenObtainPairView):
             raise e
         
         if response.status_code == 200:
+            try:
+                # Set HttpOnly cookie for server-side auth
+                access_token = response.data.get('access')
+                if access_token:
+                    response.set_cookie(
+                        'access_token',
+                        access_token,
+                        httponly=True,
+                        secure=not settings.DEBUG,
+                        samesite='Strict',
+                        max_age=1800,
+                        path='/',
+                    )
+            except Exception as e:
+                print(f"Cookie set error: {e}")
+
             try:
                 # User is technically authenticated if we got 200
                 username = request.data.get('username')
@@ -400,6 +433,13 @@ class GlobalAuditLogView(APIView):
         combined.sort(key=lambda x: x['date'], reverse=True)
         
         return Response(combined[:limit])
+
+@api_view(['POST'])
+def logout_view(request):
+    """Clear the HttpOnly access_token cookie."""
+    response = Response({'detail': 'Sesión cerrada.'})
+    response.delete_cookie('access_token', path='/')
+    return response
 
 @api_view(['GET'])
 def server_time(request):

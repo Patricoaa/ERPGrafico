@@ -31,18 +31,24 @@ export const CATEGORIES_QUERY_KEY = CATEGORIES_KEYS.all
 
 // ─── Hook principal ──────────────────────────────────────────────────────────
 
-export function useCategories() {
+export function useCategories(initialData?: Category[]) {
     const queryClient = useQueryClient()
     const { markLocalMutation } = useRealtime()
 
-    const { data: categories, isLoading, refetch } = useQuery({
+    const query = useQuery({
         queryKey: CATEGORIES_KEYS.list(),
         queryFn: async (): Promise<Category[]> => {
             const response = await api.get<Category[]>('/inventory/categories/')
             return response.data
         },
         staleTime: 15 * 60 * 1000, // 15 min — datos quasi-estáticos
+        initialData,
+        placeholderData: (prev) => prev,
     })
+
+    const categories = query.data ?? []
+    const showSkeleton = query.isLoading && !categories.length
+    const refetch = query.refetch
 
     const invalidate = () => {
         queryClient.invalidateQueries({ queryKey: CATEGORIES_KEYS.all })
@@ -79,8 +85,9 @@ export function useCategories() {
     })
 
     return {
-        categories: categories ?? [],
-        isLoading,
+        categories,
+        isLoading: showSkeleton,
+        isRefetching: query.isFetching && !showSkeleton,
         refetch,
         saveCategory: saveCategoryMutation.mutateAsync,
         isSaving: saveCategoryMutation.isPending,
