@@ -335,7 +335,7 @@ class TreasuryService:
                 if partner.partner_pending_capital > 0:
                     source_acc = settings.partner_capital_receivable_account
                 else:
-                    source_acc = partner.partner_contribution_account or settings.partner_capital_contribution_account
+                    source_acc = settings.partner_capital_contribution_account
 
             if not source_acc:
                 if allocated is not None and allocated._meta.model_name in ('invoice', 'saleorder'):
@@ -345,13 +345,13 @@ class TreasuryService:
                     # entry. Fall back to movement.contact only when the document has no
                     # explicit customer.
                     customer = allocated.get_customer_for_payment() or movement.contact
-                    source_acc = (customer.account_receivable if customer else None) or settings.default_receivable_account
+                    source_acc = settings.default_receivable_account
                 elif movement.justify_reason:
                     # Operational Reasons (Tips, Adjustments)
                     source_acc = TreasuryService._get_reason_account(settings, movement.justify_reason, 'IN')
             
-            if not source_acc and movement.contact:
-                source_acc = movement.contact.account_receivable or settings.default_receivable_account
+            if not source_acc:
+                source_acc = settings.default_receivable_account
 
             if source_acc:
                 JournalItem.objects.create(entry=entry, account=source_acc, debit=0, credit=movement.amount)
@@ -370,20 +370,20 @@ class TreasuryService:
                   if partner.partner_dividends_payable_balance > 0:
                       target_acc = settings.partner_dividends_payable_account
                   else:
-                      target_acc = partner.partner_provisional_withdrawal_account or settings.partner_withdrawal_account or settings.pos_partner_withdrawal_account
+                      target_acc = settings.partner_provisional_withdrawal_account or settings.partner_withdrawal_account or settings.pos_partner_withdrawal_account
 
              if not target_acc:
                  if allocated is not None:
                       if allocated.is_sale_document():
-                          target_acc = (movement.contact.account_receivable if movement.contact else None) or settings.default_receivable_account
+                           target_acc = settings.default_receivable_account
                       else:
-                          # Supplier Account
-                          target_acc = (movement.contact.account_payable if movement.contact else None) or settings.default_payable_account
+                           # Supplier Account
+                           target_acc = settings.default_payable_account
                  elif movement.justify_reason:
                       target_acc = TreasuryService._get_reason_account(settings, movement.justify_reason, 'OUT')
-             
-             if not target_acc and movement.contact:
-                  target_acc = movement.contact.account_payable or settings.default_payable_account
+
+             if not target_acc:
+                 target_acc = settings.default_payable_account
 
              if not target_acc and movement.payroll:
                   from hr.models import GlobalHRSettings
@@ -770,11 +770,11 @@ class TreasuryService:
             settings = AccountingSettings.get_solo()
 
             if movement.sale_order:
-                partner_account = movement.contact.account_receivable or settings.default_receivable_account
+                partner_account = settings.default_receivable_account
                 treasury_acc_ref = from_account
                 entry_desc = f"Devolución pago cliente - {movement.contact.name if movement.contact else ''}"
             elif movement.purchase_order:
-                partner_account = movement.contact.account_payable or settings.default_payable_account
+                partner_account = settings.default_payable_account
                 treasury_acc_ref = to_account
                 entry_desc = f"Devolución pago proveedor - {movement.contact.name if movement.contact else ''}"
 
@@ -1194,7 +1194,7 @@ class TerminalBatchService:
         settings = AccountingSettings.get_solo()
         comm_bridge = provider.commission_expense_account or (settings.terminal_commission_bridge_account if settings else None)
         iva_bridge = provider.commission_iva_account or (settings.terminal_iva_bridge_account if settings else None)
-        payable_acc = supplier.account_payable or (settings.default_payable_account if settings else None)
+        payable_acc = settings.default_payable_account if settings else None
 
         if not (comm_bridge and iva_bridge and payable_acc):
             raise ValidationError("Faltan cuentas para cancelar las cuentas puente de comisión: configure cuentas de comisión/IVA en el proveedor (o globales) y la cuenta por pagar del contacto.")

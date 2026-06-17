@@ -3,7 +3,6 @@ from django.db import transaction
 from django.core.exceptions import ValidationError
 from django.utils.translation import gettext_lazy as _
 
-from accounting.models import AccountingSettings, Account
 from contacts.models import Contact
 
 logger = logging.getLogger(__name__)
@@ -20,57 +19,19 @@ class ContactPartnerService:
     def promote_to_partner(contact: Contact, *, user=None) -> Contact:
         """
         Promueve un Contact a Socio.
-        Crea las 4 sub-cuentas contables si la empresa las tiene configuradas.
+        Las cuentas contables ahora se usan desde AccountingSettings (configuración global).
         """
-        if contact.is_partner:
-            # Ya es socio, no hacer nada (idempotente) o simplemente actualizar
-            pass
-        else:
+        if not contact.is_partner:
             contact.is_partner = True
+            contact.save()
 
-        settings = AccountingSettings.get_solo()
-        if not settings:
-            raise ValidationError(_("No existe configuración contable global."))
-
-        # Mapeo: (campo en Contact, campo en AccountingSettings, Prefijo para el nombre)
-        account_specs = [
-            ('partner_contribution_account', 'partner_capital_contribution_account', 'C.A.'),
-            ('partner_provisional_withdrawal_account', 'partner_provisional_withdrawal_account', 'R.P.'),
-            ('partner_earnings_account', 'partner_current_year_earnings_account', 'Ut.'),
-            ('partner_dividends_payable_account', 'partner_dividends_payable_account', 'Div.'),
-        ]
-
-        accounts_created = []
-
-        for contact_field, settings_field, prefix in account_specs:
-            if not getattr(contact, f'{contact_field}_id'):
-                parent_account = getattr(settings, settings_field, None)
-                if parent_account:
-                    # Crear subcuenta
-                    new_acc = Account.objects.create(
-                        name=f"{prefix} {contact.name}",
-                        parent=parent_account,
-                        account_type=parent_account.account_type,
-                        # Para evitar que el usuario lo use libremente, se podría
-                        # marcar requires_partner_transaction=True, pero no existe esa flag.
-                    )
-                    setattr(contact, contact_field, new_acc)
-                    accounts_created.append(new_acc.name)
-                else:
-                    logger.warning(
-                        f"Configuración contable faltante: {settings_field}. "
-                        f"No se creó cuenta para el socio {contact.name}."
-                    )
-
-        contact.save()
-        
-        if accounts_created and user:
+        if user:
             from core.services import ActionLoggingService
             ActionLoggingService.log_action(
                 user=user,
                 action_type="CONTACT_PROMOTED",
-                description=f"Promovido a socio y creadas cuentas: {', '.join(accounts_created)}",
-                metadata={'contact_id': contact.id, 'accounts': accounts_created}
+                description=f"Promovido a socio: {contact.name}",
+                metadata={'contact_id': contact.id}
             )
 
         return contact
@@ -106,37 +67,6 @@ class ContactPartnerService:
             )
 
         contact.is_partner = False
-        
-        # Eliminar las 4 cuentas vinculadas (solo si no tienen asientos contables, lo cual 
-        # está garantizado parcialmente por los guards y on_delete=PROTECT en JournalItem).
-        # Para ser seguros, capturamos error de ProtectedError.
-        from django.db.models import ProtectedError
-        
-        account_fields = [
-            'partner_contribution_account',
-            'partner_provisional_withdrawal_account',
-            'partner_earnings_account',
-            'partner_dividends_payable_account',
-        ]
-
-        deleted_accounts = []
-
-        try:
-            for field in account_fields:
-                acc = getattr(contact, field)
-                if acc:
-                    # Desvincular primero
-                    setattr(contact, field, None)
-                    # Eliminar la cuenta del plan de cuentas
-                    # (Si tiene movimientos fallará con ProtectedError)
-                    deleted_accounts.append(acc.name)
-                    acc.delete()
-        except ProtectedError:
-            raise ValidationError(
-                _("No se puede degradar. Una o más cuentas de socio tienen asientos contables "
-                  "históricos. Contacte a soporte para anular las cuentas manualmente.")
-            )
-
         contact.save()
 
         if user:
@@ -145,7 +75,7 @@ class ContactPartnerService:
                 user=user,
                 action_type="CONTACT_DEMOTED",
                 description="Degradado de socio a contacto normal.",
-                metadata={'contact_id': contact.id, 'accounts_deleted': deleted_accounts}
+                metadata={'contact_id': contact.id}
             )
 
         return contact

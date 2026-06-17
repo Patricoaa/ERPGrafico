@@ -128,7 +128,7 @@ class StockService:
                     contra_account = settings.partner_capital_receivable_account
                 else:
                     # Direct Equity increase
-                    contra_account = partner_contact.partner_contribution_account
+                    contra_account = settings.partner_capital_contribution_account
             
             # Fallback
             if not contra_account:
@@ -142,7 +142,7 @@ class StockService:
                     contra_account = settings.partner_dividends_payable_account
                 else:
                     # Record provisional withdrawal (Equity contra)
-                    contra_account = partner_contact.partner_provisional_withdrawal_account
+                    contra_account = settings.partner_provisional_withdrawal_account
             
             # Fallback
             if not contra_account:

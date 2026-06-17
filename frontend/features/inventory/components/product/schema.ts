@@ -59,9 +59,6 @@ export const productSchema = z.object({
     // Contract Duration
     is_indefinite: z.boolean().default(true),
     contract_end_date: z.string().optional().or(z.literal("")).nullable(),
-    // Accounting
-    income_account: z.string().optional().or(z.literal("")).nullable(),
-    expense_account: z.string().optional().or(z.literal("")).nullable(),
     boms: z.array(z.object({
         id: z.number().optional(),
         name: z.string().min(1, "Nombre requerido"),
@@ -229,16 +226,6 @@ export const productSchema = z.object({
 }, {
     message: "Debe seleccionar un tipo de documento por defecto",
     path: ["default_invoice_type"]
-}).refine((data) => {
-    // SUBSCRIPTION: Accounting mapping
-    if (data.product_type === 'SUBSCRIPTION') {
-        if (!data.income_account || data.income_account === "") return false;
-        if (!data.expense_account || data.expense_account === "") return false;
-    }
-    return true;
-}, {
-    message: "El mapeo contable es obligatorio para suscripciones",
-    path: ["income_account"]
 })
 
 export type ProductFormValues = z.infer<typeof productSchema>

@@ -20,7 +20,8 @@ class ContactSaveT23Tests(TestCase):
     def test_contact_save_does_not_create_partner_accounts(self):
         """
         Test for T-23.
-        Creating a contact with is_partner=True directly should NOT create the 4 accounts.
+        Creating a contact with is_partner=True directly should succeed without errors.
+        Per-contact account FKs have been removed; global defaults from AccountingSettings are used.
         """
         contact = Contact.objects.create(
             name="Test Partner",
@@ -28,14 +29,13 @@ class ContactSaveT23Tests(TestCase):
             is_partner=True
         )
         
-        self.assertIsNone(contact.partner_contribution_account)
-        self.assertIsNone(contact.partner_provisional_withdrawal_account)
-        self.assertIsNone(contact.partner_earnings_account)
-        self.assertIsNone(contact.partner_dividends_payable_account)
+        promoted = ContactPartnerService.promote_to_partner(contact)
+        self.assertTrue(promoted.is_partner)
 
-    def test_promote_to_partner_creates_accounts(self):
+    def test_promote_to_partner_succeeds(self):
         """
-        Test that the ContactPartnerService creates the accounts correctly.
+        Test that ContactPartnerService.promote_to_partner succeeds.
+        Per-contact account FKs have been removed; global defaults from AccountingSettings are used.
         """
         contact = Contact.objects.create(
             name="Test Partner Service",
@@ -47,11 +47,6 @@ class ContactSaveT23Tests(TestCase):
         contact.refresh_from_db()
         
         self.assertTrue(contact.is_partner)
-        self.assertIsNotNone(contact.partner_contribution_account)
-        self.assertIsNotNone(contact.partner_provisional_withdrawal_account)
-        self.assertIsNotNone(contact.partner_earnings_account)
-        self.assertIsNotNone(contact.partner_dividends_payable_account)
-        self.assertTrue(contact.partner_contribution_account.name.startswith("C.A."))
 
     def test_default_customer_signal_switch(self):
         """

@@ -79,16 +79,12 @@ class ConsumableStrategy(ProductTypeStrategy):
 
     def get_income_account(self, product):
         settings = self._get_settings()
-        if product.income_account:
-            return product.income_account
         if product.category and product.category.income_account:
             return product.category.income_account
         return settings.default_revenue_account if settings else None
 
     def get_expense_account(self, product):
         settings = self._get_settings()
-        if product.expense_account:
-            return product.expense_account
         if product.category and product.category.expense_account:
             return product.category.expense_account
         return (settings.default_consumable_account or settings.default_expense_account) if settings else None
@@ -109,20 +105,16 @@ class StorableStrategy(ProductTypeStrategy):
         settings = self._get_settings()
         if product.category and product.category.asset_account:
             return product.category.asset_account
-        return (settings.storable_inventory_account or settings.default_inventory_account) if settings else None
+        return settings.storable_inventory_account if settings else None
 
     def get_income_account(self, product):
         settings = self._get_settings()
-        if product.income_account:
-            return product.income_account
         if product.category and product.category.income_account:
             return product.category.income_account
         return settings.default_revenue_account if settings else None
 
     def get_expense_account(self, product):
         settings = self._get_settings()
-        if product.expense_account:
-            return product.expense_account
         if product.category and product.category.expense_account:
             return product.category.expense_account
         return (settings.merchandise_cogs_account or settings.default_expense_account) if settings else None
@@ -143,20 +135,16 @@ class ManufacturableStrategy(ProductTypeStrategy):
         settings = self._get_settings()
         if product.category and product.category.asset_account:
             return product.category.asset_account
-        return (settings.manufacturable_inventory_account or settings.default_inventory_account) if settings else None
+        return settings.manufacturable_inventory_account if settings else None
 
     def get_income_account(self, product):
         settings = self._get_settings()
-        if product.income_account:
-            return product.income_account
         if product.category and product.category.income_account:
             return product.category.income_account
         return settings.default_revenue_account if settings else None
 
     def get_expense_account(self, product):
         settings = self._get_settings()
-        if product.expense_account:
-            return product.expense_account
         if product.category and product.category.expense_account:
             return product.category.expense_account
         return (settings.manufactured_cogs_account or settings.default_expense_account) if settings else None
@@ -186,16 +174,12 @@ class ServiceStrategy(ProductTypeStrategy):
 
     def get_income_account(self, product):
         settings = self._get_settings()
-        if product.income_account:
-            return product.income_account
         if product.category and product.category.income_account:
             return product.category.income_account
         return (settings.default_service_revenue_account or settings.default_revenue_account) if settings else None
 
     def get_expense_account(self, product):
         settings = self._get_settings()
-        if product.expense_account:
-            return product.expense_account
         if product.category and product.category.expense_account:
             return product.category.expense_account
         return (settings.default_service_expense_account or settings.default_expense_account) if settings else None
@@ -217,16 +201,12 @@ class SubscriptionStrategy(ProductTypeStrategy):
 
     def get_income_account(self, product):
         settings = self._get_settings()
-        if product.income_account:
-            return product.income_account
         if product.category and product.category.income_account:
             return product.category.income_account
         return (settings.default_subscription_revenue_account or settings.default_revenue_account) if settings else None
 
     def get_expense_account(self, product):
         settings = self._get_settings()
-        if product.expense_account:
-            return product.expense_account
         if product.category and product.category.expense_account:
             return product.category.expense_account
         return (settings.default_subscription_expense_account or settings.default_expense_account) if settings else None

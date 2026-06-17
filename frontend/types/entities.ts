@@ -58,8 +58,6 @@ export interface Product {
     can_be_purchased?: boolean
     track_inventory?: boolean
     receiving_warehouse?: number | { id: number; name: string }
-    income_account?: number | { id: number; name: string }
-    expense_account?: number | { id: number; name: string }
     preferred_supplier?: number | { id: number; name: string }
 
     // Manufacturing fields

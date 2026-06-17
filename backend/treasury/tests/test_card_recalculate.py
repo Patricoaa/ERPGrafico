@@ -56,7 +56,6 @@ def env(db):
     )
     supplier = Contact.objects.create(
         name='Proveedor Recalc', tax_id='76.555.555-5',
-        account_payable=payable_acc,
     )
 
     return {

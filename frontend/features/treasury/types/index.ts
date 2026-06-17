@@ -108,6 +108,8 @@ export interface PaymentMethod {
     method_type_display: string
     treasury_account: number
     treasury_account_name: string
+    settlement_account: number | null
+    settlement_account_name?: string
     is_active: boolean
     allow_for_sales: boolean
     allow_for_purchases: boolean
@@ -384,6 +386,7 @@ export interface PaymentMethodCreatePayload {
     name: string
     method_type: PaymentMethodType
     treasury_account: number
+    settlement_account?: number | null
     requires_reference?: boolean
     allow_for_sales?: boolean
     allow_for_purchases?: boolean

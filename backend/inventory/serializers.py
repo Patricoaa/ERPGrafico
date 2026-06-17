@@ -249,7 +249,7 @@ class ProductSerializer(serializers.ModelSerializer):
             'recurrence_period', 'renewal_notice_days',
             'is_variable_amount', 'is_dynamic_pricing', 'track_inventory', 'can_be_sold', 'can_be_purchased',
             'uom', 'sale_uom', 'purchase_uom', 'allowed_sale_uoms', 'receiving_warehouse',
-            'sale_price', 'sale_price_gross', 'cost_price', 'is_favorite', 'is_active', 'income_account', 'expense_account',
+            'sale_price', 'sale_price_gross', 'cost_price', 'is_favorite', 'is_active',
             'price_inheritance_mode', 'price_surcharge', 'effective_price_net',
             'uom_prices',
             'preferred_supplier', 'preferred_supplier_name',

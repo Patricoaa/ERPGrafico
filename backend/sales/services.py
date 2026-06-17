@@ -772,7 +772,7 @@ class SalesService:
 
         # 3. Accounting Entries
         # We try to use specific product accounts for NC/ND transparency
-        receivable_account = order.customer.account_receivable or settings.default_receivable_account
+        receivable_account = settings.default_receivable_account
         tax_account = settings.default_tax_payable_account
         
         total_amount = amount_net + amount_tax
@@ -912,7 +912,7 @@ class SalesService:
                 if line_cogs > 0:
                     # Get correct COGS and Inventory accounts from settings
                     # Priority: Product Override -> Settings Type-based -> Settings Global Fallback
-                    inventory_account = product.get_asset_account or settings.default_inventory_account
+                    inventory_account = product.get_asset_account
                     
                     # COGS Account selection
                     cogs_account = product.get_expense_account

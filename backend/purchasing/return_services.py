@@ -213,7 +213,7 @@ class PurchaseReturnService:
                 for line in return_doc.lines.all():
                     product = line.product
                     if product.track_inventory:
-                        inv_account = product.get_asset_account or settings.default_inventory_account
+                        inv_account = product.get_asset_account
                         line_val = (UoMService.convert_quantity(line.quantity, line.uom or product.uom, product.uom) * line.unit_cost)
                         
                         if line_val > 0 and inv_account:

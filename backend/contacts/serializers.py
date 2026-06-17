@@ -27,13 +27,11 @@ class ContactSerializer(serializers.ModelSerializer):
         model = Contact
         fields = [
             'id', 'code', 'display_id', 'name', 'tax_id', 'contact_name', 'email', 'phone', 'address',
-            'account_receivable', 'account_payable',
             'is_customer', 'is_supplier', 'contact_type', 'active_roles', 'roles',
             'is_default_customer', 'is_default_vendor',
             'credit_enabled', 'credit_blocked', 'credit_limit', 'credit_days', 'credit_balance_used', 'credit_available', 'credit_aging', 'credit_balance',
             'credit_auto_blocked', 'credit_risk_level', 'credit_last_evaluated',
             'is_partner', 'partner_equity_percentage', 'partner_since',
-            'partner_contribution_account', 'partner_provisional_withdrawal_account', 'partner_earnings_account',
             'partner_balance',
             'partner_total_contributions', 'partner_total_paid_in', 'partner_pending_capital', 'partner_excess_capital',
             'partner_provisional_withdrawals_balance', 'partner_total_withdrawals',

@@ -567,7 +567,7 @@ class SaleOrderViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
             return Response({"error": "No hay una cuenta de gasto por incobrabilidad configurada."}, status=400)
 
         contact = order.customer
-        receivable_account = contact.account_receivable or settings.default_receivable_account
+        receivable_account = settings.default_receivable_account
         if not receivable_account:
              return Response({"error": "No se encontró una cuenta por cobrar configurada."}, status=400)
 

@@ -542,7 +542,6 @@ class Command(BaseCommand):
             defaults={
                 'name': "Cliente Ocasional",
                 'email': "contacto@clienteocasional.cl",
-                'account_receivable': accounts['receivable'],
                 'is_default_customer': True,
             }
         )
@@ -582,10 +581,6 @@ class Command(BaseCommand):
                 'name': "Socio Administrador (Socio A)",
                 'email': "socio.a@empresa.cl",
                 'is_partner': True,
-                'partner_contribution_account': acc_cap_a,
-                'partner_earnings_account': acc_earn_a,
-                'partner_receivable_account': acc_recv_a,
-                'partner_dividends_payable_account': acc_div_a,
                 'partner_equity_percentage': Decimal('50.00'),
             }
         )
@@ -604,10 +599,6 @@ class Command(BaseCommand):
                 'name': "Socio Capitalista (Socio B)",
                 'email': "socio.b@empresa.cl",
                 'is_partner': True,
-                'partner_contribution_account': acc_cap_b,
-                'partner_earnings_account': acc_earn_b,
-                'partner_receivable_account': acc_recv_b,
-                'partner_dividends_payable_account': acc_div_b,
                 'partner_equity_percentage': Decimal('50.00'),
             }
         )
@@ -615,12 +606,12 @@ class Command(BaseCommand):
             PartnerEquityStake.objects.create(partner=socio_b, percentage=Decimal('50.00'), effective_from=timezone.now().date())
 
         # 3. Regular Customers and Suppliers
-        c1, _ = Contact.objects.get_or_create(tax_id="76111222-3", defaults={'name': "Editorial Amanecer S.A.", 'email': "contacto@amanecer.cl", 'account_receivable': accounts['receivable']})
-        c2, _ = Contact.objects.get_or_create(tax_id="77333444-5", defaults={'name': "Publicidad Creativa Ltda", 'email': "ventas@pubcreativa.cl", 'account_receivable': accounts['receivable']})
+        c1, _ = Contact.objects.get_or_create(tax_id="76111222-3", defaults={'name': "Editorial Amanecer S.A.", 'email': "contacto@amanecer.cl"})
+        c2, _ = Contact.objects.get_or_create(tax_id="77333444-5", defaults={'name': "Publicidad Creativa Ltda", 'email': "ventas@pubcreativa.cl"})
         
-        s1, _ = Contact.objects.get_or_create(tax_id="88222333-k", defaults={'name': "Distribuidora de Papeles S.A.", 'email': "pedidos@papelessa.cl", 'account_payable': accounts['payable']})
-        s2, _ = Contact.objects.get_or_create(tax_id="99555666-0", defaults={'name': "Tintas Gráficas SpA", 'email': "tintas@graficas.cl", 'account_payable': accounts['payable']})
-        s3, _ = Contact.objects.get_or_create(tax_id="76444555-8", defaults={'name': "Servicios Eléctricos Enel", 'email': "factura@enel.cl", 'account_payable': accounts['payable']})
+        s1, _ = Contact.objects.get_or_create(tax_id="88222333-k", defaults={'name': "Distribuidora de Papeles S.A.", 'email': "pedidos@papelessa.cl"})
+        s2, _ = Contact.objects.get_or_create(tax_id="99555666-0", defaults={'name': "Tintas Gráficas SpA", 'email': "tintas@graficas.cl"})
+        s3, _ = Contact.objects.get_or_create(tax_id="76444555-8", defaults={'name': "Servicios Eléctricos Enel", 'email': "factura@enel.cl"})
 
         return {
             'default_customer': c_default,
@@ -946,8 +937,8 @@ class Command(BaseCommand):
             sub_per_owner = (total_subscription / num_owners).quantize(Decimal('1'))
             
             for owner in owners:
-                owner_capital_account = owner.partner_contribution_account or accounts['capital']
-                owner_recv_account = owner.partner_receivable_account or accounts['receivable']
+                owner_capital_account = accounts['capital']
+                owner_recv_account = accounts['receivable']
                 
                 # Debit: Cuentas por Cobrar Socios
                 JournalItem.objects.create(
@@ -985,7 +976,7 @@ class Command(BaseCommand):
             diff = total_bank - total_distributed
             
             for i, owner in enumerate(owners):
-                owner_recv_account = owner.partner_receivable_account or accounts['receivable']
+                owner_recv_account = accounts['receivable']
                 val = val_per_owner
                 if i == 0:
                     val += diff
@@ -1212,7 +1203,7 @@ class Command(BaseCommand):
                     val = per_owner_value if i < len(owners) - 1 else total_value - allocated_value
                     allocated_value += val
                     
-                    owner_recv_account = owner.partner_receivable_account or accounts['receivable']
+                    owner_recv_account = accounts['receivable']
                     
                     # Credit: Cuentas por Cobrar Socios (reduces debt)
                     JournalItem.objects.create(
@@ -1549,7 +1540,7 @@ class Command(BaseCommand):
 
         tuu_contact, _ = Contact.objects.get_or_create(
             tax_id="76.354.771-8",
-            defaults={'name': "TUU SpA", 'email': "soporte@tuu.cl", 'account_payable': accounts['payable']}
+            defaults={'name': "TUU SpA", 'email': "soporte@tuu.cl"}
         )
 
         # Service product for commissions

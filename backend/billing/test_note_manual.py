@@ -45,7 +45,7 @@ def setup_test_data():
             'default_receivable_account': acc_receivable,
             'default_revenue_account': acc_revenue,
             'default_tax_payable_account': acc_tax_payable,
-            'default_inventory_account': acc_inventory
+            'storable_inventory_account': acc_inventory
         }
     )
     
@@ -67,7 +67,7 @@ def setup_test_data():
     # Customer
     customer, _ = Contact.objects.get_or_create(
         name='Test Customer NC',
-        defaults={'tax_id': '11111111-1', 'account_receivable': acc_receivable}
+        defaults={'tax_id': '11111111-1'}
     )
     
     # Warehouse

@@ -323,7 +323,7 @@ class ContactViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
         if not settings or not settings.default_uncollectible_expense_account:
             return Response({"error": "No hay una cuenta de gasto por incobrabilidad configurada en Contabilidad."}, status=400)
             
-        receivable_account = contact.account_receivable or settings.default_receivable_account
+        receivable_account = settings.default_receivable_account
         if not receivable_account:
              return Response({"error": "No se encontró una cuenta por cobrar configurada para este contacto o sistema."}, status=400)
 
@@ -591,34 +591,12 @@ class ContactViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
     def setup_partner(self, request, pk=None):
         """Enable or update partner specific settings for a contact"""
         contact = self.get_object()
-        from accounting.models import Account
-        
         is_partner = request.data.get('is_partner', contact.is_partner)
         equity_percentage = request.data.get('partner_equity_percentage')
-        
-        # New accounts
-        contribution_id = request.data.get('partner_contribution_account_id')
-        withdrawal_id = request.data.get('partner_provisional_withdrawal_account_id')
-        earnings_id = request.data.get('partner_earnings_account_id')
         
         contact.is_partner = is_partner
         if equity_percentage is not None:
             contact.partner_equity_percentage = equity_percentage
-            
-        def get_acc(vid):
-            if not vid: return None
-            try:
-                return Account.objects.get(id=vid)
-            except Account.DoesNotExist:
-                return None
-
-        # Update accounts if provided in request
-        if 'partner_contribution_account_id' in request.data:
-            contact.partner_contribution_account = get_acc(contribution_id)
-        if 'partner_provisional_withdrawal_account_id' in request.data:
-            contact.partner_provisional_withdrawal_account = get_acc(withdrawal_id)
-        if 'partner_earnings_account_id' in request.data:
-            contact.partner_earnings_account = get_acc(earnings_id)
             
         contact.save()
         return Response(self.get_serializer(contact).data)

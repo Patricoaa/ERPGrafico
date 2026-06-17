@@ -237,7 +237,7 @@ class ReturnService:
                 source_object_id=return_doc.id,
             )
             
-            inv_acc = settings.default_inventory_account
+            inv_acc = settings.storable_inventory_account or settings.manufacturable_inventory_account
             cogs_acc = (settings.stock_input_account or 
                         settings.merchandise_cogs_account or 
                         settings.default_expense_account)

@@ -54,7 +54,6 @@ def _make_env():
     )
     supplier = Contact.objects.create(
         name='Proveedor Cuotas', tax_id='76.123.456-7',
-        account_payable=payable_acc,
     )
     return {
         'user': user, 'bank': bank, 'bank_ta': bank_ta,

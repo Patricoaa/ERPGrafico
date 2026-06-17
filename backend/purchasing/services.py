@@ -323,7 +323,7 @@ class PurchasingService:
             line.purchase_line.save()
             
             # 3. Accounting
-            asset_account = line.product.get_asset_account or (settings.default_inventory_account if settings else None)
+            asset_account = line.product.get_asset_account
             line_total = abs(line.total_cost)
             total_amount += line_total
             
@@ -642,7 +642,7 @@ class PurchasingService:
             invoice.corrected_invoice = original_invoice
             invoice.save()
 
-        payable_account = order.supplier.account_payable or settings.default_payable_account
+        payable_account = settings.default_payable_account
         if not payable_account:
             raise ValidationError("No se encontró cuenta por pagar para el proveedor.")
             
@@ -655,7 +655,7 @@ class PurchasingService:
                  # Strict error is safer to prevent accounting mess.
                  raise ValidationError(f"La cuenta asignada ({payable_account.name}) no es de Pasivo. Verifique la configuración del proveedor.")
 
-        stock_input_account = settings.stock_input_account or settings.default_inventory_account
+        stock_input_account = settings.stock_input_account
         if not stock_input_account:
             raise ValidationError("No se encontró cuenta de entrada de stock.")
 
@@ -714,10 +714,16 @@ class PurchasingService:
                 # BOLETA: Tax was capitalized into product cost
                 # For simplicity and balance, we use a global adjustment to inventory 
                 # instead of detailed per-product logic that can cause rounding remainders.
+                inv_account = settings.storable_inventory_account or settings.manufacturable_inventory_account
+                if not inv_account:
+                    raise ValidationError(
+                        "Falta cuenta de inventario para reversar IVA capitalizado de Boleta. "
+                        "Configure storable_inventory_account o manufacturable_inventory_account."
+                    )
                 if note_type == Invoice.DTEType.NOTA_CREDITO:
                     JournalItem.objects.create(
                         entry=entry,
-                        account=settings.default_inventory_account,
+                        account=inv_account,
                         debit=0,
                         credit=amount_tax,
                         label="Reverso IVA Capitalizado (Global)"
@@ -725,7 +731,7 @@ class PurchasingService:
                 else:
                     JournalItem.objects.create(
                         entry=entry,
-                        account=settings.default_inventory_account,
+                        account=inv_account,
                         debit=amount_tax,
                         credit=0,
                         label="IVA Capitalizado (Global)"
@@ -821,7 +827,7 @@ class PurchasingService:
                 # We need to reverse the Reception: Dr Stock Input (Liability), Cr Inventory (Asset)
                 # This Dr Stock Input cancels the Cr Stock Input from the Financial Reversal (Step 4)
                 
-                inventory_account = purchase_line.product.get_asset_account or settings.default_inventory_account
+                inventory_account = purchase_line.product.get_asset_account
                 line_cost = (quantity * purchase_line.unit_cost).quantize(Decimal('0.01'), rounding='ROUND_HALF_UP')
                 
                 if line_cost > 0:

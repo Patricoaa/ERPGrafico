@@ -937,7 +937,7 @@ class WorkOrderService:
                 
                 # Get debit account (Asset if track_inventory, Expense if not)
                 if product.track_inventory:
-                    debit_account = product.get_asset_account or settings.default_inventory_account
+                    debit_account = product.get_asset_account
                     label = f"Ingreso Inventario: {product.name[:100]}"
                 else:
                     debit_account = product.get_expense_account or settings.default_expense_account
@@ -973,7 +973,7 @@ class WorkOrderService:
                     component = consumption.product
                     comp_cost = (consumption.quantity * component.cost_price).quantize(Decimal('0.01'))
                     
-                    comp_inventory_account = component.get_asset_account or settings.default_inventory_account
+                    comp_inventory_account = component.get_asset_account
                     if not comp_inventory_account:
                         raise ValidationError(f"Falta cuenta de inventario para {component.internal_code}")
                     

@@ -41,7 +41,7 @@ class InventoryCostingTestCase(TestCase):
             account_type=AccountType.ASSET
         )
         
-        self.settings.default_inventory_account = self.inventory_account
+        self.settings.storable_inventory_account = self.inventory_account
         self.settings.default_payable_account = self.payable_account
         self.settings.stock_input_account = self.stock_input_account
         self.settings.default_tax_receivable_account = self.tax_receivable_account
@@ -71,7 +71,6 @@ class InventoryCostingTestCase(TestCase):
         self.supplier = Contact.objects.create(
             name="Test Supplier",
             contact_type="SUPPLIER",
-            account_payable=self.payable_account
         )
     
     def test_boleta_capitalizes_vat(self):
