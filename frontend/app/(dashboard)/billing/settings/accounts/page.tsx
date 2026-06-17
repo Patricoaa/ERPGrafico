@@ -1,5 +1,5 @@
-import { BillingSettingsView } from "@/features/settings"
+import { BillingAccountsView } from "@/features/settings"
 
-export default async function BillingSettingsAccountsPage() {
-    return <BillingSettingsView activeTab="accounts" />
+export default async function BillingAccountsPage() {
+    return <BillingAccountsView />
 }

@@ -1,5 +1,5 @@
-import { InventorySettingsView } from "@/features/settings"
+import { InventoryAccountsView } from "@/features/settings"
 
-export default async function InventorySettingsAccountsPage() {
-    return <InventorySettingsView activeTab="accounts" />
+export default async function InventoryAccountsPage() {
+    return <InventoryAccountsView />
 }

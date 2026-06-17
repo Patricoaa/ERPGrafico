@@ -164,7 +164,7 @@ export function UsersSettingsView({ activeTab }: UsersSettingsViewProps) {
     ), [])
 
     return (
-        <div className="pt-4 h-full flex flex-col">
+        <div className="pt-4 h-full flex flex-col overflow-y-auto">
             <Tabs value={activeTab} className="h-full flex flex-col">
                 <FadeIn key={activeTab} className="flex-1 min-h-0">
                     <TabsContent value="users" className="mt-0 outline-none space-y-4 h-full flex flex-col">

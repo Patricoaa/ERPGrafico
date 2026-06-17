@@ -298,7 +298,7 @@ function PasswordChangeCard() {
     }
 
     return (
-        <Card variant="transparent">
+        <Card >
             <CardHeader>
                 <CardTitle className="text-lg text-primary">Cambiar Contraseña</CardTitle>
                 <CardDescription>Actualice sus credenciales de acceso</CardDescription>
@@ -586,7 +586,7 @@ function PersonalTab({
             {/* Sub-tab 1: Ficha de Empleado */}
             {activeSubTab === "employee" && (
                 <FadeIn yOffset={10}>
-                    <Card variant="transparent">
+                    <Card >
                         <CardHeader>
                             <CardTitle className="text-lg text-primary">Ficha de Empleado</CardTitle>
                             <CardDescription>
@@ -646,7 +646,7 @@ function PersonalTab({
             {/* Sub-tab 2: Liquidaciones */}
             {activeSubTab === "payrolls" && (
                 <FadeIn delay={0.1} yOffset={10}>
-                    <Card variant="transparent">
+                    <Card >
                         <CardHeader>
                             <CardTitle className="text-lg text-primary">Historial de Liquidaciones</CardTitle>
                             <CardDescription>
@@ -721,7 +721,7 @@ function PersonalTab({
             {/* Sub-tab 3: Pagos */}
             {activeSubTab === "payments" && (
                 <FadeIn delay={0.2} yOffset={10}>
-                    <Card variant="transparent">
+                    <Card >
                         <CardHeader>
                             <CardTitle className="text-lg text-primary">Historial de Pagos y Anticipos</CardTitle>
                             <CardDescription>
@@ -792,7 +792,7 @@ function PinChangeCard() {
     }
 
     return (
-        <Card variant="transparent">
+        <Card >
             <CardHeader>
                 <CardTitle className="text-lg text-primary">Pin de Seguridad POS</CardTitle>
                 <CardDescription>Defina su PIN para operaciones en Punto de Venta</CardDescription>

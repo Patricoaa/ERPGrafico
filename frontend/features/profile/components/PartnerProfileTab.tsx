@@ -156,7 +156,7 @@ export function PartnerProfileTab({ contactId }: Props) {
                 {/* Section 1: Metrics & Summary */}
                 <AccordionItem value="summary" className="border-none">
                     <FadeIn yOffset={10}>
-                        <Card variant="transparent">
+                        <Card >
                             <AccordionTrigger className="hover:no-underline py-0">
                                 <CardHeader className="w-full">
                                     <CardTitle className="text-lg text-primary">Resumen Patrimonial</CardTitle>
@@ -193,7 +193,7 @@ export function PartnerProfileTab({ contactId }: Props) {
                 {/* Section 2: Societal Info */}
                 <AccordionItem value="info" className="border-none">
                     <FadeIn delay={0.1} yOffset={10}>
-                        <Card variant="transparent">
+                        <Card >
                             <AccordionTrigger className="hover:no-underline py-0">
                                 <CardHeader className="w-full">
                                     <CardTitle className="text-lg text-primary">Información Societaria</CardTitle>
@@ -225,7 +225,7 @@ export function PartnerProfileTab({ contactId }: Props) {
                 {/* Section 3: History */}
                 <AccordionItem value="history" className="border-none">
                     <FadeIn delay={0.2} yOffset={10}>
-                        <Card variant="transparent">
+                        <Card >
                             <AccordionTrigger className="hover:no-underline py-0">
                                 <CardHeader className="w-full">
                                     <CardTitle className="text-lg text-primary">Historial de Capital</CardTitle>
