@@ -91,6 +91,7 @@ export * from './LabeledSelect';
 export * from './LabeledContainer';
 export * from './LabeledSwitch';
 export * from './LabeledCheckbox';
+export * from './LabeledCheckboxGroup';
 export * from './NotchedButton';
 export * from './MultiTagInput';
 export * from './MultiSelectTagInput';

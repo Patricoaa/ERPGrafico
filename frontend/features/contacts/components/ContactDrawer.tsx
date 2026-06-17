@@ -38,7 +38,7 @@ import { DataTable } from '@/components/shared'
 import { ColumnDef } from "@tanstack/react-table"
 
 import { getHubStatuses } from '@/features/orders/utils/status'
-import { LabeledInput, UnderlineTabs, UnderlineTabsContent, type TabItem, FormFooter, FormSection, FormSplitLayout, SkeletonShell } from "@/components/shared"
+import { LabeledInput, LabeledContainer, LabeledCheckboxGroup, UnderlineTabs, UnderlineTabsContent, type TabItem, FormFooter, FormSection, FormSplitLayout, SkeletonShell } from "@/components/shared"
 import { formatCurrency } from "@/lib/money"
 
 const contactSchema = z.object({
@@ -323,107 +323,67 @@ export default function ContactDrawer({ open, onOpenChange, contact, onSuccess, 
                                         <div className="space-y-4">
                                             <FormSection title="Estado y Roles" icon={Scale} />
 
-                                            {/* Defaults Section */}
-                                            <div className="flex items-center gap-8 p-4 bg-muted/5 rounded-md border border-primary/5">
-                                                <FormField
-                                                    control={form.control}
-                                                    name="is_default_customer"
-                                                    render={({ field }) => (
-                                                        <FormItem className="flex flex-row items-center space-x-3 space-y-0 group cursor-pointer">
-                                                            <FormControl>
-                                                                <Checkbox
-                                                                    checked={field.value}
-                                                                    onCheckedChange={field.onChange}
-                                                                />
-                                                            </FormControl>
-                                                            <div className="space-y-0.5">
-                                                                <FormLabel className="text-[11px] font-black uppercase tracking-widest cursor-pointer group-hover:text-primary transition-colors">
-                                                                    Cliente por defecto
-                                                                </FormLabel>
-                                                            </div>
-                                                        </FormItem>
-                                                    )}
-                                                />
-                                                <Separator orientation="vertical" className="h-8" />
-                                                <FormField
-                                                    control={form.control}
-                                                    name="is_default_vendor"
-                                                    render={({ field }) => (
-                                                        <FormItem className="flex flex-row items-center space-x-3 space-y-0 group cursor-pointer">
-                                                            <FormControl>
-                                                                <Checkbox
-                                                                    checked={field.value}
-                                                                    onCheckedChange={field.onChange}
-                                                                />
-                                                            </FormControl>
-                                                            <div className="space-y-0.5">
-                                                                <FormLabel className="text-[11px] font-black uppercase tracking-widest cursor-pointer group-hover:text-primary transition-colors">
-                                                                    Proveedor por defecto
-                                                                </FormLabel>
-                                                            </div>
-                                                        </FormItem>
-                                                    )}
-                                                />
-                                            </div>
+                                            <LabeledContainer label="Predeterminados">
+                                                <div className="flex items-center gap-8 w-full px-3 py-1">
+                                                    <FormField
+                                                        control={form.control}
+                                                        name="is_default_customer"
+                                                        render={({ field }) => (
+                                                            <FormItem className="flex flex-row items-center space-x-3 space-y-0 group cursor-pointer">
+                                                                <FormControl>
+                                                                    <Checkbox
+                                                                        checked={field.value}
+                                                                        onCheckedChange={field.onChange}
+                                                                    />
+                                                                </FormControl>
+                                                                <div className="space-y-0.5">
+                                                                    <FormLabel className="text-[11px] font-black uppercase tracking-widest cursor-pointer group-hover:text-primary transition-colors">
+                                                                        Cliente por defecto
+                                                                    </FormLabel>
+                                                                </div>
+                                                            </FormItem>
+                                                        )}
+                                                    />
+                                                    <Separator orientation="vertical" className="h-8" />
+                                                    <FormField
+                                                        control={form.control}
+                                                        name="is_default_vendor"
+                                                        render={({ field }) => (
+                                                            <FormItem className="flex flex-row items-center space-x-3 space-y-0 group cursor-pointer">
+                                                                <FormControl>
+                                                                    <Checkbox
+                                                                        checked={field.value}
+                                                                        onCheckedChange={field.onChange}
+                                                                    />
+                                                                </FormControl>
+                                                                <div className="space-y-0.5">
+                                                                    <FormLabel className="text-[11px] font-black uppercase tracking-widest cursor-pointer group-hover:text-primary transition-colors">
+                                                                        Proveedor por defecto
+                                                                    </FormLabel>
+                                                                </div>
+                                                            </FormItem>
+                                                        )}
+                                                    />
+                                                </div>
+                                            </LabeledContainer>
 
-                                            {/* Manual Roles Selection */}
                                             <FormField
                                                 control={form.control}
                                                 name="roles"
                                                 render={({ field }) => (
-                                                    <FormItem className="space-y-2">
-                                                        <FormLabel className="text-xs font-bold uppercase tracking-widest text-muted-foreground">
-                                                            Roles Manuales Asignados
-                                                        </FormLabel>
-                                                        <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                                                            {[
-                                                                { id: "CUSTOMER", label: "Cliente", desc: "Permite emitir notas de venta y facturas" },
-                                                                { id: "SUPPLIER", label: "Proveedor", desc: "Permite emitir órdenes de compra" },
-                                                                { id: "RELATED", label: "Relacionado", desc: "Contacto para órdenes de trabajo" },
-                                                                { id: "PARTNER", label: "Socio", desc: "Socio aportador de capital" },
-                                                                { id: "CARRIER", label: "Transportista", desc: "Empresa de transportes o despacho" },
-                                                            ].map((role) => {
-                                                                const checked = field.value?.includes(role.id)
-                                                                return (
-                                                                    <div
-                                                                        key={role.id}
-                                                                        className={`flex items-start space-x-3 p-3 rounded-lg border transition-all cursor-pointer select-none ${checked
-                                                                                ? "border-primary bg-primary/5 shadow-sm"
-                                                                                : "border-muted hover:border-muted-foreground/30 bg-card"
-                                                                            }`}
-                                                                        onClick={() => {
-                                                                            const nextValue = checked
-                                                                                ? field.value.filter((v: string) => v !== role.id)
-                                                                                : [...(field.value || []), role.id]
-                                                                            field.onChange(nextValue)
-                                                                        }}
-                                                                    >
-                                                                        <Checkbox
-                                                                            id={`role-${role.id}`}
-                                                                            checked={checked}
-                                                                            onCheckedChange={(isChecked) => {
-                                                                                const nextValue = isChecked
-                                                                                    ? [...(field.value || []), role.id]
-                                                                                    : field.value.filter((v: string) => v !== role.id)
-                                                                                field.onChange(nextValue)
-                                                                            }}
-                                                                        />
-                                                                        <div className="space-y-1 leading-none">
-                                                                            <label
-                                                                                htmlFor={`role-${role.id}`}
-                                                                                className="text-sm font-semibold cursor-pointer"
-                                                                            >
-                                                                                {role.label}
-                                                                            </label>
-                                                                            <p className="text-[11px] text-muted-foreground">
-                                                                                {role.desc}
-                                                                            </p>
-                                                                        </div>
-                                                                    </div>
-                                                                )
-                                                            })}
-                                                        </div>
-                                                    </FormItem>
+                                                    <LabeledCheckboxGroup
+                                                        columns={2}
+                                                        label="Roles Manuales Asignados"
+                                                        items={[
+                                                            { value: "CUSTOMER", label: "Cliente", description: "Permite emitir notas de venta y facturas" },
+                                                            { value: "SUPPLIER", label: "Proveedor", description: "Permite emitir órdenes de compra" },
+                                                            { value: "RELATED", label: "Relacionado", description: "Contacto para órdenes de trabajo" },
+                                                            { value: "PARTNER", label: "Socio", description: "Socio aportador de capital" },
+                                                            { value: "CARRIER", label: "Transportista", description: "Empresa de transportes o despacho" },
+                                                        ]}
+                                                        value={field.value || []}
+                                                        onChange={field.onChange}
+                                                    />
                                                 )}
                                             />
 

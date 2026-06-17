@@ -1,7 +1,6 @@
 "use client"
 
-import { DocumentAttachmentDropzone, LabeledInput, PeriodValidationDateInput } from '@/components/shared'
-import { Checkbox } from "@/components/ui/checkbox"
+import { DocumentAttachmentDropzone, LabeledInput, LabeledCheckbox, PeriodValidationDateInput } from '@/components/shared'
 import { FileText, Calendar, Hash, ShieldAlert } from "lucide-react"
 import { useServerDate } from "@/hooks/useServerDate"
 import { useEffect } from "react"
@@ -48,30 +47,25 @@ export function Step3_Registration({
             </div>
 
             <div className="space-y-4">
-                {/* Pending Checkbox - Styled as in Step1_DTE */}
-                <div className="flex items-center space-x-2 p-3 bg-muted/30 rounded-lg border border-dashed transition-all hover:bg-muted/50">
-                    <Checkbox
-                        id="is_pending"
-                        checked={formData.is_pending}
-                        onCheckedChange={(val) => {
-                            const isChecked = !!val;
-                            if (isChecked) {
-                                setData({
-                                    ...formData,
-                                    is_pending: true,
-                                    document_number: '',
-                                    attachment: null
-                                });
-                                onPeriodValidityChange?.(true);
-                            } else {
-                                setData({ ...formData, is_pending: false });
-                            }
-                        }}
-                    />
-                    <label htmlFor="is_pending" className="text-xs font-medium cursor-pointer">
-                        Emitiré/recibiré la nota luego
-                    </label>
-                </div>
+                <LabeledCheckbox
+                    label="Documento Pendiente"
+                    description="Emitiré/recibiré la nota luego"
+                    checked={formData.is_pending}
+                    onCheckedChange={(val) => {
+                        const isChecked = !!val;
+                        if (isChecked) {
+                            setData({
+                                ...formData,
+                                is_pending: true,
+                                document_number: '',
+                                attachment: null
+                            });
+                            onPeriodValidityChange?.(true);
+                        } else {
+                            setData({ ...formData, is_pending: false });
+                        }
+                    }}
+                />
 
                 {!formData.is_pending && (
                     <div className="space-y-6 animate-in fade-in slide-in-from-top-2 duration-300">

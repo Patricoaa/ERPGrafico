@@ -11,10 +11,9 @@ import { toast } from "sonner"
 import { usersApi } from "../api/usersApi"
 import { useSingleUser } from "../hooks/useUserSearch"
 import { Button } from "@/components/ui/button"
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
+import { Form, FormField } from "@/components/ui/form"
 import { Plus, User, ShieldCheck, Printer } from "lucide-react"
-import { Drawer, CancelButton, ActionSlideButton, LabeledInput, FormSection, UnderlineTabs, UnderlineTabsContent, type TabItem, FormSplitLayout, FormFooter, LabeledSelect, LabeledSwitch, SkeletonShell } from "@/components/shared"
-import { Checkbox } from "@/components/ui/checkbox"
+import { Drawer, CancelButton, ActionSlideButton, LabeledInput, LabeledCheckboxGroup, FormSection, UnderlineTabs, UnderlineTabsContent, type TabItem, FormSplitLayout, FormFooter, LabeledSelect, LabeledSwitch, SkeletonShell } from "@/components/shared"
 import { AdvancedContactSelector } from "@/components/selectors/AdvancedContactSelector"
 import { AppGroup } from "@/types/entities"
 import { useReactToPrint } from "react-to-print"
@@ -382,51 +381,25 @@ export function UserDrawer({ auditSidebar, initialData, onSuccess, trigger, open
                                                                     label="Nivel de Permisos (Rol)"
                                                                     required
                                                                     error={fieldState.error?.message}
-                                                                    hint="Define la capacidad técnica global del usuario."
                                                                     options={availableRoles.map(([val, label]) => ({ value: val, label }))}
                                                                     value={field.value}
                                                                     onChange={field.onChange}
                                                                 />
                                                             )}
                                                         />
-                                                        <div className="space-y-4">
-                                                            <FormSection title="Equipos Funcionales" icon={ShieldCheck} />
-                                                            <FormField
-                                                                control={form.control}
-                                                                name="functional_groups"
-                                                                render={() => (
-                                                                    <FormItem>
-                                                                        <div className="grid grid-cols-2 gap-4">
-                                                                            {availableGroups.map((group) => (
-                                                                                <FormField
-                                                                                    key={group.id}
-                                                                                    control={form.control}
-                                                                                    name="functional_groups"
-                                                                                    render={({ field }) => (
-                                                                                        <FormItem className="flex flex-row items-center space-x-3 space-y-0 p-3 bg-muted/5 rounded-xl border border-primary/5 hover:border-primary/20 hover:bg-muted/10 transition-all cursor-pointer group">
-                                                                                            <FormControl>
-                                                                                                <Checkbox
-                                                                                                    checked={field.value?.includes(group.name)}
-                                                                                                    onCheckedChange={(checked) => {
-                                                                                                        return checked
-                                                                                                            ? field.onChange([...field.value, group.name])
-                                                                                                            : field.onChange(field.value?.filter((v) => v !== group.name))
-                                                                                                    }}
-                                                                                                />
-                                                                                            </FormControl>
-                                                                                            <FormLabel className="text-[11px] font-black uppercase tracking-widest cursor-pointer w-full group-hover:text-primary transition-colors">
-                                                                                                {group.name}
-                                                                                            </FormLabel>
-                                                                                        </FormItem>
-                                                                                    )}
-                                                                                />
-                                                                            ))}
-                                                                        </div>
-                                                                        <FormMessage />
-                                                                    </FormItem>
-                                                                )}
-                                                            />
-                                                        </div>
+                                                        <FormField
+                                                            control={form.control}
+                                                            name="functional_groups"
+                                                            render={({ field }) => (
+                                                                 <LabeledCheckboxGroup
+                                                                     columns={2}
+                                                                     label="Equipos Funcionales"
+                                                                     items={availableGroups.map((g) => ({ value: g.name, label: g.name }))}
+                                                                     value={field.value || []}
+                                                                     onChange={field.onChange}
+                                                                 />
+                                                            )}
+                                                        />
                                                     </div>
                                                 </div>
                                             </FormSplitLayout>
