@@ -386,15 +386,15 @@ class TreasuryService:
                  target_acc = settings.default_payable_account
 
              if not target_acc and movement.payroll:
-                  from hr.models import GlobalHRSettings
-                  hr_settings = GlobalHRSettings.get_solo()
-                  if hr_settings:
+                  from accounting.models import AccountingSettings
+                  acct_settings = AccountingSettings.get_solo()
+                  if acct_settings:
                        if movement.payroll_payment_type == 'SALARY':
-                            target_acc = hr_settings.account_remuneraciones_por_pagar
+                            target_acc = acct_settings.account_remuneraciones_por_pagar
                        elif movement.payroll_payment_type == 'PREVIRED':
-                            target_acc = hr_settings.account_previred_por_pagar
+                            target_acc = acct_settings.account_previred_por_pagar
                        elif movement.payroll_payment_type == 'ADVANCE':
-                            target_acc = hr_settings.account_anticipos
+                            target_acc = acct_settings.account_anticipos
 
              if target_acc:
                   JournalItem.objects.create(entry=entry, account=target_acc, debit=movement.amount, credit=0)

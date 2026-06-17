@@ -869,6 +869,26 @@ class AccountingSettings(TimeStampedModel):
         verbose_name=_("Cuenta de Anticipos de Clientes (Pasivo)")
     )
     
+    # HR / Payroll Default Accounts
+    account_remuneraciones_por_pagar = models.ForeignKey(
+        Account, on_delete=models.SET_NULL, null=True, blank=True,
+        related_name='settings_hr_rem_por_pagar',
+        verbose_name=_("Cuenta Remuneraciones por Pagar"),
+        help_text=_("Pasivo con el trabajador por su sueldo líquido.")
+    )
+    account_previred_por_pagar = models.ForeignKey(
+        Account, on_delete=models.SET_NULL, null=True, blank=True,
+        related_name='settings_hr_previred_por_pagar',
+        verbose_name=_("Cuenta Obligaciones Previred por Pagar"),
+        help_text=_("Pasivo consolidado para pagos a instituciones previsionales.")
+    )
+    account_anticipos = models.ForeignKey(
+        Account, on_delete=models.SET_NULL, null=True, blank=True,
+        related_name='settings_hr_anticipos',
+        verbose_name=_("Cuenta Anticipos de Remuneraciones"),
+        help_text=_("Cuenta de activo para registrar adelantos a trabajadores.")
+    )
+
     # Inventory Config
     inventory_valuation_method = models.CharField(
         _("Método de Valoración de Inventario"), 

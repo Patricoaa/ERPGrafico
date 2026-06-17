@@ -21,6 +21,12 @@ export const defaultsSchema = z.object({
     adjustment_expense_account: z.string().nullable(),
 })
 
+export const hrSchema = z.object({
+    account_remuneraciones_por_pagar: z.string().nullable(),
+    account_previred_por_pagar: z.string().nullable(),
+    account_anticipos: z.string().nullable(),
+})
+
 export const taxSchema = z.object({
     default_vat_rate: z.number().min(0).max(100),
     vat_payable_account: z.string().nullable(),
@@ -39,3 +45,4 @@ export const taxSchema = z.object({
 export type AccountingFormValues = z.infer<typeof accountingSchema>
 export type DefaultsFormValues = z.infer<typeof defaultsSchema>
 export type TaxFormValues = z.infer<typeof taxSchema>
+export type HRSettingsFormValues = z.infer<typeof hrSchema>

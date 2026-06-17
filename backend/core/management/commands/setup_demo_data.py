@@ -2166,12 +2166,18 @@ class Command(BaseCommand):
                 'uf_current_value': Decimal('37000.00'),
                 'utm_current_value': Decimal('65000.00'),
                 'min_wage_value': Decimal('500000.00'),
-                'account_remuneraciones_por_pagar': accounts['salary_payable'],
-                'account_previred_por_pagar': accounts['previred_payable'],
-                'account_anticipos': accounts['salary_advance'],
             }
         )
         self.stdout.write("    ✓ Global HR Settings initialized.")
+
+        # Also set HR accounts in AccountingSettings
+        from accounting.models import AccountingSettings
+        acct_settings = AccountingSettings.get_solo()
+        acct_settings.account_remuneraciones_por_pagar = accounts['salary_payable']
+        acct_settings.account_previred_por_pagar = accounts['previred_payable']
+        acct_settings.account_anticipos = accounts['salary_advance']
+        acct_settings.save()
+        self.stdout.write("    ✓ HR accounts set in AccountingSettings.")
 
         # 2. AFPs
         afps_data = [

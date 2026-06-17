@@ -20,9 +20,6 @@ export interface GlobalHRSettings {
   uf_current_value: string
   utm_current_value: string
   min_wage_value: string
-  account_remuneraciones_por_pagar: number | null
-  account_previred_por_pagar: number | null
-  account_anticipos: number | null
 }
 
 

@@ -291,15 +291,15 @@ def post_payroll(payroll):
     """
     Contabiliza la liquidación usando el asiento de remuneraciones v2.
     """
-    from .models import GlobalHRSettings, PayrollItem, Payroll, PayrollConcept
-    from accounting.models import JournalEntry, JournalItem
+    from .models import PayrollItem, Payroll, PayrollConcept
+    from accounting.models import JournalEntry, JournalItem, AccountingSettings
     
     if payroll.status == Payroll.Status.POSTED:
         raise ValidationError(_("La liquidación ya está contabilizada."))
         
-    settings, _ = GlobalHRSettings.objects.get_or_create(pk=1)
+    settings = AccountingSettings.get_solo()
     
-    if not settings.account_remuneraciones_por_pagar or not settings.account_previred_por_pagar:
+    if not settings or not settings.account_remuneraciones_por_pagar or not settings.account_previred_por_pagar:
         raise ValidationError(_("Faltan cuentas globales (Remuneraciones/Previred) por configurar."))
         
     payroll.recalculate_totals()
@@ -509,7 +509,8 @@ class PayrollPaymentService:
         created_by=None,
         amount: Decimal | None = None,
     ):
-        from .models import GlobalHRSettings, Payroll, PayrollPayment
+        from .models import Payroll, PayrollPayment
+        from accounting.models import AccountingSettings
         from treasury.services import TreasuryService
         from treasury.models import TreasuryAccount, PaymentMethod, TreasuryMovement
         from django.db.models import Sum
@@ -517,8 +518,8 @@ class PayrollPaymentService:
         if payroll.status != Payroll.Status.POSTED:
             raise ValidationError("Solo se puede registrar pago de liquidaciones contabilizadas.")
 
-        settings, _ = GlobalHRSettings.objects.get_or_create(pk=1)
-        if not settings.account_remuneraciones_por_pagar:
+        settings = AccountingSettings.get_solo()
+        if not settings or not settings.account_remuneraciones_por_pagar:
             raise ValidationError(
                 "Falta configurar la cuenta Remuneraciones por Pagar en ajustes globales."
             )

@@ -2,7 +2,7 @@ import { useMemo } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import { settingsApi } from '../api/settingsApi'
-import { accountingSchema, defaultsSchema, taxSchema, type AccountingFormValues, type DefaultsFormValues, type TaxFormValues } from "@/features/settings/schemas/accounting"
+import { accountingSchema, defaultsSchema, taxSchema, hrSchema, type AccountingFormValues, type DefaultsFormValues, type TaxFormValues, type HRSettingsFormValues } from "@/features/settings/schemas/accounting"
 import { purchasingSchema, type PurchasingFormValues } from "@/features/settings/schemas/purchasing"
 
 export const ACCOUNTING_SETTINGS_QUERY_KEY = ['accounting-settings']
@@ -70,6 +70,16 @@ export function useAccountingSettings() {
         return formatted
     }, [rawSettings])
 
+    const hr = useMemo(() => {
+        const formatted = {} as HRSettingsFormValues
+        const keys = Object.keys(hrSchema.shape) as (keyof HRSettingsFormValues)[]
+        keys.forEach((key) => {
+            const val = rawSettings[key]
+            ;(formatted as Record<string, unknown>)[key] = (val ? val.toString() : null)
+        })
+        return formatted
+    }, [rawSettings])
+
     const updateMutation = useMutation({
         mutationFn: (payload: Record<string, unknown>) => settingsApi.updateCurrentSettings(payload),
         onSuccess: () => {
@@ -90,6 +100,7 @@ export function useAccountingSettings() {
         defaults,
         tax,
         purchasing,
+        hr,
         refetch,
         isLoading,
         saving: updateMutation.isPending,
