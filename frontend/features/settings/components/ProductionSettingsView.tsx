@@ -6,8 +6,8 @@ import { Factory } from "lucide-react"
 
 export function ProductionSettingsView() {
     return (
-        <div className="space-y-6">
-            <Card variant="transparent" className="border-primary/10 border-2">
+        <div className="flex-1 min-h-0 overflow-y-auto space-y-6">
+            <Card  className="border-primary/10 border-2">
                 <CardHeader className="pb-4">
                     <CardTitle className="text-sm font-black uppercase text-primary tracking-widest flex items-center gap-2">
                         <Factory className="h-4 w-4" />

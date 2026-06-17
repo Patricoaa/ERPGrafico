@@ -1,3 +1,4 @@
+import { useMemo } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import { settingsApi } from '../api/settingsApi'
@@ -15,7 +16,7 @@ export function useAccountingSettings() {
         staleTime: 10 * 60 * 1000,
     })
 
-    const structure = (() => {
+    const structure = useMemo(() => {
         const formatted = {} as AccountingFormValues
         const keys = Object.keys(accountingSchema.shape) as (keyof AccountingFormValues)[]
         keys.forEach((key) => {
@@ -27,9 +28,9 @@ export function useAccountingSettings() {
             }
         })
         return formatted
-    })()
+    }, [rawSettings])
 
-    const defaults = (() => {
+    const defaults = useMemo(() => {
         const formatted = {} as DefaultsFormValues
         const keys = Object.keys(defaultsSchema.shape) as (keyof DefaultsFormValues)[]
         keys.forEach((key) => {
@@ -41,9 +42,9 @@ export function useAccountingSettings() {
             }
         })
         return formatted
-    })()
+    }, [rawSettings])
 
-    const tax = (() => {
+    const tax = useMemo(() => {
         const formatted = {} as TaxFormValues
         const keys = Object.keys(taxSchema.shape) as (keyof TaxFormValues)[]
         keys.forEach((key) => {
@@ -57,9 +58,9 @@ export function useAccountingSettings() {
             }
         })
         return formatted
-    })()
+    }, [rawSettings])
 
-    const purchasing = (() => {
+    const purchasing = useMemo(() => {
         const formatted = {} as PurchasingFormValues
         const keys = Object.keys(purchasingSchema.shape) as (keyof PurchasingFormValues)[]
         keys.forEach((key) => {
@@ -67,7 +68,7 @@ export function useAccountingSettings() {
             formatted[key] = (val ? val.toString() : null) as never
         })
         return formatted
-    })()
+    }, [rawSettings])
 
     const updateMutation = useMutation({
         mutationFn: (payload: Record<string, unknown>) => settingsApi.updateCurrentSettings(payload),

@@ -13,7 +13,7 @@ import { useSingleUser } from "../hooks/useUserSearch"
 import { Button } from "@/components/ui/button"
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
 import { Plus, User, ShieldCheck, Printer } from "lucide-react"
-import { Drawer, CancelButton, ActionSlideButton, LabeledInput, FormSection, UnderlineTabs, UnderlineTabsContent, type TabItem, FormSplitLayout, FormFooter, LabeledSelect, LabeledSwitch, EntityHeader, SkeletonShell } from "@/components/shared"
+import { Drawer, CancelButton, ActionSlideButton, LabeledInput, FormSection, UnderlineTabs, UnderlineTabsContent, type TabItem, FormSplitLayout, FormFooter, LabeledSelect, LabeledSwitch, SkeletonShell } from "@/components/shared"
 import { Checkbox } from "@/components/ui/checkbox"
 import { AdvancedContactSelector } from "@/components/selectors/AdvancedContactSelector"
 import { AppGroup } from "@/types/entities"
@@ -22,6 +22,7 @@ import { PrintableLayout } from "@/features/_shared/transaction-drawer"
 import type { DrawerMode } from "@/features/_shared/drawer/types"
 import { cn } from "@/lib/utils"
 import { formDrawerWidth } from "@/lib/form-widths"
+import { getEntityIcon } from "@/lib/entity-registry"
 
 const userSchema = z.object({
     username: z.string().min(3, "Mínimo 3 caracteres"),
@@ -210,15 +211,6 @@ export function UserDrawer({ auditSidebar, initialData, onSuccess, trigger, open
         },
     ]
 
-    const headerSlot = (
-        <EntityHeader
-            entityLabel="core.user"
-            data={apiUser ?? initialData}
-            action={isView ? 'view' : initialData ? 'edit' : 'create'}
-            className="border-none px-6 py-4 bg-muted/5 print:hidden"
-        />
-    )
-
     const drawerTitle = isView
         ? `Ficha de Usuario${initialData?.id ? ` #${initialData.id}` : ""}`
         : mode === 'create'
@@ -260,12 +252,12 @@ export function UserDrawer({ auditSidebar, initialData, onSuccess, trigger, open
             <Drawer
                 open={open}
                 onOpenChange={setOpen}
-                headerClassName="sr-only"
                 title={<span>{drawerTitle}</span>}
                 headerActions={(mode === 'view' || mode === 'edit') && initialData?.id && <Button variant="ghost" size="icon" onClick={() => handlePrint()}><Printer className="h-4 w-4" /></Button>}
                 subtitle="Gestión de cuentas, roles y permisos de acceso."
                 defaultSize={width}
                 mode={mode}
+                icon={getEntityIcon('core.user')}
                 side="left"
                 footer={isView ? undefined : (
                     <FormFooter
@@ -290,7 +282,6 @@ export function UserDrawer({ auditSidebar, initialData, onSuccess, trigger, open
                                     onValueChange={setActiveTab}
                                     orientation="horizontal"
                                     variant="underline"
-                                    header={headerSlot}
                                     contentClassName="bg-transparent"
                                     className="flex-1"
                                 >
