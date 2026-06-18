@@ -46,7 +46,7 @@ export function useStockMove<T = StockMove>(id: string | number | null | undefin
     return useQuery<T>({
         queryKey: id ? [...STOCK_MOVES_QUERY_KEY, 'detail', id] : [...STOCK_MOVES_QUERY_KEY, 'detail', 'noop'],
         queryFn: async () => {
-            const res = await api.get<T>(`/inventory/stock_moves/${id}/`)
+            const res = await api.get<T>(`/inventory/moves/${id}/`)
             return res.data
         },
         enabled: id !== null && id !== undefined && id !== '',
