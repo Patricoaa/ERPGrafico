@@ -7,12 +7,7 @@ from billing.note_workflow import NoteWorkflow
 from billing.note_checkout_service import NoteCheckoutService
 from billing.note_serializers import (
     NoteWorkflowSerializer,
-    InitNoteWorkflowSerializer,
-    SelectItemsSerializer,
-    ProcessLogisticsSerializer,
-    RegisterDocumentSerializer,
     CompleteWorkflowSerializer,
-    CancelWorkflowSerializer,
     FullNoteCheckoutSerializer
 )
 from core.mixins import AuditHistoryMixin
@@ -20,16 +15,11 @@ from core.mixins import AuditHistoryMixin
 
 class NoteWorkflowViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
     """
-    ViewSet for Note Workflow (Credit/Debit Note multi-stage checkout)
+    ViewSet for Note Workflow (Credit/Debit Note checkout)
     
     Endpoints:
-    - POST /note-workflows/init/ - Initialize new workflow
-    - POST /note-workflows/{id}/select-items/ - Select products (Stage 2)
-    - POST /note-workflows/{id}/process-logistics/ - Process logistics (Stage 3)
-    - POST /note-workflows/{id}/skip-logistics/ - Skip logistics if not needed
-    - POST /note-workflows/{id}/register-document/ - Register DTE (Stage 4)
-    - POST /note-workflows/{id}/complete/ - Complete workflow (Stage 5)
-    - POST /note-workflows/{id}/cancel/ - Cancel workflow
+    - POST /note-workflows/{id}/complete/ - Complete workflow
+    - POST /note-workflows/checkout/ - Atomic checkout (all-in-one)
     """
     
     queryset = NoteWorkflow.objects.select_related(
@@ -57,186 +47,6 @@ class NoteWorkflowViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
             queryset = queryset.filter(current_stage=stage)
         
         return queryset
-    
-    @action(detail=False, methods=['post'])
-    def init(self, request):
-        """
-        Initialize a new note workflow
-        
-        POST /billing/note-workflows/init/
-        Body: {
-            "corrected_invoice_id": 123,
-            "note_type": "NOTA_CREDITO",
-            "reason": "Devolución de mercadería defectuosa"
-        }
-        """
-        serializer = InitNoteWorkflowSerializer(data=request.data)
-        
-        if serializer.is_valid():
-            try:
-                workflow = NoteCheckoutService.init_note_workflow(
-                    corrected_invoice_id=serializer.validated_data['corrected_invoice_id'],
-                    note_type=serializer.validated_data['note_type'],
-                    reason=serializer.validated_data.get('reason', ''),
-                    created_by=request.user
-                )
-                
-                return Response(
-                    NoteWorkflowSerializer(workflow).data,
-                    status=status.HTTP_201_CREATED
-                )
-            except ValidationError as e:
-                return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
-            except Exception as e:
-                import traceback
-                traceback.print_exc()
-                return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-        
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-    
-    @action(detail=True, methods=['post'], url_path='select-items')
-    def select_items(self, request, pk=None):
-        """
-        Select items/products for the note
-        
-        POST /billing/note-workflows/{id}/select-items/
-        Body: {
-            "selected_items": [
-                {
-                    "product_id": 456,
-                    "quantity": 5,
-                    "reason": "Producto dañado",
-                    "unit_price": 1000,
-                    "tax_amount": 190
-                }
-            ]
-        }
-        """
-        workflow = self.get_object()
-        
-        serializer = SelectItemsSerializer(data={
-            'workflow_id': workflow.id,
-            'selected_items': request.data.get('selected_items', [])
-        })
-        
-        if serializer.is_valid():
-            try:
-                updated_workflow = NoteCheckoutService.select_items(
-                    workflow_id=workflow.id,
-                    selected_items=serializer.validated_data['selected_items']
-                )
-                
-                return Response(NoteWorkflowSerializer(updated_workflow).data)
-            except ValidationError as e:
-                return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
-            except Exception as e:
-                import traceback
-                traceback.print_exc()
-                return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-        
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-    
-    @action(detail=True, methods=['post'], url_path='process-logistics')
-    def process_logistics(self, request, pk=None):
-        """
-        Process logistics (stock movements)
-        
-        POST /billing/note-workflows/{id}/process-logistics/
-        Body: {
-            "warehouse_id": 1,
-            "date": "2026-01-22",
-            "notes": "Recibido en bodega principal"
-        }
-        """
-        workflow = self.get_object()
-        
-        serializer = ProcessLogisticsSerializer(data={
-            'workflow_id': workflow.id,
-            **request.data
-        })
-        
-        if serializer.is_valid():
-            try:
-                updated_workflow = NoteCheckoutService.process_logistics(
-                    workflow_id=workflow.id,
-                    warehouse_id=serializer.validated_data['warehouse_id'],
-                    date=serializer.validated_data['date'],
-                    delivery_type=serializer.validated_data.get('delivery_type', 'IMMEDIATE'),
-                    line_data=serializer.validated_data.get('line_data'),
-                    notes=serializer.validated_data.get('notes', '')
-                )
-                
-                return Response(NoteWorkflowSerializer(updated_workflow).data)
-            except ValidationError as e:
-                return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
-            except Exception as e:
-                import traceback
-                traceback.print_exc()
-                return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-        
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-    
-    @action(detail=True, methods=['post'], url_path='skip-logistics')
-    def skip_logistics(self, request, pk=None):
-        """
-        Skip logistics stage if no stockable items
-        
-        POST /billing/note-workflows/{id}/skip-logistics/
-        """
-        workflow = self.get_object()
-        
-        try:
-            updated_workflow = NoteCheckoutService.skip_logistics(workflow_id=workflow.id)
-            return Response(NoteWorkflowSerializer(updated_workflow).data)
-        except ValidationError as e:
-            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
-        except Exception as e:
-            import traceback
-            traceback.print_exc()
-            return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-    
-    @action(detail=True, methods=['post'], url_path='register-document')
-    def register_document(self, request, pk=None):
-        """
-        Register document (DTE folio and accounting)
-        
-        POST /billing/note-workflows/{id}/register-document/
-        Body (multipart/form-data): {
-            "document_number": "NC-12345",
-            "document_date": "2026-01-22",
-            "document_attachment": <file>,
-            "is_pending": false
-        }
-        """
-        workflow = self.get_object()
-        
-        # Flatten QueryDict if needed
-        data = request.data.dict() if hasattr(request.data, 'dict') else request.data
-        
-        serializer = RegisterDocumentSerializer(data={
-            'workflow_id': workflow.id,
-            **data
-        })
-        
-        if serializer.is_valid():
-            try:
-                updated_workflow = NoteCheckoutService.register_document(
-                    workflow_id=workflow.id,
-                    document_number=serializer.validated_data['document_number'],
-                    document_date=serializer.validated_data.get('document_date'),
-                    document_attachment=request.FILES.get('document_attachment'),
-                    is_pending=serializer.validated_data.get('is_pending', False)
-                )
-                
-                return Response(NoteWorkflowSerializer(updated_workflow).data)
-            except ValidationError as e:
-                return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
-            except Exception as e:
-                import traceback
-                traceback.print_exc()
-                return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-        
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
     @action(detail=True, methods=['post'])
     def complete(self, request, pk=None):
@@ -275,40 +85,6 @@ class NoteWorkflowViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
         
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
-    @action(detail=True, methods=['post'])
-    def cancel(self, request, pk=None):
-        """
-        Cancel workflow
-        
-        POST /billing/note-workflows/{id}/cancel/
-        Body: {
-            "reason": "Cliente retiró solicitud"
-        }
-        """
-        workflow = self.get_object()
-        
-        serializer = CancelWorkflowSerializer(data={
-            'workflow_id': workflow.id,
-            **request.data
-        })
-        
-        if serializer.is_valid():
-            try:
-                updated_workflow = NoteCheckoutService.cancel_workflow(
-                    workflow_id=workflow.id,
-                    reason=serializer.validated_data.get('reason', '')
-                )
-                
-                return Response(NoteWorkflowSerializer(updated_workflow).data)
-            except ValidationError as e:
-                return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
-            except Exception as e:
-                import traceback
-                traceback.print_exc()
-                return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-        
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
     @action(detail=False, methods=['post'], url_path='checkout')
     def checkout(self, request):
         """

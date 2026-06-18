@@ -1,7 +1,6 @@
 from rest_framework import serializers
 from billing.note_workflow import NoteWorkflow
 from billing.models import Invoice
-from inventory.models import Product
 
 
 class NoteWorkflowSerializer(serializers.ModelSerializer):
@@ -98,83 +97,10 @@ class NoteWorkflowSerializer(serializers.ModelSerializer):
         return None
 
 
-class InitNoteWorkflowSerializer(serializers.Serializer):
-    """Serializer for initializing a note workflow"""
-    corrected_invoice_id = serializers.IntegerField(required=True, help_text="ID de la factura POSTED a corregir")
-    note_type = serializers.ChoiceField(
-        choices=[Invoice.DTEType.NOTA_CREDITO, Invoice.DTEType.NOTA_DEBITO],
-        required=True,
-        help_text="Tipo de nota: NOTA_CREDITO o NOTA_DEBITO"
-    )
-    reason = serializers.CharField(required=False, allow_blank=True, help_text="Motivo de la nota")
-
-
-class SelectItemsSerializer(serializers.Serializer):
-    """Serializer for selecting items in a note workflow"""
-    workflow_id = serializers.IntegerField(required=True)
-    selected_items = serializers.ListField(
-        child=serializers.DictField(),
-        required=True,
-        help_text="Lista de productos: [{product_id, quantity, reason, unit_price, tax_amount}]"
-    )
-    
-    def validate_selected_items(self, value):
-        """Validate item structure"""
-        if not value:
-            raise serializers.ValidationError("Debe seleccionar al menos un producto.")
-        
-        for item in value:
-            if 'product_id' not in item:
-                raise serializers.ValidationError("Cada producto debe tener 'product_id'.")
-            if 'quantity' not in item:
-                raise serializers.ValidationError("Cada producto debe tener 'quantity'.")
-            
-            # Validate product exists
-            try:
-                Product.objects.get(id=item['product_id'])
-            except Product.DoesNotExist:
-                raise serializers.ValidationError(f"Producto con ID {item['product_id']} no existe.")
-        
-        return value
-
-
-class ProcessLogisticsSerializer(serializers.Serializer):
-    """Serializer for processing logistics stage"""
-    workflow_id = serializers.IntegerField(required=True)
-    warehouse_id = serializers.IntegerField(required=True, help_text="ID de la bodega")
-    date = serializers.DateField(required=True, help_text="Fecha del movimiento")
-    delivery_type = serializers.ChoiceField(
-        choices=['IMMEDIATE', 'SCHEDULED', 'PARTIAL'],
-        default='IMMEDIATE',
-        help_text="Tipo de entrega"
-    )
-    line_data = serializers.ListField(
-        child=serializers.DictField(),
-        required=False,
-        help_text="Datos de líneas para despacho parcial: [{line_id, quantity, uom_id}]"
-    )
-    notes = serializers.CharField(required=False, allow_blank=True, help_text="Notas adicionales")
-
-
-class RegisterDocumentSerializer(serializers.Serializer):
-    """Serializer for registering document (DTE)"""
-    workflow_id = serializers.IntegerField(required=True)
-    document_number = serializers.CharField(required=True, max_length=20, help_text="Número de folio")
-    document_date = serializers.DateField(required=False, help_text="Fecha del documento (opcional)")
-    document_attachment = serializers.FileField(required=False, help_text="PDF/XML del documento")
-    is_pending = serializers.BooleanField(default=False, help_text="Atrasar registro contable")
-
-
 class CompleteWorkflowSerializer(serializers.Serializer):
     """Serializer for completing workflow"""
     workflow_id = serializers.IntegerField(required=True)
     payment_data = serializers.DictField(required=False, help_text="Datos de pago (opcional)")
-
-
-class CancelWorkflowSerializer(serializers.Serializer):
-    """Serializer for cancelling workflow"""
-    workflow_id = serializers.IntegerField(required=True)
-    reason = serializers.CharField(required=False, allow_blank=True, help_text="Motivo de cancelación")
 
 
 class FullNoteCheckoutSerializer(serializers.Serializer):

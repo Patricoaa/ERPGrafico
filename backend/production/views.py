@@ -41,9 +41,8 @@ class WorkOrderFilterSet(FilterSet):
 
 from .serializers import (
     WorkOrderSerializer,
-    ProductionConsumptionSerializer,
+    WorkOrderCreateSerializer,
     BillOfMaterialsSerializer,
-    BillOfMaterialsLineSerializer,
     WorkOrderTemplateSerializer,
 )
 from .services import WorkOrderService, WorkOrderPdfService, WorkOrderMetricsService
@@ -690,18 +689,6 @@ class BillOfMaterialsViewSet(viewsets.ModelViewSet):
         self.perform_create(serializer)
         headers = self.get_success_headers(serializer.data)
         return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
-
-class BillOfMaterialsLineViewSet(viewsets.ModelViewSet):
-    queryset = BillOfMaterialsLine.objects.all()
-    serializer_class = BillOfMaterialsLineSerializer
-    
-    def get_queryset(self):
-        queryset = super().get_queryset()
-        bom_id = self.request.query_params.get('bom_id')
-        if bom_id:
-            queryset = queryset.filter(bom_id=bom_id)
-        return queryset
-
 
 class WorkOrderTemplateViewSet(viewsets.ModelViewSet):
     """TASK-312: CRUD for WorkOrderTemplate + save_from_order action."""
