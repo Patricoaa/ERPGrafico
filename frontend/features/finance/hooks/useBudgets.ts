@@ -11,6 +11,30 @@ export interface Budget {
     description?: string
 }
 
+export function useBudgetDetailData(id: number | null) {
+    return useQuery({
+        queryKey: FINANCE_KEYS.budgets.detailData(id ?? 0),
+        queryFn: async () => {
+            const [budget, execution] = await Promise.all([
+                financeApi.getBudgetDetail(id!),
+                financeApi.getBudgetExecution(id!)
+            ])
+            return { budget, execution }
+        },
+        enabled: id != null,
+        staleTime: 5 * 60 * 1000,
+    })
+}
+
+export function useBudgetVariance(id: number | null, params?: Record<string, unknown>) {
+    return useQuery({
+        queryKey: FINANCE_KEYS.budgets.variance(id ?? 0),
+        queryFn: () => financeApi.getBudgetVariance(id!, params),
+        enabled: id != null,
+        staleTime: 2 * 60 * 1000,
+    })
+}
+
 export function useBudgets() {
     const queryClient = useQueryClient()
 

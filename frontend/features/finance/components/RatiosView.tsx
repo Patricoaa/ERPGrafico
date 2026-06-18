@@ -1,13 +1,13 @@
 "use client"
 
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { EmptyState, MoneyDisplay, PageContainer } from '@/components/shared'
 import { formatMoney } from "@/lib/money"
 import { ResponsivePie } from '@nivo/pie'
 import { ResponsiveLine } from '@nivo/line'
 import { ResponsiveBar } from '@nivo/bar'
-import { financeApi } from "../api/financeApi";
+import { useAnalysis } from "../hooks/useAnalysis";
 import { DateRange } from "react-day-picker";
 import { format } from "date-fns";
 import { CardSkeleton, StatCard } from "@/components/shared";
@@ -20,47 +20,23 @@ interface RatiosViewProps {
 }
 
 export const RatiosView: React.FC<RatiosViewProps> = ({ date, showComparison, compDate }) => {
-    const [data, setData] = useState<Record<string, unknown> | null>(null);
-    const [compData, setCompData] = useState<Record<string, unknown> | null>(null);
-    const [loading, setLoading] = useState(true);
+    const params: Record<string, unknown> = {
+        is_async: true,
+        ...(date?.to && { end_date: format(date.to, 'yyyy-MM-dd') }),
+        ...(date?.from && { start_date: format(date.from, 'yyyy-MM-dd') }),
+    }
 
-    useEffect(() => {
-        const loadData = async () => {
-            setLoading(true);
-            try {
-                const params: Record<string, unknown> = { is_async: true };
-                if (date?.to) {
-                    params.end_date = format(date.to, 'yyyy-MM-dd');
-                }
-                if (date?.from) {
-                    params.start_date = format(date.from, 'yyyy-MM-dd');
-                }
+    const compParams: Record<string, unknown> | undefined = showComparison ? {
+        is_async: true,
+        ...(compDate?.to && { end_date: format(compDate.to, 'yyyy-MM-dd') }),
+        ...(compDate?.from && { start_date: format(compDate.from, 'yyyy-MM-dd') }),
+    } : undefined
 
-                const finalData = await financeApi.getAnalysis(params);
-                setData(finalData);
+    const { data, isLoading, isError } = useAnalysis(params)
+    const { data: compData } = useAnalysis(compParams)
 
-                // Load comparison data if enabled
-                if (showComparison && compDate?.to) {
-                    const compParams: Record<string, unknown> = { is_async: true };
-                    if (compDate.to) {
-                        compParams.end_date = format(compDate.to, 'yyyy-MM-dd');
-                    }
-                    if (compDate.from) {
-                        compParams.start_date = format(compDate.from, 'yyyy-MM-dd');
-                    }
-                    const finalCompData = await financeApi.getAnalysis(compParams);
-                    setCompData(finalCompData);
-                }
-            } catch (err) {
-                console.error(err);
-            } finally {
-                setLoading(false);
-            }
-        };
-        loadData();
-    }, [date, showComparison, compDate]);
-
-    if (loading) return <CardSkeleton variant="grid" count={4} />;
+    if (isLoading) return <CardSkeleton variant="grid" count={4} />;
+    if (isError) return <EmptyState context="finance" variant="compact" title="Error al cargar ratios" description="No se pudieron cargar los indicadores financieros." />;
     if (!data) return <EmptyState context="finance" variant="compact" description="No hay datos disponibles para el período seleccionado" />;
 
     const d = data as any;

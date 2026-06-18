@@ -1,11 +1,11 @@
 "use client"
 
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { ResponsiveLine } from '@nivo/line'
 import { ResponsiveBar } from '@nivo/bar'
 import { ResponsivePie } from '@nivo/pie'
-import { financeApi } from "../api/financeApi";
+import { useBIAnalytics } from "../hooks/useBIAnalytics";
 import {TrendingUp, Package, DollarSign, ShoppingCart} from 'lucide-react';
 import { CardSkeleton, EmptyState, MoneyDisplay, StatCard } from '@/components/shared';
 ;
@@ -48,29 +48,16 @@ interface BIAnalyticsData {
 }
 
 export const BIAnalyticsView: React.FC<BIAnalyticsViewProps> = ({ date }) => {
-    const [data, setData] = useState<BIAnalyticsData | null>(null);
-    const [loading, setLoading] = useState(true);
+    const params: Record<string, unknown> = {
+        is_async: true,
+        ...(date?.to && { end_date: format(date.to, 'yyyy-MM-dd') }),
+        ...(date?.from && { start_date: format(date.from, 'yyyy-MM-dd') }),
+    }
 
-    useEffect(() => {
-        const loadData = async () => {
-            setLoading(true);
-            try {
-                const params: Record<string, unknown> = { is_async: true };
-                if (date?.to) params.end_date = format(date.to, 'yyyy-MM-dd');
-                if (date?.from) params.start_date = format(date.from, 'yyyy-MM-dd');
+    const { data, isLoading, isError } = useBIAnalytics(params)
 
-                const finalData = await financeApi.getBIAnalytics(params);
-                setData(finalData);
-            } catch (err) {
-                console.error(err);
-            } finally {
-                setLoading(false);
-            }
-        };
-        loadData();
-    }, [date]);
-
-    if (loading) return <CardSkeleton variant="grid" count={4} />;
+    if (isLoading) return <CardSkeleton variant="grid" count={4} />;
+    if (isError) return <EmptyState context="finance" variant="compact" title="Error al cargar analytics" description="No se pudieron cargar los datos de inteligencia de negocio." />;
     if (!data) return <EmptyState context="finance" variant="compact" description="No hay datos disponibles para el período seleccionado" />;
 
     const { sales, inventory, performance } = data;
