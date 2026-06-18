@@ -18,6 +18,7 @@ import {
 
 import { CashFlowTable } from "@/features/finance/components/CashFlowTable"
 import { MappingConfigDrawer } from "@/features/finance/components/MappingConfigDrawer"
+import { useMappingDrawer } from "@/features/finance/hooks/useMappingDrawer"
 import { DateRangeFilter } from "@/components/shared"
 import { DateRange } from "react-day-picker"
 import { format, startOfYear, subYears } from "date-fns"
@@ -106,7 +107,9 @@ import { useStatements } from "@/features/finance/hooks/useStatements"
 
 export function StatementsView({ activeTab }: StatementsViewProps) {
     const [showComparison, setShowComparison] = useState(false)
-    const [mappingOpen, setMappingOpen] = useState(false)
+    const { open: mappingOpen, onOpenChange: setMappingOpen, resolvedMappingType, openDrawer: openMappingDrawer } = useMappingDrawer(
+        activeTab === 'pl' ? 'is' : activeTab === 'cf' ? 'cf' : 'bs'
+    )
     type HeaderFormat = 'year' | 'month-year' | 'day-month-year'
     const [headerFormat, setHeaderFormat] = useState<HeaderFormat>('year')
 
@@ -247,7 +250,7 @@ export function StatementsView({ activeTab }: StatementsViewProps) {
                             <Button
                                 variant="ghost"
                                 size="sm"
-                                onClick={() => setMappingOpen(true)}
+                                onClick={() => openMappingDrawer()}
                                 className="text-[10px] font-black uppercase tracking-wider gap-1.5 hover:bg-primary/10 border border-border/50 px-3.5 py-2 rounded-l-md rounded-r-none transition-all duration-300 shadow-sm hover:scale-[1.01]"
                             >
                                 <SlidersHorizontal className="h-3.5 w-3.5" />
@@ -475,7 +478,7 @@ export function StatementsView({ activeTab }: StatementsViewProps) {
             <MappingConfigDrawer
                 open={mappingOpen}
                 onOpenChange={setMappingOpen}
-                mappingType={activeTab === 'pl' ? 'is' : activeTab === 'cf' ? 'cf' : 'bs'}
+                mappingType={resolvedMappingType}
                 onSaveSuccess={() => {
                     refetch()
                 }}

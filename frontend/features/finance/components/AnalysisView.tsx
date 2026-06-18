@@ -9,6 +9,7 @@ import { startOfYear, subYears } from "date-fns"
 import { useServerDate } from "@/hooks/useServerDate"
 import { CardSkeleton } from "@/components/shared"
 import { MappingConfigDrawer } from "@/features/finance/components/MappingConfigDrawer"
+import { useMappingDrawer } from "@/features/finance/hooks/useMappingDrawer"
 import { PageContainer, FadeIn } from "@/components/shared"
 import { Button } from "@/components/ui/button"
 import { SlidersHorizontal, ChevronDown, GitCompare } from "lucide-react"
@@ -37,7 +38,7 @@ interface AnalysisViewProps {
 
 export function AnalysisView({ activeTab }: AnalysisViewProps) {
     const [showComparison, setShowComparison] = useState(false)
-    const [mappingOpen, setMappingOpen] = useState(false)
+    const { open: mappingOpen, onOpenChange: setMappingOpen, resolvedMappingType, openDrawer: openMappingDrawer } = useMappingDrawer('bs')
     type HeaderFormat = 'year' | 'month-year' | 'day-month-year'
     const [headerFormat, setHeaderFormat] = useState<HeaderFormat>('year')
 
@@ -78,7 +79,7 @@ export function AnalysisView({ activeTab }: AnalysisViewProps) {
                                 <Button
                                     variant="ghost"
                                     size="sm"
-                                    onClick={() => setMappingOpen(true)}
+                                    onClick={() => openMappingDrawer()}
                                     className="text-[10px] font-black uppercase tracking-wider text-primary gap-1.5 bg-primary/5 hover:bg-primary/10 border border-border/50 px-3.5 py-2 rounded-l-md rounded-r-none transition-all duration-300 shadow-sm hover:scale-[1.01]"
                                 >
                                     <SlidersHorizontal className="h-3.5 w-3.5" />
@@ -190,7 +191,7 @@ export function AnalysisView({ activeTab }: AnalysisViewProps) {
             <MappingConfigDrawer
                 open={mappingOpen}
                 onOpenChange={setMappingOpen}
-                mappingType="bs" // Defaulting to Balance Sheet mappings for Ratios
+                mappingType={resolvedMappingType} // Defaulting to Balance Sheet mappings for Ratios
                 // Ratios data will be fetched inside RatiosView on next mount or we can't easily force refresh here 
                 // since RatiosView does its own fetch on mount/date change. 
                 // But saving mappings will take effect on next refresh.
