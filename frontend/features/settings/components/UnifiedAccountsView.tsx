@@ -689,6 +689,10 @@ const sociosSchema = z.object({
     partner_capital_contribution_account: z.string().nullable(),
     partner_withdrawal_account: z.string().nullable(),
     partner_provisional_withdrawal_account: z.string().nullable(),
+    partner_capital_receivable_account: z.string().nullable(),
+    partner_retained_earnings_account: z.string().nullable(),
+    partner_current_year_earnings_account: z.string().nullable(),
+    partner_dividends_payable_account: z.string().nullable(),
 })
 
 type SociosFormValues = z.infer<typeof sociosSchema>
@@ -698,6 +702,10 @@ const SOCIOS_DEFAULTS: SociosFormValues = {
     partner_capital_contribution_account: null,
     partner_withdrawal_account: null,
     partner_provisional_withdrawal_account: null,
+    partner_capital_receivable_account: null,
+    partner_retained_earnings_account: null,
+    partner_current_year_earnings_account: null,
+    partner_dividends_payable_account: null,
 }
 
 function SociosForm() {
@@ -718,6 +726,10 @@ function SociosForm() {
                     partner_capital_contribution_account: data.partner_capital_contribution_account?.toString() || null,
                     partner_withdrawal_account: data.partner_withdrawal_account?.toString() || null,
                     partner_provisional_withdrawal_account: data.partner_provisional_withdrawal_account?.toString() || null,
+                    partner_capital_receivable_account: data.partner_capital_receivable_account?.toString() || null,
+                    partner_retained_earnings_account: data.partner_retained_earnings_account?.toString() || null,
+                    partner_current_year_earnings_account: data.partner_current_year_earnings_account?.toString() || null,
+                    partner_dividends_payable_account: data.partner_dividends_payable_account?.toString() || null,
                 }
                 setSettings(formatted)
                 form.reset(formatted)
@@ -735,6 +747,10 @@ function SociosForm() {
             partner_capital_contribution_account: data.partner_capital_contribution_account ? parseInt(data.partner_capital_contribution_account) : null,
             partner_withdrawal_account: data.partner_withdrawal_account ? parseInt(data.partner_withdrawal_account) : null,
             partner_provisional_withdrawal_account: data.partner_provisional_withdrawal_account ? parseInt(data.partner_provisional_withdrawal_account) : null,
+            partner_capital_receivable_account: data.partner_capital_receivable_account ? parseInt(data.partner_capital_receivable_account) : null,
+            partner_retained_earnings_account: data.partner_retained_earnings_account ? parseInt(data.partner_retained_earnings_account) : null,
+            partner_current_year_earnings_account: data.partner_current_year_earnings_account ? parseInt(data.partner_current_year_earnings_account) : null,
+            partner_dividends_payable_account: data.partner_dividends_payable_account ? parseInt(data.partner_dividends_payable_account) : null,
         })
     }, [])
 
@@ -830,6 +846,92 @@ function SociosForm() {
                                             onChange={field.onChange}
                                             placeholder="Seleccionar cuenta de Retiros Provisorios..."
                                             accountType="EQUITY"
+                                        />
+                                    )}
+                                />
+                            </CardContent>
+                        </Card>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+                        <Card variant="default">
+                            <CardHeader>
+                                <CardTitle className="text-lg text-primary">Capital por Cobrar</CardTitle>
+                                <CardDescription>Cuenta de activo para el capital suscrito aún no pagado por los socios</CardDescription>
+                            </CardHeader>
+                            <CardContent>
+                                <FormField
+                                    control={form.control}
+                                    name="partner_capital_receivable_account"
+                                    render={({ field }) => (
+                                        <AccountSelector
+                                            label="Cuenta de Capital por Cobrar"
+                                            value={field.value}
+                                            onChange={field.onChange}
+                                            placeholder="Seleccionar cuenta de Capital por Cobrar..."
+                                            accountType="ASSET"
+                                        />
+                                    )}
+                                />
+                            </CardContent>
+                        </Card>
+                        <Card variant="default">
+                            <CardHeader>
+                                <CardTitle className="text-lg text-primary">Utilidades Retenidas</CardTitle>
+                                <CardDescription>Cuenta de patrimonio que acumula resultados de ejercicios anteriores</CardDescription>
+                            </CardHeader>
+                            <CardContent>
+                                <FormField
+                                    control={form.control}
+                                    name="partner_retained_earnings_account"
+                                    render={({ field }) => (
+                                        <AccountSelector
+                                            label="Cuenta de Utilidades Retenidas"
+                                            value={field.value}
+                                            onChange={field.onChange}
+                                            placeholder="Seleccionar cuenta de Utilidades Retenidas..."
+                                            accountType="EQUITY"
+                                        />
+                                    )}
+                                />
+                            </CardContent>
+                        </Card>
+                        <Card variant="default">
+                            <CardHeader>
+                                <CardTitle className="text-lg text-primary">Resultado del Ejercicio</CardTitle>
+                                <CardDescription>Cuenta de patrimonio para la utilidad o pérdida del período en curso</CardDescription>
+                            </CardHeader>
+                            <CardContent>
+                                <FormField
+                                    control={form.control}
+                                    name="partner_current_year_earnings_account"
+                                    render={({ field }) => (
+                                        <AccountSelector
+                                            label="Cuenta de Resultado del Ejercicio"
+                                            value={field.value}
+                                            onChange={field.onChange}
+                                            placeholder="Seleccionar cuenta de Resultado..."
+                                            accountType="EQUITY"
+                                        />
+                                    )}
+                                />
+                            </CardContent>
+                        </Card>
+                        <Card variant="default">
+                            <CardHeader>
+                                <CardTitle className="text-lg text-primary">Dividendos por Pagar</CardTitle>
+                                <CardDescription>Cuenta de pasivo para dividendos declarados pendientes de pago</CardDescription>
+                            </CardHeader>
+                            <CardContent>
+                                <FormField
+                                    control={form.control}
+                                    name="partner_dividends_payable_account"
+                                    render={({ field }) => (
+                                        <AccountSelector
+                                            label="Cuenta de Dividendos por Pagar"
+                                            value={field.value}
+                                            onChange={field.onChange}
+                                            placeholder="Seleccionar cuenta de Dividendos por Pagar..."
+                                            accountType="LIABILITY"
                                         />
                                     )}
                                 />
