@@ -20,8 +20,8 @@ export interface ViewPolicy {
   availableViews: ('list' | 'card' | 'grid' | 'kanban')[];
   /** Default view when no ?view= param is present */
   defaultView: 'list' | 'card' | 'grid' | 'kanban';
-  /** Card component strategy: 'domain' = DomainCard (workflow entities), 'entity' = EntityCard, 'entity-compact' = EntityCard compact, 'custom' = domain-specific */
-  cardComponent?: 'domain' | 'entity' | 'entity-compact' | 'custom';
+  /** Card component strategy: 'domain' = DomainCard (workflow entities), 'entity' = EntityCard, 'custom' = domain-specific */
+  cardComponent?: 'domain' | 'entity' | 'custom';
   /** Grid layout for card/grid views */
   gridLayout?: 'single-column' | 'multi-column';
 }
