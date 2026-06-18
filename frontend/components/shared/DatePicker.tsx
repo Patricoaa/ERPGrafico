@@ -60,7 +60,7 @@ export function DatePicker({
         disabled={disabled}
         onClick={() => handleOpenChange(true)}
         className={cn(
-          "flex items-center gap-1 justify-start text-left",
+          "flex items-center gap-1 justify-start text-left text-sm text-foreground",
           "cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed",
           !date && "text-muted-foreground",
           className
