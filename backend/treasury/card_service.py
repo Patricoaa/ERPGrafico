@@ -348,154 +348,6 @@ class CardService:
             created_by=created_by,
         )
 
-    # ── Interés punitorio (Onda 3, ADR-0044) ──────────────────────────────
-
-    @staticmethod
-    def compute_punitory_interest(
-        statement: CreditCardStatement,
-        *,
-        as_of_date: _date | None = None,
-    ) -> Decimal:
-        """
-        Calcula el interés punitorio del emisor sobre el saldo
-        impago a la fecha (Onda 3, ADR-0044).
-
-        - Si `outstanding_balance <= 0` → 0.
-        - Si `due_date >= as_of_date` (no vencido) → 0.
-        - Si `settings.card_punitory_monthly_rate == 0` → 0
-          (cálculo desactivado).
-        - Meses de mora = `floor((as_of_date - due_date) / 30)`,
-          mínimo 1.
-        - Interés = `outstanding_balance × rate × meses_mora`,
-          redondeado a 2 decimales con ROUND_HALF_UP.
-
-        El cálculo es **on-demand**: no persiste. El caller decide
-        si imputarlo vía `apply_punitory_interest`.
-        """
-        from accounting.models import AccountingSettings
-
-        if as_of_date is None:
-            from core.utils import get_current_date
-            as_of_date = get_current_date()
-
-        outstanding = statement.outstanding_balance
-        if outstanding <= 0:
-            return Decimal('0')
-        if statement.due_date >= as_of_date:
-            return Decimal('0')
-
-        settings_obj, _ = AccountingSettings.objects.get_or_create()
-        rate = settings_obj.card_punitory_monthly_rate or Decimal('0')
-        if rate <= 0:
-            return Decimal('0')
-
-        # Meses de mora: 1 mes entero o fracción, mínimo 1.
-        days_late = (as_of_date - statement.due_date).days
-        months_late = max(1, days_late // 30)
-        interest = (outstanding * rate * Decimal(months_late)).quantize(
-            Decimal('0.01'), rounding=ROUND_HALF_UP,
-        )
-        return interest
-
-    @staticmethod
-    @transaction.atomic
-    def apply_punitory_interest(
-        statement: CreditCardStatement,
-        *,
-        as_of_date: _date | None = None,
-        interest_expense_account: Account | None = None,
-        created_by: "AbstractUser | None" = None,
-    ) -> tuple[Decimal, TreasuryMovement | None]:
-        """
-        Calcula e imputa el interés punitorio al statement (Onda 3,
-        ADR-0044). Idempotente por mes: si ya imputó el interés
-        para el mes actual, no duplica el ADJUSTMENT.
-
-        Devuelve `(interest, movement | None)`. Si el cálculo da
-        0, devuelve `(0, None)` y no crea nada.
-
-        El asiento: D=cuenta de gasto (configurable, default
-        `settings.interest_expense_account`) / H=pasivo tarjeta.
-        Referencia: `INT-PUN-{statement.display_id}-{YYYY-MM}`.
-        """
-        from accounting.models import AccountingSettings, Account as AccModel
-        from .services import TreasuryService
-
-        if statement.status not in (
-            CreditCardStatement.Status.OPEN,
-            CreditCardStatement.Status.OVERDUE,
-            CreditCardStatement.Status.PARTIALLY_PAID,
-        ):
-            # No imputar interés a un statement PAID o CANCELED.
-            return (Decimal('0'), None)
-
-        if as_of_date is None:
-            from core.utils import get_current_date
-            as_of_date = get_current_date()
-
-        interest = CardService.compute_punitory_interest(
-            statement, as_of_date=as_of_date,
-        )
-        if interest <= 0:
-            return (Decimal('0'), None)
-
-        # Idempotencia por mes: no imputar dos veces el mismo mes.
-        month_tag = as_of_date.strftime('%Y-%m')
-        reference = f"INT-PUN-{statement.display_id}-{month_tag}"
-        existing = TreasuryMovement.objects.filter(
-            reference=reference,
-            movement_type=TreasuryMovement.Type.ADJUSTMENT,
-        ).first()
-        if existing is not None:
-            return (interest, existing)  # ya estaba aplicado
-
-        # Resolver cuenta de gasto.
-        if interest_expense_account is None:
-            settings_obj, _ = AccountingSettings.objects.get_or_create()
-            interest_expense_account = settings_obj.interest_expense_account
-        if interest_expense_account is None:
-            raise ValidationError(
-                _t("No hay cuenta de gasto para imputar el interés "
-                   "punitorio. Configure `AccountingSettings."
-                   "interest_expense_account` o pase la cuenta "
-                   "explícitamente.")
-            )
-
-        # Crear el ADJUSTMENT que imputa el interés.
-        movement = TreasuryService.create_movement(
-            amount=interest,
-            movement_type=TreasuryMovement.Type.ADJUSTMENT,
-            payment_method=TreasuryMovement.Method.CARD,
-            from_account=statement.card_account,
-            date=as_of_date,
-            created_by=created_by,
-            reference=reference,
-            notes=(
-                f"Interés punitorio {month_tag} sobre saldo impago "
-                f"${statement.outstanding_balance:,.0f} "
-                f"({statement.display_id})"
-            ),
-        )
-        # Vincular al statement (trazabilidad via from_card_statement
-        # FK; no es un "pago", sólo referencia). Esto permite
-        # listar todos los movimientos relacionados al statement
-        # (pagos + intereses punitorios + cargos) si fuera
-        # necesario.
-        movement.from_card_statement = statement
-        movement.save(update_fields=['from_card_statement'])
-
-        # NO capitalizamos: el interés punitorio es un ADJUSTMENT
-        # independiente (D=gasto / H=pasivo). NO se suma a
-        # `interest_charged` del statement para no inflar
-        # `total_to_pay` y crear un efecto de capitalización no
-        # deseado (ver ADR-0044, decisión D-5).
-        #
-        # La trazabilidad queda via el ADJUSTMENT vinculado al
-        # statement por `from_card_statement`. La idempotencia
-        # por mes se mantiene via la `reference` con YYYY-MM.
-
-        return (interest, movement)
-
     # ── Pago del estado de cuenta (F3.4) ─────────────────────────────────
 
     @staticmethod
@@ -533,9 +385,6 @@ class CardService:
         - Si es CHECKING, debe tener saldo suficiente. Si es CASH, también
           (la validación de CASH ya existe en TreasuryService, pero la
           hacemos explícita aquí para no depender de ella).
-        - Si `settings.card_minimum_payment_block` y el statement
-          tiene `minimum_payment > 0`, rechaza pagos parciales
-          menores a `minimum_payment` con ValidationError.
         """
         from accounting.models import AccountingSettings
         from .services import TreasuryService
@@ -601,26 +450,6 @@ class CardService:
             # Truncar al saldo (no error). El operador puede pasar
             # `amount = total` por simplicidad y el sistema corrige.
             amount = outstanding
-
-        # Validación de pago mínimo (Onda 3, ADR-0044, opcional).
-        settings_obj, _ = AccountingSettings.objects.get_or_create()
-        if (
-            statement.minimum_payment
-            and statement.minimum_payment > 0
-            and settings_obj.card_minimum_payment_block
-            and amount < statement.minimum_payment
-            and amount < outstanding
-        ):
-            raise ValidationError(
-                _t("Pago parcial ($%(a)s) menor al mínimo exigido "
-                   "($%(m)s) y el bloqueo está activo. Si querés "
-                   "habilitar pagos menores, desactivá "
-                   "`card_minimum_payment_block` en AccountingSettings.")
-                % {
-                    'a': f"{amount:,.0f}",
-                    'm': f"{statement.minimum_payment:,.0f}",
-                }
-            )
 
         # Validación de fondos. Permite pagar aunque no haya saldo
         # si `amount == 0` (statement vacío) — caso que ya no llega

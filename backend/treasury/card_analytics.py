@@ -128,8 +128,6 @@ class CardAnalyticsService:
             paid = stmt.paid_at.date() if stmt.paid_at else None
             days_late = (paid - due).days if paid and paid > due else None
 
-            punitory = CardService.compute_punitory_interest(stmt)
-
             if granularity == 'month':
                 period_key = f"{due.year}-{due.month:02d}"
             elif granularity == 'year':
@@ -148,7 +146,6 @@ class CardAnalyticsService:
                 'paid_at': paid.isoformat() if paid else None,
                 'days_late': days_late,
                 'status': stmt.status,
-                'punitory_interest': str(punitory),
             })
 
         # Aggregate by period_key if granularity is month or year

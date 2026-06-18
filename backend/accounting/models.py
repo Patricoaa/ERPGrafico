@@ -678,11 +678,6 @@ class AccountingSettings(TimeStampedModel):
         verbose_name=_("Cuenta de Ajuste por Redondeo"),
         help_text=_("Para justificar diferencias de redondeo")
     )
-    auto_post_reconciliation_adjustments = models.BooleanField(
-        _("Auto-Publicar Ajustes de Conciliación"),
-        default=False,
-        help_text=_("Si se activa, los ajustes contables generados desde la conciliación bancaria se crearán en estado PUBLICADO (POSTED) en lugar de BORRADOR (DRAFT).")
-    )
     terminal_commission_bridge_account = models.ForeignKey(
         Account, on_delete=models.SET_NULL, null=True, blank=True,
         related_name='settings_terminal_comm_bridge',
@@ -732,28 +727,6 @@ class AccountingSettings(TimeStampedModel):
         related_name='settings_interest_expense',
         verbose_name=_("Cuenta de Gasto por Intereses"),
         help_text=_("Cuenta de gasto para intereses pagados de préstamos bancarios y tarjetas de crédito.")
-    )
-    # Onda 3 (ADR-0044): parámetros para el ciclo de pagos parciales
-    # e interés punitorio de la tarjeta de crédito.
-    card_punitory_monthly_rate = models.DecimalField(
-        _("Tasa Punitoria Mensual Tarjeta (0–1)"),
-        max_digits=8, decimal_places=6,
-        default=Decimal('0'),
-        validators=[MinValueValidator(Decimal('0'))],
-        help_text=_(
-            "Tasa mensual que cobra el emisor sobre el saldo impago "
-            "del statement después del due_date (ej. 0.05 = 5%/mes). "
-            "0 = desactiva el cálculo automático."
-        ),
-    )
-    card_minimum_payment_block = models.BooleanField(
-        _("Bloquear Pago Parcial < Mínimo"),
-        default=False,
-        help_text=_(
-            "Si True, rechaza pagos parciales menores al `minimum_payment` "
-            "del statement con ValidationError. Si False (default), "
-            "permite cualquier pago parcial positivo."
-        ),
     )
     insurance_expense_account = models.ForeignKey(
         Account, on_delete=models.SET_NULL, null=True, blank=True,
@@ -976,19 +949,6 @@ class AccountingSettings(TimeStampedModel):
         default=list, 
         blank=True,
         help_text=_("Tipos de documentos electrónicos seleccionables en el flujo de compras.")
-    )
-
-    # Billing Compliance Model
-    class BillingModel(models.TextChoices):
-        ALWAYS_BOLETA = 'ALWAYS_BOLETA', _('Modelo A: Siempre emitir boleta (Incluso con pago electrónico)')
-        TERMINAL_AS_BOLETA = 'TERMINAL_AS_BOLETA', _('Modelo B: Terminal reemplaza boleta (No emitir DTE 39/41 si hay comprobante DTE 48)')
-
-    billing_model = models.CharField(
-        _("Modelo de Emisión POS"),
-        max_length=20,
-        choices=BillingModel.choices,
-        default=BillingModel.ALWAYS_BOLETA,
-        help_text=_("Determina si se debe emitir boleta cuando se recibe un comprobante de pago electrónico de máquina en el POS.")
     )
 
     # Code Format & Hierarchy

@@ -1159,9 +1159,7 @@ class PayStatementActionSerializer(serializers.Serializer):
         max_digits=14, decimal_places=2, required=False, allow_null=True,
         help_text=(
             "Monto a pagar. Si se omite o es >= outstanding_balance, "
-            "se paga el total. Para pago parcial, enviar el monto "
-            "deseado (sujeto a card_minimum_payment_block si está "
-            "activo)."
+            "se paga el total. Para pago parcial, enviar el monto deseado."
         ),
     )
 
