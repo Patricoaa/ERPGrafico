@@ -4,7 +4,6 @@ export * from './GroupManagement';
 export * from './HRSettingsView';
 export * from './InitialCapitalModal';
 export * from './PartnerEditDrawer';
-export * from './PartnerSettingsTab';
 export * from './SalesSettingsView';
 export * from './TerminalDrawer';
 export * from './UsersSettingsView';
