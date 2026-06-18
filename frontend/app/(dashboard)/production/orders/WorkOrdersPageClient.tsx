@@ -7,7 +7,7 @@ import { ActionConfirmModal, DataTable } from '@/components/shared'
 import { DataTableColumnHeader } from '@/components/shared'
 import { createActionsColumn, DataCell } from '@/components/shared'
 import { ColumnDef } from "@tanstack/react-table"
-import { List, Columns, CalendarDays, Printer, User } from "lucide-react"
+import { List, Columns, CalendarDays, Printer, User, Check } from "lucide-react"
 import {
     WorkOrderWizard,
     WorkOrderKanban,
@@ -313,19 +313,25 @@ export default function WorkOrdersPageClient({ initialOrders }: WorkOrdersPageCl
                         leftAction={
                             <SmartSearchBar searchDef={workOrderSearchDef} placeholder="Buscar OTs..." className="w-full" />
                         }
-                        rightButtonGroupAction={
-                            <Button
-                                variant="ghost"
+                        customFilters={
+                            <div
                                 className={cn(
-                                    "h-full px-3 rounded-none text-[10px] font-black uppercase tracking-widest hover:bg-muted/50 transition-all border-0 ring-0 focus-visible:ring-0",
-                                    myTasks && "bg-primary/5 text-primary hover:bg-primary/10"
+                                    "relative flex cursor-pointer select-none items-center rounded-sm px-3 py-1.5 text-xs uppercase font-bold font-heading tracking-wider outline-none transition-colors",
+                                    myTasks ? "bg-primary/10 text-primary" : "text-foreground/70 hover:bg-muted/50 hover:text-foreground"
                                 )}
                                 onClick={() => handleMyTasksChange(!myTasks)}
                             >
-                                <User className={cn("h-3.5 w-3.5 mr-2", myTasks ? "text-primary" : "opacity-50")} />
+                                <div className={cn(
+                                    "mr-3 flex h-3.5 w-3.5 items-center justify-center rounded-sm border border-primary/50 transition-all",
+                                    myTasks ? "bg-primary text-primary-foreground border-primary" : "opacity-50 [&_svg]:invisible"
+                                )}>
+                                    <Check className="h-3 w-3" />
+                                </div>
+                                <User className={cn("h-3.5 w-3.5 mr-2", myTasks ? "text-primary" : "opacity-60")} />
                                 Mis OTs
-                            </Button>
+                            </div>
                         }
+                        customFilterCount={myTasks ? 1 : 0}
                         viewOptions={[
                             { label: "Lista", value: "list", icon: List },
                             { label: "Tablero", value: "kanban", icon: Columns },
