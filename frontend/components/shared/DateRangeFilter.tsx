@@ -99,7 +99,7 @@ export function DateRangeFilter({
         </Button>
 
       <Dialog open={open} onOpenChange={handleOpenChange}>
-        <DialogContent size="sm" className="p-4 sm:p-5">
+        <DialogContent size="md" className="p-4 sm:p-5">
           <DialogHeader>
             <DialogTitle className="text-center text-lg">{label}</DialogTitle>
             {tempRange?.from && (
