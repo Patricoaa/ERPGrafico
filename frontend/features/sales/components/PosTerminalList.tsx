@@ -190,90 +190,85 @@ export function PosTerminalList({ externalOpen, onExternalOpenChange, createActi
                             <Plus className="mr-2 h-4 w-4" /> Crear Caja
                         </Button>
                     )}
-                    renderCustomView={(table) => (
-                        <div className="flex flex-col gap-4 pt-2">
-                            {table.getRowModel().rows.map(row => {
-                                const terminal = row.original
-                                const methodsByType = terminal.allowed_payment_methods.reduce((acc, method) => {
-                                    let type = method.method_type
-                                    if (type === 'DEBIT_CARD' || type === 'CREDIT_CARD') {
-                                        type = 'CARD'
+                    renderCard={(terminal: Terminal) => {
+                        const methodsByType = terminal.allowed_payment_methods.reduce((acc, method) => {
+                            let type = method.method_type
+                            if (type === 'DEBIT_CARD' || type === 'CREDIT_CARD') {
+                                type = 'CARD'
+                            }
+                            if (!acc[type]) acc[type] = 0
+                            acc[type]++
+                            return acc
+                        }, {} as Record<string, number>)
+
+                        const orderedTypes = PAYMENT_TYPE_ORDER.filter(t => methodsByType[t] !== undefined)
+                        const totalMethods = Object.values(methodsByType).reduce((a, b) => a + b, 0)
+
+                        return (
+                            <EntityCard key={terminal.id} className={!terminal.is_active ? "opacity-70 bg-muted/20" : ""}>
+                                <EntityCard.Header
+                                    title={terminal.name}
+                                    subtitle={terminal.code}
+                                    trailing={
+                                        <div className="flex flex-col items-end gap-2">
+                                            <StatusBadge status={terminal.is_active ? "active" : "inactive"} size="sm" className="uppercase font-bold tracking-tight" />
+                                            <div className="flex items-center gap-1">
+                                                <IconButton onClick={() => handleEdit(terminal)} className="h-7 w-7"><Settings className="h-3 w-3" /></IconButton>
+                                            </div>
+                                        </div>
                                     }
-                                    if (!acc[type]) acc[type] = 0
-                                    acc[type]++
-                                    return acc
-                                }, {} as Record<string, number>)
-
-                                const orderedTypes = PAYMENT_TYPE_ORDER.filter(t => methodsByType[t] !== undefined)
-                                const totalMethods = Object.values(methodsByType).reduce((a, b) => a + b, 0)
-
-                                return (
-                                    <EntityCard key={terminal.id} className={!terminal.is_active ? "opacity-70 bg-muted/20" : ""}>
-                                        <EntityCard.Header
-                                            title={terminal.name}
-                                            subtitle={terminal.code}
-                                            trailing={
-                                                <div className="flex flex-col items-end gap-2">
-                                                    <StatusBadge status={terminal.is_active ? "active" : "inactive"} size="sm" className="uppercase font-bold tracking-tight" />
-                                                    <div className="flex items-center gap-1">
-                                                        <IconButton onClick={() => handleEdit(terminal)} className="h-7 w-7"><Settings className="h-3 w-3" /></IconButton>
-                                                    </div>
+                                />
+                                <EntityCard.Body>
+                                    <EntityCard.Field
+                                        label="Ubicación"
+                                        value={
+                                            <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                                                <MapPin className="h-3.5 w-3.5" />
+                                                {terminal.location || "No especificada"}
+                                            </div>
+                                        }
+                                    />
+                                    {terminal.payment_terminal_device && (
+                                        <EntityCard.Field
+                                            label="Dispositivo"
+                                            value={
+                                                <div className="flex items-center gap-1.5 text-[10px] font-bold text-primary px-1.5 py-0.5 bg-primary/5 border border-primary/10 rounded uppercase">
+                                                    <Smartphone className="h-3 w-3" />
+                                                    {terminal.payment_terminal_device_name || "Vinculado"}
                                                 </div>
                                             }
                                         />
-                                        <EntityCard.Body>
-                                            <EntityCard.Field
-                                                label="Ubicación"
-                                                value={
-                                                    <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                                                        <MapPin className="h-3.5 w-3.5" />
-                                                        {terminal.location || "No especificada"}
-                                                    </div>
-                                                }
-                                            />
-                                            {terminal.payment_terminal_device && (
-                                                <EntityCard.Field
-                                                    label="Dispositivo"
-                                                    value={
-                                                        <div className="flex items-center gap-1.5 text-[10px] font-bold text-primary px-1.5 py-0.5 bg-primary/5 border border-primary/10 rounded uppercase">
-                                                            <Smartphone className="h-3 w-3" />
-                                                            {terminal.payment_terminal_device_name || "Vinculado"}
-                                                        </div>
-                                                    }
-                                                />
-                                            )}
-                                        </EntityCard.Body>
-                                        <EntityCard.Footer className="justify-between items-center bg-muted/10 px-4 py-2 border-t gap-2">
-                                            <div className="flex flex-wrap items-center gap-1.5">
-                                                {orderedTypes.map(type => {
-                                                    const meta = PAYMENT_TYPE_META[type]
-                                                    const Icon = meta.Icon
-                                                    return (
-                                                        <Badge
-                                                            key={type}
-                                                            variant={meta.badgeVariant}
-                                                            className="h-5 gap-1 rounded-md px-1.5 text-[10px] font-semibold uppercase tracking-wide"
-                                                        >
-                                                            <Icon className={cn("h-3 w-3", meta.iconColorClass)} />
-                                                            {meta.label}
-                                                        </Badge>
-                                                    )
-                                                })}
-                                                {totalMethods === 0 && (
-                                                    <span className="text-[10px] text-muted-foreground italic">Sin métodos configurados</span>
-                                                )}
-                                            </div>
-                                            {totalMethods > 0 && (
-                                                <span className="text-[10px] font-semibold text-muted-foreground/70 whitespace-nowrap">
-                                                    {totalMethods} {totalMethods === 1 ? "método" : "métodos"}
-                                                </span>
-                                            )}
-                                        </EntityCard.Footer>
-                                    </EntityCard>
-                                )
-                            })}
-                        </div>
-                    )}
+                                    )}
+                                </EntityCard.Body>
+                                <EntityCard.Footer className="justify-between items-center bg-muted/10 px-4 py-2 border-t gap-2">
+                                    <div className="flex flex-wrap items-center gap-1.5">
+                                        {orderedTypes.map(type => {
+                                            const meta = PAYMENT_TYPE_META[type]
+                                            const Icon = meta.Icon
+                                            return (
+                                                <Badge
+                                                    key={type}
+                                                    variant={meta.badgeVariant}
+                                                    className="h-5 gap-1 rounded-md px-1.5 text-[10px] font-semibold uppercase tracking-wide"
+                                                >
+                                                    <Icon className={cn("h-3 w-3", meta.iconColorClass)} />
+                                                    {meta.label}
+                                                </Badge>
+                                            )
+                                        })}
+                                        {totalMethods === 0 && (
+                                            <span className="text-[10px] text-muted-foreground italic">Sin métodos configurados</span>
+                                        )}
+                                    </div>
+                                    {totalMethods > 0 && (
+                                        <span className="text-[10px] font-semibold text-muted-foreground/70 whitespace-nowrap">
+                                            {totalMethods} {totalMethods === 1 ? "método" : "métodos"}
+                                        </span>
+                                    )}
+                                </EntityCard.Footer>
+                            </EntityCard>
+                        )
+                    }}
                 />
             </div>
 
