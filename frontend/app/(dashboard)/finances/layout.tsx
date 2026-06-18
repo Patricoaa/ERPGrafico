@@ -9,7 +9,7 @@ export const metadata: Metadata = {
 
 export default function FinancesLayout({ children }: { children: React.ReactNode }) {
     return (
-        <PageContainer className="flex flex-col min-h-0 h-full">
+        <PageContainer className="flex flex-col">
             <FinancesHeader />
             <div className="h-full flex flex-col">
                 {children}
