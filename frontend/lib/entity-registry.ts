@@ -251,7 +251,7 @@ export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
     listUrl: '/treasury/operaciones/movements',
     detailUrlPattern: '/treasury/operaciones/movements?selected={id}',
     hasDrawer: true,
-    viewPolicy: { availableViews: ['list', 'grid'], defaultView: 'list', cardComponent: 'entity-compact', gridLayout: 'multi-column' },
+    viewPolicy: { availableViews: ['list', 'grid'], defaultView: 'list', cardComponent: 'entity', gridLayout: 'multi-column' },
   },
   'treasury.unbilled-charge': {
     label: 'treasury.unbilled-charge',
@@ -262,7 +262,7 @@ export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
     shortTemplate: 'UBC-{id}',
     listUrl: '/treasury/centro-bancos',
     detailUrlPattern: '/treasury/centro-bancos',
-    viewPolicy: { availableViews: ['list', 'grid'], defaultView: 'list', cardComponent: 'entity-compact', gridLayout: 'multi-column' },
+    viewPolicy: { availableViews: ['list', 'grid'], defaultView: 'list', cardComponent: 'entity', gridLayout: 'multi-column' },
   },
   'treasury.treasuryaccount': {
     label: 'treasury.treasuryaccount',
@@ -273,7 +273,7 @@ export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
     shortTemplate: 'CTA-{id}',
     listUrl: '/treasury/operaciones/accounts',
     detailUrlPattern: '/treasury/operaciones/accounts?selected={id}',
-    viewPolicy: { availableViews: ['list', 'grid'], defaultView: 'list', cardComponent: 'entity-compact', gridLayout: 'multi-column' },
+    viewPolicy: { availableViews: ['list', 'grid'], defaultView: 'list', cardComponent: 'entity', gridLayout: 'multi-column' },
     hasDrawer: true,
   },
   'treasury.bankstatement': {
