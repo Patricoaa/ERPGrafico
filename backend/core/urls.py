@@ -3,7 +3,7 @@ from rest_framework.routers import DefaultRouter
 from .views import (
     UserViewSet, CompanySettingsViewSet, ActionLogViewSet, GlobalAuditLogView,
     CurrentUserView, MyProfileView, ChangePasswordView, ChangePinView, GroupViewSet, server_time,
-    MyProfilePayrollPreviewView, system_status
+    MyProfilePayrollPreviewView, system_status, UserPreferenceView
 )
 from .api.search import universal_search
 from .api.document import document_action_view
@@ -25,6 +25,7 @@ urlpatterns = [
     path('audit/global/', GlobalAuditLogView.as_view(), name='global-audit-log'),
     path('server-time/', server_time, name='server-time'),
     path('status/', system_status, name='system-status'),
+    path('preferences/', UserPreferenceView.as_view(), name='user-preferences'),
     path('search/', universal_search, name='universal-search'),
     path('documents/<int:content_type_id>/<int:object_id>/<str:action>/', document_action_view, name='document-action'),
     path('registry/<str:model_label>/schema/', model_schema, name='model-schema'),

@@ -12,6 +12,7 @@ from core.storages import PublicMediaStorage, PrivateMediaStorage
 from .abstracts import TimeStampedModel, AuditedModel, TransactionalDocument
 from .search import GlobalSearchIndex
 from .idempotency import IdempotencyRecord
+from .user_preference import UserPreference
 
 __all__ = [
     'User',
@@ -24,6 +25,7 @@ __all__ = [
     'TransactionalDocument',
     'GlobalSearchIndex',
     'IdempotencyRecord',
+    'UserPreference',
 ]
 
 

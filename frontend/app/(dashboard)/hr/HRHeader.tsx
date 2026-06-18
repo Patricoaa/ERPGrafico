@@ -3,9 +3,11 @@
 import { usePathname } from "next/navigation"
 import { PageHeader } from "@/components/shared"
 import { getEntityIconName } from "@/lib/entity-registry"
+import { useViewModePreference } from "@/hooks/useViewModePreference"
 
 export function HRHeader() {
     const pathname = usePathname()
+    const { getViewModeUrl } = useViewModePreference()
     
     // Determine active view from pathname
     // e.g. /hr/employees -> employees
@@ -18,10 +20,10 @@ export function HRHeader() {
     const subActiveValue = currentSegment === 'settings' ? (segments[2] || 'global') : undefined
 
     const tabs = [
-        { value: "employees", label: "Nómina Personal", iconName: getEntityIconName('hr.employee'), href: "/hr/employees" },
-        { value: "absences", label: "Inasistencias", iconName: getEntityIconName('hr.absence'), href: "/hr/absences" },
-        { value: "advances", label: "Anticipos", iconName: getEntityIconName('hr.salaryadvance'), href: "/hr/advances" },
-        { value: "payrolls", label: "Liquidaciones", iconName: getEntityIconName('hr.payroll'), href: "/hr/payrolls" },
+        { value: "employees", label: "Nómina Personal", iconName: getEntityIconName('hr.employee'), href: getViewModeUrl('hr.employee', "/hr/employees") },
+        { value: "absences", label: "Inasistencias", iconName: getEntityIconName('hr.absence'), href: getViewModeUrl('hr.absence', "/hr/absences") },
+        { value: "advances", label: "Anticipos", iconName: getEntityIconName('hr.salaryadvance'), href: getViewModeUrl('hr.salaryadvance', "/hr/advances") },
+        { value: "payrolls", label: "Liquidaciones", iconName: getEntityIconName('hr.payroll'), href: getViewModeUrl('hr.payroll', "/hr/payrolls") },
         { 
             value: "config", 
             label: "Configuración", 
@@ -37,7 +39,7 @@ export function HRHeader() {
 
     const navigation = {
         moduleName: "Recursos Humanos",
-        moduleHref: "/hr/employees",
+        moduleHref: getViewModeUrl('hr.employee', "/hr/employees"),
         tabs,
         activeValue,
         subActiveValue,

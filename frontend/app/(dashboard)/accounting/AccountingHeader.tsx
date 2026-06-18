@@ -3,9 +3,11 @@
 import { usePathname } from "next/navigation"
 import { PageHeader } from "@/components/shared"
 import { getEntityIconName } from "@/lib/entity-registry"
+import { useViewModePreference } from "@/hooks/useViewModePreference"
 
 export function AccountingHeader() {
     const pathname = usePathname()
+    const { getViewModeUrl } = useViewModePreference()
 
     const segments = pathname.split('/').filter(Boolean)
     const currentSegment = segments[1] || 'ledger'
@@ -14,15 +16,15 @@ export function AccountingHeader() {
     const subActiveValue = undefined
 
     const tabs = [
-        { value: "ledger", label: "Plan de Cuentas", iconName: getEntityIconName('accounting.account'), href: "/accounting/ledger" },
-        { value: "entries", label: "Asientos", iconName: getEntityIconName('accounting.journalentry'), href: "/accounting/entries" },
-        { value: "closures", label: "Cierre Contable", iconName: getEntityIconName('accounting.fiscalyear'), href: "/accounting/closures" },
-        { value: "tax", label: "Impuestos mensuales (F29)", iconName: "landmark", href: "/accounting/tax" },
+        { value: "ledger", label: "Plan de Cuentas", iconName: getEntityIconName('accounting.account'), href: getViewModeUrl('accounting.account', "/accounting/ledger") },
+        { value: "entries", label: "Asientos", iconName: getEntityIconName('accounting.journalentry'), href: getViewModeUrl('accounting.journalentry', "/accounting/entries") },
+        { value: "closures", label: "Cierre Contable", iconName: getEntityIconName('accounting.fiscalyear'), href: getViewModeUrl('accounting.fiscalyear', "/accounting/closures") },
+        { value: "tax", label: "Impuestos mensuales (F29)", iconName: "landmark", href: getViewModeUrl('tax.taxperiod', "/accounting/tax") },
     ]
 
     const navigation = {
         moduleName: "Contabilidad",
-        moduleHref: "/accounting",
+        moduleHref: getViewModeUrl('accounting.account', "/accounting/ledger"),
         tabs,
         activeValue,
         subActiveValue,

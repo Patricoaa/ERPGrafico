@@ -3,9 +3,11 @@
 import { usePathname } from "next/navigation"
 import { PageHeader } from "@/components/shared"
 import { getEntityIconName } from "@/lib/entity-registry"
+import { useViewModePreference } from "@/hooks/useViewModePreference"
 
 export function SalesHeader() {
     const pathname = usePathname()
+    const { getViewModeUrl } = useViewModePreference()
 
     const segments = pathname.split('/').filter(Boolean)
     const currentSegment = segments[1] || 'orders'
@@ -38,9 +40,9 @@ export function SalesHeader() {
             value: "orders",
             label: "Órdenes",
             iconName: getEntityIconName('sales.saleorder'),
-            href: "/sales/orders",
+            href: getViewModeUrl('sales.saleorder', "/sales/orders"),
             subTabs: [
-                { value: "orders", label: "Notas de Venta", href: "/sales/orders" },
+                { value: "orders", label: "Notas de Venta", href: getViewModeUrl('sales.saleorder', "/sales/orders") },
                 { value: "notes", label: "Ajustes (N/C N/D)", href: "/sales/orders/notes" },
             ]
         },
@@ -79,7 +81,7 @@ export function SalesHeader() {
 
     const navigation = {
         moduleName: "Ventas",
-        moduleHref: "/sales/orders",
+        moduleHref: getViewModeUrl('sales.saleorder', "/sales/orders"),
         tabs,
         activeValue,
         subActiveValue,

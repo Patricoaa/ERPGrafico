@@ -3,9 +3,11 @@
 import { usePathname } from "next/navigation"
 import { PageHeader } from "@/components/shared"
 import { getEntityIconName } from "@/lib/entity-registry"
+import { useViewModePreference } from "@/hooks/useViewModePreference"
 
 export function ProductionHeader() {
     const pathname = usePathname()
+    const { getViewModeUrl } = useViewModePreference()
     
     const segments = pathname.split('/').filter(Boolean)
     const currentSegment = segments[1] || 'orders'
@@ -14,13 +16,13 @@ export function ProductionHeader() {
     const subActiveValue = undefined
 
     const tabs = [
-        { value: "orders", label: "Órdenes de Trabajo", iconName: getEntityIconName('production.workorder'), href: "/production/orders" },
-        { value: "boms", label: "Lista de Materiales", iconName: getEntityIconName('production.bom'), href: "/production/boms" },
+        { value: "orders", label: "Órdenes de Trabajo", iconName: getEntityIconName('production.workorder'), href: getViewModeUrl('production.workorder', "/production/orders") },
+        { value: "boms", label: "Lista de Materiales", iconName: getEntityIconName('production.bom'), href: getViewModeUrl('production.bom', "/production/boms") },
     ]
 
     const navigation = {
         moduleName: "Producción",
-        moduleHref: "/production",
+        moduleHref: getViewModeUrl('production.workorder', "/production/orders"),
         tabs,
         activeValue,
         subActiveValue,

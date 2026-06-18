@@ -1,6 +1,15 @@
 import api from "@/lib/api"
 import type { MyProfile, ChangePasswordPayload, ChangePinPayload } from "@/types/profile"
 
+export async function getUserPreferences(): Promise<Record<string, any>> {
+  const res = await api.get('/core/preferences/')
+  return res.data
+}
+
+export async function saveUserPreference(key: string, value: any): Promise<void> {
+  await api.patch('/core/preferences/', { [key]: value })
+}
+
 export async function getMyProfile(): Promise<MyProfile> {
   const res = await api.get('/core/auth/my-profile/')
   return res.data
