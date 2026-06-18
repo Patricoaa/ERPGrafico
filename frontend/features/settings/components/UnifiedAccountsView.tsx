@@ -501,7 +501,7 @@ function TesoreriasForm() {
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 <AccountField form={form} name="bank_commission_account" label="Gasto Comisiones Bancarias" accountType="EXPENSE" />
                                 <AccountField form={form} name="interest_income_account" label="Ingreso por Intereses" accountType="INCOME" />
-                                <AccountField form={form} name="exchange_difference_account" label="Diferencia de Cambio (M.E)" accountType="" />
+                                <AccountField form={form} name="exchange_difference_account" label="Diferencia de Cambio (M.E)" accountType="INCOME" />
                                 <AccountField form={form} name="rounding_adjustment_account" label="Ajuste por Redondeo / Centavos" accountType="EXPENSE" />
                                 <AccountField form={form} name="error_adjustment_account" label="Ajustes por Errores Operativos" accountType="EXPENSE" />
                                 <AccountField form={form} name="miscellaneous_adjustment_account" label="Otros Ajustes de Tesorería" accountType="EXPENSE" />
@@ -1139,7 +1139,7 @@ function ImpuestosForm() {
                                 <CardContent className="space-y-6">
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                         <AccountField form={form} name="ppm_account" label="PPM por Pagar / Recuperar" accountType="ASSET" />
-                                        <AccountField form={form} name="withholding_tax_account" label="Retenciones Honorarios (10.75%)" accountType="LIABILITY" />
+                                        <AccountField form={form} name="withholding_tax_account" label="Retenciones Honorarios (10.75%)" accountType="ASSET" />
                                     </div>
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                         <AccountField form={form} name="second_category_tax_account" label="Impuesto Único trabajadores" accountType="LIABILITY" />
