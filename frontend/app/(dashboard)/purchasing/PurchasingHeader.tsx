@@ -3,9 +3,11 @@
 import { usePathname } from "next/navigation"
 import { PageHeader } from "@/components/shared"
 import { getEntityIconName } from "@/lib/entity-registry"
+import { useViewModePreference } from "@/hooks/useViewModePreference"
 
 export function PurchasingHeader() {
     const pathname = usePathname()
+    const { getViewModeUrl } = useViewModePreference()
     
     const segments = pathname.split('/').filter(Boolean)
     const currentSegment = segments[1] || 'orders'
@@ -14,13 +16,13 @@ export function PurchasingHeader() {
     const subActiveValue = undefined
 
     const tabs = [
-        { value: "orders", label: "Órdenes", iconName: getEntityIconName('purchasing.purchaseorder'), href: "/purchasing/orders" },
-        { value: "notes", label: "Notas Crédito/Débito", iconName: "file-text", href: "/purchasing/notes" },
+        { value: "orders", label: "Órdenes", iconName: getEntityIconName('purchasing.purchaseorder'), href: getViewModeUrl('purchasing.purchaseorder', "/purchasing/orders") },
+        { value: "notes", label: "Notas Crédito/Débito", iconName: "file-text", href: getViewModeUrl('billing.invoice', "/purchasing/notes") },
     ]
 
     const navigation = {
         moduleName: "Compras",
-        moduleHref: "/purchasing/orders",
+        moduleHref: getViewModeUrl('purchasing.purchaseorder', "/purchasing/orders"),
         tabs,
         activeValue,
         subActiveValue,

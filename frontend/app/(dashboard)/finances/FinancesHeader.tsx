@@ -3,6 +3,7 @@
 import { usePathname, useSearchParams } from "next/navigation"
 import { PageHeader } from "@/components/shared"
 import { getEntityIconName } from "@/lib/entity-registry"
+import { useViewModePreference } from "@/hooks/useViewModePreference"
 
 export const FINANCES_TABS = [
     {
@@ -50,6 +51,20 @@ export const FINANCES_TABS = [
 
 export function FinancesHeader() {
     const pathname = usePathname()
+    const { getViewModeUrl } = useViewModePreference()
+
+    const tabs = FINANCES_TABS.map(t => {
+        if (t.value === 'budgets') {
+            return {
+                ...t,
+                subTabs: t.subTabs.map(st => st.value === 'list'
+                    ? { ...st, href: getViewModeUrl('accounting.budget', st.href) }
+                    : st
+                ),
+            }
+        }
+        return t
+    })
 
     const segments = pathname.split('/').filter(Boolean)
     const currentSegment = segments[1] || 'statements'
@@ -60,7 +75,7 @@ export function FinancesHeader() {
     const navigation = {
         moduleName: "Finanzas",
         moduleHref: "/finances",
-        tabs: FINANCES_TABS,
+        tabs,
         activeValue,
         subActiveValue,
     }

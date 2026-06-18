@@ -2,7 +2,7 @@ from django.contrib.auth.models import Group
 from rest_framework import serializers
 from rest_framework_simplejwt.serializers import TokenRefreshSerializer
 from rest_framework_simplejwt.exceptions import InvalidToken
-from core.models import User, CompanySettings, ActionLog, Attachment
+from core.models import User, CompanySettings, ActionLog, Attachment, UserPreference
 
 class CustomTokenRefreshSerializer(TokenRefreshSerializer):
     def validate(self, attrs):
@@ -191,3 +191,9 @@ class HistoricalRecordSerializer(serializers.Serializer):
 
     def get_history_user_username(self, obj):
         return obj.history_user.username if obj.history_user else "System"
+
+class UserPreferenceSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = UserPreference
+        fields = ['id', 'key', 'value', 'updated_at']
+        read_only_fields = ['id', 'updated_at']

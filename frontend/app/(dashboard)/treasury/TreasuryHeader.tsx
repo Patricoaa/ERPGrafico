@@ -5,10 +5,12 @@ import { useMemo } from "react"
 import { PageHeader } from "@/components/shared"
 import { getEntityIconName } from "@/lib/entity-registry"
 import { useBanks } from "@/features/treasury"
+import { useViewModePreference } from "@/hooks/useViewModePreference"
 
 export function TreasuryHeader() {
     const pathname = usePathname()
     const { banks } = useBanks()
+    const { getViewModeUrl } = useViewModePreference()
 
     const segments = pathname.split('/').filter(Boolean)
     const currentSegment = segments[1] || 'operaciones'
@@ -51,12 +53,12 @@ export function TreasuryHeader() {
             value: "operaciones",
             label: "Operaciones",
             iconName: "banknote",
-            href: "/treasury/operaciones/movements",
+            href: getViewModeUrl('treasury.treasurymovement', "/treasury/operaciones/movements"),
             subTabs: [
-                { value: "movements", label: "Movimientos", href: "/treasury/operaciones/movements", iconName: getEntityIconName('treasury.treasurymovement') },
-                { value: "accounts", label: "Cuentas de Tesorería", href: "/treasury/operaciones/accounts", iconName: getEntityIconName('treasury.treasuryaccount') },
-                { value: "methods", label: "Métodos de Pago", href: "/treasury/operaciones/methods", iconName: getEntityIconName('treasury.paymentmethod') },
-                { value: "checks", label: "Cheques Recibidos", href: "/treasury/operaciones/checks", iconName: getEntityIconName('treasury.check') },
+                { value: "movements", label: "Movimientos", href: getViewModeUrl('treasury.treasurymovement', "/treasury/operaciones/movements"), iconName: getEntityIconName('treasury.treasurymovement') },
+                { value: "accounts", label: "Cuentas de Tesorería", href: getViewModeUrl('treasury.treasuryaccount', "/treasury/operaciones/accounts"), iconName: getEntityIconName('treasury.treasuryaccount') },
+                { value: "methods", label: "Métodos de Pago", href: getViewModeUrl('treasury.paymentmethod', "/treasury/operaciones/methods"), iconName: getEntityIconName('treasury.paymentmethod') },
+                { value: "checks", label: "Cheques Recibidos", href: getViewModeUrl('treasury.check', "/treasury/operaciones/checks"), iconName: getEntityIconName('treasury.check') },
             ]
         },
         {
@@ -72,16 +74,16 @@ export function TreasuryHeader() {
             iconName: "cpu",
             href: "/treasury/terminal-cobro/providers",
             subTabs: [
-                { value: "providers", label: "Proveedores", iconName: getEntityIconName('treasury.terminalprovider'), href: "/treasury/terminal-cobro/providers" },
-                { value: "devices", label: "Dispositivos", iconName: getEntityIconName('treasury.terminaldevice'), href: "/treasury/terminal-cobro/devices" },
-                { value: "batches", label: "Lotes de Pago", iconName: getEntityIconName('treasury.terminalbatch'), href: "/treasury/terminal-cobro/batches" },
+                { value: "providers", label: "Proveedores", iconName: getEntityIconName('treasury.terminalprovider'), href: getViewModeUrl('treasury.terminalprovider', "/treasury/terminal-cobro/providers") },
+                { value: "devices", label: "Dispositivos", iconName: getEntityIconName('treasury.terminaldevice'), href: getViewModeUrl('treasury.terminaldevice', "/treasury/terminal-cobro/devices") },
+                { value: "batches", label: "Lotes de Pago", iconName: getEntityIconName('treasury.terminalbatch'), href: getViewModeUrl('treasury.terminalbatch', "/treasury/terminal-cobro/batches") },
             ]
         },
     ]
 
     const navigation = {
         moduleName: "Tesorería",
-        moduleHref: "/treasury/operaciones/movements",
+        moduleHref: getViewModeUrl('treasury.treasurymovement', "/treasury/operaciones/movements"),
         tabs,
         activeValue,
         subActiveValue,

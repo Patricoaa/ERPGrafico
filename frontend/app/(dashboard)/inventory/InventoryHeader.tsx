@@ -3,9 +3,11 @@
 import { usePathname } from "next/navigation"
 import { PageHeader } from "@/components/shared"
 import { getEntityIconName } from "@/lib/entity-registry"
+import { useViewModePreference } from "@/hooks/useViewModePreference"
 
 export function InventoryHeader() {
     const pathname = usePathname()
+    const { getViewModeUrl } = useViewModePreference()
 
     const segments = pathname.split('/').filter(Boolean)
     const currentSegment = segments[1] || 'products'
@@ -26,12 +28,12 @@ export function InventoryHeader() {
             value: "products",
             label: "Productos",
             iconName: getEntityIconName('inventory.product'),
-            href: "/inventory/products",
+            href: getViewModeUrl('inventory.product', "/inventory/products"),
             subTabs: [
-                { value: "products", label: "Catálogo", iconName: getEntityIconName('inventory.product'), href: "/inventory/products" },
-                { value: "categories", label: "Categorías", iconName: getEntityIconName('inventory.productcategory'), href: "/inventory/products/categories" },
-                { value: "pricing-rules", label: "Precios", iconName: getEntityIconName('inventory.pricingrule'), href: "/inventory/products/pricing-rules" },
-                { value: "subscriptions", label: "Suscripciones", iconName: "calendar-clock", href: "/inventory/products/subscriptions" },
+                { value: "products", label: "Catálogo", iconName: getEntityIconName('inventory.product'), href: getViewModeUrl('inventory.product', "/inventory/products") },
+                { value: "categories", label: "Categorías", iconName: getEntityIconName('inventory.productcategory'), href: getViewModeUrl('inventory.productcategory', "/inventory/products/categories") },
+                { value: "pricing-rules", label: "Precios", iconName: getEntityIconName('inventory.pricingrule'), href: getViewModeUrl('inventory.pricingrule', "/inventory/products/pricing-rules") },
+                { value: "subscriptions", label: "Suscripciones", iconName: "calendar-clock", href: getViewModeUrl('inventory.subscription', "/inventory/products/subscriptions") },
             ]
         },
         {
@@ -41,8 +43,8 @@ export function InventoryHeader() {
             href: "/inventory/stock",
             subTabs: [
                 { value: "report", label: "Reporte", iconName: "file-text", href: "/inventory/stock/report" },
-                { value: "movements", label: "Movimientos", iconName: getEntityIconName('inventory.stockmove'), href: "/inventory/stock/movements" },
-                { value: "warehouses", label: "Almacenes", iconName: getEntityIconName('inventory.warehouse'), href: "/inventory/stock/warehouses" },
+                { value: "movements", label: "Movimientos", iconName: getEntityIconName('inventory.stockmove'), href: getViewModeUrl('inventory.stockmove', "/inventory/stock/movements") },
+                { value: "warehouses", label: "Almacenes", iconName: getEntityIconName('inventory.warehouse'), href: getViewModeUrl('inventory.warehouse', "/inventory/stock/warehouses") },
             ]
         },
         {
@@ -51,8 +53,8 @@ export function InventoryHeader() {
             iconName: getEntityIconName('inventory.uom'),
             href: "/inventory/uoms",
             subTabs: [
-                { value: "units", label: "Unidades de Medida", iconName: getEntityIconName('inventory.uom'), href: "/inventory/uoms/units" },
-                { value: "categories", label: "Categorías de Medida", iconName: getEntityIconName('inventory.uomcategory'), href: "/inventory/uoms/categories" },
+                { value: "units", label: "Unidades de Medida", iconName: getEntityIconName('inventory.uom'), href: getViewModeUrl('inventory.uom', "/inventory/uoms/units") },
+                { value: "categories", label: "Categorías de Medida", iconName: getEntityIconName('inventory.uomcategory'), href: getViewModeUrl('inventory.uomcategory', "/inventory/uoms/categories") },
             ]
         },
         { value: "attributes", label: "Atributos", iconName: "tags", href: "/inventory/attributes" },
@@ -69,7 +71,7 @@ export function InventoryHeader() {
 
     const navigation = {
         moduleName: "Inventario",
-        moduleHref: "/inventory/products",
+        moduleHref: getViewModeUrl('inventory.product', "/inventory/products"),
         tabs,
         activeValue,
         subActiveValue,

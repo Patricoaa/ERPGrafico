@@ -3,9 +3,11 @@
 import { usePathname } from "next/navigation"
 import { PageHeader } from "@/components/shared"
 import { getEntityIconName } from "@/lib/entity-registry"
+import { useViewModePreference } from "@/hooks/useViewModePreference"
 
 export function BillingHeader() {
     const pathname = usePathname()
+    const { getViewModeUrl } = useViewModePreference()
     
     const segments = pathname.split('/').filter(Boolean)
     const currentSegment = segments[1] || 'sales'
@@ -14,8 +16,8 @@ export function BillingHeader() {
     const subActiveValue = currentSegment === 'settings' ? (segments[2] || 'dtes') : undefined
 
     const tabs = [
-        { value: "sales", label: "Emitidos (Ventas)", iconName: getEntityIconName('billing.invoice'), href: "/billing/sales" },
-        { value: "purchases", label: "Recibidos (Compras)", iconName: getEntityIconName('billing.purchaseinvoice'), href: "/billing/purchases" },
+        { value: "sales", label: "Emitidos (Ventas)", iconName: getEntityIconName('billing.invoice'), href: getViewModeUrl('billing.invoice', "/billing/sales") },
+        { value: "purchases", label: "Recibidos (Compras)", iconName: getEntityIconName('billing.purchaseinvoice'), href: getViewModeUrl('billing.invoice', "/billing/purchases") },
         { 
             value: "config", 
             label: "Configuración", 
@@ -29,7 +31,7 @@ export function BillingHeader() {
 
     const navigation = {
         moduleName: "Facturación",
-        moduleHref: "/billing",
+        moduleHref: getViewModeUrl('billing.invoice', "/billing/sales"),
         tabs,
         activeValue,
         subActiveValue,

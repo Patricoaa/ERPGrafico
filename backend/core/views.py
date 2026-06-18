@@ -7,10 +7,10 @@ from rest_framework.response import Response
 from rest_framework_simplejwt.views import TokenRefreshView, TokenObtainPairView
 from django.contrib.auth.models import Group
 from django.conf import settings
-from .models import User, CompanySettings, ActionLog, Attachment
+from .models import User, CompanySettings, ActionLog, Attachment, UserPreference
 from .serializers import (
     UserSerializer, CompanySettingsSerializer, CustomTokenRefreshSerializer,
-    ActionLogSerializer, HistoricalRecordSerializer, GroupSerializer
+    ActionLogSerializer, HistoricalRecordSerializer, GroupSerializer, UserPreferenceSerializer
 )
 from .services import ActionLoggingService
 from django.utils import timezone
@@ -291,6 +291,25 @@ class ChangePinView(APIView):
         )
 
         return Response({'detail': 'PIN de POS actualizado exitosamente.'})
+
+
+class UserPreferenceView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        prefs = UserPreference.objects.filter(user=request.user)
+        data = {p.key: p.value for p in prefs}
+        return Response(data)
+
+    def patch(self, request):
+        data = request.data
+        for key, value in data.items():
+            UserPreference.objects.update_or_create(
+                user=request.user,
+                key=key,
+                defaults={'value': value}
+            )
+        return Response(data)
 
 
 class UserViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
