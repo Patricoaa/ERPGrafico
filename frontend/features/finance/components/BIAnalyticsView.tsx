@@ -107,7 +107,7 @@ export const BIAnalyticsView: React.FC<BIAnalyticsViewProps> = ({ date }) => {
                         data={[
                             {
                                 id: "Ventas Mensuales",
-                                data: (sales.monthly_trend || []).map((d) => ({ x: d.month, y: d.sales })),
+                                data: (sales.monthly_trend || []).map((d: { month: string; sales: number }) => ({ x: d.month, y: d.sales })),
                             },
                         ]}
                         margin={{ top: 20, right: 20, bottom: 50, left: 60 }}
@@ -196,7 +196,7 @@ export const BIAnalyticsView: React.FC<BIAnalyticsViewProps> = ({ date }) => {
                     </CardHeader>
                     <CardContent className="h-[300px]">
                         <ResponsivePie
-                            data={(inventory.stock_distribution || []).map((d) => ({ id: d.category, value: d.value }))}
+                            data={(inventory.stock_distribution || []).map((d: { category: string; value: number }) => ({ id: d.category, value: d.value }))}
                             margin={{ top: 20, right: 20, bottom: 40, left: 20 }}
                             padAngle={2}
                             cornerRadius={4}

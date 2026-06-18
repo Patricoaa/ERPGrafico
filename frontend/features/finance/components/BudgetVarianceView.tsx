@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
     CalendarDays,
     FileDown,
@@ -41,9 +41,11 @@ export function BudgetVarianceView() {
     const varianceData: BudgetVarianceNode[] = Array.isArray(data) ? data : []
 
     // Auto-select first budget on load
-    if (!selectedBudget && budgets.length > 0) {
-        setSelectedBudget(budgets[0].id.toString())
-    }
+    useEffect(() => {
+        if (!selectedBudget && budgets.length > 0) {
+            setSelectedBudget(budgets[0].id.toString())
+        }
+    }, [selectedBudget, budgets])
 
     // Calculate top-level summary sums from the tree
     const summary = useMemo(() => {
@@ -94,7 +96,7 @@ export function BudgetVarianceView() {
                                 <SelectValue placeholder="Seleccionar Presupuesto" />
                             </SelectTrigger>
                             <SelectContent>
-                                {budgets.map(b => (
+                                {budgets.map((b: { id: number; name: string }) => (
                                     <SelectItem key={b.id} value={b.id.toString()}>{b.name}</SelectItem>
                                 ))}
                             </SelectContent>
