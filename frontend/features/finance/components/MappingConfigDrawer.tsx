@@ -263,10 +263,9 @@ export function MappingConfigDrawer({
                     columns={columns}
                     data={accounts}
                     isLoading={isLoading}
-                    variant="standalone"
+                    variant="embedded"
                     searchPlaceholder="Buscar por nombre de cuenta..."
                     filterColumn="name"
-                    useAdvancedFilter={true}
                     bulkDock={(items, clear) => (
                         <BulkActionDock selectedCount={items.length} onClear={clear}>
                             <ActionDock.Actions>
