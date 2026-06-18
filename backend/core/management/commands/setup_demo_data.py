@@ -546,6 +546,7 @@ class Command(BaseCommand):
             'pos_cashback_error': Account.objects.get(code='5.2.24'),
             'pos_system_error': Account.objects.get(code='5.2.25'),
             'uncollectible_expense': Account.objects.get(code='5.2.26'),
+            'tax_withholding': Account.objects.get(code='2.1.02.08'),
         }
 
     def _create_partners(self, accounts):

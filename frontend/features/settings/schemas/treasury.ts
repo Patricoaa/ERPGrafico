@@ -8,6 +8,7 @@ export const treasurySchema = z.object({
     rounding_adjustment_account: z.string().nullable(),
     error_adjustment_account: z.string().nullable(),
     miscellaneous_adjustment_account: z.string().nullable(),
+    tax_withholding_account: z.string().nullable(),
     // POS Session Difference accounts
     pos_cash_difference_gain_account: z.string().nullable(),
     pos_cash_difference_loss_account: z.string().nullable(),

@@ -171,6 +171,7 @@ class AccountingService:
             ('2.1.02.05', 'Retención Préstamo Solidario', AccountType.LIABILITY, '2.1.02', None, None, None),
             ('2.1.02.06', 'Impuesto Adicional (ILA) por Pagar', AccountType.LIABILITY, '2.1.02', None, None, None),
             ('2.1.02.07', 'Retención IVA por Pagar', AccountType.LIABILITY, '2.1.02', None, None, None),
+            ('2.1.02.08', 'Ajuste Conciliación - Retenciones', AccountType.LIABILITY, '2.1.02', None, None, None),
             
             ('2.1.03', 'Obligaciones Laborales', AccountType.LIABILITY, '2.1', None, CFCategory.OPERATING, None),
             ('2.1.03.01', 'Remuneraciones por Pagar', AccountType.LIABILITY, '2.1.03', None, None, None),
@@ -386,6 +387,7 @@ class AccountingService:
             'rounding_adjustment_account': '5.2.11',
             'error_adjustment_account': '5.2.12',
             'miscellaneous_adjustment_account': '5.2.99', # Otros Gastos Varios (needs creation)
+            'tax_withholding_account': '2.1.02.08',
 
             # F5.1 — Financial expense accounts (ADR-0036)
             'interest_expense_account': '5.3.01',

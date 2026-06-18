@@ -47,6 +47,7 @@ export interface TreasurySettings {
     rounding_adjustment_account: string | null
     error_adjustment_account: string | null
     miscellaneous_adjustment_account: string | null
+    tax_withholding_account: string | null
     // POS Session Difference accounts
     pos_cash_difference_gain_account: string | null
     pos_cash_difference_loss_account: string | null

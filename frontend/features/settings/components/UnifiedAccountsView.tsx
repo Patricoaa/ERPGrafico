@@ -437,6 +437,7 @@ const TESORERIA_DEFAULTS: TreasuryFormValues = {
     rounding_adjustment_account: null,
     error_adjustment_account: null,
     miscellaneous_adjustment_account: null,
+    tax_withholding_account: null,
     pos_cash_difference_gain_account: null,
     pos_cash_difference_loss_account: null,
     pos_tip_account: null,
@@ -505,6 +506,7 @@ function TesoreriasForm() {
                                 <AccountField form={form} name="rounding_adjustment_account" label="Ajuste por Redondeo / Centavos" accountType="EXPENSE" />
                                 <AccountField form={form} name="error_adjustment_account" label="Ajustes por Errores Operativos" accountType="EXPENSE" />
                                 <AccountField form={form} name="miscellaneous_adjustment_account" label="Otros Ajustes de Tesorería" accountType="EXPENSE" />
+                                <AccountField form={form} name="tax_withholding_account" label="Ajustes por Retenciones de Impuestos" accountType="LIABILITY" />
                             </div>
                         </CardContent>
                     </Card>
