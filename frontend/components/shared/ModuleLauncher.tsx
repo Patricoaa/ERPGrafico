@@ -87,7 +87,7 @@ export function ModuleLauncher({ open, onClose }: ModuleLauncherProps) {
                             Seleccionar Módulo
                         </h2>
 
-                        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-[clamp(0.75rem,2.5vw,1.5rem)]">
+                        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-[clamp(0.75rem,2.5vw,1.5rem)]">
                             {MODULE_ORDER.map((id) => {
                                 const mod = MODULE_REGISTRY[id]
                                 if (!mod) return null
@@ -103,7 +103,7 @@ export function ModuleLauncher({ open, onClose }: ModuleLauncherProps) {
                                                 href={getModuleDefaultUrl(id)}
                                                 onClick={onClose}
                                                 className={cn(
-                                                    "group relative flex flex-col items-center justify-center gap-3 p-[clamp(1rem,4vw,2rem)] rounded-xl border transition-all duration-200",
+                                                    "group relative flex flex-col items-center justify-center gap-2 p-[clamp(0.75rem,2vw,1.25rem)] rounded-xl border transition-all duration-200",
                                                     "hover:shadow-md hover:border-border/30",
                                                     isActive
                                                         ? "bg-primary/5 border-primary/20 shadow-sm"
@@ -111,12 +111,12 @@ export function ModuleLauncher({ open, onClose }: ModuleLauncherProps) {
                                                 )}
                                             >
                                                 <div className={cn(
-                                                    "w-[clamp(3rem,8vw,5rem)] h-[clamp(3rem,8vw,5rem)] rounded-xl flex items-center justify-center transition-colors",
+                                                    "w-[clamp(2.5rem,5vw,3.75rem)] h-[clamp(2.5rem,5vw,3.75rem)] rounded-xl flex items-center justify-center transition-colors",
                                                     isActive
                                                         ? "text-primary"
                                                         : "text-muted-foreground group-hover:text-primary"
                                                 )}>
-                                                    <DynamicIcon name={getModuleIconName(id)} className="h-[clamp(1.5rem,4vw,2.5rem)] w-[clamp(1.5rem,4vw,2.5rem)]" />
+                                                    <DynamicIcon name={getModuleIconName(id)} className="h-[clamp(1.25rem,2.5vw,1.75rem)] w-[clamp(1.25rem,2.5vw,1.75rem)]" />
                                                 </div>
                                                 <span className={cn(
                                                     "text-sm font-bold tracking-tight text-center",
