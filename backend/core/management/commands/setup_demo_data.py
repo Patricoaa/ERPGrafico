@@ -533,6 +533,19 @@ class Command(BaseCommand):
             'insurance_expense': Account.objects.get(code='5.2.09'),
             'interest_payable': Account.objects.get(code='2.1.04.01'),
             'credit_card_payable': Account.objects.get(code='2.1.04.02'),
+            # Nuevas cuentas Fase 1
+            'inventory_fabricables': Account.objects.get(code='1.1.03.03'),
+            'subscription_income': Account.objects.get(code='4.1.03'),
+            'revaluation': Account.objects.get(code='4.2.08'),
+            'pos_other_inflow': Account.objects.get(code='4.2.09'),
+            'subscription_expense': Account.objects.get(code='5.1.04'),
+            'loan_penalty': Account.objects.get(code='5.2.20'),
+            'loan_commission': Account.objects.get(code='5.2.21'),
+            'loan_stamp_tax': Account.objects.get(code='5.2.22'),
+            'pos_other_outflow': Account.objects.get(code='5.2.23'),
+            'pos_cashback_error': Account.objects.get(code='5.2.24'),
+            'pos_system_error': Account.objects.get(code='5.2.25'),
+            'uncollectible_expense': Account.objects.get(code='5.2.26'),
         }
 
     def _create_partners(self, accounts):
@@ -1711,7 +1724,7 @@ class Command(BaseCommand):
                 date=timezone.now().date(),
                 payment_method=SaleOrder.PaymentMethod.CREDIT
             )
-            SaleLine.objects.create(order=order, product=product, uom=product.uom, quantity=100, unit_price=150)
+            SaleLine.objects.create(order=order, product=product, uom=product.uom, quantity=10, unit_price=150)
             order.save() # Triggers totals calculation
             
             # Confirm and Delivery
@@ -1731,7 +1744,7 @@ class Command(BaseCommand):
                 status=Invoice.Status.POSTED,
                 date=timezone.now().date()
             )
-            self.stdout.write(f"  ✓ NV-{order.number}: {customer.name} → 100u {product.name} (FACT-{invoice.number})")
+            self.stdout.write(f"  ✓ NV-{order.number}: {customer.name} → {order.lines.first().quantity}u {product.name} (FACT-{invoice.number})")
         else:
             self.stdout.write("  — No se encontró producto storable para demo flow")
 
@@ -1796,8 +1809,8 @@ class Command(BaseCommand):
         loan = LoanService.disburse(
             loan,
             created_by=admin,
-            commission_expense_account=settings.loan_commission_expense_account or accounts.get('bank_commission'),
-            stamp_tax_expense_account=settings.loan_stamp_tax_expense_account or accounts.get('expense_general'),
+            commission_expense_account=settings.loan_commission_expense_account,
+            stamp_tax_expense_account=settings.loan_stamp_tax_expense_account,
         )
         first_inst = loan.installments.filter(number=1).first()
         n_inst = loan.installments.count()
