@@ -1,7 +1,8 @@
 "use client"
 import { formatCurrency } from "@/lib/money"
 
-import React, { useEffect, useState, useMemo, useRef } from "react"
+import React, { useEffect, useState, useMemo, useRef, useCallback } from "react"
+import { useRouter, usePathname, useSearchParams } from "next/navigation"
 
 import { ColumnDef } from "@tanstack/react-table"
 import {ActionConfirmModal, Chip, DataCell, DataTable, StatusBadge, createActionsColumn} from '@/components/shared'
@@ -23,12 +24,22 @@ import { ProfitDistributionDrawer } from "@/features/settings/components/ProfitD
 interface ProfitDistributionsTabProps {
     /** Whether the new-distribution flow should open on mount (driven by URL ?modal=new-distribution) */
     initialFlowOpen?: boolean
-    /** Callback to clear the modal query param in the URL when the flow closes */
-    onModalClose?: () => void
     createAction?: React.ReactNode
 }
 
-export function ProfitDistributionsTab({ initialFlowOpen = false, onModalClose, createAction }: ProfitDistributionsTabProps) {
+export function ProfitDistributionsTab({ initialFlowOpen = false, createAction }: ProfitDistributionsTabProps) {
+    const router = useRouter()
+    const pathname = usePathname()
+    const searchParams = useSearchParams()
+
+    const clearModalParam = useCallback(() => {
+        const params = new URLSearchParams(searchParams.toString())
+        if (params.has('modal')) {
+            params.delete('modal')
+            const query = params.toString()
+            router.replace(query ? `?${query}` : pathname, { scroll: false })
+        }
+    }, [searchParams, router, pathname])
     // Unified state to prevent fragmented updates
     const [state, setState] = useState({
         distributions: [] as ProfitDistribution[],
@@ -87,8 +98,7 @@ export function ProfitDistributionsTab({ initialFlowOpen = false, onModalClose, 
             ...prev,
             isFlowOpen: false
         }))
-        // Notify parent to clear the URL modal param
-        onModalClose?.()
+        clearModalParam()
         fetchDistributions()
     }
 

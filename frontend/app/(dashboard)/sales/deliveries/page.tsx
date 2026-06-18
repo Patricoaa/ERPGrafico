@@ -1,48 +1,10 @@
-"use client"
+import type { Metadata } from "next"
+import DeliveriesPageClient from "./DeliveriesPageClient"
 
-import { lazy, Suspense } from "react"
-import { useSelectedEntity } from "@/hooks/useSelectedEntity"
-import { useRouter } from "next/navigation"
-import { SaleOrder, SalesOrdersView } from "@/features/sales"
-
-const DeliveryDrawer = lazy(() =>
-    import("@/features/sales").then(m => ({ default: m.DeliveryDrawer }))
-)
+export const metadata: Metadata = {
+    title: "Despachos | ERPGrafico",
+}
 
 export default function SalesDeliveriesPage() {
-    const router = useRouter()
-
-    // 1. Usar useSelectedEntity para atrapar ?selected=<id> y fetchear la orden
-    const { entity: selectedOrder, isLoading, clearSelection } = useSelectedEntity<SaleOrder>({
-        endpoint: '/api/sales/orders'
-    })
-
-    return (
-        <div className="h-full flex flex-col">
-            <SalesOrdersView 
-                viewMode="orders" 
-                // Cuando hagan clic en la fila de la orden en vez del hub, podemos 
-                // forzarlos a abrir deliveries? El click por defecto en SalesOrdersView abre el HubPanel.
-                // Podemos dejarlo como está, o pasar un onRowClick (pero SalesOrdersView no expone onRowClick para overriding fácil).
-                // Para despachar, la gente usará universal search -> /sales/deliveries?selected=123
-            />
-
-            {/* 2. Montar el modal existente (DeliveryDrawer) controlado por ?selected */}
-            <Suspense fallback={null}>
-                {(selectedOrder || isLoading) && (
-                    <DeliveryDrawer
-                        open={!!selectedOrder || isLoading}
-                        onOpenChange={(open) => {
-                            if (!open) clearSelection()
-                        }}
-                        orderId={selectedOrder?.id as number}
-                        onSuccess={() => {
-                            clearSelection()
-                            router.refresh()
-                        }}
-                    />
-                )}
-            </Suspense>
-        </div>
-    )
+    return <DeliveriesPageClient />
 }

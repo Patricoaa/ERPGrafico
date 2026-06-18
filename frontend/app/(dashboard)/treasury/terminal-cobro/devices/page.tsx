@@ -1,21 +1,25 @@
-"use client"
-
-import { useState } from "react"
-import { PaymentHardwareManagement } from "@/features/treasury"
+import type { Metadata } from "next"
 import { ToolbarCreateButton } from '@/components/shared'
+import { PaymentHardwareManagement } from "@/features/treasury"
 
-export default function TerminalCobroDevicesPage() {
-    const [isDeviceModalOpen, setIsDeviceModalOpen] = useState(false)
+export const metadata: Metadata = {
+    title: "Dispositivos | ERPGrafico",
+}
 
+interface PageProps {
+    searchParams: Promise<{ modal?: string }>
+}
+
+export default async function TerminalCobroDevicesPage({ searchParams }: PageProps) {
+    const { modal } = await searchParams
     const createAction = (
-        <ToolbarCreateButton label="Nuevo Dispositivo" onClick={() => setIsDeviceModalOpen(true)} />
+        <ToolbarCreateButton label="Nuevo Dispositivo" href="/treasury/terminal-cobro/devices?modal=device" />
     )
 
     return (
         <PaymentHardwareManagement
             activeTab="devices"
-            externalDeviceOpen={isDeviceModalOpen}
-            onExternalDeviceOpenChange={setIsDeviceModalOpen}
+            externalDeviceOpen={modal === 'device'}
             createAction={createAction}
         />
     )
