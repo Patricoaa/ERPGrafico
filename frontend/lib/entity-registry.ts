@@ -297,7 +297,7 @@ export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
     listUrl: '/treasury/terminal-cobro/devices',
     detailUrlPattern: '/treasury/terminal-cobro/devices?selected={id}',
     hasDrawer: true,
-    viewPolicy: { availableViews: ['list', 'card'], defaultView: 'card', cardComponent: 'custom' },
+    viewPolicy: { availableViews: ['list', 'card'], defaultView: 'card', cardComponent: 'entity' },
   },
   'treasury.terminaldevice': {
     label: 'treasury.terminaldevice',
