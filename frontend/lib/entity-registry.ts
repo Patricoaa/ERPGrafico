@@ -309,7 +309,7 @@ export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
     listUrl: '/treasury/hardware',
     detailUrlPattern: '/treasury/hardware?selected={id}',
     hasDrawer: true,
-    viewPolicy: { availableViews: ['list', 'card'], defaultView: 'card', cardComponent: 'custom' },
+    viewPolicy: { availableViews: ['list', 'card'], defaultView: 'card', cardComponent: 'entity' },
   },
   'treasury.terminalprovider': {
     label: 'treasury.terminalprovider',
@@ -321,7 +321,7 @@ export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
     listUrl: '/treasury/hardware',
     detailUrlPattern: '/treasury/hardware?selected={id}',
     hasDrawer: true,
-    viewPolicy: { availableViews: ['list', 'card'], defaultView: 'card', cardComponent: 'custom' },
+    viewPolicy: { availableViews: ['list', 'card'], defaultView: 'card', cardComponent: 'entity' },
   },
   'treasury.terminalbatch': {
     label: 'treasury.terminalbatch',
