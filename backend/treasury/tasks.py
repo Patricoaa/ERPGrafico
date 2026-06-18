@@ -196,76 +196,6 @@ def mark_overdue_credit_card_statements(days_ahead: int = 5, notify: bool = True
     }
 
 
-# ── Onda 3 (ADR-0044): Interés punitorio mensual ────────────────────────
-
-
-@shared_task(name='treasury.compute_overdue_card_interest')
-def compute_overdue_card_interest():
-    """
-    Para cada `CreditCardStatement` con saldo impago (`outstanding > 0`)
-    y `due_date < hoy`, calcula e imputa el interés punitorio
-    correspondiente a este mes, usando
-    `settings.card_punitory_monthly_rate` (Onda 3, ADR-0044).
-
-    Pensado para correr mensualmente vía beat (1° de cada mes, 09:00).
-    Idempotente por mes: si ya se imputó el interés de este mes
-    (chequeado por `reference` del ADJUSTMENT), no duplica.
-
-    Retorna un dict con el conteo de statements procesados e interés
-    total acumulado.
-    """
-    from decimal import Decimal
-    from .models import CreditCardStatement
-    from .card_service import CardService
-
-    today = timezone.now().date()
-    qs = CreditCardStatement.objects.filter(
-        status__in=(
-            CreditCardStatement.Status.OPEN,
-            CreditCardStatement.Status.OVERDUE,
-            CreditCardStatement.Status.PARTIALLY_PAID,
-        ),
-        due_date__lt=today,
-    ).select_related('card_account', 'card_account__bank')
-
-    processed = 0
-    skipped = 0
-    total_interest = Decimal('0')
-    errors: list[str] = []
-
-    for stmt in qs:
-        try:
-            if stmt.outstanding_balance <= 0:
-                skipped += 1
-                continue
-            interest, _ = CardService.apply_punitory_interest(
-                stmt, as_of_date=today,
-            )
-            if interest > 0:
-                processed += 1
-                total_interest += interest
-            else:
-                skipped += 1
-        except Exception as e:
-            errors.append(f"{stmt.display_id}: {e}")
-            logger.exception(
-                "compute_overdue_card_interest failed for %s",
-                stmt.display_id,
-            )
-
-    logger.info(
-        "compute_overdue_card_interest: processed=%s skipped=%s "
-        "total_interest=%s errors=%s",
-        processed, skipped, total_interest, len(errors),
-    )
-    return {
-        'processed': processed,
-        'skipped': skipped,
-        'total_interest': str(total_interest),
-        'errors': errors,
-    }
-
-
 # ── F2.9: Devengo mensual de interés (opt-in) ────────────────────────────
 
 
@@ -337,25 +267,9 @@ def accrue_monthly_loan_interest(year: int = None, month: int = None):
         if total_interest_uf <= 0:
             continue
 
-        # Conversión UF → CLP si el crédito es UF.
-        if inst.loan.currency == BankLoan.Currency.UF:
-            from finances.models import IndicatorValue
-            try:
-                # Usamos el UF del último día del mes.
-                last_day = timezone.now().date().replace(
-                    year=year, month=month, day=1
-                ) + timedelta(days=31)
-                last_day = last_day.replace(day=1) - timedelta(days=1)
-                uf_value = IndicatorValue.get_value('UF', last_day)
-            except IndicatorValue.DoesNotExist:
-                continue
-            total_interest_clp = (
-                total_interest_uf * uf_value
-            ).quantize(__import__('decimal').Decimal('0.01'))
-        else:
-            total_interest_clp = total_interest_uf.quantize(
-                __import__('decimal').Decimal('0.01')
-            )
+        total_interest_clp = total_interest_uf.quantize(
+            __import__('decimal').Decimal('0.01')
+        )
 
         # Idempotencia: si ya hay JE con este ref, no duplicar.
         ref = f"ACCRUAL-{inst.loan.display_id}-{year:04d}{month:02d}"

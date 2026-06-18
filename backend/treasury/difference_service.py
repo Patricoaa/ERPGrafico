@@ -106,14 +106,11 @@ class DifferenceService:
         
         difference_label = dict(DifferenceService.DIFFERENCE_CHOICES)[difference_type]
         
-        # Determine initial status from settings
-        initial_status = JournalEntry.State.POSTED if settings.auto_post_reconciliation_adjustments else JournalEntry.State.DRAFT
-        
         entry = JournalEntry.objects.create(
             date=accounting_date or line.transaction_date,
             reference=f"AJ-{line.statement.display_id}-{line.line_number}",
             description=f"{difference_label} - {notes}" if notes else difference_label,
-            status=initial_status,
+            status=JournalEntry.State.POSTED,
             source_content_type=ContentType.objects.get_for_model(BankStatement),
             source_object_id=line.statement_id,
         )

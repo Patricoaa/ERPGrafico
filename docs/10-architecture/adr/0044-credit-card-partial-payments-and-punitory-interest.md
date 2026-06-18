@@ -26,11 +26,10 @@ En la práctica, la operatoria real exige:
    claro en el estado (`PARTIALLY_PAID`) cuánto falta.
 2. **Múltiples pagos parciales**: un statement admite N pagos (no
    uno solo). La FK `payment_movement` debe ser de uno-a-muchos.
-3. **Interés punitorio**: cuando el saldo no se paga al
-   vencimiento, el emisor cobra un interés adicional
-   (`card_punitory_monthly_rate`) sobre el saldo impago. Se imputa
-   mensualmente como ADJUSTMENT, hasta que el cliente pague el
-   total o la mora prescriba (fuera de scope).
+3. ~~**Interés punitorio**: cuando el saldo no se paga al
+   vencimiento, el emisor cobra un interés adicional~~ *(Eliminado
+   en migration 0030: los castigos se ejecutan manualmente, no hay
+   cálculo automático)*.
 4. **Truncamiento al saldo**: si el operador pasa un `amount` mayor
    al saldo impago, no debe fallar; truncar al saldo. Esto
    simplifica el flujo UI (el operador puede pasar "el total" sin
