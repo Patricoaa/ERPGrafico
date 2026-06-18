@@ -11,7 +11,7 @@ export default async function SalesPage({ searchParams }: PageProps) {
     if (view === 'pos') redirect(sub === 'sessions' ? '/sales/sessions' : '/sales/pos/cajas')
     if (view === 'hardware') redirect(sub ? `/treasury/terminal-cobro/${sub}` : '/treasury/terminal-cobro/providers')
     if (view === 'credits') redirect(sub ? `/sales/credits/${sub}` : '/sales/credits/portfolio')
-    if (view === 'config') redirect('/sales/settings/income')
+    if (view === 'config') redirect('/sales/settings/credit')
 
     redirect('/sales/orders')
 }
