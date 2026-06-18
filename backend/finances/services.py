@@ -273,8 +273,7 @@ class FinanceService:
         from decimal import Decimal
         
         # 0. Identify Cash Pool (The source of truth for liquid assets)
-        CASH_PREFIX = '1.1.01'
-        cash_pool_accs = Account.objects.filter(code__startswith=CASH_PREFIX)
+        cash_pool_accs = Account.get_cash_pool_accounts()
         cash_pool_ids = set(cash_pool_accs.values_list('id', flat=True))
         
         def get_pool_balance(date):
@@ -412,7 +411,7 @@ class FinanceService:
         culprit_accounts = []
         if abs(discrepancy) > 0.01:
             # Find accounts with movements that are NOT mapped and NOT in cash pool
-            unmapped_accs = Account.objects.filter(cf_category__isnull=True).exclude(code__startswith=CASH_PREFIX)
+            unmapped_accs = Account.objects.filter(cf_category__isnull=True).exclude(pk__in=cash_pool_ids)
             for acc in unmapped_accs:
                 if not acc.is_selectable: continue # parent accounts logic
                 variation = float(FinanceService._get_account_balance(acc, start_date, end_date))

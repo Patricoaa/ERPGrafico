@@ -877,9 +877,9 @@ class TreasuryAccount(models.Model):
                         'account': _("La cuenta de Cheques en Cartera debe ser una cuenta de ACTIVO (documentos por cobrar).")
                     })
             elif self.account_type not in self._NON_CASH_EQUIVALENT_TYPES:
-                if not self.account.code.startswith('1.1.01'):
+                if not Account.get_cash_pool_accounts().filter(pk=self.account.pk).exists():
                     raise ValidationError({
-                        'account': _("La cuenta contable debe pertenecer al grupo de 'Efectivo y Equivalentes' (Prefijo 1.1.01).")
+                        'account': _("La cuenta contable debe pertenecer al grupo de 'Efectivo y Equivalentes'.")
                     })
 
             # 3. Duplicate usage validation (already exists but refined)

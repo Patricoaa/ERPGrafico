@@ -97,6 +97,23 @@ class Account(TimeStampedModel):
             return self.parent.effective_bs_category
         return None
     
+    # Código del grupo raíz de efectivo y equivalentes en el CoA IFRS.
+    # Se define como constante de clase para centralizar la referencia
+    # y evitar strings hardcodeadas en treasury, finances, etc.
+    CASH_GROUP_CODE = '1.1.01'
+
+    @classmethod
+    def get_cash_pool_accounts(cls):
+        """Returns all accounts classified as cash equivalents (efectivo y equivalentes).
+        
+        Localiza el nodo padre 'Efectivo y Equivalentes' usando CASH_GROUP_CODE
+        y retorna todas las cuentas cuyo código comienza con ese prefijo.
+        """
+        group = cls.objects.filter(code=cls.CASH_GROUP_CODE).first()
+        if not group:
+            return cls.objects.none()
+        return cls.objects.filter(code__startswith=group.code)
+
     class Meta:
         ordering = ['code']
         verbose_name = _("Cuenta Contable")
