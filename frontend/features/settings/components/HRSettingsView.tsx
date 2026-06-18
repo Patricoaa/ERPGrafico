@@ -199,7 +199,7 @@ export function HRSettingsView({ activeTab = "global" }: { activeTab?: string })
                         </div>
                         <Form {...globalForm}>
                             <div className="grid gap-6">
-                                <Card variant="transparent">
+                                <Card variant="default">
                                     <CardHeader>
                                         <CardTitle className="text-lg text-primary">Indicadores Económicos</CardTitle>
                                         <CardDescription>Valores oficiales para el cálculo mensual</CardDescription>
@@ -292,7 +292,7 @@ export function HRSettingsView({ activeTab = "global" }: { activeTab?: string })
 
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                             {afps.map((afp) => (
-                                <Card key={afp.id} variant="transparent" className="relative overflow-hidden group hover:border-primary/50 transition-all">
+                                <Card key={afp.id} variant="default" className="relative overflow-hidden group hover:border-primary/50 transition-all">
                                     <div className="absolute top-0 right-0 p-2 opacity-0 group-hover:opacity-100 transition-opacity">
                                         <AFPDialog afp={afp} onSaved={fetchData} />
                                     </div>

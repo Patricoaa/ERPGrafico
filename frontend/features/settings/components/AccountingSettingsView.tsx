@@ -92,7 +92,7 @@ function StructureSettings() {
                     {/* Fila 1: Dos columnas */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         {/* Columna 1: Estructura del Código */}
-                        <Card variant="transparent">
+                        <Card variant="default">
                             <CardHeader>
                                 <CardTitle className="text-lg text-primary">Estructura del Código</CardTitle>
                                 <CardDescription>Establezca los niveles de jerarquía y el formato del código para su Plan de Cuentas</CardDescription>
@@ -149,7 +149,7 @@ function StructureSettings() {
                         </Card>
 
                         {/* Columna 2: Prefijos de Cuentas */}
-                        <Card variant="transparent">
+                        <Card variant="default">
                             <CardHeader>
                                 <CardTitle className="text-lg text-primary">Prefijos de Cuentas</CardTitle>
                                 <CardDescription>Establezca los prefijos del Nivel 1 para clasificar cada tipo de cuenta contable</CardDescription>
@@ -168,7 +168,7 @@ function StructureSettings() {
                         </Card>
                     </div>
 
-                    <Card variant="transparent">
+                    <Card variant="default">
                         <CardHeader>
                             <CardTitle className="text-lg text-primary">Plan de Cuentas IFRS</CardTitle>
                             <CardDescription>Cargue el Plan de Cuentas oficial recomendado por la normativa IFRS para comenzar de inmediato</CardDescription>

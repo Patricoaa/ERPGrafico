@@ -93,7 +93,7 @@ function DTEConfigCard({ form, name, title, description }: DTEConfigCardProps) {
     ]
 
     return (
-        <Card variant="transparent">
+        <Card variant="default">
             <CardHeader>
                 <CardTitle className="text-lg">{title}</CardTitle>
                 <CardDescription>{description}</CardDescription>
