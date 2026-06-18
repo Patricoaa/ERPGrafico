@@ -8,16 +8,9 @@ from .views import (
     get_bi_analytics_data,
     get_report_status_data,
     get_trial_balance_data,
-    IndicatorValueViewSet,
 )
 
-router = DefaultRouter()
-router.register(r'indicators', IndicatorValueViewSet, basename='indicator-value')
-
 urlpatterns = [
-    # ViewSet router (CRUD + acciones custom)
-    path('api/', include(router.urls)),
-
     # API Data
     path('api/balance-sheet/', get_balance_sheet_data, name='api-balance-sheet'),
     path('api/trial-balance/', get_trial_balance_data, name='api-trial-balance'),

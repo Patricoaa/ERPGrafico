@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import WorkOrder, ProductionConsumption, BillOfMaterials, BillOfMaterialsLine, WorkOrderMaterial, WorkOrderHistory, WorkOrderTemplate
+from .models import WorkOrder, ProductionConsumption, BillOfMaterials, BillOfMaterialsLine, WorkOrderMaterial, WorkOrderHistory
 from core.serializers import AttachmentSerializer
 from inventory.models import Product, UoM, Warehouse
 
@@ -549,11 +549,3 @@ class BillOfMaterialsSerializer(serializers.ModelSerializer):
                 BillOfMaterialsLine.objects.create(bom=instance, **line_data)
         return instance
 
-
-class WorkOrderTemplateSerializer(serializers.ModelSerializer):
-    customer_name = serializers.CharField(source='customer.name', read_only=True)
-
-    class Meta:
-        model = WorkOrderTemplate
-        fields = ['id', 'name', 'customer', 'customer_name', 'default_data', 'created_at', 'updated_at']
-        read_only_fields = ['id', 'created_at', 'updated_at']

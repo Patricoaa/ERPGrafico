@@ -4,7 +4,7 @@ from rest_framework import viewsets, status, filters
 logger = logging.getLogger(__name__)
 from rest_framework.decorators import action
 from rest_framework.response import Response
-from .models import WorkOrder, ProductionConsumption, BillOfMaterials, BillOfMaterialsLine, WorkOrderMaterial, WorkOrderTemplate, ScanToken
+from .models import WorkOrder, ProductionConsumption, BillOfMaterials, BillOfMaterialsLine, WorkOrderMaterial
 from django_filters.rest_framework import DjangoFilterBackend, FilterSet
 import django_filters
 
@@ -41,9 +41,7 @@ class WorkOrderFilterSet(FilterSet):
 
 from .serializers import (
     WorkOrderSerializer,
-    WorkOrderCreateSerializer,
     BillOfMaterialsSerializer,
-    WorkOrderTemplateSerializer,
 )
 from .services import WorkOrderService, WorkOrderPdfService, WorkOrderMetricsService
 from inventory.models import Product, Warehouse, UoM
@@ -542,51 +540,6 @@ class WorkOrderViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
             logger.exception("Error generating bulk PDF")
             return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-    @action(detail=True, methods=['post'], url_path='generate_scan_token')
-    def generate_scan_token(self, request, pk=None):
-        """TASK-313: Generate a short-lived scan token for the QR on the printed PDF."""
-        import secrets
-        from django.utils import timezone
-        from datetime import timedelta
-        order = self.get_object()
-        token = secrets.token_urlsafe(32)
-        expires_at = timezone.now() + timedelta(hours=24)
-        scan_token = ScanToken.objects.create(work_order=order, token=token, expires_at=expires_at)
-        base_url = request.build_absolute_uri('/').rstrip('/')
-        scan_url = f"{base_url}/api/production/orders/scan/{token}/"
-        return Response({'token': token, 'scan_url': scan_url, 'expires_at': scan_token.expires_at})
-
-    @action(detail=False, methods=['get', 'post'], url_path=r'scan/(?P<token>[^/.]+)',
-            permission_classes=[], authentication_classes=[])
-    def scan(self, request, token=None):
-        """TASK-313: Tokenized scan endpoint — no auth required (token is the credential)."""
-        from django.utils import timezone
-        try:
-            scan_token = ScanToken.objects.select_related('work_order').get(token=token)
-        except ScanToken.DoesNotExist:
-            return Response({'error': 'Token inválido'}, status=status.HTTP_404_NOT_FOUND)
-        if not scan_token.is_valid():
-            return Response({'error': 'Token expirado o ya utilizado'}, status=status.HTTP_410_GONE)
-        order = scan_token.work_order
-        if request.method == 'GET':
-            return Response({
-                'order_id': order.pk,
-                'number': order.number,
-                'description': order.description,
-                'current_stage': order.current_stage,
-                'status': order.status,
-            })
-        next_stage = request.data.get('next_stage')
-        if not next_stage:
-            return Response({'error': 'next_stage es requerido'}, status=status.HTTP_400_BAD_REQUEST)
-        try:
-            WorkOrderService.transition_to(order, next_stage, user=None)
-            scan_token.used_at = timezone.now()
-            scan_token.save(update_fields=['used_at'])
-            return Response({'ok': True, 'new_stage': next_stage})
-        except Exception as e:
-            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
-
     @action(detail=True, methods=['get', 'post'], url_path='comments')
     def comments(self, request, pk=None):
         """TASK-307: Unified comment feed for an OT (includes linked NV comments)."""
@@ -690,47 +643,4 @@ class BillOfMaterialsViewSet(viewsets.ModelViewSet):
         headers = self.get_success_headers(serializer.data)
         return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
 
-class WorkOrderTemplateViewSet(viewsets.ModelViewSet):
-    """TASK-312: CRUD for WorkOrderTemplate + save_from_order action."""
-    queryset = WorkOrderTemplate.objects.select_related('customer').all()
-    serializer_class = WorkOrderTemplateSerializer
 
-    def get_queryset(self):
-        qs = super().get_queryset()
-        customer_id = self.request.query_params.get('customer_id')
-        if customer_id:
-            qs = qs.filter(customer_id=customer_id)
-        return qs
-
-    @action(detail=False, methods=['post'], url_path='save_from_order')
-    def save_from_order(self, request):
-        """Create a template from an existing WorkOrder."""
-        order_id = request.data.get('order_id')
-        name = (request.data.get('name') or '').strip()
-        if not order_id or not name:
-            return Response({'error': 'order_id y name son requeridos'}, status=status.HTTP_400_BAD_REQUEST)
-        try:
-            order = WorkOrder.objects.get(pk=order_id)
-        except WorkOrder.DoesNotExist:
-            return Response({'error': 'OT no encontrada'}, status=status.HTTP_404_NOT_FOUND)
-        default_data = {
-            'description': order.description,
-            'stage_data': order.stage_data or {},
-            'materials': [
-                {
-                    'component_id': m.component_id,
-                    'quantity_planned': float(m.quantity_planned),
-                    'uom_id': m.uom_id,
-                    'is_outsourced': m.is_outsourced,
-                    'unit_price': float(m.unit_price),
-                    'supplier_id': m.supplier_id,
-                }
-                for m in order.materials.all()
-            ],
-        }
-        template = WorkOrderTemplate.objects.create(
-            name=name,
-            customer=order.sale_order.customer if order.sale_order else None,
-            default_data=default_data,
-        )
-        return Response(WorkOrderTemplateSerializer(template).data, status=status.HTTP_201_CREATED)

@@ -9,8 +9,6 @@ export default async function ProductionPage({ searchParams }: PageProps) {
     
     // Redirect logic to preserve backward compatibility for bookmarked URLs
     if (view === 'boms') redirect('/production/boms')
-    if (view === 'config') redirect('/production/settings')
-
     // Default redirect
     redirect('/production/orders')
 }

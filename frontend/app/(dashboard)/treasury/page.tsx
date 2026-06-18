@@ -9,7 +9,6 @@ export default async function TreasuryPage({ searchParams }: PageProps) {
 
     if (view === 'accounts') redirect(sub ? `/treasury/operaciones/${sub}` : '/treasury/operaciones/accounts')
     if (view === 'reconciliation') redirect('/treasury/reconciliation')
-    if (view === 'config') redirect(tab ? `/treasury/settings/${tab}` : '/treasury/settings/conciliation')
     if (view === 'movements') redirect('/treasury/operaciones/movements')
 
     redirect('/treasury/operaciones/movements')

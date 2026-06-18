@@ -7,7 +7,6 @@ from .views import (
 )
 from .api.search import universal_search
 from .api.document import document_action_view
-from .api.registry import model_schema
 
 router = DefaultRouter()
 router.register(r'users', UserViewSet)
@@ -28,5 +27,4 @@ urlpatterns = [
     path('preferences/', UserPreferenceView.as_view(), name='user-preferences'),
     path('search/', universal_search, name='universal-search'),
     path('documents/<int:content_type_id>/<int:object_id>/<str:action>/', document_action_view, name='document-action'),
-    path('registry/<str:model_label>/schema/', model_schema, name='model-schema'),
 ]

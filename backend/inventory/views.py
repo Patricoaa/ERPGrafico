@@ -4,12 +4,12 @@ from rest_framework.response import Response
 from .serializers import (
     ProductSerializer, ProductListSerializer, ProductSimpleSerializer, ProductCategorySerializer, WarehouseSerializer,
     StockMoveSerializer, UoMSerializer, UoMCategorySerializer, PricingRuleSerializer,
-    CustomFieldTemplateSerializer, ProductCustomFieldSerializer, SubscriptionSerializer,
+    SubscriptionSerializer,
     ProductAttributeSerializer, ProductAttributeValueSerializer, ProductUoMPriceSerializer
 )
 from .models import (
     Product, ProductCategory, Warehouse, StockMove, UoM, UoMCategory, PricingRule,
-    CustomFieldTemplate, ProductCustomField, Subscription,
+    Subscription,
     ProductAttribute, ProductAttributeValue, ProductFavorite, ProductUoMPrice
 )
 from django.shortcuts import get_object_or_404
@@ -784,15 +784,6 @@ class PricingRuleViewSet(AuditHistory, viewsets.ModelViewSet):
     filter_backends = [DjangoFilterBackend, filters.SearchFilter]
     filterset_fields = ['product', 'category', 'active']
     search_fields = ['name']
-
-class CustomFieldTemplateViewSet(viewsets.ModelViewSet):
-    queryset = CustomFieldTemplate.objects.all()
-    serializer_class = CustomFieldTemplateSerializer
-
-class ProductCustomFieldViewSet(viewsets.ModelViewSet):
-    queryset = ProductCustomField.objects.all()
-    serializer_class = ProductCustomFieldSerializer
-    filterset_fields = ['product']
 
 
 

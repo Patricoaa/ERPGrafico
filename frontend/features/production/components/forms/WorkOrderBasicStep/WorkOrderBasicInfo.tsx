@@ -1,6 +1,5 @@
 import { useFormContext } from "react-hook-form"
-import Link from "next/link"
-import { FileText, User, ExternalLink, X } from "lucide-react"
+import { FileText, User, X } from "lucide-react"
 import { formatCurrency } from "@/lib/money"
 
 import { FormField } from "@/components/ui/form"
@@ -71,13 +70,6 @@ export function WorkOrderBasicInfo({
                                         </span>
                                     </div>
                                 </div>
-                                {linkedSaleOrder && (
-                                    <Link href={`/sales/command-center?id=${typeof linkedSaleOrder === 'object' ? linkedSaleOrder.id : linkedSaleOrder}`} target="_blank" passHref>
-                                        <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-primary">
-                                            <ExternalLink className="h-4 w-4" />
-                                        </Button>
-                                    </Link>
-                                )}
                             </div>
                         </div>
                     ) : otType === "LINKED" ? (
