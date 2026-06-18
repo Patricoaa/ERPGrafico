@@ -64,7 +64,7 @@ export default function InventorySettingsPage() {
             </div>
             <Form {...form}>
                 <form>
-                    <Card variant="transparent">
+                    <Card variant="default">
                         <CardHeader>
                             <CardTitle className="text-lg text-primary">Método de Valoración de Inventario</CardTitle>
                             <CardDescription>Determine cómo el sistema calcula el costo de sus existencias</CardDescription>

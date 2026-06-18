@@ -134,7 +134,7 @@ function VentasForm() {
             </div>
             <Form {...form}>
                 <form className="space-y-6">
-                    <Card variant="transparent">
+                    <Card variant="default">
                         <CardHeader>
                             <CardTitle className="text-lg text-primary">Cuentas de Ingresos Naturales</CardTitle>
                             <CardDescription>Cuentas contables para registrar los distintos tipos de ingresos por venta</CardDescription>
@@ -147,7 +147,7 @@ function VentasForm() {
                             </div>
                         </CardContent>
                     </Card>
-                    <Card variant="transparent">
+                    <Card variant="default">
                         <CardHeader>
                             <CardTitle className="text-lg text-primary">Cuenta de Castigo (Incobrables)</CardTitle>
                             <CardDescription>Cuenta donde se cargarán las pérdidas al castigar deudas de clientes</CardDescription>
@@ -218,7 +218,7 @@ function FacturacionForm() {
             <Form {...form}>
                 <form className="space-y-6">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <Card variant="transparent">
+                        <Card variant="default">
                             <CardHeader>
                                 <CardTitle className="text-lg text-primary">Cuentas por Cobrar</CardTitle>
                                 <CardDescription>Gestión de clientes y anticipos recibidos</CardDescription>
@@ -228,7 +228,7 @@ function FacturacionForm() {
                                 <AccountField form={form} name="default_advance_payment_account" label="Anticipos de Clientes (Pasivo)" accountType="LIABILITY" />
                             </CardContent>
                         </Card>
-                        <Card variant="transparent">
+                        <Card variant="default">
                             <CardHeader>
                                 <CardTitle className="text-lg text-primary">Cuentas por Pagar</CardTitle>
                                 <CardDescription>Gestión de proveedores y anticipos entregados</CardDescription>
@@ -285,7 +285,7 @@ function ComprasForm() {
             </div>
             <Form {...form}>
                 <form className="space-y-6">
-                    <Card variant="transparent">
+                    <Card variant="default">
                         <CardHeader>
                             <CardTitle className="text-lg text-primary">Cuentas de Gastos Predeterminadas</CardTitle>
                             <CardDescription>Configuración de contrapartidas contables para compras y gastos operativos</CardDescription>
@@ -372,7 +372,7 @@ function InventarioForm() {
             </div>
             <Form {...form}>
                 <form className="space-y-6">
-                    <Card variant="transparent">
+                    <Card variant="default">
                         <CardHeader>
                             <CardTitle className="text-lg text-primary">Cuentas por Tipo de Producto</CardTitle>
                             <CardDescription>Cuentas de inventario según el tipo de producto</CardDescription>
@@ -383,7 +383,7 @@ function InventarioForm() {
                             <AccountField form={form} name="default_consumable_account" label="Consumibles (Gasto)" accountType="EXPENSE" />
                         </CardContent>
                     </Card>
-                    <Card variant="transparent">
+                    <Card variant="default">
                         <CardHeader>
                             <CardTitle className="text-lg text-primary">Cuentas Puente</CardTitle>
                             <CardDescription>Cuentas intermedias para movimientos de stock</CardDescription>
@@ -395,7 +395,7 @@ function InventarioForm() {
                             </div>
                         </CardContent>
                     </Card>
-                    <Card variant="transparent">
+                    <Card variant="default">
                         <CardHeader>
                             <CardTitle className="text-lg text-primary">Cuentas de Ajuste</CardTitle>
                             <CardDescription>Cuentas para diferencias de inventario</CardDescription>
@@ -408,7 +408,7 @@ function InventarioForm() {
                             <AccountField form={form} name="revaluation_account" label="Revalorización de Stock" accountType="INCOME" />
                         </CardContent>
                     </Card>
-                    <Card variant="transparent">
+                    <Card variant="default">
                         <CardHeader>
                             <CardTitle className="text-lg text-primary">Costo de Ventas (COGS)</CardTitle>
                             <CardDescription>Cuentas de gasto para el costo de productos vendidos</CardDescription>
@@ -492,7 +492,7 @@ function TesoreriasForm() {
             </div>
             <Form {...form}>
                 <form className="space-y-6">
-                    <Card variant="transparent">
+                    <Card variant="default">
                         <CardHeader>
                             <CardTitle className="text-lg text-primary">Cuentas de Conciliación Bancaria</CardTitle>
                             <CardDescription>Identificadores para ajustes automáticos en conciliación por lotes</CardDescription>
@@ -508,7 +508,7 @@ function TesoreriasForm() {
                             </div>
                         </CardContent>
                     </Card>
-                    <Card variant="transparent">
+                    <Card variant="default">
                         <CardHeader>
                             <CardTitle className="text-lg text-primary">Diferencias de Cierre de Caja (Arqueo)</CardTitle>
                             <CardDescription>Control de discrepancias entre saldo teórico y físico en POS</CardDescription>
@@ -520,7 +520,7 @@ function TesoreriasForm() {
                             </div>
                         </CardContent>
                     </Card>
-                    <Card variant="transparent">
+                    <Card variant="default">
                         <CardHeader>
                             <CardTitle className="text-lg text-primary">Cuentas para Movimientos Manuales</CardTitle>
                             <CardDescription>Configuración de ingresos y egresos ad-hoc del módulo POS</CardDescription>
@@ -538,7 +538,7 @@ function TesoreriasForm() {
                             </div>
                         </CardContent>
                     </Card>
-                    <Card variant="transparent">
+                    <Card variant="default">
                         <CardHeader>
                             <CardTitle className="text-lg text-primary">Cuentas Puente de Terminales</CardTitle>
                             <CardDescription>Cuentas para comisiones de terminales de pago sin factura</CardDescription>
@@ -550,7 +550,7 @@ function TesoreriasForm() {
                             </div>
                         </CardContent>
                     </Card>
-                    <Card variant="transparent">
+                    <Card variant="default">
                         <CardHeader>
                             <CardTitle className="text-lg text-primary">Cuentas de Cheques</CardTitle>
                             <CardDescription>Cuentas puente para contabilización de cheques recibidos y emitidos</CardDescription>
@@ -562,7 +562,7 @@ function TesoreriasForm() {
                             </div>
                         </CardContent>
                     </Card>
-                    <Card variant="transparent">
+                    <Card variant="default">
                         <CardHeader>
                             <CardTitle className="text-lg text-primary">Cuentas de Gasto Financiero</CardTitle>
                             <CardDescription>Cuentas contables para intereses, seguros y comisiones bancarias</CardDescription>
@@ -631,7 +631,7 @@ function RRHHForm() {
             </div>
             <Form {...form}>
                 <form className="space-y-6">
-                    <Card variant="transparent">
+                    <Card variant="default">
                         <CardHeader>
                             <CardTitle className="text-lg text-primary">Cuentas Consolidadas de Remuneraciones</CardTitle>
                             <CardDescription>Cuentas contables de cierre de nómina centralizado</CardDescription>
@@ -750,7 +750,7 @@ function SociosForm() {
             <Form {...form}>
                 <form className="space-y-6">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <Card variant="transparent">
+                        <Card variant="default">
                             <CardHeader>
                                 <CardTitle className="text-lg text-primary">Capital Social</CardTitle>
                                 <CardDescription>Cuenta raíz donde se registra el Capital Social de los socios</CardDescription>
@@ -771,7 +771,7 @@ function SociosForm() {
                                 />
                             </CardContent>
                         </Card>
-                        <Card variant="transparent">
+                        <Card variant="default">
                             <CardHeader>
                                 <CardTitle className="text-lg text-primary">Aportes de Capital</CardTitle>
                                 <CardDescription>Cuenta raíz para los aportes de capital realizados por los socios</CardDescription>
@@ -792,7 +792,7 @@ function SociosForm() {
                                 />
                             </CardContent>
                         </Card>
-                        <Card variant="transparent">
+                        <Card variant="default">
                             <CardHeader>
                                 <CardTitle className="text-lg text-primary">Retiros Definitivos</CardTitle>
                                 <CardDescription>Cuenta raíz para retiros definitivos de capital de los socios</CardDescription>
@@ -813,7 +813,7 @@ function SociosForm() {
                                 />
                             </CardContent>
                         </Card>
-                        <Card variant="transparent">
+                        <Card variant="default">
                             <CardHeader>
                                 <CardTitle className="text-lg text-primary">Retiros Provisorios</CardTitle>
                                 <CardDescription>Cuenta raíz (contra patrimonio) para retiros provisorios de los socios</CardDescription>
@@ -923,7 +923,7 @@ function EstructuraForm() {
             <Form {...form}>
                 <form className="space-y-6">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <Card variant="transparent">
+                        <Card variant="default">
                             <CardHeader>
                                 <CardTitle className="text-lg text-primary">Estructura del Código</CardTitle>
                                 <CardDescription>Establezca los niveles de jerarquía y el formato del código para su Plan de Cuentas</CardDescription>
@@ -976,7 +976,7 @@ function EstructuraForm() {
                                 </div>
                             </CardContent>
                         </Card>
-                        <Card variant="transparent">
+                        <Card variant="default">
                             <CardHeader>
                                 <CardTitle className="text-lg text-primary">Prefijos de Cuentas</CardTitle>
                                 <CardDescription>Establezca los prefijos del Nivel 1 para clasificar cada tipo de cuenta contable</CardDescription>
@@ -1004,7 +1004,7 @@ function EstructuraForm() {
                             </CardContent>
                         </Card>
                     </div>
-                    <Card variant="transparent">
+                    <Card variant="default">
                         <CardHeader>
                             <CardTitle className="text-lg text-primary">Plan de Cuentas IFRS</CardTitle>
                             <CardDescription>Cargue el Plan de Cuentas oficial recomendado por la normativa IFRS para comenzar de inmediato</CardDescription>
@@ -1087,7 +1087,7 @@ function ImpuestosForm() {
             <Form {...form}>
                 <form className="space-y-6">
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                        <Card variant="transparent" className="md:col-span-1">
+                        <Card variant="default" className="md:col-span-1">
                             <CardHeader>
                                 <CardTitle className="text-lg text-primary">Tasa General</CardTitle>
                                 <CardDescription>Parámetros impositivos base</CardDescription>
@@ -1114,7 +1114,7 @@ function ImpuestosForm() {
                             </CardContent>
                         </Card>
                         <div className="md:col-span-2 space-y-6">
-                            <Card variant="transparent">
+                            <Card variant="default">
                                 <CardHeader>
                                     <CardTitle className="text-lg text-primary">Impuesto al Valor Agregado (IVA)</CardTitle>
                                     <CardDescription>Cuentas para el control mensual de IVA F29</CardDescription>
@@ -1131,7 +1131,7 @@ function ImpuestosForm() {
                                     </div>
                                 </CardContent>
                             </Card>
-                            <Card variant="transparent">
+                            <Card variant="default">
                                 <CardHeader>
                                     <CardTitle className="text-lg text-primary">Otras Contribuciones</CardTitle>
                                     <CardDescription>Retenciones, PPM y corrección monetaria</CardDescription>
