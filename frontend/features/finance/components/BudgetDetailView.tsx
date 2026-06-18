@@ -1,11 +1,12 @@
 "use client"
 
-import React, { useState, useEffect } from "react"
+import React from "react"
 import { financeApi } from "../api/financeApi"
 import { Download, ArrowLeft } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { DataTable, PageHeader, MoneyDisplay, SkeletonShell, StatCard, DataCell } from "@/components/shared"
+import { DataTable, PageHeader, EmptyState, MoneyDisplay, SkeletonShell, StatCard, DataCell } from "@/components/shared"
+import { useBudgetDetailData } from "../hooks/useBudgets"
 import { toast } from "sonner"
 import Link from "next/link"
 import type { ColumnDef } from "@tanstack/react-table"
@@ -92,32 +93,10 @@ const columns: ColumnDef<BudgetExecutionItem>[] = [
 ]
 
 export function BudgetDetailView({ budgetId }: BudgetDetailViewProps) {
-    const [executionData, setExecutionData] = useState<BudgetExecutionData | null>(null)
-    const [budget, setBudget] = useState<Budget | null>(null)
-    const [loading, setLoading] = useState(true)
+    const { data, isLoading, isError } = useBudgetDetailData(budgetId ? Number(budgetId) : null)
 
-    const loadData = async () => {
-        setLoading(true)
-        try {
-            const [budgetData, execData] = await Promise.all([
-                financeApi.getBudgetDetail(Number(budgetId)),
-                financeApi.getBudgetExecution(Number(budgetId))
-            ])
-            setBudget(budgetData)
-            setExecutionData(execData)
-        } catch (err) {
-            console.error(err)
-            toast.error("Error al cargar datos del presupuesto")
-        } finally {
-            setLoading(false)
-        }
-    }
-
-    useEffect(() => {
-        requestAnimationFrame(() => {
-            loadData()
-        })
-    }, [budgetId])
+    const budget = data?.budget ?? null
+    const executionData = data?.execution ?? null
 
     const handleExport = async () => {
         if (!budget) return
@@ -140,12 +119,18 @@ export function BudgetDetailView({ budgetId }: BudgetDetailViewProps) {
     const resolvedBudget = budget ?? SKELETON_BUDGET
     const resolvedExecution = executionData ?? SKELETON_EXECUTION
 
-    if (!loading && (!budget || !executionData)) {
-        return <div className="text-center py-8 text-destructive">No se pudo cargar la información del presupuesto.</div>
+    if (isError) {
+        return (
+            <EmptyState
+                context="finance"
+                title="Error al cargar presupuesto"
+                description="No se pudo cargar la información del presupuesto."
+            />
+        )
     }
 
     return (
-        <SkeletonShell isLoading={loading} ariaLabel="Cargando detalles del presupuesto">
+        <SkeletonShell isLoading={isLoading} ariaLabel="Cargando detalles del presupuesto">
             <div className="space-y-6">
                 <div className="flex items-center gap-4 mb-4">
                     <Button variant="ghost" size="sm" asChild>
