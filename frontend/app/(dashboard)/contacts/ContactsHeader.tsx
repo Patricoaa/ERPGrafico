@@ -7,7 +7,6 @@ import { getEntityIconName } from "@/lib/entity-registry"
 export function ContactsHeader() {
     const tabs = [
         { value: "contacts", label: "Directorio", iconName: getEntityIconName('contacts.contact'), href: "/contacts" },
-        { value: "config", label: "Configuración", iconName: "settings", href: "/contacts/settings" },
     ]
 
     const navigation = {
