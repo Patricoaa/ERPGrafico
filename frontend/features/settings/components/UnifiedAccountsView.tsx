@@ -528,6 +528,7 @@ function TesoreriasForm() {
                         <CardContent className="space-y-8">
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 <AccountField form={form} name="pos_tip_account" label="Recaudación Propinas" accountType="INCOME" />
+                                <AccountField form={form} name="pos_partner_withdrawal_account" label="Retiro de Socios desde POS" accountType="EQUITY" />
                                 <AccountField form={form} name="pos_other_inflow_account" label="Otros Ingresos Operativos" accountType="INCOME" />
                                 <AccountField form={form} name="pos_counting_error_account" label="Ajuste Error de Conteo (Sobrante)" accountType="INCOME" />
                                 <AccountField form={form} name="pos_system_error_account" label="Ajuste Operativo (Corrección)" accountType="EXPENSE" />
