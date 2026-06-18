@@ -1,6 +1,7 @@
 "use client"
 
-import React, { useState, useEffect, lazy, Suspense, useMemo } from "react"
+import React, { useState, useEffect, lazy, Suspense, useMemo, useCallback } from "react"
+import { useRouter, useSearchParams } from "next/navigation"
 import { BaseModal, DataTableView, EntityCard, StatusBadge } from '@/components/shared'
 import { DataTableColumnHeader } from '@/components/shared'
 import type { ColumnDef } from "@tanstack/react-table"
@@ -20,25 +21,31 @@ const MonthlyInvoiceModal = lazy(() => import("./MonthlyInvoiceModal"))
 interface TerminalBatchesManagementProps {
     showTitle?: boolean
     externalOpenBatch?: boolean
-    onExternalOpenBatchChange?: (open: boolean) => void
     externalOpenInvoice?: boolean
-    onExternalOpenInvoiceChange?: (open: boolean) => void
     createAction?: React.ReactNode
 }
 
 export function TerminalBatchesManagement({
     showTitle = true,
     externalOpenBatch,
-    onExternalOpenBatchChange,
     externalOpenInvoice,
-    onExternalOpenInvoiceChange,
     createAction
 }: TerminalBatchesManagementProps) {
+    const router = useRouter()
     const { filters, isFiltered } = useSmartSearch(terminalBatchSearchDef)
     const { batches, isLoading, refetch } = useTerminalBatches(filters)
     const [openCreate, setOpenCreate] = useState(false)
     const [openInvoice, setOpenInvoice] = useState(false)
     const [isMounted, setIsMounted] = useState(false)
+
+    const clearModalParam = useCallback(() => {
+        const searchParams = new URLSearchParams(window.location.search)
+        if (searchParams.has('modal')) {
+            searchParams.delete('modal')
+            const query = searchParams.toString()
+            router.replace(query ? `?${query}` : window.location.pathname, { scroll: false })
+        }
+    }, [router])
 
     useEffect(() => {
         requestAnimationFrame(() => setIsMounted(true))
@@ -168,11 +175,11 @@ export function TerminalBatchesManagement({
                      open={openCreate}
                      onOpenChange={(open: boolean) => {
                          setOpenCreate(open)
-                         if (!open) onExternalOpenBatchChange?.(false)
+                         if (!open) clearModalParam()
                      }}
                      onSuccess={() => {
                          setOpenCreate(false)
-                         onExternalOpenBatchChange?.(false)
+                         clearModalParam()
                          refetch()
                      }}
                  />
@@ -185,7 +192,7 @@ export function TerminalBatchesManagement({
                      open={openInvoice}
                      onOpenChange={(open: boolean) => {
                          setOpenInvoice(open)
-                         if (!open) onExternalOpenInvoiceChange?.(false)
+                         if (!open) clearModalParam()
                      }}
                  />
                  </Suspense>

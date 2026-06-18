@@ -1,7 +1,7 @@
 "use client"
 import { formatCurrency } from "@/lib/money"
 
-import React, { useEffect, useState } from "react"
+import React, { useEffect, useState, useCallback } from "react"
 import {
     TrendingUp,
     Plus,
@@ -48,12 +48,10 @@ import { ColumnDef } from "@tanstack/react-table"
 export function EquityCompositionTab({
     initialAddPartnerOpen = false,
     initialStatsOpen = false,
-    onModalClose,
     createAction
 }: {
     initialAddPartnerOpen?: boolean,
     initialStatsOpen?: boolean,
-    onModalClose?: () => void,
     createAction?: React.ReactNode
 }) {
     const [loading, setLoading] = useState(true)
@@ -67,6 +65,15 @@ export function EquityCompositionTab({
     const router = useRouter()
     const pathname = usePathname()
     const searchParams = useSearchParams()
+
+    const clearModalParam = useCallback(() => {
+        const params = new URLSearchParams(searchParams.toString())
+        if (params.has('modal')) {
+            params.delete('modal')
+            const query = params.toString()
+            router.replace(query ? `?${query}` : pathname, { scroll: false })
+        }
+    }, [searchParams, router, pathname])
 
     // Custom action modals
     const [isContributionOpen, setIsContributionOpen] = useState(false)
@@ -432,9 +439,7 @@ export function EquityCompositionTab({
                     open={isStatsOpen}
                     onOpenChange={(open) => {
                         setIsStatsOpen(open)
-                        if (!open) {
-                            onModalClose?.()
-                        }
+                        if (!open) clearModalParam()
                     }}
                     partners={partners}
                     summary={summary}
@@ -444,9 +449,7 @@ export function EquityCompositionTab({
                 open={isAddPartnerOpen}
                 onOpenChange={(open) => {
                     setIsAddPartnerOpen(open)
-                    if (!open) {
-                        onModalClose?.()
-                    }
+                    if (!open) clearModalParam()
                 }}
                 onSuccess={fetchData}
             />

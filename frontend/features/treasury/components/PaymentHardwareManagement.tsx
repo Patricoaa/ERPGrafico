@@ -1,6 +1,7 @@
 "use client"
 
-import React, { useState, useEffect } from "react"
+import React, { useState, useEffect, useCallback } from "react"
+import { useRouter } from "next/navigation"
 import { useTerminalProviders, useTerminalDevices, type PaymentTerminalProvider, type PaymentTerminalDevice } from "../hooks/useTerminalProviders"
 import { Button } from "@/components/ui/button"
 import { ActionConfirmModal, EntityCard, IconButton, SmartSearchBar, StatusBadge, useClientSearch, useSmartSearch } from '@/components/shared'
@@ -27,21 +28,18 @@ import { DeviceDrawer } from "./DeviceDrawer"
 
 interface PaymentHardwareManagementProps {
     externalDeviceOpen?: boolean
-    onExternalDeviceOpenChange?: (open: boolean) => void
     externalProviderOpen?: boolean
-    onExternalProviderOpenChange?: (open: boolean) => void
     activeTab?: "providers" | "devices"
     createAction?: React.ReactNode
 }
 
 export function PaymentHardwareManagement({
     externalDeviceOpen,
-    onExternalDeviceOpenChange,
     externalProviderOpen,
-    onExternalProviderOpenChange,
     activeTab: externalActiveTab,
     createAction
 }: PaymentHardwareManagementProps) {
+    const router = useRouter()
     const [activeTab, setActiveTab] = useState<"providers" | "devices">("devices")
 
     useEffect(() => {
@@ -61,6 +59,15 @@ export function PaymentHardwareManagement({
     const [deviceDialogOpen, setDeviceDialogOpen] = useState(false)
     const [editingDevice, setEditingDevice] = useState<PaymentTerminalDevice | null>(null)
 
+    const clearModalParam = useCallback(() => {
+        const searchParams = new URLSearchParams(window.location.search)
+        if (searchParams.has('modal')) {
+            searchParams.delete('modal')
+            const query = searchParams.toString()
+            router.replace(query ? `?${query}` : window.location.pathname, { scroll: false })
+        }
+    }, [router])
+
     const handleCreateProvider = () => {
         setEditingProvider(null)
         setProviderDialogOpen(true)
@@ -69,7 +76,6 @@ export function PaymentHardwareManagement({
     const handleCreateDevice = () => {
         setEditingDevice(null)
         setDeviceDialogOpen(true)
-        onExternalDeviceOpenChange?.(false)
     }
 
     useEffect(() => {
@@ -329,7 +335,7 @@ export function PaymentHardwareManagement({
                 open={providerDialogOpen}
                 onOpenChange={(v) => {
                     setProviderDialogOpen(v)
-                    if (!v) onExternalProviderOpenChange?.(false)
+                    if (!v) clearModalParam()
                 }}
                 provider={editingProvider}
                 onSuccess={refetchProviders}
@@ -339,7 +345,7 @@ export function PaymentHardwareManagement({
                 open={deviceDialogOpen}
                 onOpenChange={(v) => {
                     setDeviceDialogOpen(v)
-                    if (!v) onExternalDeviceOpenChange?.(false)
+                    if (!v) clearModalParam()
                 }}
                 device={editingDevice}
                 providers={providers}

@@ -1,41 +1,21 @@
-"use client"
-
-import { useState, useEffect, useRef, useCallback } from "react"
-import { toast } from "sonner"
+import type { Metadata } from "next"
 import { PageHeader, ToolbarCreateButton } from '@/components/shared'
-import { useSearchParams, useRouter } from "next/navigation"
 import { PartnersSettingsView } from "@/features/settings"
 import Link from "next/link"
 import { BarChart3 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { FINANCES_TABS } from "../../FinancesHeader"
 
-export default function PartnersCompositionPage() {
-    const searchParams = useSearchParams()
-    const router = useRouter()
-    const isAddPartnerModal = searchParams.get("modal") === "add-partner"
-    const isStatsModal = searchParams.get("modal") === "stats"
-    const [saving, setSaving] = useState(false)
+export const metadata: Metadata = {
+    title: "Composición Societaria | ERPGrafico",
+}
 
-    const prevSaving = useRef(false)
+interface PageProps {
+    searchParams: Promise<{ modal?: string }>
+}
 
-    const handleModalClose = useCallback(() => {
-        const currentModal = searchParams.get("modal")
-        if (currentModal === "add-partner" || currentModal === "stats") {
-            const params = new URLSearchParams(searchParams.toString())
-            params.delete("modal")
-            router.push(`?${params.toString()}`, { scroll: false })
-        }
-    }, [searchParams, router])
-
-    useEffect(() => {
-        if (prevSaving.current && !saving) {
-            toast.success("Cambios sincronizados", {
-                description: "La configuración de socios ha sido actualizada."
-            })
-        }
-        prevSaving.current = saving
-    }, [saving])
+export default async function PartnersCompositionPage({ searchParams }: PageProps) {
+    const { modal } = await searchParams
 
     const navigation = {
         moduleName: "Finanzas",
@@ -72,10 +52,8 @@ export default function PartnersCompositionPage() {
             <div className="pt-4 flex-1 min-h-0 flex flex-col">
                 <PartnersSettingsView
                     activeTab="composition"
-                    onSavingChange={setSaving}
-                    initialAddPartnerOpen={isAddPartnerModal}
-                    initialStatsOpen={isStatsModal}
-                    onModalClose={handleModalClose}
+                    initialAddPartnerOpen={modal === 'add-partner'}
+                    initialStatsOpen={modal === 'stats'}
                     createAction={createAction}
                 />
             </div>

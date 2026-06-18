@@ -1,24 +1,26 @@
-"use client"
-
-import { useState } from "react"
-import { TerminalBatchesManagement } from "@/features/treasury"
+import type { Metadata } from "next"
 import { ToolbarCreateButton } from '@/components/shared'
+import { TerminalBatchesManagement } from "@/features/treasury"
 
-export default function TerminalCobroBatchesPage() {
-    const [isBatchModalOpen, setIsBatchModalOpen] = useState(false)
-    const [isInvoiceModalOpen, setIsInvoiceModalOpen] = useState(false)
+export const metadata: Metadata = {
+    title: "Liquidaciones | ERPGrafico",
+}
 
+interface PageProps {
+    searchParams: Promise<{ modal?: string }>
+}
+
+export default async function TerminalCobroBatchesPage({ searchParams }: PageProps) {
+    const { modal } = await searchParams
     const createAction = (
-        <ToolbarCreateButton label="Registrar Liquidación" onClick={() => setIsBatchModalOpen(true)} />
+        <ToolbarCreateButton label="Registrar Liquidación" href="/treasury/terminal-cobro/batches?modal=batch" />
     )
 
     return (
         <TerminalBatchesManagement
             showTitle={false}
-            externalOpenBatch={isBatchModalOpen}
-            onExternalOpenBatchChange={setIsBatchModalOpen}
-            externalOpenInvoice={isInvoiceModalOpen}
-            onExternalOpenInvoiceChange={setIsInvoiceModalOpen}
+            externalOpenBatch={modal === 'batch'}
+            externalOpenInvoice={modal === 'invoice'}
             createAction={createAction}
         />
     )

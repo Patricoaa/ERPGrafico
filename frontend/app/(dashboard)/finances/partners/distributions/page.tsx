@@ -1,37 +1,18 @@
-"use client"
-
-import { useState, useEffect, useRef, useCallback } from "react"
-import { toast } from "sonner"
+import type { Metadata } from "next"
 import { PageHeader, ToolbarCreateButton } from '@/components/shared'
-import { useSearchParams, useRouter } from "next/navigation"
 import { PartnersSettingsView } from "@/features/settings"
 import { FINANCES_TABS } from "../../FinancesHeader"
 
-export default function PartnersDistributionsPage() {
-    const searchParams = useSearchParams()
-    const router = useRouter()
-    const isNewDistributionModal = searchParams.get("modal") === "new-distribution"
-    const [saving, setSaving] = useState(false)
+export const metadata: Metadata = {
+    title: "Distribución de Utilidades | ERPGrafico",
+}
 
-    const prevSaving = useRef(false)
+interface PageProps {
+    searchParams: Promise<{ modal?: string }>
+}
 
-    const handleModalClose = useCallback(() => {
-        const currentModal = searchParams.get("modal")
-        if (currentModal === "new-distribution" || currentModal === "mobilize-earnings") {
-            const params = new URLSearchParams(searchParams.toString())
-            params.delete("modal")
-            router.push(`?${params.toString()}`, { scroll: false })
-        }
-    }, [searchParams, router])
-
-    useEffect(() => {
-        if (prevSaving.current && !saving) {
-            toast.success("Cambios sincronizados", {
-                description: "La configuración de socios ha sido actualizada."
-            })
-        }
-        prevSaving.current = saving
-    }, [saving])
+export default async function PartnersDistributionsPage({ searchParams }: PageProps) {
+    const { modal } = await searchParams
 
     const navigation = {
         moduleName: "Finanzas",
@@ -62,9 +43,7 @@ export default function PartnersDistributionsPage() {
             <div className="pt-4 flex-1 min-h-0 flex flex-col">
                 <PartnersSettingsView
                     activeTab="distributions"
-                    onSavingChange={setSaving}
-                    initialFlowOpen={isNewDistributionModal}
-                    onModalClose={handleModalClose}
+                    initialFlowOpen={modal === 'new-distribution'}
                     createAction={createAction}
                 />
             </div>
