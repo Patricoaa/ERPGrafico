@@ -3,7 +3,7 @@
 import React from 'react'
 import { Banknote } from 'lucide-react'
 import {
-    Drawer, FormSection, Skeleton,
+    Drawer, FormSection, SkeletonShell,
 } from '@/components/shared'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
@@ -44,63 +44,58 @@ export function LoanViewDrawer({ loanId, open, onOpenChange }: Props) {
             }
             subtitle={loan ? `${loan.status_display} · ${loan.currency}` : undefined}
         >
-            {isLoading ? (
-                <div className="space-y-4 p-4">
-                    <Skeleton className="h-6 w-48" />
-                    <Skeleton className="h-6 w-64" />
-                    <Skeleton className="h-32" />
-                    <Skeleton className="h-32" />
-                </div>
-            ) : loan ? (
-                <div className="space-y-5 px-4 pb-4 pt-4">
-                    <FormSection title="Entidad" icon={Banknote} />
-                    <div className="grid grid-cols-2 gap-4">
-                        <Field label="Banco Acreedor" value={loan.lender_name} />
-                        <Field label="N° de Operación" value={loan.loan_number || '—'} />
-                    </div>
-
-                    <FormSection title="Condiciones" icon={Banknote} />
-                    <div className="grid grid-cols-2 gap-4">
-                        <Field label="Moneda" value={loan.currency === 'CLP' ? 'Pesos Chilenos (CLP)' : 'Unidad de Fomento (UF)'} />
-                        <Field label="Capital" value={formatMoney(loan.principal, loan.currency)} />
-                        <Field label="Tasa de Interés" value={`${parseFloat(loan.interest_rate).toFixed(2)}%`} />
-                        <Field label="Base de Tasa" value={loan.rate_basis === 'MONTHLY' ? 'Mensual' : 'Anual'} />
-                        <Field label="Sistema de Amortización" value={loan.amortization_system === 'FRENCH' ? 'Francés (cuota fija)' : 'Lineal (capital fijo)'} />
-                        <Field label="Plazo" value={`${loan.term_months} meses`} />
-                        <Field label="Seguro Mensual" value={formatMoney(loan.insurance_monthly, loan.currency)} />
-                    </div>
-
-                    <FormSection title="Cargos del Contrato" icon={Banknote} />
-                    <div className="grid grid-cols-3 gap-4">
-                        <Field label="Comisión de Apertura" value={formatMoney(loan.opening_fee, loan.currency)} />
-                        <Field label="Impuesto de Timbres" value={formatMoney(loan.stamp_tax, loan.currency)} />
-                        <Field label="Tasa de Mora" value={`${parseFloat(loan.penalty_rate).toFixed(2)}% mensual`} />
-                    </div>
-
-                    <FormSection title="Fechas" icon={Banknote} />
-                    <div className="grid grid-cols-2 gap-4">
-                        <Field label="Fecha de Inicio" value={loan.start_date ? new Date(loan.start_date).toLocaleDateString('es-CL') : '—'} />
-                        <Field label="Primer Vencimiento" value={loan.first_due_date ? new Date(loan.first_due_date).toLocaleDateString('es-CL') : '—'} />
-                    </div>
-
-                    <FormSection title="Cuentas" icon={Banknote} />
-                    <div className="space-y-4">
-                        <Field label="Cuenta de Desembolso" value={`${loan.disbursement_account_name} (${loan.disbursement_account})`} />
-                        <Field label="Cuenta Contable de Pasivo" value={`${loan.liability_account_name} (${loan.liability_account})`} />
-                    </div>
-
-                    {loan.notes && (
-                        <div className="space-y-2">
-                            <Label className="text-xs text-muted-foreground">Notas</Label>
-                            <Textarea
-                                readOnly
-                                value={loan.notes}
-                                className="bg-muted/30 text-sm min-h-[60px]"
-                            />
+            <SkeletonShell isLoading={isLoading} ariaLabel="Cargando crédito">
+                {loan ? (
+                    <div className="space-y-5 px-4 pb-4 pt-4">
+                        <FormSection title="Entidad" icon={Banknote} />
+                        <div className="grid grid-cols-2 gap-4">
+                            <Field label="Banco Acreedor" value={loan.lender_name} />
+                            <Field label="N° de Operación" value={loan.loan_number || '—'} />
                         </div>
-                    )}
-                </div>
-            ) : null}
+
+                        <FormSection title="Condiciones" icon={Banknote} />
+                        <div className="grid grid-cols-2 gap-4">
+                            <Field label="Moneda" value={loan.currency === 'CLP' ? 'Pesos Chilenos (CLP)' : 'Unidad de Fomento (UF)'} />
+                            <Field label="Capital" value={formatMoney(loan.principal, loan.currency)} />
+                            <Field label="Tasa de Interés" value={`${parseFloat(loan.interest_rate).toFixed(2)}%`} />
+                            <Field label="Base de Tasa" value={loan.rate_basis === 'MONTHLY' ? 'Mensual' : 'Anual'} />
+                            <Field label="Sistema de Amortización" value={loan.amortization_system === 'FRENCH' ? 'Francés (cuota fija)' : 'Lineal (capital fijo)'} />
+                            <Field label="Plazo" value={`${loan.term_months} meses`} />
+                            <Field label="Seguro Mensual" value={formatMoney(loan.insurance_monthly, loan.currency)} />
+                        </div>
+
+                        <FormSection title="Cargos del Contrato" icon={Banknote} />
+                        <div className="grid grid-cols-3 gap-4">
+                            <Field label="Comisión de Apertura" value={formatMoney(loan.opening_fee, loan.currency)} />
+                            <Field label="Impuesto de Timbres" value={formatMoney(loan.stamp_tax, loan.currency)} />
+                            <Field label="Tasa de Mora" value={`${parseFloat(loan.penalty_rate).toFixed(2)}% mensual`} />
+                        </div>
+
+                        <FormSection title="Fechas" icon={Banknote} />
+                        <div className="grid grid-cols-2 gap-4">
+                            <Field label="Fecha de Inicio" value={loan.start_date ? new Date(loan.start_date).toLocaleDateString('es-CL') : '—'} />
+                            <Field label="Primer Vencimiento" value={loan.first_due_date ? new Date(loan.first_due_date).toLocaleDateString('es-CL') : '—'} />
+                        </div>
+
+                        <FormSection title="Cuentas" icon={Banknote} />
+                        <div className="space-y-4">
+                            <Field label="Cuenta de Desembolso" value={`${loan.disbursement_account_name} (${loan.disbursement_account})`} />
+                            <Field label="Cuenta Contable de Pasivo" value={`${loan.liability_account_name} (${loan.liability_account})`} />
+                        </div>
+
+                        {loan.notes && (
+                            <div className="space-y-2">
+                                <Label className="text-xs text-muted-foreground">Notas</Label>
+                                <Textarea
+                                    readOnly
+                                    value={loan.notes}
+                                    className="bg-muted/30 text-sm min-h-[60px]"
+                                />
+                            </div>
+                        )}
+                    </div>
+                ) : null}
+            </SkeletonShell>
         </Drawer>
     )
 }
