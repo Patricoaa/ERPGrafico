@@ -190,15 +190,6 @@ export function WarehouseClientView({ externalOpen, onExternalOpenChange, create
                         title: "Aún no hay almacenes",
                         description: "Crea un almacén para gestionar ubicaciones y existencias de inventario.",
                     }}
-                    renderCard={(warehouse: Warehouse) => (
-                        <EntityCard onClick={() => openSelected(warehouse.id)}>
-                            <EntityCard.Header
-                                title={warehouse.name}
-                                subtitle={warehouse.address ?? ''}
-                                trailing={<DataCell.Code>{warehouse.code}</DataCell.Code>}
-                            />
-                        </EntityCard>
-                    )}
                 />
             </div>
 
