@@ -1,9 +1,9 @@
 "use client"
 
 import React from 'react'
-import { Banknote } from 'lucide-react'
+import { AlertCircle, Banknote } from 'lucide-react'
 import {
-    Drawer, FormSection, SkeletonShell,
+    Drawer, EmptyState, FormSection, SkeletonShell,
 } from '@/components/shared'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
@@ -25,7 +25,7 @@ function Field({ label, value }: { label: string; value: React.ReactNode }) {
 }
 
 export function LoanViewDrawer({ loanId, open, onOpenChange }: Props) {
-    const { data: loan, isLoading } = useLoan(loanId)
+    const { data: loan, isLoading, isError } = useLoan(loanId)
 
     return (
         <Drawer
@@ -44,6 +44,15 @@ export function LoanViewDrawer({ loanId, open, onOpenChange }: Props) {
             }
             subtitle={loan ? `${loan.status_display} · ${loan.currency}` : undefined}
         >
+            {isError ? (
+                <div className="p-4">
+                    <EmptyState
+                        title="Error al cargar crédito"
+                        description="No se pudo cargar la información del crédito."
+                        icon={AlertCircle}
+                    />
+                </div>
+            ) : (
             <SkeletonShell isLoading={isLoading} ariaLabel="Cargando crédito">
                 {loan ? (
                     <div className="space-y-5 px-4 pb-4 pt-4">
@@ -96,6 +105,7 @@ export function LoanViewDrawer({ loanId, open, onOpenChange }: Props) {
                     </div>
                 ) : null}
             </SkeletonShell>
+            )}
         </Drawer>
     )
 }
