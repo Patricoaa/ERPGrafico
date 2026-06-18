@@ -9,11 +9,13 @@ import { toast } from "sonner"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Form, FormField } from "@/components/ui/form"
 import { Separator } from "@/components/ui/separator"
-import { AccountField, AutoSaveStatusBadge, FadeIn, LabeledInput, SkeletonShell, UnderlineTabs, UnderlineTabsContent } from "@/components/shared"
+import { AccountField, ActionConfirmModal, AutoSaveStatusBadge, FadeIn, LabeledInput, LabeledSelect, PageHeaderButton, SkeletonShell, UnderlineTabs, UnderlineTabsContent } from "@/components/shared"
 import { AccountSelector } from "@/components/selectors/AccountSelector"
 import { useAutoSaveForm } from "@/hooks/useAutoSaveForm"
 import { useUnsavedChangesGuard } from "@/hooks/useUnsavedChangesGuard"
+import { settingsApi } from "@/features/settings/api/settingsApi"
 
+import { accountingSchema, type AccountingFormValues } from "@/features/settings/schemas/accounting"
 import { useAccountingSettings } from "@/features/settings/hooks/useAccountingSettings"
 import { useSalesSettings } from "@/features/settings/hooks/useSalesSettings"
 import { useBillingSettings } from "@/features/settings/hooks/useBillingSettings"
@@ -22,6 +24,7 @@ import { useTreasurySettings } from "@/features/settings/hooks/useTreasurySettin
 import { accountingApi } from "@/features/accounting/api/accountingApi"
 
 const TABS = [
+    { value: "estructura", label: "Estructura" },
     { value: "ventas", label: "Ventas" },
     { value: "facturacion", label: "Facturación" },
     { value: "compras", label: "Compras" },
@@ -44,6 +47,9 @@ export function UnifiedAccountsView() {
                 variant="underline"
                 orientation="horizontal"
             >
+                <UnderlineTabsContent value="estructura">
+                    {activeTab === "estructura" && <EstructuraForm />}
+                </UnderlineTabsContent>
                 <UnderlineTabsContent value="ventas">
                     {activeTab === "ventas" && <VentasForm />}
                 </UnderlineTabsContent>
@@ -817,6 +823,200 @@ function SociosForm() {
                     </div>
                 </form>
             </Form>
+        </div>
+    )
+}
+
+/* ───────── Estructura (Plan de Cuentas) ───────── */
+
+const ESTRUCTURA_DEFAULTS: AccountingFormValues = {
+    hierarchy_levels: 4,
+    code_separator: ".",
+    asset_prefix: "",
+    liability_prefix: "",
+    equity_prefix: "",
+    income_prefix: "",
+    expense_prefix: "",
+}
+
+function generatePreview(values: AccountingFormValues) {
+    const { hierarchy_levels, code_separator, asset_prefix } = values;
+    let code = asset_prefix || "1";
+    const levels = [{ padding: 1 }, { padding: 2 }, { padding: 2 }, { padding: 3 }];
+    for (let i = 0; i < Math.min(hierarchy_levels - 1, levels.length); i++) {
+        code += (code_separator || ".") + "1".padStart(levels[i].padding, "0");
+    }
+    return code;
+}
+
+function EstructuraForm() {
+    const { structure: settings, isLoading, updateSettings } = useAccountingSettings()
+
+    const form = useForm<AccountingFormValues>({
+        resolver: zodResolver(accountingSchema),
+        defaultValues: ESTRUCTURA_DEFAULTS,
+    })
+
+    useEffect(() => {
+        if (settings) form.reset(settings)
+    }, [settings, form])
+
+    const onSave = useCallback(async (data: AccountingFormValues) => {
+        await updateSettings(data as unknown as Record<string, unknown>)
+    }, [updateSettings])
+
+    const { status, invalidReason, lastSavedAt, retry } = useAutoSaveForm({
+        form,
+        onSave,
+        enabled: true,
+    })
+
+    useUnsavedChangesGuard(status)
+
+    const [populating, setPopulating] = useState(false)
+    const [confirmOpen, setConfirmOpen] = useState(false)
+
+    const handlePopulateIFRS = () => setConfirmOpen(true)
+
+    const onConfirmPopulate = async () => {
+        setPopulating(true)
+        try {
+            const res = await settingsApi.populateIfrsChart()
+            const { toast } = await import("sonner")
+            toast.success(res.message)
+            window.location.reload()
+        } catch {
+            const { toast } = await import("sonner")
+            toast.error("Error al poblar plan de cuentas")
+        } finally {
+            setPopulating(false)
+        }
+    }
+
+    if (isLoading && !settings) return <SkeletonShell isLoading ariaLabel="Cargando estructura contable..." />
+
+    const formValues = form.watch()
+
+    return (
+        <div className="space-y-6">
+            <div className="flex justify-end">
+                <AutoSaveStatusBadge status={status} invalidReason={invalidReason} lastSavedAt={lastSavedAt} onRetry={retry} />
+            </div>
+            <Form {...form}>
+                <form className="space-y-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <Card variant="transparent">
+                            <CardHeader>
+                                <CardTitle className="text-lg text-primary">Estructura del Código</CardTitle>
+                                <CardDescription>Establezca los niveles de jerarquía y el formato del código para su Plan de Cuentas</CardDescription>
+                            </CardHeader>
+                            <CardContent className="space-y-6">
+                                <fieldset className="notched-field bg-primary/[0.03] border-primary/20 pointer-events-none select-none">
+                                    <legend className="px-1.5 text-[10px] font-black uppercase tracking-[0.15em] text-primary/80">
+                                        Vista Previa del Formato
+                                    </legend>
+                                    <div className="flex items-center justify-between w-full min-h-[2.5rem] py-1">
+                                        <p className="text-[10px] text-muted-foreground uppercase opacity-75 font-bold pl-2.5">
+                                            Ejemplo nivel {formValues.hierarchy_levels}
+                                        </p>
+                                        <div className="px-4 py-1.5 bg-background border border-primary/20 rounded-sm text-lg font-mono font-bold tracking-tighter text-primary mr-1">
+                                            {generatePreview(formValues)}
+                                        </div>
+                                    </div>
+                                </fieldset>
+                                <div className="space-y-4">
+                                    <FormField
+                                        control={form.control}
+                                        name="hierarchy_levels"
+                                        render={({ field, fieldState }) => (
+                                            <LabeledSelect
+                                                label="Niveles de Jerarquía"
+                                                value={field.value?.toString() || "4"}
+                                                onChange={(val) => field.onChange(parseInt(val))}
+                                                error={fieldState.error?.message}
+                                                options={[2, 3, 4, 5].map((n) => ({ value: n.toString(), label: `${n} Niveles` }))}
+                                            />
+                                        )}
+                                    />
+                                    <FormField
+                                        control={form.control}
+                                        name="code_separator"
+                                        render={({ field, fieldState }) => (
+                                            <LabeledSelect
+                                                label="Separador"
+                                                value={field.value || "."}
+                                                onChange={field.onChange}
+                                                error={fieldState.error?.message}
+                                                options={[
+                                                    { value: ".", label: "Punto ( . )" },
+                                                    { value: "-", label: "Guion ( - )" },
+                                                    { value: "/", label: "Slash ( / )" },
+                                                ]}
+                                            />
+                                        )}
+                                    />
+                                </div>
+                            </CardContent>
+                        </Card>
+                        <Card variant="transparent">
+                            <CardHeader>
+                                <CardTitle className="text-lg text-primary">Prefijos de Cuentas</CardTitle>
+                                <CardDescription>Establezca los prefijos del Nivel 1 para clasificar cada tipo de cuenta contable</CardDescription>
+                            </CardHeader>
+                            <CardContent className="space-y-4">
+                                <div className="grid grid-cols-2 gap-4">
+                                    <FormField control={form.control} name="asset_prefix" render={({ field, fieldState }) => (
+                                        <LabeledInput {...field} value={field.value?.toString() || ""} label="Activos" error={fieldState.error?.message} className="font-mono text-[11px]" />
+                                    )} />
+                                    <FormField control={form.control} name="liability_prefix" render={({ field, fieldState }) => (
+                                        <LabeledInput {...field} value={field.value?.toString() || ""} label="Pasivos" error={fieldState.error?.message} className="font-mono text-[11px]" />
+                                    )} />
+                                    <FormField control={form.control} name="equity_prefix" render={({ field, fieldState }) => (
+                                        <LabeledInput {...field} value={field.value?.toString() || ""} label="Patrimonio" error={fieldState.error?.message} className="font-mono text-[11px]" />
+                                    )} />
+                                    <FormField control={form.control} name="income_prefix" render={({ field, fieldState }) => (
+                                        <LabeledInput {...field} value={field.value?.toString() || ""} label="Ingresos" error={fieldState.error?.message} className="font-mono text-[11px]" />
+                                    )} />
+                                    <div className="col-span-2 md:col-span-1">
+                                        <FormField control={form.control} name="expense_prefix" render={({ field, fieldState }) => (
+                                            <LabeledInput {...field} value={field.value?.toString() || ""} label="Gastos" error={fieldState.error?.message} className="font-mono text-[11px]" />
+                                        )} />
+                                    </div>
+                                </div>
+                            </CardContent>
+                        </Card>
+                    </div>
+                    <Card variant="transparent">
+                        <CardHeader>
+                            <CardTitle className="text-lg text-primary">Plan de Cuentas IFRS</CardTitle>
+                            <CardDescription>Cargue el Plan de Cuentas oficial recomendado por la normativa IFRS para comenzar de inmediato</CardDescription>
+                        </CardHeader>
+                        <CardContent className="flex flex-col md:flex-row items-center justify-between gap-4 p-4 rounded-sm">
+                            <div className="space-y-1">
+                                <p className="text-[11px] font-bold uppercase text-primary/80">Generación Automática de Cuentas</p>
+                                <p className="text-[10px] text-muted-foreground uppercase">Esta acción creará las cuentas detalladas y configurará los mapeos contables por defecto de manera instantánea.</p>
+                            </div>
+                            <PageHeaderButton
+                                onClick={handlePopulateIFRS}
+                                disabled={populating}
+                                iconName={populating ? "loader-2" : "database"}
+                                label={populating ? "Poblar Plan de Cuentas IFRS" : "Poblar Plan de Cuentas IFRS"}
+                                variant="outline"
+                                className="font-bold whitespace-nowrap px-4 py-2 rounded-sm"
+                            />
+                        </CardContent>
+                    </Card>
+                </form>
+            </Form>
+            <ActionConfirmModal
+                open={confirmOpen}
+                onOpenChange={setConfirmOpen}
+                onConfirm={onConfirmPopulate}
+                title="Cargar Plan de Cuentas IFRS"
+                description="¿Está seguro de cargar el plan de cuentas IFRS? Esto creará las cuentas detalladas y configurará todos los mapeos predeterminados automáticamente."
+                variant="warning"
+                confirmText="Cargar Plan IFRS"
+            />
         </div>
     )
 }
