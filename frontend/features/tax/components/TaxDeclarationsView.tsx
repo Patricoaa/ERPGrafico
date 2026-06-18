@@ -27,7 +27,7 @@ import { cn } from "@/lib/utils"
 import { TaxPeriod, TaxDeclaration, TaxPaymentData } from "../types"
 import { useSelectedEntity } from "@/hooks/useSelectedEntity"
 import { type Row, type Table } from "@tanstack/react-table"
-import { CardSkeleton, SmartSearchBar, useClientSearch } from "@/components/shared"
+import { SkeletonShell, SmartSearchBar, useClientSearch } from "@/components/shared"
 import { taxPeriodSearchDef } from "@/features/tax/searchDef"
 
 import { useTaxPeriods, useLazyTaxDeclarations } from "../hooks/useTaxQueries"
@@ -295,61 +295,57 @@ export function TaxDeclarationsView({ externalOpen, onExternalOpenChange, create
     return (
         <div className="h-full flex flex-col">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6 shrink-0">
-                {isLoading ? (
-                    <CardSkeleton count={3} variant="grid" />
-                ) : (
-                    <>
-                        <Card className="bg-gradient-to-br from-primary/5 to-transparent border-primary/10">
-                            <CardHeader className="pb-2">
-                                <CardTitle className="text-sm font-medium text-muted-foreground">Período Actual</CardTitle>
-                                <CardDescription className="text-2xl font-bold text-foreground">
-                                    {currentPeriodDisplay}
-                                </CardDescription>
-                            </CardHeader>
-                            <CardContent>
-                                {isLatestClosed ? (
-                                    <div className="flex items-center gap-2 text-sm text-success font-medium">
-                                        <CheckCircle2 className="h-4 w-4" />
-                                        Período Cerrado
-                                    </div>
-                                ) : (
-                                    <div className="flex items-center gap-2 text-sm text-warning font-medium">
-                                        <AlertCircle className="h-4 w-4" />
-                                        Pendiente de declaración
-                                    </div>
-                                )}
-                            </CardContent>
-                        </Card>
-
-                        <Card>
-                            <CardHeader className="pb-2">
-                                <CardTitle className="text-sm font-medium text-muted-foreground">IVA por Pagar (Estimado)</CardTitle>
-                                <CardDescription className="text-2xl font-bold text-foreground">
-                                    {formatCurrency(currentVatToPay)}
-                                </CardDescription>
-                            </CardHeader>
-                            <CardContent>
-                                <div className="text-xs text-muted-foreground italic">
-                                    Basado en {latestPeriod?.declaration_summary ? 'declaración registrada' : 'información disponible'}
+                <SkeletonShell isLoading={isLoading} ariaLabel="Cargando períodos tributarios">
+                    <Card className="bg-gradient-to-br from-primary/5 to-transparent border-primary/10">
+                        <CardHeader className="pb-2">
+                            <CardTitle className="text-sm font-medium text-muted-foreground">Período Actual</CardTitle>
+                            <CardDescription className="text-2xl font-bold text-foreground">
+                                {currentPeriodDisplay}
+                            </CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                            {isLatestClosed ? (
+                                <div className="flex items-center gap-2 text-sm text-success font-medium">
+                                    <CheckCircle2 className="h-4 w-4" />
+                                    Período Cerrado
                                 </div>
-                            </CardContent>
-                        </Card>
-
-                        <Card>
-                            <CardHeader className="pb-2">
-                                <CardTitle className="text-sm font-medium text-muted-foreground">Último Remanente</CardTitle>
-                                <CardDescription className="text-2xl font-bold text-foreground">
-                                    -
-                                </CardDescription>
-                            </CardHeader>
-                            <CardContent>
-                                <div className="text-sm text-muted-foreground font-medium">
-                                    Información no disponible
+                            ) : (
+                                <div className="flex items-center gap-2 text-sm text-warning font-medium">
+                                    <AlertCircle className="h-4 w-4" />
+                                    Pendiente de declaración
                                 </div>
-                            </CardContent>
-                        </Card>
-                    </>
-                )}
+                            )}
+                        </CardContent>
+                    </Card>
+
+                    <Card>
+                        <CardHeader className="pb-2">
+                            <CardTitle className="text-sm font-medium text-muted-foreground">IVA por Pagar (Estimado)</CardTitle>
+                            <CardDescription className="text-2xl font-bold text-foreground">
+                                {formatCurrency(currentVatToPay)}
+                            </CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                            <div className="text-xs text-muted-foreground italic">
+                                Basado en {latestPeriod?.declaration_summary ? 'declaración registrada' : 'información disponible'}
+                            </div>
+                        </CardContent>
+                    </Card>
+
+                    <Card>
+                        <CardHeader className="pb-2">
+                            <CardTitle className="text-sm font-medium text-muted-foreground">Último Remanente</CardTitle>
+                            <CardDescription className="text-2xl font-bold text-foreground">
+                                -
+                            </CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                            <div className="text-sm text-muted-foreground font-medium">
+                                Información no disponible
+                            </div>
+                        </CardContent>
+                    </Card>
+                </SkeletonShell>
             </div>
 
             <div className="flex-1 min-h-0">

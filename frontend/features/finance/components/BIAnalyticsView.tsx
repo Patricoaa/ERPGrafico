@@ -7,7 +7,7 @@ import { ResponsiveBar } from '@nivo/bar'
 import { ResponsivePie } from '@nivo/pie'
 import { useBIAnalytics } from "../hooks/useBIAnalytics";
 import {TrendingUp, Package, DollarSign, ShoppingCart} from 'lucide-react';
-import { CardSkeleton, EmptyState, MoneyDisplay, StatCard } from '@/components/shared';
+import { EmptyState, MoneyDisplay, SkeletonShell, StatCard } from '@/components/shared';
 ;
 import { formatCurrency } from "@/lib/money";
 import { DateRange } from "react-day-picker";
@@ -56,14 +56,16 @@ export const BIAnalyticsView: React.FC<BIAnalyticsViewProps> = ({ date }) => {
 
     const { data, isLoading, isError } = useBIAnalytics(params)
 
-    if (isLoading) return <CardSkeleton variant="grid" count={4} />;
     if (isError) return <EmptyState context="finance" variant="compact" title="Error al cargar analytics" description="No se pudieron cargar los datos de inteligencia de negocio." />;
-    if (!data) return <EmptyState context="finance" variant="compact" description="No hay datos disponibles para el período seleccionado" />;
+    if (!data && !isLoading) return <EmptyState context="finance" variant="compact" description="No hay datos disponibles para el período seleccionado" />;
 
-    const { sales, inventory, performance } = data;
+    const PLACEHOLDER = { sales: { total_sales: 0, growth: 0, average_ticket: 0, sales_count: 0, monthly_trend: [], top_customers: [] }, inventory: { total_value: 0, item_count: 0, turnover_ratio: 0, low_stock_alerts: 0, stock_distribution: [] }, performance: { purchase_total: 0, efficiency: 0, ar_total: 0, ap_total: 0 }, production: { finished_wo: 0, total_wo: 0 } };
+    const d = data ?? PLACEHOLDER;
+    const { sales, inventory, performance } = d;
 
     return (
-        <PageContainer>
+        <SkeletonShell isLoading={isLoading} ariaLabel="Cargando analytics de negocio">
+            <PageContainer>
             {/* KPI Overview Cards */}
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
                 <StatCard
@@ -292,5 +294,6 @@ export const BIAnalyticsView: React.FC<BIAnalyticsViewProps> = ({ date }) => {
                 </Card>
             </div>
         </PageContainer>
+        </SkeletonShell>
     );
 };

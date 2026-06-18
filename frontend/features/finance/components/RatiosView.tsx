@@ -10,7 +10,7 @@ import { ResponsiveBar } from '@nivo/bar'
 import { useAnalysis } from "../hooks/useAnalysis";
 import { DateRange } from "react-day-picker";
 import { format } from "date-fns";
-import { CardSkeleton, StatCard } from "@/components/shared";
+import { SkeletonShell, StatCard } from "@/components/shared";
 ;
 
 interface RatiosViewProps {
@@ -35,11 +35,11 @@ export const RatiosView: React.FC<RatiosViewProps> = ({ date, showComparison, co
     const { data, isLoading, isError } = useAnalysis(params)
     const { data: compData } = useAnalysis(compParams)
 
-    if (isLoading) return <CardSkeleton variant="grid" count={4} />;
     if (isError) return <EmptyState context="finance" variant="compact" title="Error al cargar ratios" description="No se pudieron cargar los indicadores financieros." />;
-    if (!data) return <EmptyState context="finance" variant="compact" description="No hay datos disponibles para el período seleccionado" />;
+    if (!data && !isLoading) return <EmptyState context="finance" variant="compact" description="No hay datos disponibles para el período seleccionado" />;
 
-    const d = data as any;
+    const PLACEHOLDER = { liquidity: { current_ratio: 0, acid_test: 0, current_assets: 0, current_liabilities: 0 }, structure: { debt_to_equity: 0, total_assets: 0, total_liabilities: 0, total_equity: 0 }, solvency: { solvency_ratio: 0 }, profitability: { gross_margin: 0, net_margin: 0 } } as const;
+    const d = (data || PLACEHOLDER) as any;
     const cd = compData as any;
 
     const structureData = [
@@ -73,7 +73,8 @@ export const RatiosView: React.FC<RatiosViewProps> = ({ date, showComparison, co
     ] : null;
 
     return (
-        <PageContainer>
+        <SkeletonShell isLoading={isLoading} ariaLabel="Cargando ratios financieros">
+            <PageContainer>
             {/* Key Metrics Cards */}
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
                 <StatCard
@@ -342,5 +343,6 @@ export const RatiosView: React.FC<RatiosViewProps> = ({ date, showComparison, co
                 </Card>
             </div>
         </PageContainer>
+        </SkeletonShell>
     );
 };
