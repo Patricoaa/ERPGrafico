@@ -22,7 +22,6 @@ import { useRouter, usePathname, useSearchParams } from "next/navigation"
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 import { useSelectedEntity } from "@/hooks/useSelectedEntity"
 
-import { createEntityCardView } from "@/lib/view-helpers"
 
 interface TreasuryAccountsViewProps {
     activeTab: string
@@ -256,71 +255,62 @@ export const TreasuryAccountsView: React.FC<TreasuryAccountsViewProps> = ({ acti
                                 title: "Aún no hay cuentas de tesorería",
                                 description: "Crea cuentas de caja o banco para registrar y controlar tus fondos.",
                             }}
-                            renderCustomView={createEntityCardView('treasury.treasuryaccount', {
-                                isFiltered,
-                                emptyState: {
-                                    context: "treasury",
-                                    title: "Aún no hay cuentas de tesorería",
-                                    description: "Crea cuentas de caja o banco para registrar y controlar tus fondos.",
-                                    action: activeTab === "accounts" ? createAction : undefined,
-                                },
-                                renderCard: (acc: TreasuryAccount) => {
-                                    const name = acc.account_name
-                                    const providers = acc.terminal_providers ?? []
-                                    const hasBank = !!acc.bank
-                                    const hasProviders = providers.length > 0
-                                    return (
-                                        <EntityCard key={acc.id} onClick={() => handleEdit(acc)}>
-                                            <EntityCard.Header
-                                                title={acc.name}
-                                                trailing={
-                                                    acc.is_system_managed ? <Lock className="h-4 w-4 text-muted-foreground opacity-50" /> : null
-                                                }
-                                            />
-                                            <EntityCard.Body>
-                                                <EntityCard.Field label="Tipología" value={acc.account_type_display || typeLabels[acc.account_type?.toUpperCase()] || acc.account_type} />
-                                                <EntityCard.Field label="Cuenta Contable" value={
-                                                    name ? (
-                                                        <div className="flex flex-col gap-0.5">
-                                                            <DataCell.Code className="text-[10px] bg-transparent p-0">{acc.account_code}</DataCell.Code>
-                                                            <DataCell.Secondary className="truncate max-w-[140px] leading-tight">{name}</DataCell.Secondary>
-                                                        </div>
-                                                    ) : <DataCell.Secondary className="italic">No vinculada</DataCell.Secondary>
-                                                } />
-                                                <EntityCard.Field label="Entidad Externa" value={
-                                                    !hasBank && !hasProviders ? (
-                                                        <DataCell.Secondary className="italic">Sin entidad externa</DataCell.Secondary>
-                                                    ) : (
-                                                        <div className="flex flex-col gap-1 items-start">
-                                                            {hasBank && acc.bank_name && (
-                                                                <EntityBadge
-                                                                    label="treasury.bank"
-                                                                    data={{ id: acc.bank, name: acc.bank_name }}
-                                                                    size="sm"
-                                                                    showIcon
-                                                                />
-                                                            )}
-                                                            {providers.map((p) => (
-                                                                <EntityBadge
-                                                                    key={p.id}
-                                                                    label="treasury.terminalprovider"
-                                                                    data={p}
-                                                                    size="sm"
-                                                                    showIcon
-                                                                />
-                                                            ))}
-                                                        </div>
-                                                    )
-                                                } />
-                                            </EntityCard.Body>
-                                            <EntityCard.Footer className="justify-between items-center border-t bg-muted/10 py-2 px-4">
-                                                <span className="text-[10px] font-bold text-muted-foreground uppercase">Saldo Actual</span>
-                                                <DataCell.Currency value={acc.current_balance} currency={acc.currency} className="font-bold text-base" />
-                                            </EntityCard.Footer>
-                                        </EntityCard>
-                                    )
-                                }
-                            })}
+                            renderCard={(acc: TreasuryAccount) => {
+                                const name = acc.account_name
+                                const providers = acc.terminal_providers ?? []
+                                const hasBank = !!acc.bank
+                                const hasProviders = providers.length > 0
+                                return (
+                                    <EntityCard key={acc.id} onClick={() => handleEdit(acc)}>
+                                        <EntityCard.Header
+                                            title={acc.name}
+                                            trailing={
+                                                acc.is_system_managed ? <Lock className="h-4 w-4 text-muted-foreground opacity-50" /> : null
+                                            }
+                                        />
+                                        <EntityCard.Body>
+                                            <EntityCard.Field label="Tipología" value={acc.account_type_display || typeLabels[acc.account_type?.toUpperCase()] || acc.account_type} />
+                                            <EntityCard.Field label="Cuenta Contable" value={
+                                                name ? (
+                                                    <div className="flex flex-col gap-0.5">
+                                                        <DataCell.Code className="text-[10px] bg-transparent p-0">{acc.account_code}</DataCell.Code>
+                                                        <DataCell.Secondary className="truncate max-w-[140px] leading-tight">{name}</DataCell.Secondary>
+                                                    </div>
+                                                ) : <DataCell.Secondary className="italic">No vinculada</DataCell.Secondary>
+                                            } />
+                                            <EntityCard.Field label="Entidad Externa" value={
+                                                !hasBank && !hasProviders ? (
+                                                    <DataCell.Secondary className="italic">Sin entidad externa</DataCell.Secondary>
+                                                ) : (
+                                                    <div className="flex flex-col gap-1 items-start">
+                                                        {hasBank && acc.bank_name && (
+                                                            <EntityBadge
+                                                                label="treasury.bank"
+                                                                data={{ id: acc.bank, name: acc.bank_name }}
+                                                                size="sm"
+                                                                showIcon
+                                                            />
+                                                        )}
+                                                        {providers.map((p) => (
+                                                            <EntityBadge
+                                                                key={p.id}
+                                                                label="treasury.terminalprovider"
+                                                                data={p}
+                                                                size="sm"
+                                                                showIcon
+                                                            />
+                                                        ))}
+                                                    </div>
+                                                )
+                                            } />
+                                        </EntityCard.Body>
+                                        <EntityCard.Footer className="justify-between items-center border-t bg-muted/10 py-2 px-4">
+                                            <span className="text-[10px] font-bold text-muted-foreground uppercase">Saldo Actual</span>
+                                            <DataCell.Currency value={acc.current_balance} currency={acc.currency} className="font-bold text-base" />
+                                        </EntityCard.Footer>
+                                    </EntityCard>
+                                )
+                            }}
                         />
                     </div>
                 </div>

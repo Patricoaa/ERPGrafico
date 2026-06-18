@@ -18,7 +18,6 @@ import {
 
 import { useConfirmAction } from "@/hooks/useConfirmAction"
 import { DataTableView } from '@/components/shared'
-import { createEntityCardView } from "@/lib/view-helpers"
 import { DataTableColumnHeader } from '@/components/shared'
 import { createActionsColumn, DataCell } from '@/components/shared'
 import { ColumnDef } from "@tanstack/react-table"

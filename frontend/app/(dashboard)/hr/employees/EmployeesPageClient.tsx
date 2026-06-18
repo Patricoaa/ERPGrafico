@@ -16,7 +16,6 @@ import { useSelectedEntity } from "@/hooks/useSelectedEntity"
 import { useEmployees } from "@/features/hr"
 import { employeeSearchDef } from "@/features/hr/searchDef"
 
-import { createEntityCardView } from "@/lib/view-helpers"
 
 interface EmployeesPageClientProps {
     initialEmployees?: Employee[]
@@ -161,40 +160,31 @@ export default function EmployeesPageClient({ initialEmployees }: EmployeesPageC
                         title: "Aún no hay empleados",
                         description: "Registra a tu personal para gestionar nóminas, anticipos e inasistencias.",
                     }}
-                    renderCustomView={createEntityCardView('hr.employee', {
-                        isFiltered,
-                        emptyState: {
-                            context: "users",
-                            title: "Aún no hay empleados",
-                            description: "Registra a tu personal para gestionar nóminas, anticipos e inasistencias.",
-                            action: createAction,
-                        },
-                        renderCard: (emp: Employee) => (
-                            <EntityCard key={emp.id} onClick={() => {
-                                const params = new URLSearchParams(searchParams.toString())
-                                params.set('selected', String(emp.id))
-                                router.push(`${pathname}?${params.toString()}`, { scroll: false })
-                            }}>
-                                <EntityCard.Header
-                                    title={emp.contact_detail?.name || "Sin nombre"}
-                                    subtitle={emp.contact_detail?.tax_id || emp.display_id}
-                                    trailing={
-                                        <StatusBadge status={emp.status} label={emp.status_display} size="sm" />
-                                    }
-                                />
-                                <EntityCard.Body>
-                                    <EntityCard.Field label="Cargo" value={emp.position || '—'} />
-                                    <EntityCard.Field label="Dpto." value={emp.department || '—'} />
-                                    <EntityCard.Field label="Previsión" value={`AFP: ${emp.afp_detail?.name || 'N/A'}`} />
-                                    <EntityCard.Field label="Salud" value={emp.salud_type_display || 'N/A'} />
-                                </EntityCard.Body>
-                                <EntityCard.Footer className="justify-between items-center border-t bg-muted/10 py-2 px-4">
-                                    <span className="text-[10px] font-bold text-muted-foreground uppercase">Sueldo Base</span>
-                                    <DataCell.Currency value={parseFloat((emp.base_salary as string) || "0")} className="font-bold text-base" />
-                                </EntityCard.Footer>
-                            </EntityCard>
-                        )
-                    })}
+                    renderCard={(emp: Employee) => (
+                        <EntityCard key={emp.id} onClick={() => {
+                            const params = new URLSearchParams(searchParams.toString())
+                            params.set('selected', String(emp.id))
+                            router.push(`${pathname}?${params.toString()}`, { scroll: false })
+                        }}>
+                            <EntityCard.Header
+                                title={emp.contact_detail?.name || "Sin nombre"}
+                                subtitle={emp.contact_detail?.tax_id || emp.display_id}
+                                trailing={
+                                    <StatusBadge status={emp.status} label={emp.status_display} size="sm" />
+                                }
+                            />
+                            <EntityCard.Body>
+                                <EntityCard.Field label="Cargo" value={emp.position || '—'} />
+                                <EntityCard.Field label="Dpto." value={emp.department || '—'} />
+                                <EntityCard.Field label="Previsión" value={`AFP: ${emp.afp_detail?.name || 'N/A'}`} />
+                                <EntityCard.Field label="Salud" value={emp.salud_type_display || 'N/A'} />
+                            </EntityCard.Body>
+                            <EntityCard.Footer className="justify-between items-center border-t bg-muted/10 py-2 px-4">
+                                <span className="text-[10px] font-bold text-muted-foreground uppercase">Sueldo Base</span>
+                                <DataCell.Currency value={parseFloat((emp.base_salary as string) || "0")} className="font-bold text-base" />
+                            </EntityCard.Footer>
+                        </EntityCard>
+                    )}
                 />
             </div>
             <EmployeeDrawer

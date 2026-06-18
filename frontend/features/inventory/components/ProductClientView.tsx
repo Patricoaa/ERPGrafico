@@ -28,7 +28,6 @@ import { Product, Restriction, ProductFilters } from "@/features/inventory/types
 import { useSelectedEntity } from "@/hooks/useSelectedEntity"
 import { Chip, SmartSearchBar, useSmartSearch } from "@/components/shared"
 import { productSearchDef } from "@/features/inventory/searchDef"
-import { createEntityCardView } from "@/lib/view-helpers"
 
 interface ProductClientViewProps {
     externalOpen?: boolean
@@ -448,54 +447,45 @@ export function ProductClientView({ externalOpen, onExternalOpenChange, createAc
                     variant="embedded"
                     leftAction={<SmartSearchBar searchDef={productSearchDef} placeholder="Buscar producto..." className="w-full" />}
                     initialColumnVisibility={initialColumnVisibility}
-                    renderCustomView={createEntityCardView('inventory.product', {
-                        isFiltered,
-                        emptyState: {
-                            context: "inventory",
-                            title: "Aún no hay productos",
-                            description: "Crea tu primer producto para empezar a construir el catálogo.",
-                            action: createAction,
-                        },
-                        renderCard: (product: Product) => (
-                            <EntityCard key={product.id} onClick={() => {
-                                const params = new URLSearchParams(searchParams.toString())
-                                params.set('selected', String(product.id))
-                                router.push(`${pathname}?${params.toString()}`, { scroll: false })
-                            }}>
-                                <EntityCard.Header
-                                    title={product.name}
-                                    subtitle={<span className="font-mono text-xs">{product.code}</span>}
-                                    trailing={
-                                        <StatusBadge
-                                            status={product.is_active ? "active" : "inactive"}
-                                            size="sm"
-                                        />
+                    renderCard={(product: Product) => (
+                        <EntityCard key={product.id} onClick={() => {
+                            const params = new URLSearchParams(searchParams.toString())
+                            params.set('selected', String(product.id))
+                            router.push(`${pathname}?${params.toString()}`, { scroll: false })
+                        }}>
+                            <EntityCard.Header
+                                title={product.name}
+                                subtitle={<span className="font-mono text-xs">{product.code}</span>}
+                                trailing={
+                                    <StatusBadge
+                                        status={product.is_active ? "active" : "inactive"}
+                                        size="sm"
+                                    />
+                                }
+                            />
+                            <EntityCard.Body>
+                                <EntityCard.Field label="Tipo" value={translateProductType(product.product_type)} />
+                                <EntityCard.Field label="Categoría" value={product.category_name} />
+                                <EntityCard.Field
+                                    label="Precio Neto"
+                                    value={
+                                        product.is_dynamic_pricing
+                                            ? <Chip size="xs" intent="warning">Dinámico</Chip>
+                                            : <MoneyDisplay amount={product.sale_price} />
                                     }
                                 />
-                                <EntityCard.Body>
-                                    <EntityCard.Field label="Tipo" value={translateProductType(product.product_type)} />
-                                    <EntityCard.Field label="Categoría" value={product.category_name} />
-                                    <EntityCard.Field
-                                        label="Precio Neto"
-                                        value={
-                                            product.is_dynamic_pricing
-                                                ? <Chip size="xs" intent="warning">Dinámico</Chip>
-                                                : <MoneyDisplay amount={product.sale_price} />
-                                        }
-                                    />
-                                    <EntityCard.Field
-                                        label="Precio Total"
-                                        value={
-                                            product.is_dynamic_pricing
-                                                ? <Chip size="xs" intent="warning">Dinámico</Chip>
-                                                : <MoneyDisplay amount={product.sale_price_gross || PricingUtils.netToGross(Number(product.sale_price))} className="text-primary" />
-                                        }
-                                        className="font-bold"
-                                    />
-                                </EntityCard.Body>
-                            </EntityCard>
-                        )
-                    })}
+                                <EntityCard.Field
+                                    label="Precio Total"
+                                    value={
+                                        product.is_dynamic_pricing
+                                            ? <Chip size="xs" intent="warning">Dinámico</Chip>
+                                            : <MoneyDisplay amount={product.sale_price_gross || PricingUtils.netToGross(Number(product.sale_price))} className="text-primary" />
+                                    }
+                                    className="font-bold"
+                                />
+                            </EntityCard.Body>
+                        </EntityCard>
+                    )}
                     bulkActions={bulkActions}
                     defaultPageSize={500}
                     createAction={createAction}
