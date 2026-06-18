@@ -1,7 +1,7 @@
 "use client"
 
 import React, { useState, useEffect } from 'react';
-import { BaseModal, DataCell, LoadingFallback, MoneyDisplay, FormFooter, CancelButton } from "@/components/shared";
+import { BaseModal, DataCell, MoneyDisplay, SkeletonShell, FormFooter, CancelButton } from "@/components/shared";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
@@ -302,21 +302,17 @@ export function BudgetEditor({ open, onOpenChange, budget, onSave }: BudgetEdito
                                 <div className="w-[100px] p-3 text-center bg-muted/50">Total Anual</div>
                             </div>
 
-                            {loading && (
-                                <div className="py-12">
-                                    <LoadingFallback message="Cargando cuentas..." />
-                                </div>
-                            )}
-
-                            {!loading && filteredAccounts.map(acc => (
-                                <BudgetAccountRow
-                                    key={acc.id}
-                                    account={acc}
-                                    monthlyData={items[acc.id]}
-                                    onAmountChange={handleAmountChange}
-                                    onAutoDistribute={handleAutoDistribute}
-                                />
-                            ))}
+                            <SkeletonShell isLoading={loading} ariaLabel="Cargando cuentas presupuestables">
+                                {filteredAccounts.map(acc => (
+                                    <BudgetAccountRow
+                                        key={acc.id}
+                                        account={acc}
+                                        monthlyData={items[acc.id]}
+                                        onAmountChange={handleAmountChange}
+                                        onAutoDistribute={handleAutoDistribute}
+                                    />
+                                ))}
+                            </SkeletonShell>
                         </div>
                     </ScrollArea>
                 </div>

@@ -5,7 +5,7 @@ import { financeApi } from "../api/financeApi"
 import { Download, ArrowLeft } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { DataTable, PageHeader, LoadingFallback, MoneyDisplay, StatCard, DataCell } from "@/components/shared"
+import { DataTable, PageHeader, MoneyDisplay, SkeletonShell, StatCard, DataCell } from "@/components/shared"
 import { toast } from "sonner"
 import Link from "next/link"
 import type { ColumnDef } from "@tanstack/react-table"
@@ -36,6 +36,24 @@ interface Budget {
     name: string;
     start_date: string;
     end_date: string;
+}
+
+const SKELETON_BUDGET: Budget = {
+    id: 0,
+    name: '——————————————————',
+    start_date: '——————',
+    end_date: '——————',
+}
+
+const SKELETON_EXECUTION: BudgetExecutionData = {
+    summary: { total_budgeted: 0, total_actual: 0, total_variance: 0 },
+    items: Array.from({ length: 6 }, (_, i) => ({
+        account_name: '——————————————————',
+        account_code: '————',
+        budgeted: 0,
+        actual: 0,
+        percentage: 0,
+    })),
 }
 
 const columns: ColumnDef<BudgetExecutionItem>[] = [
@@ -119,68 +137,69 @@ export function BudgetDetailView({ budgetId }: BudgetDetailViewProps) {
         }
     }
 
-    if (loading) {
-        return <div className="flex items-center justify-center h-64"><LoadingFallback message="Cargando detalles..." /></div>
-    }
+    const resolvedBudget = budget ?? SKELETON_BUDGET
+    const resolvedExecution = executionData ?? SKELETON_EXECUTION
 
-    if (!budget || !executionData) {
+    if (!loading && (!budget || !executionData)) {
         return <div className="text-center py-8 text-destructive">No se pudo cargar la información del presupuesto.</div>
     }
 
     return (
-        <div className="space-y-6">
-            <div className="flex items-center gap-4 mb-4">
-                <Button variant="ghost" size="sm" asChild>
-                    <Link href="/finances/budgets">
-                        <ArrowLeft className="h-4 w-4 mr-2" />
-                        Volver
-                    </Link>
-                </Button>
-            </div>
-
-            <PageHeader
-                title={`Ejecución: ${budget.name}`}
-                description={`${budget.start_date} - ${budget.end_date}`}
-                titleActions={
-                    <Button variant="outline" onClick={handleExport}>
-                        <Download className="h-4 w-4 mr-2" />
-                        Exportar CSV
+        <SkeletonShell isLoading={loading} ariaLabel="Cargando detalles del presupuesto">
+            <div className="space-y-6">
+                <div className="flex items-center gap-4 mb-4">
+                    <Button variant="ghost" size="sm" asChild>
+                        <Link href="/finances/budgets">
+                            <ArrowLeft className="h-4 w-4 mr-2" />
+                            Volver
+                        </Link>
                     </Button>
-                }
-            />
+                </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <StatCard
-                    label="Presupuestado"
-                    value={<MoneyDisplay amount={executionData.summary.total_budgeted} />}
-                    accent="muted"
+                <PageHeader
+                    title={`Ejecución: ${resolvedBudget.name}`}
+                    description={`${resolvedBudget.start_date} - ${resolvedBudget.end_date}`}
+                    titleActions={
+                        <Button variant="outline" onClick={handleExport}>
+                            <Download className="h-4 w-4 mr-2" />
+                            Exportar CSV
+                        </Button>
+                    }
                 />
-                <StatCard
-                    label="Ejecutado"
-                    value={<MoneyDisplay amount={executionData.summary.total_actual} />}
-                    accent="muted"
-                />
-                <StatCard
-                    label="Desviación"
-                    value={<MoneyDisplay amount={executionData.summary.total_variance} />}
-                    accent="muted"
-                />
-            </div>
 
-            <Card>
-                <CardHeader>
-                    <CardTitle>Detalle por Cuenta</CardTitle>
-                </CardHeader>
-                <CardContent>
-                    <DataTable
-                        columns={columns}
-                        data={executionData.items}
-                        variant="embedded"
-                        hidePagination
-                        emptyState={{ title: "Sin datos", description: "No se encontraron cuentas presupuestarias" }}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <StatCard
+                        label="Presupuestado"
+                        value={<MoneyDisplay amount={resolvedExecution.summary.total_budgeted} />}
+                        accent="muted"
                     />
-                </CardContent>
-            </Card>
-        </div>
+                    <StatCard
+                        label="Ejecutado"
+                        value={<MoneyDisplay amount={resolvedExecution.summary.total_actual} />}
+                        accent="muted"
+                    />
+                    <StatCard
+                        label="Desviación"
+                        value={<MoneyDisplay amount={resolvedExecution.summary.total_variance} />}
+                        accent="muted"
+                    />
+                </div>
+
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Detalle por Cuenta</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <DataTable
+                            columns={columns}
+                            data={resolvedExecution.items}
+                            variant="embedded"
+                            hidePagination
+                            emptyState={{ title: "Sin datos", description: "No se encontraron cuentas presupuestarias" }}
+                        />
+                    </CardContent>
+                </Card>
+            </div>
+        </SkeletonShell>
     )
 }

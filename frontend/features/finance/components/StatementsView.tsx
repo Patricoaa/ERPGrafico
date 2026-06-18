@@ -25,6 +25,26 @@ import { es } from 'date-fns/locale'
 import { cn } from "@/lib/utils"
 import { useServerDate } from "@/hooks/useServerDate"
 
+function SkeletonReportSection() {
+    return (
+        <div className="space-y-4">
+            <div className="h-6 w-48 bg-muted/30 rounded animate-pulse" />
+            <div className="space-y-2">
+                {[1, 2, 3, 4, 5].map(i => (
+                    <div key={i} className="flex justify-between py-2 border-b border-border/20">
+                        <div className="h-4 w-48 bg-muted/30 rounded animate-pulse" />
+                        <div className="h-4 w-24 bg-muted/30 rounded animate-pulse" />
+                    </div>
+                ))}
+                <div className="flex justify-between py-3 border-t-2 border-border/40 pt-3">
+                    <div className="h-5 w-36 bg-muted/40 rounded animate-pulse" />
+                    <div className="h-5 w-28 bg-muted/40 rounded animate-pulse" />
+                </div>
+            </div>
+        </div>
+    )
+}
+
 function ReportHeader({ title, dateRange, compDateRange, showComparison, headerFormat, accent = 'primary' }: { title: string, dateRange?: DateRange, compDateRange?: DateRange, showComparison?: boolean, headerFormat: 'year' | 'month-year' | 'day-month-year', accent?: 'primary' | 'success' | 'info' }) {
     const getPeriodLabel = (range: DateRange | undefined) => {
         if (!range?.from || !range?.to) return ""
@@ -346,9 +366,13 @@ export function StatementsView({ activeTab }: StatementsViewProps) {
                                             </div>
                                         </div>
                                     ) : (
-                                        <div className="p-8">
-                                            <SkeletonShell isLoading ariaLabel="Cargando..." />
-                                        </div>
+                                        <SkeletonShell isLoading ariaLabel="Cargando balance">
+                                            <div className="space-y-8">
+                                                <SkeletonReportSection />
+                                                <SkeletonReportSection />
+                                                <SkeletonReportSection />
+                                            </div>
+                                        </SkeletonShell>
                                     )}
                                 </CardContent>
                             </Card>
@@ -407,9 +431,13 @@ export function StatementsView({ activeTab }: StatementsViewProps) {
                                             })()}
                                         </div>
                                     ) : (
-                                        <div className="p-8">
-                                            <SkeletonShell isLoading ariaLabel="Cargando..." />
-                                        </div>
+                                        <SkeletonShell isLoading ariaLabel="Cargando estado de resultados">
+                                            <div className="space-y-8">
+                                                <SkeletonReportSection />
+                                                <SkeletonReportSection />
+                                                <SkeletonReportSection />
+                                            </div>
+                                        </SkeletonShell>
                                     )}
                                 </CardContent>
                             </Card>
@@ -430,9 +458,12 @@ export function StatementsView({ activeTab }: StatementsViewProps) {
                                             compPeriodLabel={compPeriodLabel}
                                         />
                                     ) : (
-                                        <div className="p-8">
-                                            <SkeletonShell isLoading ariaLabel="Cargando..." />
-                                        </div>
+                                        <SkeletonShell isLoading ariaLabel="Cargando flujo de efectivo">
+                                            <div className="space-y-8">
+                                                <SkeletonReportSection />
+                                                <SkeletonReportSection />
+                                            </div>
+                                        </SkeletonShell>
                                     )}
                                 </CardContent>
                             </Card>
