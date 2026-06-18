@@ -1,6 +1,6 @@
 "use client"
 
-import { Drawer, MoneyDisplay, SkeletonShell, StatusBadge } from "@/components/shared"
+import { Drawer, EmptyState, MoneyDisplay, SkeletonShell, StatusBadge } from "@/components/shared"
 import { getEntityIcon } from "@/lib/entity-registry"
 import { useBankStatement } from "../hooks/useBankStatement"
 
@@ -22,7 +22,7 @@ interface BankStatementDrawerProps {
 }
 
 export function BankStatementDrawer({ statementId, open, onOpenChange }: BankStatementDrawerProps) {
-    const { statement, isLoading } = useBankStatement<BankStatementData>(statementId, open)
+    const { statement, isLoading, isError } = useBankStatement<BankStatementData>(statementId, open)
 
     return (
         <Drawer
@@ -35,6 +35,15 @@ export function BankStatementDrawer({ statementId, open, onOpenChange }: BankSta
             subtitle={statement?.treasury_account_name}
             icon={getEntityIcon('treasury.bankstatement')}
         >
+            {isError ? (
+                <div className="p-4">
+                    <EmptyState
+                        context="treasury"
+                        title="Error al cargar cartola"
+                        description="No se pudo cargar la información de la cartola bancaria."
+                    />
+                </div>
+            ) : (
             <SkeletonShell isLoading={isLoading} ariaLabel="Cargando cartola">
                 {statement ? (
                     <div className="p-4 space-y-4">
@@ -71,6 +80,7 @@ export function BankStatementDrawer({ statementId, open, onOpenChange }: BankSta
                     </div>
                 ) : null}
             </SkeletonShell>
+            )}
         </Drawer>
     )
 }
