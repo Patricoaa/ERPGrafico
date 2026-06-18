@@ -15,7 +15,6 @@ import { useTreasuryMovements, type TreasuryMovementFilters } from "@/features/t
 import { treasuryMovementsSearchDef } from "@/features/treasury/searchDef"
 import { useSelectedEntity } from "@/hooks/useSelectedEntity"
 
-import { createEntityCardView } from "@/lib/view-helpers"
 
 // Lazy load heavy components
 import { CashMovementDrawer } from "@/features/treasury/components/CashMovementDrawer"
@@ -318,74 +317,65 @@ export function TreasuryMovementsClientView({ externalOpen, createAction }: Trea
                         title: "Aún no hay movimientos de caja",
                         description: "Los ingresos y egresos de fondos que registres aparecerán aquí.",
                     }}
-                    renderCustomView={createEntityCardView('treasury.treasurymovement', {
-                        isFiltered,
-                        emptyState: {
-                            context: "treasury",
-                            title: "Aún no hay movimientos de caja",
-                            description: "Los ingresos y egresos de fondos que registres aparecerán aquí.",
-                            action: createAction,
-                        },
-                        renderCard: (m) => {
-                            const type = m.movement_type
-                            const isWriteOff = m.payment_method === 'WRITE_OFF'
+                    renderCard={(m) => {
+                        const type = m.movement_type
+                        const isWriteOff = m.payment_method === 'WRITE_OFF'
 
-                            let status = "info" as any
-                            let label = m.movement_type_display
+                        let status = "info" as any
+                        let label = m.movement_type_display
 
-                            if (isWriteOff) {
-                                status = "voided"
-                                label = "Castigo"
-                            } else if (type === 'INBOUND') {
-                                status = "received"
-                                label = "Depósito"
-                            } else if (type === 'OUTBOUND') {
-                                status = "sent"
-                                label = "Retiro"
-                            } else if (type === 'TRANSFER' || type === 'ADJUSTMENT') {
-                                status = "in_progress"
-                                label = type === 'TRANSFER' ? "Traspaso" : "Ajuste"
-                            }
-
-                            let sourceLabel = m.partner_name || m.from_account_name || 'Origen'
-                            let destLabel = m.to_account_name || m.partner_name || 'Destino'
-
-                            if (type === 'INBOUND') {
-                                sourceLabel = m.partner_name || 'Particular'
-                                destLabel = m.to_account_name || 'Caja'
-                            } else if (type === 'OUTBOUND') {
-                                sourceLabel = m.from_account_name || 'Caja'
-                                destLabel = m.partner_name || 'Particular'
-                            } else if (type === 'TRANSFER' || type === 'ADJUSTMENT') {
-                                sourceLabel = m.from_account_name || 'Origen'
-                                destLabel = m.to_account_name || 'Destino'
-                            }
-
-                            const amount = typeof m.amount === 'string' ? parseFloat(m.amount) : m.amount
-                            const signedAmount = type === 'OUTBOUND' ? -amount : amount
-
-                            return (
-                                <EntityCard key={m.id} onClick={() => handleViewDetails(m.id)}>
-                                    <EntityCard.Header
-                                        title={`Movimiento ${m.display_id}`}
-                                        subtitle={m.date}
-                                        trailing={
-                                            <div className="flex flex-col items-end gap-2">
-                                                <StatusBadge status={status} label={label} size="sm" className="uppercase font-bold tracking-tight" />
-                                                <DataCell.Currency value={signedAmount} />
-                                            </div>
-                                        }
-                                    />
-                                    <EntityCard.Body>
-                                        <EntityCard.Field label="Origen" value={sourceLabel} />
-                                        <EntityCard.Field label="Destino" value={destLabel} />
-                                        <EntityCard.Field label="Método" value={m.payment_method_display} />
-                                        <EntityCard.Field label="Usuario" value={m.created_by_name} />
-                                    </EntityCard.Body>
-                                </EntityCard>
-                            )
+                        if (isWriteOff) {
+                            status = "voided"
+                            label = "Castigo"
+                        } else if (type === 'INBOUND') {
+                            status = "received"
+                            label = "Depósito"
+                        } else if (type === 'OUTBOUND') {
+                            status = "sent"
+                            label = "Retiro"
+                        } else if (type === 'TRANSFER' || type === 'ADJUSTMENT') {
+                            status = "in_progress"
+                            label = type === 'TRANSFER' ? "Traspaso" : "Ajuste"
                         }
-                    })}
+
+                        let sourceLabel = m.partner_name || m.from_account_name || 'Origen'
+                        let destLabel = m.to_account_name || m.partner_name || 'Destino'
+
+                        if (type === 'INBOUND') {
+                            sourceLabel = m.partner_name || 'Particular'
+                            destLabel = m.to_account_name || 'Caja'
+                        } else if (type === 'OUTBOUND') {
+                            sourceLabel = m.from_account_name || 'Caja'
+                            destLabel = m.partner_name || 'Particular'
+                        } else if (type === 'TRANSFER' || type === 'ADJUSTMENT') {
+                            sourceLabel = m.from_account_name || 'Origen'
+                            destLabel = m.to_account_name || 'Destino'
+                        }
+
+                        const amount = typeof m.amount === 'string' ? parseFloat(m.amount) : m.amount
+                        const signedAmount = type === 'OUTBOUND' ? -amount : amount
+
+                        return (
+                            <EntityCard key={m.id} onClick={() => handleViewDetails(m.id)}>
+                                <EntityCard.Header
+                                    title={`Movimiento ${m.display_id}`}
+                                    subtitle={m.date}
+                                    trailing={
+                                        <div className="flex flex-col items-end gap-2">
+                                            <StatusBadge status={status} label={label} size="sm" className="uppercase font-bold tracking-tight" />
+                                            <DataCell.Currency value={signedAmount} />
+                                        </div>
+                                    }
+                                />
+                                <EntityCard.Body>
+                                    <EntityCard.Field label="Origen" value={sourceLabel} />
+                                    <EntityCard.Field label="Destino" value={destLabel} />
+                                    <EntityCard.Field label="Método" value={m.payment_method_display} />
+                                    <EntityCard.Field label="Usuario" value={m.created_by_name} />
+                                </EntityCard.Body>
+                            </EntityCard>
+                        )
+                    }}
                 />
             </div>
 
