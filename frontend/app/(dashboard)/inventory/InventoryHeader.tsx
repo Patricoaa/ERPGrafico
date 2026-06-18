@@ -14,7 +14,7 @@ export function InventoryHeader() {
 
     // Determine subActiveValue from path segments
     const subActiveValue = (() => {
-        if (activeValue === 'config') return segments[2] || 'accounts'
+        if (activeValue === 'config') return segments[2] || 'valuation'
         if (activeValue === 'products') return segments[2] || 'products'
         if (activeValue === 'stock') return segments[2] || 'report'
         if (activeValue === 'uoms') return segments[2] || 'units'
@@ -62,9 +62,7 @@ export function InventoryHeader() {
             iconName: "settings",
             href: "/inventory/settings",
             subTabs: [
-                { value: "accounts", label: "Cuentas", href: "/inventory/settings/accounts", iconName: "package" },
-                { value: "adjustments", label: "Ajustes", href: "/inventory/settings/adjustments", iconName: "arrow-left-right" },
-                { value: "cogs", label: "Costo Ventas", href: "/inventory/settings/cogs", iconName: "dollar-sign" },
+                { value: "valuation", label: "Valorización", href: "/inventory/settings", iconName: "package" },
             ]
         },
     ]
@@ -78,7 +76,7 @@ export function InventoryHeader() {
     }
 
     const getHeaderConfig = () => {
-        if (activeValue === 'config') return { title: "Configuración de Inventario", description: "Gestione las cuentas de stock, ajustes y costo de ventas.", iconName: "settings" as const }
+        if (activeValue === 'config') return { title: "Configuración de Inventario", description: "Gestione el método de valorización de inventario.", iconName: "settings" as const }
         if (activeValue === 'attributes') return { title: "Atributos de Variantes", description: "Gestión de atributos para variaciones.", iconName: "tags" as const }
         if (activeValue === 'uoms') {
             if (subActiveValue === 'categories') return { title: "Categorías de Medida", description: "Clasificación de magnitudes compatibles (peso, volumen, longitud).", iconName: getEntityIconName('inventory.uomcategory') }

@@ -11,7 +11,7 @@ export function BillingHeader() {
     const currentSegment = segments[1] || 'sales'
     
     const activeValue = currentSegment === 'settings' ? 'config' : currentSegment
-    const subActiveValue = currentSegment === 'settings' ? (segments[2] || 'accounts') : undefined
+    const subActiveValue = currentSegment === 'settings' ? (segments[2] || 'dtes') : undefined
 
     const tabs = [
         { value: "sales", label: "Emitidos (Ventas)", iconName: getEntityIconName('billing.invoice'), href: "/billing/sales" },
@@ -22,7 +22,6 @@ export function BillingHeader() {
             iconName: "settings", 
             href: "/billing/settings",
             subTabs: [
-                { value: "accounts", label: "Cuentas", href: "/billing/settings/accounts", iconName: "users" },
                 { value: "dtes", label: "Documentos", href: "/billing/settings/dtes", iconName: "file-text" }
             ]
         },
@@ -37,7 +36,7 @@ export function BillingHeader() {
     }
 
     const getHeaderConfig = () => {
-        if (activeValue === 'config') return { title: "Configuración de Facturación", description: "Gestione las cuentas contables y parámetros de documentos electrónicos.", iconName: "settings" }
+        if (activeValue === 'config') return { title: "Configuración de Facturación", description: "Gestione los parámetros de documentos electrónicos.", iconName: "settings" }
         return {
             title: activeValue === 'sales' ? "Facturación de Ventas" : "Facturación de Compras",
             description: activeValue === 'sales'
