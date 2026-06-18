@@ -23,7 +23,7 @@ export function SalesHeader() {
 
     // Determine subActiveValue from path segments
     const subActiveValue = (() => {
-        if (activeValue === 'config') return segments[2] || 'income'
+        if (activeValue === 'config') return segments[2] || 'credit'
         if (activeValue === 'orders') return segments[2] || 'orders'
         if (activeValue === 'pos') {
             if (currentSegment === 'sessions') return 'sessions'
@@ -71,7 +71,6 @@ export function SalesHeader() {
             iconName: "settings",
             href: "/sales/settings",
             subTabs: [
-                { value: "income", label: "Ingresos", href: "/sales/settings/income", iconName: "trending-up" },
                 { value: "credit", label: "Crédito", href: "/sales/settings/credit", iconName: "credit-card" },
                 { value: "config-pos", label: "POS", href: "/sales/settings/config-pos", iconName: "settings" },
             ]
@@ -87,7 +86,7 @@ export function SalesHeader() {
     }
 
     const getHeaderConfig = () => {
-        if (activeValue === 'config') return { title: "Configuración de Ventas", description: "Gestione los ingresos, políticas de crédito y parámetros del POS.", iconName: "settings" as const }
+        if (activeValue === 'config') return { title: "Configuración de Ventas", description: "Gestione las políticas de crédito y parámetros del POS.", iconName: "settings" as const }
         if (activeValue === 'credits') {
             if (subActiveValue === 'history') return { title: "Historial de Asignaciones", description: "Registro global de créditos asignados a clientes.", iconName: "history" as const }
             if (subActiveValue === 'blacklist') return { title: "Lista Negra", description: "Clientes con historial de impago o riesgo crediticio.", iconName: "user-x" as const }

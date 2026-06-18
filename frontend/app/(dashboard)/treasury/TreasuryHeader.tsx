@@ -18,13 +18,11 @@ export function TreasuryHeader() {
         'centro-bancos': 'centro-bancos',
         'terminal-cobro': 'terminal-cobro',
         reconciliation: 'centro-bancos',
-        settings: 'config',
     }
 
     const activeValue = segmentToTab[currentSegment] || 'operaciones'
 
     const subActiveValue = useMemo(() => {
-        if (activeValue === 'config') return segments[2] || 'conciliation'
         if (activeValue === 'operaciones') return segments[2] || 'movements'
         if (activeValue === 'terminal-cobro') return segments[2] || 'providers'
         if (activeValue === 'centro-bancos') {
@@ -79,20 +77,6 @@ export function TreasuryHeader() {
                 { value: "batches", label: "Lotes de Pago", iconName: getEntityIconName('treasury.terminalbatch'), href: "/treasury/terminal-cobro/batches" },
             ]
         },
-        {
-            value: "config",
-            label: "Configuración",
-            iconName: "settings",
-            href: "/treasury/settings/conciliation",
-            subTabs: [
-                { value: "conciliation", label: "Cuentas Contables", href: "/treasury/settings/conciliation", iconName: "arrow-left-right" },
-                { value: "financial", label: "Gastos Financieros", href: "/treasury/settings/financial", iconName: "trending-up" },
-                { value: "checks", label: "Cuentas de Cheques", href: "/treasury/settings/checks", iconName: "file-check" },
-                { value: "movements", label: "Movimientos Manuales POS", href: "/treasury/settings/movements", iconName: "shuffle" },
-                { value: "audit", label: "Arqueo de Caja", href: "/treasury/settings/audit", iconName: "wallet" },
-                { value: "terminals", label: "Sistema", href: "/treasury/settings/terminals", iconName: "settings" },
-            ]
-        },
     ]
 
     const navigation = {
@@ -104,14 +88,6 @@ export function TreasuryHeader() {
     }
 
     const getHeaderConfig = () => {
-        if (activeValue === 'config') {
-            if (subActiveValue === 'financial') return { title: "Cuentas de Gasto Financiero", description: "Cuentas contables para intereses, seguros, mora, comisiones de apertura e impuesto de timbres de préstamos.", iconName: "trending-up" as const }
-            if (subActiveValue === 'checks') return { title: "Cuentas de Cheques", description: "Cuentas puente para contabilización de cheques recibidos y emitidos.", iconName: "file-check" as const }
-            if (subActiveValue === 'movements') return { title: "Cuentas para Movimientos Manuales", description: "Configuración de ingresos y egresos ad-hoc del módulo POS.", iconName: "shuffle" as const }
-            if (subActiveValue === 'audit') return { title: "Arqueo de Caja", description: "Control de discrepancias entre saldo teórico y físico en POS.", iconName: "wallet" as const }
-            if (subActiveValue === 'terminals') return { title: "Sistema", description: "Configure cuentas puente de terminales y otros ajustes del sistema.", iconName: "settings" as const }
-            return { title: "Cuentas Contables", description: "Gestione las cuentas contables para conciliación, arqueo y gastos financieros.", iconName: "arrow-left-right" as const }
-        }
         if (activeValue === 'operaciones') {
             if (subActiveValue === 'accounts') return { title: "Cuentas de Tesorería", description: "Registre y configure sus cuentas bancarias y de efectivo.", iconName: getEntityIconName('treasury.treasuryaccount') }
             if (subActiveValue === 'methods') return { title: "Métodos de Pago", description: "Configure los medios de pago aceptados y sus cuentas vinculadas.", iconName: getEntityIconName('treasury.paymentmethod') }

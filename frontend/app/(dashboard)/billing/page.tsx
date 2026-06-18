@@ -1,7 +1,6 @@
 import { redirect } from "next/navigation"
 
 const BILLING_SETTINGS_TAB_MAP: Record<string, string> = {
-    accounts: 'accounts',
     dtes: 'dtes',
 }
 
@@ -14,7 +13,7 @@ export default async function BillingPage({ searchParams }: PageProps) {
     
     if (view === 'purchases') redirect('/billing/purchases')
     if (view === 'config') {
-        redirect(tab && BILLING_SETTINGS_TAB_MAP[tab] ? `/billing/settings/${BILLING_SETTINGS_TAB_MAP[tab]}` : '/billing/settings/accounts')
+        redirect(tab && BILLING_SETTINGS_TAB_MAP[tab] ? `/billing/settings/${BILLING_SETTINGS_TAB_MAP[tab]}` : '/billing/settings/dtes')
     }
 
     redirect('/billing/sales')
