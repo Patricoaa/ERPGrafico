@@ -216,49 +216,41 @@ export function PaymentHardwareManagement({
                                 Configurar proveedor
                             </Button>
                         )}
-                        renderCustomView={createEntityCardView('treasury.terminalprovider', {
-                            isFiltered: isProvidersFiltered,
-                            emptyState: {
-                                context: "treasury",
-                                title: "Aún no hay proveedores de terminal",
-                                description: "Configura un proveedor (Transbank, etc.) para registrar sus dispositivos.",
-                            },
-                            renderCard: (provider: PaymentTerminalProvider) => (
-                                <EntityCard key={provider.id}>
-                                    <EntityCard.Header
-                                        title={
-                                            <div className="flex items-center gap-2">
-                                                <Building2 className="h-4 w-4 text-primary" />
-                                                {provider.name}
+                        renderCard={(provider: PaymentTerminalProvider) => (
+                            <EntityCard key={provider.id}>
+                                <EntityCard.Header
+                                    title={
+                                        <div className="flex items-center gap-2">
+                                            <Building2 className="h-4 w-4 text-primary" />
+                                            {provider.name}
+                                        </div>
+                                    }
+                                    trailing={
+                                        <div className="flex flex-col items-end gap-2">
+                                            <StatusBadge status={provider.is_active ? "active" : "inactive"} size="sm" />
+                                            <div className="flex items-center gap-1">
+                                                <IconButton onClick={() => handleEditProvider(provider)} className="h-7 w-7"><Settings className="h-3 w-3" /></IconButton>
+                                                <IconButton onClick={() => deleteProviderConfirm.requestConfirm(provider)} className="h-7 w-7 text-destructive hover:bg-destructive/10 hover:text-destructive"><Trash2 className="h-3 w-3" /></IconButton>
                                             </div>
-                                        }
-                                        trailing={
-                                            <div className="flex flex-col items-end gap-2">
-                                                <StatusBadge status={provider.is_active ? "active" : "inactive"} size="sm" />
-                                                <div className="flex items-center gap-1">
-                                                    <IconButton onClick={() => handleEditProvider(provider)} className="h-7 w-7"><Settings className="h-3 w-3" /></IconButton>
-                                                    <IconButton onClick={() => deleteProviderConfirm.requestConfirm(provider)} className="h-7 w-7 text-destructive hover:bg-destructive/10 hover:text-destructive"><Trash2 className="h-3 w-3" /></IconButton>
-                                                </div>
-                                            </div>
-                                        }
+                                        </div>
+                                    }
+                                />
+                                <EntityCard.Body>
+                                    <EntityCard.Field
+                                        label="Recaudación"
+                                        value={provider.receivable_account_name || "No configurada"}
+                                        icon={Building2}
                                     />
-                                    <EntityCard.Body>
+                                    {provider.supplier_name && (
                                         <EntityCard.Field
-                                            label="Recaudación"
-                                            value={provider.receivable_account_name || "No configurada"}
-                                            icon={Building2}
+                                            label="Contacto"
+                                            value={provider.supplier_name}
+                                            icon={UserIcon}
                                         />
-                                        {provider.supplier_name && (
-                                            <EntityCard.Field
-                                                label="Contacto"
-                                                value={provider.supplier_name}
-                                                icon={UserIcon}
-                                            />
-                                        )}
-                                    </EntityCard.Body>
-                                </EntityCard>
-                            ),
-                        })}
+                                    )}
+                                </EntityCard.Body>
+                            </EntityCard>
+                        )}
                     />
                 </div>
             ) : (
@@ -282,61 +274,53 @@ export function PaymentHardwareManagement({
                                 Registrar dispositivo
                             </Button>
                         )}
-                        renderCustomView={createEntityCardView('treasury.terminaldevice', {
-                            isFiltered: isDevicesFiltered,
-                            emptyState: {
-                                context: "treasury",
-                                title: "Aún no hay dispositivos",
-                                description: "Registra terminales de pago (POS) para conciliar sus transacciones.",
-                            },
-                            renderCard: (device: PaymentTerminalDevice) => (
-                                <EntityCard key={device.id}>
-                                    <EntityCard.Header
-                                        title={
-                                            <div className="flex items-center gap-2">
-                                                <Smartphone className="h-4 w-4 text-info" />
-                                                {device.name}
-                                            </div>
-                                        }
-                                        trailing={
-                                            <div className="flex flex-col items-end gap-2">
-                                                <StatusBadge status={device.is_active ? "active" : "inactive"} size="sm" />
-                                                <div className="flex items-center gap-1">
-                                                    <IconButton onClick={() => handleEditDevice(device)} className="h-7 w-7"><Settings className="h-3 w-3" /></IconButton>
-                                                    <IconButton onClick={() => deleteDeviceConfirm.requestConfirm(device)} className="h-7 w-7 text-destructive hover:bg-destructive/10 hover:text-destructive"><Trash2 className="h-3 w-3" /></IconButton>
-                                                </div>
-                                            </div>
-                                        }
-                                    />
-                                    <EntityCard.Body>
-                                        <EntityCard.Field
-                                            label="Proveedor"
-                                            value={device.provider_name || "Sin proveedor"}
-                                            icon={Building2}
-                                        />
-                                        <EntityCard.Field
-                                            label="N° Serie"
-                                            value={<span className="font-mono">{device.serial_number}</span>}
-                                            icon={CreditCard}
-                                        />
-                                    </EntityCard.Body>
-                                    <EntityCard.Footer className="justify-between items-center bg-muted/10 px-4 py-2 border-t">
-                                        <div className="flex items-center gap-1.5 w-full">
-                                            <span className="text-[10px] font-bold text-muted-foreground uppercase mr-2">Soporta:</span>
-                                            {device.supported_payment_methods?.includes(2) && (
-                                                <span className="px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-widest bg-primary/10 text-primary border border-primary/20 rounded-sm">DÉBITO</span>
-                                            )}
-                                            {device.supported_payment_methods?.includes(1) && (
-                                                <span className="px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-widest bg-primary/10 text-primary border border-primary/20 rounded-sm">CRÉDITO</span>
-                                            )}
-                                            {(!device.supported_payment_methods || device.supported_payment_methods.length === 0) && (
-                                                <span className="text-[10px] italic opacity-50">SIN CONFIG</span>
-                                            )}
+                        renderCard={(device: PaymentTerminalDevice) => (
+                            <EntityCard key={device.id}>
+                                <EntityCard.Header
+                                    title={
+                                        <div className="flex items-center gap-2">
+                                            <Smartphone className="h-4 w-4 text-info" />
+                                            {device.name}
                                         </div>
-                                    </EntityCard.Footer>
-                                </EntityCard>
-                            ),
-                        })}
+                                    }
+                                    trailing={
+                                        <div className="flex flex-col items-end gap-2">
+                                            <StatusBadge status={device.is_active ? "active" : "inactive"} size="sm" />
+                                            <div className="flex items-center gap-1">
+                                                <IconButton onClick={() => handleEditDevice(device)} className="h-7 w-7"><Settings className="h-3 w-3" /></IconButton>
+                                                <IconButton onClick={() => deleteDeviceConfirm.requestConfirm(device)} className="h-7 w-7 text-destructive hover:bg-destructive/10 hover:text-destructive"><Trash2 className="h-3 w-3" /></IconButton>
+                                            </div>
+                                        </div>
+                                    }
+                                />
+                                <EntityCard.Body>
+                                    <EntityCard.Field
+                                        label="Proveedor"
+                                        value={device.provider_name || "Sin proveedor"}
+                                        icon={Building2}
+                                    />
+                                    <EntityCard.Field
+                                        label="N° Serie"
+                                        value={<span className="font-mono">{device.serial_number}</span>}
+                                        icon={CreditCard}
+                                    />
+                                </EntityCard.Body>
+                                <EntityCard.Footer className="justify-between items-center bg-muted/10 px-4 py-2 border-t">
+                                    <div className="flex items-center gap-1.5 w-full">
+                                        <span className="text-[10px] font-bold text-muted-foreground uppercase mr-2">Soporta:</span>
+                                        {device.supported_payment_methods?.includes(2) && (
+                                            <span className="px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-widest bg-primary/10 text-primary border border-primary/20 rounded-sm">DÉBITO</span>
+                                        )}
+                                        {device.supported_payment_methods?.includes(1) && (
+                                            <span className="px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-widest bg-primary/10 text-primary border border-primary/20 rounded-sm">CRÉDITO</span>
+                                        )}
+                                        {(!device.supported_payment_methods || device.supported_payment_methods.length === 0) && (
+                                            <span className="text-[10px] italic opacity-50">SIN CONFIG</span>
+                                        )}
+                                    </div>
+                                </EntityCard.Footer>
+                            </EntityCard>
+                        )}
                     />
                 </div>
             )}
