@@ -72,22 +72,22 @@ export function ModuleLauncher({ open, onClose }: ModuleLauncherProps) {
                         animate="visible"
                         exit="hidden"
                         transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
-                        className="relative max-w-6xl w-full mx-2 md:mx-4"
+                        className="relative w-full mx-2 md:mx-4 max-w-[clamp(48rem,90vw,72rem)]"
                         onClick={(e) => e.stopPropagation()}
                     >
                         <button
                             onClick={onClose}
-                            className="absolute -top-12 right-0 p-2 rounded-full text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors"
+                            className="absolute -top-[clamp(2.5rem,6vw,3rem)] right-0 p-2 rounded-full text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors"
                             aria-label="Cerrar selector de módulos"
                         >
-                            <X className="h-5 w-5" />
+                            <X className="h-[clamp(1rem,2.5vw,1.5rem)] w-[clamp(1rem,2.5vw,1.5rem)]" />
                         </button>
 
-                        <h2 className="text-xs font-bold tracking-tight text-muted-foreground uppercase mb-4 text-center">
+                        <h2 className="text-[clamp(0.65rem,1.5vw,0.875rem)] font-bold tracking-tight text-muted-foreground uppercase mb-[clamp(0.75rem,2vw,1.5rem)] text-center">
                             Seleccionar Módulo
                         </h2>
 
-                        <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-5 md:gap-6">
+                        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-[clamp(0.75rem,2.5vw,1.5rem)]">
                             {MODULE_ORDER.map((id) => {
                                 const mod = MODULE_REGISTRY[id]
                                 if (!mod) return null
@@ -103,7 +103,7 @@ export function ModuleLauncher({ open, onClose }: ModuleLauncherProps) {
                                                 href={getModuleDefaultUrl(id)}
                                                 onClick={onClose}
                                                 className={cn(
-                                                    "group relative flex flex-col items-center justify-center gap-3 p-6 md:p-8 rounded-xl border transition-all duration-200",
+                                                    "group relative flex flex-col items-center justify-center gap-3 p-[clamp(1rem,4vw,2rem)] rounded-xl border transition-all duration-200",
                                                     "hover:shadow-md hover:border-border/30",
                                                     isActive
                                                         ? "bg-primary/5 border-primary/20 shadow-sm"
@@ -111,12 +111,12 @@ export function ModuleLauncher({ open, onClose }: ModuleLauncherProps) {
                                                 )}
                                             >
                                                 <div className={cn(
-                                                    "w-16 h-16 md:w-20 md:h-20 rounded-xl flex items-center justify-center transition-colors",
+                                                    "w-[clamp(3rem,8vw,5rem)] h-[clamp(3rem,8vw,5rem)] rounded-xl flex items-center justify-center transition-colors",
                                                     isActive
                                                         ? "text-primary"
                                                         : "text-muted-foreground group-hover:text-primary"
                                                 )}>
-                                                    <DynamicIcon name={getModuleIconName(id)} className="h-8 w-8 md:h-10 md:w-10" />
+                                                    <DynamicIcon name={getModuleIconName(id)} className="h-[clamp(1.5rem,4vw,2.5rem)] w-[clamp(1.5rem,4vw,2.5rem)]" />
                                                 </div>
                                                 <span className={cn(
                                                     "text-sm font-bold tracking-tight text-center",
