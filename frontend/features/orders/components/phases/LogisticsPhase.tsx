@@ -1,3 +1,5 @@
+"use client"
+
 import { showApiError } from "@/lib/errors"
 
 import { useState } from "react"

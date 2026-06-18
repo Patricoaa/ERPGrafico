@@ -1,3 +1,5 @@
+"use client"
+
 import { showApiError } from "@/lib/errors"
 import { ActionConfirmModal, Chip, DataCell, EmptyState, StatusBadge } from '@/components/shared'
 import { FormLineItemsTable } from "@/components/shared"

@@ -1,3 +1,5 @@
+"use client"
+
 import { formatCurrency } from "@/lib/money"
 import React from "react"
 import { Drawer, StatCard } from "@/components/shared"

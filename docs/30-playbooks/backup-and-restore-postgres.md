@@ -26,7 +26,7 @@ Estrategia mínima y barata para no perder los libros fiscales. Asume topología
 | Stack | Postgres 16-alpine en docker compose (`db` service) |
 | Volumen | `postgres_data:/var/lib/postgresql/data` (named volume Docker) |
 | DB | `${POSTGRES_DB:-erpgrafico}` |
-| Credenciales | `.env.dev` → `POSTGRES_USER`, `POSTGRES_PASSWORD` |
+| Credenciales | `.env.dev` (dev) / `.env.prod` (prod) → `POSTGRES_USER`, `POSTGRES_PASSWORD` |
 | Storage de backup | Cloudflare R2 bucket dedicado (`erpgrafico-backups`) |
 | Local staging | `/mnt/data/backups/postgres/` en el host del home-server |
 
@@ -36,10 +36,10 @@ Estrategia mínima y barata para no perder los libros fiscales. Asume topología
 
 Una sola vez. Dashboard de Cloudflare → R2 → Create bucket → `erpgrafico-backups`.
 
-Crear API token con scope `Object Read & Write` solo para ese bucket. Guardar `ACCESS_KEY_ID` + `SECRET_ACCESS_KEY` + `ENDPOINT` en `.env.dev`:
+Crear API token con scope `Object Read & Write` solo para ese bucket. Guardar `ACCESS_KEY_ID` + `SECRET_ACCESS_KEY` + `ENDPOINT` en `.env.dev` (o `.env.prod` para producción):
 
 ```bash
-# .env.dev
+# .env.dev / .env.prod
 R2_BACKUPS_BUCKET=erpgrafico-backups
 R2_BACKUPS_ENDPOINT=https://<account-id>.r2.cloudflarestorage.com
 R2_BACKUPS_ACCESS_KEY=...
@@ -163,7 +163,8 @@ Primer lunes de cada mes. Restaura el backup más reciente a una DB temporal (`e
 set -euo pipefail
 
 PROJECT_ROOT="${PROJECT_ROOT:-$(cd "$(dirname "$0")/.." && pwd)}"
-set -a; source "$PROJECT_ROOT/.env.dev"; set +a
+ENV_FILE="${ENV_FILE:-.env.dev}"  # Usar .env.prod para producción
+set -a; source "$PROJECT_ROOT/$ENV_FILE"; set +a
 
 TEST_DB="erpgrafico_restore_test"
 LATEST=$(ls -t /mnt/data/backups/postgres/erpgrafico-*.sql.zst | head -1)

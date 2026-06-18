@@ -1,3 +1,5 @@
+"use client"
+
 import { PhaseCard } from "./PhaseCard"
 import { FileText, Trash2, Ban, Edit, TrendingUp } from "lucide-react"
 import { formatEntity } from '@/features/orders/utils/status'

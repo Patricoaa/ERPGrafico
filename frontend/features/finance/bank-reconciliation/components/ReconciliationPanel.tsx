@@ -13,7 +13,7 @@ import { SplitAllocationDialog } from "./SplitAllocationDialog"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useReconciledLinesQuery } from "../hooks/useReconciliationQueries"
 
-import { ActionConfirmModal, ActionDock, BaseModal, CancelButton, Chip, CollapsibleSheet, FormFooter, LabeledInput, LabeledSelect, PeriodValidationDateInput, SkeletonShell, SmartSearchBar, useSmartSearch } from '@/components/shared'
+import { ActionConfirmModal, ActionDock, BaseModal, CancelButton, Chip, CollapsibleSheet, EmptyState, FormFooter, LabeledInput, LabeledSelect, PeriodValidationDateInput, SkeletonShell, SmartSearchBar, useSmartSearch } from '@/components/shared'
 import { reconciliationSearchDef } from "../searchDef"
 
 import { isZeroTolerance, safeDifference, safeSum, safeParseFloat } from "@/lib/math"
@@ -197,10 +197,10 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
         setDetailsOpen(false)
     }
 
-    const { data: statement } = useStatementQuery(statementId)
-    const { data: bankData, isLoading: loadingLines } = useUnreconciledLinesQuery(statementId, bankParams)
-    const { data: systemData, isLoading: loadingPayments } = useUnreconciledPaymentsQuery(treasuryAccountId, systemParams)
-    const { data: reconciledData, isLoading: loadingReconciled } = useReconciledLinesQuery(statementId, { page: 1, pageSize: 200 })
+    const { data: statement, isError: isErrorStmt } = useStatementQuery(statementId)
+    const { data: bankData, isLoading: loadingLines, isError: isErrorBank } = useUnreconciledLinesQuery(statementId, bankParams)
+    const { data: systemData, isLoading: loadingPayments, isError: isErrorSystem } = useUnreconciledPaymentsQuery(treasuryAccountId, systemParams)
+    const { data: reconciledData, isLoading: loadingReconciled, isError: isErrorReconciled } = useReconciledLinesQuery(statementId, { page: 1, pageSize: 200 })
 
     const reconciledGroups = useMemo(() => {
         if (!reconciledData?.results) return []
@@ -233,6 +233,7 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
     const restoreMutation = useRestoreMutation(statementId)
 
     const loading = loadingLines || loadingPayments || loadingReconciled
+    const isError = isErrorStmt || isErrorBank || isErrorSystem || isErrorReconciled
     const matching = matchMutation.isPending || groupMatchMutation.isPending
     const autoMatching = autoMatchMutation.isPending
 
@@ -718,6 +719,10 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
     ], [suggestions])
 
     // ─── Render ───────────────────────────────────────────────────────────────
+
+    if (isError) {
+        return <EmptyState context="finance" variant="compact" title="Error al cargar datos" description="No se pudieron cargar los datos de conciliación." />
+    }
 
     if (loading) return <SkeletonShell isLoading ariaLabel="Cargando..." />
 

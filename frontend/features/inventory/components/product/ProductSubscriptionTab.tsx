@@ -1,3 +1,5 @@
+"use client"
+
 import { FormField } from "@/components/ui/form"
 import {LabeledInput, LabeledSelect, PeriodValidationDateInput, FormSection, LabeledSwitch} from "@/components/shared"
 import { UseFormReturn } from "react-hook-form"

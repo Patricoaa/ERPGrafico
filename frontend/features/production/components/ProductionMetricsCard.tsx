@@ -1,3 +1,5 @@
+"use client"
+
 import { Skeleton, StatCard } from "@/components/shared"
 import {useProductionMetrics} from "../hooks/useProductionQueries"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"

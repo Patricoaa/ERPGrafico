@@ -1,3 +1,5 @@
+"use client"
+
 import { LucideIcon } from 'lucide-react'
 import type { BadgeIntent } from '@/lib/badge-resolvers'
 import { Badge } from '@/components/shared'

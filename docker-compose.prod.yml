@@ -1,18 +1,18 @@
-# Docker Compose — Dev-First Setup
+# Docker Compose — Production Local (Standalone)
 # -------------------------------------------------------
-# Objetivo: reinicio rápido sin pérdida de caché ni sesión
+# Uso: docker compose -f docker-compose.prod.yml -p erpgrafico-prod up -d
 #
-# Volúmenes clave:
-#   next_cache   → .next/ de Next.js sobrevive al reinicio
-#   postgres_data → datos de la DB persisten
+# Construir (primera vez o tras cambios de código):
+#   docker compose -f docker-compose.prod.yml -p erpgrafico-prod build
 #
-# Para limpiar TODO (caché incluido):
-#   docker compose down -v
+# Las migraciones corren automáticamente al arrancar via entrypoint.sh.
+# Para migraciones manuales:
+#   SKIP_MIGRATIONS=true docker compose -f docker-compose.prod.yml -p erpgrafico-prod up -d
+#   docker compose -f docker-compose.prod.yml -p erpgrafico-prod exec backend python manage.py migrate
 #
-#
-# MODO HÍBRIDO (Máximo Rendimiento Front nativo + Back Docker - RECOMENDADO):
-#   docker compose -f docker-compose.yml -f docker-compose.hybrid.yml up -d
-#   cd frontend && npm run dev
+# Ejecución paralela con dev (puertos distintos por proyecto):
+#   Dev:  docker compose up -d                        # puertos 5433, 6379, 8100, 3000, 80
+#   Prod: docker compose -f docker-compose.prod.yml -p erpgrafico-prod up -d  # puertos 5434, 6380, 8101, 3001, 8080
 # -------------------------------------------------------
 
 services:
@@ -21,7 +21,7 @@ services:
   db:
     image: postgres:16-alpine
     restart: unless-stopped
-    env_file: .env.dev
+    env_file: .env.prod
     environment:
       POSTGRES_DB: ${POSTGRES_DB:-erpgrafico}
       POSTGRES_USER: ${POSTGRES_USER:-postgres}
@@ -31,7 +31,7 @@ services:
     networks:
       - backend_net
     ports:
-      - "5433:5432"
+      - "5434:5432"
     healthcheck:
       test: [ "CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres}" ]
       interval: 5s
@@ -44,26 +44,43 @@ services:
           cpus: '0.5'
           memory: 256M
 
+  # ── Redis ───────────────────────────────────────────────
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    command: redis-server --maxmemory 120mb --maxmemory-policy allkeys-lru
+    volumes:
+      - redis_data:/data
+    networks:
+      - backend_net
+    ports:
+      - "6380:6379"
+    healthcheck:
+      test: [ "CMD", "redis-cli", "ping" ]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    deploy:
+      resources:
+        limits:
+          cpus: '0.2'
+          memory: 128M
+
   # ── Backend Django ──────────────────────────────────────
   backend:
     build:
       context: ./backend
       dockerfile: Dockerfile
-      target: development
+      target: production
       network: host
     restart: unless-stopped
-    env_file: .env.dev
+    env_file: .env.prod
     environment:
       DB_HOST: db
       PYTHONDONTWRITEBYTECODE: "1"
       PYTHONUNBUFFERED: "1"
-    volumes:
-      # Bind-mount del código fuente → auto-reload de Django al editar
-      - ./backend:/app
-      # Excluir venv del bind mount para evitar conflictos con el SO
-      - backend_venv:/app/venv
     ports:
-      - "8100:8100"
+      - "8101:8100"
     networks:
       - backend_net
     depends_on:
@@ -77,44 +94,19 @@ services:
           cpus: '1.0'
           memory: 512M
 
-  # ── Redis (Broker + Cache + Rate Limiting) ─────────────────
-  redis:
-    image: redis:7-alpine
-    restart: unless-stopped
-    command: redis-server --maxmemory 120mb --maxmemory-policy allkeys-lru
-    volumes:
-      - redis_data:/data
-    networks:
-      - backend_net
-    ports:
-      - "6379:6379"
-    healthcheck:
-      test: [ "CMD", "redis-cli", "ping" ]
-      interval: 5s
-      timeout: 3s
-      retries: 10
-    deploy:
-      resources:
-        limits:
-          cpus: '0.2'
-          memory: 128M
-
   # ── Celery Worker ───────────────────────────────────────
   celery-worker:
     build:
       context: ./backend
       dockerfile: Dockerfile
-      target: development
+      target: production
       network: host
     restart: unless-stopped
-    env_file: .env.dev
+    env_file: .env.prod
     environment:
       DB_HOST: db
       PYTHONDONTWRITEBYTECODE: "1"
       PYTHONUNBUFFERED: "1"
-    volumes:
-      - ./backend:/app
-      - backend_venv:/app/venv
     networks:
       - backend_net
     depends_on:
@@ -122,7 +114,6 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
-    # Sobreescribe el entrypoint para NO correr migraciones en cada worker
     entrypoint: []
     command: [ "celery", "-A", "config", "worker", "-l", "INFO", "--concurrency=2" ]
     deploy:
@@ -131,22 +122,19 @@ services:
           cpus: '0.5'
           memory: 512M
 
-  # ── Celery Beat (Scheduler) ─────────────────────────────
+  # ── Celery Beat ─────────────────────────────────────────
   celery-beat:
     build:
       context: ./backend
       dockerfile: Dockerfile
-      target: development
+      target: production
       network: host
     restart: unless-stopped
-    env_file: .env.dev
+    env_file: .env.prod
     environment:
       DB_HOST: db
       PYTHONDONTWRITEBYTECODE: "1"
       PYTHONUNBUFFERED: "1"
-    volumes:
-      - ./backend:/app
-      - backend_venv:/app/venv
     networks:
       - backend_net
     depends_on:
@@ -162,58 +150,45 @@ services:
           cpus: '0.2'
           memory: 256M
 
-  # ── Frontend Next.js (Dev Mode) ─────────────────────────
+  # ── Frontend Next.js (Standalone) ───────────────────────
   frontend:
     build:
       context: ./frontend
       dockerfile: Dockerfile
-      target: development
+      target: runner
       network: host
+      args:
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:8080/api}
     restart: unless-stopped
-    env_file: .env.dev
+    env_file: .env.prod
     environment:
-      NODE_ENV: development
-      NODE_OPTIONS: --max-old-space-size=1024
+      NODE_ENV: production
       NEXT_TELEMETRY_DISABLED: "1"
-      # La API se llama a través de nginx en el navegador (URL pública)
-      # Dentro de la red Docker, el backend se llama directamente
-      BACKEND_INTERNAL_URL: http://backend:8100
-      # Chokidar fix para file watching en Windows/WSL
-      # WATCHPACK_POLLING: "true"
-      # CHOKIDAR_USEPOLLING: "true"
-    volumes:
-      # Código fuente bind-montado → HMR real sin rebuild
-      - ./frontend:/app
-      # node_modules se mantiene dentro del contenedor (evita conflictos OS)
-      - frontend_node_modules:/app/node_modules
-      # .next/ en named volume → la caché de TurboPack/SWC persiste entre reinicios
-      # Esto es lo que hace que el contenedor arranque en ~5s en lugar de ~60s
-      - next_cache:/app/.next
     ports:
-      - "3000:3000"
+      - "3001:3000"
     networks:
       - frontend_net
-    command: npm run dev
     deploy:
       resources:
         limits:
-          cpus: '2.0'
-          memory: 4G
+          cpus: '1.0'
+          memory: 1G
 
-  # ── Nginx Reverse Proxy ─────────────────────────────────
+  # ── Nginx ───────────────────────────────────────────────
   nginx:
     image: nginx:1.27-alpine
     restart: unless-stopped
     volumes:
-      - ./nginx/nginx.dev.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./nginx/nginx.prod-dev.conf:/etc/nginx/conf.d/default.conf:ro
       - ./backend/media:/app/media:ro
     ports:
-      - "80:80"
+      - "8080:80"
     networks:
       - frontend_net
       - backend_net
     depends_on:
       - backend
+      - frontend
     deploy:
       resources:
         limits:
@@ -229,18 +204,5 @@ networks:
 
 # ── Volúmenes ───────────────────────────────────────────
 volumes:
-  # Datos de Postgres — persisten entre reinicios
   postgres_data:
-
-  # Datos de Redis — persisten entre reinicios (opcional, se puede quitar)
   redis_data:
-
-  # Caché de Next.js (.next/) — CLAVE para arranque rápido
-  # No se elimina con `docker compose down`, solo con `docker compose down -v`
-  next_cache:
-
-  # node_modules del frontend — isolado del SO host (evita bugs en Windows)
-  frontend_node_modules:
-
-  # venv del backend — isolado del SO host
-  backend_venv:

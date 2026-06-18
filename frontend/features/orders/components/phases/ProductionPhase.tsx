@@ -1,3 +1,5 @@
+"use client"
+
 import { showApiError } from "@/lib/errors"
 import { formatEntityDisplay } from "@/lib/entity-registry"
 
