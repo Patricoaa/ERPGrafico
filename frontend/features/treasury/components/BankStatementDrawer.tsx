@@ -35,42 +35,42 @@ export function BankStatementDrawer({ statementId, open, onOpenChange }: BankSta
             subtitle={statement?.treasury_account_name}
             icon={getEntityIcon('treasury.bankstatement')}
         >
-            {isLoading ? (
-                <SkeletonShell isLoading={true} ariaLabel="Cargando cartola" />
-            ) : statement ? (
-                <div className="p-4 space-y-4">
-                    <div className="grid grid-cols-2 gap-4 text-sm">
-                        <div>
-                            <span className="text-muted-foreground">Cuenta</span>
-                            <p className="font-medium">{statement.treasury_account_name}</p>
-                        </div>
-                        <div>
-                            <span className="text-muted-foreground">Estado</span>
-                            <p><StatusBadge status={statement.status} /></p>
-                        </div>
-                        <div>
-                            <span className="text-muted-foreground">Saldo Inicial</span>
-                            <p className="font-medium"><MoneyDisplay amount={statement.opening_balance || 0} inline /></p>
-                        </div>
-                        <div>
-                            <span className="text-muted-foreground">Saldo Final</span>
-                            <p className="font-medium"><MoneyDisplay amount={statement.closing_balance || 0} inline /></p>
-                        </div>
-                    </div>
-                    {statement.reconciliation_progress != null && (
-                        <div>
-                            <span className="text-muted-foreground text-sm">Progreso de Conciliación</span>
-                            <div className="mt-1 h-2 bg-muted rounded-full overflow-hidden">
-                                <div
-                                    className="h-full bg-primary transition-all"
-                                    style={{ width: `${statement.reconciliation_progress}%` }}
-                                />
+            <SkeletonShell isLoading={isLoading} ariaLabel="Cargando cartola">
+                {statement ? (
+                    <div className="p-4 space-y-4">
+                        <div className="grid grid-cols-2 gap-4 text-sm">
+                            <div>
+                                <span className="text-muted-foreground">Cuenta</span>
+                                <p className="font-medium">{statement.treasury_account_name}</p>
                             </div>
-                            <p className="text-xs text-muted-foreground mt-1">{statement.reconciliation_progress}%</p>
+                            <div>
+                                <span className="text-muted-foreground">Estado</span>
+                                <p><StatusBadge status={statement.status} /></p>
+                            </div>
+                            <div>
+                                <span className="text-muted-foreground">Saldo Inicial</span>
+                                <p className="font-medium"><MoneyDisplay amount={statement.opening_balance || 0} inline /></p>
+                            </div>
+                            <div>
+                                <span className="text-muted-foreground">Saldo Final</span>
+                                <p className="font-medium"><MoneyDisplay amount={statement.closing_balance || 0} inline /></p>
+                            </div>
                         </div>
-                    )}
-                </div>
-            ) : null}
+                        {statement.reconciliation_progress != null && (
+                            <div>
+                                <span className="text-muted-foreground text-sm">Progreso de Conciliación</span>
+                                <div className="mt-1 h-2 bg-muted rounded-full overflow-hidden">
+                                    <div
+                                        className="h-full bg-primary transition-all"
+                                        style={{ width: `${statement.reconciliation_progress}%` }}
+                                    />
+                                </div>
+                                <p className="text-xs text-muted-foreground mt-1">{statement.reconciliation_progress}%</p>
+                            </div>
+                        )}
+                    </div>
+                ) : null}
+            </SkeletonShell>
         </Drawer>
     )
 }
