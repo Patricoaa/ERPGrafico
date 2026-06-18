@@ -1,7 +1,7 @@
 "use client"
 
 import React, { useState, useEffect } from "react"
-import { TabsContent } from "@/components/ui/tabs"
+
 import { Card, CardContent } from "@/components/ui/card"
 import { FadeIn, MoneyDisplay, ReportTable, SkeletonShell } from '@/components/shared'
 import { PageContainer } from "@/components/shared"
@@ -278,7 +278,7 @@ export function StatementsView({ activeTab }: StatementsViewProps) {
                     </div>
                 </div>
                 <FadeIn key={activeTab}>
-                    <TabsContent value="bs" className="mt-0 outline-none">
+                    <div className="mt-0 outline-none ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
                         {activeTab === "bs" && (
                             <Card className="rounded-md border bg-card/60 backdrop-blur-md shadow-xl shadow-black/5 ring-1 ring-border/50 overflow-hidden transition-all duration-300">
                                 <CardContent className="p-6 md:p-10 pt-10">
@@ -339,9 +339,9 @@ export function StatementsView({ activeTab }: StatementsViewProps) {
                                 </CardContent>
                             </Card>
                         )}
-                    </TabsContent>
+                    </div>
 
-                    <TabsContent value="pl" className="mt-0 outline-none">
+                    <div className="mt-0 outline-none ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
                         {activeTab === "pl" && (
                             <Card className="rounded-md border bg-card/60 backdrop-blur-md shadow-xl shadow-black/5 ring-1 ring-border/50 overflow-hidden transition-all duration-300">
                                 <CardContent className="p-6 md:p-10 pt-10">
@@ -400,9 +400,9 @@ export function StatementsView({ activeTab }: StatementsViewProps) {
                                 </CardContent>
                             </Card>
                         )}
-                    </TabsContent>
+                    </div>
 
-                    <TabsContent value="cf" className="mt-0 outline-none">
+                    <div className="mt-0 outline-none ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
                         {activeTab === "cf" && (
                             <Card className="rounded-md border bg-card/60 backdrop-blur-md shadow-xl shadow-black/5 ring-1 ring-border/50 overflow-hidden transition-all duration-300">
                                 <CardContent className="p-6 md:p-10 pt-10">
@@ -423,7 +423,7 @@ export function StatementsView({ activeTab }: StatementsViewProps) {
                                 </CardContent>
                             </Card>
                         )}
-                    </TabsContent>
+                    </div>
                 </FadeIn>
             </div>
 
