@@ -15,7 +15,7 @@ import {
 } from "lucide-react"
 import { UserSelector } from "@/components/selectors/UserSelector"
 import { GroupSelector } from "@/components/selectors/GroupSelector"
-import {AccountField, AutoSaveStatusBadge, FadeIn, LabeledInput, LabeledSwitch, SkeletonShell} from "@/components/shared"
+import {AutoSaveStatusBadge, FadeIn, LabeledInput, LabeledSwitch, SkeletonShell} from "@/components/shared"
 import { SalesSettingsUpdatePayload } from "@/features/settings/types"
 import { cn } from "@/lib/utils"
 import { useAutoSaveForm } from "@/hooks/useAutoSaveForm"
@@ -99,9 +99,6 @@ export function SalesSettingsView({ activeTab = "income" }: { activeTab?: string
     const form = useForm<SalesFormValues>({
         resolver: zodResolver(salesSchema),
         defaultValues: {
-            default_revenue_account: null,
-            default_service_revenue_account: null,
-            default_subscription_revenue_account: null,
             pos_default_credit_percentage: 0,
             pos_enable_line_discounts: false,
             pos_enable_total_discounts: false,
@@ -110,16 +107,12 @@ export function SalesSettingsView({ activeTab = "income" }: { activeTab?: string
             pos_global_discount_user: null,
             pos_global_discount_group: "",
             credit_auto_block_days: 60,
-            default_uncollectible_expense_account: null,
         }
     })
 
     useEffect(() => {
         if (settings) {
             form.reset({
-                default_revenue_account: settings.default_revenue_account?.toString() ?? null,
-                default_service_revenue_account: settings.default_service_revenue_account?.toString() ?? null,
-                default_subscription_revenue_account: settings.default_subscription_revenue_account?.toString() ?? null,
                 pos_default_credit_percentage: Number(settings.pos_default_credit_percentage) || 0,
                 pos_enable_line_discounts: !!settings.pos_enable_line_discounts,
                 pos_enable_total_discounts: !!settings.pos_enable_total_discounts,
@@ -128,7 +121,6 @@ export function SalesSettingsView({ activeTab = "income" }: { activeTab?: string
                 pos_global_discount_user: settings.pos_global_discount_user ?? null,
                 pos_global_discount_group: settings.pos_global_discount_group ?? "",
                 credit_auto_block_days: settings.credit_auto_block_days ?? null,
-                default_uncollectible_expense_account: settings.default_uncollectible_expense_account?.toString() ?? null,
             })
         }
     }, [settings, form])
@@ -158,24 +150,6 @@ export function SalesSettingsView({ activeTab = "income" }: { activeTab?: string
             <Form {...form}>
                 <form className="mt-6 space-y-6">
                     <FadeIn key={activeTab}>
-                    {activeTab === "income" && (
-                        <div className="space-y-6 m-0 p-0 border-0 outline-none mt-6">
-                            <Card variant="transparent">
-                                <CardHeader>
-                                    <CardTitle className="text-lg text-primary">Cuentas de Ingresos Naturales</CardTitle>
-                                    <CardDescription>Cuentas contables para registrar los distintos tipos de ingresos por venta</CardDescription>
-                                </CardHeader>
-                                <CardContent className="space-y-6">
-                                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                                        <AccountField form={form} name="default_revenue_account" label="Ingreso General (Productos)" accountType="INCOME" />
-                                        <AccountField form={form} name="default_service_revenue_account" label="Ingresos por Servicios" accountType="INCOME" />
-                                        <AccountField form={form} name="default_subscription_revenue_account" label="Ingresos por Suscripciones" accountType="INCOME" />
-                                    </div>
-                                </CardContent>
-                            </Card>
-                        </div>
-                    )}
-
                     {activeTab === "credit" && (
                         <div className="space-y-6 m-0 p-0 border-0 outline-none mt-6">
                             <Card variant="transparent">
@@ -236,19 +210,6 @@ export function SalesSettingsView({ activeTab = "income" }: { activeTab?: string
                                             </Card>
                                         </div>
 
-                                        <Card className="bg-muted/10 border shadow-none overflow-hidden h-full">
-                                            <div className="p-4 space-y-4">
-                                                <AccountField
-                                                    form={form}
-                                                    name="default_uncollectible_expense_account"
-                                                    label="Cuenta Gasto Incobrables"
-                                                    accountType="EXPENSE"
-                                                />
-                                                <p className="text-[10px] text-muted-foreground leading-tight px-1">
-                                                    Cuenta donde se cargarán las pérdidas al castigar deudas de clientes.
-                                                </p>
-                                            </div>
-                                        </Card>
                                     </div>
                                 </CardContent>
                             </Card>

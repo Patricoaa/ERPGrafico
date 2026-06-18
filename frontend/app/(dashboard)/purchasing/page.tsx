@@ -9,7 +9,6 @@ export default async function PurchasingPage({ searchParams }: PageProps) {
     
     // Redirect logic to preserve backward compatibility for bookmarked URLs
     if (view === 'notes') redirect('/purchasing/notes')
-    if (view === 'config') redirect('/purchasing/settings')
 
     // Default redirect
     redirect('/purchasing/orders')

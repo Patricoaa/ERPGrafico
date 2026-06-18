@@ -44,7 +44,6 @@ export const FINANCES_TABS = [
         subTabs: [
             { value: "composition", label: "Composición", iconName: "users", href: "/finances/partners/composition" },
             { value: "distributions", label: "Utilidades", iconName: getEntityIconName('contacts.profitdistributionresolution'), href: "/finances/partners/distributions" },
-            { value: "config", label: "Arquitectura", iconName: "settings", href: "/finances/partners/config" },
         ]
     },
     {
@@ -92,7 +91,6 @@ export function FinancesHeader() {
             return { title: "Control Presupuestario", description: "Gestión de metas presupuestarias y ejecución.", iconName: "target" as const }
         }
         if (activeValue === 'partners') {
-            if (subActiveValue === 'config') return { title: "Arquitectura Contable de Socios", description: "Configure las cuentas maestras para el Modelo Híbrido de Capital.", iconName: "settings" as const }
             if (subActiveValue === 'distributions') return { title: "Distribución de Utilidades", description: "Gestión de actas, resolución de dividendos y reinversiones.", iconName: getEntityIconName('contacts.profitdistributionresolution') }
             return { title: "Composición Societaria", description: "Gestión de capital suscrito y pagado por los socios.", iconName: "users" as const }
         }
