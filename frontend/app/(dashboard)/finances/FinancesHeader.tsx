@@ -46,12 +46,6 @@ export const FINANCES_TABS = [
             { value: "distributions", label: "Utilidades", iconName: getEntityIconName('contacts.profitdistributionresolution'), href: "/finances/partners/distributions" },
         ]
     },
-    {
-        value: "settings",
-        label: "Configuración",
-        iconName: "settings",
-        href: "/finances/settings"
-    },
 ]
 
 export function FinancesHeader() {
@@ -72,9 +66,6 @@ export function FinancesHeader() {
     }
 
     const getHeaderConfig = () => {
-        if (activeValue === 'settings') {
-            return { title: "Configuración de Finanzas", description: "Períodos fiscales, centros de costo y reglas de consolidación.", iconName: "settings" as const }
-        }
         if (activeValue === 'statements') {
             if (subActiveValue === 'bs') return { title: "Balance General", description: "Estado de situación financiera resumido.", iconName: "file-text" as const }
             if (subActiveValue === 'pl') return { title: "Estado de Resultados", description: "Pérdidas y ganancias en un periodo determinado.", iconName: "bar-chart-2" as const }
