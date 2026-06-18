@@ -33,8 +33,7 @@ export function AccountingHeader() {
             href: "/accounting/settings",
             subTabs: [
                 { value: "structure", label: "Estructura Contable", href: "/accounting/settings/structure", iconName: "settings-2" },
-                { value: "defaults", label: "Cuentas por Defecto", href: "/accounting/settings/defaults", iconName: "book-open" },
-                { value: "tax", label: "Impuestos", href: "/accounting/settings/tax", iconName: "receipt" }
+                { value: "accounts", label: "Cuentas Contables", href: "/accounting/settings/accounts", iconName: "book-open" },
             ]
         },
     ]
@@ -48,7 +47,7 @@ export function AccountingHeader() {
     }
 
     const getHeaderConfig = () => {
-        if (activeValue === 'config') return { title: "Configuración Contable", description: "Gestione la estructura del plan de cuentas, prefijos y reglas de negocio.", iconName: "settings" as const }
+        if (activeValue === 'config') return { title: "Configuración Contable", description: "Gestione la estructura del plan de cuentas y las cuentas contables por defecto.", iconName: "settings" as const }
         if (activeValue === 'ledger') return { title: "Plan de Cuentas", description: "Estructura contable y clasificación de cuentas.", iconName: getEntityIconName('accounting.account') }
         if (activeValue === 'entries') return { title: "Asientos Contables", description: "Libro diario y registro cronológico de transacciones.", iconName: getEntityIconName('accounting.journalentry') }
         if (activeValue === 'closures') return { title: "Gestión de Cierres", description: "Control de validación mensual y cierres de ejercicios anuales.", iconName: getEntityIconName('accounting.fiscalyear') }

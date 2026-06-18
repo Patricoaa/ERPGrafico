@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation"
 
 export default async function BillingSettingsPage() {
-    redirect("/billing/settings/accounts")
+    redirect("/accounting/settings/accounts")
 }

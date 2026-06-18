@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation"
 
 export default async function TreasurySettingsPage() {
-    redirect("/treasury/settings/conciliation")
+    redirect("/accounting/settings/accounts")
 }

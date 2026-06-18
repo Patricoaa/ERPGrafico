@@ -1,5 +1,5 @@
-import { AccountingAccountsView } from "@/features/settings"
+import { UnifiedAccountsView } from "@/features/settings"
 
 export default async function AccountingAccountsPage() {
-    return <AccountingAccountsView />
+    return <UnifiedAccountsView />
 }
