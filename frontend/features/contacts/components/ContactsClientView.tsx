@@ -1,3 +1,5 @@
+"use client"
+
 import { useRouter, useSearchParams, usePathname } from "next/navigation"
 import React, { useState, useEffect, lazy, Suspense } from "react"
 import { ColumnDef } from "@tanstack/react-table"

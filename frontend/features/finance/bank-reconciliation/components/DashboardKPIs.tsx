@@ -1,3 +1,5 @@
+"use client"
+
 import { Progress } from "@/components/ui/progress"
 import { Chip, CardSkeleton, StatCard, MoneyDisplay } from "@/components/shared"
 import { CheckCircle2, Clock, AlertTriangle, FileText } from "lucide-react"

@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from "react"
 
 import { Card, CardContent } from "@/components/ui/card"
-import { FadeIn, MoneyDisplay, ReportTable, SkeletonShell } from '@/components/shared'
+import { EmptyState, FadeIn, MoneyDisplay, ReportTable, SkeletonShell } from '@/components/shared'
 import { PageContainer } from "@/components/shared"
 import { formatMoney } from "@/lib/money"
 import { Button } from "@/components/ui/button"
@@ -127,7 +127,7 @@ export function StatementsView({ activeTab }: StatementsViewProps) {
         showComparison
     }
 
-    const { balanceSheet: bsData, incomeStatement: plData, cashFlow: cfData, refetch, isLoading } = useStatements(statementParams)
+    const { balanceSheet: bsData, incomeStatement: plData, cashFlow: cfData, refetch, isLoading, isError } = useStatements(statementParams)
 
     const getPeriodLabel = (range: DateRange | undefined) => {
         if (!range?.from || !range?.to) return ""
@@ -160,6 +160,20 @@ export function StatementsView({ activeTab }: StatementsViewProps) {
 
     const periodLabel = getPeriodLabel(date)
     const compPeriodLabel = getPeriodLabel(compDate)
+
+    if (isError) {
+        return (
+            <PageContainer scrollable>
+                <div className="max-w-5xl mx-auto w-full pt-4">
+                    <EmptyState
+                        context="finance"
+                        title="Error al cargar estados financieros"
+                        description="No se pudieron obtener los datos financieros. Intente nuevamente más tarde."
+                    />
+                </div>
+            </PageContainer>
+        )
+    }
 
     const renderBSDistribution = () => {
         if (!bsData) return null

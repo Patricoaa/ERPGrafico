@@ -24,10 +24,12 @@ interface SimulationResult {
 export function SimulationResults({ rule }: { rule: Record<string, unknown> }) {
     const [results, setResults] = useState<SimulationResult[]>([])
     const [loading, setLoading] = useState(true)
+    const [error, setError] = useState(false)
 
     useEffect(() => {
         const simulate = async () => {
             setLoading(true)
+            setError(false)
             try {
                 // Prepare rule data for backend
                 const payload = {
@@ -38,6 +40,7 @@ export function SimulationResults({ rule }: { rule: Record<string, unknown> }) {
                 setResults((response as any).results)
             } catch (error) {
                 console.error("Simulation error", error)
+                setError(true)
             } finally {
                 setLoading(false)
             }
@@ -46,6 +49,10 @@ export function SimulationResults({ rule }: { rule: Record<string, unknown> }) {
     }, [rule])
 
     if (loading) return <SkeletonShell isLoading ariaLabel="Cargando..." />
+
+    if (error) {
+        return <EmptyState context="finance" variant="compact" title="Error de simulación" description="No se pudieron simular las reglas." />
+    }
 
     if (results.length === 0) {
         return <EmptyState context="search" variant="compact" title="Sin coincidencias" description="Ninguna línea reciente coincide con esta configuración." />

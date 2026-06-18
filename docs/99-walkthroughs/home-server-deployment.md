@@ -14,7 +14,7 @@ Este documento resume la implementación exitosa del entorno de desarrollo remot
 ## 🏘️ Arquitectura Final
 - **Hardware**: PC Vieja (2011) con Proxmox.
 - **Virtualización**: VM Ubuntu 24.04 LTS (Minimized).
-- **Orquestación**: Docker Compose (Stack completo: Postgres, Redis, MinIO/R2, Nginx, Django, Next.js).
+- **Orquestación**: Docker Compose (Stack completo: Postgres, Redis, Cloudflare R2, Nginx, Django, Next.js).
 - **Almacenamiento**: Híbrido (Postgres Local + Cloudflare R2 para Media).
 - **IDE**: Antigravity (VS Code Fork) conectado vía Remote-SSH.
 

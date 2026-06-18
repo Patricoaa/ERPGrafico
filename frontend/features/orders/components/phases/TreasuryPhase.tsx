@@ -1,3 +1,5 @@
+"use client"
+
 import { formatCurrency } from "@/lib/money"
 import { getErrorMessage } from "@/lib/errors"
 

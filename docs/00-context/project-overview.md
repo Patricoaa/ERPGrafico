@@ -37,7 +37,7 @@ ERPGrafico — full-stack ERP for graphic/printing industry.
 | Frontend | Next.js 16 (App Router), TypeScript, Tailwind 4, Shadcn UI, TanStack Query, Zod, react-hook-form |
 | Backend | Django 5, DRF, Celery, Redis |
 | DB | PostgreSQL |
-| Object storage | MinIO (S3-compatible) |
+| Object storage | Cloudflare R2 (S3-compatible) |
 | Infra | Docker Compose, Nginx reverse proxy |
 
 ## High-level flow
@@ -47,7 +47,7 @@ User → Nginx :80 → Next.js :3000 (SSR/App Router)
                  → Django :8100 /api/* (JWT auth)
                        ↘ PostgreSQL
                        ↘ Redis (cache + Celery broker)
-                       ↘ MinIO (file storage)
+                        ↘ Cloudflare R2 (file storage)
                        ↘ Celery workers (async jobs)
 ```
 

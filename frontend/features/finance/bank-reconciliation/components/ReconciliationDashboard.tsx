@@ -6,7 +6,7 @@ import { DashboardKPIs } from "./DashboardKPIs"
 import dynamic from "next/dynamic"
 import { DashboardPendingTable } from "./DashboardPendingTable"
 import { Select, SelectContent, SelectItem, SelectValue, SelectTrigger } from "@/components/ui/select"
-import { CardSkeleton } from "@/components/shared"
+import { CardSkeleton, EmptyState } from "@/components/shared"
 
 const DashboardTrendChart = dynamic(() => import("./DashboardTrendChart").then(mod => mod.DashboardTrendChart), {
     ssr: false,
@@ -17,11 +17,24 @@ export function ReconciliationDashboard() {
     const [selectedAccount, setSelectedAccount] = useState<string>("all")
     
     const { data: accounts = [] } = useAccountsQuery()
-    const { data: dashboardData, isLoading } = useDashboardDataQuery(selectedAccount)
+    const { data: dashboardData, isLoading, isError } = useDashboardDataQuery(selectedAccount)
 
     const stats = dashboardData?.stats || null
     const trend = dashboardData?.trend || []
     const pending = dashboardData?.pending || []
+
+    if (isError) {
+        return (
+            <div className="space-y-6">
+                <EmptyState
+                    context="finance"
+                    variant="compact"
+                    title="Error al cargar dashboard"
+                    description="No se pudieron cargar los datos del dashboard de tesorería."
+                />
+            </div>
+        )
+    }
 
     return (
         <div className="space-y-6">

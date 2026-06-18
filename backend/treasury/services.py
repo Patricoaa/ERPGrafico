@@ -386,7 +386,6 @@ class TreasuryService:
                  target_acc = settings.default_payable_account
 
              if not target_acc and movement.payroll:
-                  from accounting.models import AccountingSettings
                   acct_settings = AccountingSettings.get_solo()
                   if acct_settings:
                        if movement.payroll_payment_type == 'SALARY':

@@ -1,4 +1,5 @@
-FROM python:3.12-slim
+# ── Target: production ───────────────────────────────────
+FROM python:3.12-slim AS production
 
 WORKDIR /app
 
@@ -36,8 +37,6 @@ RUN apt-get update \
     libpangoft2-1.0-0 \
     && rm -rf /var/lib/apt/lists/*
 
-
-
 # Instalar dependencias Python
 COPY requirements.txt .
 RUN pip install --upgrade pip
@@ -52,7 +51,14 @@ COPY . .
 RUN chown -R django:django /app
 
 COPY entrypoint.sh /entrypoint.sh
-RUN sed -i 's/\r$//' /entrypoint.sh && chmod +x /entrypoint.sh
+RUN sed -i 's/\r$//' /entrypoint.sh && chmod 755 /entrypoint.sh
+
+USER django
+
+EXPOSE 8100
+
+ENTRYPOINT ["/entrypoint.sh"]
+CMD ["sh", "-c", "daphne -b 0.0.0.0 -p ${PORT:-8100} config.asgi:application"]
 
 # ── Target: development ──────────────────────────────────
 FROM python:3.12-slim AS development
@@ -61,8 +67,6 @@ WORKDIR /app
 
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
-ENV DJANGO_DEBUG=True
-
 # Mitigación para "Illegal Instruction" (SIGILL / status -4) en hardware antiguo
 ENV OPENBLAS_CORETYPE=GENERIC
 ENV NPY_DISABLE_CPU_FEATURES="AVX512F AVX512_SKX AVX2 AVX F16C FMA3 SSE42 SSE41 SSE4A"

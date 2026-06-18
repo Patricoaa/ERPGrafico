@@ -95,7 +95,7 @@ Debes crear este archivo en la raíz del proyecto (`/mnt/data/ERPGrafico/.env.de
 
 ```env
 # --- Configuración Básica ---
-DJANGO_DEBUG=True
+DEBUG=1
 DJANGO_SECRET_KEY=cambiame_por_algo_seguro_o_usa_el_comando_abajo
 ALLOWED_HOSTS=localhost,127.0.0.1,192.168.1.50 # Pon aquí la IP de tu PC vieja
 

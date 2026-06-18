@@ -17,7 +17,7 @@ sync:
         # Volúmenes de bases de datos/Docker locales (si existen)
         - "postgres_data/"
         - "redis_data/"
-        - "minio_data/"
+
         
         # Archivos locales o de IDEs (para no ensuciar el servidor)
         - ".vscode/"

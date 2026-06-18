@@ -1,3 +1,5 @@
+"use client"
+
 import { formatCurrency } from "@/lib/money"
 import React, { useState, useEffect, Suspense, lazy, useMemo } from 'react';
 import {SkeletonShell, LabeledContainer, CancelButton, SubmitButton, BaseModal, GenericWizard, WizardStep} from '@/components/shared';

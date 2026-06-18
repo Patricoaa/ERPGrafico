@@ -1,3 +1,5 @@
+"use client"
+
 import React from "react"
 import { ClipboardList, Package, Receipt, Banknote, FileText } from "lucide-react"
 import { StatusBadge } from "./StatusBadge"

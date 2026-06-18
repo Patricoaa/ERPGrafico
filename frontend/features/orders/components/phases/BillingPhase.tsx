@@ -1,3 +1,5 @@
+"use client"
+
 import { getErrorMessage } from "@/lib/errors"
 
 import { useState } from "react"
