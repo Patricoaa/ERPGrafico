@@ -47,7 +47,6 @@ export function DataTableView<TData, TValue>({
           isFiltered: dataTableProps.isFiltered,
         })
       case "entity":
-      case "entity-compact":
         if (!renderCard) return undefined
         return createEntityCardView(entityLabel, {
           renderCard: renderCard as (data: any, row: any) => React.ReactNode,
@@ -63,7 +62,7 @@ export function DataTableView<TData, TValue>({
   const internalLoadingView = useMemo(() => {
     if (externalLoadingView) return externalLoadingView
     if (!isCustomView) return undefined
-    if (policy?.cardComponent === "domain" || policy?.cardComponent === "entity" || policy?.cardComponent === "entity-compact" || externalRenderCustomView) {
+    if (policy?.cardComponent === "domain" || policy?.cardComponent === "entity" || externalRenderCustomView) {
       return createCardLoadingView(policy?.gridLayout ?? "single-column")
     }
     return undefined
