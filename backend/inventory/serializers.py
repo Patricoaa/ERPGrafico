@@ -6,7 +6,6 @@ logger = logging.getLogger(__name__)
 
 from .models import (
     Product, ProductCategory, Warehouse, StockMove, UoM, UoMCategory, PricingRule,
-    CustomFieldTemplate, ProductCustomField,
     Subscription, ProductAttribute, ProductAttributeValue, ProductUoMPrice
 )
 from production.models import BillOfMaterials, BillOfMaterialsLine
@@ -71,19 +70,6 @@ class PricingRuleSerializer(serializers.ModelSerializer):
                 "product": "No se pueden crear ni aplicar reglas de precio a un producto con precio dinámico."
             })
         return data
-
-class CustomFieldTemplateSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = CustomFieldTemplate
-        fields = '__all__'
-
-class ProductCustomFieldSerializer(serializers.ModelSerializer):
-    template_data = CustomFieldTemplateSerializer(source='template', read_only=True)
-    product = serializers.PrimaryKeyRelatedField(queryset=Product.objects.all(), required=False)
-    
-    class Meta:
-        model = ProductCustomField
-        fields = ['id', 'template', 'template_data', 'order']
 
 
 
@@ -209,7 +195,6 @@ class ProductSerializer(serializers.ModelSerializer):
 
     # Manufacturing fields: Support multiple BOMs
     boms = serializers.SerializerMethodField()
-    product_custom_fields = ProductCustomFieldSerializer(many=True, required=False)
     attachments = AttachmentSerializer(many=True, read_only=True)
     available_uoms = serializers.SerializerMethodField()
     variant_generation_selection = serializers.JSONField(write_only=True, required=False)
@@ -445,7 +430,6 @@ class ProductSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         boms_data = validated_data.pop('boms', [])
-        pcf_data = validated_data.pop('product_custom_fields', [])
         allowed_sale_uoms = validated_data.pop('allowed_sale_uoms', [])
         attribute_values = validated_data.pop('attribute_values', [])
         variant_generation_selection = validated_data.pop('variant_generation_selection', None)
@@ -466,9 +450,6 @@ class ProductSerializer(serializers.ModelSerializer):
                 line_data.pop('id', None)
                 BillOfMaterialsLine.objects.create(bom=bom, **line_data)
             
-        for pcf in pcf_data:
-            ProductCustomField.objects.create(product=product, **pcf)
-
         for uom_price in uom_prices_data:
             ProductUoMPrice.objects.create(product=product, **uom_price)
 
@@ -480,7 +461,6 @@ class ProductSerializer(serializers.ModelSerializer):
 
     def update(self, instance, validated_data):
         boms_data = validated_data.pop('boms', None) # If None, don't touch
-        pcf_data = validated_data.pop('product_custom_fields', None)
         allowed_sale_uoms = validated_data.pop('allowed_sale_uoms', None)
         attribute_values = validated_data.pop('attribute_values', None)
         variant_updates = validated_data.pop('variant_updates', None)
@@ -548,12 +528,6 @@ class ProductSerializer(serializers.ModelSerializer):
                         line_data.pop('id', None)
                         BillOfMaterialsLine.objects.create(bom=bom, **line_data)
                 
-        if pcf_data is not None:
-            # Simple replace strategy
-            instance.product_custom_fields.all().delete()
-            for pcf in pcf_data:
-                ProductCustomField.objects.create(product=instance, **pcf)
-
         if uom_prices_data is not None:
             instance.uom_prices.all().delete()
             for uom_price in uom_prices_data:

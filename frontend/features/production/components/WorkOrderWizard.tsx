@@ -6,7 +6,6 @@ import { toast } from 'sonner'
 import { motion, AnimatePresence } from 'framer-motion'
 import { AlertTriangle, Package, FileText, Plus, CheckCircle2, Keyboard, Printer } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
 
 import { ActionConfirmModal, BaseModal, Drawer, CancelButton, FormFooter, LabeledSelect, StatusBadge } from '@/components/shared'
 import { cn, formatPlainDate } from '@/lib/utils'
@@ -154,10 +153,6 @@ export function WorkOrderWizard({ mode, open, onOpenChange, onSuccess }: WorkOrd
   const { openHub } = useHubPanel()
   const { multiplier: vatMultiplier } = useVatRate()
   const [isDuplicateModalOpen, setIsDuplicateModalOpen] = useState(false)
-  const [isSaveTemplateOpen, setIsSaveTemplateOpen] = useState(false)
-  const [templateName, setTemplateName] = useState('')
-  const [isSavingTemplate, setIsSavingTemplate] = useState(false)
-
   // localOrderId: null = create mode, number = manage mode
   const [localOrderId, setLocalOrderId] = useState<number | null>(
     mode.kind === 'manage' ? mode.orderId : null
@@ -481,15 +476,6 @@ export function WorkOrderWizard({ mode, open, onOpenChange, onSuccess }: WorkOrd
                     Centro de Comando
                   </Button>
                 )}
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => { setTemplateName(''); setIsSaveTemplateOpen(true) }}
-                  title="Guardar como plantilla"
-                  disabled={mutations.isDuplicating}
-                >
-                  Plantilla
-                </Button>
                 <Button
                   variant="ghost"
                   size="sm"
@@ -933,49 +919,7 @@ export function WorkOrderWizard({ mode, open, onOpenChange, onSuccess }: WorkOrd
         confirmText="Finalizar"
       />
 
-      <BaseModal
-        open={isSaveTemplateOpen}
-        onOpenChange={setIsSaveTemplateOpen}
-        icon={FileText}
-        title="Guardar como plantilla"
-        description="Se guardará la configuración de esta OT como plantilla reutilizable."
-        size="sm"
-        footer={
-          <FormFooter
-            actions={
-              <>
-                <CancelButton onClick={() => setIsSaveTemplateOpen(false)} />
-                <Button
-                  disabled={!templateName.trim() || isSavingTemplate}
-                  onClick={async () => {
-                    setIsSavingTemplate(true)
-                    try {
-                      await productionApi.saveTemplate(localOrderId!, templateName.trim())
-                      toast.success('Plantilla guardada correctamente.')
-                      setIsSaveTemplateOpen(false)
-                    } catch {
-                      toast.error('Error al guardar la plantilla.')
-                    } finally {
-                      setIsSavingTemplate(false)
-                    }
-                  }}
-                >
-                  {isSavingTemplate ? 'Guardando…' : 'Guardar'}
-                </Button>
-              </>
-            }
-          />
-        }
-      >
-        <div className="space-y-4 py-2">
-          <Input
-            placeholder="Nombre de la plantilla…"
-            value={templateName}
-            onChange={e => setTemplateName(e.target.value)}
-            onKeyDown={e => { if (e.key === 'Enter') e.currentTarget.blur() }}
-          />
-        </div>
-      </BaseModal>
+
 
       <BaseModal
         open={showCheatsheet}

@@ -14,15 +14,8 @@ export function useNoteCheckout() {
         onSuccess: () => invalidate(),
     })
 
-    const completeMutation = useMutation({
-        mutationFn: async (id: number) => billingApi.completeNoteWorkflow(id),
-        onSuccess: () => invalidate(),
-    })
-
     return {
         checkout: checkoutMutation.mutateAsync,
         isCheckingOut: checkoutMutation.isPending,
-        completeWorkflow: completeMutation.mutateAsync,
-        isCompleting: completeMutation.isPending,
     }
 }

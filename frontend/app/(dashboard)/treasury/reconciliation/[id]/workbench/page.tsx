@@ -55,7 +55,6 @@ export default function WorkbenchPage({ params }: { params: Promise<{ id: string
             { value: "operaciones", label: "Operaciones", iconName: "banknote", href: "/treasury/operaciones/movements" },
             { value: "centro-bancos", label: "Centro de Bancos", iconName: "landmark", href: "/treasury/centro-bancos" },
             { value: "terminal-cobro", label: "Terminal de Cobro", iconName: "cpu", href: "/treasury/terminal-cobro/providers" },
-            { value: "config", label: "Configuración", iconName: "settings", href: "/treasury/settings/conciliation" },
         ],
         activeValue: "centro-bancos",
         breadcrumbs: [

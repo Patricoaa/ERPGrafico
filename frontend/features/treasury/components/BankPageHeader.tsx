@@ -67,17 +67,7 @@ export function BankPageHeader({ bankId, breadcrumbs, title = "", description, s
             { value: "operaciones", label: "Operaciones", iconName: "banknote", href: "/treasury/operaciones/movements" },
             { value: "centro-bancos", label: "Centro de Bancos", iconName: "landmark", href: "/treasury/centro-bancos", subTabs: bankSubTabs },
             { value: "terminal-cobro", label: "Terminal de Cobro", iconName: "cpu", href: "/treasury/terminal-cobro/providers" },
-            {
-                value: "config", label: "Configuración", iconName: "settings", href: "/treasury/settings/conciliation",
-                subTabs: [
-                    { value: "conciliation", label: "Cuentas Contables", href: "/treasury/settings/conciliation", iconName: "arrow-left-right" },
-                    { value: "financial", label: "Gastos Financieros", href: "/treasury/settings/financial", iconName: "trending-up" },
-                    { value: "checks", label: "Cuentas de Cheques", href: "/treasury/settings/checks", iconName: "file-check" },
-                    { value: "movements", label: "Movimientos Manuales POS", href: "/treasury/settings/movements", iconName: "shuffle" },
-                    { value: "audit", label: "Arqueo de Caja", href: "/treasury/settings/audit", iconName: "wallet" },
-                    { value: "terminals", label: "Sistema", href: "/treasury/settings/terminals", iconName: "settings" },
-                ],
-            },
+
         ],
         activeValue: "centro-bancos",
         subActiveValue: `bank-${bankId}`,

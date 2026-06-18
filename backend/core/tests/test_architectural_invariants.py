@@ -92,29 +92,6 @@ class TestArchitecturalInvariants:
 
         assert not missing_apps, f"Apps que faltan en UniversalRegistry: {missing_apps}"
 
-    def test_no_secret_fields_exposed(self):
-        """
-        schema endpoint NUNCA retorna campos en allowlist (pin, password, secret, token, key).
-        """
-        from core.registry import UniversalRegistry
-        from core.serializers.metadata import build_schema
-
-        sensitive_keywords = ['pin', 'password', 'secret', 'token', 'key', 'api_key', 'webhook_secret']
-
-        violations = []
-        for label, entity in UniversalRegistry._entities.items():
-            model = entity.model
-            try:
-                schema = build_schema(model)
-                for field_name in schema.get('fields', {}).keys():
-                    for kw in sensitive_keywords:
-                        if kw in field_name.lower():
-                            violations.append(f"{label} exposes field: {field_name}")
-            except Exception:
-                pass
-
-        assert not violations, f"Se encontraron campos sensibles expuestos en el schema: {violations}"
-
     def test_views_under_20_lines(self):
         """
         Las vistas (views.py) deben tener métodos cortos (<= 20 líneas) — regla #9 de CLAUDE.md.

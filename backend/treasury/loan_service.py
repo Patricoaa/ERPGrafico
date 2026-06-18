@@ -422,43 +422,24 @@ class LoanService:
         insurance_native = insurance_amount if insurance_amount is not None else installment.insurance_amount
         tax_native = tax_amount or Decimal('0')
 
-        # Conversión UF → CLP si corresponde (F2.7).
-        uf_value_used = None
-        if loan.currency == BankLoan.Currency.UF:
-            from finances.models import IndicatorValue
-            try:
-                uf_value_used = IndicatorValue.get_value('UF', pay_date)
-            except IndicatorValue.DoesNotExist as e:
-                raise ValidationError(
-                    _t("No hay valor UF cargado para la fecha de pago. "
-                       "Cargue el valor en Tesorería > Configuración > Indicadores.")
-                ) from e
-            principal_clp = _q(principal_native * uf_value_used)
-            interest_clp = _q(interest_native * uf_value_used)
-            insurance_clp = _q(insurance_native * uf_value_used)
-            tax_clp = _q(tax_native * uf_value_used)
-        else:
-            principal_clp = principal_native
-            interest_clp = interest_native
-            insurance_clp = insurance_native
-            tax_clp = tax_native
+        principal_clp = principal_native
+        interest_clp = interest_native
+        insurance_clp = insurance_native
+        tax_clp = tax_native
 
         # Mora (interés penal): usar monto provisto o calcular automáticamente
         penalty_clp = Decimal('0')
         penalty_expense_account = None
         if penalty_amount is not None and penalty_amount > 0:
-            # Monto provisto por el usuario
-            penalty_clp = _q(penalty_amount * uf_value_used) if uf_value_used else penalty_amount
+            penalty_clp = penalty_amount
         elif installment.status == LoanInstallment.Status.OVERDUE and (loan.penalty_rate or 0) > 0:
-            # Calcular automáticamente si no se provistoe
             days_late = (pay_date - installment.due_date).days
             if days_late > 0:
-                penalty_native = _q(
+                penalty_clp = _q(
                     installment.total_amount
                     * (loan.penalty_rate / Decimal('100'))
                     * Decimal(days_late) / Decimal('30')
                 )
-                penalty_clp = _q(penalty_native * uf_value_used) if uf_value_used else penalty_native
 
         if penalty_clp > 0:
             from accounting.models import AccountingSettings
@@ -490,7 +471,7 @@ class LoanService:
             reference=installment.display_id,
             notes=(
                 f"Pago cuota #{installment.number} crédito {loan.display_id} "
-                f"({loan.currency}{'=' + str(uf_value_used) if uf_value_used else ''}"
+                f"({loan.currency}"
                 f"{'; mora ' + str(penalty_clp) if penalty_clp else ''})"
             ),
             is_pending_registration=True,
@@ -534,8 +515,6 @@ class LoanService:
         installment.status = LoanInstallment.Status.PAID
         installment.paid_at = timezone.now()
         installment.payment_movement = movement
-        installment.uf_value_used = uf_value_used
-        installment.clp_amount_paid = total_with_penalty if uf_value_used else None
         installment.penalty_paid = penalty_clp
         installment.save()
 
@@ -626,33 +605,16 @@ class LoanService:
         insurance_native = insurance_amount if insurance_amount is not None else Decimal('0')
         tax_native = tax_amount or Decimal('0')
 
-        if loan.currency == BankLoan.Currency.UF:
-            from finances.models import IndicatorValue
-            try:
-                uf_value = IndicatorValue.get_value('UF', pay_date)
-            except IndicatorValue.DoesNotExist as e:
-                raise ValidationError(
-                    _t("No hay valor UF cargado para la fecha de pago. "
-                       "Cargue el valor en Tesorería > Configuración > Indicadores.")
-                ) from e
-            principal_clp = _q(outstanding * uf_value)
-            interest_clp = _q(accrued_interest * uf_value)
-            insurance_clp = _q(insurance_native * uf_value)
-            tax_clp = _q(tax_native * uf_value)
-            total_clp = _q((outstanding + accrued_interest + insurance_native + tax_native) * uf_value)
-            uf_value_used = uf_value
-        else:
-            principal_clp = outstanding
-            interest_clp = accrued_interest
-            insurance_clp = insurance_native
-            tax_clp = tax_native
-            total_clp = _q(principal_clp + interest_clp + insurance_clp + tax_clp)
-            uf_value_used = None
+        principal_clp = outstanding
+        interest_clp = accrued_interest
+        insurance_clp = insurance_native
+        tax_clp = tax_native
+        total_clp = _q(principal_clp + interest_clp + insurance_clp + tax_clp)
 
         # Mora: usar monto provisto o calcular automáticamente
         penalty_clp = Decimal('0')
         if penalty_amount is not None and penalty_amount > 0:
-            penalty_clp = _q(penalty_amount * uf_value_used) if uf_value_used else penalty_amount
+            penalty_clp = penalty_amount
             total_clp = _q(total_clp + penalty_clp)
 
         from .services import TreasuryService
@@ -667,7 +629,7 @@ class LoanService:
             reference=f"PREPAGO-{loan.display_id}",
             notes=(
                 f"Prepago total crédito {loan.display_id} "
-                f"({loan.currency}{'=' + str(uf_value_used) if uf_value_used else ''}"
+                f"({loan.currency}"
                 f"{'; mora ' + str(penalty_clp) if penalty_clp else ''})"
             ),
             is_pending_registration=True,

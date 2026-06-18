@@ -1220,55 +1220,6 @@ class PricingRule(models.Model):
 
         super().save(*args, **kwargs)
 
-class CustomFieldTemplate(models.Model):
-    """Reusable custom field definitions for advanced manufacturing products"""
-    class FieldType(models.TextChoices):
-        TEXT = 'TEXT', _('Texto')
-        SELECT_SINGLE = 'SELECT_SINGLE', _('Selección Única')
-        SELECT_MULTIPLE = 'SELECT_MULTIPLE', _('Selección Múltiple')
-    
-    name = models.CharField(_("Nombre del Campo"), max_length=100)
-    field_type = models.CharField(_("Tipo"), max_length=20, choices=FieldType.choices)
-    description = models.TextField(_("Descripción/Ayuda"), blank=True)
-    options = models.JSONField(
-        _("Opciones"),
-        null=True, blank=True,
-        help_text=_("Lista de opciones para campos de selección (ej: ['Opción 1', 'Opción 2'])")
-    )
-    is_required = models.BooleanField(_("Obligatorio"), default=False)
-    created_at = models.DateTimeField(auto_now_add=True)
-    
-    class Meta:
-        verbose_name = _("Plantilla de Campo Personalizado")
-        verbose_name_plural = _("Plantillas de Campos Personalizados")
-        ordering = ['name']
-    
-    def __str__(self):
-        return f"{self.name} ({self.get_field_type_display()})"
-
-class ProductCustomField(models.Model):
-    """Association between products and custom field templates"""
-    product = models.ForeignKey(
-        Product,
-        on_delete=models.CASCADE,
-        related_name='product_custom_fields'
-    )
-    template = models.ForeignKey(
-        CustomFieldTemplate,
-        on_delete=models.CASCADE,
-        related_name='product_associations'
-    )
-    order = models.IntegerField(_("Orden"), default=0)
-    
-    class Meta:
-        verbose_name = _("Campo Personalizado del Producto")
-        verbose_name_plural = _("Campos Personalizados del Producto")
-        ordering = ['order', 'template__name']
-        unique_together = ['product', 'template']
-    
-    def __str__(self):
-        return f"{self.product.internal_code} - {self.template.name}"
-
 
 
 class Subscription(models.Model):

@@ -1,13 +1,12 @@
 """
 Tests del LoanService: generate_schedule (francés/lineal), disburse,
-pay_installment (CLP y UF), prepay.
+pay_installment, prepay.
 
 Cubre:
   - Sistema francés: 12 cuotas, suma de capital = principal, saldo final 0.
   - Sistema lineal: capital constante, interés decreciente.
   - Desembolso: 1 INBOUND al banco, status=ACTIVE, N cuotas PENDING.
-  - Pago CLP: pasivo baja por principal; interés y seguro van a gasto.
-  - Pago UF: conversión a CLP usando IndicatorValue; trazabilidad.
+  - Pago: pasivo baja por principal; interés y seguro van a gasto.
   - Prepago: saldo 0, status=PAID, cuotas CANCELED.
   - Refinanciación: status=REFINANCED, cuotas CANCELED.
 """
@@ -16,11 +15,9 @@ from decimal import Decimal
 
 import pytest
 from django.contrib.auth import get_user_model
-from django.core.exceptions import ValidationError
 from django.db.models import Sum
 
 from accounting.models import Account, AccountType, JournalItem
-from finances.models import IndicatorValue
 from treasury.models import (
     Bank, BankLoan, LoanInstallment, TreasuryAccount, TreasuryMovement,
 )
@@ -364,57 +361,6 @@ def test_pay_installment_reduces_liability(base):
 
 
 @pytest.mark.django_db
-def test_pay_installment_uf_converts_to_clp(base):
-    loan = _make_loan(
-        base,
-        currency=BankLoan.Currency.UF,
-        principal=Decimal('1000.00'),  # 1000 UF
-        interest_rate=Decimal('0.50'),  # 0.5% mensual
-        insurance_monthly=Decimal('0.50'),  # 0.5 UF/mes
-        term_months=2,
-    )
-    # Cargar UF para la fecha de pago.
-    pay_date = date(2026, 7, 1)
-    IndicatorValue.objects.create(
-        indicator=IndicatorValue.Indicator.UF,
-        date=pay_date, value=Decimal('37000'),
-    )
-    LoanService.disburse(loan, created_by=base['user'])
-    inst = loan.installments.first()
-    paid = LoanService.pay_installment(
-        loan, inst,
-        payment_account=base['bank_ta'],
-        date=pay_date,
-        created_by=base['user'],
-    )
-    paid.refresh_from_db()
-    assert paid.uf_value_used == Decimal('37000')
-    # El monto CLP pagado debe ser total_amount_uf · 37000
-    expected_clp = paid.total_amount * Decimal('37000')
-    assert paid.clp_amount_paid == expected_clp.quantize(Decimal('0.01'))
-
-
-@pytest.mark.django_db
-def test_pay_installment_without_uf_value_raises(base):
-    loan = _make_loan(
-        base,
-        currency=BankLoan.Currency.UF,
-        principal=Decimal('100'),
-        interest_rate=Decimal('0'),
-        insurance_monthly=Decimal('0'),
-        term_months=1,
-    )
-    LoanService.disburse(loan, created_by=base['user'])
-    inst = loan.installments.first()
-    with pytest.raises(ValidationError, match='UF'):
-        LoanService.pay_installment(
-            loan, inst,
-            payment_account=base['bank_ta'],
-            created_by=base['user'],
-        )
-
-
-@pytest.mark.django_db
 def test_pay_installment_closes_loan_when_all_paid(base):
     loan = _make_loan(base, term_months=1, insurance_monthly=Decimal('0'))
     LoanService.disburse(loan, created_by=base['user'])
@@ -450,25 +396,4 @@ def test_prepay_cancels_remaining_and_marks_paid(base):
     assert canceled == 2  # cuotas 2 y 3
 
 
-@pytest.mark.django_db
-def test_prepay_uf_converts_with_uf_value(base):
-    loan = _make_loan(
-        base,
-        currency=BankLoan.Currency.UF,
-        principal=Decimal('500'),
-        interest_rate=Decimal('0'),
-        insurance_monthly=Decimal('0'),
-        term_months=3,
-    )
-    IndicatorValue.objects.create(
-        indicator=IndicatorValue.Indicator.UF,
-        date=date(2026, 6, 15), value=Decimal('38000'),
-    )
-    LoanService.disburse(loan, created_by=base['user'])
-    LoanService.prepay(
-        loan, payment_account=base['bank_ta'],
-        date=date(2026, 6, 15),
-        created_by=base['user'],
-    )
-    loan.refresh_from_db()
-    assert loan.status == BankLoan.Status.PAID
+

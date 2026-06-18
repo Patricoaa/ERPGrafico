@@ -1537,28 +1537,6 @@ class WorkOrderPdfService:
         except ImportError:
             raise Exception("WeasyPrint is not installed. Please install it.")
 
-        # Prepare QR code — points to the scan endpoint so mobile scan triggers transition
-        from production.models import ScanToken
-        import secrets
-        from django.utils import timezone
-        from datetime import timedelta
-        base_url = request.build_absolute_uri('/')[:-1] if request else getattr(settings, 'SITE_URL', 'http://localhost:3000')
-        scan_token = ScanToken.objects.create(
-            work_order=work_order,
-            token=secrets.token_urlsafe(32),
-            expires_at=timezone.now() + timedelta(hours=24),
-        )
-        qr_data = f"{base_url}/api/production/orders/scan/{scan_token.token}/"
-        
-        qr = qrcode.QRCode(version=1, box_size=10, border=4)
-        qr.add_data(qr_data)
-        qr.make(fit=True)
-        img = qr.make_image(fill_color="black", back_color="white")
-        
-        buffered = BytesIO()
-        img.save(buffered, format="PNG")
-        qr_base64 = base64.b64encode(buffered.getvalue()).decode("utf-8")
-
         # Prepare flat stage data for rendering (filtering out None or complex objects if needed)
         flat_stage_data = {}
         stage_data = work_order.canonical_stage_data

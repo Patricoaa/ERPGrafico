@@ -4,7 +4,7 @@ from .views import (
     ProductViewSet, CategoryViewSet, WarehouseViewSet, StockMoveViewSet,
     UoMViewSet, UoMCategoryViewSet, PricingRuleViewSet,
     ProductAttributeViewSet, ProductAttributeValueViewSet,
-    CustomFieldTemplateViewSet, ProductCustomFieldViewSet, ProductUoMPriceViewSet
+    ProductUoMPriceViewSet
 )
 from .subscription_views import SubscriptionViewSet
 
@@ -17,8 +17,6 @@ router.register(r'moves', StockMoveViewSet)
 router.register(r'uoms', UoMViewSet)
 router.register(r'uom-categories', UoMCategoryViewSet)
 router.register(r'pricing-rules', PricingRuleViewSet)
-router.register(r'custom-field-templates', CustomFieldTemplateViewSet)
-router.register(r'product-custom-fields', ProductCustomFieldViewSet)
 router.register(r'subscriptions', SubscriptionViewSet)
 router.register(r'attributes', ProductAttributeViewSet)
 router.register(r'attribute-values', ProductAttributeValueViewSet)

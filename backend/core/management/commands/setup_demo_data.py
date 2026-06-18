@@ -12,7 +12,7 @@ from accounting.services import AccountingService
 from inventory.models import (
     ProductCategory, Product, Warehouse, StockMove, UoMCategory, UoM, 
     PricingRule, Subscription, ProductAttribute, ProductAttributeValue,
-    CustomFieldTemplate, ProductCustomField
+
 )
 from contacts.models import Contact
 from contacts.partner_models import PartnerTransaction, PartnerEquityStake
@@ -434,8 +434,6 @@ class Command(BaseCommand):
         _safe_delete(BudgetItem, "BudgetItem")
         _safe_delete(Budget, "Budget")
         _safe_delete(FiscalYear, "FiscalYear")
-        _safe_delete(ProductCustomField, "ProductCustomField")
-        _safe_delete(CustomFieldTemplate, "CustomFieldTemplate")
         _safe_delete(PartnerTransaction, "PartnerTransaction")
         self.stdout.write(f"  {' ':<45} {section_records:>6} total")
 

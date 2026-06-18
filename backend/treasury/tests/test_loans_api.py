@@ -301,35 +301,6 @@ def test_pay_installment_action_closes_loan(
 
 
 @pytest.mark.django_db
-def test_pay_installment_uf_uses_indicator(
-    auth_client, bank, checking_account, liability_accounting,
-):
-    from finances.models import IndicatorValue
-    pay_date = date(2026, 3, 15)
-    IndicatorValue.objects.create(indicator='UF', date=pay_date, value=Decimal('37000.0000'))
-
-    create = auth_client.post(
-        '/api/treasury/loans/',
-        _make_payload(bank, checking_account, liability_accounting,
-                      currency='UF', principal='100.00', term_months=1,
-                      first_due_date=pay_date.isoformat()),
-        format='json',
-    )
-    loan_id = create.json()['id']
-    auth_client.post(f'/api/treasury/loans/{loan_id}/disburse/')
-    inst = LoanInstallment.objects.get(loan_id=loan_id)
-    r = auth_client.post(
-        f'/api/treasury/loan-installments/{inst.id}/pay/',
-        {'payment_account': checking_account.id, 'date': pay_date.isoformat()},
-        format='json',
-    )
-    assert r.status_code == 200, r.json()
-    assert r.json()['uf_value_used'] is not None
-    # CLP paid debe ser > 100 (algo * 37000)
-    assert Decimal(r.json()['clp_amount_paid']) > Decimal('100')
-
-
-@pytest.mark.django_db
 def test_pay_installment_requires_active_loan(
     auth_client, bank, checking_account, liability_accounting,
 ):
