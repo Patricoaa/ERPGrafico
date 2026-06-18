@@ -132,6 +132,7 @@ class AccountingService:
             ('1.1.03', 'Inventarios', AccountType.ASSET, '1.1', None, CFCategory.OPERATING, BSCategory.INVENTORY),
             ('1.1.03.01', 'Mercaderías / Productos Terminados', AccountType.ASSET, '1.1.03', None, None, None),
             ('1.1.03.02', 'Materias Primas y Suministros', AccountType.ASSET, '1.1.03', None, None, None),
+            ('1.1.03.03', 'Inventario de Productos Fabricables', AccountType.ASSET, '1.1.03', None, None, None),
             
             ('1.1.04', 'Impuestos por Recuperar', AccountType.ASSET, '1.1', None, None, None),
             ('1.1.04.01', 'IVA Crédito Fiscal', AccountType.ASSET, '1.1.04', None, None, None),
@@ -212,6 +213,7 @@ class AccountingService:
             ('4.1', 'Ingresos de Actividades Ordinarias', AccountType.INCOME, None, ISCategory.REVENUE, None, None),
             ('4.1.01', 'Venta de Productos', AccountType.INCOME, '4.1', None, None, None),
             ('4.1.02', 'Venta de Servicios', AccountType.INCOME, '4.1', None, None, None),
+            ('4.1.03', 'Ingresos por Suscripciones', AccountType.INCOME, '4.1', None, None, None),
             ('4.2', 'Otros Ingresos', AccountType.INCOME, None, ISCategory.NON_OPERATING_REVENUE, None, None),
             ('4.2.01', 'Ajuste de Precios / Otros Ingresos', AccountType.INCOME, '4.2', None, None, None),
             ('4.2.02', 'Ganancia por Ajuste de Inventario', AccountType.INCOME, '4.2', None, None, None),
@@ -220,12 +222,15 @@ class AccountingService:
             ('4.2.05', 'Otros Ingresos POS', AccountType.INCOME, '4.2', None, None, None),
             ('4.2.06', 'Propinas POS', AccountType.INCOME, '4.2', None, None, None),
             ('4.2.07', 'Ingreso por Corrección Monetaria', AccountType.INCOME, '4.2', None, None, None),
+            ('4.2.08', 'Revalorización de Stock', AccountType.INCOME, '4.2', None, None, None),
+            ('4.2.09', 'Otros Ingresos Operativos (POS)', AccountType.INCOME, '4.2', None, None, None),
 
             # 5.1 Cost of Sales
             ('5.1', 'Costo de Ventas', AccountType.EXPENSE, None, ISCategory.COST_OF_SALES, None, None),
             ('5.1.01', 'Costo de Mercaderías Vendidas', AccountType.EXPENSE, '5.1', None, None, None),
             ('5.1.02', 'Costo de Productos Fabricados', AccountType.EXPENSE, '5.1', None, None, None),
             ('5.1.03', 'Costo de Servicios Prestados', AccountType.EXPENSE, '5.1', None, None, None),
+            ('5.1.04', 'Costo por Suscripciones', AccountType.EXPENSE, '5.1', None, None, None),
             
             ('5.2', 'Gastos de Administración y Ventas', AccountType.EXPENSE, None, ISCategory.OPERATING_EXPENSE, None, None),
             ('5.2.01', 'Sueldos y Remuneraciones', AccountType.EXPENSE, '5.2', None, None, None),
@@ -248,6 +253,13 @@ class AccountingService:
             ('5.2.16', 'Redondeo y Vueltos POS (Ajuste)', AccountType.EXPENSE, '5.2', None, None, None),
             ('5.2.17', 'Errores de Conteo y Sistema POS', AccountType.EXPENSE, '5.2', None, None, None),
             ('5.2.18', 'Asignaciones y Bonos No Imponibles', AccountType.EXPENSE, '5.2', None, None, None),
+            ('5.2.20', 'Gasto por Mora / Penalizaciones', AccountType.EXPENSE, '5.2', None, None, None),
+            ('5.2.21', 'Gasto por Comisión de Apertura', AccountType.EXPENSE, '5.2', None, None, None),
+            ('5.2.22', 'Gasto por Impuesto de Timbres (ITE)', AccountType.EXPENSE, '5.2', None, None, None),
+            ('5.2.23', 'Otros Egresos Operativos (POS)', AccountType.EXPENSE, '5.2', None, None, None),
+            ('5.2.24', 'Error de Vuelto POS', AccountType.EXPENSE, '5.2', None, None, None),
+            ('5.2.25', 'Error de Sistema POS', AccountType.EXPENSE, '5.2', None, None, None),
+            ('5.2.26', 'Gasto Incobrabilidad', AccountType.EXPENSE, '5.2', None, None, None),
             ('5.2.99', 'Otros Gastos Varios', AccountType.EXPENSE, '5.2', None, None, None),
 
             # 5.3 Non-Operating Expenses
@@ -318,8 +330,8 @@ class AccountingService:
             'partner_capital_receivable_account': '1.1.05.01',
             
             # Cuentas de inventario
-            'storable_inventory_account': '1.1.03.01',  # NUEVO
-            'manufacturable_inventory_account': '1.1.03.01',  # NUEVO
+            'storable_inventory_account': '1.1.03.01',
+            'manufacturable_inventory_account': '1.1.03.03',
             'default_consumable_account': '5.2.05',
             'merchandise_cogs_account': '5.1.01',
             'manufactured_cogs_account': '5.1.02',
@@ -328,8 +340,8 @@ class AccountingService:
             'stock_output_account': '1.1.06.01',
             'default_service_expense_account': '5.1.03',
             'default_service_revenue_account': '4.1.02',
-            'default_subscription_expense_account': '5.1.03',
-            'default_subscription_revenue_account': '4.1.02',
+            'default_subscription_expense_account': '5.1.04',
+            'default_subscription_revenue_account': '4.1.03',
             'default_prepayment_account': '1.1.02.02',
             'default_advance_payment_account': '2.1.01.02',
             
@@ -338,12 +350,12 @@ class AccountingService:
             'pos_cash_difference_loss_account': '5.2.15',
             'pos_theft_account': '5.2.14',
             'pos_partner_withdrawal_account': '3.1.03',
-            'pos_other_inflow_account': '4.2.05',
-            'pos_other_outflow_account': '5.2.15',
+            'pos_other_inflow_account': '4.2.09',
+            'pos_other_outflow_account': '5.2.23',
             'pos_tip_account': '4.2.06',
-            'pos_cashback_error_account': '5.2.16',
+            'pos_cashback_error_account': '5.2.24',
             'pos_counting_error_account': '5.2.17',
-            'pos_system_error_account': '5.2.17',
+            'pos_system_error_account': '5.2.25',
             'pos_rounding_adjustment_account': '5.2.16',
 
             # Terminal Bridge
@@ -365,7 +377,7 @@ class AccountingService:
             'adjustment_income_account': '4.2.02',  # Ganancia por Ajuste de Inventario (needs creation)
             'adjustment_expense_account': '5.2.07', # Pérdida por Ajuste de Inventario (needs creation)
             # initial_inventory_account removed — field deprecated
-            'revaluation_account': '5.1.03',        # Ajuste por Revalorización (needs creation)
+            'revaluation_account': '4.2.08',
 
             # Treasury Reconciliation (Missing)
             'bank_commission_account': '5.2.10',
@@ -376,9 +388,12 @@ class AccountingService:
             'miscellaneous_adjustment_account': '5.2.99', # Otros Gastos Varios (needs creation)
 
             # F5.1 — Financial expense accounts (ADR-0036)
-            'interest_expense_account': '5.3.01',   # Gastos Financieros / Intereses
-            'insurance_expense_account': '5.2.09',  # Seguros
-            'interest_payable_account': '2.1.04.01',# Intereses por Pagar (needs creation)
+            'interest_expense_account': '5.3.01',
+            'insurance_expense_account': '5.2.09',
+            'interest_payable_account': '2.1.04.01',
+            'loan_penalty_expense_account': '5.2.20',
+            'loan_commission_expense_account': '5.2.21',
+            'loan_stamp_tax_expense_account': '5.2.22',
 
             # ADR-0038 — Check portfolio / issued checks (puente ASSET y LIABILITY).
             # El signal post_save de AccountingSettings detecta la transición
