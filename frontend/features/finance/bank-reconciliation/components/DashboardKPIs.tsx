@@ -1,7 +1,7 @@
 "use client"
 
 import { Progress } from "@/components/ui/progress"
-import { Chip, CardSkeleton, StatCard, MoneyDisplay } from "@/components/shared"
+import { Chip, SkeletonShell, StatCard, MoneyDisplay } from "@/components/shared"
 import { CheckCircle2, Clock, AlertTriangle, FileText } from "lucide-react"
 import type { DashboardKPIData } from "../types"
 
@@ -11,14 +11,16 @@ interface DashboardKPIsProps {
 }
 
 export function DashboardKPIs({ data, loading }: DashboardKPIsProps) {
-    if (loading || !data) {
-        return <CardSkeleton count={4} variant="grid" />
+    const { lines, reconciliation_rate, differences, statements } = data ?? {
+        lines: { reconciled: 0, pending: 0, total: 0 },
+        reconciliation_rate: 0,
+        differences: { total_amount: 0, count: 0, by_type: {} },
+        statements: { total: 0, confirmed: 0, draft: 0 },
     }
 
-    const { lines, reconciliation_rate, differences, statements } = data
-
     return (
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <SkeletonShell isLoading={loading ?? !data} ariaLabel="Cargando indicadores">
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
             <StatCard
                 label="Tasa de Conciliación"
                 value={`${reconciliation_rate}%`}
@@ -78,7 +80,8 @@ export function DashboardKPIs({ data, loading }: DashboardKPIsProps) {
                     <span className="text-primary">{statements.draft} en borrador</span>
                 </div>
             </StatCard>
-        </div>
+            </div>
+        </SkeletonShell>
     )
 }
 
