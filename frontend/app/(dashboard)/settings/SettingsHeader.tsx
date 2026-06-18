@@ -37,6 +37,12 @@ export const SETTINGS_TABS = [
         href: "/settings/audit",
     },
     {
+        value: "accounts",
+        label: "Cuentas Contables",
+        iconName: "book-open",
+        href: "/settings/accounts",
+    },
+    {
         value: "workflow",
         label: "Workflow",
         iconName: "git-branch",
@@ -99,6 +105,12 @@ export function SettingsHeader() {
                     title: "Registro de Auditoría", 
                     description: "Trazabilidad completa de acciones y cambios realizados en el sistema.", 
                     iconName: "history" 
+                }
+            case 'accounts':
+                return {
+                    title: "Cuentas Contables",
+                    description: "Configure las cuentas contables por defecto de cada módulo del sistema.",
+                    iconName: "book-open"
                 }
             case 'workflow':
                 if (subActiveValue === 'tasks') return { title: "Tareas Automáticas", description: "Configuración de responsables y disparadores de tareas.", iconName: "list-todo" }

@@ -1,7 +1,7 @@
 "use client"
 
 import Link from "next/link"
-import { Building2, ShieldCheck, History, GitBranch, Terminal, Info } from "lucide-react"
+import { Building2, ShieldCheck, History, GitBranch, Terminal, Info, BookOpen } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 
 const settingsModules = [
@@ -40,6 +40,15 @@ const settingsModules = [
         url: "/settings/workflow", 
         status: "Ejecutando", 
         statusColor: "text-success bg-success/10" 
+    },
+    {
+        id: "accounts",
+        icon: BookOpen,
+        label: "Cuentas Contables",
+        description: "Cuentas por defecto de cada módulo",
+        url: "/settings/accounts",
+        status: "Configurado",
+        statusColor: "text-success bg-success/10"
     },
 ]
 
