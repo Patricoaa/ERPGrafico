@@ -21,4 +21,5 @@ export type {
 
 export { purchaseOrderActions } from './actions'
 export { purchaseOrderSearchDef } from './searchDef'
+export * from './segmentationDef'
 export * from './components'

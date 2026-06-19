@@ -10,9 +10,9 @@ import { format } from "date-fns"
 
 import { useTerminalBatches } from "@/features/treasury"
 import type { TerminalBatch } from "@/features/treasury/types"
-import { DataCell, createActionsColumn } from '@/components/shared'
-import { SkeletonShell, SmartSearchBar, useSmartSearch } from "@/components/shared"
-import { terminalBatchSearchDef } from "@/features/treasury/searchDef"
+import { DataCell, createActionsColumn, SegmentationBar, useSegmentation } from '@/components/shared'
+import { SkeletonShell } from "@/components/shared"
+import { terminalBatchSegDef } from "@/features/treasury/segmentationDef"
 
 // Lazy load feature components
 const LazyTerminalBatchForm = lazy(() => import("./TerminalBatchForm"))
@@ -32,8 +32,8 @@ export function TerminalBatchesManagement({
     createAction
 }: TerminalBatchesManagementProps) {
     const router = useRouter()
-    const { filters, isFiltered } = useSmartSearch(terminalBatchSearchDef)
-    const { batches, isLoading, refetch } = useTerminalBatches(filters)
+    const { filters: segFilters, isFiltered: isSegFiltered, clearAll: clearSeg } = useSegmentation(terminalBatchSegDef)
+    const { batches, isLoading, refetch } = useTerminalBatches(segFilters)
     const [openCreate, setOpenCreate] = useState(false)
     const [openInvoice, setOpenInvoice] = useState(false)
     const [isMounted, setIsMounted] = useState(false)
@@ -139,9 +139,11 @@ export function TerminalBatchesManagement({
                     data={batches}
                     isLoading={isLoading}
                     variant="embedded"
-                    smartSearch={<SmartSearchBar searchDef={terminalBatchSearchDef} placeholder="Buscar liquidaciones..." className="w-full" />}
+                    segmentation={<SegmentationBar def={terminalBatchSegDef} />}
+                    showReset={isSegFiltered}
+                    onReset={clearSeg}
                     createAction={createAction}
-                    isFiltered={isFiltered}
+                    isFiltered={isSegFiltered}
                     emptyState={{
                         context: "treasury",
                         title: "Aún no hay liquidaciones",

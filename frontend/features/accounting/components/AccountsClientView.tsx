@@ -21,8 +21,9 @@ import { buildAccountTree } from "../utils/accountTree"
 
 import { ActivitySidebar } from "@/features/audit/components"
 import { useSelectedEntity } from "@/hooks/useSelectedEntity"
-import { SmartSearchBar, useSmartSearch } from "@/components/shared"
+import { SmartSearchBar, useSmartSearch, SegmentationBar, useSegmentation } from "@/components/shared"
 import { accountSearchDef } from "../searchDef"
+import { accountSegDef } from "../segmentationDef"
 
 interface AccountsClientViewProps {
     externalOpen?: boolean
@@ -31,8 +32,11 @@ interface AccountsClientViewProps {
 }
 
 export function AccountsClientView({ externalOpen, onExternalOpenChange, createAction }: AccountsClientViewProps) {
-    const { filters, isFiltered } = useSmartSearch(accountSearchDef)
-    const { accounts: flatAccounts, isLoading, refetch, deleteAccount } = useAccounts({ filters })
+    const { filters: textFilters, isFiltered: isTextFiltered, clearAll: clearText } = useSmartSearch(accountSearchDef)
+    const { filters: segFilters, isFiltered: isSegFiltered, clearAll: clearSeg } = useSegmentation(accountSegDef)
+    const isFiltered = isTextFiltered || isSegFiltered
+    const allFilters = { ...textFilters, ...segFilters }
+    const { accounts: flatAccounts, isLoading, refetch, deleteAccount } = useAccounts({ filters: allFilters as any })
     const [deleteTarget, setDeleteTarget] = useState<number | null>(null)
     const [isFormOpen, setIsFormOpen] = useState(false)
     const [editingAccount, setEditingAccount] = useState<Account | null>(null)
@@ -263,6 +267,9 @@ export function AccountsClientView({ externalOpen, onExternalOpenChange, createA
                     autoExpand={true}
                     createAction={createAction}
                     smartSearch={<SmartSearchBar searchDef={accountSearchDef} placeholder="Buscar por cuenta o código..." className="w-full" />}
+                    segmentation={<SegmentationBar def={accountSegDef} />}
+                    showReset={isFiltered}
+                    onReset={() => { clearText(); clearSeg() }}
                     isFiltered={isFiltered}
                     emptyState={{
                         context: "finance",

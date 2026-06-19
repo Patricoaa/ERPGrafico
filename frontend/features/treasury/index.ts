@@ -1,5 +1,6 @@
 // Re-export all treasury-related modules for convenient importing
 export * from './types'
+export * from './segmentationDef'
 export * from './api/treasuryApi'
 export * from './hooks/useTreasuryAccounts'
 export * from './hooks/useTerminalBatches'

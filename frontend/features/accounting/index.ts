@@ -1,4 +1,5 @@
 export * from './components'
+export * from './segmentationDef'
 export { useAccountingSettings, ACCOUNTING_SETTINGS_QUERY_KEY } from './hooks/useAccountingSettings'
 export * from './hooks/useAccountMutations'
 export { useJournalEntry, useJournalEntries, type JournalEntry } from './hooks/useJournalEntries'

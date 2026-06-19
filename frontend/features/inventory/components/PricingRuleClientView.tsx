@@ -45,12 +45,16 @@ interface PricingRuleClientViewProps {
 }
 
 import { usePricingRules } from "@/features/inventory/hooks/usePricingRules"
-import { Chip, SmartSearchBar, useSmartSearch } from "@/components/shared"
+import { Chip, SmartSearchBar, useSmartSearch, SegmentationBar, useSegmentation } from "@/components/shared"
 import { pricingRuleSearchDef } from "@/features/inventory/searchDef"
+import { pricingRuleSegDef } from "@/features/inventory/segmentationDef"
 
 export function PricingRuleClientView({ externalOpen, onExternalOpenChange, createAction }: PricingRuleClientViewProps) {
-    const { filters, isFiltered } = useSmartSearch(pricingRuleSearchDef)
-    const { rules, isLoading, refetch, deletePricingRule } = usePricingRules(filters)
+    const { filters: textFilters, isFiltered: isTextFiltered, clearAll: clearText } = useSmartSearch(pricingRuleSearchDef)
+    const { filters: segFilters, isFiltered: isSegFiltered, clearAll: clearSeg } = useSegmentation(pricingRuleSegDef)
+    const isFiltered = isTextFiltered || isSegFiltered
+    const allFilters = useMemo(() => ({ ...textFilters, ...segFilters }), [textFilters, segFilters])
+    const { rules, isLoading, refetch, deletePricingRule } = usePricingRules(allFilters)
     const [editingRule, setEditingRule] = useState<PricingRule | null>(null)
     const [isFormOpen, setIsFormOpen] = useState(false)
 
@@ -237,6 +241,9 @@ export function PricingRuleClientView({ externalOpen, onExternalOpenChange, crea
                     entityLabel="inventory.pricingrule"
                     variant="embedded"
                     smartSearch={<SmartSearchBar searchDef={pricingRuleSearchDef} placeholder="Buscar reglas de precio..." className="w-full" />}
+                    segmentation={<SegmentationBar def={pricingRuleSegDef} />}
+                    showReset={isFiltered}
+                    onReset={() => { clearText(); clearSeg() }}
                     createAction={createAction}
                     isFiltered={isFiltered}
                     emptyState={{

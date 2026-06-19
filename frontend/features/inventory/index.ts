@@ -1,4 +1,5 @@
 export * from './components'
+export * from './segmentationDef'
 export * from './hooks/usePricingRuleMutations'
 export * from './hooks/useCategoryMutations'
 export * from './hooks/useProductMutations'

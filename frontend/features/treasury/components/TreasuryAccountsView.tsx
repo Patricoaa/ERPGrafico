@@ -2,8 +2,9 @@
 
 import React, { useState, useEffect } from "react"
 import { useTreasuryAccounts, type TreasuryAccount } from "@/features/treasury"
-import { EntityCard, SmartSearchBar, useSmartSearch } from '@/components/shared'
+import { EntityCard, SmartSearchBar, useSmartSearch, SegmentationBar, useSegmentation } from '@/components/shared'
 import { treasuryAccountSearchDef } from "../searchDef"
+import { treasuryAccountSegDef } from "../segmentationDef"
 import {
     ColumnDef
 } from "@tanstack/react-table"
@@ -31,8 +32,11 @@ interface TreasuryAccountsViewProps {
 
 export const TreasuryAccountsView: React.FC<TreasuryAccountsViewProps> = ({ activeTab, externalOpen, createAction }) => {
     const { openEntity } = useGlobalModalActions()
-    const { filters, isFiltered } = useSmartSearch(treasuryAccountSearchDef)
-    const { accounts, isLoading, deleteAccount, refetch } = useTreasuryAccounts({ filters })
+    const { filters: textFilters, isFiltered: isTextFiltered, clearAll: clearText } = useSmartSearch(treasuryAccountSearchDef)
+    const { filters: segFilters, isFiltered: isSegFiltered, clearAll: clearSeg } = useSegmentation(treasuryAccountSegDef)
+    const isFiltered = isTextFiltered || isSegFiltered
+    const accountsFilters = { ...textFilters, ...segFilters }
+    const { accounts, isLoading, deleteAccount, refetch } = useTreasuryAccounts({ filters: accountsFilters })
     const [isBankModalOpen, setIsBankModalOpen] = useState(false)
     const [isMethodModalOpen, setIsMethodModalOpen] = useState(false)
     const [isLocalAccountModalOpen, setIsLocalAccountModalOpen] = useState(false)
@@ -249,6 +253,9 @@ export const TreasuryAccountsView: React.FC<TreasuryAccountsViewProps> = ({ acti
                             variant="embedded"
                             createAction={activeTab === "accounts" ? createAction : undefined}
                             smartSearch={<SmartSearchBar searchDef={treasuryAccountSearchDef} placeholder="Buscar cuenta..." className="w-full" />}
+                            segmentation={<SegmentationBar def={treasuryAccountSegDef} />}
+                            showReset={isFiltered}
+                            onReset={() => { clearText(); clearSeg() }}
                             isFiltered={isFiltered}
                             emptyState={{
                                 context: "treasury",
