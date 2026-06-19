@@ -241,7 +241,7 @@ class ProductSerializer(serializers.ModelSerializer):
             'category_name', 'uom_name', 'uom_category', 'sale_uom_name', 'purchase_uom_name',
             'receiving_warehouse_name', 'current_stock', 'effective_price', 'last_purchase_price',
             'manufacturable_quantity', 'bom_cost', 'qty_reserved', 'qty_available',
-            'boms', 'product_custom_fields',
+            'boms',
             # Subscription Fields
             'subscription_supplier', 'subscription_supplier_name', 'subscription_amount', 'subscription_start_date',
             'auto_activate_subscription', 'default_invoice_type', 'is_indefinite', 'contract_end_date',
@@ -274,14 +274,14 @@ class ProductSerializer(serializers.ModelSerializer):
         # Convert QueryDict to a dict that preserves lists for our specific fields
         if isinstance(data, QueryDict):
             ret = data.dict()  # Start with standard dict (last-value)
-            for field in ['boms', 'product_custom_fields', 'allowed_sale_uoms', 'attribute_values', 'variant_updates', 'variant_generation_selection', 'uom_prices']:
+            for field in ['boms', 'allowed_sale_uoms', 'attribute_values', 'variant_updates', 'variant_generation_selection', 'uom_prices']:
                 if field in data:
                     ret[field] = data.getlist(field)
         else:
             ret = data.copy() if hasattr(data, 'copy') else data
 
         # Process the list fields (handle JSON strings if necessary)
-        for field in ['boms', 'product_custom_fields', 'allowed_sale_uoms', 'attribute_values', 'variant_updates', 'variant_generation_selection', 'uom_prices']:
+        for field in ['boms', 'allowed_sale_uoms', 'attribute_values', 'variant_updates', 'variant_generation_selection', 'uom_prices']:
             if field in ret:
                 raw_value = ret[field]
                 

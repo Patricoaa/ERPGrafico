@@ -2,11 +2,17 @@
 
 import { useCallback, useMemo } from 'react'
 import { useQueryStates, useQueryState, parseAsString } from 'nuqs'
-import type { SegmentationDefinition, SegmentDef, TabSegmentDef, DateSegmentDef } from '@/types/segmentation'
+import type { SegmentationDefinition, SegmentDef } from '@/types/segmentation'
 import type { UseSegmentationReturn } from './types'
 
 function getSegmentParams(segment: SegmentDef): string[] {
   if (segment.type === 'tabs') return [segment.serverParam]
+  if (segment.type === 'period') {
+    const params: string[] = []
+    if (segment.serverParamFrom) params.push(segment.serverParamFrom)
+    if (segment.serverParamTo) params.push(segment.serverParamTo)
+    return params
+  }
   const params: string[] = []
   if (segment.serverParamDate) params.push(segment.serverParamDate)
   if (segment.serverParamFrom) params.push(segment.serverParamFrom)

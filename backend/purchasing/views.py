@@ -18,16 +18,59 @@ import django_filters
 class PurchaseOrderFilterSet(FilterSet):
     date_after = django_filters.DateFilter(field_name='date', lookup_expr='gte')
     date_before = django_filters.DateFilter(field_name='date', lookup_expr='lte')
+    receiving_status = django_filters.CharFilter(field_name='receiving_status')
+    receipt_date_after = django_filters.DateFilter(field_name='receipt_date', lookup_expr='gte')
+    receipt_date_before = django_filters.DateFilter(field_name='receipt_date', lookup_expr='lte')
+    total = django_filters.NumberFilter(field_name='total')
+
+    origin_status = django_filters.CharFilter(method='filter_origin_status')
+    billing_status = django_filters.CharFilter(method='filter_billing_status')
+    treasury_status = django_filters.CharFilter(method='filter_treasury_status')
 
     class Meta:
         model = PurchaseOrder
-        fields = ['status', 'date_after', 'date_before']
+        fields = [
+            'status', 'date_after', 'date_before',
+            'receiving_status', 'receipt_date_after', 'receipt_date_before',
+            'total', 'origin_status', 'billing_status', 'treasury_status',
+        ]
+
+    def filter_origin_status(self, queryset, name, value):
+        if value == 'success':
+            return queryset.exclude(status__in=['DRAFT', 'CANCELLED'])
+        elif value == 'neutral':
+            return queryset.filter(status='DRAFT')
+        elif value == 'destructive':
+            return queryset.filter(status='CANCELLED')
+        return queryset
+
+    def filter_billing_status(self, queryset, name, value):
+        if value == 'success':
+            return queryset.filter(
+                invoices__status__in=['POSTED', 'PAID'],
+            ).exclude(invoices__number='').distinct()
+        elif value == 'neutral':
+            return queryset.exclude(
+                id__in=queryset.filter(
+                    invoices__status__in=['POSTED', 'PAID'],
+                ).exclude(invoices__number='').values('id')
+            ).distinct()
+        return queryset
+
+    def filter_treasury_status(self, queryset, name, value):
+        if value == 'success':
+            return queryset.filter(status='PAID')
+        elif value == 'active':
+            return queryset.filter(payments__isnull=False).exclude(status='PAID').distinct()
+        elif value == 'neutral':
+            return queryset.filter(payments__isnull=True, status__in=['DRAFT', 'CONFIRMED', 'RECEIVED', 'INVOICED'])
+        return queryset
 
 class PurchaseOrderViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
     queryset = PurchaseOrder.objects.all()
     filter_backends = [DjangoFilterBackend, filters.SearchFilter]
     filterset_class = PurchaseOrderFilterSet
-    search_fields = ['supplier__name', 'supplier__tax_id', 'display_id']
+    search_fields = ['supplier__name', 'supplier__tax_id', 'number', 'lines__product__name']
 
     def get_serializer_class(self):
         if self.action in ['create', 'update', 'partial_update']:
