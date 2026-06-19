@@ -233,11 +233,10 @@ export function DataTableToolbar<TData>(props: DataTableToolbarProps<TData>) {
                                         <DropdownMenuTrigger asChild>
                                             <Button
                                                 variant="ghost"
-                                                size="sm"
-                                                className="h-9 px-2 text-[10px] uppercase font-bold tracking-widest gap-1 shrink-0"
+                                                size="icon"
+                                                className="h-9 w-9 shrink-0"
                                             >
-                                                <ArrowUpDown className="h-3.5 w-3.5" />
-                                                Orden
+                                                <ArrowUpDown className="h-4 w-4" />
                                             </Button>
                                         </DropdownMenuTrigger>
                                     </TooltipTrigger>

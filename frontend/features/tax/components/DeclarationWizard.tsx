@@ -12,6 +12,7 @@ import {
     HandCoins,
     History,
 } from "lucide-react"
+import { showApiError } from "@/lib/errors"
 import { toast } from "sonner"
 import { useTaxCalculation, useCreateDeclaration, useRegisterDeclaration, useClosePeriod } from "../hooks/useTaxMutations"
 import { cn } from "@/lib/utils"
@@ -166,9 +167,7 @@ export function DeclarationWizard({ isOpen, onOpenChange, periodId, onSuccess, e
             onSuccess();
             return true
         } catch (error: unknown) {
-            console.error("Error in final process:", error)
-            const apiError = error as { response?: { data?: { error?: string } } }
-            toast.error(apiError.response?.data?.error || "Error al finalizar el ciclo tributario")
+            showApiError(error, "Error al finalizar el ciclo tributario")
             return false
         } finally {
             setIsLoading(false)
