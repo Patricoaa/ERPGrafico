@@ -1,13 +1,9 @@
 'use client'
 
 import { useRef, useState, useCallback, useEffect, KeyboardEvent, useMemo } from 'react'
-import { Search, X, ChevronRight, ChevronLeft, CornerDownLeft } from 'lucide-react'
-import { format } from 'date-fns'
-import { es } from 'date-fns/locale'
-import { DateRange } from 'react-day-picker'
+import { Search, X, ChevronRight, ChevronLeft, CornerDownLeft, Check } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { Calendar } from '@/components/ui/calendar'
-import type { SearchDefinition, FieldDef, EnumFieldDef, DateRangeFieldDef, TextFieldDef } from '@/types/search'
+import type { SearchDefinition, FieldDef, IdentityEnumFieldDef, TextFieldDef } from '@/types/search'
 import { useSmartSearch } from './useSmartSearch'
 import { useSuggestions } from '@/hooks/useSuggestions'
 import { Chip } from '@/components/shared'
@@ -20,14 +16,15 @@ interface SmartSearchBarProps {
 
 type DropdownStage =
   | { type: 'fields' }
-  | { type: 'enum-options'; field: EnumFieldDef }
-  | { type: 'daterange'; field: DateRangeFieldDef }
+  | { type: 'identity-options'; field: IdentityEnumFieldDef }
   | { type: 'closed' }
 
-function hasSubcategories(field: FieldDef): boolean {
-  if (field.type === 'enum') return true
-  if (field.type === 'daterange') return true
-  return false
+function isIdentityEnum(field: FieldDef): field is IdentityEnumFieldDef {
+  return field.type === 'identity-enum'
+}
+
+function isTextField(field: FieldDef): field is TextFieldDef {
+  return field.type === 'text'
 }
 
 export function SmartSearchBar({ searchDef, placeholder = 'Buscar...', className }: SmartSearchBarProps) {
@@ -35,9 +32,11 @@ export function SmartSearchBar({ searchDef, placeholder = 'Buscar...', className
 
   const [stage, setStage] = useState<DropdownStage>({ type: 'closed' })
   const [focusedIndex, setFocusedIndex] = useState(-1)
-  const [dateRange, setDateRange] = useState<DateRange | undefined>()
   const inputRef = useRef<HTMLInputElement>(null)
   const containerRef = useRef<HTMLDivElement>(null)
+
+  const identityField = searchDef.fields.find(isIdentityEnum)
+  const identityValue = identityField ? filters[identityField.serverParam] : undefined
 
   const parsedActiveFieldInfo = useMemo(() => {
     const trimmedInput = inputValue.trim()
@@ -49,12 +48,14 @@ export function SmartSearchBar({ searchDef, placeholder = 'Buscar...', className
 
     const matchedField = searchDef.fields.find(
       (f) =>
-        f.label.toLowerCase() === prefix ||
-        f.key.toLowerCase() === prefix ||
-        (f.type === 'text' && f.serverParam.toLowerCase() === prefix)
+        isTextField(f) && (
+          f.label.toLowerCase() === prefix ||
+          f.key.toLowerCase() === prefix ||
+          f.serverParam.toLowerCase() === prefix
+        )
     )
 
-    if (matchedField && matchedField.type === 'text') {
+    if (matchedField) {
       return { field: matchedField, value }
     }
     return null
@@ -66,15 +67,9 @@ export function SmartSearchBar({ searchDef, placeholder = 'Buscar...', className
 
   const isOpen = stage.type !== 'closed' || !!activeSuggestionsUrl
 
-  // Fields not yet applied (avoid offering duplicates for non-daterange fields)
-  const availableFields = searchDef.fields.filter((f) => {
-    if (f.type === 'daterange') return true
-    return filters[f.serverParam] === undefined
-  })
-
   const filteredFields = inputValue.trim()
-    ? availableFields.filter((f) => f.label.toLowerCase().includes(inputValue.toLowerCase()))
-    : availableFields
+    ? searchDef.fields.filter((f) => f.label.toLowerCase().includes(inputValue.toLowerCase()) && isTextField(f))
+    : searchDef.fields.filter(isTextField)
 
   const openFieldList = useCallback(() => {
     setStage({ type: 'fields' })
@@ -92,51 +87,34 @@ export function SmartSearchBar({ searchDef, placeholder = 'Buscar...', className
     setStage({ type: 'fields' })
     setFocusedIndex(0)
     setInputValue('')
-    // Focus the main input after a short delay to ensure it's visible
     setTimeout(() => inputRef.current?.focus(), 0)
   }, [setInputValue])
 
   const handleFieldSelect = useCallback(
-    (field: FieldDef) => {
+    (field: TextFieldDef) => {
       setFocusedIndex(-1)
-      if (hasSubcategories(field)) {
-        setInputValue('')
-        if (field.type === 'enum') {
-          setStage({ type: 'enum-options', field })
-        } else if (field.type === 'daterange') {
-          setStage({ type: 'daterange', field })
-          setDateRange(undefined)
-        }
-      } else {
-        // Simple text filter: Prefill the exact label as a prefix in the main input
-        setInputValue(`${field.label}: `)
-        setStage({ type: 'closed' })
-        setFocusedIndex(-1)
-        // Focus the main input after a short delay
-        setTimeout(() => inputRef.current?.focus(), 0)
-      }
+      setInputValue(`${field.label}: `)
+      setStage({ type: 'closed' })
+      setTimeout(() => inputRef.current?.focus(), 0)
     },
     [setInputValue],
   )
 
-  const handleEnumSelect = useCallback(
-    async (field: EnumFieldDef, value: string) => {
+  const handleIdentitySelect = useCallback(
+    async (field: IdentityEnumFieldDef, value: string) => {
       await applyFilter(field.serverParam, value)
-      setInputValue('')
-      close()
-      inputRef.current?.focus()
-    },
-    [applyFilter, close, setInputValue],
-  )
-
-  const handleDateConfirm = useCallback(
-    async (field: DateRangeFieldDef, range: DateRange | undefined) => {
-      if (range?.from) await applyFilter(field.serverParamStart, format(range.from, 'yyyy-MM-dd'))
-      if (range?.to) await applyFilter(field.serverParamEnd, format(range.to, 'yyyy-MM-dd'))
       close()
       inputRef.current?.focus()
     },
     [applyFilter, close],
+  )
+
+  const handleIdentityClear = useCallback(
+    async (field: IdentityEnumFieldDef) => {
+      await removeFilter(field.serverParam)
+      inputRef.current?.focus()
+    },
+    [removeFilter],
   )
 
   const handleSuggestionSelect = useCallback(
@@ -150,7 +128,6 @@ export function SmartSearchBar({ searchDef, placeholder = 'Buscar...', className
   )
 
   const handleTextSubmit = useCallback(async () => {
-    // If we are in the main input
     const trimmedInput = inputValue.trim()
     if (!trimmedInput) return
 
@@ -159,25 +136,23 @@ export function SmartSearchBar({ searchDef, placeholder = 'Buscar...', className
       const prefix = trimmedInput.slice(0, colonIndex).trim().toLowerCase()
       const value = trimmedInput.slice(colonIndex + 1).trim()
 
-      // Find if the prefix matches any field's label or key
       const matchedField = searchDef.fields.find(
         (f) =>
-          f.label.toLowerCase() === prefix ||
-          f.key.toLowerCase() === prefix ||
-          (f.type === 'text' && f.serverParam.toLowerCase() === prefix)
+          isTextField(f) && (
+            f.label.toLowerCase() === prefix ||
+            f.key.toLowerCase() === prefix ||
+            f.serverParam.toLowerCase() === prefix
+          )
       )
 
-      if (matchedField) {
-        if (value && matchedField.type !== 'daterange') {
-          await applyFilter(matchedField.serverParam, value)
-          setInputValue('')
-          close()
-        }
+      if (matchedField && value) {
+        await applyFilter(matchedField.serverParam, value)
+        setInputValue('')
+        close()
         return
       }
     }
 
-    // Fallback to Global Search (search query parameter)
     await applyFilter('search', trimmedInput)
     setInputValue('')
     close()
@@ -190,7 +165,7 @@ export function SmartSearchBar({ searchDef, placeholder = 'Buscar...', className
       const currentVal = inputValue
 
       if (e.key === 'Backspace' && currentVal === '') {
-        if (stage.type !== 'fields' && stage.type !== 'closed') {
+        if (stage.type === 'identity-options') {
           handleBack()
           return
         }
@@ -206,9 +181,9 @@ export function SmartSearchBar({ searchDef, placeholder = 'Buscar...', className
           handleFieldSelect(filteredFields[focusedIndex])
           return
         }
-        if (stage.type === 'enum-options') {
+        if (stage.type === 'identity-options') {
           const opt = stage.field.options[focusedIndex]
-          if (opt) { e.preventDefault(); handleEnumSelect(stage.field, opt.value) }
+          if (opt) { e.preventDefault(); handleIdentitySelect(stage.field, opt.value) }
           return
         }
         if (activeSuggestionsUrl && focusedIndex >= 0 && suggestions[focusedIndex]) {
@@ -226,7 +201,7 @@ export function SmartSearchBar({ searchDef, placeholder = 'Buscar...', className
         e.preventDefault()
         const list = stage.type === 'fields'
           ? filteredFields
-          : stage.type === 'enum-options'
+          : stage.type === 'identity-options'
             ? stage.field.options
             : activeSuggestionsUrl
               ? suggestions
@@ -239,7 +214,7 @@ export function SmartSearchBar({ searchDef, placeholder = 'Buscar...', className
         setFocusedIndex((i) => Math.max(i - 1, -1))
       }
     },
-    [inputValue, chips, stage, filteredFields, focusedIndex, suggestions, activeSuggestionsUrl, parsedActiveFieldInfo, close, removeFilter, handleFieldSelect, handleEnumSelect, handleSuggestionSelect, handleTextSubmit, handleBack],
+    [inputValue, chips, stage, filteredFields, focusedIndex, suggestions, activeSuggestionsUrl, parsedActiveFieldInfo, close, removeFilter, handleFieldSelect, handleIdentitySelect, handleSuggestionSelect, handleTextSubmit, handleBack],
   )
 
   // Close dropdown on outside click
@@ -259,12 +234,11 @@ export function SmartSearchBar({ searchDef, placeholder = 'Buscar...', className
 
   return (
     <div ref={containerRef} className={cn('relative w-full', className)}>
-      {/* Input row */}
       <div
         className={cn(
-          'group flex items-center gap-1.5 h-9 px-2 py-1 rounded-sm overflow-x-auto scrollbar-hide border border-border/60',
+          'group flex items-center gap-1.5 h-9 px-2 py-1 rounded-md overflow-x-auto scrollbar-hide border border-border/60',
           'bg-background transition-all',
-          'hover:bg-muted/50 hover:text-foreground',
+          'hover:bg-muted/50 hover:text-foreground hover:ring-2 hover:ring-primary/10',
           'focus-within:bg-muted/50 focus-within:ring-2 focus-within:ring-primary/20',
           isOpen && 'bg-muted/50 ring-2 ring-primary/20',
         )}
@@ -278,7 +252,26 @@ export function SmartSearchBar({ searchDef, placeholder = 'Buscar...', className
       >
         <Search className="h-3.5 w-3.5 text-muted-foreground/50 shrink-0 transition-colors group-hover:text-foreground" />
 
-        {/* Active chips */}
+        {identityField && (
+          <IdentityChip
+            field={identityField}
+            value={identityValue}
+            options={identityField.options}
+            isOpen={stage.type === 'identity-options'}
+            onSelect={(v) => handleIdentitySelect(identityField, v)}
+            onClear={() => handleIdentityClear(identityField)}
+            onOpenChange={(open) => {
+              if (open) {
+                setStage({ type: 'identity-options', field: identityField })
+                setFocusedIndex(0)
+              } else {
+                setStage({ type: 'closed' })
+                setFocusedIndex(-1)
+              }
+            }}
+          />
+        )}
+
         {chips.map((chip) => (
           <Chip
             key={chip.key}
@@ -301,9 +294,6 @@ export function SmartSearchBar({ searchDef, placeholder = 'Buscar...', className
           </Chip>
         ))}
 
-
-
-        {/* Text input */}
         <input
           ref={inputRef}
           value={inputValue}
@@ -339,14 +329,12 @@ export function SmartSearchBar({ searchDef, placeholder = 'Buscar...', className
           aria-activedescendant={isOpen && focusedIndex >= 0 ? `ssb-option-${focusedIndex}` : undefined}
         />
 
-        {/* Enter hint — visible when actively typing a text filter */}
         {showEnterHint && (
           <span className="inline-flex items-center text-[8px] text-muted-foreground/40 shrink-0 select-none">
             <CornerDownLeft className="h-2.5 w-2.5" />
           </span>
         )}
 
-        {/* Clear all */}
         {hasActiveFilters && (
           <button
             type="button"
@@ -366,10 +354,6 @@ export function SmartSearchBar({ searchDef, placeholder = 'Buscar...', className
             'absolute z-50 left-0 right-0 mt-1',
             'bg-popover/95 backdrop-blur-md border border-border/80 rounded-lg shadow-floating',
             'overflow-hidden',
-            'data-[state=open]:animate-in data-[state=closed]:animate-out',
-            'data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0',
-            'data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95',
-            'data-[side=bottom]:slide-in-from-top-2',
           )}
           role="listbox"
         >
@@ -416,47 +400,51 @@ export function SmartSearchBar({ searchDef, placeholder = 'Buscar...', className
                     )}
                   >
                     <span>{field.label}</span>
-                    {hasSubcategories(field) && <ChevronRight className="h-3 w-3 text-muted-foreground/50" />}
                   </button>
                 ))
               )}
             </div>
           )}
 
-          {/* Stage: enum options */}
-          {stage.type === 'enum-options' && (
-            <div className="p-1">
-              <button
-                type="button"
-                onClick={(e) => { e.stopPropagation(); handleBack() }}
-                className="w-full flex items-center gap-2 px-2.5 py-1.5 mb-0.5 border-b border-border/40 hover:bg-primary/5 transition-colors group text-left rounded-sm"
-              >
-                <ChevronLeft className="h-3.5 w-3.5 text-muted-foreground group-hover:text-foreground transition-colors" />
-                <span className="text-[10px] text-muted-foreground uppercase tracking-widest group-hover:text-foreground transition-colors">
-                  {stage.field.label}
-                </span>
-              </button>
-              {stage.field.options.map((opt, i) => (
+          {/* Stage: identity-enum options */}
+          {stage.type === 'identity-options' && (
+            <div className="p-1 min-w-[160px]">
+              {stage.field.options.map((opt, i) => {
+                const isSelected = opt.value === identityValue
+                return (
+                  <button
+                    key={opt.value}
+                    id={`ssb-option-${i}`}
+                    type="button"
+                    role="option"
+                    aria-selected={i === focusedIndex}
+                    onClick={() => handleIdentitySelect(stage.field, opt.value)}
+                    className={cn(
+                      'w-full flex items-center justify-between px-2.5 py-2 text-left transition-colors rounded-sm',
+                      'text-[10px] uppercase tracking-widest',
+                      i === focusedIndex ? 'bg-primary/10 text-primary' : 'hover:bg-primary/5 text-foreground',
+                      isSelected && 'text-primary font-bold',
+                    )}
+                  >
+                    <span>{opt.label}</span>
+                    {isSelected && <Check className="h-3 w-3 text-primary" />}
+                  </button>
+                )
+              })}
+              {identityValue && (
                 <button
-                  key={opt.value}
-                  id={`ssb-option-${i}`}
                   type="button"
-                  role="option"
-                  aria-selected={i === focusedIndex}
-                  onClick={() => handleEnumSelect(stage.field, opt.value)}
-                  className={cn(
-                    'w-full flex items-center px-2.5 py-2 text-left transition-colors rounded-sm',
-                    'text-[10px] uppercase tracking-widest',
-                    i === focusedIndex ? 'bg-primary/10 text-primary' : 'hover:bg-primary/5 text-foreground',
-                  )}
+                  onClick={() => handleIdentityClear(stage.field)}
+                  className="w-full flex items-center gap-2 px-2.5 py-1.5 mt-1 border-t border-border/40 text-[10px] text-muted-foreground hover:text-foreground transition-colors"
                 >
-                  {opt.label}
+                  <X className="h-3 w-3" />
+                  Quitar filtro
                 </button>
-              ))}
+              )}
             </div>
           )}
 
-          {/* Dynamic Suggestions for Text Field under Main Input */}
+          {/* Dynamic Suggestions for Text Field */}
           {activeSuggestionsUrl && (
             <div className="p-1 border-t border-border/30">
               {suggestionQuery.length < 2 ? (
@@ -488,48 +476,63 @@ export function SmartSearchBar({ searchDef, placeholder = 'Buscar...', className
               )}
             </div>
           )}
-
-          {/* Stage: daterange picker */}
-          {stage.type === 'daterange' && (
-            <div className="p-3 flex flex-col gap-3">
-              <button
-                type="button"
-                onClick={(e) => { e.stopPropagation(); handleBack() }}
-                className="w-full flex items-center gap-2 px-2.5 py-1.5 border-b border-border/40 hover:bg-primary/5 transition-colors group text-left -mt-1 -ml-1 mb-1 rounded-sm"
-              >
-                <ChevronLeft className="h-3.5 w-3.5 text-muted-foreground group-hover:text-foreground transition-colors" />
-                <span className="text-[10px] text-muted-foreground uppercase tracking-widest group-hover:text-foreground transition-colors">
-                  {stage.field.label}
-                </span>
-              </button>
-              <Calendar
-                mode="range"
-                selected={dateRange}
-                onSelect={setDateRange}
-                locale={es}
-                numberOfMonths={2}
-              />
-              <div className="flex justify-end gap-2">
-                  <button
-                    type="button"
-                    onClick={close}
-                    className="px-3 py-1.5 text-[10px] uppercase tracking-widest text-muted-foreground hover:text-foreground transition-colors"
-                  >
-                    Cancelar
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => handleDateConfirm(stage.field, dateRange)}
-                    disabled={!dateRange?.from}
-                    className="px-3 py-1.5 text-[10px] uppercase tracking-widest bg-primary text-primary-foreground rounded-sm disabled:opacity-40 transition-opacity"
-                  >
-                    Aplicar
-                  </button>
-              </div>
-            </div>
-          )}
         </div>
       )}
     </div>
+  )
+}
+
+/* ─── Identity chip inline ─── */
+
+interface IdentityChipProps {
+  field: IdentityEnumFieldDef
+  value?: string
+  options: { label: string; value: string }[]
+  isOpen: boolean
+  onSelect: (value: string) => void
+  onClear: () => void
+  onOpenChange: (open: boolean) => void
+}
+
+function IdentityChip({ field, value, options, isOpen, onSelect, onClear, onOpenChange }: IdentityChipProps) {
+  const selectedLabel = value ? options.find((o) => o.value === value)?.label : null
+
+  return (
+    <div className="relative shrink-0">
+      <button
+        type="button"
+        onClick={(e) => {
+          e.stopPropagation()
+          onOpenChange(!isOpen)
+        }}
+        className={cn(
+          'inline-flex items-center gap-1 h-6 px-1.5 text-[10px] uppercase font-bold tracking-widest rounded-sm transition-colors',
+          value
+            ? 'bg-primary/10 text-primary hover:bg-primary/15'
+            : 'bg-muted/50 text-muted-foreground hover:text-foreground hover:bg-muted/80',
+          isOpen && 'ring-1 ring-primary/30',
+        )}
+      >
+        {selectedLabel ?? field.label}
+        <ChevronDown className="h-2.5 w-2.5" />
+      </button>
+    </div>
+  )
+}
+
+function ChevronDown({ className }: { className?: string }) {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+    >
+      <path d="m6 9 6 6 6-6" />
+    </svg>
   )
 }
