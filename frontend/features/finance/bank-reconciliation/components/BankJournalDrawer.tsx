@@ -162,6 +162,7 @@ export function BankJournalDrawer({ auditSidebar, onSuccess, initialData, open: 
                                         render={({ field, fieldState }) => (
                                             <LabeledInput
                                                 label="Nombre"
+                                                required
                                                 placeholder="Banco Estado Cta Cte"
                                                 error={fieldState.error?.message}
                                                 {...field}
@@ -174,6 +175,7 @@ export function BankJournalDrawer({ auditSidebar, onSuccess, initialData, open: 
                                         render={({ field, fieldState }) => (
                                             <LabeledInput
                                                 label="Código"
+                                                required
                                                 placeholder="BEST-CTE"
                                                 error={fieldState.error?.message}
                                                 {...field}
@@ -184,12 +186,13 @@ export function BankJournalDrawer({ auditSidebar, onSuccess, initialData, open: 
                                         control={form.control}
                                         name="currency"
                                         render={({ field, fieldState }) => (
-                                            <LabeledSelect
-                                                label="Moneda"
-                                                value={field.value}
-                                                onChange={field.onChange}
-                                                error={fieldState.error?.message}
-                                                options={[
+                                                    <LabeledSelect
+                                                        label="Moneda"
+                                                        required
+                                                        value={field.value}
+                                                        onChange={field.onChange}
+                                                        error={fieldState.error?.message}
+                                                        options={[
                                                     { value: "CLP", label: "CLP (Peso Chileno)" },
                                                     { value: "USD", label: "USD (Dólar)" },
                                                     { value: "EUR", label: "EUR (Euro)" }
@@ -202,14 +205,13 @@ export function BankJournalDrawer({ auditSidebar, onSuccess, initialData, open: 
                                         control={form.control}
                                         name="account"
                                         render={({ field, fieldState }) => (
-                                            <AccountSelector
-                                                value={field.value}
-                                                onChange={field.onChange}
-                                                accountType="ASSET"
-                                                isReconcilable={true}
-                                                placeholder="Seleccionar cuenta de banco/caja"
-                                                label="Cuenta Contable"
-                                                error={fieldState.error?.message}
+                                                    <AccountSelector
+                                                        label="Cuenta Contable"
+                                                        required
+                                                        value={field.value}
+                                                        onChange={field.onChange}
+                                                        accountType="ASSET"
+                                                        error={fieldState.error?.message}
                                             />
                                         )}
                                     />

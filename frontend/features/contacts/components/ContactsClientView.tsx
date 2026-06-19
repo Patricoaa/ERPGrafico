@@ -130,7 +130,7 @@ export function ContactsClientView({ isNewModalOpen = false, createAction, initi
                                         <TooltipTrigger asChild>
                                             <Chip size="xs" intent="primary" icon={UserIcon} className="cursor-help shrink-0">Cliente</Chip>
                                         </TooltipTrigger>
-                                        <TooltipContent>Cliente por defecto</TooltipContent>
+                                        <TooltipContent className="rounded-sm">Cliente por defecto</TooltipContent>
                                     </Tooltip>
                                 </TooltipProvider>
                             )}
@@ -140,7 +140,7 @@ export function ContactsClientView({ isNewModalOpen = false, createAction, initi
                                         <TooltipTrigger asChild>
                                             <Chip size="xs" intent="success" icon={Building2} className="cursor-help shrink-0">Proveedor</Chip>
                                         </TooltipTrigger>
-                                        <TooltipContent>Proveedor por defecto</TooltipContent>
+                                        <TooltipContent className="rounded-sm">Proveedor por defecto</TooltipContent>
                                     </Tooltip>
                                 </TooltipProvider>
                             )}
@@ -157,7 +157,7 @@ export function ContactsClientView({ isNewModalOpen = false, createAction, initi
                                                 Crédito
                                             </Chip>
                                         </TooltipTrigger>
-                                        <TooltipContent>
+                                        <TooltipContent className="rounded-sm">
                                             <div className="flex flex-col gap-1">
                                                 {Number(contact.credit_limit || 0) > 0 && (
                                                     <span>Límite de Crédito: {formatCurrency(Number(contact.credit_limit || 0))} ({contact.credit_days} días)</span>

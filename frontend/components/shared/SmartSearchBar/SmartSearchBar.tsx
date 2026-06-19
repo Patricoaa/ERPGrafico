@@ -383,7 +383,7 @@ export function SmartSearchBar({ searchDef, placeholder = 'Buscar...', className
                     role="option"
                     aria-selected={false}
                     onClick={() => handleTextSubmit()}
-                    className="w-full flex items-center gap-2 px-3 py-2 text-left transition-colors hover:bg-primary/5 rounded-md"
+                    className="w-full flex items-center gap-2 px-3 py-2 text-left transition-colors hover:bg-primary/5 rounded-sm"
                   >
                     <Search className="h-3.5 w-3.5 text-muted-foreground/60 shrink-0" />
                     <div className="flex-1 min-w-0">
@@ -410,7 +410,7 @@ export function SmartSearchBar({ searchDef, placeholder = 'Buscar...', className
                     aria-selected={i === focusedIndex}
                     onClick={() => handleFieldSelect(field)}
                     className={cn(
-                      'w-full flex items-center justify-between px-2.5 py-2 text-left transition-colors rounded-md',
+                      'w-full flex items-center justify-between px-2.5 py-2 text-left transition-colors rounded-sm',
                       'text-[10px] uppercase tracking-widest',
                       i === focusedIndex ? 'bg-primary/10 text-primary' : 'hover:bg-primary/5 text-foreground',
                     )}
@@ -429,7 +429,7 @@ export function SmartSearchBar({ searchDef, placeholder = 'Buscar...', className
               <button
                 type="button"
                 onClick={(e) => { e.stopPropagation(); handleBack() }}
-                className="w-full flex items-center gap-2 px-2.5 py-1.5 mb-0.5 border-b border-border/40 hover:bg-primary/5 transition-colors group text-left rounded-md"
+                className="w-full flex items-center gap-2 px-2.5 py-1.5 mb-0.5 border-b border-border/40 hover:bg-primary/5 transition-colors group text-left rounded-sm"
               >
                 <ChevronLeft className="h-3.5 w-3.5 text-muted-foreground group-hover:text-foreground transition-colors" />
                 <span className="text-[10px] text-muted-foreground uppercase tracking-widest group-hover:text-foreground transition-colors">
@@ -445,7 +445,7 @@ export function SmartSearchBar({ searchDef, placeholder = 'Buscar...', className
                   aria-selected={i === focusedIndex}
                   onClick={() => handleEnumSelect(stage.field, opt.value)}
                   className={cn(
-                    'w-full flex items-center px-2.5 py-2 text-left transition-colors rounded-md',
+                    'w-full flex items-center px-2.5 py-2 text-left transition-colors rounded-sm',
                     'text-[10px] uppercase tracking-widest',
                     i === focusedIndex ? 'bg-primary/10 text-primary' : 'hover:bg-primary/5 text-foreground',
                   )}
@@ -476,7 +476,7 @@ export function SmartSearchBar({ searchDef, placeholder = 'Buscar...', className
                       aria-selected={i === focusedIndex}
                       onClick={() => handleSuggestionSelect(parsedActiveFieldInfo!.field, value)}
                       className={cn(
-                        'w-full flex items-center px-2.5 py-1.5 text-left transition-colors rounded-md',
+                        'w-full flex items-center px-2.5 py-1.5 text-left transition-colors rounded-sm',
                         'text-[10px]',
                         i === focusedIndex ? 'bg-primary/10 text-primary' : 'hover:bg-primary/5 text-foreground',
                       )}
@@ -495,7 +495,7 @@ export function SmartSearchBar({ searchDef, placeholder = 'Buscar...', className
               <button
                 type="button"
                 onClick={(e) => { e.stopPropagation(); handleBack() }}
-                className="w-full flex items-center gap-2 px-2.5 py-1.5 border-b border-border/40 hover:bg-primary/5 transition-colors group text-left -mt-1 -ml-1 mb-1 rounded-t-md"
+                className="w-full flex items-center gap-2 px-2.5 py-1.5 border-b border-border/40 hover:bg-primary/5 transition-colors group text-left -mt-1 -ml-1 mb-1 rounded-sm"
               >
                 <ChevronLeft className="h-3.5 w-3.5 text-muted-foreground group-hover:text-foreground transition-colors" />
                 <span className="text-[10px] text-muted-foreground uppercase tracking-widest group-hover:text-foreground transition-colors">

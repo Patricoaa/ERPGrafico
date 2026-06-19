@@ -24,6 +24,7 @@ import { Label } from '@/components/ui/label'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Button } from '@/components/ui/button'
+import { showApiError } from "@/lib/errors"
 import { toast } from 'sonner'
 import { treasuryApi } from '../api/treasuryApi'
 import type { PendingChargeRow } from '../types'
@@ -128,8 +129,8 @@ export function CardPendingChargeDrawer({
             }
             onSuccess?.()
             onOpenChange(false)
-        } catch {
-            toast.error('Error al guardar el cargo')
+        } catch (error) {
+            showApiError(error, 'Error al guardar el cargo')
         } finally {
             setLoading(false)
         }
@@ -143,8 +144,8 @@ export function CardPendingChargeDrawer({
             toast.success('Cargo eliminado exitosamente')
             onSuccess?.()
             onOpenChange(false)
-        } catch {
-            toast.error('Error al eliminar el cargo')
+        } catch (error) {
+            showApiError(error, 'Error al eliminar el cargo')
         } finally {
             setLoading(false)
         }

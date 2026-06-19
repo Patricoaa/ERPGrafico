@@ -107,63 +107,6 @@ export function DataTableToolbar<TData>(props: DataTableToolbarProps<TData>) {
                 <div className="flex items-center justify-between gap-2 h-9 w-full">
                     {/* Left: Segmentadores */}
                     <div className="flex items-center gap-1.5 flex-1 min-w-0 overflow-x-auto">
-                        {/* Sort dropdown */}
-                        {sortOptions && sortableColumns.length > 0 && (
-                            <DropdownMenu>
-                                <Tooltip>
-                                    <TooltipTrigger asChild>
-                                        <DropdownMenuTrigger asChild>
-                                            <Button
-                                                variant="ghost"
-                                                size="sm"
-                                                className="h-7 px-2 text-[10px] uppercase font-bold tracking-widest gap-1 shrink-0"
-                                            >
-                                                <ArrowUpDown className="h-3.5 w-3.5" />
-                                                Orden
-                                            </Button>
-                                        </DropdownMenuTrigger>
-                                    </TooltipTrigger>
-                                    <TooltipContent side="bottom">Ordenar columnas</TooltipContent>
-                                </Tooltip>
-                                <DropdownMenuContent
-                                    align="start"
-                                    className="w-[200px] p-1 border-border/80 shadow-floating"
-                                >
-                                    {sortableColumns.map((column) => {
-                                        const isSorted = column.getIsSorted()
-                                        return (
-                                            <div
-                                                key={column.id}
-                                                className={cn(
-                                                    "relative flex cursor-pointer select-none items-center rounded-sm px-3 py-1.5 text-[10px] uppercase font-bold tracking-tight outline-none transition-colors",
-                                                    isSorted
-                                                        ? "bg-accent/50 text-primary"
-                                                        : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
-                                                )}
-                                                onClick={() =>
-                                                    column.toggleSorting(column.getIsSorted() === "asc")
-                                                }
-                                            >
-                                                <div className="mr-3 flex h-3.5 w-3.5 items-center justify-center transition-all">
-                                                    {isSorted === "desc" ? (
-                                                        <ArrowDown className="h-3.5 w-3.5 text-primary" />
-                                                    ) : isSorted === "asc" ? (
-                                                        <ArrowUp className="h-3.5 w-3.5 text-primary" />
-                                                    ) : (
-                                                        <ArrowUpDown className="h-3.5 w-3.5 opacity-30" />
-                                                    )}
-                                                </div>
-                                                <span>
-                                                    {(column.columnDef.meta as { title?: string })?.title ||
-                                                        translateColumnId(column.id)}
-                                                </span>
-                                            </div>
-                                        )
-                                    })}
-                                </DropdownMenuContent>
-                            </DropdownMenu>
-                        )}
-
                         {/* View toggle — shadcn Tabs inline */}
                         {viewOptions && viewOptions.length > 0 && (
                             <Tabs value={currentView} onValueChange={(v) => onViewChange?.(v)}>
@@ -281,6 +224,62 @@ export function DataTableToolbar<TData>(props: DataTableToolbarProps<TData>) {
 
                         {columnToggle && (
                             <DataTableColumnToggle table={table} />
+                        )}
+
+                        {sortOptions && sortableColumns.length > 0 && (
+                            <DropdownMenu>
+                                <Tooltip>
+                                    <TooltipTrigger asChild>
+                                        <DropdownMenuTrigger asChild>
+                                            <Button
+                                                variant="ghost"
+                                                size="sm"
+                                                className="h-9 px-2 text-[10px] uppercase font-bold tracking-widest gap-1 shrink-0"
+                                            >
+                                                <ArrowUpDown className="h-3.5 w-3.5" />
+                                                Orden
+                                            </Button>
+                                        </DropdownMenuTrigger>
+                                    </TooltipTrigger>
+                                    <TooltipContent side="bottom">Ordenar columnas</TooltipContent>
+                                </Tooltip>
+                                <DropdownMenuContent
+                                    align="end"
+                                    className="w-[200px] p-1 border-border/80 shadow-floating"
+                                >
+                                    {sortableColumns.map((column) => {
+                                        const isSorted = column.getIsSorted()
+                                        return (
+                                            <div
+                                                key={column.id}
+                                                className={cn(
+                                                    "relative flex cursor-pointer select-none items-center rounded-sm px-3 py-1.5 text-[10px] uppercase font-bold tracking-tight outline-none transition-colors",
+                                                    isSorted
+                                                        ? "bg-accent/50 text-primary"
+                                                        : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+                                                )}
+                                                onClick={() =>
+                                                    column.toggleSorting(column.getIsSorted() === "asc")
+                                                }
+                                            >
+                                                <div className="mr-3 flex h-3.5 w-3.5 items-center justify-center transition-all">
+                                                    {isSorted === "desc" ? (
+                                                        <ArrowDown className="h-3.5 w-3.5 text-primary" />
+                                                    ) : isSorted === "asc" ? (
+                                                        <ArrowUp className="h-3.5 w-3.5 text-primary" />
+                                                    ) : (
+                                                        <ArrowUpDown className="h-3.5 w-3.5 opacity-30" />
+                                                    )}
+                                                </div>
+                                                <span>
+                                                    {(column.columnDef.meta as { title?: string })?.title ||
+                                                        translateColumnId(column.id)}
+                                                </span>
+                                            </div>
+                                        )
+                                    })}
+                                </DropdownMenuContent>
+                            </DropdownMenu>
                         )}
                     </div>
                 </div>

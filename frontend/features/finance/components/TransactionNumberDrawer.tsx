@@ -10,6 +10,7 @@ import {
     FormField,
     FormItem,
 } from "@/components/ui/form"
+import { showApiError } from "@/lib/errors"
 import { Button } from "@/components/ui/button"
 import { financeApi } from "../api/financeApi"
 import { toast } from "sonner"
@@ -72,8 +73,7 @@ export function TransactionNumberDrawer({
             onOpenChange(false)
             onSuccess?.()
         } catch (error) {
-            console.error("Failed to update transaction number", error)
-            toast.error("Error al actualizar N° de transacción")
+            showApiError(error, "Error al actualizar N° de transacción")
         } finally {
             setLoading(false)
         }

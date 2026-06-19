@@ -1,6 +1,6 @@
 "use client"
 
-import { getErrorMessage } from "@/lib/errors"
+import { showApiError } from "@/lib/errors"
 import { useState, useEffect, useRef } from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
@@ -274,14 +274,7 @@ export function JournalEntryDrawer({
             setOpen(false)
             if (onSuccess) onSuccess()
         } catch (error: unknown) {
-            console.error("Error saving entry:", error)
-            const detail = getErrorMessage(error) || "Error al guardar el asiento"
-            // Check if validation array error
-            if (typeof detail === 'object') {
-                toast.error("Error de validación: Revise los campos")
-            } else {
-                toast.error(detail)
-            }
+            showApiError(error, "Error al guardar el asiento")
         } finally {
             setLoading(false)
         }
@@ -364,6 +357,7 @@ export function JournalEntryDrawer({
                                 render={({ field, fieldState }) => (
                                     <LabeledInput
                                         label="Descripción"
+                                        required
                                         placeholder="Venta de mercadería..."
                                         error={fieldState.error?.message}
                                         {...field}

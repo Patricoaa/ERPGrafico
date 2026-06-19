@@ -436,7 +436,7 @@ export function BOMDrawer({
                                                     {selectedProduct?.has_variants && (
                                                         <div className="sm:col-span-1 animate-in fade-in slide-in-from-left-2">
                                                             <LabeledSelect
-                                                                label="Variante (Opcional)"
+                                                                label="Variante (opcional)"
                                                                 placeholder="Plantilla Base..."
                                                                 value={selectedVariant?.id?.toString() || "template"}
                                                                 onChange={(val) => {

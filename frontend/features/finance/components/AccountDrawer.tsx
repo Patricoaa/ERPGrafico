@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect, useRef } from "react"
+import { showApiError } from "@/lib/errors"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
@@ -147,7 +148,7 @@ export function AccountDrawer({
             setOpen(false)
             if (onSuccess) onSuccess()
         } catch (error) {
-            console.error("Error saving account:", error)
+            showApiError(error, "Error al guardar la cuenta")
         }
     }
 
@@ -201,6 +202,7 @@ export function AccountDrawer({
                     render={({ field, fieldState }) => (
                         <LabeledSelect
                             label="Tipo de Cuenta"
+                            required
                             value={field.value}
                             onChange={field.onChange}
                             error={fieldState.error?.message}
@@ -220,7 +222,7 @@ export function AccountDrawer({
                     name="parent"
                     render={({ field, fieldState }) => (
                         <AccountSelector
-                            label="Cuenta Padre (Opcional)"
+                            label="Cuenta Padre (opcional)"
                             value={field.value}
                             onChange={field.onChange}
                             showAll={true}

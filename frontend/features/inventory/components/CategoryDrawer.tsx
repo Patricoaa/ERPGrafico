@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useRef } from "react"
 import { ProductCategory } from "@/types/entities"
 import { cn } from "@/lib/utils"
+import { showApiError } from "@/lib/errors"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
@@ -279,7 +280,7 @@ export function CategoryDrawer({
             setOpen(false)
             if (onSuccess) onSuccess(response)
         } catch (error: unknown) {
-            console.error("Error saving category:", error)
+            showApiError(error, "Error al guardar la categoría")
         } finally {
             setLoading(false)
             if (onLoadingChange) onLoadingChange(false)

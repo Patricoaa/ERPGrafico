@@ -16,6 +16,7 @@ import {
 import { ActivitySidebar } from "@/features/audit/components"
 import { Form, FormField } from "@/components/ui/form"
 import { Button } from "@/components/ui/button"
+import { showApiError } from "@/lib/errors"
 import { toast } from "sonner"
 import { Printer } from "lucide-react"
 import { useReactToPrint } from "react-to-print"
@@ -130,8 +131,7 @@ export function GroupDrawer({
             setOpen?.(false)
             onSuccess?.()
         } catch (error) {
-            console.error(error)
-            toast.error("Error al guardar el grupo")
+            showApiError(error, "Error al guardar el grupo")
         } finally {
             setIsLoading(false)
         }
