@@ -443,12 +443,15 @@ El toolbar del DataTable sigue una jerarquía visual consistente con el [design 
 
 | Nivel | Clase | Tamaño | Elementos |
 |-------|-------|--------|-----------|
-| Contenedor toolbar | `rounded-md` | 12px | Button group container, ToolbarCreateButton, inputs de búsqueda, SelectTrigger, botones de paginación |
+| Contenedor toolbar | `rounded-md` | 12px | Button group container, ToolbarCreateButton |
+| Atomic (elementos interactivos) | `rounded-sm` | 8px | Todos los botones del toolbar (Sort, Columnas, Vista, Acciones), inputs de búsqueda (SmartSearch), SelectTrigger, botones de paginación, DropdownMenuItem, checkbox, option items |
 | Overlay (dropdown/popover) | `rounded-lg` | 16px | DropdownMenuContent, PopoverContent (heredado del base `ui/` component) |
-| Atomic (items internos) | `rounded-sm` | 8px | DropdownMenuItem, checkbox, option items |
 | Pill | `rounded-full` | ∞ | Badge de filtros activos, skeleton shapes |
 
-**Regla:** No sobreescribir `rounded-lg` por `rounded-md` en overlays del toolbar. Los DropdownMenuContent y PopoverContent heredan el radius del componente base (`rounded-lg`).
+**Reglas:**
+- Todos los elementos interactivos del toolbar son **atómicos** → `rounded-sm`.
+- Los contenedores estructurales (button group container, ToolbarCreateButton) usan `rounded-md`.
+- No sobreescribir `rounded-lg` por `rounded-md` en overlays del toolbar. Los DropdownMenuContent y PopoverContent heredan el radius del componente base (`rounded-lg`).
 
 ### 10.4 Segmented button group
 
