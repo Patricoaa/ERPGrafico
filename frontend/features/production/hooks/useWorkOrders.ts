@@ -17,6 +17,8 @@ export function useWorkOrders(filters?: FilterState & { my_tasks?: boolean }, in
             if (filters?.search) params.append('search', filters.search)
             if (filters?.date_from) params.append('due_date_after', filters.date_from)
             if (filters?.date_to) params.append('due_date_before', filters.date_to)
+            if (filters?.due_date_after) params.append('due_date_after', filters.due_date_after)
+            if (filters?.due_date_before) params.append('due_date_before', filters.due_date_before)
             if (filters?.my_tasks) params.append('my_tasks', 'true')
             const res = await api.get('/production/orders/', { params })
             return res.data

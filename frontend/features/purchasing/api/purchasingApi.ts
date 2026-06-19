@@ -9,6 +9,8 @@ interface OrderFilters {
     search?: string
     date_from?: string
     date_to?: string
+    date_after?: string
+    date_before?: string
     receiving_status?: string
     receipt_date_after?: string
     receipt_date_before?: string
@@ -43,6 +45,8 @@ export const purchasingApi = {
         if (filters?.search) params.append('search', filters.search)
         if (filters?.date_from) params.append('date_after', filters.date_from)
         if (filters?.date_to) params.append('date_before', filters.date_to)
+        if (filters?.date_after) params.append('date_after', filters.date_after)
+        if (filters?.date_before) params.append('date_before', filters.date_before)
         if (filters?.receiving_status) params.append('receiving_status', filters.receiving_status)
         if (filters?.receipt_date_after) params.append('receipt_date_after', filters.receipt_date_after)
         if (filters?.receipt_date_before) params.append('receipt_date_before', filters.receipt_date_before)
