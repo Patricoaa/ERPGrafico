@@ -1,11 +1,9 @@
 "use client"
 
-import { useState, useEffect, useMemo, type ReactNode } from "react"
+import { useMemo, useState, type ReactNode } from "react"
 import { usePathname } from "next/navigation"
-import { Loader2 } from "lucide-react"
 import { PageContainer, PageHeader } from '@/components/shared'
-import { ProfileProvider, useMyProfile, getMyProfile, ProfileSidePanel } from "@/features/profile"
-import type { MyProfile } from "@/types/profile"
+import { ProfileProvider, useMyProfile, useProfile, ProfileSidePanel } from "@/features/profile"
 
 function ProfileNavigation({ children }: { children: ReactNode }) {
     const pathname = usePathname()
@@ -93,26 +91,17 @@ function ProfileNavigation({ children }: { children: ReactNode }) {
 }
 
 export function ProfileLayoutClient({ children }: { children: ReactNode }) {
-    const [profile, setProfile] = useState<MyProfile | null>(null)
-    const [loading, setLoading] = useState(true)
-    const [errored, setErrored] = useState(false)
+    const { data: profile, isLoading, isError } = useProfile()
 
-    useEffect(() => {
-        getMyProfile()
-            .then(setProfile)
-            .catch(() => setErrored(true))
-            .finally(() => setLoading(false))
-    }, [])
-
-    if (loading) {
+    if (isLoading) {
         return (
             <div className="flex items-center justify-center h-64">
-                <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+                <p className="text-muted-foreground text-sm">Cargando perfil...</p>
             </div>
         )
     }
 
-    if (!profile || errored) {
+    if (isError || !profile) {
         return (
             <div className="p-8 text-center text-muted-foreground">
                 Error al cargar el perfil. Intente nuevamente.

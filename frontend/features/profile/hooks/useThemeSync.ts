@@ -4,12 +4,15 @@ import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { useTheme } from "next-themes"
 import { updateThemePreference } from "../api/profileApi"
 import { useAuth } from "@/contexts/AuthContext"
+import { useRealtime } from "@/features/realtime"
 import { toast } from "sonner"
+import { PROFILE_KEYS } from "./queryKeys"
 
 export function useThemeSync() {
   const { setTheme } = useTheme()
   const { user, updateUser } = useAuth()
   const queryClient = useQueryClient()
+  const { markLocalMutation } = useRealtime()
 
   const mutation = useMutation({
     mutationFn: (newTheme: 'light' | 'dark' | 'system') => updateThemePreference(newTheme),
@@ -36,8 +39,8 @@ export function useThemeSync() {
       toast.error("No se pudo sincronizar la preferencia de tema con el servidor.")
     },
     onSuccess: () => {
-      // Invalidar query del perfil para refrescar datos del usuario autenticado
-      queryClient.invalidateQueries({ queryKey: ['current-user'] })
+      markLocalMutation()
+      queryClient.invalidateQueries({ queryKey: PROFILE_KEYS.all })
     }
   })
 

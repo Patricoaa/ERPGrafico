@@ -1,13 +1,12 @@
 "use client"
 import { formatPlainDate } from "@/lib/utils";
 
-import { useState, useEffect, useCallback } from "react"
+import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { toast } from "sonner"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
-import * as z from "zod"
-import { getMyProfile, changePassword, changePin, downloadPayrollPdf, downloadMultiplePayrollPdfs } from '@/features/profile/api/profileApi'
+import { changePassword, changePin, downloadPayrollPdf, downloadMultiplePayrollPdfs } from '@/features/profile/api/profileApi'
 import type { MyProfile } from "@/types/profile"
 import type {Payroll} from "@/types/hr"
 import { Tabs, TabsContent } from "@/components/ui/tabs"
@@ -31,34 +30,11 @@ import { EmptyState, LabeledInput } from "@/components/shared"
 import { EmployeePayrollPreview } from "./EmployeePayrollPreview"
 import { PartnerProfileTab } from "./PartnerProfileTab"
 import { DataCell, createActionsColumn } from '@/components/shared'
-import { CardSkeleton } from "@/components/shared"
-;
+
 import { useTheme } from "next-themes"
 import { useThemeSync } from "../hooks/useThemeSync"
-
-// --- Schemas ---
-const passwordSchema = z.object({
-    current_password: z.string().min(1, "Ingrese su contraseña actual"),
-    new_password: z.string().min(6, "Mínimo 6 caracteres"),
-    confirm_password: z.string().min(1, "Confirme la nueva contraseña"),
-}).refine(data => data.new_password === data.confirm_password, {
-    message: "Las contraseñas no coinciden",
-    path: ["confirm_password"],
-})
-type PasswordFormValues = z.infer<typeof passwordSchema>
-
-const pinSchema = z.object({
-    current_password: z.string().min(1, "Ingrese su contraseña actual"),
-    new_pin: z.string()
-        .min(1, "El PIN no puede estar vacío")
-        .max(4, "Máximo 4 dígitos")
-        .regex(/^\d+$/, "El PIN debe ser solo números"),
-    confirm_pin: z.string().min(1, "Confirme el nuevo PIN"),
-}).refine(data => data.new_pin === data.confirm_pin, {
-    message: "Los PINs no coinciden",
-    path: ["confirm_pin"],
-})
-type PinFormValues = z.infer<typeof pinSchema>
+import { passwordSchema, pinSchema } from "../schema"
+import type { PasswordFormValues, PinFormValues } from "../schema"
 
 interface ProfileViewProps {
     activeTab: string
@@ -68,43 +44,12 @@ interface ProfileViewProps {
 
 export function ProfileView({ activeTab, activeSubTab = "employee", initialProfile }: ProfileViewProps) {
     const router = useRouter()
-    const [profile, setProfile] = useState<MyProfile | null>(initialProfile || null)
-    const [loading, setLoading] = useState(!initialProfile)
+    const profile = initialProfile
     const [selectedPayrolls, setSelectedPayrolls] = useState<number[]>([])
     const [downloadingAll, setDownloadingAll] = useState(false)
 
-    const fetchProfile = useCallback(async () => {
-        try {
-            const data = await getMyProfile()
-            setProfile(data)
-        } catch {
-            toast.error("Error al cargar perfil")
-        } finally {
-            setLoading(false)
-        }
-    }, [])
-
-    useEffect(() => {
-        if (!initialProfile) {
-            requestAnimationFrame(() => {
-                fetchProfile()
-            })
-        }
-    }, [fetchProfile, initialProfile])
-
     const contactDetail = profile?.contact_detail || profile?.employee?.contact_detail
     const isPartner = contactDetail?.is_partner
-
-    if (loading) {
-        return (
-            <div className="space-y-6">
-                <CardSkeleton count={1} variant="grid" className="h-[300px]" />
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <CardSkeleton count={2} variant="grid" className="h-[200px]" />
-                </div>
-            </div>
-        )
-    }
 
     if (!profile) return null
 

@@ -1,9 +1,8 @@
 "use client"
 import { formatPlainDate } from "@/lib/utils";
 
-import React, {useEffect, useState} from "react"
+import React, {useState} from "react"
 import { useRouter, usePathname, useSearchParams } from "next/navigation"
-import { toast } from "sonner"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Chip, FadeIn, MoneyDisplay, StatCard } from '@/components/shared'
 import { DataTable } from '@/components/shared'
@@ -17,22 +16,21 @@ import {
     Eye
 } from "lucide-react"
 import { ColumnDef } from "@tanstack/react-table"
-import { partnersApi } from "@/features/contacts/api/partnersApi"
-import { PartnerStatement, PartnerTransaction } from "@/features/contacts/types/partner"
+import { PartnerTransaction } from "@/features/contacts/types/partner"
 import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "@/components/ui/accordion"
 
 import { cn } from "@/lib/utils"
 import {SkeletonShell} from "@/components/shared"
 
 import { PaymentDrawer } from "@/features/treasury/components/PaymentDrawer"
+import { usePartnerStatement } from "../hooks/usePartnerStatement"
 
 interface Props {
     contactId: number;
 }
 
 export function PartnerProfileTab({ contactId }: Props) {
-    const [statement, setStatement] = useState<PartnerStatement | null>(null)
-    const [loading, setLoading] = useState(true)
+    const { data: statement, isLoading, isError } = usePartnerStatement(contactId)
 
     // Movement Details state
     const router = useRouter()
@@ -41,23 +39,6 @@ export function PartnerProfileTab({ contactId }: Props) {
 
     const [detailsOpen, setDetailsOpen] = useState(false)
     const [selectedMovementId, setSelectedMovementId] = useState<number | null>(null)
-
-    const fetchData = async () => {
-        if (!contactId) return
-        setLoading(true)
-        try {
-            const data = await partnersApi.getStatement(contactId)
-            setStatement(data)
-        } catch {
-            toast.error("Error al cargar estado de cuenta societario")
-        } finally {
-            setLoading(false)
-        }
-    }
-
-    useEffect(() => {
-        requestAnimationFrame(() => fetchData())
-    }, [contactId])
 
     const handleViewDetails = (movementId: number) => {
         const params = new URLSearchParams(searchParams.toString())
@@ -142,9 +123,9 @@ export function PartnerProfileTab({ contactId }: Props) {
         })
     ]
 
-    if (loading) return <SkeletonShell isLoading ariaLabel="Cargando..." />
+    if (isLoading) return <SkeletonShell isLoading ariaLabel="Cargando..." />
 
-    if (!statement) return null
+    if (isError || !statement) return null
 
     const { contact, summary } = statement
 
