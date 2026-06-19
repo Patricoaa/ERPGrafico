@@ -262,7 +262,7 @@ export function SmartSearchBar({ searchDef, placeholder = 'Buscar...', className
       {/* Input row */}
       <div
         className={cn(
-          'group flex items-center gap-1.5 h-9 px-2 py-1 rounded-md overflow-x-auto scrollbar-hide border border-border/60',
+          'group flex items-center gap-1.5 h-9 px-2 py-1 rounded-sm overflow-x-auto scrollbar-hide border border-border/60',
           'bg-background transition-all',
           'hover:bg-muted/50 hover:text-foreground hover:ring-2 hover:ring-primary/10',
           'focus-within:bg-muted/50 focus-within:ring-2 focus-within:ring-primary/20',
@@ -521,7 +521,7 @@ export function SmartSearchBar({ searchDef, placeholder = 'Buscar...', className
                     type="button"
                     onClick={() => handleDateConfirm(stage.field, dateRange)}
                     disabled={!dateRange?.from}
-                    className="px-3 py-1.5 text-[10px] uppercase tracking-widest bg-primary text-primary-foreground rounded-md disabled:opacity-40 transition-opacity"
+                    className="px-3 py-1.5 text-[10px] uppercase tracking-widest bg-primary text-primary-foreground rounded-sm disabled:opacity-40 transition-opacity"
                   >
                     Aplicar
                   </button>
