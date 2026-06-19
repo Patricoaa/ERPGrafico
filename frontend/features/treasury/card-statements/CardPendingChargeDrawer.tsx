@@ -9,20 +9,10 @@ import type { DrawerMode } from "@/features/_shared/drawer/types"
 import { useServerDate } from "@/hooks/useServerDate"
 import { Form, FormField } from "@/components/ui/form"
 import {
-    CancelButton, LabeledInput, FormSection, FormFooter,
+    CancelButton, LabeledInput, LabeledSelect, FormSection, FormFooter,
     FormSplitLayout, ActionSlideButton, Drawer, SkeletonShell,
 } from "@/components/shared"
 import { formDrawerWidth } from "@/lib/form-widths"
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from '@/components/ui/select'
-import { Label } from '@/components/ui/label'
-import { Input } from '@/components/ui/input'
-import { Textarea } from '@/components/ui/textarea'
 import { Button } from '@/components/ui/button'
 import { showApiError } from "@/lib/errors"
 import { toast } from 'sonner'
@@ -219,25 +209,16 @@ export function CardPendingChargeDrawer({
                                     <FormField
                                         control={form.control}
                                         name="charge_type"
-                                        render={({ field }) => (
-                                            <div className="grid gap-2">
-                                                <Label htmlFor="charge_type">Tipo de Cargo <span className="text-destructive">*</span></Label>
-                                                <Select
-                                                    value={field.value}
-                                                    onValueChange={field.onChange}
-                                                >
-                                                    <SelectTrigger id="charge_type">
-                                                        <SelectValue placeholder="Seleccionar tipo" />
-                                                    </SelectTrigger>
-                                                    <SelectContent>
-                                                        {CHARGE_TYPES.map((type) => (
-                                                            <SelectItem key={type.value} value={type.value}>
-                                                                {type.label}
-                                                            </SelectItem>
-                                                        ))}
-                                                    </SelectContent>
-                                                </Select>
-                                            </div>
+                                        render={({ field, fieldState }) => (
+                                            <LabeledSelect
+                                                label="Tipo de Cargo"
+                                                options={CHARGE_TYPES}
+                                                value={field.value}
+                                                onChange={field.onChange}
+                                                placeholder="Seleccionar tipo"
+                                                required
+                                                error={fieldState.error?.message}
+                                            />
                                         )}
                                     />
 
@@ -245,18 +226,13 @@ export function CardPendingChargeDrawer({
                                         control={form.control}
                                         name="date"
                                         render={({ field, fieldState }) => (
-                                            <div className="grid gap-2">
-                                                <Label htmlFor="date">Fecha <span className="text-destructive">*</span></Label>
-                                                <Input
-                                                    id="date"
-                                                    type="date"
-                                                    required
-                                                    {...field}
-                                                />
-                                                {fieldState.error && (
-                                                    <p className="text-sm text-destructive">{fieldState.error.message}</p>
-                                                )}
-                                            </div>
+                                            <LabeledInput
+                                                label="Fecha"
+                                                type="date"
+                                                required
+                                                error={fieldState.error?.message}
+                                                {...field}
+                                            />
                                         )}
                                     />
 
@@ -264,14 +240,13 @@ export function CardPendingChargeDrawer({
                                         control={form.control}
                                         name="description"
                                         render={({ field }) => (
-                                            <div className="grid gap-2">
-                                                <Label htmlFor="description">Descripción <span className="text-muted-foreground text-xs">(opcional)</span></Label>
-                                                <Textarea
-                                                    id="description"
-                                                    placeholder="Descripción del cargo"
-                                                    {...field}
-                                                />
-                                            </div>
+                                            <LabeledInput
+                                                label="Descripción (opcional)"
+                                                as="textarea"
+                                                rows={3}
+                                                placeholder="Descripción del cargo"
+                                                {...field}
+                                            />
                                         )}
                                     />
                                 </div>
