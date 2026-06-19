@@ -8,6 +8,19 @@ export type TextFieldDef = {
   clientKey?: string | string[]
 }
 
+/**
+ * Identity enum — for entity-classification fields like contact type (Cliente/Proveedor).
+ * NOT for operational state/segmentation (status, dates, etc.).
+ */
+export type IdentityEnumFieldDef = {
+  key: string
+  label: string
+  type: 'identity-enum'
+  serverParam: string
+  options: { label: string; value: string }[]
+}
+
+/** @deprecated Use TabSegmentDef from @/types/segmentation instead. */
 export type EnumFieldDef = {
   key: string
   label: string
@@ -17,6 +30,7 @@ export type EnumFieldDef = {
   defaultValue?: string
 }
 
+/** @deprecated Use DateSegmentDef from @/types/segmentation instead. */
 export type DateRangeFieldDef = {
   key: string
   label: string
@@ -25,7 +39,7 @@ export type DateRangeFieldDef = {
   serverParamEnd: string
 }
 
-export type FieldDef = TextFieldDef | EnumFieldDef | DateRangeFieldDef
+export type FieldDef = TextFieldDef | IdentityEnumFieldDef | EnumFieldDef | DateRangeFieldDef
 
 export type SearchDefinition = {
   fields: FieldDef[]
