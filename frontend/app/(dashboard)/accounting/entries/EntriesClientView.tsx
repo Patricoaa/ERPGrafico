@@ -18,8 +18,9 @@ import { useJournalEntries, type JournalEntry } from "@/features/accounting"
 import { useAccountingAccounts } from "@/features/accounting"
 import { useSelectedEntity } from "@/hooks/useSelectedEntity"
 import { useEntityRouteActions } from "@/hooks/useEntityRouteActions"
-import { SmartSearchBar, useSmartSearch } from "@/components/shared"
+import { SmartSearchBar, useSmartSearch, SegmentationBar, useSegmentation } from "@/components/shared"
 import { journalEntrySearchDef } from "@/features/accounting/searchDef"
+import { journalEntrySegDef } from "@/features/accounting/segmentationDef"
 
 interface EntriesPageProps {
     externalOpen?: boolean
@@ -28,8 +29,11 @@ interface EntriesPageProps {
 }
 
 export default function EntriesPage({ externalOpen, onExternalOpenChange, createAction }: EntriesPageProps) {
-    const { filters, isFiltered } = useSmartSearch(journalEntrySearchDef)
-    const { entries, isLoading, refetch } = useJournalEntries(filters)
+    const { filters: textFilters, isFiltered: isTextFiltered, clearAll: clearText } = useSmartSearch(journalEntrySearchDef)
+    const { filters: segFilters, isFiltered: isSegFiltered, clearAll: clearSeg } = useSegmentation(journalEntrySegDef)
+    const isFiltered = isTextFiltered || isSegFiltered
+    const allFilters = { ...textFilters, ...segFilters }
+    const { entries, isLoading, refetch } = useJournalEntries(allFilters)
     const { accounts } = useAccountingAccounts({ filters: { is_leaf: true } })
     const [viewingTransaction, setViewingTransaction] = useState<{ type: 'journal_entry', id: number | string } | null>(null)
     const [isFormOpen, setIsFormOpen] = useState(false)
@@ -237,6 +241,9 @@ export default function EntriesPage({ externalOpen, onExternalOpenChange, create
                     entityLabel="accounting.journalentry"
                     variant="embedded"
                     smartSearch={<SmartSearchBar searchDef={journalEntrySearchDef} placeholder="Buscar asientos..." className="w-full" />}
+                    segmentation={<SegmentationBar def={journalEntrySegDef} />}
+                    showReset={isFiltered}
+                    onReset={() => { clearText(); clearSeg() }}
                     defaultPageSize={20}
                     createAction={createAction}
                     isFiltered={isFiltered}

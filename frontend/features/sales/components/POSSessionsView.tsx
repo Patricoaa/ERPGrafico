@@ -4,7 +4,7 @@ import { useState, useEffect } from "react"
 import { useRouter, usePathname, useSearchParams } from "next/navigation"
 import { useSelectedEntity } from "@/hooks/useSelectedEntity"
 
-import { DataTableView, DataTableColumnHeader, EntityCard, StatusBadge } from '@/components/shared'
+import { DataTableView, DataTableColumnHeader, EntityCard, StatusBadge, SegmentationBar, useSegmentation } from '@/components/shared'
 import { ColumnDef } from "@tanstack/react-table"
 import { DataCell, createActionsColumn } from '@/components/shared'
 import { FileText, Lock } from "lucide-react"
@@ -41,15 +41,14 @@ interface POSSessionsViewProps {
 }
 
 import { usePOSSessions } from "@/features/pos/hooks/usePOSSessions"
-import { SmartSearchBar, useSmartSearch } from "@/components/shared"
-import { posSessionSearchDef } from "@/features/pos/searchDef"
+import { posSessionSegDef } from "@/features/pos/segmentationDef"
 
 export const POSSessionsView = ({ hideHeader = false }: POSSessionsViewProps) => {
     const router = useRouter()
     const pathname = usePathname()
     const searchParams = useSearchParams()
-    const { filters, isFiltered } = useSmartSearch(posSessionSearchDef)
-    const { sessions, isLoading, refetch } = usePOSSessions(filters)
+    const { filters: segFilters, isFiltered: isSegFiltered, clearAll: clearSeg } = useSegmentation(posSessionSegDef)
+    const { sessions, isLoading, refetch } = usePOSSessions(segFilters)
 
     const { entity: selectedFromUrl, clearSelection } = useSelectedEntity<POSSession>({
         endpoint: '/treasury/pos-sessions'
@@ -186,9 +185,11 @@ export const POSSessionsView = ({ hideHeader = false }: POSSessionsViewProps) =>
                     variant="embedded"
                     isLoading={isLoading}
                     entityLabel="pos.session"
-                    smartSearch={<SmartSearchBar searchDef={posSessionSearchDef} placeholder="Buscar sesiones..." className="w-full" />}
+                    segmentation={<SegmentationBar def={posSessionSegDef} />}
+                    showReset={isSegFiltered}
+                    onReset={clearSeg}
                     defaultPageSize={10}
-                    isFiltered={isFiltered}
+                    isFiltered={isSegFiltered}
                     emptyState={{
                         context: "pos",
                         title: "Aún no hay sesiones de caja",

@@ -20,10 +20,11 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { Button } from "@/components/ui/button"
 import { BulkActionDock, Chip, FadeIn } from "@/components/shared"
 import { isWorkOrderOverdue } from "@/features/production/utils"
-import { ToolbarCreateButton, SmartSearchBar, useSmartSearch } from "@/components/shared"
+import { ToolbarCreateButton, SmartSearchBar, useSmartSearch, SegmentationBar, useSegmentation } from "@/components/shared"
 import { cn, translateProductionStage } from "@/lib/utils"
 import { useConfirmAction } from "@/hooks/useConfirmAction"
 import { workOrderSearchDef } from "@/features/production/searchDef"
+import { workOrderSegDef } from "@/features/production/segmentationDef"
 
 import type { WorkOrder, WizardMode, StageId } from "@/features/production/types"
 
@@ -50,9 +51,12 @@ export default function WorkOrdersPageClient({ initialOrders }: WorkOrdersPageCl
         router.push(`${pathname}?${params.toString()}`, { scroll: false })
     }
 
-    const { filters, isFiltered } = useSmartSearch(workOrderSearchDef)
+    const { filters: textFilters, isFiltered: isTextFiltered, clearAll: clearText } = useSmartSearch(workOrderSearchDef)
+    const { filters: segFilters, isFiltered: isSegFiltered, clearAll: clearSeg } = useSegmentation(workOrderSegDef)
+    const isFiltered = isTextFiltered || isSegFiltered
+    const allFilters = { ...textFilters, ...segFilters }
     const { orders, isLoading: loading, isRefetching, refetch: refetchOrders } = useWorkOrders({
-        ...(filters as any),
+        ...(allFilters as any),
         my_tasks: myTasks
     }, initialOrders)
 
@@ -314,6 +318,9 @@ export default function WorkOrdersPageClient({ initialOrders }: WorkOrdersPageCl
                         smartSearch={
                             <SmartSearchBar searchDef={workOrderSearchDef} placeholder="Buscar OTs..." className="w-full" />
                         }
+                        segmentation={<SegmentationBar def={workOrderSegDef} />}
+                        showReset={isFiltered}
+                        onReset={() => { clearText(); clearSeg() }}
                         customFilters={
                             <div
                                 className={cn(
