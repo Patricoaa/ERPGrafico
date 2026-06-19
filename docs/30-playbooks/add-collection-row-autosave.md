@@ -1,12 +1,20 @@
 ---
 layer: 30-playbooks
 doc: add-collection-row-autosave
+task: "Add autosave row to editable collection"
+triggers: ["inline save", "autosave row", "collection row", "row-level save"]
 status: active
 owner: frontend-team
 last_review: 2026-05-28
 preconditions:
   - autosave-contract.md
   - add-settings-panel.md
+validation:
+  - npm run type-check
+  - npm run lint
+forbidden:
+  - saving non-row forms with useAutoSaveForm
+  - mixing row-level and page-level autosave
 ---
 
 # Playbook: autosave por fila en colecciones editables
