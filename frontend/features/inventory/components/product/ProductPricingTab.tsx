@@ -71,7 +71,7 @@ export function ProductPricingTab({ initialData, pricingRules, fetchPricingRules
 
             {/* Variant notice — rules are managed at template level */}
             {initialData && isVariant && (
-                <div className="flex items-start gap-3 p-4 rounded-lg bg-info/5 border border-info/20 text-sm">
+                <div className="flex items-start gap-3 p-4 rounded-md bg-info/5 border border-info/20 text-sm">
                     <Info className="h-4 w-4 text-info mt-0.5 shrink-0" />
                     <p className="text-info/80 font-medium text-xs leading-relaxed">
                         Las reglas de precios se gestionan en el <strong>producto plantilla</strong>, no en variantes individuales.

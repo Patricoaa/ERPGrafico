@@ -400,7 +400,7 @@ export function VariantQuickEditForm({
                 {availableBOMs.map((bom) => (
                   <div
                     key={bom.id}
-                    className="flex items-center justify-between p-3 rounded-lg border bg-muted/10 hover:bg-muted/20 transition-colors"
+                    className="flex items-center justify-between p-3 rounded-md border bg-muted/10 hover:bg-muted/20 transition-colors"
                   >
                     <div className="flex items-center gap-2 min-w-0">
                       <CheckCircle2 className={cn("h-4 w-4 shrink-0", bom.active ? "text-success" : "text-muted-foreground")} />
@@ -437,7 +437,7 @@ export function VariantQuickEditForm({
                 ))}
               </div>
             ) : (
-              <div className="rounded-lg border border-dashed border-muted-foreground/30 p-6 text-center bg-muted/5">
+              <div className="rounded-md border border-dashed border-muted-foreground/30 p-6 text-center bg-muted/5">
                 <Factory className="h-8 w-8 text-muted-foreground/40 mx-auto mb-2" />
                 <p className="text-xs text-muted-foreground font-medium">Sin recetas de producción</p>
                 <p className="text-[10px] text-muted-foreground/70 mt-1">
@@ -471,7 +471,7 @@ export function VariantQuickEditForm({
 
             {/* Clone source selector */}
             {cloneSources.length <= 1 ? (
-              <div className="p-3 bg-muted/10 border rounded-lg text-center">
+              <div className="p-3 bg-muted/10 border rounded-md text-center">
                 <p className="text-[11px] text-muted-foreground">
                   No hay fuentes disponibles para clonar.
                   {!templateData?.has_active_bom && " El template padre tampoco tiene LDM configurada."}

@@ -391,7 +391,7 @@ export function BulkVariantEditFormV2({
 
             {/* Clone source selector */}
             {cloneSources.length <= 1 ? (
-              <div className="p-3 bg-muted/10 border rounded-lg text-center">
+              <div className="p-3 bg-muted/10 border rounded-md text-center">
                 <p className="text-[11px] text-muted-foreground">
                   No hay fuentes disponibles para clonar.
                   {!templateData?.has_active_bom && " El template padre tampoco tiene LDM configurada."}

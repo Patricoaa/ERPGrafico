@@ -80,7 +80,7 @@ export function ProductPricingSection({ form, canBeSold, uoms }: ProductPricingS
 
                 {/* Base price row */}
                 <div className={cn(isDynamicPricing && "hidden")}>
-                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4 rounded-lg items-end">
+                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4 rounded-md items-end">
                         <FormField<ProductFormValues>
                             control={form.control}
                             name="sale_price"
