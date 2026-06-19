@@ -221,7 +221,7 @@ export function CardPendingChargeDrawer({
                                         name="charge_type"
                                         render={({ field }) => (
                                             <div className="grid gap-2">
-                                                <Label htmlFor="charge_type">Tipo de Cargo</Label>
+                                                <Label htmlFor="charge_type">Tipo de Cargo <span className="text-destructive">*</span></Label>
                                                 <Select
                                                     value={field.value}
                                                     onValueChange={field.onChange}
@@ -246,7 +246,7 @@ export function CardPendingChargeDrawer({
                                         name="date"
                                         render={({ field, fieldState }) => (
                                             <div className="grid gap-2">
-                                                <Label htmlFor="date">Fecha</Label>
+                                                <Label htmlFor="date">Fecha <span className="text-destructive">*</span></Label>
                                                 <Input
                                                     id="date"
                                                     type="date"
@@ -265,7 +265,7 @@ export function CardPendingChargeDrawer({
                                         name="description"
                                         render={({ field }) => (
                                             <div className="grid gap-2">
-                                                <Label htmlFor="description">Descripción</Label>
+                                                <Label htmlFor="description">Descripción <span className="text-muted-foreground text-xs">(opcional)</span></Label>
                                                 <Textarea
                                                     id="description"
                                                     placeholder="Descripción del cargo"
