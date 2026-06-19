@@ -225,7 +225,7 @@ export function BankManagement({ externalOpen, onOpenChange, createAction }: Ban
                     columns={columns}
                     data={filterBanks(banks)}
                     variant="embedded"
-                    leftAction={<SmartSearchBar searchDef={bankSearchDef} placeholder="Buscar banco..." className="w-full" />}
+                    smartSearch={<SmartSearchBar searchDef={bankSearchDef} placeholder="Buscar banco..." className="w-full" />}
                     createAction={createAction}
                 />
             </div>
@@ -553,7 +553,7 @@ export function PaymentMethodManagement({ externalOpen, onOpenChange, createActi
                     columns={columns}
                     data={filterMethods(methods)}
                     variant="embedded"
-                    leftAction={<SmartSearchBar searchDef={paymentMethodSearchDef} placeholder="Buscar método de pago..." className="w-full" />}
+                    smartSearch={<SmartSearchBar searchDef={paymentMethodSearchDef} placeholder="Buscar método de pago..." className="w-full" />}
                     createAction={createAction}
                 />
             </div>

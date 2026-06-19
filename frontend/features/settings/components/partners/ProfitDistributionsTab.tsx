@@ -281,8 +281,6 @@ export function ProfitDistributionsTab({ initialFlowOpen = false, createAction }
                     data={state.distributions}
                     isLoading={state.loading}
                     variant="embedded"
-                    searchPlaceholder="Buscar por año o resolución..."
-                    filterColumn="fiscal_year"
                     createAction={createAction}
                 />
             </div>

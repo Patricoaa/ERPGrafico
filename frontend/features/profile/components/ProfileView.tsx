@@ -673,14 +673,11 @@ function PersonalTab({
                                     <DataTable
                                         columns={payrollColumns}
                                         data={payrolls}
-                                        searchPlaceholder="Buscar por folio..."
-                                        globalFilterFields={["display_id"]}
                                         defaultPageSize={10}
                                         variant="standalone"
                                         noBorder={true}
-                                        useAdvancedFilter={true}
                                         toolbarClassName="px-6 pt-6 pb-2 pl-14"
-                                        showToolbarSort={false}
+                                        sortOptions={false}
                                         facetedFilters={[{
                                             column: "period_label",
                                             title: "Período",
@@ -734,14 +731,11 @@ function PersonalTab({
                                     <DataTable
                                         columns={unifiedPaymentColumns}
                                         data={unifiedPayments}
-                                        searchPlaceholder="Buscar por tipo..."
-                                        globalFilterFields={["typeLabel"]}
                                         defaultPageSize={10}
                                         variant="standalone"
                                         noBorder={true}
-                                        useAdvancedFilter={true}
                                         toolbarClassName="px-6 pt-6 pb-2"
-                                        showToolbarSort={false}
+                                        sortOptions={false}
                                     />
                                 ) : (
                                     <EmptyState

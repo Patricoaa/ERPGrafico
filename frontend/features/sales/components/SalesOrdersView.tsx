@@ -216,11 +216,11 @@ export function SalesOrdersView({ viewMode, posSessionId, onActionSuccess, hideS
                     variant="embedded"
                     isLoading={viewMode === 'orders' ? isLoadingOrders : isLoadingNotes}
                     isRefetching={viewMode === 'orders' ? isRefetching : undefined}
-                    leftAction={viewMode === 'orders'
+                    smartSearch={viewMode === 'orders'
                         ? <SmartSearchBar searchDef={salesOrderSearchDef} placeholder="Buscar órdenes..." />
                         : <SmartSearchBar searchDef={salesNoteSearchDef} placeholder="Buscar notas..." />
                     }
-                    showToolbarSort={true}
+                    sortOptions={true}
                     defaultPageSize={20}
                     isSelected={(data: any) => !!getSelectionId(data)}
                     isHubOpen={onSelectOrder ? !!selectedId : isHubOpen}

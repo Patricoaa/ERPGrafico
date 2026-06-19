@@ -231,9 +231,6 @@ export default function AuditPageClient({ initialLogs }: AuditPageClientProps) {
                     data={logs}
                     isLoading={loading}
                     variant="embedded"
-                    globalFilterFields={["entity_type", "action", "change_summary", "entity_label"]}
-                    searchPlaceholder="Buscar en la bitácora..."
-                    useAdvancedFilter={true}
                     facetedFilters={facetedFilters}
                     hiddenColumns={["source"]}
                     defaultPageSize={50}

@@ -233,7 +233,7 @@ export function PurchaseInvoicesClientView() {
                         }
                     }}
                     variant="embedded"
-                    leftAction={<SmartSearchBar searchDef={purchaseInvoiceSearchDef} placeholder="Buscar facturas de compra..." className="w-full" />}
+                    smartSearch={<SmartSearchBar searchDef={purchaseInvoiceSearchDef} placeholder="Buscar facturas de compra..." className="w-full" />}
                     defaultPageSize={20}
                     isSelected={(inv: Invoice) => hubConfig?.invoiceId === inv.id}
                     isHubOpen={isHubOpen}

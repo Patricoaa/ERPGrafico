@@ -149,7 +149,7 @@ export function UoMCategoryClientView({ externalOpen, onExternalOpenChange, crea
                     isLoading={isLoading}
                     entityLabel="inventory.uomcategory"
                     variant="embedded"
-                    leftAction={<SmartSearchBar searchDef={uomCategorySearchDef} placeholder="Buscar categoría..." className="w-full" />}
+                    smartSearch={<SmartSearchBar searchDef={uomCategorySearchDef} placeholder="Buscar categoría..." className="w-full" />}
                     pageSizeOptions={[10, 20]}
                     bulkActions={bulkActions}
                     createAction={createAction}

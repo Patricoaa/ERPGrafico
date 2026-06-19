@@ -285,7 +285,7 @@ export function AttributeManager({ externalOpen, createAction }: AttributeManage
                     variant="embedded"
                     bulkActions={bulkActions}
                     createAction={createAction}
-                    leftAction={<SmartSearchBar searchDef={attributeSearchDef} placeholder="Buscar atributo..." className="w-full" />}
+                    smartSearch={<SmartSearchBar searchDef={attributeSearchDef} placeholder="Buscar atributo..." className="w-full" />}
                     isFiltered={isFiltered}
                     emptyState={{
                         context: "inventory",

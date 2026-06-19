@@ -85,7 +85,7 @@ export function GroupManagement({ externalOpen, onExternalOpenChange, createActi
                     data={filterFn(groups as unknown as Record<string, unknown>[])}
                     isLoading={loading}
                     variant="embedded"
-                    leftAction={<SmartSearchBar searchDef={groupSearchDef} placeholder="Buscar grupo..." className="w-full" />}
+                    smartSearch={<SmartSearchBar searchDef={groupSearchDef} placeholder="Buscar grupo..." className="w-full" />}
                     createAction={createAction}
                 />
             </div>

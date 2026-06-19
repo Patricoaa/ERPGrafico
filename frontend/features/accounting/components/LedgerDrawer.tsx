@@ -319,9 +319,6 @@ function LedgerContent({
                 data={data?.movements || []}
                 isLoading={isLoading}
                 variant="embedded"
-                useAdvancedFilter={true}
-                globalFilterFields={["description", "partner", "reference"]}
-                searchPlaceholder="Buscar movimientos..."
                 defaultPageSize={100}
                 customFilters={
                     <div className="px-1 py-1">
@@ -335,7 +332,6 @@ function LedgerContent({
                         />
                     </div>
                 }
-                isCustomFiltered={!!dateRange}
                 onReset={() => {
                     if (serverDate) {
                         setDateRange({

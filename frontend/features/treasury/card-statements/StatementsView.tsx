@@ -232,27 +232,23 @@ export function StatementsView({ bankId, creditCardAccounts }: StatementsViewPro
                             onDateRangeChange: setDateRange,
                         },
                     }}
-                    leftAction={
-                        <div className="flex items-center gap-1 w-full">
-                            {creditCardAccounts.length > 1 && (
-                                <UnderlineTabs
-                                    items={creditCardAccounts.map(a => ({ value: String(a.id), label: a.name }))}
-                                    value={String(filters.card ?? creditCardAccounts[0]?.id ?? '')}
-                                    onValueChange={(v) => applyFilter('card', v)}
-                                    orientation="horizontal"
-                                    variant="underline"
-                                    className="w-auto shrink-0"
-                                    headerClassName="h-9 px-0 bg-transparent"
-                                    contentClassName="hidden"
-                                >
-                                    <div />
-                                </UnderlineTabs>
-                            )}
-                            <SmartSearchBar searchDef={searchDef} placeholder="Buscar estados de cuenta..." className="flex-1" />
-                        </div>
+                    customFilters={
+                        creditCardAccounts.length > 1 ? (
+                            <UnderlineTabs
+                                items={creditCardAccounts.map(a => ({ value: String(a.id), label: a.name }))}
+                                value={String(filters.card ?? creditCardAccounts[0]?.id ?? '')}
+                                onValueChange={(v) => applyFilter('card', v)}
+                                orientation="horizontal"
+                                variant="underline"
+                                className="w-auto"
+                                headerClassName="h-7 px-0 bg-transparent"
+                                contentClassName="hidden"
+                            >
+                                <div />
+                            </UnderlineTabs>
+                        ) : null
                     }
-                    filterColumn="display_id"
-                    searchPlaceholder="Buscar por estado de cuenta..."
+                    smartSearch={<SmartSearchBar searchDef={searchDef} placeholder="Buscar estados de cuenta..." className="flex-1" />}
                     emptyState={{
                         context: 'treasury',
                         icon: CreditCard,

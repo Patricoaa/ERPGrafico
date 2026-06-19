@@ -208,7 +208,7 @@ export function PaymentHardwareManagement({
                         data={filterProviders(providers)}
                         isLoading={isLoadingProviders}
                         variant="embedded"
-                        leftAction={<SmartSearchBar searchDef={providerSearchDef} placeholder="Buscar proveedor..." className="w-full" />}
+                        smartSearch={<SmartSearchBar searchDef={providerSearchDef} placeholder="Buscar proveedor..." className="w-full" />}
                         defaultPageSize={20}
                         isFiltered={isProvidersFiltered}
                         emptyState={{
@@ -266,7 +266,7 @@ export function PaymentHardwareManagement({
                         data={devices}
                         isLoading={isLoadingDevices}
                         variant="embedded"
-                        leftAction={<SmartSearchBar searchDef={deviceSearchDef} placeholder="Buscar dispositivo..." className="w-full" />}
+                        smartSearch={<SmartSearchBar searchDef={deviceSearchDef} placeholder="Buscar dispositivo..." className="w-full" />}
                         defaultPageSize={20}
                         isFiltered={isDevicesFiltered}
                         emptyState={{

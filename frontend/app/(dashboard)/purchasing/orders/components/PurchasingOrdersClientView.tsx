@@ -591,8 +591,8 @@ export function PurchasingOrdersClientView({ viewMode, externalOpenCheckout, cre
                         variant="embedded"
                         isLoading={viewMode === 'orders' ? isLoadingOrders : isLoadingNotes}
                         isRefetching={viewMode === 'orders' ? isRefetching : undefined}
-                        leftAction={<SmartSearchBar searchDef={purchaseOrderSearchDef} placeholder="Buscar por proveedor..." className="w-full" />}
-                        showToolbarSort={true}
+                        smartSearch={<SmartSearchBar searchDef={purchaseOrderSearchDef} placeholder="Buscar por proveedor..." className="w-full" />}
+                        sortOptions={true}
                         createAction={createAction}
                         isSelected={(data: any) => viewMode === 'orders'
                             ? hubConfig?.orderId === data.id

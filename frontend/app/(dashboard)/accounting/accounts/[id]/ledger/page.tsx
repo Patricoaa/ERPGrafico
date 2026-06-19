@@ -140,9 +140,6 @@ export default function AccountLedgerPage() {
                     columns={columns}
                     data={movements}
                     variant="embedded"
-                useAdvancedFilter={true}
-                globalFilterFields={["date", "description", "partner"]}
-                searchPlaceholder="Buscar por fecha, descripción o tercero..."
                 defaultPageSize={50}
             />
             </div>

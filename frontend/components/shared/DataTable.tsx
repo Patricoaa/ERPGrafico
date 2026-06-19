@@ -36,9 +36,6 @@ export interface DataTableProps<TData, TValue> {
     defaultPageSize?: number
     pageSizeOptions?: number[]
     hideToolbar?: boolean
-    filterColumn?: string
-    searchPlaceholder?: string
-    globalFilterFields?: string[]
     facetedFilters?: {
         column: string
         title: string
@@ -52,20 +49,10 @@ export interface DataTableProps<TData, TValue> {
     onRowSelectionChange?: (selection: RowSelectionState) => void
     initialColumnVisibility?: VisibilityState
     hiddenColumns?: string[]
-    useAdvancedFilter?: boolean
     onReset?: () => void
     renderCustomView?: (table: ReactTable<TData>) => React.ReactNode
-    /** @deprecated Search now lives in the config drawer */
-    leftAction?: React.ReactNode
-    rightAction?: React.ReactNode
-    showToolbarSort?: boolean
-    /** Optional tabs on the left side of the toolbar */
-    tabs?: {
-        items: { value: string; label: string; icon?: LucideIcon; badge?: string | number; hidden?: boolean; disabled?: boolean }[]
-        value: string
-        onValueChange: (value: string) => void
-    }
-    /** Optional analytics panel button in the toolbar button group */
+    smartSearch?: React.ReactNode
+    sortOptions?: boolean
     analyticsPanel?: AnalyticsPanelConfig
     onRowClick?: (row: TData) => void
     /** Layout variant. Use 'embedded' when the table lives inside a card/panel (no outer border, compact toolbar). Use 'standalone' for full-page tables with border. Use 'minimal' for simple display tables inside tabs/detail panels (no toolbar, no pagination). Use 'compact' for dense CSS Grid tables inside modals/drawers (no toolbar, no pagination, no border). */
@@ -100,18 +87,14 @@ export interface DataTableProps<TData, TValue> {
     viewOptions?: { label: string; value: string; icon: React.ComponentType<{ className?: string }> }[]
     currentView?: string
     onViewChange?: (view: string) => void
-    showColumnToggle?: boolean
+    columnToggle?: boolean
     renderFooter?: (table: ReactTable<TData>) => React.ReactNode
     customFilters?: React.ReactNode
-    isCustomFiltered?: boolean
-    customFilterCount?: number
     getSubRows?: (originalRow: TData, index: number) => TData[] | undefined
     autoExpand?: boolean
     initialColumnFilters?: { id: string; value: unknown }[]
     /** Primary create action rendered at the right-most end of the toolbar, after the button group */
     createAction?: React.ReactNode
-    /** Custom actions/buttons rendered inside the main toolbar button group */
-    rightButtonGroupAction?: React.ReactNode
     /**
      * Empty-state copy. Flat fields describe the "no records at all" case
      * (entity truly empty). The optional `filtered` sub-object overrides the
@@ -166,21 +149,15 @@ export function DataTable<TData, TValue>({
     defaultPageSize = 20,
     pageSizeOptions = DEFAULT_PAGE_SIZE_OPTIONS,
     hideToolbar = false,
-    filterColumn,
-    searchPlaceholder,
-    globalFilterFields,
     facetedFilters,
     toolbarAction,
     onRowSelectionChange,
     initialColumnVisibility = DEFAULT_COLUMN_VISIBILITY,
     hiddenColumns = EMPTY_ARRAY,
-    useAdvancedFilter = false,
     onReset,
     renderCustomView,
-    leftAction,
-    rightAction,
-    showToolbarSort,
-    tabs,
+    smartSearch,
+    sortOptions,
     analyticsPanel,
     onRowClick,
     variant,
@@ -196,15 +173,12 @@ export function DataTable<TData, TValue>({
     viewOptions,
     currentView,
     onViewChange,
-    showColumnToggle,
+    columnToggle,
     renderFooter,
     customFilters,
-    isCustomFiltered,
-    customFilterCount,
     getSubRows,
     autoExpand,
     createAction,
-    rightButtonGroupAction,
     emptyState: customEmptyState,
     isFiltered,
     initialColumnFilters = EMPTY_ARRAY,
@@ -325,18 +299,15 @@ export function DataTable<TData, TValue>({
     }, [internalRowSelection, onRowSelectionChange])
 
     const showToolbar = !hideToolbar && !isMinimal && !isCompact && (
-        tabs ||
-        leftAction ||
-        filterColumn || globalFilterFields ||
+        smartSearch ||
         (facetedFilters && facetedFilters.length > 0) ||
         customFilters ||
         toolbarAction ||
-        rightAction ||
         createAction ||
         (viewOptions && viewOptions.length > 0) ||
-        showToolbarSort ||
+        sortOptions ||
         analyticsPanel ||
-        rightButtonGroupAction
+        columnToggle
     )
     const selectedRows = table.getSelectedRowModel().rows
     const selectedItems = React.useMemo(() => selectedRows.map(r => r.original), [selectedRows])
@@ -366,27 +337,18 @@ export function DataTable<TData, TValue>({
                 {showToolbar && !isMinimal && (
                     <DataTableToolbar
                         table={table}
-                        filterColumn={filterColumn}
-                        globalFilterFields={globalFilterFields}
-                        searchPlaceholder={searchPlaceholder}
                         facetedFilters={facetedFilters}
                         toolbarAction={toolbarAction}
-                        useAdvancedFilter={useAdvancedFilter}
                         onReset={onReset}
-                        leftAction={leftAction}
-                        rightAction={rightAction}
-                        showToolbarSort={showToolbarSort}
+                        sortOptions={sortOptions}
                         viewOptions={viewOptions}
                         currentView={currentView}
                         onViewChange={onViewChange}
-                        showColumnToggle={showColumnToggle}
+                        columnToggle={columnToggle}
                         customFilters={customFilters}
-                        isCustomFiltered={isCustomFiltered}
-                        customFilterCount={customFilterCount}
-                        createAction={createAction}
-                        rightButtonGroupAction={rightButtonGroupAction}
-                        tabs={tabs}
+                        smartSearch={smartSearch}
                         analyticsPanel={analyticsPanel}
+                        createAction={createAction}
                     />
                 )}
 
@@ -696,30 +658,21 @@ export function DataTable<TData, TValue>({
                     )}>
                             <DataTableToolbar
                                 table={table}
-                                filterColumn={filterColumn}
-                                globalFilterFields={globalFilterFields}
-                                searchPlaceholder={searchPlaceholder}
                                 facetedFilters={facetedFilters}
                                 toolbarAction={toolbarAction}
-                                useAdvancedFilter={useAdvancedFilter}
                                 onReset={onReset}
-                                leftAction={leftAction}
-                                rightAction={rightAction}
-                            showToolbarSort={showToolbarSort}
-                            viewOptions={viewOptions}
-                            currentView={currentView}
-                            onViewChange={onViewChange}
-                            showColumnToggle={showColumnToggle}
-                            customFilters={customFilters}
-                            isCustomFiltered={isCustomFiltered}
-                            customFilterCount={customFilterCount}
-                            createAction={createAction}
-                            rightButtonGroupAction={rightButtonGroupAction}
-                            tabs={tabs}
-                            analyticsPanel={analyticsPanel}
-                        />
-                    </div>
-                )}
+                                sortOptions={sortOptions}
+                                viewOptions={viewOptions}
+                                currentView={currentView}
+                                onViewChange={onViewChange}
+                                columnToggle={columnToggle}
+                                customFilters={customFilters}
+                                smartSearch={smartSearch}
+                                analyticsPanel={analyticsPanel}
+                                createAction={createAction}
+                            />
+                        </div>
+                    )}
 
                 <div className={cn("flex-1 min-h-0", renderCustomView ? "overflow-x-auto" : "flex flex-col overflow-hidden")}>
                     {renderCustomView ? (
@@ -789,27 +742,18 @@ export function DataTable<TData, TValue>({
                 )}>
                     <DataTableToolbar
                         table={table}
-                        filterColumn={filterColumn}
-                        globalFilterFields={globalFilterFields}
-                        searchPlaceholder={searchPlaceholder}
                         facetedFilters={facetedFilters}
                         toolbarAction={toolbarAction}
-                        useAdvancedFilter={useAdvancedFilter}
                         onReset={onReset}
-                        leftAction={leftAction}
-                        rightAction={rightAction}
-                        showToolbarSort={showToolbarSort}
+                        sortOptions={sortOptions}
                         viewOptions={viewOptions}
                         currentView={currentView}
                         onViewChange={onViewChange}
-                        showColumnToggle={showColumnToggle}
+                        columnToggle={columnToggle}
                         customFilters={customFilters}
-                        isCustomFiltered={isCustomFiltered}
-                        customFilterCount={customFilterCount}
-                        createAction={createAction}
-                        rightButtonGroupAction={rightButtonGroupAction}
-                        tabs={tabs}
+                        smartSearch={smartSearch}
                         analyticsPanel={analyticsPanel}
+                        createAction={createAction}
                     />
                 </div>
             )}

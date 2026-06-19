@@ -122,7 +122,7 @@ export default function AbsencesPageClient({ initialAbsences }: AbsencesPageClie
                     isLoading={loading}
                     isRefetching={isRefetching}
                     variant="embedded"
-                    leftAction={<SmartSearchBar searchDef={absenceSearchDef} placeholder="Buscar inasistencias..." className="w-full" />}
+                    smartSearch={<SmartSearchBar searchDef={absenceSearchDef} placeholder="Buscar inasistencias..." className="w-full" />}
                     defaultPageSize={20}
                     onRowClick={(row: Absence) => { setEditingAbsence(row); setDialogOpen(true) }}
                     createAction={createAction}

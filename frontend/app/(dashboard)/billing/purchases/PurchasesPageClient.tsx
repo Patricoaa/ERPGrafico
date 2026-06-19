@@ -382,7 +382,7 @@ export default function PurchasesPageClient({ initialInvoices }: PurchasesPageCl
                         title: "Aún no hay documentos de compra",
                         description: "Las facturas y boletas de proveedores que registres aparecerán aquí.",
                     }}
-                    leftAction={
+                    smartSearch={
                         <SmartSearchBar
                             searchDef={purchaseInvoiceSearchDef}
                             placeholder="Buscar por proveedor, folio o fecha..."
@@ -411,7 +411,6 @@ export default function PurchasesPageClient({ initialInvoices }: PurchasesPageCl
                             ],
                         },
                     ]}
-                    useAdvancedFilter={true}
                     defaultPageSize={20}
                 />
             </div>

@@ -189,8 +189,6 @@ export function PartnerLedgerDrawer({
                         data={transactionsWithBalance}
                         isLoading={loading}
                         variant="standalone"
-                        searchPlaceholder="Buscar por concepto (ej: aporte, retiro)..."
-                        filterColumn="description"
                         toolbarAction={
                             <>
                                 <DropdownMenuItem

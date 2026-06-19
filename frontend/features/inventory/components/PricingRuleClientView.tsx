@@ -236,7 +236,7 @@ export function PricingRuleClientView({ externalOpen, onExternalOpenChange, crea
                     isLoading={isLoading}
                     entityLabel="inventory.pricingrule"
                     variant="embedded"
-                    leftAction={<SmartSearchBar searchDef={pricingRuleSearchDef} placeholder="Buscar reglas de precio..." className="w-full" />}
+                    smartSearch={<SmartSearchBar searchDef={pricingRuleSearchDef} placeholder="Buscar reglas de precio..." className="w-full" />}
                     createAction={createAction}
                     isFiltered={isFiltered}
                     emptyState={{

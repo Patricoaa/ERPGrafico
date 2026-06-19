@@ -447,7 +447,7 @@ export function ProductClientView({ externalOpen, onExternalOpenChange, createAc
                     data={displayProducts}
                     isLoading={isLoading}
                     variant="embedded"
-                    leftAction={<SmartSearchBar searchDef={productSearchDef} placeholder="Buscar producto..." className="w-full" />}
+                    smartSearch={<SmartSearchBar searchDef={productSearchDef} placeholder="Buscar producto..." className="w-full" />}
                     initialColumnVisibility={initialColumnVisibility}
                     renderCard={(product: Product) => (
                         <EntityCard key={product.id} onClick={() => {

@@ -168,8 +168,7 @@ export function StockReport() {
                     data={filteredReport}
                     isLoading={isLoading}
                     variant="embedded"
-                    leftAction={<SmartSearchBar searchDef={stockReportSearchDef} placeholder="Buscar por producto, SKU o categoría..." className="w-full" />}
-                    useAdvancedFilter={true}
+                    smartSearch={<SmartSearchBar searchDef={stockReportSearchDef} placeholder="Buscar por producto, SKU o categoría..." className="w-full" />}
                     defaultPageSize={50}
                     isFiltered={isFiltered}
                     emptyState={{

@@ -158,7 +158,7 @@ export default function AdvancesPageClient({ initialAdvances }: AdvancesPageClie
                     isRefetching={isRefetching}
                     entityLabel="hr.salaryadvance"
                     variant="embedded"
-                    leftAction={<SmartSearchBar searchDef={salaryAdvanceSearchDef} placeholder="Buscar anticipos..." className="w-full" />}
+                    smartSearch={<SmartSearchBar searchDef={salaryAdvanceSearchDef} placeholder="Buscar anticipos..." className="w-full" />}
                     defaultPageSize={20}
                     createAction={createAction}
                     isFiltered={isFiltered}

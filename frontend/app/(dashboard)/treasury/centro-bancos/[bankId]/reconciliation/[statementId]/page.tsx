@@ -332,8 +332,6 @@ export default function BankStatementDetailPage({
                     columns={columns}
                     data={statement.lines}
                     variant="embedded"
-                    filterColumn="description"
-                    searchPlaceholder="Buscar por descripción o referencia..."
                     facetedFilters={[
                         {
                             column: "reconciliation_state",
@@ -347,7 +345,6 @@ export default function BankStatementDetailPage({
                             ]
                         }
                     ]}
-                    useAdvancedFilter
                     defaultPageSize={20}
                     createAction={
                         statement.state !== 'CONFIRMED' && statement.reconciliation_progress < 100 ? (

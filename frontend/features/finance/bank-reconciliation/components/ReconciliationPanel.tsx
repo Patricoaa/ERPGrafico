@@ -809,7 +809,6 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                                             columns={bankColumns}
                                             data={unreconciledLines}
                                             variant="embedded"
-                                            searchPlaceholder="Buscar movimiento..."
                                             rowSelection={bankRowSelection}
                                             onRowSelectionChange={handleLineSelectionChange}
                                             skeletonRows={10}
@@ -874,7 +873,6 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                                             columns={paymentColumns}
                                             data={unreconciledPayments}
                                             variant="embedded"
-                                            searchPlaceholder="Buscar pago..."
                                             rowSelection={systemRowSelection}
                                             onRowSelectionChange={handlePaymentSelectionChange}
                                             skeletonRows={10}

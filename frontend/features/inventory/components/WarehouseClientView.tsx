@@ -181,7 +181,7 @@ export function WarehouseClientView({ externalOpen, onExternalOpenChange, create
                     data={filterFn(warehouses)}
                     isLoading={isLoading}
                     variant="embedded"
-                    leftAction={<SmartSearchBar searchDef={warehouseSearchDef} placeholder="Buscar almacén..." className="w-full" />}
+                    smartSearch={<SmartSearchBar searchDef={warehouseSearchDef} placeholder="Buscar almacén..." className="w-full" />}
                     bulkActions={bulkActions}
                     createAction={createAction}
                     isFiltered={isFiltered}

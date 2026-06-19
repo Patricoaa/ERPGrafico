@@ -483,25 +483,23 @@ export function UnbilledChargesView({
                             onScopeChange: (v) => applyFilter('scope', v),
                         },
                     }}
-                    leftAction={
-                        <div className="flex items-center gap-1 w-full">
-                            {creditCardAccounts.length > 1 && (
-                                <UnderlineTabs
-                                    items={creditCardAccounts.map(a => ({ value: String(a.id), label: a.name }))}
-                                    value={String(filters.card ?? creditCardAccounts[0]?.id ?? '')}
-                                    onValueChange={(v) => applyFilter('card', v)}
-                                    orientation="horizontal"
-                                    variant="underline"
-                                    className="w-auto shrink-0"
-                                    headerClassName="h-9 px-0 bg-transparent"
-                                    contentClassName="hidden"
-                                >
-                                    <div />
-                                </UnderlineTabs>
-                            )}
-                            <SmartSearchBar searchDef={searchDef} placeholder="Buscar cargos..." className="flex-1" />
-                        </div>
+                    customFilters={
+                        creditCardAccounts.length > 1 ? (
+                            <UnderlineTabs
+                                items={creditCardAccounts.map(a => ({ value: String(a.id), label: a.name }))}
+                                value={String(filters.card ?? creditCardAccounts[0]?.id ?? '')}
+                                onValueChange={(v) => applyFilter('card', v)}
+                                orientation="horizontal"
+                                variant="underline"
+                                className="w-auto"
+                                headerClassName="h-7 px-0 bg-transparent"
+                                contentClassName="hidden"
+                            >
+                                <div />
+                            </UnderlineTabs>
+                        ) : null
                     }
+                    smartSearch={<SmartSearchBar searchDef={searchDef} placeholder="Buscar cargos..." className="flex-1" />}
                     createAction={actionButtons}
                     emptyState={{
                         context: 'treasury',
