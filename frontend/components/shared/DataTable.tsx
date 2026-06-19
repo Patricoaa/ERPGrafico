@@ -330,8 +330,8 @@ export function DataTable<TData, TValue>({
     if (isLoading) {
         return (
             <div ref={containerRef} className={cn(
-                isEmbedded && "relative flex flex-col h-full space-y-1 min-h-0",
-                !isEmbedded && !isMinimal && "space-y-4",
+                isEmbedded && "relative flex flex-col h-full w-full space-y-1 min-h-0",
+                !isEmbedded && !isMinimal && "w-full space-y-4",
                 isMinimal && "space-y-0"
             )}>
                 {showToolbar && !isMinimal && (
@@ -648,11 +648,11 @@ export function DataTable<TData, TValue>({
         const isTableEmpty = !renderCustomView && table.getRowModel().rows.length === 0
 
         return (
-            <div ref={containerRef} className="relative flex flex-col h-full space-y-1 min-h-0">
-                {/* Toolbar Section (Outside) */}
-                {showToolbar && (
+            <div ref={containerRef} className="relative flex flex-col h-full w-full space-y-1 min-h-0">
+                    {/* Toolbar Section (Outside) */}
+                    {showToolbar && (
                     <div className={cn(
-                        "px-1 shrink-0",
+                        "w-full px-1 shrink-0",
                         !isInModal && "sticky top-0 z-20 bg-transparent py-2",
                         toolbarClassName
                     )}>
@@ -734,9 +734,10 @@ export function DataTable<TData, TValue>({
 
     // ─── Classic Mode (unchanged) ─────────────────────────────────────────────
     return (
-        <div ref={containerRef} className="space-y-4">
+        <div ref={containerRef} className="w-full space-y-4">
             {showToolbar && (
                 <div className={cn(
+                    "w-full",
                     !isInModal && "sticky top-0 z-20 bg-transparent py-2",
                     toolbarClassName
                 )}>
