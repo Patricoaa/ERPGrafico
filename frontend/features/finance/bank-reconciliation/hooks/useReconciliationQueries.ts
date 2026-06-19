@@ -45,20 +45,6 @@ export interface QueryPaginationParams {
     type?: string
 }
 
-export function useDashboardDataQuery(selectedAccount: string = 'all') {
-    return useQuery({
-        queryKey: reconciliationKeys.dashboard(selectedAccount),
-        queryFn: async () => {
-            const params = selectedAccount !== 'all' ? { treasury_account: selectedAccount } : {}
-            const [stats, trend, pending] = await Promise.all([
-                financeApi.getDashboardData(params),
-                financeApi.getDashboardHistory(params),
-                financeApi.getDashboardPending(params),
-            ])
-            return { stats, trend, pending }
-        }
-    })
-}
 
 export function useUnreconciledLinesQuery(statementId: number, params: QueryPaginationParams = {}) {
     return useQuery({

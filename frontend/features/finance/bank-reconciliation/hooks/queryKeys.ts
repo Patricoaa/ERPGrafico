@@ -4,7 +4,7 @@ export const reconciliationKeys = {
     statement: (id: number) => [...reconciliationKeys.statements(), id] as const,
     accounts: () => [...reconciliationKeys.all, 'accounts'] as const,
     settings: (accountId?: number) => [...reconciliationKeys.all, 'settings', accountId] as const,
-    dashboard: (accountId: string) => [...reconciliationKeys.all, 'dashboard', accountId] as const,
+
     unreconciledLines: (statementId: number, params: Record<string, unknown> = {}) => [...reconciliationKeys.all, 'unreconciled-lines', statementId, params] as const,
     unreconciledPayments: (accountId: number, params: Record<string, unknown> = {}) => [...reconciliationKeys.all, 'unreconciled-payments', accountId, params] as const,
     lineSuggestions: (lineId: number) => [...reconciliationKeys.all, 'line-suggestions', lineId] as const,
