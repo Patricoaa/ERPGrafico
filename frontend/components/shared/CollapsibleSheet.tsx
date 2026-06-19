@@ -125,7 +125,7 @@ export function CollapsibleSheet({
             side={side}
             data-sheet-id={sheetId}
             className={cn(
-                "p-0 h-full",
+                "p-0 h-full panel-surface",
                 "top-[var(--page-padding-top)] bottom-[var(--page-gap-bottom)] right-4 h-[calc(100vh-var(--page-padding-top)-var(--page-gap-bottom))]",
                 "data-[state=open]:animate-none data-[state=closed]:animate-none duration-0 sm:duration-500",
                 (!open || isCollapsed) ? "border-primary/10" : "translate-x-0",

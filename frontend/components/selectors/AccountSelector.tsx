@@ -25,6 +25,7 @@ interface AccountSelectorProps {
     showAll?: boolean
     isReconcilable?: boolean
     disabled?: boolean
+    required?: boolean
     label?: string
     error?: string
     className?: string
@@ -54,7 +55,7 @@ const accountColumns: ColumnDef<Account, unknown>[] = [
     },
 ]
 
-export function AccountSelector({ value, onChange, placeholder = "Seleccionar cuenta...", accountType, showAll = false, isReconcilable, disabled = false, label, error, className }: AccountSelectorProps) {
+export function AccountSelector({ value, onChange, placeholder = "Seleccionar cuenta...", accountType, showAll = false, isReconcilable, disabled = false, required, label, error, className }: AccountSelectorProps) {
     const [open, setOpen] = useState(false)
     const [modalOpen, setModalOpen] = useState(false)
     const [searchTerm, setSearchTerm] = useState("")
@@ -133,7 +134,7 @@ export function AccountSelector({ value, onChange, placeholder = "Seleccionar cu
             >
                 {label && (
                     <legend className={cn("notched-legend", error && "text-destructive")}>
-                        {label}
+                        {label}{required && <span className="text-destructive ml-0.5">*</span>}
                     </legend>
                 )}
                 <Popover open={open} onOpenChange={setOpen}>

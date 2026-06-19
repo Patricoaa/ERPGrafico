@@ -12,6 +12,7 @@ import {
 } from '@/components/shared'
 import { Send, AlertCircle, Settings } from 'lucide-react'
 import { useLoanMutations } from './hooks'
+import { showApiError } from '@/lib/errors'
 import { AccountSelector } from '@/components/selectors/AccountSelector'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { useTreasurySettings } from '@/features/settings'
@@ -75,22 +76,26 @@ export function LoanDisburseDrawer({ open, onOpenChange, loan, onSuccess }: Prop
     if (!loan) return null
 
     const onSubmit = async (values: FormValues) => {
-        await disburse({
-            id: loan.id,
-            payload: {
-                date: values.date,
-                opening_fee: values.opening_fee,
-                stamp_tax: values.stamp_tax,
-                commission_expense_account: values.commission_expense_account
-                    ? parseInt(values.commission_expense_account)
-                    : null,
-                stamp_tax_expense_account: values.stamp_tax_expense_account
-                    ? parseInt(values.stamp_tax_expense_account)
-                    : null,
-            },
-        })
-        onSuccess?.()
-        onOpenChange(false)
+        try {
+            await disburse({
+                id: loan.id,
+                payload: {
+                    date: values.date,
+                    opening_fee: values.opening_fee,
+                    stamp_tax: values.stamp_tax,
+                    commission_expense_account: values.commission_expense_account
+                        ? parseInt(values.commission_expense_account)
+                        : null,
+                    stamp_tax_expense_account: values.stamp_tax_expense_account
+                        ? parseInt(values.stamp_tax_expense_account)
+                        : null,
+                },
+            })
+            onSuccess?.()
+            onOpenChange(false)
+        } catch (error) {
+            showApiError(error, "Error al desembolsar crédito")
+        }
     }
 
     return (

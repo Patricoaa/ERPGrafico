@@ -127,6 +127,7 @@ export function CreatePayrollDrawer({ open, onOpenChange, onSaved, trigger }: Cr
                         <FormField control={form.control} name="employee" render={({ field, fieldState }) => (
                             <LabeledSelect
                                 label="Empleado"
+                                required
                                 value={field.value}
                                 onChange={field.onChange}
                                 error={fieldState.error?.message}
@@ -141,6 +142,7 @@ export function CreatePayrollDrawer({ open, onOpenChange, onSaved, trigger }: Cr
                         <FormField control={form.control} name="period_year" render={({ field, fieldState }) => (
                             <LabeledSelect
                                 label="Año"
+                                required
                                 value={field.value}
                                 onChange={field.onChange}
                                 error={fieldState.error?.message}
@@ -153,6 +155,7 @@ export function CreatePayrollDrawer({ open, onOpenChange, onSaved, trigger }: Cr
                         <FormField control={form.control} name="period_month" render={({ field, fieldState }) => (
                             <LabeledSelect
                                 label="Mes"
+                                required
                                 value={field.value}
                                 onChange={field.onChange}
                                 error={fieldState.error?.message}

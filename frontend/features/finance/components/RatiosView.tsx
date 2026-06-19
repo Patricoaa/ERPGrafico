@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
-import { EmptyState, MoneyDisplay, PageContainer } from '@/components/shared'
+import { EmptyState, MoneyDisplay, PageContainer, ChartTooltip } from '@/components/shared'
 import { formatMoney } from "@/lib/money"
 import { ResponsivePie } from '@nivo/pie'
 import { ResponsiveLine } from '@nivo/line'
@@ -186,10 +186,10 @@ export const RatiosView: React.FC<RatiosViewProps> = ({ date, showComparison, co
                             arcLinkLabelsStraightLength={8}
                             arcLabelsSkipAngle={20}
                             tooltip={({ datum }) => (
-                                <div className="rounded-lg border bg-background p-2 shadow-sm">
+                                <ChartTooltip>
                                     <p className="text-[10px] uppercase text-muted-foreground">{datum.id}</p>
                                     <p className="font-bold text-xs">Monto: {formatMoney(datum.value)}</p>
-                                </div>
+                                </ChartTooltip>
                             )}
                             legends={[
                                 {
@@ -227,10 +227,10 @@ export const RatiosView: React.FC<RatiosViewProps> = ({ date, showComparison, co
                             arcLinkLabelsStraightLength={8}
                             arcLabelsSkipAngle={20}
                             tooltip={({ datum }) => (
-                                <div className="rounded-lg border bg-background p-2 shadow-sm">
+                                <ChartTooltip>
                                     <p className="text-[10px] uppercase text-muted-foreground">{datum.id}</p>
                                     <p className="font-bold text-xs">Monto: {formatMoney(datum.value)}</p>
-                                </div>
+                                </ChartTooltip>
                             )}
                             legends={[
                                 {
@@ -284,10 +284,10 @@ export const RatiosView: React.FC<RatiosViewProps> = ({ date, showComparison, co
                                         tickPadding: 12,
                                     }}
                                     tooltip={({ point }) => (
-                                        <div className="rounded-lg border bg-background p-2 shadow-sm">
+                                        <ChartTooltip>
                                             <p className="text-[10px] uppercase text-muted-foreground">{String(point.data.x)}</p>
                                             <p className="text-xs font-bold">{String(point.seriesId)}: {Number(point.data.y).toFixed(2)}</p>
-                                        </div>
+                                        </ChartTooltip>
                                     )}
                                     legends={[
                                         {
@@ -333,10 +333,10 @@ export const RatiosView: React.FC<RatiosViewProps> = ({ date, showComparison, co
                                 format: (v) => formatMoney(v as number),
                             }}
                             tooltip={({ value, indexValue }) => (
-                                <div className="rounded-lg border bg-background p-2 shadow-sm">
+                                <ChartTooltip>
                                     <p className="text-[10px] uppercase text-muted-foreground">{indexValue as string}</p>
                                     <p className="font-bold text-xs">Monto: {formatMoney(value)}</p>
-                                </div>
+                                </ChartTooltip>
                             )}
                         />
                     </CardContent>

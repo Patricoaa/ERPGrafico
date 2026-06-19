@@ -168,6 +168,7 @@ export function AdvanceDrawer({ open, onOpenChange, advance, employees: employee
                                             <FormField control={form.control} name="employee" render={({ field, fieldState }) => (
                                                 <LabeledSelect
                                                     label="Empleado"
+                                                    required
                                                     value={field.value}
                                                     onChange={field.onChange}
                                                     error={fieldState.error?.message}
@@ -207,7 +208,8 @@ export function AdvanceDrawer({ open, onOpenChange, advance, employees: employee
 
                                             <FormField control={form.control} name="payroll" render={({ field, fieldState }) => (
                                                 <LabeledSelect
-                                                    label="Vincular a Liquidación (Obligatorio)"
+                                                    label="Vincular a Liquidación"
+                                                    required
                                                     value={field.value}
                                                     onChange={field.onChange}
                                                     error={fieldState.error?.message}
@@ -245,6 +247,7 @@ export function AdvanceDrawer({ open, onOpenChange, advance, employees: employee
                                             <FormField control={form.control} name="employee" render={({ field, fieldState }) => (
                                                 <LabeledSelect
                                                     label="Empleado"
+                                                    required
                                                     value={field.value}
                                                     onChange={field.onChange}
                                                     error={fieldState.error?.message}
@@ -284,7 +287,8 @@ export function AdvanceDrawer({ open, onOpenChange, advance, employees: employee
 
                                             <FormField control={form.control} name="payroll" render={({ field, fieldState }) => (
                                                 <LabeledSelect
-                                                    label="Vincular a Liquidación (Obligatorio)"
+                                                    label="Vincular a Liquidación"
+                                                    required
                                                     value={field.value}
                                                     onChange={field.onChange}
                                                     error={fieldState.error?.message}

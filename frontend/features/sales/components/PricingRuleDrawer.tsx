@@ -12,6 +12,7 @@ import {
 import { cn } from "@/lib/utils"
 import { useUoMs } from "@/features/inventory/hooks/useUoMs"
 import { usePricingRuleMutations } from "@/features/inventory"
+import { showApiError } from "@/lib/errors"
 import { toast } from "sonner"
 import { Layers, Zap, DollarSign, Calendar, Printer } from "lucide-react"
 import { PricingUtils } from '@/features/inventory/utils/pricing'
@@ -177,8 +178,7 @@ export function PricingRuleDrawer({ auditSidebar, initialData, onSuccess, open, 
             onSuccess?.()
             onOpenChange?.(false)
         } catch (error) {
-            console.error(error)
-            toast.error("Error al guardar la regla")
+            showApiError(error, "Error al guardar la regla de precio")
         }
     }
 
@@ -190,14 +190,14 @@ export function PricingRuleDrawer({ auditSidebar, initialData, onSuccess, open, 
                     control={form.control}
                     name="name"
                     render={({ field }) => (
-                        <LabeledInput label="Nombre de la Regla" placeholder="Ej: Descuento Mayorista" {...field} />
+                        <LabeledInput label="Nombre de la Regla" required placeholder="Ej: Descuento Mayorista" {...field} />
                     )}
                 />
                 <FormField
                     control={form.control}
                     name="priority"
                     render={({ field }) => (
-                        <LabeledInput label="Prioridad" type="number" {...field} onChange={e => field.onChange(parseInt(e.target.value))} />
+                        <LabeledInput label="Prioridad" required type="number" {...field} onChange={e => field.onChange(parseInt(e.target.value))} />
                     )}
                 />
             </div>
@@ -208,7 +208,7 @@ export function PricingRuleDrawer({ auditSidebar, initialData, onSuccess, open, 
                     name="product"
                     render={({ field }) => (
                         <ProductSelector
-                            label="Producto Específico (Opcional)"
+                            label="Producto Específico (opcional)"
                             value={field.value?.toString() || null}
                             onChange={(val) => {
                                 field.onChange(val ? parseInt(val) : null)
@@ -251,6 +251,7 @@ export function PricingRuleDrawer({ auditSidebar, initialData, onSuccess, open, 
                     render={({ field }) => (
                         <LabeledSelect
                             label="Cuando la Cantidad es..."
+                            required
                             onChange={field.onChange}
                             value={field.value}
                             options={[
@@ -268,7 +269,7 @@ export function PricingRuleDrawer({ auditSidebar, initialData, onSuccess, open, 
                     control={form.control}
                     name="min_quantity"
                     render={({ field }) => (
-                        <LabeledInput label={operator === "BT" ? "Desde" : "Cantidad"} type="number" {...field} />
+                        <LabeledInput label={operator === "BT" ? "Desde" : "Cantidad"} required type="number" {...field} />
                     )}
                 />
                 {operator === "BT" && (
@@ -294,6 +295,7 @@ export function PricingRuleDrawer({ auditSidebar, initialData, onSuccess, open, 
                     render={({ field }) => (
                         <LabeledSelect
                             label="Tipo de Ajuste"
+                            required
                             onChange={field.onChange}
                             value={field.value}
                             options={[
@@ -396,9 +398,9 @@ export function PricingRuleDrawer({ auditSidebar, initialData, onSuccess, open, 
                                 }
                                 field.onChange(date.toISOString().split('T')[0])
                             }}
-                            label="Válida Desde"
+                            label="Válida Desde (opcional)"
                             validationType="tax"
-                            required
+                            required={false}
                         />
                     )}
                 />

@@ -44,6 +44,7 @@ export * from './Chip';
 export * from './HubStatus';
 export * from './EntityBadge';
 export * from './SourceDocumentLink';
+export * from './ChartTooltip';
 export * from './AutoSaveStatusBadge';
 export * from './ReportTable';
 export * from './DataManagement';

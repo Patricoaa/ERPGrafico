@@ -5,7 +5,7 @@ import { BaseModal, Chip, SkeletonShell, StatusBadge } from '@/components/shared
 
 import {useState} from "react"
 
-import { DataTable, StatCard } from "@/components/shared"
+import { DataTable, StatCard, ChartTooltip } from "@/components/shared"
 import {
     History,
     TrendingUp,
@@ -262,14 +262,10 @@ export function ProductInsightsModal({ productId, productName, open, onOpenChang
                                             tickPadding: 10,
                                         }}
                                         tooltip={({ point }) => (
-                                            <div className="rounded-lg border bg-popover p-2 shadow-sm">
-                                                <p className="text-[10px] uppercase text-muted-foreground">
-                                                    {format(new Date(String(point.data.x)), 'PPP', { locale: es })}
-                                                </p>
-                                                    <p className="text-xs font-bold">
-                                                    {String(point.seriesId)}: {formatCurrency(Number(point.data.y))}
-                                                </p>
-                                            </div>
+                                            <ChartTooltip className="bg-popover">
+                                                <p className="text-[10px] uppercase text-muted-foreground">{String(point.data.xFormatted ?? point.data.x)}</p>
+                                                <p className="font-bold text-xs">{String(point.seriesId)}: {formatCurrency(Number(point.data.yFormatted ?? point.data.y))}</p>
+                                            </ChartTooltip>
                                         )}
                                         legends={[
                                             {

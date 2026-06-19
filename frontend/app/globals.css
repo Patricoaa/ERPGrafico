@@ -246,8 +246,6 @@
   /* 16px (Overlays) */
   --radius-xl: calc(var(--radius) + 12px);
   /* 20px */
-  --radius-2xl: calc(var(--radius) + 24px);
-  /* Pill-ish */
 
   /*
    * LAYER 1 — PROCESS COLORS (CMYK + Pantone)

@@ -332,6 +332,7 @@ export function EmployeeDrawer({ open, onOpenChange, employee, onSaved, trigger,
                                                                 render={({ field, fieldState }) => (
                                                                     <AdvancedContactSelector
                                                                         label="Contacto"
+                                                                        required
                                                                         value={field.value || null}
                                                                         onChange={(val) => field.onChange(val || "")}
                                                                         error={fieldState.error?.message}
@@ -342,7 +343,7 @@ export function EmployeeDrawer({ open, onOpenChange, employee, onSaved, trigger,
                                                         <div className="col-span-2">
                                                             <FormField control={form.control} name="position" render={({ field, fieldState }) => (
                                                                 <LabeledInput
-                                                                    label="Cargo"
+                                                                    label="Cargo (opcional)"
                                                                     placeholder="Ej: Vendedor"
                                                                     error={fieldState.error?.message}
                                                                     {...field}
@@ -352,7 +353,7 @@ export function EmployeeDrawer({ open, onOpenChange, employee, onSaved, trigger,
                                                         <div className="col-span-2">
                                                             <FormField control={form.control} name="department" render={({ field, fieldState }) => (
                                                                 <LabeledInput
-                                                                    label="Departamento"
+                                                                    label="Departamento (opcional)"
                                                                     placeholder="Ventas"
                                                                     error={fieldState.error?.message}
                                                                     {...field}
@@ -375,6 +376,7 @@ export function EmployeeDrawer({ open, onOpenChange, employee, onSaved, trigger,
                                                             <FormField control={form.control} name="contract_type" render={({ field, fieldState }) => (
                                                                 <LabeledSelect
                                                                     label="Tipo de Contrato"
+                                                                    required
                                                                     value={field.value}
                                                                     onChange={field.onChange}
                                                                     error={fieldState.error?.message}
@@ -388,7 +390,7 @@ export function EmployeeDrawer({ open, onOpenChange, employee, onSaved, trigger,
                                                         <div className="col-span-2">
                                                             <FormField control={form.control} name="start_date" render={({ field, fieldState }) => (
                                                                 <LabeledContainer
-                                                                    label="Fecha Ingreso"
+                                                                    label="Fecha Ingreso (opcional)"
                                                                     error={fieldState.error?.message}
                                                                 >
                                                                     <DatePicker
@@ -412,6 +414,7 @@ export function EmployeeDrawer({ open, onOpenChange, employee, onSaved, trigger,
                                                             <FormField control={form.control} name="status" render={({ field, fieldState }) => (
                                                                 <LabeledSelect
                                                                     label="Estado Ficha"
+                                                                    required
                                                                     value={field.value}
                                                                     onChange={field.onChange}
                                                                     error={fieldState.error?.message}
@@ -433,6 +436,7 @@ export function EmployeeDrawer({ open, onOpenChange, employee, onSaved, trigger,
                                                             <FormField control={form.control} name="jornada_type" render={({ field, fieldState }) => (
                                                                 <LabeledSelect
                                                                     label="Régimen de Trabajo"
+                                                                    required
                                                                     value={field.value}
                                                                     onChange={field.onChange}
                                                                     error={fieldState.error?.message}
@@ -449,6 +453,7 @@ export function EmployeeDrawer({ open, onOpenChange, employee, onSaved, trigger,
                                                             <FormField control={form.control} name="dias_pactados" render={({ field, fieldState }) => (
                                                                 <LabeledInput
                                                                     label="Días Mensuales"
+                                                                    required
                                                                     type="number"
                                                                     min="1"
                                                                     max="31"
@@ -463,6 +468,7 @@ export function EmployeeDrawer({ open, onOpenChange, employee, onSaved, trigger,
                                                             <FormField control={form.control} name="jornada_hours" render={({ field, fieldState }) => (
                                                                 <LabeledInput
                                                                     label="Horas / Sem"
+                                                                    required
                                                                     type="number"
                                                                     step="0.5"
                                                                     error={fieldState.error?.message}
@@ -514,6 +520,7 @@ export function EmployeeDrawer({ open, onOpenChange, employee, onSaved, trigger,
                                                             <FormField control={form.control} name="salud_type" render={({ field, fieldState }) => (
                                                                 <LabeledSelect
                                                                     label="Sistema de Salud"
+                                                                    required
                                                                     value={field.value}
                                                                     onChange={field.onChange}
                                                                     error={fieldState.error?.message}
@@ -530,6 +537,7 @@ export function EmployeeDrawer({ open, onOpenChange, employee, onSaved, trigger,
                                                                 <FormField control={form.control} name="isapre_amount_uf" render={({ field, fieldState }) => (
                                                                     <LabeledInput
                                                                         label="Monto Pactado (UF)"
+                                                                        required
                                                                         type="number"
                                                                         step="0.0001"
                                                                         hint="Se descontará el mayor entre el 7% y este monto."
@@ -545,6 +553,7 @@ export function EmployeeDrawer({ open, onOpenChange, employee, onSaved, trigger,
                                                             <FormField control={form.control} name="asignacion_familiar" render={({ field, fieldState }) => (
                                                                 <LabeledSelect
                                                                     label="Tramo Asignación Familiar"
+                                                                    required
                                                                     value={field.value}
                                                                     onChange={field.onChange}
                                                                     error={fieldState.error?.message}
@@ -561,6 +570,7 @@ export function EmployeeDrawer({ open, onOpenChange, employee, onSaved, trigger,
                                                             <FormField control={form.control} name="cargas_familiares" render={({ field, fieldState }) => (
                                                                 <LabeledInput
                                                                     label="Número de Cargas"
+                                                                    required
                                                                     type="number"
                                                                     min="0"
                                                                     error={fieldState.error?.message}
