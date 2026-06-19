@@ -77,7 +77,7 @@ export function Step3_Delivery({ deliveryData, setDeliveryData, orderLines }: St
     if (isServiceMode) {
         return (
             <div className="space-y-6">
-                <div className="flex items-start gap-3 p-4 bg-primary/5 border border-primary/20 rounded-lg">
+                <div className="flex items-start gap-3 p-4 bg-primary/5 border border-primary/20 rounded-md">
                     <Calendar className="h-5 w-5 shrink-0 mt-0.5 text-primary" />
                     <div className="space-y-1">
                         <p className="text-xs font-bold uppercase tracking-wider">Cumplimiento de Servicios</p>
@@ -137,14 +137,14 @@ export function Step3_Delivery({ deliveryData, setDeliveryData, orderLines }: St
                 <Label
                     htmlFor="del-immediate"
                     className={cn(
-                        "flex items-center gap-4 rounded-lg border-2 border-muted bg-popover p-4 hover:bg-accent cursor-pointer transition-all",
+                        "flex items-center gap-4 rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent cursor-pointer transition-all",
                         deliveryData.type === 'IMMEDIATE' && "border-primary bg-primary/5",
                         hasRestrictedItems && "opacity-50 pointer-events-none grayscale"
                     )}
                 >
                     <RadioGroupItem value="IMMEDIATE" id="del-immediate" className="sr-only" disabled={hasRestrictedItems} />
                     <div className={cn(
-                        "p-2 rounded-lg bg-background border transition-colors",
+                        "p-2 rounded-md bg-background border transition-colors",
                         deliveryData.type === 'IMMEDIATE' ? 'text-primary border-primary/30' : 'text-muted-foreground'
                     )}>
                         <Package className="h-5 w-5" />
@@ -158,13 +158,13 @@ export function Step3_Delivery({ deliveryData, setDeliveryData, orderLines }: St
                 <Label
                     htmlFor="del-scheduled"
                     className={cn(
-                        "flex items-center gap-4 rounded-lg border-2 border-muted bg-popover p-4 hover:bg-accent cursor-pointer transition-all",
+                        "flex items-center gap-4 rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent cursor-pointer transition-all",
                         deliveryData.type === 'SCHEDULED' && "border-primary bg-primary/5"
                     )}
                 >
                     <RadioGroupItem value="SCHEDULED" id="del-scheduled" className="sr-only" />
                     <div className={cn(
-                        "p-2 rounded-lg bg-background border transition-colors",
+                        "p-2 rounded-md bg-background border transition-colors",
                         deliveryData.type === 'SCHEDULED' ? 'text-primary border-primary/30' : 'text-muted-foreground'
                     )}>
                         <Calendar className="h-5 w-5" />
@@ -180,13 +180,13 @@ export function Step3_Delivery({ deliveryData, setDeliveryData, orderLines }: St
                 <Label
                     htmlFor="del-partial"
                     className={cn(
-                        "flex items-center gap-4 rounded-lg border-2 border-muted bg-popover p-4 hover:bg-accent cursor-pointer transition-all",
+                        "flex items-center gap-4 rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent cursor-pointer transition-all",
                         deliveryData.type === 'PARTIAL' && "border-primary bg-primary/5"
                     )}
                 >
                     <RadioGroupItem value="PARTIAL" id="del-partial" className="sr-only" />
                     <div className={cn(
-                        "p-2 rounded-lg bg-background border transition-colors",
+                        "p-2 rounded-md bg-background border transition-colors",
                         deliveryData.type === 'PARTIAL' ? 'text-primary border-primary/30' : 'text-muted-foreground'
                     )}>
                         <Truck className="h-5 w-5" />
@@ -322,14 +322,14 @@ export function Step3_Delivery({ deliveryData, setDeliveryData, orderLines }: St
             )}
 
             {hasRestrictedItems && (
-                <div className="flex items-start gap-3 p-4 bg-destructive/10 border border-destructive/30 rounded-lg text-destructive [&>svg]:text-destructive">
+                <div className="flex items-start gap-3 p-4 bg-destructive/10 border border-destructive/30 rounded-md text-destructive [&>svg]:text-destructive">
                     <AlertTriangle className="h-4 w-4 shrink-0 mt-0.5" />
                     <p className="text-xs font-medium">Hay {strictManufacturableItems.length} productos que requieren fabricación. El despacho inmediato está deshabilitado para estos ítems.</p>
                 </div>
             )}
 
             {isMixedMode && (
-                <div className="flex items-start gap-3 p-4 bg-info/10 border border-info/30 rounded-lg text-info [&>svg]:text-info">
+                <div className="flex items-start gap-3 p-4 bg-info/10 border border-info/30 rounded-md text-info [&>svg]:text-info">
                     <Info className="h-4 w-4 shrink-0 mt-0.5" />
                     <p className="text-xs font-medium">Los servicios se cumplen según la fecha programada. Solo los productos físicos aparecen en el detalle de despacho.</p>
                 </div>
