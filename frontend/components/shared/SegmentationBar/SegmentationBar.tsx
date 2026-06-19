@@ -30,13 +30,14 @@ export function SegmentationBar({ def }: SegmentationBarProps) {
   return (
     <>
       {def.segments.map((segment) => (
-        <SegmentItem
-          key={segment.key}
-          segment={segment}
-          filters={filters}
-          apply={apply}
-          remove={remove}
-        />
+        <div key={segment.key} className="flex items-center shrink-0 bg-muted/30 rounded-sm px-1 h-9">
+          <SegmentItem
+            segment={segment}
+            filters={filters}
+            apply={apply}
+            remove={remove}
+          />
+        </div>
       ))}
     </>
   )
