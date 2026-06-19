@@ -1016,9 +1016,9 @@ function EstructuraForm() {
         }
     }
 
-    if (isLoading && !initialized) return <SkeletonShell isLoading ariaLabel="Cargando estructura contable..." />
-
     const formValues = useWatch({ control: form.control }) as AccountingFormValues
+
+    if (isLoading && !initialized) return <SkeletonShell isLoading ariaLabel="Cargando estructura contable..." />
 
     return (
         <div className="space-y-6">
