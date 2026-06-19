@@ -86,12 +86,14 @@ function TabsSegment({ def, filters, apply, remove }: TabsSegmentProps) {
   return (
     <Tabs value={currentValue} onValueChange={handleChange}>
       <TabsList className="h-7 p-0 gap-0 bg-transparent border-border/60 shrink-0">
-        <TabsTrigger
-          value=""
-          className="h-7 px-2 text-[10px] uppercase font-bold tracking-widest gap-1 data-[state=active]:bg-accent/50 data-[state=active]:shadow-none rounded-sm"
-        >
-          Todos
-        </TabsTrigger>
+        {!def.defaultValue && (
+          <TabsTrigger
+            value=""
+            className="h-7 px-2 text-[10px] uppercase font-bold tracking-widest gap-1 data-[state=active]:bg-accent/50 data-[state=active]:shadow-none rounded-sm"
+          >
+            Todos
+          </TabsTrigger>
+        )}
         {def.options.map((opt) => (
           <TabsTrigger
             key={opt.value}
