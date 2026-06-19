@@ -7,13 +7,18 @@ import type { FilterState } from './types'
 
 const PRESERVED_PARAMS = new Set(['selected'])
 
+function hasServerParam(field: FieldDef): field is Extract<FieldDef, { serverParam: string }> {
+  return 'serverParam' in field
+}
+
 function getServerParams(field: FieldDef): string[] {
-  return [field.serverParam]
+  if (hasServerParam(field)) return [field.serverParam]
+  return []
 }
 
 function getFieldLabelForParam(def: SearchDefinition, param: string): string {
   for (const field of def.fields) {
-    if (field.serverParam === param) return field.label
+    if (hasServerParam(field) && field.serverParam === param) return field.label
   }
   if (param === 'search') return 'Búsqueda'
   return param

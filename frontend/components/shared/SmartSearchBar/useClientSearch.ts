@@ -36,6 +36,7 @@ export function useClientSearch<T extends object>(
         }
 
         return searchDef.fields.every((field) => {
+          if (!('serverParam' in field)) return true
           if (field.serverParam === 'search') return true
 
           const filterVal = filters[field.serverParam]
