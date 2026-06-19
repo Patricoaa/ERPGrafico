@@ -1,5 +1,6 @@
 import api from '@/lib/api'
 import type { SaleOrder, SaleOrderFilters, SaleOrderPayload, SaleNote } from '../types'
+import type { SaleNoteFilters } from '../hooks/useSalesOrders'
 import { Invoice } from '@/features/billing/types'
 
 /**
@@ -11,10 +12,18 @@ export const salesApi = {
      */
     getOrders: async (filters?: SaleOrderFilters): Promise<SaleOrder[]> => {
         const params = new URLSearchParams()
-        if (filters?.status) params.append('status', filters.status)
         if (filters?.customer_name) params.append('customer_name', filters.customer_name)
         if (filters?.date_after) params.append('date_after', filters.date_after)
         if (filters?.date_before) params.append('date_before', filters.date_before)
+        if (filters?.total_min) params.append('total_min', filters.total_min)
+        if (filters?.total_max) params.append('total_max', filters.total_max)
+        if (filters?.number) params.append('number', filters.number)
+        if (filters?.product_name) params.append('product_name', filters.product_name)
+        if (filters?.delivery_status) params.append('delivery_status', filters.delivery_status)
+        if (filters?.origin_status) params.append('origin_status', filters.origin_status)
+        if (filters?.billing_status) params.append('billing_status', filters.billing_status)
+        if (filters?.payment_status) params.append('payment_status', filters.payment_status)
+        if (filters?.production_status) params.append('production_status', filters.production_status)
         if (filters?.pos_session) params.append('pos_session', String(filters.pos_session))
 
         const { data } = await api.get<SaleOrder[]>('/sales/orders/', { params })
@@ -84,30 +93,7 @@ export const salesApi = {
     /**
      * Fetch sales notes (credit/debit notes associated with orders)
      */
-    getSalesNotes: async (filters?: { date_after?: string, date_before?: string, customer_name?: string }): Promise<SaleNote[]> => {
-        const params = new URLSearchParams()
-        params.append('dte_type__in', 'NOTA_CREDITO,NOTA_DEBITO')
-        params.append('sale_order__isnull', 'true') // Actually false in logic: sale_order__isnull=false means it HAS a sale order. In Django filter: sale_order__isnull=false. 
-        // Wait, the original code used params object: { sale_order__isnull: false }
-        // api.get handles boolean to string conversion usually? Or maybe I should send 'false'.
-        // Let's verify original code.
-
-        if (filters?.date_after) params.append('date_after', filters.date_after)
-        if (filters?.date_before) params.append('date_before', filters.date_before)
-
-        // We need to pass sale_order__isnull=false. 
-        // If I use params.append('sale_order__isnull', 'false'), it might work depending on backend.
-        // Original code:
-        /*
-            const response = await api.get('/billing/invoices/', {
-                params: {
-                    dte_type__in: 'NOTA_CREDITO,NOTA_DEBITO',
-                    sale_order__isnull: false
-                }
-            })
-        */
-        // I will replicate this.
-
+    getSalesNotes: async (filters?: SaleNoteFilters): Promise<SaleNote[]> => {
         const { data } = await api.get<Invoice[]>('/billing/invoices/', {
             params: {
                 dte_type__in: 'NOTA_CREDITO,NOTA_DEBITO',
@@ -116,17 +102,6 @@ export const salesApi = {
             }
         })
 
-        const results = data
-        // Client-side filtering was also done in original code:
-        /*
-             const salesNotes = results.filter((inv: Invoice) =>
-                 ['NOTA_CREDITO', 'NOTA_DEBITO'].includes(inv.dte_type) && inv.sale_order
-             )
-        */
-        // The server filter `sale_order__isnull=false` should handle `inv.sale_order`.
-        // `dte_type__in` handles the type.
-        // So results should be correct.
-
-        return results
+        return data
     }
 }

@@ -96,10 +96,18 @@ export interface SaleOrder {
 }
 
 export interface SaleOrderFilters {
-    status?: string
     customer_name?: string
     date_after?: string
     date_before?: string
+    total_min?: string
+    total_max?: string
+    number?: string
+    product_name?: string
+    delivery_status?: string
+    origin_status?: string
+    billing_status?: string
+    payment_status?: string
+    production_status?: string
     pos_session?: number
 }
 

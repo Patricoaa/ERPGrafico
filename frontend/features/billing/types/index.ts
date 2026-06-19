@@ -53,6 +53,9 @@ export interface InvoiceFilters {
     mode?: 'sale' | 'purchase'
     date_from?: string
     date_to?: string
+    total_min?: string
+    total_max?: string
+    number?: string
 }
 
 export interface AnnulInvoicePayload {

@@ -3,10 +3,18 @@ import type { SegmentationDefinition } from '@/types/segmentation'
 export const invoiceSegDef: SegmentationDefinition = {
   segments: [
     {
+      key: 'period',
+      label: 'Período',
+      type: 'period',
+      serverParamFrom: 'date_from',
+      serverParamTo: 'date_to',
+    },
+    {
       key: 'status',
       label: 'Estado',
       type: 'tabs',
       serverParam: 'status',
+      variant: 'dropdown',
       options: [
         { label: 'Borrador', value: 'DRAFT' },
         { label: 'Emitido', value: 'POSTED' },
@@ -31,12 +39,13 @@ export const invoiceSegDef: SegmentationDefinition = {
       ],
     },
     {
-      key: 'date',
-      label: 'Fecha',
-      type: 'date',
-      serverParamDate: 'date',
-      serverParamFrom: 'date_from',
-      serverParamTo: 'date_to',
+      key: 'total',
+      label: 'Monto Total',
+      type: 'range',
+      serverParamFrom: 'total_min',
+      serverParamTo: 'total_max',
+      placeholderFrom: 'Desde',
+      placeholderTo: 'Hasta',
     },
   ],
 }
@@ -44,10 +53,18 @@ export const invoiceSegDef: SegmentationDefinition = {
 export const purchaseInvoiceSegDef: SegmentationDefinition = {
   segments: [
     {
+      key: 'period',
+      label: 'Período',
+      type: 'period',
+      serverParamFrom: 'date_from',
+      serverParamTo: 'date_to',
+    },
+    {
       key: 'status',
       label: 'Estado',
       type: 'tabs',
       serverParam: 'status',
+      variant: 'dropdown',
       options: [
         { label: 'Borrador', value: 'DRAFT' },
         { label: 'Emitido', value: 'POSTED' },
@@ -56,12 +73,13 @@ export const purchaseInvoiceSegDef: SegmentationDefinition = {
       ],
     },
     {
-      key: 'date',
-      label: 'Fecha',
-      type: 'date',
-      serverParamDate: 'date',
-      serverParamFrom: 'date_from',
-      serverParamTo: 'date_to',
+      key: 'total',
+      label: 'Monto Total',
+      type: 'range',
+      serverParamFrom: 'total_min',
+      serverParamTo: 'total_max',
+      placeholderFrom: 'Desde',
+      placeholderTo: 'Hasta',
     },
   ],
 }
