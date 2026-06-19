@@ -2,10 +2,8 @@
 
 import { useMemo, useState } from 'react'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { Textarea } from '@/components/ui/textarea'
-import { BaseModal, MoneyDisplay } from '@/components/shared'
+import { showApiError } from '@/lib/errors'
+import { BaseModal, MoneyDisplay, LabeledInput, LabeledSelect } from '@/components/shared'
 import { toast } from 'sonner'
 import { treasuryApi } from '../api/treasuryApi'
 import type { PendingChargeRow, UpcomingInstallment } from '../types'
@@ -35,7 +33,6 @@ function groupByPurchase(
 ): BreakdownItem[] {
     const groups = new Map<string, BreakdownItem>()
 
-    // Pending charges always go to "Sin compra asociada"
     if (charges.length > 0) {
         groups.set('pending', {
             label: 'Sin compra asociada',
@@ -45,7 +42,6 @@ function groupByPurchase(
         })
     }
 
-    // Installments grouped by group_uuid
     for (const inst of installments) {
         const key = `uuid-${inst.group_uuid}`
         let g = groups.get(key)
@@ -65,6 +61,21 @@ function groupByPurchase(
     return Array.from(groups.values())
 }
 
+const MONTHS = [
+    { value: '1', label: 'Enero' },
+    { value: '2', label: 'Febrero' },
+    { value: '3', label: 'Marzo' },
+    { value: '4', label: 'Abril' },
+    { value: '5', label: 'Mayo' },
+    { value: '6', label: 'Junio' },
+    { value: '7', label: 'Julio' },
+    { value: '8', label: 'Agosto' },
+    { value: '9', label: 'Septiembre' },
+    { value: '10', label: 'Octubre' },
+    { value: '11', label: 'Noviembre' },
+    { value: '12', label: 'Diciembre' },
+]
+
 export function BillChargesModal({
     cardAccountId,
     cardAccountName,
@@ -76,7 +87,7 @@ export function BillChargesModal({
     onCancel,
 }: BillChargesModalProps) {
     const [periodYear, setPeriodYear] = useState(new Date().getFullYear())
-    const [periodMonth, setPeriodMonth] = useState(new Date().getMonth() + 1)
+    const [periodMonth, setPeriodMonth] = useState(String(new Date().getMonth() + 1))
     const [cutOffDate, setCutOffDate] = useState(
         new Date().toISOString().split('T')[0]
     )
@@ -117,24 +128,19 @@ export function BillChargesModal({
             await treasuryApi.billUnbilledCharges({
                 card_account: cardAccountId,
                 period_year: periodYear,
-                period_month: periodMonth,
+                period_month: parseInt(periodMonth),
                 cut_off_date: cutOffDate,
                 due_date: dueDate,
                 minimum_payment: minimumPayment ? parseFloat(minimumPayment) : undefined,
                 notes,
             })
             onSuccess()
-        } catch {
-            toast.error('Error al facturar cargos')
+        } catch (error) {
+            showApiError(error, 'Error al facturar cargos')
         } finally {
             setLoading(false)
         }
     }
-
-    const months = [
-        'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
-        'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
-    ]
 
     return (
         <BaseModal
@@ -262,78 +268,57 @@ export function BillChargesModal({
                     )}
 
                     <div className="grid grid-cols-2 gap-4">
-                        <div className="grid gap-2">
-                            <Label htmlFor="periodYear">Año</Label>
-                            <Input
-                                id="periodYear"
-                                type="number"
-                                min="2020"
-                                max="2030"
-                                value={periodYear}
-                                onChange={(e) => setPeriodYear(parseInt(e.target.value))}
-                                required
-                            />
-                        </div>
-                        <div className="grid gap-2">
-                            <Label htmlFor="periodMonth">Mes</Label>
-                            <select
-                                id="periodMonth"
-                                value={periodMonth}
-                                onChange={(e) => setPeriodMonth(parseInt(e.target.value))}
-                                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
-                                required
-                            >
-                                {months.map((month, index) => (
-                                    <option key={index + 1} value={index + 1}>
-                                        {month}
-                                    </option>
-                                ))}
-                            </select>
-                        </div>
+                        <LabeledInput
+                            label="Año"
+                            type="number"
+                            min="2020"
+                            max="2030"
+                            value={periodYear}
+                            onChange={(e) => setPeriodYear(parseInt(e.target.value))}
+                            required
+                        />
+                        <LabeledSelect
+                            label="Mes"
+                            options={MONTHS}
+                            value={periodMonth}
+                            onChange={setPeriodMonth}
+                            placeholder="Seleccionar mes"
+                            required
+                        />
                     </div>
                     <div className="grid grid-cols-2 gap-4">
-                        <div className="grid gap-2">
-                            <Label htmlFor="cutOffDate">Fecha de Cierre</Label>
-                            <Input
-                                id="cutOffDate"
-                                type="date"
-                                value={cutOffDate}
-                                onChange={(e) => setCutOffDate(e.target.value)}
-                                required
-                            />
-                        </div>
-                        <div className="grid gap-2">
-                            <Label htmlFor="dueDate">Fecha de Vencimiento</Label>
-                            <Input
-                                id="dueDate"
-                                type="date"
-                                value={dueDate}
-                                onChange={(e) => setDueDate(e.target.value)}
-                                required
-                            />
-                        </div>
-                    </div>
-                    <div className="grid gap-2">
-                        <Label htmlFor="minimumPayment">Pago Mínimo (Opcional)</Label>
-                        <Input
-                            id="minimumPayment"
-                            type="number"
-                            step="0.01"
-                            min="0"
-                            value={minimumPayment}
-                            onChange={(e) => setMinimumPayment(e.target.value)}
-                            placeholder="0.00"
+                        <LabeledInput
+                            label="Fecha de Cierre"
+                            type="date"
+                            value={cutOffDate}
+                            onChange={(e) => setCutOffDate(e.target.value)}
+                            required
+                        />
+                        <LabeledInput
+                            label="Fecha de Vencimiento"
+                            type="date"
+                            value={dueDate}
+                            onChange={(e) => setDueDate(e.target.value)}
+                            required
                         />
                     </div>
-                    <div className="grid gap-2">
-                        <Label htmlFor="notes">Notas (Opcional)</Label>
-                        <Textarea
-                            id="notes"
-                            value={notes}
-                            onChange={(e) => setNotes(e.target.value)}
-                            placeholder="Notas sobre la facturación"
-                        />
-                    </div>
+                    <LabeledInput
+                        label="Pago Mínimo (opcional)"
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        value={minimumPayment}
+                        onChange={(e) => setMinimumPayment(e.target.value)}
+                        placeholder="0.00"
+                    />
+                    <LabeledInput
+                        label="Notas (opcional)"
+                        as="textarea"
+                        rows={3}
+                        value={notes}
+                        onChange={(e) => setNotes(e.target.value)}
+                        placeholder="Notas sobre la facturación"
+                    />
                 </div>
             </form>
         </BaseModal>

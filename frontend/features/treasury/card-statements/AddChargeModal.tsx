@@ -2,17 +2,8 @@
 
 import { useState } from 'react'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { Textarea } from '@/components/ui/textarea'
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from '@/components/ui/select'
-import { BaseModal, MoneyDisplay } from '@/components/shared'
+import { showApiError } from '@/lib/errors'
+import { BaseModal, MoneyDisplay, LabeledInput, LabeledSelect } from '@/components/shared'
 import { toast } from 'sonner'
 import { treasuryApi } from '../api/treasuryApi'
 
@@ -65,7 +56,7 @@ export function AddChargeModal({
             })
             onSuccess()
         } catch (error) {
-            toast.error('Error al agregar cargo')
+            showApiError(error, 'Error al agregar cargo')
         } finally {
             setLoading(false)
         }
@@ -101,53 +92,39 @@ export function AddChargeModal({
                             </div>
                         </div>
                     )}
-                    <div className="grid gap-2">
-                        <Label htmlFor="amount">Monto</Label>
-                        <Input
-                            id="amount"
-                            type="number"
-                            step="0.01"
-                            min="0"
-                            value={amount}
-                            onChange={(e) => setAmount(e.target.value)}
-                            placeholder="0.00"
-                            required
-                        />
-                    </div>
-                    <div className="grid gap-2">
-                        <Label htmlFor="chargeType">Tipo de Cargo</Label>
-                        <Select value={chargeType} onValueChange={setChargeType}>
-                            <SelectTrigger>
-                                <SelectValue placeholder="Seleccionar tipo" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                {CHARGE_TYPES.map((type) => (
-                                    <SelectItem key={type.value} value={type.value}>
-                                        {type.label}
-                                    </SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
-                    </div>
-                    <div className="grid gap-2">
-                        <Label htmlFor="date">Fecha</Label>
-                        <Input
-                            id="date"
-                            type="date"
-                            value={date}
-                            onChange={(e) => setDate(e.target.value)}
-                            required
-                        />
-                    </div>
-                    <div className="grid gap-2">
-                        <Label htmlFor="description">Descripción</Label>
-                        <Textarea
-                            id="description"
-                            value={description}
-                            onChange={(e) => setDescription(e.target.value)}
-                            placeholder="Descripción del cargo"
-                        />
-                    </div>
+                    <LabeledInput
+                        label="Monto"
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        value={amount}
+                        onChange={(e) => setAmount(e.target.value)}
+                        placeholder="0.00"
+                        required
+                    />
+                    <LabeledSelect
+                        label="Tipo de Cargo"
+                        options={CHARGE_TYPES}
+                        value={chargeType}
+                        onChange={setChargeType}
+                        placeholder="Seleccionar tipo"
+                        required
+                    />
+                    <LabeledInput
+                        label="Fecha"
+                        type="date"
+                        value={date}
+                        onChange={(e) => setDate(e.target.value)}
+                        required
+                    />
+                    <LabeledInput
+                        label="Descripción (opcional)"
+                        as="textarea"
+                        rows={3}
+                        value={description}
+                        onChange={(e) => setDescription(e.target.value)}
+                        placeholder="Descripción del cargo"
+                    />
                 </div>
             </form>
         </BaseModal>
