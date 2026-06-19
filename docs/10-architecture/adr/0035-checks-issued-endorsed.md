@@ -1,8 +1,11 @@
 ---
 layer: 10-architecture
 doc: adr/0035-checks-issued-endorsed
-status: Accepted (partially superseded by 0039)
+id: 0035
+title: "Cheques propios girados y endoso de cheques recibidos"
+status: Superseded by 0039 (partial)
 date: 2026-06-03
+author: core-team
 superseded_by: 0039 (sección "Endoso de cheques recibidos")
 ---
 

@@ -1,8 +1,11 @@
 ---
 layer: 10-architecture
 doc: adr/0036-centro-de-bancos-y-vencimientos
-status: accepted
+id: 0036
+title: "Centro de Bancos y proyección de vencimientos"
+status: Accepted
 date: 2026-06-03
+author: core-team
 ---
 
 # ADR-0036: Centro de Bancos y proyección de vencimientos
