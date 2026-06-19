@@ -82,6 +82,10 @@ export * from './FadeIn';
 export { SmartSearchBar, useSmartSearch, useClientSearch } from './SmartSearchBar';
 export type { FilterState } from './SmartSearchBar';
 
+// Segmentation
+export { SegmentationBar, useSegmentation } from './SegmentationBar';
+export type { UseSegmentationReturn, SegmentationFilterState } from './SegmentationBar';
+
 // Filters & Inputs
 export * from './DatePicker';
 export * from './DateRangeFilter';
