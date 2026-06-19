@@ -38,15 +38,19 @@ interface MovementClientViewProps {
 }
 
 import { useStockMoves } from "@/features/inventory/hooks/useStockMoves"
-import { SmartSearchBar, useSmartSearch } from "@/components/shared"
+import { SmartSearchBar, useSmartSearch, SegmentationBar, useSegmentation } from "@/components/shared"
 import { stockMoveSearchDef } from "@/features/inventory/searchDef"
+import { stockMoveSegDef } from "@/features/inventory/segmentationDef"
 import React from "react"
 
 export function MovementClientView({ externalOpen, onExternalOpenChange, createAction }: MovementClientViewProps) {
-    const { filters, isFiltered } = useSmartSearch(stockMoveSearchDef)
+    const { filters: textFilters, isFiltered: isTextFiltered, clearAll: clearText } = useSmartSearch(stockMoveSearchDef)
+    const { filters: segFilters, isFiltered: isSegFiltered, clearAll: clearSeg } = useSegmentation(stockMoveSegDef)
+    const isFiltered = isTextFiltered || isSegFiltered
+    const allFilters = useMemo(() => ({ ...textFilters, ...segFilters }), [textFilters, segFilters])
     const [pageState, setPageState] = useState({ pageIndex: 0, pageSize: 50 })
     const { page, moves, totalCount, isLoading, refetch } = useStockMoves({
-        ...filters,
+        ...allFilters,
         page: pageState.pageIndex + 1,
         page_size: pageState.pageSize,
     })
@@ -187,6 +191,9 @@ export function MovementClientView({ externalOpen, onExternalOpenChange, createA
                     pagination={pageState}
                     onPaginationChange={setPageState}
                     smartSearch={<SmartSearchBar searchDef={stockMoveSearchDef} placeholder="Buscar movimientos..." className="w-full" />}
+                    segmentation={<SegmentationBar def={stockMoveSegDef} />}
+                    showReset={isFiltered}
+                    onReset={() => { clearText(); clearSeg() }}
                     createAction={createAction}
                     isFiltered={isFiltered}
                     emptyState={{

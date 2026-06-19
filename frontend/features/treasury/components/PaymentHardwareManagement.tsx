@@ -4,8 +4,9 @@ import React, { useState, useEffect, useCallback } from "react"
 import { useRouter } from "next/navigation"
 import { useTerminalProviders, useTerminalDevices, type PaymentTerminalProvider, type PaymentTerminalDevice } from "../hooks/useTerminalProviders"
 import { Button } from "@/components/ui/button"
-import { ActionConfirmModal, EntityCard, IconButton, SmartSearchBar, StatusBadge, useClientSearch, useSmartSearch } from '@/components/shared'
+import { ActionConfirmModal, EntityCard, IconButton, SmartSearchBar, StatusBadge, useClientSearch, useSmartSearch, SegmentationBar, useSegmentation } from '@/components/shared'
 import { deviceSearchDef, providerSearchDef } from "@/features/treasury/searchDef"
+import { deviceSegDef } from "@/features/treasury/segmentationDef"
 import {
     Settings,
     Trash2,
@@ -48,7 +49,10 @@ export function PaymentHardwareManagement({
         }
     }, [externalActiveTab])
 
-    const { filters: deviceFilters, isFiltered: isDevicesFiltered } = useSmartSearch(deviceSearchDef)
+    const { filters: deviceTextFilters, isFiltered: isDevicesTextFiltered, clearAll: clearDevText } = useSmartSearch(deviceSearchDef)
+    const { filters: deviceSegFilters, isFiltered: isDevicesSegFiltered, clearAll: clearDevSeg } = useSegmentation(deviceSegDef)
+    const isDevicesFiltered = isDevicesTextFiltered || isDevicesSegFiltered
+    const deviceFilters = { ...deviceTextFilters, ...deviceSegFilters }
     const { filterFn: filterProviders, isFiltered: isProvidersFiltered } = useClientSearch<PaymentTerminalProvider>(providerSearchDef)
     const { providers, isLoading: isLoadingProviders, refetch: refetchProviders, deleteProvider } = useTerminalProviders()
     const { devices, isLoading: isLoadingDevices, refetch: refetchDevices, deleteDevice } = useTerminalDevices(deviceFilters)
@@ -267,6 +271,9 @@ export function PaymentHardwareManagement({
                         isLoading={isLoadingDevices}
                         variant="embedded"
                         smartSearch={<SmartSearchBar searchDef={deviceSearchDef} placeholder="Buscar dispositivo..." className="w-full" />}
+                        segmentation={<SegmentationBar def={deviceSegDef} />}
+                        showReset={isDevicesFiltered}
+                        onReset={() => { clearDevText(); clearDevSeg() }}
                         defaultPageSize={20}
                         isFiltered={isDevicesFiltered}
                         emptyState={{

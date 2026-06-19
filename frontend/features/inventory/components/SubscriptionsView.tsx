@@ -27,13 +27,14 @@ import { DataTableView } from '@/components/shared'
 import type { Product } from "@/types/entities"
 import { DataTableColumnHeader } from '@/components/shared'
 import { DataCell, createActionsColumn, StatCard } from '@/components/shared'
-import { PageHeader, PageHeaderButton, SmartSearchBar, useSmartSearch } from "@/components/shared"
+import { PageHeader, PageHeaderButton, SmartSearchBar, useSmartSearch, SegmentationBar, useSegmentation } from "@/components/shared"
 import { Restriction } from "@/features/inventory/types"
 import { PageContainer } from "@/components/shared"
 import { cn } from "@/lib/utils"
 import { useSubscriptions, useSubscriptionStats, type Subscription } from "@/features/inventory/hooks/useSubscriptions"
 import { useProducts } from "@/features/inventory/hooks/useProducts"
 import { subscriptionSearchDef } from "@/features/inventory/searchDef"
+import { subscriptionSegDef } from "@/features/inventory/segmentationDef"
 
 // Subscription type imported from useSubscriptions hook
 
@@ -52,8 +53,11 @@ interface SubscriptionsViewProps {
 }
 
 export function SubscriptionsView({ hideHeader = false, externalOpen = false, createAction }: SubscriptionsViewProps) {
-    const { filters, isFiltered } = useSmartSearch(subscriptionSearchDef)
-    const { subscriptions, isLoading: loading, refetch: fetchSubscriptions, pauseSubscription, resumeSubscription } = useSubscriptions(filters)
+    const { filters: textFilters, isFiltered: isTextFiltered, clearAll: clearText } = useSmartSearch(subscriptionSearchDef)
+    const { filters: segFilters, isFiltered: isSegFiltered, clearAll: clearSeg } = useSegmentation(subscriptionSegDef)
+    const isFiltered = isTextFiltered || isSegFiltered
+    const allFilters = useMemo(() => ({ ...textFilters, ...segFilters }), [textFilters, segFilters])
+    const { subscriptions, isLoading: loading, refetch: fetchSubscriptions, pauseSubscription, resumeSubscription } = useSubscriptions(allFilters)
     const { data: stats } = useSubscriptionStats<Stats>()
     const { updateProduct, fetchProductById } = useProducts()
 
@@ -435,6 +439,9 @@ export function SubscriptionsView({ hideHeader = false, externalOpen = false, cr
                             isLoading={loading}
                             variant="embedded"
                             smartSearch={<SmartSearchBar searchDef={subscriptionSearchDef} placeholder="Buscar suscripciones..." className="w-full" />}
+                            segmentation={<SegmentationBar def={subscriptionSegDef} />}
+                            showReset={isFiltered}
+                            onReset={() => { clearText(); clearSeg() }}
                             defaultPageSize={20}
                             bulkActions={bulkActions}
                             createAction={createAction}

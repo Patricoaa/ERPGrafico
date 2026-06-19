@@ -8,45 +8,11 @@ export const treasuryAccountSearchDef: SearchDefinition = {
       type: 'text',
       serverParam: 'name',
     },
-    {
-      key: 'account_type',
-      label: 'Tipo',
-      type: 'enum',
-      serverParam: 'account_type',
-      options: [
-        { label: 'Caja Física (Efectivo)', value: 'CASH' },
-        { label: 'Cuenta Bancaria', value: 'CHECKING' },
-        { label: 'T. Crédito Empresa', value: 'CREDIT_CARD' },
-        { label: 'Préstamo Bancario', value: 'LOAN' },
-        { label: 'Puente', value: 'BRIDGE' },
-        { label: 'Cheques en Cartera', value: 'CHECK_PORTFOLIO' },
-      ],
-    },
   ],
 }
 
 export const terminalBatchSearchDef: SearchDefinition = {
-  fields: [
-    {
-      key: 'status',
-      label: 'Estado',
-      type: 'enum',
-      serverParam: 'status',
-      options: [
-        { label: 'Pendiente', value: 'PENDING' },
-        { label: 'Liquidado', value: 'SETTLED' },
-        { label: 'Conciliado', value: 'RECONCILED' },
-        { label: 'Facturado', value: 'INVOICED' },
-      ],
-    },
-    {
-      key: 'date',
-      label: 'Fecha',
-      type: 'daterange',
-      serverParamStart: 'date_from',
-      serverParamEnd: 'date_to',
-    },
-  ],
+  fields: [],
 }
 
 export const deviceSearchDef: SearchDefinition = {
@@ -56,17 +22,6 @@ export const deviceSearchDef: SearchDefinition = {
       label: 'Nombre',
       type: 'text',
       serverParam: 'search',
-    },
-    {
-      key: 'status',
-      label: 'Estado',
-      type: 'enum',
-      serverParam: 'status',
-      options: [
-        { label: 'Activo', value: 'ACTIVE' },
-        { label: 'Inactivo', value: 'INACTIVE' },
-        { label: 'Mantenimiento', value: 'MAINTENANCE' },
-      ],
     },
   ],
 }
@@ -120,35 +75,5 @@ export const providerSearchDef: SearchDefinition = {
 }
 
 export const treasuryMovementsSearchDef: SearchDefinition = {
-  fields: [
-    {
-      key: 'movement_type',
-      label: 'Tipo',
-      type: 'enum',
-      serverParam: 'movement_type',
-      options: [
-        { label: 'Depósito', value: 'INBOUND' },
-        { label: 'Retiro', value: 'OUTBOUND' },
-        { label: 'Traspaso', value: 'TRANSFER' },
-        { label: 'Ajuste', value: 'ADJUSTMENT' },
-      ],
-    },
-    {
-      key: 'is_reconciled',
-      label: 'Conciliado',
-      type: 'enum',
-      serverParam: 'is_reconciled',
-      options: [
-        { label: 'Sí', value: 'true' },
-        { label: 'No', value: 'false' },
-      ],
-    },
-    {
-      key: 'date',
-      label: 'Fecha',
-      type: 'daterange',
-      serverParamStart: 'date_from',
-      serverParamEnd: 'date_to',
-    },
-  ],
+  fields: [],
 }

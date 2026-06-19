@@ -27,8 +27,9 @@ import { EntityCard } from "@/components/shared"
 import { useProducts } from "@/features/inventory/hooks/useProducts"
 import { Product, Restriction, ProductFilters } from "@/features/inventory/types"
 import { useSelectedEntity } from "@/hooks/useSelectedEntity"
-import { Chip, SmartSearchBar, useSmartSearch } from "@/components/shared"
+import { Chip, SmartSearchBar, useSmartSearch, SegmentationBar, useSegmentation } from "@/components/shared"
 import { productSearchDef } from "@/features/inventory/searchDef"
+import { productSegDef } from "@/features/inventory/segmentationDef"
 
 interface ProductClientViewProps {
     externalOpen?: boolean
@@ -39,13 +40,15 @@ interface ProductClientViewProps {
 
 export function ProductClientView({ externalOpen, onExternalOpenChange, createAction, initialProducts }: ProductClientViewProps) {
     const { rate } = useVatRate()
-    const { filters: smartFilters, isFiltered } = useSmartSearch(productSearchDef)
+    const { filters: textFilters, isFiltered: isTextFiltered, clearAll: clearText } = useSmartSearch(productSearchDef)
+    const { filters: segFilters, isFiltered: isSegFiltered, clearAll: clearSeg } = useSegmentation(productSegDef)
+    const isFiltered = isTextFiltered || isSegFiltered
     const filters = useMemo<ProductFilters>(() => ({
-        is_active: 'all',
         parent_template__isnull: true,
         page_size: 1000,
-        ...(smartFilters as Partial<ProductFilters>),
-    }), [smartFilters])
+        ...textFilters as Partial<ProductFilters>,
+        ...segFilters as Partial<ProductFilters>,
+    }), [textFilters, segFilters])
 
     const { products, isLoading, refetch, updateProduct } = useProducts({ filters, initialData: initialProducts })
     const [editingProduct, setEditingProduct] = useState<Product | null>(null)
@@ -448,6 +451,9 @@ export function ProductClientView({ externalOpen, onExternalOpenChange, createAc
                     isLoading={isLoading}
                     variant="embedded"
                     smartSearch={<SmartSearchBar searchDef={productSearchDef} placeholder="Buscar producto..." className="w-full" />}
+                    segmentation={<SegmentationBar def={productSegDef} />}
+                    showReset={isFiltered}
+                    onReset={() => { clearText(); clearSeg() }}
                     initialColumnVisibility={initialColumnVisibility}
                     renderCard={(product: Product) => (
                         <EntityCard key={product.id} onClick={() => {
