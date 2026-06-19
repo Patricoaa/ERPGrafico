@@ -4,6 +4,7 @@ import React, { useState, useEffect, useMemo } from 'react'
 import { Button } from "@/components/ui/button"
 import { Banknote, LogOut, ArrowRightLeft, AlertTriangle, Info, ShieldAlert, CheckCircle2 } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { showApiError } from "@/lib/errors"
 import { Numpad, LabeledInput, MoneyDisplay, GenericWizard, WizardStep } from "@/components/shared"
 import { TreasuryAccountSelector } from "@/components/selectors/TreasuryAccountSelector"
 import { AdvancedContactSelector } from "@/components/selectors/AdvancedContactSelector"
@@ -579,7 +580,7 @@ export function MovementWizard({
             await onComplete(data)
             onOpenChange(false)
         } catch (error) {
-            console.error(error)
+            showApiError(error, "Error al registrar el movimiento")
         } finally {
             setSubmitting(false)
         }

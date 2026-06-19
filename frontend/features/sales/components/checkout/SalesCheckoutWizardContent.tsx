@@ -434,8 +434,7 @@ export function SalesCheckoutWizardContent({
                     return { isValid: true }
             }
         } catch (error) {
-            console.error("Error en validación de checkout:", error)
-            toast.error("Ocurrió un error inesperado al validar la venta.")
+            showApiError(error, "Ocurrió un error inesperado al validar la venta.")
             return { isValid: false }
         }
     }
@@ -715,8 +714,7 @@ export function SalesCheckoutWizardContent({
                 return 'PENDING'
             }
         } catch (error) {
-            console.error("Error checking task:", error)
-            if (!silent) toast.error("Error al consultar la tarea.")
+            if (!silent) showApiError(error, "Error al consultar la tarea.")
             return 'ERROR'
         }
     }
