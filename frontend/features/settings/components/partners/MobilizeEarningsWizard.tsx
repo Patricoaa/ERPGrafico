@@ -109,7 +109,7 @@ export function MobilizeEarningsWizard({ open, onOpenChange, onSuccess, initialP
                                 No hay socios con utilidades retenidas disponibles.
                             </div>
                         ) : (
-                            <div className="border border-border/50 rounded-lg overflow-hidden">
+                            <div className="border border-border/50 rounded-md overflow-hidden">
                                 <table className="w-full text-sm">
                                     <thead className="bg-muted/50 text-muted-foreground">
                                         <tr>
@@ -186,7 +186,7 @@ export function MobilizeEarningsWizard({ open, onOpenChange, onSuccess, initialP
                 isValid: true,
                 component: (
                     <div className="space-y-6">
-                        <div className="bg-muted/30 p-4 rounded-lg flex items-start gap-3 border border-border/50">
+                        <div className="bg-muted/30 p-4 rounded-md flex items-start gap-3 border border-border/50">
                             <ArrowRightLeft className="w-5 h-5 text-primary mt-0.5" />
                             <div className="space-y-1">
                                 <h4 className="font-heading font-semibold text-sm">Resumen de Movilización</h4>
@@ -199,11 +199,11 @@ export function MobilizeEarningsWizard({ open, onOpenChange, onSuccess, initialP
                         </div>
 
                         <div className="grid grid-cols-2 gap-4">
-                            <div className="space-y-1 border p-3 rounded-lg bg-card">
+                            <div className="space-y-1 border p-3 rounded-md bg-card">
                                 <p className="text-[10px] uppercase text-muted-foreground font-bold tracking-wider">A Dividendos Pagar</p>
                                 <DataCell.Currency value={totalDividend} className="justify-start text-xl font-semibold text-foreground" />
                             </div>
-                            <div className="space-y-1 border p-3 rounded-lg bg-card">
+                            <div className="space-y-1 border p-3 rounded-md bg-card">
                                 <p className="text-[10px] uppercase text-muted-foreground font-bold tracking-wider">A Re-Inversión</p>
                                 <DataCell.Currency value={totalReinvest} className="justify-start text-xl font-semibold text-muted-foreground" />
                             </div>

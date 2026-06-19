@@ -209,7 +209,7 @@ export function PartnerWithdrawalWizard({
                         }))}
                     />
                     {selectedPartner && (
-                        <div className="p-3 bg-destructive/5 border-2 border-dashed border-destructive/20 rounded-lg space-y-2 animate-in fade-in zoom-in-95 duration-300">
+                        <div className="p-3 bg-destructive/5 border-2 border-dashed border-destructive/20 rounded-md space-y-2 animate-in fade-in zoom-in-95 duration-300">
                             <div className="flex justify-between items-center text-[10px] text-muted-foreground uppercase font-black">
                                 <span>Pasivo con el Socio</span>
                                 <Chip size="xs" intent="destructive">Deuda del Socio</Chip>
@@ -359,7 +359,7 @@ export function PartnerWithdrawalWizard({
                         />
                         <div className="space-y-1.5 font-mono">
                             <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Stock Actual</span>
-                            <div className="h-10 px-3 flex items-center bg-muted/50 rounded-lg border border-border/50 text-sm font-medium">
+                            <div className="h-10 px-3 flex items-center bg-muted/50 rounded-md border border-border/50 text-sm font-medium">
                                 {productDetails?.qty_on_hand ?? '0'} {productDetails?.uom_name ?? ''}
                             </div>
                         </div>

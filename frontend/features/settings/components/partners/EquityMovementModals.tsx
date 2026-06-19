@@ -143,7 +143,7 @@ export function SubscriptionMovementModal({ open, onOpenChange, onSuccess, initi
 
                     {/* Show selected partner's current capital */}
                     {selectedPartner && (
-                        <div className="rounded-lg border bg-muted/30 p-3 space-y-1.5">
+                        <div className="rounded-md border bg-muted/30 p-3 space-y-1.5">
                             <div className="flex items-center justify-between text-xs">
                                 <span className="text-muted-foreground font-medium">Capital Suscrito Actual</span>
                                 <span className="font-mono font-bold text-primary">{formatCurrency(subscribedCapital)}</span>

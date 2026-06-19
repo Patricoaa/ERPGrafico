@@ -101,7 +101,7 @@ export function AddPartnerModal({ open, onOpenChange, onSuccess }: AddPartnerMod
         >
             <div className="space-y-6">
                 {/* Selector de nuevo socio */}
-                <div className="grid gap-4 p-4 border rounded-lg bg-muted/30">
+                <div className="grid gap-4 p-4 border rounded-md bg-muted/30">
                     <LabeledContainer label="Seleccionar Persona / Empresa">
                         <AdvancedContactSelector
                             value={formData.contact_id}

@@ -372,7 +372,7 @@ export function CompanySettingsView({ activeTab }: { activeTab: string }) {
                                         <p className="text-[10px] font-bold uppercase text-muted-foreground">Logo de la Empresa</p>
                                         <div className="flex flex-col md:flex-row gap-6 items-start">
                                             <div
-                                                className="h-32 w-32 rounded-lg border-2 border-dashed flex items-center justify-center bg-muted/30 overflow-hidden relative group shadow-inner cursor-pointer hover:bg-muted/50 transition-colors"
+                                                className="h-32 w-32 rounded-md border-2 border-dashed flex items-center justify-center bg-muted/30 overflow-hidden relative group shadow-inner cursor-pointer hover:bg-muted/50 transition-colors"
                                                 onClick={() => !settings?.logo && fileInputRef.current?.click()}
                                             >
                                                 {uploadingLogo ? (
