@@ -25,7 +25,17 @@ export type PeriodSegmentDef = {
   serverParamTo: string
 }
 
-export type SegmentDef = TabSegmentDef | DateSegmentDef | PeriodSegmentDef
+export type RangeSegmentDef = {
+  key: string
+  label: string
+  type: 'range'
+  serverParamFrom: string
+  serverParamTo: string
+  placeholderFrom?: string
+  placeholderTo?: string
+}
+
+export type SegmentDef = TabSegmentDef | DateSegmentDef | PeriodSegmentDef | RangeSegmentDef
 
 export type SegmentationDefinition = {
   segments: SegmentDef[]

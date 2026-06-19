@@ -12,10 +12,14 @@ interface OrderFilters {
     receiving_status?: string
     receipt_date_after?: string
     receipt_date_before?: string
-    total?: string
+    total_min?: string
+    total_max?: string
     origin_status?: string
     billing_status?: string
     treasury_status?: string
+    supplier_name?: string
+    number?: string
+    product_name?: string
 }
 
 interface PartialReceivePayload {
@@ -42,10 +46,14 @@ export const purchasingApi = {
         if (filters?.receiving_status) params.append('receiving_status', filters.receiving_status)
         if (filters?.receipt_date_after) params.append('receipt_date_after', filters.receipt_date_after)
         if (filters?.receipt_date_before) params.append('receipt_date_before', filters.receipt_date_before)
-        if (filters?.total) params.append('total', filters.total)
+        if (filters?.total_min) params.append('total_min', filters.total_min)
+        if (filters?.total_max) params.append('total_max', filters.total_max)
         if (filters?.origin_status) params.append('origin_status', filters.origin_status)
         if (filters?.billing_status) params.append('billing_status', filters.billing_status)
         if (filters?.treasury_status) params.append('treasury_status', filters.treasury_status)
+        if (filters?.supplier_name) params.append('supplier_name', filters.supplier_name)
+        if (filters?.number) params.append('number', filters.number)
+        if (filters?.product_name) params.append('product_name', filters.product_name)
         const res = await api.get<PurchaseOrderAPI[]>('/purchasing/orders/', { params })
         return res.data
     },
