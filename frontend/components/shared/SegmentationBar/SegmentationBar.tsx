@@ -178,6 +178,12 @@ interface DateSegmentProps {
   remove: (param: string) => Promise<void>
 }
 
+/** Parse "yyyy-MM-dd" string as local-midnight Date (avoids UTC timezone offset). */
+function parseDateLocal(dateStr: string): Date {
+  const [y, m, d] = dateStr.split('-').map(Number)
+  return new Date(y, m - 1, d)
+}
+
 function DateSegment({ def, filters, apply, remove }: DateSegmentProps) {
   const [open, setOpen] = useState(false)
 
@@ -189,19 +195,19 @@ function DateSegment({ def, filters, apply, remove }: DateSegmentProps) {
 
   const [tempMode, setTempMode] = useState<DateMode>(mode)
   const [tempSingle, setTempSingle] = useState<Date | undefined>(
-    singleVal ? new Date(singleVal) : undefined,
+    singleVal ? parseDateLocal(singleVal) : undefined,
   )
   const [tempRange, setTempRange] = useState<DateRange | undefined>(
-    fromVal ? { from: new Date(fromVal), to: toVal ? new Date(toVal) : undefined } : undefined,
+    fromVal ? { from: parseDateLocal(fromVal), to: toVal ? parseDateLocal(toVal) : undefined } : undefined,
   )
 
   const handleOpenChange = useCallback((newOpen: boolean) => {
     if (newOpen) {
       setTempMode(mode)
-      setTempSingle(singleVal ? new Date(singleVal) : undefined)
+      setTempSingle(singleVal ? parseDateLocal(singleVal) : undefined)
       setTempRange(
         fromVal
-          ? { from: new Date(fromVal), to: toVal ? new Date(toVal) : undefined }
+          ? { from: parseDateLocal(fromVal), to: toVal ? parseDateLocal(toVal) : undefined }
           : undefined,
       )
     }
@@ -230,9 +236,9 @@ function DateSegment({ def, filters, apply, remove }: DateSegmentProps) {
   }, [tempMode, tempSingle, tempRange, def, apply, remove])
 
   const label = mode === 'single' && singleVal
-    ? format(new Date(singleVal), 'dd/MM/yy', { locale: es })
+    ? format(parseDateLocal(singleVal), 'dd/MM/yy', { locale: es })
     : mode === 'range' && fromVal
-      ? `${format(new Date(fromVal), 'dd/MM/yy', { locale: es })} - ${toVal ? format(new Date(toVal), 'dd/MM/yy', { locale: es }) : '...'}`
+      ? `${format(parseDateLocal(fromVal), 'dd/MM/yy', { locale: es })} - ${toVal ? format(parseDateLocal(toVal), 'dd/MM/yy', { locale: es }) : '...'}`
       : null
 
   return (
