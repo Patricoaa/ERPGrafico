@@ -104,7 +104,7 @@ export function DataTableToolbar<TData>(props: DataTableToolbarProps<TData>) {
         <>
             <div className="w-full space-y-2">
                 {/* ── ROW 1: Segmentadores + Acciones ── */}
-                <div className="flex items-center justify-between gap-2 h-9 w-full">
+                <div className="flex items-center gap-2 h-9 w-full">
                     {/* Left: Segmentadores */}
                     <div className="flex items-center gap-1.5 flex-1 min-w-0 overflow-x-auto">
                         {/* Faceted filters — inline popover per filter */}
