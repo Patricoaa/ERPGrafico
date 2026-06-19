@@ -47,7 +47,7 @@ export function SmartSearchBar({ searchDef, placeholder = 'Buscar...', className
     const value = trimmedInput.slice(colonIndex + 1).trim()
 
     const matchedField = searchDef.fields.find(
-      (f) =>
+      (f): f is TextFieldDef =>
         isTextField(f) && (
           f.label.toLowerCase() === prefix ||
           f.key.toLowerCase() === prefix ||
@@ -67,8 +67,8 @@ export function SmartSearchBar({ searchDef, placeholder = 'Buscar...', className
 
   const isOpen = stage.type !== 'closed' || !!activeSuggestionsUrl
 
-  const filteredFields = inputValue.trim()
-    ? searchDef.fields.filter((f) => f.label.toLowerCase().includes(inputValue.toLowerCase()) && isTextField(f))
+  const filteredFields: TextFieldDef[] = inputValue.trim()
+    ? searchDef.fields.filter((f): f is TextFieldDef => f.label.toLowerCase().includes(inputValue.toLowerCase()) && isTextField(f))
     : searchDef.fields.filter(isTextField)
 
   const openFieldList = useCallback(() => {
@@ -137,7 +137,7 @@ export function SmartSearchBar({ searchDef, placeholder = 'Buscar...', className
       const value = trimmedInput.slice(colonIndex + 1).trim()
 
       const matchedField = searchDef.fields.find(
-        (f) =>
+        (f): f is TextFieldDef =>
           isTextField(f) && (
             f.label.toLowerCase() === prefix ||
             f.key.toLowerCase() === prefix ||
