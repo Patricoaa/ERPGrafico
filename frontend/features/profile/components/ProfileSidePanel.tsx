@@ -38,7 +38,7 @@ export function ProfileSidePanel({ profile, open = true, onOpenChange }: Profile
                                 </div>
                             </div>
                             <div className="space-y-4">
-                                <div className="p-4 rounded-lg border border-border/50 bg-card/50 space-y-4">
+                                <div className="p-4 rounded-md border border-border/50 bg-card/50 space-y-4">
                                     <div className="flex justify-between items-center">
                                         <div className="h-5 w-40" />
                                         <div className="h-5 w-5 rounded-full" />
@@ -51,7 +51,7 @@ export function ProfileSidePanel({ profile, open = true, onOpenChange }: Profile
                                         <div className="h-8 w-24 rounded" />
                                     </div>
                                 </div>
-                                <div className="p-4 rounded-lg border border-border/50 bg-card/50 space-y-4">
+                                <div className="p-4 rounded-md border border-border/50 bg-card/50 space-y-4">
                                     <div className="flex justify-between items-center">
                                         <div className="h-5 w-40" />
                                         <div className="h-5 w-5 rounded-full" />
@@ -64,7 +64,7 @@ export function ProfileSidePanel({ profile, open = true, onOpenChange }: Profile
                                         <div className="h-8 w-24 rounded" />
                                     </div>
                                 </div>
-                                <div className="p-4 rounded-lg border border-border/50 bg-card/50 space-y-4">
+                                <div className="p-4 rounded-md border border-border/50 bg-card/50 space-y-4">
                                     <div className="flex justify-between items-center">
                                         <div className="h-5 w-40" />
                                         <div className="h-5 w-5 rounded-full" />

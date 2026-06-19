@@ -156,7 +156,7 @@ export function OrderActionPanel({
                     ) : (
                         <div className="space-y-6 py-6">
                             {/* Order Summary Card */}
-                            <div className="bg-muted/50 rounded-lg p-4 space-y-3">
+                            <div className="bg-muted/50 rounded-md p-4 space-y-3">
                                 <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
                                     Resumen de Orden
                                 </h3>

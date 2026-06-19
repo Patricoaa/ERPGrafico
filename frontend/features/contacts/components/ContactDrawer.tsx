@@ -389,7 +389,7 @@ export default function ContactDrawer({ open, onOpenChange, contact, onSuccess, 
 
                                             {/* System/Dynamic Active Roles (Read-Only) */}
                                             {c?.active_roles && c.active_roles.some(r => r === 'USER' || r === 'EMPLOYEE') && (
-                                                <div className="flex flex-wrap gap-2 items-center p-3 rounded-lg bg-muted/20 border border-muted/50 mt-2">
+                                                <div className="flex flex-wrap gap-2 items-center p-3 rounded-md bg-muted/20 border border-muted/50 mt-2">
                                                     <span className="text-xs text-muted-foreground font-semibold">Roles del sistema (automáticos):</span>
                                                     {c.active_roles.includes('USER') && (
                                                         <Chip.Category domain="contact_type" value="USER" size="xs" />
