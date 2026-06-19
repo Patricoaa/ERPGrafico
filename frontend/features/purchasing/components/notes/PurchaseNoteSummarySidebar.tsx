@@ -57,7 +57,7 @@ export function PurchaseNoteSummarySidebar({
                 <Progress value={progress} className="h-2" />
 
                 <div className="mt-6 flex items-center gap-3">
-                    <div className={`p-2.5 rounded-lg ${noteType === 'NOTA_CREDITO' ? 'bg-warning/10 text-warning' : 'bg-primary/10 text-primary'}`}>
+                    <div className={`p-2.5 rounded-md ${noteType === 'NOTA_CREDITO' ? 'bg-warning/10 text-warning' : 'bg-primary/10 text-primary'}`}>
                         {noteType === 'NOTA_CREDITO' ? (
                             <ArrowLeft className="h-5 w-5" />
                         ) : (
@@ -121,7 +121,7 @@ export function PurchaseNoteSummarySidebar({
                 <Separator />
 
                 {/* Impact Info */}
-                <div className={`p-4 rounded-lg border text-xs leading-relaxed ${noteType === 'NOTA_CREDITO'
+                <div className={`p-4 rounded-md border text-xs leading-relaxed ${noteType === 'NOTA_CREDITO'
                     ? 'bg-warning/10 border-warning/10 text-warning'
                     : 'bg-primary/10 border-primary/10 text-primary'
                     }`}>

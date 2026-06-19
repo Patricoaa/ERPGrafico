@@ -210,7 +210,7 @@ export function Step4_Receipt({ receiptData, setReceiptData, orderLines = [] }: 
                         <span>Tipo de {receiptLabel}</span>
                     </div>
                 }
-                containerClassName="bg-primary/5 rounded-lg"
+                containerClassName="bg-primary/5 rounded-md"
             >
                 <RadioGroup
                     value={receiptData.type}
@@ -221,11 +221,11 @@ export function Step4_Receipt({ receiptData, setReceiptData, orderLines = [] }: 
                         <div key={type.id} className="relative">
                             <label
                                 htmlFor={`receipt-${type.id}`}
-                                className={`flex items-start gap-4 rounded-lg border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground cursor-pointer transition-all ${receiptData.type === type.id ? 'border-primary bg-primary/5' : ''
+                                className={`flex items-start gap-4 rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground cursor-pointer transition-all ${receiptData.type === type.id ? 'border-primary bg-primary/5' : ''
                                     }`}
                             >
                                 <RadioGroupItem value={type.id} id={`receipt-${type.id}`} className="mt-1" />
-                                <div className={`p-2 rounded-lg bg-background border ${type.color}`}>
+                                <div className={`p-2 rounded-md bg-background border ${type.color}`}>
                                     <type.icon className="h-5 w-5" />
                                 </div>
                                 <div className="flex-1">
@@ -333,7 +333,7 @@ export function Step4_Receipt({ receiptData, setReceiptData, orderLines = [] }: 
             )}
 
             {(receiptData.type as string) !== 'DEFERRED' && (
-                <div className="space-y-6 p-4 bg-muted/30 rounded-lg border border-dashed animate-in fade-in">
+                <div className="space-y-6 p-4 bg-muted/30 rounded-md border border-dashed animate-in fade-in">
                     <LabeledInput
                         label="Referencia de Entrega"
                         placeholder="Ej: Guía de despacho #123"
@@ -354,8 +354,8 @@ export function Step4_Receipt({ receiptData, setReceiptData, orderLines = [] }: 
             )}
 
             {(receiptData.type as string) === 'DEFERRED' && (
-                <div className="flex items-start gap-3 p-4 bg-warning/10 border border-warning/20 rounded-lg text-warning">
-                    <div className="p-2 rounded-lg bg-background border border-warning/20">
+                <div className="flex items-start gap-3 p-4 bg-warning/10 border border-warning/20 rounded-md text-warning">
+                    <div className="p-2 rounded-md bg-background border border-warning/20">
                         <FileText className="h-5 w-5" />
                     </div>
                     <div className="space-y-1">
