@@ -6,10 +6,9 @@ import { CreditCard, AlertTriangle, Eye, Receipt, Wallet } from 'lucide-react'
 import {
     DataTableView, DataTableColumnHeader, DataCell,
     createActionsColumn, StatusBadge, MoneyDisplay, Skeleton, EmptyState, EntityCard,
-    SmartSearchBar,
-    useSmartSearch,
-    UnderlineTabs,
+    SegmentationBar, useSegmentation, SmartSearchBar, useClientSearch,
 } from '@/components/shared'
+import type { SegmentationDefinition } from '@/types/segmentation'
 import type { SearchDefinition } from '@/types/search'
 import { useCardStatements } from './hooks'
 import { useBankOverview } from '../hooks/useBankOverview'
@@ -21,6 +20,13 @@ import { useStatementsAnalyticsData } from './useStatementsAnalyticsData'
 
 interface StatementsViewProps {
     bankId: number
+}
+
+const statementsSearchDef: SearchDefinition = {
+    fields: [
+        { key: 'display_id', label: 'N° Estado', type: 'text', serverParam: 'display_id' },
+        { key: 'billed_amount', label: 'Monto facturado', type: 'text', serverParam: 'billed_amount' },
+    ],
 }
 
 export function StatementsView({ bankId }: StatementsViewProps) {
@@ -35,22 +41,32 @@ export function StatementsView({ bankId }: StatementsViewProps) {
     const [selectedId, setSelectedId] = useState<number | null>(null)
     const [payingStatement, setPayingStatement] = useState<CreditCardStatement | null>(null)
 
-    const searchDef: SearchDefinition = useMemo(() => ({
-        fields: [
+    const segDef: SegmentationDefinition = useMemo(() => ({
+        segments: [
             {
                 key: 'card',
                 label: 'Tarjeta',
-                type: 'identity-enum',
+                type: 'tabs',
                 serverParam: 'card',
+                variant: 'dropdown',
                 defaultValue: String(creditCardAccounts[0]?.id ?? ''),
                 options: creditCardAccounts.map(a => ({ label: a.name, value: String(a.id) })),
+            },
+            {
+                key: 'cutoff_date',
+                label: 'Fecha de corte',
+                type: 'date',
+                serverParamDate: 'cutoff_date',
+                serverParamFrom: 'cutoff_from',
+                serverParamTo: 'cutoff_to',
             },
         ],
     }), [creditCardAccounts])
 
-    const { filters, applyFilter } = useSmartSearch(searchDef)
+    const { filters: segFilters, isFiltered: isSegFiltered, apply, clearAll: clearSeg } = useSegmentation(segDef)
+    const { filterFn, isFiltered: isTextFiltered, clearAll: clearText } = useClientSearch<CreditCardStatement>(statementsSearchDef)
 
-    const cardAccountId = filters.card ? Number(filters.card) : (creditCardAccounts[0]?.id ?? null)
+    const cardAccountId = segFilters.card ? Number(segFilters.card) : (creditCardAccounts[0]?.id ?? null)
 
     const params: Record<string, string> = {}
     if (bankId) params.bank = String(bankId)
@@ -68,6 +84,21 @@ export function StatementsView({ bankId }: StatementsViewProps) {
     const { data: statements = [], isLoading, isError } = useCardStatements(
         Object.keys(params).length > 0 ? params : undefined,
     )
+
+    const filteredStatements = useMemo(() => {
+        let result = filterFn(statements)
+        const { cutoff_date, cutoff_from, cutoff_to } = segFilters
+        if (cutoff_date) {
+            result = result.filter(s => s.cut_off_date === cutoff_date)
+        }
+        if (cutoff_from) {
+            result = result.filter(s => s.cut_off_date >= cutoff_from)
+        }
+        if (cutoff_to) {
+            result = result.filter(s => s.cut_off_date <= cutoff_to)
+        }
+        return result
+    }, [statements, filterFn, segFilters])
 
     if (isLoading) {
         return <Skeleton className="h-full" />
@@ -157,8 +188,12 @@ export function StatementsView({ bankId }: StatementsViewProps) {
                 <DataTableView
                     entityLabel="treasury.creditcardstatement"
                     columns={columns}
-                    data={statements}
+                    data={filteredStatements}
                     variant="embedded"
+                    smartSearch={<SmartSearchBar searchDef={statementsSearchDef} placeholder="Buscar por N° de estado o monto..." className="w-full" />}
+                    showReset={isTextFiltered || isSegFiltered}
+                    isFiltered={isTextFiltered || isSegFiltered}
+                    onReset={() => { clearText(); clearSeg() }}
                     analyticsPanel={{
                         screen: {
                             entityName: "Gestión TC",
@@ -234,30 +269,14 @@ export function StatementsView({ bankId }: StatementsViewProps) {
                             ],
                             cardAccounts: creditCardAccounts,
                             cardAccountId: cardAccountId,
-                            onCardAccountChange: (id) => applyFilter('card', String(id)),
+                            onCardAccountChange: (id) => apply('card', String(id)),
                             granularity,
                             onGranularityChange: setGranularity,
                             dateRange,
                             onDateRangeChange: setDateRange,
                         },
                     }}
-                    customFilters={
-                        creditCardAccounts.length > 1 ? (
-                            <UnderlineTabs
-                                items={creditCardAccounts.map(a => ({ value: String(a.id), label: a.name }))}
-                                value={String(filters.card ?? creditCardAccounts[0]?.id ?? '')}
-                                onValueChange={(v) => applyFilter('card', v)}
-                                orientation="horizontal"
-                                variant="underline"
-                                className="w-auto"
-                                headerClassName="h-7 px-0 bg-transparent"
-                                contentClassName="hidden"
-                            >
-                                <div />
-                            </UnderlineTabs>
-                        ) : null
-                    }
-                    smartSearch={<SmartSearchBar searchDef={searchDef} placeholder="Buscar estados de cuenta..." className="flex-1" />}
+                    segmentation={<SegmentationBar def={segDef} />}
                     emptyState={{
                         context: 'treasury',
                         icon: CreditCard,

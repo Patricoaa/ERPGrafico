@@ -42,10 +42,6 @@ export function useClientSearch<T extends object>(
           const filterVal = filters[field.serverParam]
           if (!filterVal) return true
 
-          if (field.type === 'identity-enum') {
-            return String(r[field.key] ?? '') === filterVal
-          }
-
           const keys = resolveClientKeys(field)
           return keys.some((k) =>
             String(r[k] ?? '').toLowerCase().includes(filterVal.toLowerCase()),

@@ -1,9 +1,9 @@
 'use client'
 
 import { useRef, useState, useCallback, useEffect, KeyboardEvent, useMemo } from 'react'
-import { Search, X, ChevronRight, ChevronLeft, CornerDownLeft, Check } from 'lucide-react'
+import { Search, X, CornerDownLeft } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import type { SearchDefinition, FieldDef, IdentityEnumFieldDef, TextFieldDef } from '@/types/search'
+import type { SearchDefinition, FieldDef, TextFieldDef } from '@/types/search'
 import { useSmartSearch } from './useSmartSearch'
 import { useSuggestions } from '@/hooks/useSuggestions'
 import { Chip } from '@/components/shared'
@@ -16,12 +16,7 @@ interface SmartSearchBarProps {
 
 type DropdownStage =
   | { type: 'fields' }
-  | { type: 'identity-options'; field: IdentityEnumFieldDef }
   | { type: 'closed' }
-
-function isIdentityEnum(field: FieldDef): field is IdentityEnumFieldDef {
-  return field.type === 'identity-enum'
-}
 
 function isTextField(field: FieldDef): field is TextFieldDef {
   return field.type === 'text'
@@ -34,9 +29,6 @@ export function SmartSearchBar({ searchDef, placeholder = 'Buscar...', className
   const [focusedIndex, setFocusedIndex] = useState(-1)
   const inputRef = useRef<HTMLInputElement>(null)
   const containerRef = useRef<HTMLDivElement>(null)
-
-  const identityField = searchDef.fields.find(isIdentityEnum)
-  const identityValue = identityField ? filters[identityField.serverParam] : undefined
 
   const parsedActiveFieldInfo = useMemo(() => {
     const trimmedInput = inputValue.trim()
@@ -83,13 +75,6 @@ export function SmartSearchBar({ searchDef, placeholder = 'Buscar...', className
     setInputValue('')
   }, [setInputValue])
 
-  const handleBack = useCallback(() => {
-    setStage({ type: 'fields' })
-    setFocusedIndex(0)
-    setInputValue('')
-    setTimeout(() => inputRef.current?.focus(), 0)
-  }, [setInputValue])
-
   const handleFieldSelect = useCallback(
     (field: TextFieldDef) => {
       setFocusedIndex(-1)
@@ -98,23 +83,6 @@ export function SmartSearchBar({ searchDef, placeholder = 'Buscar...', className
       setTimeout(() => inputRef.current?.focus(), 0)
     },
     [setInputValue],
-  )
-
-  const handleIdentitySelect = useCallback(
-    async (field: IdentityEnumFieldDef, value: string) => {
-      await applyFilter(field.serverParam, value)
-      close()
-      inputRef.current?.focus()
-    },
-    [applyFilter, close],
-  )
-
-  const handleIdentityClear = useCallback(
-    async (field: IdentityEnumFieldDef) => {
-      await removeFilter(field.serverParam)
-      inputRef.current?.focus()
-    },
-    [removeFilter],
   )
 
   const handleSuggestionSelect = useCallback(
@@ -165,10 +133,6 @@ export function SmartSearchBar({ searchDef, placeholder = 'Buscar...', className
       const currentVal = inputValue
 
       if (e.key === 'Backspace' && currentVal === '') {
-        if (stage.type === 'identity-options') {
-          handleBack()
-          return
-        }
         if (chips.length > 0) {
           removeFilter(chips[chips.length - 1].key)
           return
@@ -179,11 +143,6 @@ export function SmartSearchBar({ searchDef, placeholder = 'Buscar...', className
         if (stage.type === 'fields' && focusedIndex >= 0 && filteredFields[focusedIndex]) {
           e.preventDefault()
           handleFieldSelect(filteredFields[focusedIndex])
-          return
-        }
-        if (stage.type === 'identity-options') {
-          const opt = stage.field.options[focusedIndex]
-          if (opt) { e.preventDefault(); handleIdentitySelect(stage.field, opt.value) }
           return
         }
         if (activeSuggestionsUrl && focusedIndex >= 0 && suggestions[focusedIndex]) {
@@ -201,11 +160,9 @@ export function SmartSearchBar({ searchDef, placeholder = 'Buscar...', className
         e.preventDefault()
         const list = stage.type === 'fields'
           ? filteredFields
-          : stage.type === 'identity-options'
-            ? stage.field.options
-            : activeSuggestionsUrl
-              ? suggestions
-              : []
+          : activeSuggestionsUrl
+            ? suggestions
+            : []
         setFocusedIndex((i) => Math.min(i + 1, list.length - 1))
         return
       }
@@ -214,7 +171,7 @@ export function SmartSearchBar({ searchDef, placeholder = 'Buscar...', className
         setFocusedIndex((i) => Math.max(i - 1, -1))
       }
     },
-    [inputValue, chips, stage, filteredFields, focusedIndex, suggestions, activeSuggestionsUrl, parsedActiveFieldInfo, close, removeFilter, handleFieldSelect, handleIdentitySelect, handleSuggestionSelect, handleTextSubmit, handleBack],
+    [inputValue, chips, stage, filteredFields, focusedIndex, suggestions, activeSuggestionsUrl, parsedActiveFieldInfo, close, removeFilter, handleFieldSelect, handleSuggestionSelect, handleTextSubmit],
   )
 
   // Close dropdown on outside click
@@ -252,26 +209,6 @@ export function SmartSearchBar({ searchDef, placeholder = 'Buscar...', className
       >
         <Search className="h-3.5 w-3.5 text-muted-foreground/50 shrink-0 transition-colors group-hover:text-foreground" />
 
-        {identityField && (
-          <IdentityChip
-            field={identityField}
-            value={identityValue}
-            options={identityField.options}
-            isOpen={stage.type === 'identity-options'}
-            onSelect={(v) => handleIdentitySelect(identityField, v)}
-            onClear={() => handleIdentityClear(identityField)}
-            onOpenChange={(open) => {
-              if (open) {
-                setStage({ type: 'identity-options', field: identityField })
-                setFocusedIndex(0)
-              } else {
-                setStage({ type: 'closed' })
-                setFocusedIndex(-1)
-              }
-            }}
-          />
-        )}
-
         {chips.map((chip) => (
           <Chip
             key={chip.key}
@@ -304,9 +241,7 @@ export function SmartSearchBar({ searchDef, placeholder = 'Buscar...', className
 
             const hasColon = val.includes(':')
 
-            if (stage.type !== 'closed' && stage.type !== 'fields') {
-              setStage({ type: 'fields' })
-            } else if (stage.type === 'closed' && !hasColon) {
+            if (stage.type === 'closed' && !hasColon) {
               openFieldList()
             } else if (stage.type === 'fields' && hasColon) {
               setStage({ type: 'closed' })
@@ -406,44 +341,6 @@ export function SmartSearchBar({ searchDef, placeholder = 'Buscar...', className
             </div>
           )}
 
-          {/* Stage: identity-enum options */}
-          {stage.type === 'identity-options' && (
-            <div className="p-1 min-w-[160px]">
-              {stage.field.options.map((opt, i) => {
-                const isSelected = opt.value === identityValue
-                return (
-                  <button
-                    key={opt.value}
-                    id={`ssb-option-${i}`}
-                    type="button"
-                    role="option"
-                    aria-selected={i === focusedIndex}
-                    onClick={() => handleIdentitySelect(stage.field, opt.value)}
-                    className={cn(
-                      'w-full flex items-center justify-between px-2.5 py-2 text-left transition-colors rounded-sm',
-                      'text-[10px] uppercase tracking-widest',
-                      i === focusedIndex ? 'bg-primary/10 text-primary' : 'hover:bg-primary/5 text-foreground',
-                      isSelected && 'text-primary font-bold',
-                    )}
-                  >
-                    <span>{opt.label}</span>
-                    {isSelected && <Check className="h-3 w-3 text-primary" />}
-                  </button>
-                )
-              })}
-              {identityValue && (
-                <button
-                  type="button"
-                  onClick={() => handleIdentityClear(stage.field)}
-                  className="w-full flex items-center gap-2 px-2.5 py-1.5 mt-1 border-t border-border/40 text-[10px] text-muted-foreground hover:text-foreground transition-colors"
-                >
-                  <X className="h-3 w-3" />
-                  Quitar filtro
-                </button>
-              )}
-            </div>
-          )}
-
           {/* Dynamic Suggestions for Text Field */}
           {activeSuggestionsUrl && (
             <div className="p-1 border-t border-border/30">
@@ -482,57 +379,4 @@ export function SmartSearchBar({ searchDef, placeholder = 'Buscar...', className
   )
 }
 
-/* ─── Identity chip inline ─── */
 
-interface IdentityChipProps {
-  field: IdentityEnumFieldDef
-  value?: string
-  options: { label: string; value: string }[]
-  isOpen: boolean
-  onSelect: (value: string) => void
-  onClear: () => void
-  onOpenChange: (open: boolean) => void
-}
-
-function IdentityChip({ field, value, options, isOpen, onSelect, onClear, onOpenChange }: IdentityChipProps) {
-  const selectedLabel = value ? options.find((o) => o.value === value)?.label : null
-
-  return (
-    <div className="relative shrink-0">
-      <button
-        type="button"
-        onClick={(e) => {
-          e.stopPropagation()
-          onOpenChange(!isOpen)
-        }}
-        className={cn(
-          'inline-flex items-center gap-1 h-6 px-1.5 text-[10px] uppercase font-bold tracking-widest rounded-sm transition-colors',
-          value
-            ? 'bg-primary/10 text-primary hover:bg-primary/15'
-            : 'bg-muted/50 text-muted-foreground hover:text-foreground hover:bg-muted/80',
-          isOpen && 'ring-1 ring-primary/30',
-        )}
-      >
-        {selectedLabel ?? field.label}
-        <ChevronDown className="h-2.5 w-2.5" />
-      </button>
-    </div>
-  )
-}
-
-function ChevronDown({ className }: { className?: string }) {
-  return (
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      className={className}
-    >
-      <path d="m6 9 6 6 6-6" />
-    </svg>
-  )
-}

@@ -7,7 +7,7 @@ created: 2026-05-13
 updated: 2026-06-19
 last_review: 2026-06-19
 stability: stable
-scope: Decisión de búsqueda en vistas de tabla — SmartSearchBar + useSmartSearch vs useClientSearch vs sin searchbar. A partir de 2026-06 los filtros de estado/fecha migraron a SegmentationBar.
+scope: Decisión de búsqueda en vistas de tabla — SmartSearchBar + useSmartSearch vs useClientSearch vs sin searchbar. A partir de 2026-06 los filtros de estado/fecha/clasificación migraron a SegmentationBar.
 ---
 
 # Contrato: SmartSearchBar — Árbol de Decisión
@@ -15,10 +15,10 @@ scope: Decisión de búsqueda en vistas de tabla — SmartSearchBar + useSmartSe
 Todo `DataTable` con búsqueda/filtrado debe usar `SmartSearchBar` como `leftAction`.
 El componente es siempre el mismo; la diferencia está en el hook de estado.
 
-**A partir de 2026-06:** SmartSearchBar maneja solo campos de tipo `text` e `identity-enum`.
-Los filtros de estado (tab/select) y fechas (calendario) se declaran como `SegmentationDefinition`
-y se renderizan con `<SegmentationBar>` en la Fila 1 del toolbar. Ver
-[segmentation-decision.md](segmentation-decision.md).
+**A partir de 2026-06:** SmartSearchBar maneja solo campos de tipo `text`.
+Los filtros de estado, clasificación de entidad (tabs/dropdown) y fechas (calendario)
+se declaran como `SegmentationDefinition` y se renderizan con `<SegmentationBar>`
+en la Fila 1 del toolbar. Ver [segmentation-decision.md](segmentation-decision.md).
 
 ---
 
@@ -63,9 +63,9 @@ y se renderizan con `<SegmentationBar>` en la Fila 1 del toolbar. Ver
 | `type` | Dónde se renderiza | Propósito |
 |---|---|---|
 | `text` | SmartSearchBar (input de texto libre) | Búsqueda por nombre, código, RUT, etc. |
-| `identity-enum` | SmartSearchBar (chip inline + dropdown) | Clasificación de entidad — ej. tipo de contacto (cliente/proveedor). **NO** para estado operacional. |
 
-Los filtros de estado y fecha **no** van en el searchDef. Van en `segmentationDef.ts`
+Cualquier filtro con opciones predefinidas (estado, tipo, clasificación de entidad,
+selector de tarjeta, alcance, año) **no** va en el searchDef. Va en `segmentationDef.ts`
 como `TabSegmentDef`, `DropdownSegmentDef` o `DateSegmentDef`. Ver
 [segmentation-decision.md](segmentation-decision.md).
 
@@ -74,7 +74,7 @@ como `TabSegmentDef`, `DropdownSegmentDef` o `DateSegmentDef`. Ver
 ## Patrón canónico: server-side (useSmartSearch) con segmentation
 
 ```tsx
-// 1. searchDef — features/[app]/searchDef.ts (solo text + identity-enum)
+// 1. searchDef — features/[app]/searchDef.ts (solo text)
 export const myEntitySearchDef: SearchDefinition = {
   fields: [
     { key: 'search', label: 'Nombre', type: 'text', serverParam: 'search' },
@@ -158,7 +158,8 @@ const filtered = useMemo(() => filterFn(data ?? []), [data, filterFn])
 | Solo `SmartSearchBar` como `leftAction` | No usar SimpleSearchBar — no existe en el barrel |
 | `useClientSearch` solo para datasets sin paginación | Si el hook ya pagina server-side, usar `useSmartSearch` |
 | `clientKey` en `TextFieldDef` solo para `useClientSearch` | Ignorado por SmartSearchBar (server-side) |
-| Sin `type: 'enum'` ni `type: 'daterange'` en searchDef | Esos tipos fueron eliminados 2026-06. Usar SegmentationBar. |
+| Sin `type: 'enum'`, `type: 'daterange'`, ni `type: 'identity-enum'` en searchDef | Esos tipos fueron eliminados 2026-06. Usar SegmentationBar. |
+| `FieldDef` es solo `TextFieldDef` | No existe `IdentityEnumFieldDef` desde 2026-06. |
 
 ---
 
@@ -167,7 +168,7 @@ const filtered = useMemo(() => filterFn(data ?? []), [data, filterFn])
 ### Server-side activo (useSmartSearch) — con SegmentationBar
 | Ruta | searchDef | segmentationDef |
 |---|---|---|
-| `/contacts` | `contactSearchDef` | — (solo identity-enum) |
+| `/contacts` | `contactSearchDef` | `contactSegDef` |
 | `/billing/invoices` | `invoiceSearchDef` | `invoiceSegDef` |
 | `/billing/purchases` | `purchaseInvoiceSearchDef` | `purchaseInvoiceSegDef` |
 | `/sales/orders?tab=orders` | `saleOrderSearchDef` | `salesOrderSegDef` |
@@ -183,6 +184,8 @@ const filtered = useMemo(() => filterFn(data ?? []), [data, filterFn])
 | `/inventory/attributes` | `attributeSearchDef` | — (solo text) |
 | `/treasury/accounts?tab=accounts` | `treasuryAccountSearchDef` | `treasuryAccountSegDef` |
 | `/treasury/movements` | `treasuryMovementSearchDef` | `treasuryMovementsSegDef` |
+| `/treasury/card-statements` | — (solo segmentation) | (inline segDef en StatementsView) |
+| `/treasury/unbilled-charges` | — (solo segmentation) | (inline segDef en UnbilledChargesView) |
 | `/purchasing/orders` | `purchaseOrderSearchDef` | `purchaseOrderSegDef` |
 | `/production/orders` | `workOrderSearchDef` | `workOrderSegDef` |
 | `/production/boms` | `bomSearchDef` | `bomSegDef` |
@@ -229,3 +232,15 @@ Cuando un dataset Tier 5 crece y justifica filtrado server-side:
 4. `filterFn` y `useMemo(filterFn(...))` → eliminar
 5. Si hay filtros de estado/fecha, crear `segmentationDef` y agregar `SegmentationBar`
 6. `SmartSearchBar` en `leftAction` sin cambios (solo text)
+7. Si el dataset no usa filtros server-side pero hay filtros de clasificación (ej.
+   `state` en `StatementsList`), combinar `useClientSearch` + `useSegmentation` y
+   aplicar ambos filtros en el `useMemo`:
+   ```tsx
+   const { filterFn } = useClientSearch<MyEntity>(searchDef)
+   const { filters: segFilters } = useSegmentation(segDef)
+   const filtered = useMemo(() => {
+     let result = filterFn(data)
+     if (segFilters.state) result = result.filter(s => s.state === segFilters.state)
+     return result
+   }, [filterFn, data, segFilters])
+   ```

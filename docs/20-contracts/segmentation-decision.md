@@ -11,36 +11,44 @@ scope: Contrato para SegmentationBar — filtros de estado (tabs/dropdown) y fec
 
 # Contrato: SegmentationBar — Filtros de Segmentación en Toolbar
 
-`SegmentationBar` es el componente que reemplaza los antiguos campos `type: 'enum'`
-y `type: 'daterange'` de `SmartSearchBar`. Los filtros de estado operacional, tipo
-de documento y rangos de fecha se declaran como `SegmentationDefinition` y se
-renderizan en la Fila 1 del toolbar del DataTable.
+`SegmentationBar` es el componente que reemplaza los antiguos campos `type: 'enum'`,
+`type: 'daterange'` y `type: 'identity-enum'` de `SmartSearchBar`. Los filtros de
+estado operacional, tipo de documento, clasificación de entidad y rangos de fecha
+se declaran como `SegmentationDefinition` y se renderizan en la Fila 1 del toolbar
+del DataTable.
 
 ---
 
 ## Árbol de decisión
 
 ```
-¿El filtro representa estado operacional, tipo de documento, o rango de fecha?
+¿El filtro tiene opciones predefinidas (conjunto cerrado)?
 │
-├── NO → Usar SmartSearchBar (text) o identity-enum (clasificación de entidad)
+├── NO → SmartSearchBar (text, búsqueda libre)
+│       Ej: nombre, RUT, código, descripción
 │
-└── SÍ
+└── SÍ → SegmentationBar (Row 1)
     │
-    ├── ¿Son 2-6 opciones bien definidas y el orden importa?
+    ├── ¿Es un filtro de fecha?
     │   │
-    │   └── SÍ → TabSegment (shadcn Tabs, `variant: 'tabs'`)
-    │           Ej: estado (Borrador/Publicado/Anulado), tipo (Entrada/Salida/Ajuste)
+    │   └── SÍ → DateSegment (Popover + Calendar)
+    │           Modos: "Todos", "Fecha única", "Rango"
     │
-    ├── ¿Son muchas opciones (>6) o secundarias?
+    ├── ¿Es clasificación de entidad con defaultValue requerido?
     │   │
-    │   └── SÍ → DropdownSegment (DropdownMenu, `variant: 'dropdown'`)
-    │           Ej: tipo de DTE (33/34/35/…), cuenta bancaria, método de pago
+    │   └── SÍ → DropdownSegment con defaultValue
+    │           Ej: selector de tarjeta (card), alcance (scope)
+    │           No muestra "Todos" — siempre hay un valor activo
     │
-    └── ¿Es un filtro de fecha?
+    ├── ¿Son 2-6 opciones y el orden importa?
+    │   │
+    │   └── SÍ → TabSegment (Tabs, `variant: 'tabs'`)
+    │           Ej: estado (Borrador/Publicado/Anulado), tipo contacto (Cliente/Proveedor)
+    │
+    └── ¿Son muchas opciones (>6) o secundarias?
         │
-        └── SÍ → DateSegment (Popover + Calendar)
-                Modos: "Todos", "Fecha única", "Rango"
+        └── SÍ → DropdownSegment (DropdownMenu, `variant: 'dropdown'`)
+                Ej: tipo de DTE (33/34/35/…), cuenta bancaria, tipo de producto
 ```
 
 ---
@@ -56,6 +64,7 @@ type TabSegmentDef = {
   type: 'tabs'
   serverParam: string
   variant?: 'tabs' | 'dropdown'  // default 'tabs'
+  defaultValue?: string           // valor inicial; isFiltered lo ignora
   options: { label: string; value: string }[]
 }
 
@@ -167,10 +176,12 @@ Los valores persisten en la URL y soportan deeplinks y navegación con historial
 
 | Regla | Detalle |
 |---|---|
-| No mezclar `type: 'enum'` en searchDef | Los status/tipo van en segmentationDef, no en searchDef |
+| No mezclar `type: 'enum'`, `type: 'identity-enum'` ni `type: 'daterange'` en searchDef | Status, clasificación, fecha → segmentationDef |
 | `SegmentationBar` se renderiza en Fila 1 del toolbar | Pasa como prop `segmentation` a DataTable/DataTableView |
 | `useSegmentation` se importa desde `@/components/shared` | Barrel only |
-| `SegmentationDefinition` se declara en `features/[app]/segmentationDef.ts` | Un archivo por feature, exportado desde `index.ts` |
+| `SegmentationDefinition` se declara en `features/[app]/segmentationDef.ts` | Un archivo por feature, exportado desde `index.ts`. Excepción: segDefs dinámicos inline en vistas complejas (ej. card-statements) |
 | No renderizar SegmentationBar si `segments.length === 0` | El componente retorna `null` internamente |
 | DateSegment importa `DateRange` de `react-day-picker` como type-only | Evita bundling innecesario |
 | Un segmento `date` sin `serverParamDate` oculta el modo "Fecha única" | El modo "Todos" y "Rango" siempre están disponibles |
+| Si un segmento tiene `defaultValue`, `isFiltered` no lo cuenta como filtro activo | El valor default es el estado "neutro"; solo filtros distintos del default se consideran activos |
+| `customFilters` está deprecado desde 2026-06 | Los filtros de entidad (card, scope) y estado van en SegmentationBar. No crear nuevos customFilters. |

@@ -7,7 +7,7 @@ import { useStatementsQuery } from "../hooks/useReconciliationQueries"
 import { useSelectedEntity } from "@/hooks/useSelectedEntity"
 import type { BankStatement } from "../types"
 import { StatementImportModal } from "@/features/treasury"
-import { DataTable, StatusBadge, SmartSearchBar, useClientSearch } from '@/components/shared'
+import { DataTable, StatusBadge, SmartSearchBar, SegmentationBar, useClientSearch, useSegmentation } from '@/components/shared'
 import { DataTableColumnHeader } from '@/components/shared'
 import type { ColumnDef } from "@tanstack/react-table"
 import { createActionsColumn, DataCell } from '@/components/shared'
@@ -15,6 +15,7 @@ import { Progress } from "@/components/ui/progress"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Button } from "@/components/ui/button"
 import type { SearchDefinition } from '@/types/search'
+import type { SegmentationDefinition } from '@/types/segmentation'
 
 const statementsSearchDef: SearchDefinition = {
     fields: [
@@ -25,10 +26,15 @@ const statementsSearchDef: SearchDefinition = {
             serverParam: 'search',
             clientKey: ['display_id', 'treasury_account_name'],
         },
+    ],
+}
+
+const statementsSegDef: SegmentationDefinition = {
+    segments: [
         {
             key: 'state',
             label: 'Estado',
-            type: 'identity-enum',
+            type: 'tabs',
             serverParam: 'state',
             options: [
                 { label: 'Borrador', value: 'DRAFT' },
@@ -53,7 +59,9 @@ export function StatementsList({ externalOpen = false, createAction, bankId, acc
     const [selectedAccountId, setSelectedAccountId] = useState<number | null>(null)
     const [importModalOpen, setImportModalOpen] = useState(false)
 
-    const { filterFn, isFiltered } = useClientSearch<BankStatement>(statementsSearchDef)
+    const { filterFn, isFiltered: isTextFiltered } = useClientSearch<BankStatement>(statementsSearchDef)
+    const { filters: segFilters, isFiltered: isSegFiltered } = useSegmentation(statementsSegDef)
+    const isFiltered = isTextFiltered || isSegFiltered
 
     const { data: statements = [], isLoading, refetch } = useStatementsQuery(
         selectedAccountId
@@ -63,7 +71,13 @@ export function StatementsList({ externalOpen = false, createAction, bankId, acc
             : undefined,
     )
 
-    const filteredStatements = useMemo(() => filterFn(statements), [filterFn, statements])
+    const filteredStatements = useMemo(() => {
+        let result = filterFn(statements)
+        if (segFilters.state) {
+            result = result.filter((s) => s.state === segFilters.state)
+        }
+        return result
+    }, [filterFn, statements, segFilters])
 
     const { entity: selectedFromUrl } = useSelectedEntity<BankStatement>({
         endpoint: '/treasury/statements'
@@ -254,6 +268,7 @@ export function StatementsList({ externalOpen = false, createAction, bankId, acc
                     isFiltered={isFiltered}
                     customFilters={accountFilter}
                     smartSearch={<SmartSearchBar searchDef={statementsSearchDef} placeholder="Buscar por ID o cuenta..." className="flex-1" />}
+                    segmentation={<SegmentationBar def={statementsSegDef} />}
                     createAction={internalImportButton ?? createAction}
                     defaultPageSize={10}
                 />

@@ -28,6 +28,7 @@ export function mapToUnbilledItemRows(
         chargeType: c.charge_type,
         chargeTypeDisplay: c.charge_type_display,
         isInstallmentInterest: false,
+        purchaseOrderDisplayId: null,
         originalPendingCharge: c,
         originalInstallment: null,
     }))
@@ -46,6 +47,7 @@ export function mapToUnbilledItemRows(
         chargeType: 'SCHEDULED',
         chargeTypeDisplay: 'Cuota programada',
         isInstallmentInterest: false,
+        purchaseOrderDisplayId: i.purchase_order_display_id,
         originalPendingCharge: null,
         originalInstallment: i,
     }))
