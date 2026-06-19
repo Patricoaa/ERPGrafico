@@ -567,26 +567,42 @@ function DateSegment({ def, filters, apply, remove }: DateSegmentProps) {
           )}
 
           {/* Actions */}
-          <div className="flex justify-end gap-2">
+          <div className="flex justify-between gap-2">
             <Button
               variant="outline"
               size="sm"
               className="h-7 text-[10px] uppercase tracking-widest"
-              onClick={() => setOpen(false)}
+              onClick={async () => {
+                if (def.serverParamDate) await remove(def.serverParamDate)
+                if (def.serverParamFrom) await remove(def.serverParamFrom)
+                if (def.serverParamTo) await remove(def.serverParamTo)
+                setOpen(false)
+              }}
+              disabled={mode === 'all'}
             >
-              Cancelar
+              Limpiar
             </Button>
-            <Button
-              size="sm"
-              className="h-7 text-[10px] uppercase tracking-widest"
-              onClick={handleApply}
-              disabled={
-                (tempMode === 'single' && !tempSingle) ||
-                (tempMode === 'range' && !tempRange?.from)
-              }
-            >
-              Aplicar
-            </Button>
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-7 text-[10px] uppercase tracking-widest"
+                onClick={() => setOpen(false)}
+              >
+                Cancelar
+              </Button>
+              <Button
+                size="sm"
+                className="h-7 text-[10px] uppercase tracking-widest"
+                onClick={handleApply}
+                disabled={
+                  (tempMode === 'single' && !tempSingle) ||
+                  (tempMode === 'range' && !tempRange?.from)
+                }
+              >
+                Aplicar
+              </Button>
+            </div>
           </div>
         </div>
       </PopoverContent>
