@@ -1,10 +1,19 @@
 ---
 layer: 30-playbooks
 doc: bank-reconciliation-roadmap
+task: "Execute bank reconciliation roadmap"
+triggers: ["bank reconciliation", "roadmap bancos", "conciliación bancaria"]
 status: active
 owner: core-team
 last_review: 2026-05-21
 kind: roadmap
+preconditions:
+  - ADR-0036 completed
+  - Centro de Bancos deployed
+validation:
+  - TBD (roadmap — validate per task)
+forbidden:
+  - skipping phases
 ---
 
 # Bank Reconciliation — Roadmap LLM-Executable

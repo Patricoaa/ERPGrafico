@@ -7,6 +7,10 @@ preconditions:
   - 10-architecture/frontend-fsd.md
   - 10-architecture/backend-apps.md
   - 40-quality/testing.md
+validation:
+  - npx tsc --noEmit
+  - npm run lint
+  - npm run test
 forbidden:
   - refactor + behavior change in same PR
   - contract change without ADR

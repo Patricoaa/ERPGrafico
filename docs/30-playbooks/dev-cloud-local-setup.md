@@ -1,10 +1,22 @@
 ---
 layer: 30-playbooks
 doc: dev-cloud-local-setup
+task: "Setup hybrid dev environment (cloud + local)"
+triggers: ["dev setup", "cloud setup", "local setup", "hybrid dev", "new developer"]
 status: active
 owner: core-team
 last_review: 2026-05-21
 kind: setup
+preconditions:
+  - Docker
+  - Docker Compose
+  - Python 3.12
+  - Node.js 22
+validation:
+  - docker compose up -d
+  - npm run dev
+forbidden:
+  - running full stack locally on low-RAM machines
 ---
 
 # Dev con Cloud + Local Nativo

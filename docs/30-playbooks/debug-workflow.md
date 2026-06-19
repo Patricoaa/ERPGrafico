@@ -6,6 +6,12 @@ triggers: ["bug", "failing test", "error", "unexpected", "regression"]
 preconditions:
   - 40-quality/observability.md
   - 40-quality/testing.md
+validation:
+  - pytest failing test
+  - npm run type-check
+forbidden:
+  - fixing symptom not root cause
+  - modifying unrelated code
 status: active
 owner: core-team
 last_review: 2026-04-21

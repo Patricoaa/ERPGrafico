@@ -1,10 +1,21 @@
 ---
 layer: 30-playbooks
 doc: home-server-setup
+task: "Setup home server for remote development"
+triggers: ["home server", "old pc", "ssh development", "remote setup", "proxmox"]
 status: active
 owner: core-team
 last_review: 2026-05-21
 kind: setup
+preconditions:
+  - Hardware with virtualization support (VT-x/AMD-V)
+  - Proxmox installed
+validation:
+  - SSH access successful
+  - docker compose up -d
+  - frontend access http://localhost
+forbidden:
+  - using cloud services for main stack
 ---
 
 # Playbook: Setup de Home Server (Proxmox + Cloudflare R2)
