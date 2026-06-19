@@ -3,7 +3,7 @@ from rest_framework.routers import DefaultRouter
 from .views import (
     TreasuryMovementViewSet, TreasuryAccountViewSet, POSTerminalViewSet,
     BankStatementViewSet, BankStatementLineViewSet,
-    ReconciliationSettingsViewSet, ReconciliationReportsViewSet,
+    ReconciliationSettingsViewSet,
     POSSessionViewSet,
     TreasuryDashboardViewSet,
     BankViewSet, PaymentMethodViewSet, TerminalBatchViewSet,
@@ -27,7 +27,6 @@ router.register(r'terminal-devices', PaymentTerminalDeviceViewSet)
 router.register(r'statements', BankStatementViewSet)
 router.register(r'statement-lines', BankStatementLineViewSet)
 router.register(r'reconciliation-settings', ReconciliationSettingsViewSet)
-router.register(r'reconciliation-reports', ReconciliationReportsViewSet, basename='reconciliation-reports')
 
 router.register(r'pos-sessions', POSSessionViewSet, basename='possession')
 router.register(r'dashboard', TreasuryDashboardViewSet, basename='treasury-dashboard')

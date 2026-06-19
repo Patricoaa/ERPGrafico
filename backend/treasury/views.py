@@ -32,7 +32,7 @@ from .reconciliation_service import ReconciliationService
 from .matching_service import MatchingService
 # from .rule_service import RuleService
 from .difference_service import DifferenceService
-from .reports_service import ReportsService
+
 from contacts.models import Contact
 from decimal import Decimal
 from accounting.models import Account
@@ -1279,65 +1279,6 @@ class ReconciliationSettingsViewSet(viewsets.ModelViewSet):
         """Always returns the global settings singleton."""
         settings, _ = ReconciliationSettings.objects.get_or_create(treasury_account=None)
         return Response(ReconciliationSettingsSerializer(settings).data)
-
-
-class ReconciliationReportsViewSet(viewsets.ViewSet):
-    """ViewSet for reconciliation reports and dashboard"""
-    
-    @action(detail=False, methods=['get'])
-    def dashboard(self, request):
-        """Reconciliation dashboard metrics — cached 90s"""
-        try:
-            from core.cache import cache_report
-            
-            account_id = request.query_params.get('treasury_account')
-            
-            date_from_str = request.query_params.get('date_from')
-            date_to_str = request.query_params.get('date_to')
-            
-            date_from = date.fromisoformat(date_from_str) if date_from_str else None
-            date_to = date.fromisoformat(date_to_str) if date_to_str else None
-            
-            def _generate():
-                return ReportsService.get_reconciliation_dashboard(
-                    treasury_account_id=account_id,
-                    date_from=date_from,
-                    date_to=date_to
-                )
-
-            data = cache_report(
-                module='treasury',
-                endpoint='recon_dashboard',
-                params={'account': account_id, 'from': date_from_str, 'to': date_to_str},
-                timeout=90,
-                generator=_generate,
-            )
-            return Response(data)
-        except Exception as e:
-            import traceback
-            traceback.print_exc()
-            return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-    
-    @action(detail=False, methods=['get'])
-    def pending(self, request):
-        """Pending reconciliations report"""
-        try:
-            account_id = request.query_params.get('treasury_account')
-            data = ReportsService.get_pending_reconciliations_report(account_id)
-            return Response(data)
-        except Exception as e:
-            return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-            
-    @action(detail=False, methods=['get'])
-    def history(self, request):
-        """Reconciliation history/trend"""
-        try:
-            account_id = request.query_params.get('treasury_account')
-            months = int(request.query_params.get('months', 6))
-            data = ReportsService.get_monthly_trend(account_id, months)
-            return Response(data)
-        except Exception as e:
-            return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 

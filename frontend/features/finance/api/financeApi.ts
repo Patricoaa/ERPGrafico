@@ -125,13 +125,6 @@ export const financeApi = {
     updateReconciliationSettings: (id: number, payload: Record<string, unknown>) =>
         api.patch(`/treasury/reconciliation-settings/${id}/`, payload).then(r => r.data),
 
-    // ── Bank Reconciliation: Dashboard ──
-    getDashboardData: (params?: Record<string, unknown>) =>
-        api.get('/treasury/reconciliation-reports/dashboard/', { params }).then(r => r.data),
-    getDashboardHistory: (params?: Record<string, unknown>) =>
-        api.get('/treasury/reconciliation-reports/history/', { params }).then(r => r.data),
-    getDashboardPending: (params?: Record<string, unknown>) =>
-        api.get('/treasury/reconciliation-reports/pending/', { params }).then(r => r.data),
 
     // ── Bank Reconciliation: Statement Lines ──
     getStatementLines: (params?: Record<string, unknown>) =>
