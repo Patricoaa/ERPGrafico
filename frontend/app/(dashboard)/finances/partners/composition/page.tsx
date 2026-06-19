@@ -34,7 +34,7 @@ export default async function PartnersCompositionPage({ searchParams }: PageProp
     )
 
     return (
-        <div className="h-full flex flex-col">
+        <>
             <PageHeader
                 title="Composición Societaria"
                 description="Gestión de capital suscrito y pagado por los socios."
@@ -49,14 +49,12 @@ export default async function PartnersCompositionPage({ searchParams }: PageProp
                 </Link>
             </PageHeader>
 
-            <div className="pt-4 flex-1 min-h-0 flex flex-col">
-                <PartnersSettingsView
-                    activeTab="composition"
-                    initialAddPartnerOpen={modal === 'add-partner'}
-                    initialStatsOpen={modal === 'stats'}
-                    createAction={createAction}
-                />
-            </div>
-        </div>
+            <PartnersSettingsView
+                activeTab="composition"
+                initialAddPartnerOpen={modal === 'add-partner'}
+                initialStatsOpen={modal === 'stats'}
+                createAction={createAction}
+            />
+        </>
     )
 }
