@@ -253,7 +253,7 @@ export function BlacklistView() {
                     data={contacts}
                     variant="embedded"
                     isLoading={loading}
-                    leftAction={<SmartSearchBar searchDef={creditContactSearchDef} placeholder="Cliente o RUT..." className="w-full" />}
+                    smartSearch={<SmartSearchBar searchDef={creditContactSearchDef} placeholder="Cliente o RUT..." className="w-full" />}
                     renderSubComponent={(row) => (
                         <BlacklistContactPanel contact={row.original} onRefresh={fetchData} />
                     )}

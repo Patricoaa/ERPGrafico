@@ -270,8 +270,6 @@ export function HRSettingsView({ activeTab = "global" }: { activeTab?: string })
                             <DataTable
                                 columns={conceptColumns}
                                 data={concepts}
-                                filterColumn="name"
-                                searchPlaceholder="Buscar concepto..."
                                 isLoading={loading}
                                 variant="embedded"
                             />

@@ -174,7 +174,7 @@ export function UsersSettingsView({ activeTab }: UsersSettingsViewProps) {
                                 data={users}
                                 variant="embedded"
                                 isLoading={isLoading}
-                                leftAction={<SmartSearchBar searchDef={userSearchDef} placeholder="Buscar usuario por nombre, email o username..." className="w-full" />}
+                                smartSearch={<SmartSearchBar searchDef={userSearchDef} placeholder="Buscar usuario por nombre, email o username..." className="w-full" />}
                                 createAction={usersCreateAction}
                             />
                         </div>

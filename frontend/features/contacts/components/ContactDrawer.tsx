@@ -787,8 +787,7 @@ function InsightsTable({ data, type, title, icon: Icon, onActionSuccess }: Insig
                     data={filteredData}
                     variant="embedded"
                     defaultPageSize={10}
-                    globalFilterFields={["display_id", "number"]}
-                    showToolbarSort={true}
+                    sortOptions={true}
                     renderCustomView={cardView}
                 />
             </div>
@@ -870,8 +869,7 @@ function CreditLedgerTable({ data, loading, onActionSuccess }: { data: any[], lo
                         data={loading ? LEDGER_SKELETON : data}
                         variant="embedded"
                         defaultPageSize={10}
-                        globalFilterFields={["display_id", "number"]}
-                        showToolbarSort={true}
+                        sortOptions={true}
                         renderCustomView={createDomainCardView('sales.saleorder', {
                             onRowClick: (data: any) => openHub({ orderId: data.id, type: 'sale', onActionSuccess }),
                         })}

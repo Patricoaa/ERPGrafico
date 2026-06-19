@@ -167,7 +167,7 @@ export function SalesInvoicesClientView({ initialInvoices }: { initialInvoices?:
                     isRefetching={isRefetching}
                     onRowClick={(row: Invoice) => toggleSelection(row)}
                     variant="embedded"
-                    leftAction={<SmartSearchBar searchDef={invoiceSearchDef} placeholder="Buscar facturas..." className="w-full" />}
+                    smartSearch={<SmartSearchBar searchDef={invoiceSearchDef} placeholder="Buscar facturas..." className="w-full" />}
                     defaultPageSize={20}
                     isSelected={(data: Invoice) => hubConfig?.invoiceId === data.id}
                     isHubOpen={isHubOpen}

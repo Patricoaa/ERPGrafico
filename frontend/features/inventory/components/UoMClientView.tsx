@@ -162,7 +162,7 @@ export function UoMClientView({ externalOpen, onExternalOpenChange, createAction
                     isLoading={isLoading}
                     entityLabel="inventory.uom"
                     variant="embedded"
-                    leftAction={<SmartSearchBar searchDef={uomSearchDef} placeholder="Buscar unidad..." className="w-full" />}
+                    smartSearch={<SmartSearchBar searchDef={uomSearchDef} placeholder="Buscar unidad..." className="w-full" />}
                     bulkActions={bulkActions}
                     createAction={createAction}
                     isFiltered={isFiltered}

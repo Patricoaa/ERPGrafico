@@ -139,7 +139,7 @@ export function TerminalBatchesManagement({
                     data={batches}
                     isLoading={isLoading}
                     variant="embedded"
-                    leftAction={<SmartSearchBar searchDef={terminalBatchSearchDef} placeholder="Buscar liquidaciones..." className="w-full" />}
+                    smartSearch={<SmartSearchBar searchDef={terminalBatchSearchDef} placeholder="Buscar liquidaciones..." className="w-full" />}
                     createAction={createAction}
                     isFiltered={isFiltered}
                     emptyState={{

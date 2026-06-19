@@ -168,9 +168,6 @@ export function BudgetsListView({ externalOpen, onExternalOpenChange, createActi
                     variant="embedded"
                     isLoading={isLoading}
                     entityLabel="accounting.budget"
-                    globalFilterFields={["name"]}
-                    searchPlaceholder="Buscar presupuestos..."
-                    useAdvancedFilter={true}
                     createAction={createAction}
                 />
             </div>

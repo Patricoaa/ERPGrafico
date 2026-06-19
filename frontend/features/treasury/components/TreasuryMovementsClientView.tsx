@@ -309,7 +309,7 @@ export function TreasuryMovementsClientView({ externalOpen, createAction }: Trea
                     rowCount={totalCount}
                     pagination={pageState}
                     onPaginationChange={setPageState}
-                    leftAction={<SmartSearchBar searchDef={treasuryMovementsSearchDef} placeholder="Buscar movimientos..." className="w-full" />}
+                    smartSearch={<SmartSearchBar searchDef={treasuryMovementsSearchDef} placeholder="Buscar movimientos..." className="w-full" />}
                     createAction={createAction}
                     isFiltered={isFiltered}
                     emptyState={{

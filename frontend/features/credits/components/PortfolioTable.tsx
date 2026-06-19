@@ -308,14 +308,14 @@ export function PortfolioTable({
     isLoading,
     onRefresh,
     createAction,
-    leftAction,
+    smartSearch,
 }: {
     columns: ColumnDef<CreditContact>[],
     data: CreditContact[],
     isLoading: boolean,
     onRefresh: () => void,
     createAction?: React.ReactNode,
-    leftAction?: React.ReactNode,
+    smartSearch?: React.ReactNode,
 }) {
     const columnsWithExpander = useMemo<ColumnDef<CreditContact>[]>(() => [
         {
@@ -360,7 +360,7 @@ export function PortfolioTable({
                         description: "Habilite cupos de crédito para sus clientes para comenzar el seguimiento.",
                     }}
                     createAction={createAction}
-                    leftAction={leftAction}
+                    smartSearch={smartSearch}
                 />
             </div>
         </div>

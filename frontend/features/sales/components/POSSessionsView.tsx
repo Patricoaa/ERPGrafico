@@ -186,7 +186,7 @@ export const POSSessionsView = ({ hideHeader = false }: POSSessionsViewProps) =>
                     variant="embedded"
                     isLoading={isLoading}
                     entityLabel="pos.session"
-                    leftAction={<SmartSearchBar searchDef={posSessionSearchDef} placeholder="Buscar sesiones..." className="w-full" />}
+                    smartSearch={<SmartSearchBar searchDef={posSessionSearchDef} placeholder="Buscar sesiones..." className="w-full" />}
                     defaultPageSize={10}
                     isFiltered={isFiltered}
                     emptyState={{

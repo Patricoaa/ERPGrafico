@@ -434,7 +434,7 @@ export function SubscriptionsView({ hideHeader = false, externalOpen = false, cr
                             data={subscriptions}
                             isLoading={loading}
                             variant="embedded"
-                            leftAction={<SmartSearchBar searchDef={subscriptionSearchDef} placeholder="Buscar suscripciones..." className="w-full" />}
+                            smartSearch={<SmartSearchBar searchDef={subscriptionSearchDef} placeholder="Buscar suscripciones..." className="w-full" />}
                             defaultPageSize={20}
                             bulkActions={bulkActions}
                             createAction={createAction}

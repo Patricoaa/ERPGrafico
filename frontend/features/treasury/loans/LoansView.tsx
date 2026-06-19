@@ -157,8 +157,6 @@ export function LoansView({ bankId }: { bankId?: number } = {}) {
                     columns={columns}
                     data={loans}
                     variant="embedded"
-                    filterColumn="display_id"
-                    searchPlaceholder="Buscar por crédito…"
                     createAction={registerAction}
                     emptyState={{
                         context: 'treasury',

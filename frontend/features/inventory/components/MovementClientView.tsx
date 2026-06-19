@@ -186,7 +186,7 @@ export function MovementClientView({ externalOpen, onExternalOpenChange, createA
                     rowCount={totalCount}
                     pagination={pageState}
                     onPaginationChange={setPageState}
-                    leftAction={<SmartSearchBar searchDef={stockMoveSearchDef} placeholder="Buscar movimientos..." className="w-full" />}
+                    smartSearch={<SmartSearchBar searchDef={stockMoveSearchDef} placeholder="Buscar movimientos..." className="w-full" />}
                     createAction={createAction}
                     isFiltered={isFiltered}
                     emptyState={{

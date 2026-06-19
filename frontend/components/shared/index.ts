@@ -115,6 +115,7 @@ export * from './DataTableFilters';
 export * from './DataTablePagination';
 export * from './DataTableColumnHeader';
 export * from './DataTableFacetedFilter';
+export * from './DataTableColumnToggle';
 export * from './DataTableCells';
 
 // Utilities

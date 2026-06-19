@@ -160,7 +160,7 @@ export function CategoryClientView({ externalOpen, onExternalOpenChange, createA
                     isLoading={isLoading}
                     entityLabel="inventory.category"
                     variant="embedded"
-                    leftAction={<SmartSearchBar searchDef={categorySearchDef} placeholder="Buscar categoría..." className="w-full" />}
+                    smartSearch={<SmartSearchBar searchDef={categorySearchDef} placeholder="Buscar categoría..." className="w-full" />}
                     createAction={createAction}
                     isFiltered={isFiltered}
                     emptyState={{

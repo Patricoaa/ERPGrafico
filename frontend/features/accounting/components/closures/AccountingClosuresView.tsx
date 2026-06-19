@@ -261,7 +261,7 @@ export function AccountingClosuresView({ externalOpen, onExternalOpenChange }: A
                     data={filterFn(groupedData.map(r => ({ ...r, status: r.fiscalYear?.status ?? 'OPEN' })))}
                     isLoading={actionLoadingYr || actionLoadingPeriod}
                     variant="standalone"
-                    leftAction={<SmartSearchBar searchDef={fiscalYearSearchDef} placeholder="Buscar ejercicio..." className="w-full" />}
+                    smartSearch={<SmartSearchBar searchDef={fiscalYearSearchDef} placeholder="Buscar ejercicio..." className="w-full" />}
                     defaultPageSize={10}
                     createAction={
                         <ToolbarCreateButton

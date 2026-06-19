@@ -206,9 +206,6 @@ export function PartnerLedgerTab() {
                 data={txsWithBalance}
                 isLoading={loading}
                 variant="embedded"
-                useAdvancedFilter={true}
-                searchPlaceholder="Buscar por descripción..."
-                filterColumn="description"
                 hiddenColumns={["transaction_type"]}
                 facetedFilters={[
                     {

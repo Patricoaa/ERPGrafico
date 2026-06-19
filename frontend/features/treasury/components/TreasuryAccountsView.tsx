@@ -248,7 +248,7 @@ export const TreasuryAccountsView: React.FC<TreasuryAccountsViewProps> = ({ acti
                             isLoading={isLoading}
                             variant="embedded"
                             createAction={activeTab === "accounts" ? createAction : undefined}
-                            leftAction={<SmartSearchBar searchDef={treasuryAccountSearchDef} placeholder="Buscar cuenta..." className="w-full" />}
+                            smartSearch={<SmartSearchBar searchDef={treasuryAccountSearchDef} placeholder="Buscar cuenta..." className="w-full" />}
                             isFiltered={isFiltered}
                             emptyState={{
                                 context: "treasury",

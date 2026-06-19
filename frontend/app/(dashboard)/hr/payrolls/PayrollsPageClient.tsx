@@ -329,7 +329,7 @@ export default function PayrollsPageClient({ initialPayrolls }: PayrollsPageClie
                 isRefetching={isRefetching}
                 entityLabel="hr.payroll"
                 variant="embedded"
-                leftAction={<SmartSearchBar searchDef={payrollSearchDef} placeholder="Buscar por empleado o período..." className="w-full" />}
+                smartSearch={<SmartSearchBar searchDef={payrollSearchDef} placeholder="Buscar por empleado o período..." className="w-full" />}
                 defaultPageSize={20}
                 onRowClick={(row: Payroll) => openDetail(row.id)}
                 createAction={createAction}

@@ -236,7 +236,7 @@ export default function EntriesPage({ externalOpen, onExternalOpenChange, create
                     isLoading={isLoading}
                     entityLabel="accounting.journalentry"
                     variant="embedded"
-                    leftAction={<SmartSearchBar searchDef={journalEntrySearchDef} placeholder="Buscar asientos..." className="w-full" />}
+                    smartSearch={<SmartSearchBar searchDef={journalEntrySearchDef} placeholder="Buscar asientos..." className="w-full" />}
                     defaultPageSize={20}
                     createAction={createAction}
                     isFiltered={isFiltered}

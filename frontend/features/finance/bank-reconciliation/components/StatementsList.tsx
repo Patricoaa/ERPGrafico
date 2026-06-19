@@ -208,39 +208,30 @@ export function StatementsList({ externalOpen = false, createAction, bankId, acc
         })
     ]
 
-    const leftAction = (
-        <div className="flex items-center gap-2 w-full">
-            {accounts !== undefined && (
-                accounts.length > 0 ? (
-                    <Select
-                        value={selectedAccountId?.toString() || 'all'}
-                        onValueChange={(v) => setSelectedAccountId(v === 'all' ? null : Number(v))}
-                    >
-                        <SelectTrigger className="h-9 w-[200px] shrink-0 text-[10px] font-black uppercase tracking-widest">
-                            <SelectValue placeholder="Todas las cuentas" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="all" className="text-[10px] font-bold uppercase">Todas las cuentas</SelectItem>
-                            {accounts.map(acc => (
-                                <SelectItem key={acc.id} value={acc.id.toString()} className="text-[10px] font-bold uppercase">
-                                    {acc.name}
-                                </SelectItem>
-                            ))}
-                        </SelectContent>
-                    </Select>
-                ) : (
-                    <div className="h-9 flex items-center px-3 rounded-md border border-border/50 bg-muted/20 shrink-0 gap-2">
-                        <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/50">Sin cuentas bancarias</span>
-                    </div>
-                )
-            )}
-            <SmartSearchBar
-                searchDef={statementsSearchDef}
-                placeholder="Buscar por ID o cuenta..."
-                className="flex-1"
-            />
-        </div>
-    )
+    const accountFilter = accounts !== undefined ? (
+        accounts.length > 0 ? (
+            <Select
+                value={selectedAccountId?.toString() || 'all'}
+                onValueChange={(v) => setSelectedAccountId(v === 'all' ? null : Number(v))}
+            >
+                <SelectTrigger className="h-7 w-[180px] shrink-0 text-[10px] font-black uppercase tracking-widest">
+                    <SelectValue placeholder="Todas las cuentas" />
+                </SelectTrigger>
+                <SelectContent>
+                    <SelectItem value="all" className="text-[10px] font-bold uppercase">Todas las cuentas</SelectItem>
+                    {accounts.map(acc => (
+                        <SelectItem key={acc.id} value={acc.id.toString()} className="text-[10px] font-bold uppercase">
+                            {acc.name}
+                        </SelectItem>
+                    ))}
+                </SelectContent>
+            </Select>
+        ) : (
+            <div className="h-7 flex items-center px-3 rounded-md border border-border/50 bg-muted/20 shrink-0 gap-2">
+                <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/50">Sin cuentas bancarias</span>
+            </div>
+        )
+    ) : null
 
     const internalImportButton = accounts !== undefined ? (
         <Button
@@ -261,7 +252,8 @@ export function StatementsList({ externalOpen = false, createAction, bankId, acc
                     variant="embedded"
                     isLoading={isLoading}
                     isFiltered={isFiltered}
-                    leftAction={leftAction}
+                    customFilters={accountFilter}
+                    smartSearch={<SmartSearchBar searchDef={statementsSearchDef} placeholder="Buscar por ID o cuenta..." className="flex-1" />}
                     createAction={internalImportButton ?? createAction}
                     defaultPageSize={10}
                 />

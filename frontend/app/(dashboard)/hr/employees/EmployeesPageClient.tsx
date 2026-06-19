@@ -151,7 +151,7 @@ export default function EmployeesPageClient({ initialEmployees }: EmployeesPageC
                     isLoading={loading}
                     isRefetching={isRefetching}
                     variant="embedded"
-                    leftAction={<SmartSearchBar searchDef={employeeSearchDef} placeholder="Buscar por nombre o RUT..." className="w-full" />}
+                    smartSearch={<SmartSearchBar searchDef={employeeSearchDef} placeholder="Buscar por nombre o RUT..." className="w-full" />}
                     defaultPageSize={20}
                     createAction={createAction}
                     isFiltered={isFiltered}

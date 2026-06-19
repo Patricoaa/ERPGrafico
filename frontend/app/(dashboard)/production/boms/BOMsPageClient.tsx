@@ -195,7 +195,7 @@ export default function BOMsPageClient({ initialBoms }: BOMsPageClientProps) {
                     entityLabel="production.bom"
                     variant="embedded"
                     defaultPageSize={20}
-                    leftAction={<SmartSearchBar searchDef={bomSearchDef} placeholder="Buscar por producto..." className="w-full" />}
+                    smartSearch={<SmartSearchBar searchDef={bomSearchDef} placeholder="Buscar por producto..." className="w-full" />}
                     createAction={<ToolbarCreateButton label="Nueva Lista" href="/production/boms?modal=new" />}
                     isFiltered={isFiltered}
                     emptyState={{

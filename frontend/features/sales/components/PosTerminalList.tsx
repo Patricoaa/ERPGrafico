@@ -172,8 +172,6 @@ export function PosTerminalList({ externalOpen, onExternalOpenChange, createActi
                     data={terminals}
                     isLoading={isLoading}
                     variant="embedded"
-                    filterColumn="name"
-                    searchPlaceholder="Buscar caja por nombre..."
                     defaultPageSize={20}
                     facetedFilters={[
                         {

@@ -310,7 +310,7 @@ export default function WorkOrdersPageClient({ initialOrders }: WorkOrdersPageCl
                             title: "Aún no hay órdenes de trabajo",
                             description: "Crea una orden de trabajo para planificar y seguir la fabricación.",
                         }}
-                        leftAction={
+                        smartSearch={
                             <SmartSearchBar searchDef={workOrderSearchDef} placeholder="Buscar OTs..." className="w-full" />
                         }
                         customFilters={
@@ -331,7 +331,6 @@ export default function WorkOrdersPageClient({ initialOrders }: WorkOrdersPageCl
                                 Mis OTs
                             </div>
                         }
-                        customFilterCount={myTasks ? 1 : 0}
                         viewOptions={[
                             { label: "Lista", value: "list", icon: List },
                             { label: "Tablero", value: "kanban", icon: Columns },

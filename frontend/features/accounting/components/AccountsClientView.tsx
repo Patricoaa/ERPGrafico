@@ -261,9 +261,8 @@ export function AccountsClientView({ externalOpen, onExternalOpenChange, createA
                     defaultPageSize={500}
                     getSubRows={(row: Account & { children?: unknown[] }) => row.children as (Account & { children?: unknown[] })[] | undefined}
                     autoExpand={true}
-                    rightAction={null}
                     createAction={createAction}
-                    leftAction={<SmartSearchBar searchDef={accountSearchDef} placeholder="Buscar por cuenta o código..." className="w-full" />}
+                    smartSearch={<SmartSearchBar searchDef={accountSearchDef} placeholder="Buscar por cuenta o código..." className="w-full" />}
                     isFiltered={isFiltered}
                     emptyState={{
                         context: "finance",
