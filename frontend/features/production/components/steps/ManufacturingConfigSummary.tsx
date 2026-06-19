@@ -282,7 +282,7 @@ export function ManufacturingConfigSummary({ order, onSaved, onRestartComplete, 
         <form id="wizard-edit-form" onSubmit={handleSave} className="space-y-4">
 
             {/* ── Card 1: Identidad (always locked) ── */}
-            <div className="border rounded-lg p-4 bg-muted/20">
+            <div className="border rounded-md p-4 bg-muted/20">
                 <SectionHeader
                     icon={<Package className="h-3.5 w-3.5" />}
                     title="Identidad"
@@ -355,7 +355,7 @@ export function ManufacturingConfigSummary({ order, onSaved, onRestartComplete, 
             </div>
 
             {/* ── Card 2: Volumen ── */}
-            <div className={cn("border rounded-lg p-4", editingSection === 'volume' && "border-info/40 bg-info/5")}>
+            <div className={cn("border rounded-md p-4", editingSection === 'volume' && "border-info/40 bg-info/5")}>
                 <SectionHeader
                     icon={<Package className="h-3.5 w-3.5" />}
                     title="Volumen"
@@ -396,7 +396,7 @@ export function ManufacturingConfigSummary({ order, onSaved, onRestartComplete, 
             </div>
 
             {/* ── Card 3: Parámetros de fabricación ── */}
-            <div className={cn("border rounded-lg p-4", ['prepress', 'press', 'postpress'].includes(editingSection ?? '') && "border-info/40 bg-info/5")}>
+            <div className={cn("border rounded-md p-4", ['prepress', 'press', 'postpress'].includes(editingSection ?? '') && "border-info/40 bg-info/5")}>
                 <SectionHeader
                     icon={<Settings className="h-3.5 w-3.5" />}
                     title="Parámetros de Fabricación"
@@ -435,7 +435,7 @@ export function ManufacturingConfigSummary({ order, onSaved, onRestartComplete, 
             </div>
 
             {/* ── Card 4: Planificación ── */}
-            <div className={cn("border rounded-lg p-4", editingSection === 'planning' && "border-info/40 bg-info/5")}>
+            <div className={cn("border rounded-md p-4", editingSection === 'planning' && "border-info/40 bg-info/5")}>
                 <SectionHeader
                     icon={<Calendar className="h-3.5 w-3.5" />}
                     title="Planificación"
