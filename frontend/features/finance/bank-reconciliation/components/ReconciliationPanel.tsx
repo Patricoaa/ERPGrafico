@@ -1162,7 +1162,7 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                     description={
                         <div className="space-y-4">
                             <p>Existe una diferencia de <span className="font-bold text-primary">{formatCurrency(parseFloat(diffDialog.amount))}</span>. Selecciona cómo deseas procesarla.</p>
-                            <div className="bg-destructive/5 border border-destructive/20 rounded-lg p-3 flex items-start gap-3">
+                            <div className="bg-destructive/5 border border-destructive/20 rounded-md p-3 flex items-start gap-3">
                                 <Ban className="h-4 w-4 text-destructive shrink-0 mt-0.5" />
                                 <div className="space-y-1">
                                     <p className="text-[11px] font-black uppercase text-destructive leading-none">Acción Irreversible</p>
@@ -1425,7 +1425,7 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                     description={
                         <div className="space-y-4 pt-2">
                             <p>¿Estás seguro de que deseas conciliar estos movimientos?</p>
-                            <div className="bg-destructive/5 border border-destructive/20 rounded-lg p-3 flex items-start gap-3">
+                            <div className="bg-destructive/5 border border-destructive/20 rounded-md p-3 flex items-start gap-3">
                                 <Ban className="h-4 w-4 text-destructive shrink-0 mt-0.5" />
                                 <div className="space-y-1">
                                     <p className="text-[11px] font-black uppercase text-destructive leading-none">Acción Irreversible</p>

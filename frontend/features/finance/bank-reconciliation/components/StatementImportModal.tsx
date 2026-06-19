@@ -321,7 +321,7 @@ export default function StatementImportModal({ open, onOpenChange, onSuccess, de
 
                         {error && (
                             <div className="animate-in fade-in slide-in-from-top-2">
-                                <Alert variant="destructive" className="rounded-lg">
+                                <Alert variant="destructive" className="rounded-md">
                                     <AlertDescription className="text-xs font-bold uppercase leading-relaxed">
                                         {error}
                                     </AlertDescription>
@@ -349,7 +349,7 @@ export default function StatementImportModal({ open, onOpenChange, onSuccess, de
 
                     {/* S3.7: Parse options */}
                     {bankFormat === 'GENERIC_CSV' && (
-                        <div className="rounded-lg border border-border/40 bg-muted/20 p-4">
+                        <div className="rounded-md border border-border/40 bg-muted/20 p-4">
                             <div className="flex items-center gap-2 mb-3">
                                 <SlidersHorizontal className="h-3.5 w-3.5 text-muted-foreground" />
                                 <span className="text-xs font-black uppercase text-muted-foreground">Opciones de Parseo</span>
@@ -393,7 +393,7 @@ export default function StatementImportModal({ open, onOpenChange, onSuccess, de
                         </div>
                     )}
 
-                    <div className="rounded-lg border border-border/40 overflow-hidden bg-background">
+                    <div className="rounded-md border border-border/40 overflow-hidden bg-background">
                         <div className="max-h-[50vh] overflow-x-auto overflow-y-auto w-full relative custom-scrollbar">
                             {previewData && (
                                 <Table className="w-max min-w-full border-separate border-spacing-0">
@@ -494,7 +494,7 @@ export default function StatementImportModal({ open, onOpenChange, onSuccess, de
 
                     {error && (
                         <div className="max-w-xl mx-auto animate-in fade-in slide-in-from-top-2">
-                            <Alert variant="destructive" className="rounded-lg">
+                            <Alert variant="destructive" className="rounded-md">
                                 <AlertDescription className="text-xs font-bold uppercase leading-relaxed">
                                     {error}
                                 </AlertDescription>
