@@ -12,17 +12,26 @@ import {
 } from '@/components/shared'
 import type { SearchDefinition } from '@/types/search'
 import { useCardStatements } from './hooks'
+import { useBankOverview } from '../hooks/useBankOverview'
+import type { BankOverviewData } from '../hooks/useBankOverview'
 import { StatementDetailModal } from './StatementDetailModal'
 import { PayStatementModal } from './PayStatementModal'
 import type { CreditCardStatement } from './types'
 import { useStatementsAnalyticsData } from './useStatementsAnalyticsData'
 
 interface StatementsViewProps {
-    bankId?: number
-    creditCardAccounts: Array<{ id: number; name: string; currency: string }>
+    bankId: number
 }
 
-export function StatementsView({ bankId, creditCardAccounts }: StatementsViewProps = { creditCardAccounts: [] }) {
+export function StatementsView({ bankId }: StatementsViewProps) {
+    const { data: overview, isLoading: overviewLoading } = useBankOverview(bankId)
+    const overviewData = (overview && !overviewLoading ? overview : null) as BankOverviewData | null
+    const creditCardAccounts = useMemo(
+        () => (overviewData?.accounts?.filter(
+            (acc) => acc.account_type === 'CREDIT_CARD'
+        ).map(a => ({ id: a.id, name: a.name, currency: a.currency })) ?? []),
+        [overviewData],
+    )
     const [selectedId, setSelectedId] = useState<number | null>(null)
     const [payingStatement, setPayingStatement] = useState<CreditCardStatement | null>(null)
 
