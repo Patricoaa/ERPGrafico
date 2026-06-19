@@ -1,7 +1,7 @@
 "use client"
 
 import React, { useState, useMemo } from "react"
-import { ArrowUpDown, ArrowUp, ArrowDown, Check, X, LayoutDashboard } from "lucide-react"
+import { ArrowUpDown, ArrowUp, ArrowDown, X, LayoutDashboard } from "lucide-react"
 import { Table } from "@tanstack/react-table"
 
 import { Button } from "@/components/ui/button"
@@ -11,6 +11,7 @@ import {
     DropdownMenuContent,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { AnalyticsPanel, type AnalyticsTab, type Granularity } from "./AnalyticsPanel"
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 import { DataTableFacetedFilter } from "./DataTableFacetedFilter"
@@ -163,51 +164,22 @@ export function DataTableToolbar<TData>(props: DataTableToolbarProps<TData>) {
                             </DropdownMenu>
                         )}
 
-                        {/* View toggle dropdown */}
+                        {/* View toggle — shadcn Tabs inline */}
                         {viewOptions && viewOptions.length > 0 && (
-                            <DropdownMenu>
-                                <Tooltip>
-                                    <TooltipTrigger asChild>
-                                        <DropdownMenuTrigger asChild>
-                                            <Button
-                                                variant="ghost"
-                                                size="sm"
-                                                className="h-7 px-2 text-[10px] uppercase font-bold tracking-widest gap-1 shrink-0"
-                                            >
-                                                {currentView
-                                                    ? viewOptions.find((v) => v.value === currentView)?.label
-                                                    : "Vista"}
-                                            </Button>
-                                        </DropdownMenuTrigger>
-                                    </TooltipTrigger>
-                                    <TooltipContent side="bottom">Cambiar vista</TooltipContent>
-                                </Tooltip>
-                                <DropdownMenuContent
-                                    align="start"
-                                    className="w-[180px] p-1 border-border/80 shadow-floating"
-                                >
+                            <Tabs value={currentView} onValueChange={(v) => onViewChange?.(v)}>
+                                <TabsList className="h-7 p-0 gap-0 bg-transparent border-border/60">
                                     {viewOptions.map((option) => (
-                                        <div
+                                        <TabsTrigger
                                             key={option.value}
-                                            className={cn(
-                                                "relative flex cursor-pointer select-none items-center rounded-sm px-3 py-1.5 text-[10px] uppercase font-bold tracking-tight outline-none transition-colors",
-                                                currentView === option.value
-                                                    ? "bg-accent/50 text-primary"
-                                                    : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
-                                            )}
-                                            onClick={() => onViewChange?.(option.value)}
+                                            value={option.value}
+                                            className="h-7 px-2 text-[10px] uppercase font-bold tracking-widest gap-1 data-[state=active]:bg-accent/50 data-[state=active]:shadow-none rounded-sm"
                                         >
-                                            <div className="mr-3 flex h-3.5 w-3.5 items-center justify-center">
-                                                <option.icon className="h-3.5 w-3.5 opacity-60" />
-                                            </div>
-                                            <span>{option.label}</span>
-                                            {currentView === option.value && (
-                                                <Check className="h-3 w-3 ml-auto text-primary" />
-                                            )}
-                                        </div>
+                                            <option.icon className="h-3.5 w-3.5" />
+                                            {option.label}
+                                        </TabsTrigger>
                                     ))}
-                                </DropdownMenuContent>
-                            </DropdownMenu>
+                                </TabsList>
+                            </Tabs>
                         )}
 
                         {/* Faceted filters — inline popover per filter */}
