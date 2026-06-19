@@ -148,9 +148,65 @@ class SaleOrderFilterSet(django_filters.FilterSet):
     customer_name = django_filters.CharFilter(field_name='customer__name', lookup_expr='icontains')
     date_after = django_filters.DateFilter(field_name='date', lookup_expr='gte')
     date_before = django_filters.DateFilter(field_name='date', lookup_expr='lte')
+    total_min = django_filters.NumberFilter(field_name='total', lookup_expr='gte')
+    total_max = django_filters.NumberFilter(field_name='total', lookup_expr='lte')
+    number = django_filters.CharFilter(field_name='number', lookup_expr='icontains')
+    product_name = django_filters.CharFilter(method='filter_product_name')
+    delivery_status = django_filters.CharFilter(field_name='delivery_status')
+    origin_status = django_filters.CharFilter(method='filter_origin_status')
+    billing_status = django_filters.CharFilter(method='filter_billing_status')
+    payment_status = django_filters.CharFilter(method='filter_payment_status')
+    production_status = django_filters.CharFilter(method='filter_production_status')
+
     class Meta:
         model = SaleOrder
-        fields = ['status']
+        fields = [
+            'customer_name', 'date_after', 'date_before',
+            'total_min', 'total_max', 'number', 'product_name',
+            'delivery_status', 'origin_status', 'billing_status',
+            'payment_status', 'production_status',
+        ]
+
+    def filter_product_name(self, queryset, name, value):
+        return queryset.filter(lines__product__name__icontains=value).distinct()
+
+    def filter_origin_status(self, queryset, name, value):
+        if value == 'success':
+            return queryset.exclude(status__in=['DRAFT', 'CANCELLED'])
+        elif value == 'neutral':
+            return queryset.filter(status='DRAFT')
+        elif value == 'destructive':
+            return queryset.filter(status='CANCELLED')
+        return queryset
+
+    def filter_billing_status(self, queryset, name, value):
+        if value == 'success':
+            return queryset.filter(invoices__status__in=['POSTED', 'PAID']).exclude(invoices__number='').distinct()
+        elif value == 'neutral':
+            return queryset.exclude(
+                id__in=queryset.filter(
+                    invoices__status__in=['POSTED', 'PAID'],
+                ).exclude(invoices__number='').values('id')
+            ).distinct()
+        return queryset
+
+    def filter_payment_status(self, queryset, name, value):
+        if value == 'success':
+            return queryset.filter(status='PAID')
+        elif value == 'active':
+            return queryset.filter(payments__isnull=False).exclude(status='PAID').distinct()
+        elif value == 'neutral':
+            return queryset.filter(payments__isnull=True, status__in=['DRAFT', 'CONFIRMED', 'INVOICED'])
+        return queryset
+
+    def filter_production_status(self, queryset, name, value):
+        if value == 'none':
+            return queryset.filter(work_orders__isnull=True)
+        elif value == 'in_progress':
+            return queryset.filter(work_orders__status='IN_PROGRESS').distinct()
+        elif value == 'finished':
+            return queryset.exclude(work_orders__isnull=True).exclude(work_orders__status='IN_PROGRESS').distinct()
+        return queryset
 
 
 class SaleOrderViewSet(viewsets.ModelViewSet, AuditHistoryMixin):

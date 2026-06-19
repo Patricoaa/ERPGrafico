@@ -52,8 +52,10 @@ export function SalesOrdersView({ viewMode, posSessionId, onActionSuccess, hideS
         router.push(query ? `${pathname}?${query}` : pathname, { scroll: false })
     }
 
-    const { filters: textFilters, isFiltered: isTextFiltered, clearAll: clearText } = useSmartSearch(salesOrderSearchDef)
-    const { filters: segFilters, isFiltered: isSegFiltered, clearAll: clearSeg } = useSegmentation(salesOrderSegDef)
+    const searchDef = viewMode === 'orders' ? salesOrderSearchDef : salesNoteSearchDef
+    const segDef = viewMode === 'orders' ? salesOrderSegDef : salesNoteSegDef
+    const { filters: textFilters, isFiltered: isTextFiltered, clearAll: clearText } = useSmartSearch(searchDef)
+    const { filters: segFilters, isFiltered: isSegFiltered, clearAll: clearSeg } = useSegmentation(segDef)
     const isFiltered = isTextFiltered || isSegFiltered
 
     const { orders, isLoading: isLoadingOrders, isRefetching, refetch: refetchOrders } = useSalesOrders({
@@ -66,9 +68,8 @@ export function SalesOrdersView({ viewMode, posSessionId, onActionSuccess, hideS
     })
     const { notes, isLoading: isLoadingNotes, refetch: refetchNotes } = useSalesNotes({
         filters: {
-            customer_name: (textFilters as Record<string, string>).customer_name,
-            date_after: (segFilters as Record<string, string>).date_after,
-            date_before: (segFilters as Record<string, string>).date_before,
+            ...(textFilters as Record<string, string>),
+            ...(segFilters as Record<string, string>),
         }
     })
 

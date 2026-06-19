@@ -1,5 +1,6 @@
 from rest_framework import viewsets, status, filters as drf_filters
 from django_filters.rest_framework import DjangoFilterBackend
+import django_filters
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from .models import Invoice
@@ -10,22 +11,36 @@ from purchasing.models import PurchaseOrder
 from django.core.exceptions import ValidationError
 from core.mixins import AuditHistoryMixin
 
+
+class InvoiceFilterSet(django_filters.FilterSet):
+    date_from = django_filters.DateFilter(field_name='date', lookup_expr='gte')
+    date_to = django_filters.DateFilter(field_name='date', lookup_expr='lte')
+    total_min = django_filters.NumberFilter(field_name='total', lookup_expr='gte')
+    total_max = django_filters.NumberFilter(field_name='total', lookup_expr='lte')
+    number = django_filters.CharFilter(field_name='number', lookup_expr='icontains')
+    partner_name = django_filters.CharFilter(field_name='contact__name', lookup_expr='icontains')
+
+    class Meta:
+        model = Invoice
+        fields = {
+            'dte_type': ['exact', 'in'],
+            'sale_order': ['exact', 'isnull'],
+            'purchase_order': ['exact', 'isnull'],
+            'status': ['exact', 'in'],
+            'contact': ['exact'],
+        }
+
+
 class InvoiceViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
     queryset = Invoice.objects.all().order_by('-date', '-id')
     serializer_class = InvoiceSerializer
     filter_backends = [DjangoFilterBackend, drf_filters.SearchFilter]
+    filterset_class = InvoiceFilterSet
     search_fields = [
         'contact__name', 'contact__tax_id',
         'purchase_order__supplier__name', 'purchase_order__supplier__tax_id',
         'sale_order__customer__name', 'sale_order__customer__tax_id',
     ]
-    filterset_fields = {
-        'dte_type': ['exact', 'in'],
-        'sale_order': ['exact', 'isnull'],
-        'purchase_order': ['exact', 'isnull'],
-        'status': ['exact', 'in'],
-        'contact': ['exact'],
-    }
 
     def update(self, request, *args, **kwargs):
         instance = self.get_object()

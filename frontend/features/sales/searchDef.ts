@@ -9,6 +9,12 @@ export const salesNoteSearchDef: SearchDefinition = {
       serverParam: 'customer_name',
       suggestionsUrl: 'sales/orders/filter-suggestions/',
     },
+    {
+      key: 'number',
+      label: 'Folio',
+      type: 'text',
+      serverParam: 'number',
+    },
   ],
 }
 
@@ -20,6 +26,18 @@ export const salesOrderSearchDef: SearchDefinition = {
       type: 'text',
       serverParam: 'customer_name',
       suggestionsUrl: 'sales/orders/filter-suggestions/',
+    },
+    {
+      key: 'number',
+      label: 'Folio',
+      type: 'text',
+      serverParam: 'number',
+    },
+    {
+      key: 'product_name',
+      label: 'Producto',
+      type: 'text',
+      serverParam: 'product_name',
     },
   ],
 }

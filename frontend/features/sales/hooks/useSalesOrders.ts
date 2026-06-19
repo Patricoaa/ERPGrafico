@@ -122,6 +122,10 @@ export interface SaleNoteFilters {
     date_after?: string
     date_before?: string
     customer_name?: string
+    total_min?: string
+    total_max?: string
+    number?: string
+    status?: string
 }
 
 export function useSalesNotes({ filters }: { filters?: SaleNoteFilters } = {}) {

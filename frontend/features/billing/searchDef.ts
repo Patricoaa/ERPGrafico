@@ -8,6 +8,12 @@ export const invoiceSearchDef: SearchDefinition = {
       type: 'text',
       serverParam: 'partner_name',
     },
+    {
+      key: 'number',
+      label: 'Folio',
+      type: 'text',
+      serverParam: 'number',
+    },
   ],
 }
 
@@ -18,6 +24,12 @@ export const purchaseInvoiceSearchDef: SearchDefinition = {
       label: 'Proveedor / RUT',
       type: 'text',
       serverParam: 'partner_name',
+    },
+    {
+      key: 'number',
+      label: 'Folio',
+      type: 'text',
+      serverParam: 'number',
     },
   ],
 }
