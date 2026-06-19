@@ -31,7 +31,7 @@ export default async function PartnersDistributionsPage({ searchParams }: PagePr
     )
 
     return (
-        <div className="h-full flex flex-col">
+        <>
             <PageHeader
                 title="Distribución de Utilidades"
                 description="Gestión de actas, resolución de dividendos y reinversiones."
@@ -40,13 +40,11 @@ export default async function PartnersDistributionsPage({ searchParams }: PagePr
                 navigation={navigation}
             />
 
-            <div className="pt-4 flex-1 min-h-0 flex flex-col">
-                <PartnersSettingsView
-                    activeTab="distributions"
-                    initialFlowOpen={modal === 'new-distribution'}
-                    createAction={createAction}
-                />
-            </div>
-        </div>
+            <PartnersSettingsView
+                activeTab="distributions"
+                initialFlowOpen={modal === 'new-distribution'}
+                createAction={createAction}
+            />
+        </>
     )
 }

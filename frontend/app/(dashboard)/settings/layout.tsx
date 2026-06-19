@@ -9,7 +9,7 @@ export const metadata: Metadata = {
 
 export default function SettingsLayout({ children }: { children: React.ReactNode }) {
     return (
-        <PageContainer className="flex flex-col" scrollable>
+        <PageContainer className="flex flex-col">
             <SettingsHeader />
             <div className="h-full flex flex-col">
                 {children}

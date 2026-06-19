@@ -64,7 +64,7 @@ export default function SettingsPageClient() {
     const buildDate = getBuildDate()
 
     return (
-        <div className="flex flex-col space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+        <div className="flex flex-col space-y-8">
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                 {settingsModules.map((mod, index) => {
                     const Icon = mod.icon

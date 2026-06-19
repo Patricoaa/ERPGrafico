@@ -58,7 +58,7 @@ export default function InventorySettingsPageClient() {
     if (isLoading && !settings) return <SkeletonShell isLoading ariaLabel="Cargando configuración..." />
 
     return (
-        <div className="max-w-2xl mx-auto space-y-6">
+        <div className="space-y-6">
             <div className="flex justify-end">
                 <AutoSaveStatusBadge status={status} invalidReason={invalidReason} lastSavedAt={lastSavedAt} onRetry={retry} />
             </div>
