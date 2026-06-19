@@ -162,7 +162,7 @@ export function SaleOrderProductStep({
                       type="button"
                       variant="outline"
                       className={cn(
-                        "group flex h-[120px] w-full rounded-xl border border-border/30",
+                        "group flex h-[120px] w-full rounded-md border border-border/30",
                         selectedOrderId === String(order.id) &&
                         "border-primary/50 bg-primary/[0.03]",
                         "hover:border-primary/50 hover:bg-primary/[0.03] transition-all duration-300"
@@ -256,7 +256,7 @@ export function SaleOrderProductStep({
                           type="button"
                           variant={isSelected ? "default" : "outline"}
                           className={cn(
-                            "flex h-[100px] w-full rounded-lg border border-border/30",
+                            "flex h-[100px] w-full rounded-sm border border-border/30",
                             isSelected && "border-primary bg-primary/[0.10]",
                             "hover:border-primary/50 hover:bg-primary/[0.03] transition-all duration-300"
                           )}

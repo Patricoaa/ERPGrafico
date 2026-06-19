@@ -103,7 +103,7 @@ export function ModuleLauncher({ open, onClose }: ModuleLauncherProps) {
                                                 href={getModuleDefaultUrl(id)}
                                                 onClick={onClose}
                                                 className={cn(
-                                                    "group relative flex flex-col items-center justify-center gap-2 p-[clamp(0.75rem,2vw,1.25rem)] rounded-xl border transition-all duration-200",
+                                                    "group relative flex flex-col items-center justify-center gap-2 p-[clamp(0.75rem,2vw,1.25rem)] rounded-md border transition-all duration-200",
                                                     "hover:shadow-md hover:border-border/30",
                                                     isActive
                                                         ? "bg-primary/5 border-primary/20 shadow-sm"
@@ -111,7 +111,7 @@ export function ModuleLauncher({ open, onClose }: ModuleLauncherProps) {
                                                 )}
                                             >
                                                 <div className={cn(
-                                                    "w-[clamp(2.5rem,5vw,3.75rem)] h-[clamp(2.5rem,5vw,3.75rem)] rounded-xl flex items-center justify-center transition-colors",
+                                                    "w-[clamp(2.5rem,5vw,3.75rem)] h-[clamp(2.5rem,5vw,3.75rem)] rounded-md flex items-center justify-center transition-colors",
                                                     isActive
                                                         ? "text-primary"
                                                         : "text-muted-foreground group-hover:text-primary"

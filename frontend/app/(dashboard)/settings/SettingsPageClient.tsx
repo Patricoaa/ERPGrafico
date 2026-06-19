@@ -72,7 +72,7 @@ export default function SettingsPageClient() {
                         <Link 
                             key={mod.id} 
                             href={mod.url}
-                            className="group relative flex flex-col justify-between p-5 h-32 bg-background border border-border/10 rounded-xl shadow-sm hover:shadow-md hover:border-border/30 transition-all duration-300"
+                            className="group relative flex flex-col justify-between p-5 h-32 bg-background border border-border/10 rounded-md shadow-sm hover:shadow-md hover:border-border/30 transition-all duration-300"
                             style={{ animationDelay: `${index * 50}ms`, animationFillMode: 'backwards' }}
                         >
                             <div className="flex items-center justify-between">
@@ -98,7 +98,7 @@ export default function SettingsPageClient() {
                 })}
             </div>
 
-            <Card className="rounded-xl border-border/10 bg-muted/30 shadow-none overflow-hidden border-dashed">
+            <Card className="rounded-md border-border/10 bg-muted/30 shadow-none overflow-hidden border-dashed">
                 <CardHeader className="pb-2">
                     <div className="flex items-center gap-2 text-muted-foreground">
                         <Info className="w-4 h-4" />

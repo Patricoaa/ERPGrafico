@@ -323,7 +323,7 @@ export function ManufacturingSpecsEditor({
         </div>
 
         {/* ── Post-Impresión ────────────────────────────────────────────── */}
-        <div className={cn(phaseCardClass(value.phases.postpress), "rounded-xl")}>
+        <div className={phaseCardClass(value.phases.postpress)}>
           <FormSection title="Post-Impresión" icon={FileText} className="pt-0 pb-4" />
 
           <div className="flex items-center justify-between mb-4 mt-1">

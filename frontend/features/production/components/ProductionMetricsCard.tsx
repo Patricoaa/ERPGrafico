@@ -21,7 +21,7 @@ export function ProductionMetricsCard() {
                 <CardContent>
                     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 mt-2">
                         {[1, 2, 3, 4].map(i => (
-                            <Skeleton key={i} className="h-24 w-full rounded-xl" />
+                            <Skeleton key={i} className="h-24 w-full rounded-md" />
                         ))}
                     </div>
                 </CardContent>
@@ -54,7 +54,7 @@ export function ProductionMetricsCard() {
                         subtext="En piso de planta"
                         variant="minimal"
                         accent="muted"
-                        className="p-4 rounded-xl flex-col"
+                        className="p-4 flex-col"
                     />
                     <StatCard
                         label="Atrasadas"
@@ -63,7 +63,7 @@ export function ProductionMetricsCard() {
                         subtext="Requieren atención"
                         variant="minimal"
                         accent="destructive"
-                        className="p-4 rounded-xl flex-col hover:bg-destructive/10 transition-colors"
+                        className="p-4 flex-col hover:bg-destructive/10 transition-colors"
                         href="/production/orders?view=list"
                     />
                     <StatCard
@@ -73,7 +73,7 @@ export function ProductionMetricsCard() {
                         subtext="Órdenes completadas"
                         variant="minimal"
                         accent="success"
-                        className="p-4 rounded-xl flex-col"
+                        className="p-4 flex-col"
                     />
                     <StatCard
                         label="Tiempos"
@@ -82,7 +82,7 @@ export function ProductionMetricsCard() {
                         subtext="Promedio en Prensa"
                         variant="minimal"
                         accent="info"
-                        className="p-4 rounded-xl flex-col"
+                        className="p-4 flex-col"
                     />
                 </div>
             </CardContent>

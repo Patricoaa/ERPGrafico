@@ -36,7 +36,7 @@ export default function DashboardPageClient() {
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
           {[...Array(6)].map((_, i) => (
-            <Skeleton key={i} className="h-28 w-full rounded-xl" />
+            <Skeleton key={i} className="h-28 w-full rounded-md" />
           ))}
         </div>
       </PageContainer>
@@ -68,7 +68,7 @@ export default function DashboardPageClient() {
             <Link 
               key={mod.id} 
               href={mod.url}
-              className="group relative flex flex-col justify-between p-5 h-28 bg-background border border-border/10 rounded-xl shadow-sm hover:shadow-md hover:border-border/30 transition-all duration-300 animate-in fade-in slide-in-from-bottom-4"
+              className="group relative flex flex-col justify-between p-5 h-28 bg-background border border-border/10 rounded-md shadow-sm hover:shadow-md hover:border-border/30 transition-all duration-300 animate-in fade-in slide-in-from-bottom-4"
               style={{ animationDelay: `${index * 50}ms`, animationFillMode: 'backwards' }}
             >
               <div className="flex items-center justify-between">

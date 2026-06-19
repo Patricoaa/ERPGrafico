@@ -176,7 +176,7 @@ export function UniversalSearch() {
                                     <button
                                         onClick={() => setSelectedType(null)}
                                         className={cn(
-                                            "flex shrink-0 items-center gap-2 rounded-lg px-4 py-2 text-[10px] uppercase tracking-widest transition-all",
+                                            "flex shrink-0 items-center gap-2 rounded-sm px-4 py-2 text-[10px] uppercase tracking-widest transition-all",
                                             !selectedType
                                                 ? "bg-primary text-primary-foreground "
                                                 : "text-muted-foreground hover:bg-accent hover:text-foreground"
@@ -189,7 +189,7 @@ export function UniversalSearch() {
                                             key={type.label}
                                             onClick={() => setSelectedType(type.label)}
                                             className={cn(
-                                                "flex shrink-0 items-center gap-2 rounded-lg px-4 py-2 text-[10px] uppercase tracking-widest transition-all",
+                                                "flex shrink-0 items-center gap-2 rounded-sm px-4 py-2 text-[10px] uppercase tracking-widest transition-all",
                                                 selectedType === type.label
                                                     ? "bg-primary text-primary-foreground "
                                                     : "text-muted-foreground hover:bg-accent hover:text-foreground"
@@ -241,8 +241,8 @@ export function UniversalSearch() {
 
                                 {!isLoading && filteredResults.length === 0 && debouncedQuery.length < 2 && (
                                     <li className="flex flex-col items-center justify-center py-16 text-center">
-                                        <div className="relative mb-4 flex h-16 w-16 items-center justify-center rounded-xl bg-gradient-to-br from-primary/20 to-primary/5 shadow-lg overflow-hidden">
-                                            <div className="absolute inset-0 animate-pulse rounded-xl bg-primary/5 blur-lg" />
+                                        <div className="relative mb-4 flex h-16 w-16 items-center justify-center rounded-md bg-gradient-to-br from-primary/20 to-primary/5 shadow-lg overflow-hidden">
+                                            <div className="absolute inset-0 animate-pulse rounded-md bg-primary/5 blur-lg" />
                                             {logo ? (
                                                 <img src={logo} alt="Logo" className="relative h-full w-full object-cover" />
                                             ) : (

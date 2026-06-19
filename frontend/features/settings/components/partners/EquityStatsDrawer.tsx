@@ -74,7 +74,7 @@ export function EquityStatsDrawer({ open, onOpenChange, partners, summary }: Equ
                         <PieChartIcon className="h-4 w-4" />
                         <h3 className="text-[11px] font-black uppercase tracking-widest">Participación Patrimonial</h3>
                     </div>
-                    <div className="h-64 bg-background border border-border rounded-xl p-4">
+                    <div className="h-64 bg-background border border-border rounded-md p-4">
                         <ResponsivePie
                             data={pieData}
                             innerRadius={0.7}
@@ -119,7 +119,7 @@ export function EquityStatsDrawer({ open, onOpenChange, partners, summary }: Equ
                         <TrendingUp className="h-4 w-4" />
                         <h3 className="text-[11px] font-black uppercase tracking-widest">Capital Enterado vs Pendiente</h3>
                     </div>
-                    <div className="h-64 bg-background border border-border rounded-xl p-4">
+                    <div className="h-64 bg-background border border-border rounded-md p-4">
                         <ResponsiveBar
                             data={barData}
                             keys={["paid", "pending"]}
