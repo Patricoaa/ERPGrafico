@@ -1,7 +1,7 @@
 "use client"
 
 import { ProfileView } from "@/features/profile"
-import { useMyProfile } from "@/features/profile/context/ProfileContext"
+import { useMyProfile } from "@/features/profile"
 
 export default function PersonalPayrollsPage() {
     const { profile } = useMyProfile()
