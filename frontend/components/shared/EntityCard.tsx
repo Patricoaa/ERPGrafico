@@ -154,7 +154,7 @@ function EntityCardBadge({ label, dot = false, variant = "secondary", className,
     return (
         <Badge
             variant={variant}
-            className={cn("h-5 gap-1 rounded-md px-1.5 text-[10px] font-semibold uppercase tracking-wide", className)}
+            className={cn("h-5 gap-1 rounded-sm px-1.5 text-[10px] font-semibold uppercase tracking-wide", className)}
             {...props}
         >
             {dot && <span className="h-1.5 w-1.5 rounded-full bg-current opacity-70" />}
@@ -193,7 +193,7 @@ function EntityCardSkeleton({ className, variant = "full" }: { className?: strin
                 }
                 subtitle={
                     <div className="flex items-center gap-2.5 pl-[52px]">
-                        <Skeleton className="h-4 w-20 rounded-md" />
+                        <Skeleton className="h-4 w-20 rounded-sm" />
                         <Skeleton className="h-4 w-24" />
                     </div>
                 }

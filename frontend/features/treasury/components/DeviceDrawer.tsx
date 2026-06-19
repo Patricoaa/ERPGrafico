@@ -200,7 +200,7 @@ export function DeviceDrawer({ open, onOpenChange, device, providers: providersP
                                     name="model"
                                     render={({ field }) => (
                                         <LabeledInput
-                                            label="Modelo (Opcional)"
+                                                    label="Modelo (opcional)"
                                             {...field}
                                             placeholder="Ej: Pax A920"
                                         />

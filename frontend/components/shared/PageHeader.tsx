@@ -134,7 +134,7 @@ export function PageHeaderButton({ icon: Icon, iconName, label, circular, href, 
     const button = (
         <Button
             className={cn(
-                "transition-all duration-300 rounded-none px-4",
+                "transition-all duration-300 rounded-md px-4",
                 className
             )}
             title={title}

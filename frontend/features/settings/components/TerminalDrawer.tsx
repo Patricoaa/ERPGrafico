@@ -10,6 +10,7 @@ import {
     FormField,
 } from "@/components/ui/form"
 import { settingsApi } from "../hooks"
+import { showApiError } from "@/lib/errors"
 import { toast } from "sonner"
 import { MonitorSmartphone } from "lucide-react"
 import * as LucideIcons from "lucide-react"
@@ -149,8 +150,7 @@ export function TerminalDrawer({ open, onOpenChange, terminal, onSuccess, mode: 
             )
             setTreasuryAccounts(validAccounts)
         } catch (error) {
-            console.error("Error fetching treasury accounts", error)
-            toast.error("Error al cargar cuentas de tesorería")
+            showApiError(error, "Error al cargar cuentas de tesorería")
         } finally {
             setIsFetchingDeps(false)
         }
@@ -214,8 +214,7 @@ export function TerminalDrawer({ open, onOpenChange, terminal, onSuccess, mode: 
             onSuccess()
             onOpenChange(false)
         } catch (error: unknown) {
-            console.error(error)
-            toast.error("Error al guardar terminal")
+            showApiError(error, "Error al guardar terminal")
         } finally {
             setLoading(false)
         }

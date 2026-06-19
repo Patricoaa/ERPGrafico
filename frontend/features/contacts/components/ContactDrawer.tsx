@@ -453,7 +453,7 @@ export default function ContactDrawer({ open, onOpenChange, contact, onSuccess, 
                                                         <FormItem className="col-span-2">
                                                             <FormControl>
                                                                 <LabeledInput
-                                                                    label="Email"
+                                                                    label="Email (opcional)"
                                                                     type="email"
                                                                     placeholder="ejemplo@correo.com"
                                                                     error={fieldState.error?.message}
@@ -471,7 +471,7 @@ export default function ContactDrawer({ open, onOpenChange, contact, onSuccess, 
                                                         <FormItem className="col-span-2">
                                                             <FormControl>
                                                                 <LabeledInput
-                                                                    label="Teléfono"
+                                                                    label="Teléfono (opcional)"
                                                                     placeholder="+56 9 ..."
                                                                     error={fieldState.error?.message}
                                                                     {...field}
@@ -493,7 +493,7 @@ export default function ContactDrawer({ open, onOpenChange, contact, onSuccess, 
                                                         <FormItem className="col-span-3">
                                                             <FormControl>
                                                                 <LabeledInput
-                                                                    label="Dirección"
+                                                                    label="Dirección (opcional)"
                                                                     placeholder="Calle, Número, Depto"
                                                                     error={fieldState.error?.message}
                                                                     {...field}
@@ -510,7 +510,7 @@ export default function ContactDrawer({ open, onOpenChange, contact, onSuccess, 
                                                         <FormItem className="col-span-1">
                                                             <FormControl>
                                                                 <LabeledInput
-                                                                    label="Ciudad / Comuna"
+                                                                    label="Ciudad / Comuna (opcional)"
                                                                     placeholder="Santiago"
                                                                     error={fieldState.error?.message}
                                                                     {...field}

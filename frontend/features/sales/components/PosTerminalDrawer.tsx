@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
+import { showApiError } from "@/lib/errors"
 import { toast } from "sonner"
 import { MonitorSmartphone, Banknote, CreditCard, Landmark, Smartphone, Printer, FileCheck } from "lucide-react"
 import { usePaymentMethods, useTerminalDevices, type Terminal } from "@/features/treasury"
@@ -146,8 +147,7 @@ export function PosTerminalDrawer({ open, onOpenChange, terminal, onSuccess, mod
             onSuccess?.()
             onOpenChange(false)
         } catch (error: unknown) {
-            const err = error as any
-            toast.error(err.response?.data?.error || "Error al guardar la caja POS")
+            showApiError(error, "Error al guardar la caja POS")
         } finally {
             setIsSubmitting(false)
         }
@@ -303,7 +303,7 @@ export function PosTerminalDrawer({ open, onOpenChange, terminal, onSuccess, mod
                                         name="ip_address"
                                         render={({ field }) => (
                                             <LabeledInput
-                                                label="IP (Opcional)"
+                                                    label="IP (opcional)"
                                                 {...field}
                                                 placeholder="192.168.1.100"
                                             />
