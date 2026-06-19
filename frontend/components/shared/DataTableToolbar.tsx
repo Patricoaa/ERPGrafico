@@ -106,7 +106,7 @@ export function DataTableToolbar<TData>(props: DataTableToolbarProps<TData>) {
 
     return (
         <>
-            <div className="w-full space-y-3">
+            <div className="w-full space-y-6">
                 {/* ── ROW 1: Vistas + Segmentación + Acciones ── */}
                 <div className="flex items-center gap-2 h-9 w-full">
                     {/* Left: view tabs + segmentation */}

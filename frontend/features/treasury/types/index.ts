@@ -230,6 +230,7 @@ export interface UnbilledItemRow {
     chargeType: string | null
     chargeTypeDisplay: string | null
     isInstallmentInterest: boolean
+    purchaseOrderDisplayId: string | null
     /** Referencia al PendingChargeRow original (null si es cuota) */
     originalPendingCharge: PendingChargeRow | null
     /** Referencia a la cuota original (null si es cargo) */

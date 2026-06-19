@@ -11,8 +11,9 @@ import { DataTableColumnHeader } from '@/components/shared'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { DataCell, createActionsColumn, Chip, EntityCard } from '@/components/shared'
 import { useContacts, type Contact } from "@/features/contacts"
-import { LoadingFallback, SmartSearchBar, StatusBadge, useSmartSearch } from "@/components/shared"
+import { LoadingFallback, SmartSearchBar, SegmentationBar, StatusBadge, useSmartSearch, useSegmentation } from "@/components/shared"
 import { contactSearchDef } from "@/features/contacts/searchDef"
+import { contactSegDef } from "@/features/contacts/segmentationDef"
 import type { ContactFilters } from "@/features/contacts/types"
 import { formatCurrency } from "@/lib/money"
 import { useSelectedEntity } from "@/hooks/useSelectedEntity"
@@ -29,9 +30,12 @@ interface ContactsClientViewProps {
 }
 
 export function ContactsClientView({ isNewModalOpen = false, createAction, initialContacts }: ContactsClientViewProps) {
-    const { filters: smartFilters, isFiltered } = useSmartSearch(contactSearchDef)
+    const { filters: smartFilters, isFiltered: isTextFiltered, clearAll: clearText } = useSmartSearch(contactSearchDef)
+    const { filters: segFilters, isFiltered: isSegFiltered, clearAll: clearSeg } = useSegmentation(contactSegDef)
+    const isFiltered = isTextFiltered || isSegFiltered
+    const allFilters = { ...smartFilters, ...segFilters }
     const { contacts, isLoading, isRefetching, deleteContact } = useContacts({
-        filters: smartFilters as ContactFilters,
+        filters: allFilters as ContactFilters,
         initialData: initialContacts,
     })
     const [selectedContact, setSelectedContact] = useState<Contact | null>(null)
@@ -231,7 +235,8 @@ export function ContactsClientView({ isNewModalOpen = false, createAction, initi
                         isLoading={isLoading}
                         isRefetching={isRefetching}
                         variant="embedded"
-                        smartSearch={<SmartSearchBar searchDef={contactSearchDef} placeholder="Buscar por nombre, RUT o tipo..." className="w-full" />}
+                        smartSearch={<SmartSearchBar searchDef={contactSearchDef} placeholder="Buscar por nombre, RUT o email..." className="w-full" />}
+                        segmentation={<SegmentationBar def={contactSegDef} />}
                         defaultPageSize={20}
                         createAction={createAction}
                         isFiltered={isFiltered}

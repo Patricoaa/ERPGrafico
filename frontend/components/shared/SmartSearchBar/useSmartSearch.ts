@@ -2,16 +2,16 @@
 
 import { useCallback, useMemo, useState } from 'react'
 import { useQueryState, useQueryStates, parseAsString } from 'nuqs'
-import type { SearchDefinition, ActiveChip, FieldDef } from '@/types/search'
+import type { SearchDefinition, ActiveChip, TextFieldDef } from '@/types/search'
 import type { FilterState } from './types'
 
 const PRESERVED_PARAMS = new Set(['selected'])
 
-function hasServerParam(field: FieldDef): field is Extract<FieldDef, { serverParam: string }> {
+function hasServerParam(field: TextFieldDef): field is Extract<TextFieldDef, { serverParam: string }> {
   return 'serverParam' in field
 }
 
-function getServerParams(field: FieldDef): string[] {
+function getServerParams(field: TextFieldDef): string[] {
   if (hasServerParam(field)) return [field.serverParam]
   return []
 }
@@ -24,16 +24,11 @@ function getFieldLabelForParam(def: SearchDefinition, param: string): string {
   return param
 }
 
-function getValueLabel(def: SearchDefinition, param: string, value: string): string {
-  for (const field of def.fields) {
-    if (field.type === 'identity-enum' && field.serverParam === param) {
-      return field.options.find((o) => o.value === value)?.label ?? value
-    }
-  }
+function getValueLabel(_def: SearchDefinition, _param: string, value: string): string {
   return value
 }
 
-function getDefaultValue(field: FieldDef): string | undefined {
+function getDefaultValue(_field: TextFieldDef): string | undefined {
   return undefined
 }
 

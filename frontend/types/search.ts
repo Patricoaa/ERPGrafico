@@ -8,19 +8,7 @@ export type TextFieldDef = {
   clientKey?: string | string[]
 }
 
-/**
- * Identity enum — for entity-classification fields like contact type (Cliente/Proveedor).
- * NOT for operational state/segmentation (status, dates, etc.).
- */
-export type IdentityEnumFieldDef = {
-  key: string
-  label: string
-  type: 'identity-enum'
-  serverParam: string
-  options: { label: string; value: string }[]
-}
-
-export type FieldDef = TextFieldDef | IdentityEnumFieldDef
+export type FieldDef = TextFieldDef
 
 export type SearchDefinition = {
   fields: FieldDef[]
