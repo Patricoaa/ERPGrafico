@@ -167,5 +167,5 @@ npm run dev     # smoke test in browser
 - [ ] No cross-feature deep import.
 - [ ] Tests pass, coverage ≥ module threshold.
 - [ ] Smoke test in browser: list → create → detail → edit → delete.
-- [ ] No new shared component created ad-hoc (if needed → [add-shared-component.md](add-shared-component.md)).
+- [ ] No new shared component created ad hoc (if needed → [add-shared-component.md](add-shared-component.md)).
 - [ ] No contract changed (if yes → ADR).

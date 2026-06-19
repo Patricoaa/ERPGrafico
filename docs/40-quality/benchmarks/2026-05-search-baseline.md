@@ -11,7 +11,7 @@ superseded_by: ADR-0018
 
 # Benchmark: UniversalSearch Baseline (2026-05)
 
-> **Estado:** Línea base histórica (icontains). Post-FTS (2026-05-10): p95 medido en 22–72 ms. Ver ADR-0018.
+> **Estado:** Línea base histórica (icontains). Post-FTS (2026-05-10): p95 medido en 22–72 ms. Ver [ADR-0018](../../10-architecture/adr/0018-postgresql-tsvector-migration.md).
 
 ## Entorno de Prueba
 - **Dataset:** 50.000 Contactos, 100.000 Órdenes de Venta (generado vía `seed_benchmark_data.py`).
@@ -32,4 +32,4 @@ La arquitectura actual (T-03) fue exitosa como refactor estructural, pero al lle
 
 El p95 supera abrumadoramente el umbral de aceptación de **300ms** (alcanzando ~1.2s), degradando drásticamente la UX del buscador global. 
 
-**Acción requerida:** Se requiere la migración a un motor de búsqueda real (PostgreSQL `tsvector` o ElasticSearch). Según lineamientos de T-64, se levanta el **ADR-0018** para decidir la estrategia técnica (PostgreSQL Full-Text Search).
+**Acción requerida:** Se requiere la migración a un motor de búsqueda real (PostgreSQL `tsvector` o ElasticSearch). Según lineamientos de T-64, se levanta el **[ADR-0018](../../10-architecture/adr/0018-postgresql-tsvector-migration.md)** para decidir la estrategia técnica (PostgreSQL Full-Text Search).

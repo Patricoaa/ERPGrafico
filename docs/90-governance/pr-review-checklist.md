@@ -18,7 +18,7 @@ Reviewer pastes or ticks before approving. Author self-reviews first.
 
 ## Types and contracts
 
-- [ ] Zero `any` (see `zero-any-policy.md`).
+- [ ] Zero `any` (see [`zero-any-policy.md`](zero-any-policy.md)).
 - [ ] Zod schemas match backend serializers.
 - [ ] No contract (`docs/20-contracts/*`) changed without ADR.
 - [ ] API docs updated if endpoint added/changed.
@@ -48,7 +48,7 @@ Reviewer pastes or ticks before approving. Author self-reviews first.
 
 ## Tests
 
-- [ ] New code covered at thresholds in `testing.md`.
+- [ ] New code covered at thresholds in [`testing.md`](../40-quality/testing.md).
 - [ ] Happy path + permission denied + validation error tests for new endpoints.
 - [ ] Hook tests assert query key + invalidation.
 - [ ] No skipped / disabled tests without linked issue.
@@ -64,7 +64,7 @@ Reviewer pastes or ticks before approving. Author self-reviews first.
 
 - [ ] INFO log on new business event.
 - [ ] Error path reaches Sentry.
-- [ ] New KPI surfaced via the existing audit-log / DB aggregation — no Prometheus-style metrics stack on the PYME single-node deployment (see `40-quality/observability.md`).
+- [ ] New KPI surfaced via the existing audit-log / DB aggregation — no Prometheus-style metrics stack on the PYME single-node deployment (see [`40-quality/observability.md`](../40-quality/observability.md)).
 
 ## Performance
 
