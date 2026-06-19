@@ -21,9 +21,13 @@ import {
     UnderlineTabs,
     StatCard,
     SummaryTable,
+    Skeleton,
+    EmptyState,
 } from '@/components/shared'
 import type { SearchDefinition } from '@/types/search'
 import { treasuryApi } from '../api/treasuryApi'
+import { useBankOverview } from '../hooks/useBankOverview'
+import type { BankOverviewData } from '../hooks/useBankOverview'
 import type { PendingChargeRow, UpcomingInstallment, UnbilledItemRow } from '../types'
 import { mapToUnbilledItemRows } from './utils'
 import { CardPendingChargeDrawer } from './CardPendingChargeDrawer'
@@ -34,7 +38,7 @@ import { useSearchParams, usePathname, useRouter } from 'next/navigation'
 import { useEntityRouteActions } from '@/hooks/useEntityRouteActions'
 
 interface UnbilledChargesViewProps {
-    creditCardAccounts: Array<{ id: number; name: string; currency: string }>
+    bankId: number
 }
 
 const chargeTypeColorMap: Record<string, string> = {
@@ -63,7 +67,7 @@ interface UnbilledSummary {
 }
 
 export function UnbilledChargesView({
-    creditCardAccounts,
+    bankId,
 }: UnbilledChargesViewProps) {
     const [chargeDrawerOpen, setChargeDrawerOpen] = useState(false)
     const [chargeToEdit, setChargeToEdit] = useState<PendingChargeRow | null>(null)
@@ -75,6 +79,16 @@ export function UnbilledChargesView({
     const router = useRouter()
     const { selectedId, openSelected, clearActions } = useEntityRouteActions()
     const isNewModal = searchParams.get('modal') === 'new'
+
+    const { data: overview, isLoading: overviewLoading } = useBankOverview(bankId)
+    const overviewData = (overview && !overviewLoading ? overview : null) as BankOverviewData | null
+
+    const creditCardAccounts = useMemo(
+        () => (overviewData?.accounts?.filter(
+            (acc) => acc.account_type === 'CREDIT_CARD'
+        ).map(a => ({ id: a.id, name: a.name, currency: a.currency })) ?? []),
+        [overviewData],
+    )
 
     const searchDef: SearchDefinition = useMemo(() => ({
         fields: [
@@ -114,6 +128,8 @@ export function UnbilledChargesView({
         queryKey: ['unbilled-charges', selectedCardAccount, cutOffDate ?? 'all'],
         queryFn: () => treasuryApi.getUnbilledCharges(selectedCardAccount, cutOffDate),
         enabled: !!selectedCardAccount,
+        staleTime: 2 * 60 * 1000,
+        placeholderData: (prev) => prev,
     })
 
     const charges: PendingChargeRow[] = result?.charges ?? []
@@ -332,6 +348,29 @@ export function UnbilledChargesView({
     const totalInstCount = upcomingInstallments.length
 
     const usedPercent = forecast?.credit_limit ? (parseFloat(forecast.total_used) / parseFloat(forecast.credit_limit)) * 100 : 0
+
+    if (overviewLoading) {
+        return (
+            <div className="h-full flex items-center justify-center">
+                <div className="space-y-3 w-full max-w-md">
+                    <Skeleton className="h-8 w-48 mx-auto" />
+                    <Skeleton className="h-64 w-full" />
+                </div>
+            </div>
+        )
+    }
+
+    if (creditCardAccounts.length === 0) {
+        return (
+            <div className="flex-1 flex items-center justify-center">
+                <EmptyState
+                    title="No hay tarjetas de crédito"
+                    description="Cree una cuenta de tipo Tarjeta de Crédito."
+                    icon={CreditCard}
+                />
+            </div>
+        )
+    }
 
     return (
         <div className="h-full flex flex-col">
