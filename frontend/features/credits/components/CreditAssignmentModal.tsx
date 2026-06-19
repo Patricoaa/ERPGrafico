@@ -129,14 +129,14 @@ export default function CreditAssignmentModal({
                             <div className="animate-in fade-in slide-in-from-bottom-2 duration-300 space-y-6">
                                 {/* Indicators grid */}
                                 <div className="grid grid-cols-2 gap-3">
-                                    <div className="p-4 rounded-lg border bg-muted/30 flex flex-col gap-1 items-center justify-center">
+                                    <div className="p-4 rounded-md border bg-muted/30 flex flex-col gap-1 items-center justify-center">
                                         <TrendingUp className="h-4 w-4 text-success mb-1" />
                                         <span className="text-[10px] uppercase font-bold text-muted-foreground tracking-wider">Disponible</span>
                                         <span className="text-lg font-mono font-black text-success">
                                             <MoneyDisplay amount={(activeContact as any).credit_available || 0} inline />
                                         </span>
                                     </div>
-                                    <div className="p-4 rounded-lg border bg-muted/30 flex flex-col gap-1 items-center justify-center">
+                                    <div className="p-4 rounded-md border bg-muted/30 flex flex-col gap-1 items-center justify-center">
                                         <Banknote className="h-4 w-4 text-destructive mb-1" />
                                         <span className="text-[10px] uppercase font-bold text-muted-foreground tracking-wider">Utilizado</span>
                                         <span className="text-lg font-mono font-black text-destructive">
@@ -160,7 +160,7 @@ export default function CreditAssignmentModal({
                                                 className="font-mono font-bold"
                                                 onChange={(e) => field.onChange(e.target.value ? Number(e.target.value) : null)}
                                             />
-                                            <div className="flex items-start gap-2 p-3 rounded-lg bg-warning/5 border border-warning/10 mt-2">
+                                            <div className="flex items-start gap-2 p-3 rounded-md bg-warning/5 border border-warning/10 mt-2">
                                                 <AlertCircle className="h-4 w-4 text-warning mt-0.5 shrink-0" />
                                                 <p className="text-[11px] text-warning leading-tight">
                                                     Establezca 0 o deje vacío para deshabilitar el crédito.

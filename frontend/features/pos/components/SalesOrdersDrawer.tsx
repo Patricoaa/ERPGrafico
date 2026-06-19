@@ -154,7 +154,7 @@ export function SalesOrdersDrawer({ open, onOpenChange, posSessionId }: SalesOrd
 
                         {/* Detail Panel (third column) */}
                         {selectedId && hasDetail && (
-                            <div className="w-1/3 border-l border-border pl-4 flex flex-col min-h-0 overflow-hidden bg-muted/20 rounded-lg">
+                            <div className="w-1/3 border-l border-border pl-4 flex flex-col min-h-0 overflow-hidden bg-muted/20 rounded-md">
                                 <DetailPanel
                                     type={detailContent.type}
                                     id={detailContent.id}

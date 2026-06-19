@@ -172,7 +172,7 @@ export function PartnerProfileTab({ contactId }: Props) {
                                             subtext="Participación sobre el total patrimonial"
                                             variant="minimal"
                                             accent="muted"
-                                            className="bg-muted/30 p-4 rounded-lg border flex flex-col justify-center text-center"
+                                            className="bg-muted/30 p-4 rounded-md border flex flex-col justify-center text-center"
                                             valueSize="xl"
                                         />
                                         <StatCard
@@ -181,7 +181,7 @@ export function PartnerProfileTab({ contactId }: Props) {
                                             subtext="Neto acumulado de aportes y retiros"
                                             variant="minimal"
                                             accent="primary"
-                                            className="md:col-span-2 bg-primary/5 p-4 rounded-lg border border-primary/20 flex flex-col justify-center items-center text-center"
+                                            className="md:col-span-2 bg-primary/5 p-4 rounded-md border border-primary/20 flex flex-col justify-center items-center text-center"
                                         />
                                     </div>
                                 </CardContent>
@@ -263,7 +263,7 @@ function InfoField({ icon, label, value }: { icon: React.ReactNode; label: strin
     return (
         <div className="space-y-1.5">
             <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">{label}</span>
-            <div className="flex items-center gap-2 h-10 px-3 rounded-lg border bg-muted/20 text-sm font-medium text-foreground">
+            <div className="flex items-center gap-2 h-10 px-3 rounded-md border bg-muted/20 text-sm font-medium text-foreground">
                 <span className="text-muted-foreground">{icon}</span>
                 {value}
             </div>

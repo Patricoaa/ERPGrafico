@@ -110,7 +110,7 @@ export function PaymentHistoryModal({
                 />
 
                 {payments.length > 0 && (
-                    <div className="mt-4 p-4 rounded-lg bg-primary/5 flex justify-between items-center border border-primary/10">
+                    <div className="mt-4 p-4 rounded-md bg-primary/5 flex justify-between items-center border border-primary/10">
                         <span className="text-sm font-medium">Total Pagado:</span>
                         <span className="text-lg font-bold text-primary">
                             {formatCurrency(payments.reduce((acc: number, p: Payment) => acc + parseFloat(String(p.amount)), 0))}

@@ -114,7 +114,7 @@ export function OrderHubPanel({
                 {/* Phase cards skeleton */}
                 <div className="flex-1 overflow-y-auto px-4 pt-5 pb-4 space-y-2.5">
                     {[1, 2, 3].map((i) => (
-                        <div key={i} className="p-4 rounded-lg border border-border/50 bg-card/50 space-y-4">
+                        <div key={i} className="p-4 rounded-md border border-border/50 bg-card/50 space-y-4">
                             <div className="flex justify-between items-center">
                                 <div className="h-5 w-40 rounded bg-muted animate-pulse" />
                                 <div className="h-5 w-5 rounded-full bg-muted animate-pulse" />
