@@ -4,6 +4,7 @@ import React, { useState, useEffect, useRef } from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
+import { showApiError } from "@/lib/errors"
 import { ArrowLeftRight, DollarSign } from "lucide-react"
 import { useReactToPrint } from "react-to-print"
 import type { DrawerMode } from "@/features/_shared/drawer/types"
@@ -80,7 +81,7 @@ export function TransferDrawer({ open, onOpenChange, onSuccess, mode: modeProp }
             onSuccess?.()
             form.reset()
         } catch (error: unknown) {
-            console.error(error)
+            showApiError(error, "Error al realizar traspaso")
         }
     }
 
@@ -132,6 +133,7 @@ export function TransferDrawer({ open, onOpenChange, onSuccess, mode: modeProp }
                                                 <div className="relative">
                                                     <TreasuryAccountSelector
                                                         label="Cuenta Origen"
+                                                        required
                                                         value={field.value}
                                                         onChange={(v) => field.onChange(v ?? "")}
                                                         excludeId={toAccountId ? Number(toAccountId) : undefined}
@@ -153,6 +155,7 @@ export function TransferDrawer({ open, onOpenChange, onSuccess, mode: modeProp }
                                             render={({ field, fieldState }) => (
                                                 <TreasuryAccountSelector
                                                     label="Cuenta Destino"
+                                                    required
                                                     value={field.value}
                                                     onChange={(v) => field.onChange(v ?? "")}
                                                     excludeId={fromAccountId ? Number(fromAccountId) : undefined}
@@ -207,9 +210,9 @@ export function TransferDrawer({ open, onOpenChange, onSuccess, mode: modeProp }
                                             control={form.control}
                                             name="notes"
                                             render={({ field, fieldState }) => (
-                                                <LabeledInput
-                                                    label="Notas o Glosa"
-                                                    as="textarea"
+                                                    <LabeledInput
+                                                        label="Notas o Glosa (opcional)"
+                                                        as="textarea"
                                                     placeholder="Describa el motivo del traspaso..."
                                                     rows={2}
                                                     error={fieldState.error?.message}

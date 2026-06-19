@@ -47,6 +47,7 @@ interface TreasuryAccountSelectorProps {
     onSelect?: (account: any) => void
     label?: string
     error?: string
+    required?: boolean
 }
 
 export function TreasuryAccountSelector({
@@ -63,7 +64,8 @@ export function TreasuryAccountSelector({
     allowedIds,
     onSelect,
     label,
-    error
+    error,
+    required
 }: TreasuryAccountSelectorProps) {
     const [open, setOpen] = useState(false)
     const [search, setSearch] = useState("")
@@ -130,7 +132,7 @@ export function TreasuryAccountSelector({
             >
                 {label && (
                     <legend className={cn("notched-legend", error && "text-destructive")}>
-                        {label}
+                        {label}{required && <span className="text-destructive ml-0.5">*</span>}
                     </legend>
                 )}
                 <Popover open={open} onOpenChange={setOpen}>

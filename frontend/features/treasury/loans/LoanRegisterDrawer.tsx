@@ -18,6 +18,7 @@ import { Banknote, Calculator } from 'lucide-react'
 import { useBanks } from '../hooks/useMasterData'
 import { useTreasuryAccounts } from '../hooks/useTreasuryAccounts'
 import { useLoanMutations } from './hooks'
+import { showApiError } from '@/lib/errors'
 import { AccountSelector } from '@/components/selectors/AccountSelector'
 
 const schema = z.object({
@@ -183,27 +184,31 @@ export function LoanRegisterDrawer({ open, onOpenChange, bankId }: Props) {
     ]
 
     const onSubmit = async (values: FormValues) => {
-        await create({
-            lender: parseInt(values.lender),
-            loan_number: values.loan_number ?? '',
-            currency: values.currency,
-            principal: values.principal,
-            interest_rate: values.interest_rate,
-            rate_basis: values.rate_basis,
-            amortization_system: values.amortization_system,
-            term_months: parseInt(values.term_months),
-            start_date: values.start_date,
-            first_due_date: values.first_due_date,
-            insurance_monthly: values.insurance_monthly || '0',
-            opening_fee: values.opening_fee || '0',
-            stamp_tax: values.stamp_tax || '0',
-            penalty_rate: values.penalty_rate || '0',
-            disbursement_account: parseInt(values.disbursement_account),
-            liability_account: parseInt(values.liability_account),
-            notes: values.notes ?? '',
-        })
-        form.reset()
-        onOpenChange(false)
+        try {
+            await create({
+                lender: parseInt(values.lender),
+                loan_number: values.loan_number ?? '',
+                currency: values.currency,
+                principal: values.principal,
+                interest_rate: values.interest_rate,
+                rate_basis: values.rate_basis,
+                amortization_system: values.amortization_system,
+                term_months: parseInt(values.term_months),
+                start_date: values.start_date,
+                first_due_date: values.first_due_date,
+                insurance_monthly: values.insurance_monthly || '0',
+                opening_fee: values.opening_fee || '0',
+                stamp_tax: values.stamp_tax || '0',
+                penalty_rate: values.penalty_rate || '0',
+                disbursement_account: parseInt(values.disbursement_account),
+                liability_account: parseInt(values.liability_account),
+                notes: values.notes ?? '',
+            })
+            form.reset()
+            onOpenChange(false)
+        } catch (error) {
+            showApiError(error, "Error al registrar crédito")
+        }
     }
 
     return (
@@ -481,6 +486,7 @@ export function LoanRegisterDrawer({ open, onOpenChange, bankId }: Props) {
                                 <div className="space-y-1">
                                     <AccountSelector
                                         label="Cuenta Contable de Pasivo (Préstamo por pagar — 2.x)"
+                                        required
                                         value={field.value}
                                         onChange={(v) => field.onChange(v ?? '')}
                                         accountType="LIABILITY"

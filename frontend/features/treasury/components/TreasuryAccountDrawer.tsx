@@ -102,7 +102,7 @@ export function TreasuryAccountDrawer({ open, onOpenChange, accountId, onSuccess
                     })
                 }
             } catch (err) {
-                console.error("Error fetching account data", err)
+                showApiError(err, "Error al cargar datos de la cuenta")
             } finally {
                 setLoading(false)
             }
@@ -268,6 +268,7 @@ export function TreasuryAccountDrawer({ open, onOpenChange, accountId, onSuccess
                                             render={({ field, fieldState }) => (
                                                 <LabeledSelect
                                                     label="Tipo de Cuenta"
+                                                    required
                                                     value={field.value}
                                                     onChange={field.onChange}
                                                     disabled={isSystemManaged || !!accountId}
@@ -288,6 +289,7 @@ export function TreasuryAccountDrawer({ open, onOpenChange, accountId, onSuccess
                                             render={({ field, fieldState }) => (
                                                 <LabeledSelect
                                                     label="Moneda"
+                                                    required
                                                     value={field.value}
                                                     onChange={field.onChange}
                                                     disabled={isSystemManaged}

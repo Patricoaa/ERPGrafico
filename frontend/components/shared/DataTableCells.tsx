@@ -258,7 +258,7 @@ export const DataCell = {
      * Incorporates CropFrame and a Ghost Button.
      * - hover:bg-transparent overrides ghost default accent fill; CropFrame is the sole hover feedback.
      * - Tooltip uses the dark sidebar palette for visual consistency.
-     * Enforces rounded-none for design system compliance.
+     * Tooltip uses rounded-sm (atomic), DropdownMenuContent uses rounded-lg (overlay).
      *
      * Two forms:
      * - Registry form (preferred): <DataCell.Action action="edit" onClick={...} />
@@ -317,7 +317,7 @@ export const DataCell = {
                         </div>
                     </TooltipTrigger>
                     {title && (
-                        <TooltipContent side="top" className="text-[9px] font-black uppercase tracking-[0.2em] px-2 py-1 shadow-floating rounded-none animate-in fade-in zoom-in-95 duration-200">
+                        <TooltipContent side="top" className="text-[9px] font-black uppercase tracking-[0.2em] px-2 py-1 shadow-floating rounded-sm animate-in fade-in zoom-in-95 duration-200">
                             {title}
                         </TooltipContent>
                     )}
@@ -377,7 +377,7 @@ export const DataCell = {
                     </TooltipTrigger>
                     <DropdownMenuContent
                         align={align}
-                        className="rounded-none border-sidebar-border min-w-[10rem]"
+                        className="rounded-lg border-sidebar-border min-w-[10rem]"
                         onClick={(e) => e.stopPropagation()}
                     >
                         {items.map((item, idx) => {
@@ -400,7 +400,7 @@ export const DataCell = {
                                         e.stopPropagation()
                                         if ('onClick' in item && item.onClick) item.onClick(e as unknown as React.MouseEvent)
                                     }}
-                                    className="text-[11px] font-black uppercase tracking-widest rounded-none cursor-pointer"
+                                    className="text-[11px] font-black uppercase tracking-widest rounded-sm cursor-pointer"
                                 >
                                     <Icon className="h-3.5 w-3.5" />
                                     {label}
@@ -409,7 +409,7 @@ export const DataCell = {
                         })}
                     </DropdownMenuContent>
                 </DropdownMenu>
-                <TooltipContent side="top" className="text-[9px] font-black uppercase tracking-[0.2em] px-2 py-1 shadow-floating rounded-none animate-in fade-in zoom-in-95 duration-200">
+                <TooltipContent side="top" className="text-[9px] font-black uppercase tracking-[0.2em] px-2 py-1 shadow-floating rounded-sm animate-in fade-in zoom-in-95 duration-200">
                     {title}
                 </TooltipContent>
             </Tooltip>

@@ -2,7 +2,7 @@
 
 import { formatCurrency } from "@/lib/money"
 import React from "react"
-import { Drawer, StatCard } from "@/components/shared"
+import { Drawer, StatCard, ChartTooltip } from "@/components/shared"
 
 import {
     TrendingUp,
@@ -88,14 +88,14 @@ export function EquityStatsDrawer({ open, onOpenChange, partners, summary }: Equ
                             arcLinkLabelsStraightLength={8}
                             arcLabelsSkipAngle={20}
                             tooltip={({ datum }) => (
-                                <div className="bg-background/95 backdrop-blur border border-border p-3 rounded-lg shadow-xl">
+                                <ChartTooltip className="bg-background/95 backdrop-blur p-3 shadow-xl">
                                     <p className="text-[10px] uppercase font-black tracking-widest text-muted-foreground mb-1">
                                         {datum.id}
                                     </p>
                                     <p className="text-xs font-mono font-bold">
                                         {formatCurrency(datum.value)}
                                     </p>
-                                </div>
+                                </ChartTooltip>
                             )}
                             legends={[
                                 {
@@ -138,7 +138,7 @@ export function EquityStatsDrawer({ open, onOpenChange, partners, summary }: Equ
                                 format: (v) => `$${Number(v) / 1000}k`,
                             }}
                             tooltip={({ id, value, indexValue, color }) => (
-                                <div className="bg-background/95 backdrop-blur border border-border p-3 rounded-lg shadow-xl">
+                                <ChartTooltip className="bg-background/95 backdrop-blur p-3 shadow-xl">
                                     <div className="flex items-center gap-2">
                                         <div className="w-2 h-2 rounded-full" style={{ backgroundColor: color }} />
                                         <span className="text-[10px] uppercase font-black tracking-widest text-muted-foreground">
@@ -149,7 +149,7 @@ export function EquityStatsDrawer({ open, onOpenChange, partners, summary }: Equ
                                         <span className="font-medium">{id === "paid" ? "Enterado" : "Pendiente"}: </span>
                                         <span className="font-mono font-bold">{formatCurrency(value)}</span>
                                     </p>
-                                </div>
+                                </ChartTooltip>
                             )}
                             legends={[
                                 {

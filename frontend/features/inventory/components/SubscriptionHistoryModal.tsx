@@ -5,7 +5,7 @@ import { BaseModal, Chip, DateRangeFilter, EmptyState, SkeletonShell, StatusBadg
 
 import { useState, useMemo } from "react"
 
-import { DataTable, StatCard } from "@/components/shared"
+import { DataTable, StatCard, ChartTooltip } from "@/components/shared"
 import {
     History,
     FileText,
@@ -191,14 +191,14 @@ export function SubscriptionHistoryModal({ subscriptionId, open, onOpenChange }:
                                                         format: (v) => formatCurrency(v),
                                                     }}
                                                     tooltip={({ value, indexValue }) => (
-                                                        <div className="rounded-lg border bg-popover p-3 shadow-lg" style={{ color: 'var(--popover-foreground)' }}>
+                                                        <ChartTooltip className="bg-popover p-3 shadow-lg" style={{ color: 'var(--popover-foreground)' }}>
                                                             <p className="text-[10px] uppercase font-black tracking-widest text-muted-foreground mb-1">
                                                                 {format(new Date(indexValue as string), 'PPP', { locale: es })}
                                                             </p>
                                                             <p className="text-xs font-bold">
                                                                 Costo Unitario: {formatCurrency(value)}
                                                             </p>
-                                                        </div>
+                                                        </ChartTooltip>
                                                     )}
                                                     theme={{
                                                         background: 'transparent',

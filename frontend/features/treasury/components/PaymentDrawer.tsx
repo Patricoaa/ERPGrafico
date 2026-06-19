@@ -330,6 +330,7 @@ export function PaymentDrawer({
                                                     render={({ field, fieldState }) => (
                                                         <LabeledSelect
                                                             label="Flujo"
+                                                            required
                                                             value={field.value}
                                                             onChange={field.onChange}
                                                             error={fieldState.error?.message}
@@ -347,6 +348,7 @@ export function PaymentDrawer({
                                                 render={({ field, fieldState }) => (
                                                     <LabeledInput
                                                         label="Monto"
+                                                        required
                                                         icon={<span className="font-bold text-muted-foreground">$</span>}
                                                         type="number"
                                                         step="0.01"
@@ -366,6 +368,7 @@ export function PaymentDrawer({
                                                 render={({ field, fieldState }) => (
                                                     <TreasuryAccountSelector
                                                         label="Cuenta de Tesorería"
+                                                        required
                                                         value={field.value}
                                                         onChange={field.onChange}
                                                         placeholder="Seleccione cuenta..."
@@ -447,7 +450,7 @@ export function PaymentDrawer({
                                                     name="invoice_id"
                                                     render={({ field, fieldState }) => (
                                                         <LabeledSelect
-                                                            label="Vincular Documento (Opcional)"
+                                                            label="Vincular Documento (opcional)"
                                                             value={field.value || "__none__"}
                                                             onChange={field.onChange}
                                                             disabled={isFetchingInvoices}

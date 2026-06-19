@@ -7,7 +7,7 @@ import { ResponsiveBar } from '@nivo/bar'
 import { ResponsivePie } from '@nivo/pie'
 import { useBIAnalytics } from "../hooks/useBIAnalytics";
 import {TrendingUp, Package, DollarSign, ShoppingCart} from 'lucide-react';
-import { EmptyState, MoneyDisplay, SkeletonShell, StatCard } from '@/components/shared';
+import { EmptyState, MoneyDisplay, SkeletonShell, StatCard, ChartTooltip } from '@/components/shared';
 ;
 import { formatCurrency } from "@/lib/money";
 import { DateRange } from "react-day-picker";
@@ -130,14 +130,14 @@ export const BIAnalyticsView: React.FC<BIAnalyticsViewProps> = ({ date }) => {
                             format: (v) => formatCurrency(v),
                         }}
                         tooltip={({ point }) => (
-                            <div className="rounded-lg border bg-background p-2 shadow-sm">
+                            <ChartTooltip>
                                 <p className="text-[10px] uppercase text-muted-foreground">
                                     {String(point.data.x)}
                                 </p>
                                 <p className="font-bold text-xs">
                                     Ventas: {formatCurrency(Number(point.data.y))}
                                 </p>
-                            </div>
+                            </ChartTooltip>
                         )}
                         legends={[
                             {
@@ -181,10 +181,10 @@ export const BIAnalyticsView: React.FC<BIAnalyticsViewProps> = ({ date }) => {
                                 tickPadding: 12,
                             }}
                             tooltip={({ value, indexValue }) => (
-                                <div className="rounded-lg border bg-background p-2 shadow-sm">
+                                <ChartTooltip>
                                     <p className="text-[10px] uppercase text-muted-foreground">{indexValue as string}</p>
                                     <p className="font-bold text-xs">Ventas: {formatCurrency(value)}</p>
-                                </div>
+                                </ChartTooltip>
                             )}
                         />
                     </CardContent>
@@ -210,10 +210,10 @@ export const BIAnalyticsView: React.FC<BIAnalyticsViewProps> = ({ date }) => {
                             arcLinkLabelsStraightLength={8}
                             arcLabelsSkipAngle={20}
                             tooltip={({ datum }) => (
-                                <div className="rounded-lg border bg-background p-2 shadow-sm">
+                                <ChartTooltip>
                                     <p className="text-[10px] uppercase text-muted-foreground">{datum.id}</p>
                                     <p className="font-bold text-xs">Valor: {formatCurrency(datum.value)}</p>
-                                </div>
+                                </ChartTooltip>
                             )}
                             legends={[
                                 {
