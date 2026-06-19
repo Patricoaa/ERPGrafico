@@ -17,7 +17,7 @@ import {
   DropdownMenuRadioGroup,
   DropdownMenuRadioItem,
 } from '@/components/ui/dropdown-menu'
-import type { SegmentationDefinition, TabSegmentDef, DateSegmentDef, SegmentDef } from '@/types/segmentation'
+import type { SegmentationDefinition, TabSegmentDef, DateSegmentDef, PeriodSegmentDef, SegmentDef } from '@/types/segmentation'
 import { useSegmentation } from './useSegmentation'
 
 interface SegmentationBarProps {
@@ -53,6 +53,9 @@ interface SegmentItemProps {
 }
 
 function SegmentItem({ segment, filters, apply, remove }: SegmentItemProps) {
+  if (segment.type === 'period') {
+    return <PeriodSegment def={segment} filters={filters} apply={apply} remove={remove} />
+  }
   if (segment.type === 'tabs') {
     const variant = segment.variant ?? 'tabs'
     if (variant === 'dropdown') {
@@ -166,6 +169,92 @@ function DropdownSegment({ def, filters, apply, remove }: DropdownSegmentProps) 
         </DropdownMenuRadioGroup>
       </DropdownMenuContent>
     </DropdownMenu>
+  )
+}
+
+/* ─── PeriodSegment ─── */
+
+type PeriodValue = '' | 'today' | 'this_month' | 'this_year'
+
+const PERIOD_OPTIONS: { label: string; value: PeriodValue }[] = [
+  { label: 'Hoy', value: 'today' },
+  { label: 'Este Mes', value: 'this_month' },
+  { label: 'Este Año', value: 'this_year' },
+]
+
+function getPeriodDateRange(value: PeriodValue): { from: string; to: string } | null {
+  const now = new Date()
+  const y = now.getFullYear()
+  const m = now.getMonth()
+
+  switch (value) {
+    case 'today': {
+      const d = format(now, 'yyyy-MM-dd')
+      return { from: d, to: d }
+    }
+    case 'this_month': {
+      const from = format(new Date(y, m, 1), 'yyyy-MM-dd')
+      const to = format(new Date(y, m + 1, 0), 'yyyy-MM-dd')
+      return { from, to }
+    }
+    case 'this_year': {
+      const from = format(new Date(y, 0, 1), 'yyyy-MM-dd')
+      const to = format(new Date(y, 11, 31), 'yyyy-MM-dd')
+      return { from, to }
+    }
+    default:
+      return null
+  }
+}
+
+interface PeriodSegmentProps {
+  def: PeriodSegmentDef
+  filters: Record<string, string>
+  apply: (param: string, value: string) => Promise<void>
+  remove: (param: string) => Promise<void>
+}
+
+function PeriodSegment({ def, filters, apply, remove }: PeriodSegmentProps) {
+  const fromVal = filters[def.serverParamFrom]
+  const toVal = filters[def.serverParamTo]
+  const currentValue: PeriodValue = (['today', 'this_month', 'this_year'] as PeriodValue[]).find((pv) => {
+    const range = getPeriodDateRange(pv)
+    return range?.from === fromVal && range?.to === toVal
+  }) ?? ''
+
+  const handleChange = useCallback(async (value: string) => {
+    if (value === '') {
+      await remove(def.serverParamFrom)
+      await remove(def.serverParamTo)
+    } else {
+      const range = getPeriodDateRange(value as PeriodValue)
+      if (range) {
+        await apply(def.serverParamFrom, range.from)
+        await apply(def.serverParamTo, range.to)
+      }
+    }
+  }, [def, apply, remove])
+
+  return (
+    <Tabs value={currentValue} onValueChange={handleChange}>
+      <TabsList className="h-7 p-0 gap-0 bg-transparent border-border/60 shrink-0">
+        <TabsTrigger
+          value=""
+          className="h-7 px-2 text-[10px] uppercase font-bold tracking-widest gap-1 data-[state=active]:bg-accent/50 data-[state=active]:shadow-none rounded-sm"
+        >
+          Todos
+        </TabsTrigger>
+        {PERIOD_OPTIONS.map((opt) => (
+          <TabsTrigger
+            key={opt.value}
+            value={opt.value}
+            className="h-7 px-2 text-[10px] uppercase font-bold tracking-widest gap-1 data-[state=active]:bg-accent/50 data-[state=active]:shadow-none rounded-sm"
+          >
+            {opt.label}
+          </TabsTrigger>
+        ))}
+      </TabsList>
+    </Tabs>
   )
 }
 

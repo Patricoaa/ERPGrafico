@@ -17,7 +17,15 @@ export type DateSegmentDef = {
   serverParamTo?: string
 }
 
-export type SegmentDef = TabSegmentDef | DateSegmentDef
+export type PeriodSegmentDef = {
+  key: string
+  label: string
+  type: 'period'
+  serverParamFrom: string
+  serverParamTo: string
+}
+
+export type SegmentDef = TabSegmentDef | DateSegmentDef | PeriodSegmentDef
 
 export type SegmentationDefinition = {
   segments: SegmentDef[]
