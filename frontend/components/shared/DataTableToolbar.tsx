@@ -105,26 +105,6 @@ export function DataTableToolbar<TData>(props: DataTableToolbarProps<TData>) {
             <div className="w-full space-y-2">
                 {/* ── ROW 1: Segmentadores + Acciones ── */}
                 <div className="flex items-center justify-between gap-2 h-9 w-full">
-                    {/* Left: Selector de vistas */}
-                    <div className="flex items-center gap-1.5 shrink-0 bg-muted/30 rounded-sm px-1 h-9">
-                        {viewOptions && viewOptions.length > 0 && (
-                            <Tabs value={currentView} onValueChange={(v) => onViewChange?.(v)}>
-                                <TabsList className="h-7 p-0 gap-0 bg-transparent border-border/60">
-                                    {viewOptions.map((option) => (
-                                        <TabsTrigger
-                                            key={option.value}
-                                            value={option.value}
-                                            className="h-7 px-2 text-[10px] uppercase font-bold tracking-widest gap-1 data-[state=active]:bg-accent/50 data-[state=active]:shadow-none rounded-sm"
-                                        >
-                                            <option.icon className="h-3.5 w-3.5" />
-                                            {option.label}
-                                        </TabsTrigger>
-                                    ))}
-                                </TabsList>
-                            </Tabs>
-                        )}
-                    </div>
-
                     {/* Left: Segmentadores */}
                     <div className="flex items-center gap-1.5 flex-1 min-w-0 overflow-x-auto">
                         {/* Faceted filters — inline popover per filter */}
@@ -282,6 +262,26 @@ export function DataTableToolbar<TData>(props: DataTableToolbarProps<TData>) {
                                 </DropdownMenuContent>
                             </DropdownMenu>
                         )}
+
+                        {/* Selector de vistas */}
+                        <div className="flex items-center gap-1.5 shrink-0 bg-muted/30 rounded-sm px-1 h-9">
+                            {viewOptions && viewOptions.length > 0 && (
+                                <Tabs value={currentView} onValueChange={(v) => onViewChange?.(v)}>
+                                    <TabsList className="h-7 p-0 gap-0 bg-transparent border-border/60">
+                                        {viewOptions.map((option) => (
+                                            <TabsTrigger
+                                                key={option.value}
+                                                value={option.value}
+                                                className="h-7 px-2 text-[10px] uppercase font-bold tracking-widest gap-1 data-[state=active]:bg-accent/50 data-[state=active]:shadow-none rounded-sm"
+                                            >
+                                                <option.icon className="h-3.5 w-3.5" />
+                                                {option.label}
+                                            </TabsTrigger>
+                                        ))}
+                                    </TabsList>
+                                </Tabs>
+                            )}
+                        </div>
                     </div>
                 </div>
             </div>
