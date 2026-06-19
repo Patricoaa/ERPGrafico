@@ -803,8 +803,9 @@ class SalesService:
                 
                 if item_price > 0:
                     line_net = (qty * item_price).quantize(Decimal('0.01'))
+                    from accounting.utils import get_default_vat_rate
                     line_tax = (qty * item_tax).quantize(Decimal('0.01')) if item_tax > 0 else \
-                               (line_net * Decimal('0.19')).quantize(Decimal('0.01')) # Fallback tax
+                               (line_net * get_default_vat_rate() / Decimal('100')).quantize(Decimal('0.01')) # Fallback tax
                 elif total_qty > 0:
                     line_net = (qty * (amount_net / total_qty)).quantize(Decimal('0.01'))
                     line_tax = (qty * (amount_tax / total_qty)).quantize(Decimal('0.01'))

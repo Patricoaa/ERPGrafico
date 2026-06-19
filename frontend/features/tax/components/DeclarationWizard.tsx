@@ -15,6 +15,7 @@ import {
 import { toast } from "sonner"
 import { useTaxCalculation, useCreateDeclaration, useRegisterDeclaration, useClosePeriod } from "../hooks/useTaxMutations"
 import { cn } from "@/lib/utils"
+import { useVatRate } from '@/hooks/useVatRate'
 import { useServerDate } from "@/hooks/useServerDate"
 
 import { TaxPeriod, TaxCalculationData } from "../types"
@@ -32,6 +33,7 @@ interface DeclarationWizardProps {
 export function DeclarationWizard({ isOpen, onOpenChange, periodId, onSuccess, existingPeriods = [] }: DeclarationWizardProps) {
     const { year: currentYear, month: currentMonth, dateString, serverDate } = useServerDate()
     const { openHub } = useHubPanel()
+    const { rate } = useVatRate()
     const [isLoading, setIsLoading] = useState(false)
     const [calcData, setCalcData] = useState<TaxCalculationData | null>(null)
     const [taxPeriodId, setTaxPeriodId] = useState<number | null>(periodId || null)
@@ -51,7 +53,7 @@ export function DeclarationWizard({ isOpen, onOpenChange, periodId, onSuccess, e
         loan_retention: 0,
         ila_tax: 0,
         vat_withholding: 0,
-        tax_rate: 19,
+        tax_rate: rate,
         notes: ""
     })
     const calcMutation = useTaxCalculation()

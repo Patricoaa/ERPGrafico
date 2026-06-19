@@ -55,8 +55,8 @@ class AccountingSettingsViewSet(viewsets.ModelViewSet):
 
     @action(detail=False, methods=['get'], url_path='vat', permission_classes=[IsAuthenticated])
     def vat(self, request):
-        obj = AccountingSettings.get_solo()
-        rate = obj.default_vat_rate if obj else 19
+        from .utils import get_default_vat_rate
+        rate = get_default_vat_rate()
         rate_float = float(rate)
         return Response({'rate': rate_float, 'multiplier': round(1 + rate_float / 100, 10)})
 

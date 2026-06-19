@@ -7,6 +7,6 @@ export * from './PartnerEditDrawer';
 export * from './SalesSettingsView';
 export * from './TerminalDrawer';
 export * from './UsersSettingsView';
-export * from './AccountingSettingsView';
 export * from './PartnersSettingsView';
 export * from './UnifiedAccountsView';
+export * from './VatRatesView';

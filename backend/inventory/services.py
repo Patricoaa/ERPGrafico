@@ -261,7 +261,8 @@ class PricingService:
             
         if uom is None:
             # If still no UoM, we can't do advanced pricing rules that depend on it
-            return product.sale_price_gross or (product.sale_price * Decimal('1.19')).quantize(Decimal('1'))
+            from accounting.utils import get_vat_multiplier
+            return product.sale_price_gross or (product.sale_price * get_vat_multiplier()).quantize(Decimal('1'))
 
         # Check for an explicit per-UoM price before falling back to proportional conversion
         uom_price_obj = ProductUoMPrice.objects.filter(product=product, uom=uom).first()
@@ -337,17 +338,18 @@ class PricingService:
                     if rule.fixed_price_gross is not None:
                         rule_base = rule.fixed_price_gross
                     elif rule.fixed_price is not None:
-                        rule_base = (rule.fixed_price * Decimal('1.19')).quantize(Decimal('1'), rounding='ROUND_HALF_UP')
+                        from accounting.utils import get_vat_multiplier
+                        rule_base = (rule.fixed_price * get_vat_multiplier()).quantize(Decimal('1'), rounding='ROUND_HALF_UP')
                     
                     if getattr(product, 'parent_template_id', None) and product.price_inheritance_mode == 'SURCHARGE' and rule.product_id == product.parent_template_id:
                         surcharge = product.price_surcharge or Decimal('0')
-                        surcharge_gross = (surcharge * Decimal('1.19')).quantize(Decimal('1'), rounding='ROUND_HALF_UP')
+                        surcharge_gross = (surcharge * get_vat_multiplier()).quantize(Decimal('1'), rounding='ROUND_HALF_UP')
                         rule_base += surcharge_gross
                         
                     best_price = rule_base
                 elif rule.rule_type == PricingRule.RuleType.PACKAGE_FIXED:
                     # Package fixed price is also usually interpreted as Gross
-                    p_price = rule.fixed_price_gross if rule.fixed_price_gross is not None else (rule.fixed_price * Decimal('1.19') if rule.fixed_price else None)
+                    p_price = rule.fixed_price_gross if rule.fixed_price_gross is not None else (rule.fixed_price * get_vat_multiplier() if rule.fixed_price else None)
                     if p_price is not None:
                          # We need to return UNIT price, so we divide by quantity
                          if quantity > 0:
@@ -357,7 +359,7 @@ class PricingService:
                              
                          if getattr(product, 'parent_template_id', None) and product.price_inheritance_mode == 'SURCHARGE' and rule.product_id == product.parent_template_id:
                              surcharge = product.price_surcharge or Decimal('0')
-                             surcharge_gross = (surcharge * Decimal('1.19')).quantize(Decimal('1'), rounding='ROUND_HALF_UP')
+                             surcharge_gross = (surcharge * get_vat_multiplier()).quantize(Decimal('1'), rounding='ROUND_HALF_UP')
                              unit_price += surcharge_gross
                              
                          best_price = unit_price
@@ -381,7 +383,8 @@ class PricingService:
 
         Si la variante no tiene parent_template, devuelve su precio propio.
         """
-        vat = Decimal('1.19')
+        from accounting.utils import get_vat_multiplier
+        vat = get_vat_multiplier()
         if not variant.parent_template_id:
             return variant.sale_price, variant.sale_price_gross
 

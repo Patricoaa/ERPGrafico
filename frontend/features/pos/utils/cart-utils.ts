@@ -14,11 +14,11 @@ export function generateCartItemId(): string {
 /**
  * Calculate cart totals
  */
-export function calculateCartTotals(items: CartItem[], totalDiscount: number = 0) {
+export function calculateCartTotals(items: CartItem[], totalDiscount: number = 0, vatMultiplier: number = 1.19) {
     const total_gross_before_global_discount = items.reduce((acc, i) => acc + i.total_gross, 0)
     const line_discounts_sum = items.reduce((acc, i) => acc + (i.discount_amount || 0), 0)
     const total_gross_sum = Math.max(0, total_gross_before_global_discount - totalDiscount)
-    const total_net_sum = Math.round(total_gross_sum / 1.19)
+    const total_net_sum = Math.round(total_gross_sum / vatMultiplier)
     const total_tax_sum = total_gross_sum - total_net_sum
 
     return {

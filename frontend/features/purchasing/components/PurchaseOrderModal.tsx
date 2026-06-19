@@ -23,6 +23,7 @@ import {
     TableHeader,
     TableRow,
 } from "@/components/ui/table"
+import { useVatRate } from '@/hooks/useVatRate'
 import { purchasingApi } from "../api/purchasingApi"
 import { toast } from "sonner"
 import { ProductSelector } from "@/components/selectors/ProductSelector"
@@ -53,6 +54,7 @@ interface PurchaseOrderModalProps {
 }
 
 const OrderTotals = ({ control }: { control: Control<PurchaseOrderModalValues> }) => {
+    const { rate } = useVatRate()
     const lines = useWatch({
         control,
         name: "lines",
@@ -72,7 +74,7 @@ const OrderTotals = ({ control }: { control: Control<PurchaseOrderModalValues> }
                 <MoneyDisplay amount={subtotal} inline />
             </div>
             <div className="text-sm text-muted-foreground flex gap-1">
-                <span>IVA (19%):</span>
+                <span>IVA ({rate}%):</span>
                 <MoneyDisplay amount={tax} inline />
             </div>
             <div className="text-lg font-bold flex gap-1">
@@ -88,6 +90,7 @@ export function PurchaseOrderModal({ onSuccess, initialData, open: openProp, onO
     const open = openProp !== undefined ? openProp : openState
     const setOpen = onOpenChange || setOpenState
 
+    const { rate } = useVatRate()
     const [loading, setLoading] = useState(false)
     const [isFetchingDeps, setIsFetchingDeps] = useState(false)
     const [products, setProducts] = useState<ProductMinimal[]>([])
@@ -107,12 +110,12 @@ export function PurchaseOrderModal({ onSuccess, initialData, open: openProp, onO
                     quantity: typeof l.quantity === 'string' ? parseFloat(l.quantity) : (l.quantity || 0),
                     uom: l.uom?.toString() || "",
                     unit_cost: typeof l.unit_cost === 'string' ? parseFloat(l.unit_cost) : (l.unit_cost || 0),
-                    tax_rate: typeof l.tax_rate === 'string' ? parseFloat(l.tax_rate) : (l.tax_rate || 19),
+                    tax_rate: typeof l.tax_rate === 'string' ? parseFloat(l.tax_rate) : (l.tax_rate ?? rate),
                 }
             })
         } : {
             notes: "",
-            lines: [{ product: "", quantity: 1, uom: "", unit_cost: 0, tax_rate: 19 }],
+            lines: [{ product: "", quantity: 1, uom: "", unit_cost: 0, tax_rate: rate }],
         },
     })
 
@@ -166,14 +169,14 @@ export function PurchaseOrderModal({ onSuccess, initialData, open: openProp, onO
                             quantity: typeof l.quantity === 'string' ? parseFloat(l.quantity) : (l.quantity || 0),
                             uom: l.uom?.toString() || "",
                             unit_cost: typeof l.unit_cost === 'string' ? parseFloat(l.unit_cost) : (l.unit_cost || 0),
-                            tax_rate: typeof l.tax_rate === 'string' ? parseFloat(l.tax_rate) : (l.tax_rate || 19),
+                            tax_rate: typeof l.tax_rate === 'string' ? parseFloat(l.tax_rate) : (l.tax_rate ?? rate),
                         }
                     })
                 })
             } else {
                 form.reset({
                     notes: "",
-                    lines: [{ product: "", quantity: 1, uom: "", unit_cost: 0, tax_rate: 19 }],
+                    lines: [{ product: "", quantity: 1, uom: "", unit_cost: 0, tax_rate: rate }],
                 })
             }
             lastResetId.current = currentId
@@ -240,7 +243,7 @@ export function PurchaseOrderModal({ onSuccess, initialData, open: openProp, onO
                                                 type="button"
                                                 variant="outline"
                                                 size="sm"
-                                                onClick={() => append({ product: "", quantity: 1, uom: "", unit_cost: 0, tax_rate: 19 })}
+                                                onClick={() => append({ product: "", quantity: 1, uom: "", unit_cost: 0, tax_rate: rate })}
                                                 className="h-9 px-4 text-[10px] font-black uppercase tracking-widest border-primary/30 hover:bg-primary/5 shadow-sm"
                                             >
                                                 <Plus className="mr-2 h-4 w-4" />
@@ -397,7 +400,7 @@ export function PurchaseOrderModal({ onSuccess, initialData, open: openProp, onO
                                             type="button"
                                             variant="outline"
                                             size="sm"
-                                            onClick={() => append({ product: "", quantity: 1, uom: "", unit_cost: 0, tax_rate: 19 })}
+                                            onClick={() => append({ product: "", quantity: 1, uom: "", unit_cost: 0, tax_rate: rate })}
                                             className="h-9 px-4 text-[10px] font-black uppercase tracking-widest border-primary/30 hover:bg-primary/5 shadow-sm"
                                         >
                                             <Plus className="mr-2 h-4 w-4" />

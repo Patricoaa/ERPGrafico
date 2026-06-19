@@ -117,7 +117,8 @@ class ReturnService:
             elif unit_price is None: # Fallback to product current prices
                 unit_price = product.sale_price
                 # Note: gross calculation if product doesn't have it explicitly stored
-                unit_price_gross = product.sale_price * Decimal('1.19')
+                from accounting.utils import get_vat_multiplier
+                unit_price_gross = product.sale_price * get_vat_multiplier()
 
             # Create Line
             SaleReturnLine.objects.create(

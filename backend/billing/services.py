@@ -550,7 +550,8 @@ class BillingService:
             order = SaleOrder.objects.get(id=order_data['id'])
             
             # Update tax rate for existing order if needed based on DTE type
-            target_tax = Decimal('0') if dte_type in ['FACTURA_EXENTA', 'BOLETA_EXENTA'] else Decimal('19')
+            from accounting.utils import get_default_vat_rate
+            target_tax = Decimal('0') if dte_type in ['FACTURA_EXENTA', 'BOLETA_EXENTA'] else get_default_vat_rate()
             lines_updated = False
             for line in order.lines.all():
                 if line.tax_rate != target_tax:
@@ -565,7 +566,8 @@ class BillingService:
                 order_data['payment_method'] = payment_method
             
             # Enforce tax rate for new orders based on DTE type
-            target_tax = 0 if dte_type in ['FACTURA_EXENTA', 'BOLETA_EXENTA'] else 19
+            from accounting.utils import get_default_vat_rate
+            target_tax = 0 if dte_type in ['FACTURA_EXENTA', 'BOLETA_EXENTA'] else float(get_default_vat_rate())
             if 'lines' in order_data:
                 for line in order_data['lines']:
                     line['tax_rate'] = target_tax
@@ -580,7 +582,8 @@ class BillingService:
             
             # Enforce tax rate on created lines (Safety net against serializer dropping it)
             # This logic mirrors the existing order update logic
-            target_tax = Decimal('0') if dte_type in ['FACTURA_EXENTA', 'BOLETA_EXENTA'] else Decimal('19')
+            from accounting.utils import get_default_vat_rate
+            target_tax = Decimal('0') if dte_type in ['FACTURA_EXENTA', 'BOLETA_EXENTA'] else get_default_vat_rate()
             # Forcing refresh from DB to avoid any stale data issues
             for line in order.lines.all():
                 line.tax_rate = target_tax

@@ -514,10 +514,6 @@ class AccountingSettings(TimeStampedModel):
     default_expense_account = models.ForeignKey(Account, on_delete=models.SET_NULL, null=True, blank=True, related_name='settings_expense')
     default_tax_receivable_account = models.ForeignKey(Account, on_delete=models.SET_NULL, null=True, blank=True, related_name='settings_tax_receivable')
     default_tax_payable_account = models.ForeignKey(Account, on_delete=models.SET_NULL, null=True, blank=True, related_name='settings_tax_payable')
-    default_tax_rate = models.DecimalField(
-        _("Tasa de IVA por Defecto (%)"), max_digits=5, decimal_places=2, default=Decimal('19.00'),
-        help_text=_("Tasa porcentual a aplicar (ej. 19.00) para desglosar el neto del IVA.")
-    )
     default_uncollectible_expense_account = models.ForeignKey(
         Account, 
         on_delete=models.SET_NULL, 

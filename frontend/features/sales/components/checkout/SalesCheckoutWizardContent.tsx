@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button"
 import { Step1_Customer } from "./Step1_Customer"
 import { Step2_DTE } from "./Step2_DTE"
 import { Step2_Payment } from "./Step2_Payment"
+import { useVatRate } from '@/hooks/useVatRate'
 import { useTreasuryAccounts } from "@/hooks/useTreasuryAccounts"
 import { useAllowedPaymentMethods } from "@/hooks/useAllowedPaymentMethods"
 import { Step3_Delivery } from "./Step3_Delivery"
@@ -109,6 +110,7 @@ export function SalesCheckoutWizardContent({
     const { dateString, serverDate } = useServerDate()
     const { openHub, isHubOpen } = useHubPanel()
     const { hasPermission } = useAuth()
+    const { rate } = useVatRate()
     const { posCheckout, requestCredit } = useInvoices()
 
     const [currentOrderLines, setCurrentOrderLines] = useState<SaleOrderLine[]>(initialOrderLines)
@@ -487,7 +489,7 @@ export function SalesCheckoutWizardContent({
                         unit_price: l.unit_price_net || l.unit_price,
                         unit_price_gross: l.unit_price_gross,
                         uom: l.uom || null,
-                        tax_rate: (dteData.type === 'FACTURA_EXENTA' || dteData.type === 'BOLETA_EXENTA') ? 0 : 19,
+                        tax_rate: (dteData.type === 'FACTURA_EXENTA' || dteData.type === 'BOLETA_EXENTA') ? 0 : rate,
                         discount_amount: l.discount_amount || 0,
                         discount_percentage: parseFloat(((l.discount_percentage || 0)).toFixed(2)),
                         manufacturing_data: cleanMfgData
@@ -667,7 +669,7 @@ export function SalesCheckoutWizardContent({
                     unit_price: l.unit_price_net || l.unit_price,
                     unit_price_gross: l.unit_price_gross,
                     uom: l.uom || null,
-                    tax_rate: (dteData.type === 'FACTURA_EXENTA' || dteData.type === 'BOLETA_EXENTA') ? 0 : 19,
+                    tax_rate: (dteData.type === 'FACTURA_EXENTA' || dteData.type === 'BOLETA_EXENTA') ? 0 : rate,
                     discount_amount: l.discount_amount || 0,
                     discount_percentage: parseFloat(((l.discount_percentage || 0)).toFixed(2))
                 }))

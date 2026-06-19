@@ -5,6 +5,7 @@ import { LabeledInput, LabeledSwitch, FormSection, LabeledSelect } from "@/compo
 import { DollarSign, Zap } from "lucide-react"
 import { UseFormReturn } from "react-hook-form"
 import { ProductFormValues } from "./schema"
+import { useVatRate } from '@/hooks/useVatRate'
 import { PricingUtils } from "../../utils/pricing"
 import { cn } from "@/lib/utils"
 import { UoM } from "@/types/entities"
@@ -17,6 +18,7 @@ interface ProductPricingSectionProps {
 }
 
 export function ProductPricingSection({ form, canBeSold, uoms }: ProductPricingSectionProps) {
+    const { rate } = useVatRate()
     const isDynamicPricing = form.watch("is_dynamic_pricing")
     const productType = form.watch("product_type")
     const allowedSaleUomStrings = form.watch("allowed_sale_uoms") || []
@@ -99,7 +101,7 @@ export function ProductPricingSection({ form, canBeSold, uoms }: ProductPricingS
                         />
 
                         <LabeledInput
-                            label="IVA (19%)"
+                            label={`IVA (${rate}%)`}
                             value={PricingUtils.formatCurrency(taxAmount)}
                             readOnly
                             className="h-9 text-right bg-info/5 border-info/20 text-info/80 cursor-default font-bold"

@@ -17,6 +17,7 @@ import { showApiError } from "@/lib/errors"
 import { toast } from "sonner"
 import { BOMDrawer } from "@/features/production/components/BOMDrawer"
 import type { ProductMinimal } from "@/features/production/types"
+import { useVatRate } from '@/hooks/useVatRate'
 import { useUoMs } from "../../hooks/useUoMs"
 import { useProductMutations } from "../../hooks/useProductMutations"
 
@@ -58,6 +59,7 @@ export function BulkVariantEditFormV2({
 }: BulkVariantEditFormV2Props) {
   const [mounted, setMounted] = useState(false)
   const { uoms, isLoading: isUoMsLoading } = useUoMs()
+  const { rate, multiplier } = useVatRate()
     const { updateProduct } = useProductMutations()
   const [cloneSourceId, setCloneSourceId] = useState<string>('none')
   const [activeTab, setActiveTab] = useState<string>('precios')
@@ -174,7 +176,7 @@ export function BulkVariantEditFormV2({
 
   const handleOverrideGrossChange = (value: string) => {
     if (currentMode !== 'OVERRIDE') return
-    form.setValue("sale_price", Math.round((parseFloat(value) || 0) / 1.19), { shouldDirty: true, shouldValidate: true })
+    form.setValue("sale_price", Math.round((parseFloat(value) || 0) / multiplier), { shouldDirty: true, shouldValidate: true })
   }
 
   const cloneSources = [
@@ -286,9 +288,9 @@ export function BulkVariantEditFormV2({
                   className={cn("h-10 font-bold text-right", currentMode !== 'OVERRIDE' && "bg-muted/30 cursor-default")}
                 />
                 <LabeledInput
-                  label="IVA (19%)"
+                  label={`IVA (${rate}%)`}
                   type="number"
-                  value={showPreview ? (previewNet * 0.19).toFixed(2) : ""}
+                  value={showPreview ? (previewNet * (rate / 100)).toFixed(2) : ""}
                   placeholder="—"
                   readOnly
                   className="h-10 font-medium text-right bg-muted/20 cursor-default text-muted-foreground"
@@ -297,7 +299,7 @@ export function BulkVariantEditFormV2({
                   label="Precio Bruto"
                   type="number"
                   step="1"
-                  value={showPreview ? String(Math.round(previewNet * 1.19)) : ""}
+                  value={showPreview ? String(Math.round(previewNet * multiplier)) : ""}
                   placeholder="Mantener"
                   readOnly={currentMode !== 'OVERRIDE'}
                   onChange={(e) => handleOverrideGrossChange(e.target.value)}

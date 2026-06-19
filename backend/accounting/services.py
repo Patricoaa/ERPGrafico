@@ -448,7 +448,7 @@ class AccountingMapper:
         total_net_remaining = order.total_net
         accounts = list(revenue_gross_grouping.items())
         
-        tax_divisor = Decimal('1') + (settings.default_tax_rate / Decimal('100.00'))
+        tax_divisor = Decimal('1') + (settings.default_vat_rate / Decimal('100.00'))
         
         for i, (acc, gross_amount) in enumerate(accounts):
             if i == len(accounts) - 1:
@@ -641,7 +641,7 @@ class AccountingMapper:
             # Distribute Total Net across accounts based on Gross grouping
             total_net_remaining = invoice.total_net
             accounts = list(revenue_gross_grouping.items())
-            tax_divisor = Decimal('1') + (settings.default_tax_rate / Decimal('100.00'))
+            tax_divisor = Decimal('1') + (settings.default_vat_rate / Decimal('100.00'))
             
             for i, (acc, gross_amount) in enumerate(accounts):
                 if i == len(accounts) - 1:

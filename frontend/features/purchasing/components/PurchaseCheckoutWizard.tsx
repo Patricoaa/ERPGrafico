@@ -18,6 +18,7 @@ import { PricingUtils } from '@/features/inventory/utils/pricing'
 import { Step0_Supplier } from "./checkout/Step0_Supplier"
 import { Step1_ProductSelection } from "./checkout/Step1_ProductSelection"
 import { Check, ChevronRight, ChevronLeft, Loader2, ShoppingCart } from "lucide-react"
+import { useVatRate } from '@/hooks/useVatRate'
 import { useTreasuryAccounts } from "@/hooks/useTreasuryAccounts"
 import { useServerDate } from "@/hooks/useServerDate"
 import { BaseModal, CancelButton, FormFooter } from '@/components/shared'
@@ -51,6 +52,7 @@ export function PurchaseCheckoutWizard({
     const [currentOrderLines, setCurrentOrderLines] = useState<CheckoutLine[]>(orderLines)
     const [currentTotal, setCurrentTotal] = useState(total)
     const { dateString } = useServerDate()
+    const { rate } = useVatRate()
     
     const [selectedSupplierId, setSelectedSupplierId] = useState<string | null>(initialSupplierId)
     const [selectedSupplierName, setSelectedSupplierName] = useState("")
@@ -85,7 +87,7 @@ export function PurchaseCheckoutWizard({
                         unit_cost: l.unit_cost,
                         uom: l.uom,
                         uom_name: l.uom_name,
-                        tax_rate: l.tax_rate || 19,
+                        tax_rate: l.tax_rate ?? rate,
                         product_type: l.product_type
                     }))
                     setCurrentOrderLines(mappedLines)
@@ -314,7 +316,7 @@ export function PurchaseCheckoutWizard({
                     quantity: l.qty || l.quantity,
                     unit_cost: l.unit_cost || 0,
                     uom: l.uom,
-                    tax_rate: (dteData.type === 'FACTURA_EXENTA' || dteData.type === 'BOLETA_EXENTA') ? 0 : 19
+                    tax_rate: (dteData.type === 'FACTURA_EXENTA' || dteData.type === 'BOLETA_EXENTA') ? 0 : rate
                 }))
             }
             formData.append('order_data', JSON.stringify(payloadOrder))

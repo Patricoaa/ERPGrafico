@@ -11,6 +11,7 @@ import { useSaleOrder, useSalesOrders } from "../hooks/useSalesOrders"
 import { useInvoice, useInvoices } from "@/features/billing"
 import { toast } from "sonner"
 import { formatCurrency } from "@/lib/money"
+import { useVatRate } from '@/hooks/useVatRate'
 import { PricingUtils } from '@/features/inventory/utils/pricing'
 import { Card } from "@/components/ui/card"
 import { formatEntityDisplay } from "@/lib/entity-registry"
@@ -91,6 +92,7 @@ export function SaleNoteForm({
     id = "sale-note-form",
     onLoadingChange,
 }: SaleNoteFormProps) {
+    const { rate } = useVatRate()
     const [lines, setLines] = useState<SaleNoteLine[]>([])
     const [attachment, setAttachment] = useState<File | null>(null)
     const [submitting, setSubmitting] = useState(false)
@@ -344,7 +346,7 @@ export function SaleNoteForm({
                             <span>{formatCurrency(amountNet)}</span>
                         </div>
                         <div className="flex justify-between text-xs text-muted-foreground uppercase font-bold">
-                            <span>IVA (19%):</span>
+                            <span>IVA ({rate}%):</span>
                             <span>{formatCurrency(amountTax)}</span>
                         </div>
                         <div className="flex justify-between items-center pt-2 border-t font-black">

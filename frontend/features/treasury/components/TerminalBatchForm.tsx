@@ -16,6 +16,7 @@ import { DateRangeFilter } from "@/components/shared"
 import { toast } from "sonner"
 import { DateRange } from "react-day-picker"
 
+import { useVatRate } from '@/hooks/useVatRate'
 import { useTerminalProviders, usePaymentMethods, useTerminalMovements, useTerminalBatchMutations } from "@/features/treasury"
 
 import { Drawer, ActionSlideButton, CancelButton, SubmitButton, LabeledContainer, LabeledInput, LabeledCheckboxGroup, FormFooter, FormSection, SkeletonShell } from "@/components/shared"
@@ -45,6 +46,7 @@ export function TerminalBatchForm({ onSuccess, onCancel }: TerminalBatchFormProp
     const { methods, isLoading: isMethodsLoading } = usePaymentMethods()
     const { createBatch, isCreating } = useTerminalBatchMutations()
     const { serverDate, isLoading: isServerDateLoading } = useServerDate()
+    const { rate } = useVatRate()
     const isFetchingInitialData = isProvidersLoading || isMethodsLoading || isServerDateLoading
 
     const form = useForm<TerminalBatchFormValues>({
@@ -287,7 +289,7 @@ export function TerminalBatchForm({ onSuccess, onCancel }: TerminalBatchFormProp
                                                 const val = e.target.value
                                                 form.setValue("commissionNet", val)
                                                 const net = parseFloat(val) || 0
-                                                form.setValue("commissionTax", Math.round(net * 0.19).toString())
+                                                form.setValue("commissionTax", Math.round(net * (rate / 100)).toString())
                                             }}
                                             className="text-right"
                                         />

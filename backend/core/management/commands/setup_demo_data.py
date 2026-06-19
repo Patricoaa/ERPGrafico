@@ -6,6 +6,7 @@ from django.db import transaction
 from django.utils import timezone
 from django.contrib.auth.hashers import make_password
 from decimal import Decimal
+from accounting.utils import get_default_vat_rate
 import random
 from accounting.models import Account, AccountType, AccountingSettings, JournalEntry, JournalItem, Budget, BudgetItem, FiscalYear, BSCategory, ISCategory
 from accounting.services import AccountingService
@@ -1866,7 +1867,7 @@ class Command(BaseCommand):
             )
             PurchaseLine.objects.create(
                 order=po1, product=papel, quantity=50,
-                uom=uoms['resma'], unit_cost=5000, tax_rate=Decimal('19'),
+                uom=uoms['resma'], unit_cost=5000, tax_rate=get_default_vat_rate(),
             )
             po1.save()
             PurchaseOrderService().confirm(po1, user=admin)
@@ -1900,11 +1901,11 @@ class Command(BaseCommand):
             )
             PurchaseLine.objects.create(
                 order=po2, product=tinta_c, quantity=10,
-                uom=uoms['kg'], unit_cost=12000, tax_rate=Decimal('19'),
+                uom=uoms['kg'], unit_cost=12000, tax_rate=get_default_vat_rate(),
             )
             PurchaseLine.objects.create(
                 order=po2, product=tinta_k, quantity=10,
-                uom=uoms['kg'], unit_cost=10000, tax_rate=Decimal('19'),
+                uom=uoms['kg'], unit_cost=10000, tax_rate=get_default_vat_rate(),
             )
             po2.save()
             PurchaseOrderService().confirm(po2, user=admin)
@@ -1937,7 +1938,7 @@ class Command(BaseCommand):
             )
             PurchaseLine.objects.create(
                 order=po3, product=cartulina, quantity=5,
-                uom=uoms['paquete'], unit_cost=22000, tax_rate=Decimal('19'),
+                uom=uoms['paquete'], unit_cost=22000, tax_rate=get_default_vat_rate(),
             )
             po3.save()
             PurchaseOrderService().confirm(po3, user=admin)
@@ -1998,7 +1999,7 @@ class Command(BaseCommand):
                 order=so1, product=impresion,
                 description="Impresión a color x 500",
                 quantity=500, uom=uoms['hoja'],
-                unit_price=Decimal('150'), tax_rate=Decimal('19'),
+                unit_price=Decimal('150'), tax_rate=get_default_vat_rate(),
             )
             so1.save()
 
@@ -2044,13 +2045,13 @@ class Command(BaseCommand):
                 order=so2, product=diseno,
                 description="Servicio Diseño Gráfico x 3",
                 quantity=3, uom=uoms['un'],
-                unit_price=Decimal('25000'), tax_rate=Decimal('19'),
+                unit_price=Decimal('25000'), tax_rate=get_default_vat_rate(),
             )
             sl2c = SaleLine.objects.create(
                 order=so2, product=encuadernacion,
                 description="Servicio Encuadernación x 10",
                 quantity=10, uom=uoms['un'],
-                unit_price=Decimal('1500'), tax_rate=Decimal('19'),
+                unit_price=Decimal('1500'), tax_rate=get_default_vat_rate(),
             )
             so2.save()
 
@@ -2088,7 +2089,7 @@ class Command(BaseCommand):
                 order=so3, product=papel,
                 description="Resma de papel x 10",
                 quantity=10, uom=uoms['resma'],
-                unit_price=Decimal('5000'), tax_rate=Decimal('19'),
+                unit_price=Decimal('5000'), tax_rate=get_default_vat_rate(),
             )
             so3.save()
 

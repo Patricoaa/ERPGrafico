@@ -98,8 +98,8 @@ class F29CalculationService:
         net_taxed_purchases = purchases_taxed + purchase_debit_notes - purchase_credit_notes
         
         # Get accounting settings for VAT rate
-        settings = AccountingSettings.get_solo()
-        tax_rate = settings.default_vat_rate if settings else Decimal('19.00')
+        from accounting.utils import get_default_vat_rate
+        tax_rate = get_default_vat_rate()
         
         # Calculate VAT
         vat_debit = (net_taxed_sales * tax_rate / Decimal('100')).quantize(
