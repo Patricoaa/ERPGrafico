@@ -46,20 +46,6 @@ export const paymentMethodSearchDef: SearchDefinition = {
       type: 'text',
       serverParam: 'name',
     },
-    {
-      key: 'method_type',
-      label: 'Tipo',
-      type: 'enum',
-      serverParam: 'method_type',
-      options: [
-        { label: 'Efectivo Directo', value: 'CASH' },
-        { label: 'Tarjeta (Dispositivo)', value: 'CARD_TERMINAL' },
-        { label: 'Transferencia', value: 'TRANSFER' },
-        { label: 'Tarjeta Débito', value: 'DEBIT_CARD' },
-        { label: 'Tarjeta Crédito', value: 'CREDIT_CARD' },
-        { label: 'Cheque', value: 'CHECK' },
-      ],
-    },
   ],
 }
 

@@ -81,7 +81,7 @@ export function UnbilledChargesView({
             {
                 key: 'scope',
                 label: 'Alcance',
-                type: 'enum',
+                type: 'identity-enum',
                 serverParam: 'scope',
                 defaultValue: 'month',
                 options: [
@@ -92,7 +92,7 @@ export function UnbilledChargesView({
             {
                 key: 'card',
                 label: 'Tarjeta',
-                type: 'enum',
+                type: 'identity-enum',
                 serverParam: 'card',
                 defaultValue: String(creditCardAccounts[0]?.id ?? ''),
                 options: creditCardAccounts.map(a => ({ label: a.name, value: String(a.id) })),

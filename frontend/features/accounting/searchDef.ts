@@ -9,17 +9,6 @@ export const fiscalYearSearchDef: SearchDefinition = {
       serverParam: 'year',
       clientKey: 'year',
     },
-    {
-      key: 'status',
-      label: 'Estado',
-      type: 'enum',
-      serverParam: 'status',
-      options: [
-        { label: 'Abierto', value: 'OPEN' },
-        { label: 'En Cierre', value: 'CLOSING' },
-        { label: 'Cerrado', value: 'CLOSED' },
-      ],
-    },
   ],
 }
 
@@ -31,17 +20,6 @@ export const taxPeriodSearchDef: SearchDefinition = {
       type: 'text',
       serverParam: 'month_display',
       clientKey: ['month_display', 'year'],
-    },
-    {
-      key: 'status',
-      label: 'Estado',
-      type: 'enum',
-      serverParam: 'status',
-      options: [
-        { label: 'Abierto', value: 'OPEN' },
-        { label: 'Cerrado', value: 'CLOSED' },
-        { label: 'En Revisión', value: 'UNDER_REVIEW' },
-      ],
     },
   ],
 }

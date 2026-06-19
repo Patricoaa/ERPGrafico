@@ -28,7 +28,7 @@ const statementsSearchDef: SearchDefinition = {
         {
             key: 'state',
             label: 'Estado',
-            type: 'enum',
+            type: 'identity-enum',
             serverParam: 'state',
             options: [
                 { label: 'Borrador', value: 'DRAFT' },
