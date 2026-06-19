@@ -111,7 +111,7 @@ export function Numpad({
     }, [value, allowDecimal, onConfirm, onClose])
 
     return (
-        <div className={cn("flex flex-col gap-2 p-1.5 bg-background border rounded-lg shadow-[var(--shadow-overlay)] w-full", className)}>
+        <div className={cn("flex flex-col gap-2 p-1.5 bg-background border rounded-md shadow-[var(--shadow-overlay)] w-full", className)}>
             {displayValue ? (
                 <div className="text-center mb-2">
                     {label && <div className="text-xs font-bold uppercase text-muted-foreground">{label}</div>}

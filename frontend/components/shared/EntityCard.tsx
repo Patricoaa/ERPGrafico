@@ -36,7 +36,7 @@ function EntityCardRoot({
                 }
             }}
             className={cn(
-                "group relative flex flex-col rounded-lg border transition-all duration-200",
+                "group relative flex flex-col rounded-md border transition-all duration-200",
                 "bg-card text-card-foreground shadow-sm",
                 variant === "compact" ? "gap-1.5 p-3" : "gap-3 p-4",
                 isSelected

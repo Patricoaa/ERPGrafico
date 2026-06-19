@@ -117,7 +117,7 @@ export function StatCard({
 
   if (loading) {
     return (
-      <div className={cn("rounded-lg border p-4 space-y-3 bg-card", className)} role="status" aria-label="Cargando">
+      <div className={cn("rounded-md border p-4 space-y-3 bg-card", className)} role="status" aria-label="Cargando">
         <Skeleton className="h-4 w-2/3" />
         <Skeleton className="h-8 w-1/2" />
         <Skeleton className="h-3 w-3/4" />
@@ -135,7 +135,7 @@ export function StatCard({
       ? {
           className: cn(
             baseCardClasses,
-            "p-3 rounded-lg",
+            "p-3 rounded-md",
             accentBg[accent],
             active && activeRing[accent],
             className,

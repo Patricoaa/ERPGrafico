@@ -56,7 +56,7 @@ export function TimelineView({ events }: { events: TimelineEvent[] }) {
 
 export function SummaryTable({ rows }: { rows: { label: string; value: React.ReactNode }[] }) {
     return (
-        <div className="rounded-lg border border-border/50 overflow-hidden">
+        <div className="rounded-md border border-border/50 overflow-hidden">
             {rows.map((row, i) => (
                 <div
                     key={i}
