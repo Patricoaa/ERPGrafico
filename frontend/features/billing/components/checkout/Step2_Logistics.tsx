@@ -166,7 +166,7 @@ export function Step2_Logistics({
                 </p>
 
                 {hasRestrictedItems && (
-                    <div className="flex items-start gap-3 p-4 bg-destructive/10 border border-destructive/20 rounded-lg text-destructive mt-2">
+                    <div className="flex items-start gap-3 p-4 bg-destructive/10 border border-destructive/20 rounded-md text-destructive mt-2">
                         <AlertTriangle className="h-5 w-5 shrink-0 mt-0.5" />
                         <div className="space-y-1">
                             <p className="text-xs font-bold uppercase tracking-wider tabular-nums leading-none">Producción Requerida</p>
@@ -207,14 +207,14 @@ export function Step2_Logistics({
                 >
                     <div
                         className={cn(
-                            "flex items-center gap-4 rounded-lg border-2 border-muted bg-popover p-4 hover:bg-accent cursor-pointer transition-all",
+                            "flex items-center gap-4 rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent cursor-pointer transition-all",
                             formData.delivery_type === 'IMMEDIATE' && "border-primary bg-primary/5",
                             hasRestrictedItems && "opacity-50 pointer-events-none grayscale"
                         )}
                         onClick={() => !hasRestrictedItems && setData({ ...formData, delivery_type: 'IMMEDIATE' })}
                     >
                         <RadioGroupItem value="IMMEDIATE" id="del-immediate" className="sr-only" disabled={hasRestrictedItems} />
-                        <div className={`p-2 rounded-lg bg-background border ${formData.delivery_type === 'IMMEDIATE' ? 'text-primary' : 'text-muted-foreground'}`}>
+                        <div className={`p-2 rounded-md bg-background border ${formData.delivery_type === 'IMMEDIATE' ? 'text-primary' : 'text-muted-foreground'}`}>
                             <Package className="h-5 w-5" />
                         </div>
                         <div className="flex-1">
@@ -225,13 +225,13 @@ export function Step2_Logistics({
 
                     <div
                         className={cn(
-                            "flex items-center gap-4 rounded-lg border-2 border-muted bg-popover p-4 hover:bg-accent cursor-pointer transition-all",
+                            "flex items-center gap-4 rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent cursor-pointer transition-all",
                             formData.delivery_type === 'SCHEDULED' && "border-primary bg-primary/5"
                         )}
                         onClick={() => setData({ ...formData, delivery_type: 'SCHEDULED' })}
                     >
                         <RadioGroupItem value="SCHEDULED" id="del-scheduled" className="sr-only" />
-                        <div className={`p-2 rounded-lg bg-background border ${formData.delivery_type === 'SCHEDULED' ? 'text-primary' : 'text-muted-foreground'}`}>
+                        <div className={`p-2 rounded-md bg-background border ${formData.delivery_type === 'SCHEDULED' ? 'text-primary' : 'text-muted-foreground'}`}>
                             <Calendar className="h-5 w-5" />
                         </div>
                         <div className="flex-1">
@@ -242,13 +242,13 @@ export function Step2_Logistics({
 
                     <div
                         className={cn(
-                            "flex items-center gap-4 rounded-lg border-2 border-muted bg-popover p-4 hover:bg-accent cursor-pointer transition-all",
+                            "flex items-center gap-4 rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent cursor-pointer transition-all",
                             formData.delivery_type === 'PARTIAL' && "border-primary bg-primary/5"
                         )}
                         onClick={() => setData({ ...formData, delivery_type: 'PARTIAL' })}
                     >
                         <RadioGroupItem value="PARTIAL" id="del-partial" className="sr-only" />
-                        <div className={`p-2 rounded-lg bg-background border ${formData.delivery_type === 'PARTIAL' ? 'text-primary' : 'text-muted-foreground'}`}>
+                        <div className={`p-2 rounded-md bg-background border ${formData.delivery_type === 'PARTIAL' ? 'text-primary' : 'text-muted-foreground'}`}>
                             <Truck className="h-5 w-5" />
                         </div>
                         <div className="flex-1">

@@ -70,7 +70,7 @@ export function Step3_Registration({
                 {!formData.is_pending && (
                     <div className="space-y-6 animate-in fade-in slide-in-from-top-2 duration-300">
                         {/* Main Info Card */}
-                        <div className="grid grid-cols-2 gap-4 p-4 border rounded-lg bg-muted/10">
+                        <div className="grid grid-cols-2 gap-4 p-4 border rounded-md bg-muted/10">
                             <LabeledInput
                                 label="N° de Folio"
                                 icon={<Hash className="h-3 w-3" />}
@@ -116,7 +116,7 @@ export function Step3_Registration({
                         </div>
 
                         {/* Note hint */}
-                        <div className="flex items-start gap-2 p-3 bg-primary/10 text-primary rounded-lg text-[11px] leading-tight">
+                        <div className="flex items-start gap-2 p-3 bg-primary/10 text-primary rounded-md text-[11px] leading-tight">
                             <ShieldAlert className="h-3.5 w-3.5 shrink-0 mt-0.5" />
                             <p>
                                 Recuerde que la información ingresada debe coincidir exactamente con el documento tributario emitido en el SII.
