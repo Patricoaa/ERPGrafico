@@ -332,7 +332,7 @@ export function InventoryContributionModal({
                         placeholder="UoM"
                     />
 
-                    <div className="space-y-1.5 bg-muted/20 pb-2 pt-1 border border-transparent rounded-lg px-2 -mx-2 sm:mx-0">
+                    <div className="space-y-1.5 bg-muted/20 pb-2 pt-1 border border-transparent rounded-md px-2 -mx-2 sm:mx-0">
                         <LabeledInput
                             label={
                                 <div className="flex justify-between w-full">
@@ -367,7 +367,7 @@ export function InventoryContributionModal({
 
                 {/* Stock Info */}
                 {productDetails && (
-                    <div className="flex items-center gap-4 text-[10px] font-medium text-muted-foreground bg-muted/30 p-2.5 rounded-lg border">
+                    <div className="flex items-center gap-4 text-[10px] font-medium text-muted-foreground bg-muted/30 p-2.5 rounded-md border">
                         <span>Stock actual: <strong className="font-mono">{productDetails.qty_on_hand ?? '—'}</strong></span>
                         <span>Costo promedio: <strong className="font-mono">{formatCurrency(productDetails.cost_price || 0)}</strong></span>
                     </div>

@@ -211,7 +211,7 @@ export function PartnerContributionWizard({
                         }))}
                     />
                     {selectedPartner && (
-                        <div className="p-3 bg-muted/30 border-2 border-dashed rounded-lg space-y-2 animate-in fade-in zoom-in-95 duration-300">
+                        <div className="p-3 bg-muted/30 border-2 border-dashed rounded-md space-y-2 animate-in fade-in zoom-in-95 duration-300">
                             <div className="flex justify-between items-center text-[10px] text-muted-foreground uppercase font-black">
                                 <span>Estado Societario</span>
                                 <Chip size="xs" intent="primary">Activo</Chip>

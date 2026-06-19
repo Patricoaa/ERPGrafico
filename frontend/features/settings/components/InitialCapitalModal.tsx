@@ -131,7 +131,7 @@ export function InitialCapitalModal({ open, onOpenChange, onSuccess }: InitialCa
                         />
                     </LabeledContainer>
 
-                    <div className="border rounded-lg overflow-hidden">
+                    <div className="border rounded-md overflow-hidden">
                         <table className="w-full text-sm">
                             <thead className="bg-muted/50 border-b">
                                 <tr>

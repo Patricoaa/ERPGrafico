@@ -29,7 +29,7 @@ const DiscountPermissionControl = ({ form, userField, groupField }: { form: UseF
 
     return (
         <div className="flex flex-col gap-3">
-            <div className="flex items-center p-0.5 bg-muted rounded-lg border shadow-sm w-fit self-start">
+            <div className="flex items-center p-0.5 bg-muted rounded-md border shadow-sm w-fit self-start">
                 <button
                     type="button"
                     className={cn(

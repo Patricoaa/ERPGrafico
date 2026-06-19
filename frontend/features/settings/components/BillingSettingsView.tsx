@@ -106,7 +106,7 @@ function DTEConfigCard({ form, name, title, description }: DTEConfigCardProps) {
                         <FormItem>
                             <div className="grid grid-cols-1 gap-4">
                                 {dteTypes.map((type) => (
-                                    <div key={type.id} className="flex items-center space-x-3 space-y-0 p-3 rounded-lg border bg-card hover:bg-accent/50 transition-colors cursor-pointer" onClick={() => {
+                                    <div key={type.id} className="flex items-center space-x-3 space-y-0 p-3 rounded-md border bg-card hover:bg-accent/50 transition-colors cursor-pointer" onClick={() => {
                                         const current = (field.value as string[]) || [];
                                         const next = current.includes(type.id)
                                             ? current.filter((v) => v !== type.id)
