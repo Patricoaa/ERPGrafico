@@ -52,6 +52,8 @@ export interface DataTableProps<TData, TValue> {
     onReset?: () => void
     renderCustomView?: (table: ReactTable<TData>) => React.ReactNode
     smartSearch?: React.ReactNode
+    segmentation?: React.ReactNode
+    showReset?: boolean
     sortOptions?: boolean
     analyticsPanel?: AnalyticsPanelConfig
     onRowClick?: (row: TData) => void
@@ -157,6 +159,8 @@ export function DataTable<TData, TValue>({
     onReset,
     renderCustomView,
     smartSearch,
+    segmentation,
+    showReset,
     sortOptions,
     analyticsPanel,
     onRowClick,
@@ -300,6 +304,7 @@ export function DataTable<TData, TValue>({
 
     const showToolbar = !hideToolbar && !isMinimal && !isCompact && (
         smartSearch ||
+        segmentation ||
         (facetedFilters && facetedFilters.length > 0) ||
         customFilters ||
         toolbarAction ||
@@ -347,6 +352,8 @@ export function DataTable<TData, TValue>({
                         columnToggle={columnToggle}
                         customFilters={customFilters}
                         smartSearch={smartSearch}
+                        segmentation={segmentation}
+                        showReset={showReset}
                         analyticsPanel={analyticsPanel}
                         createAction={createAction}
                     />
@@ -668,6 +675,8 @@ export function DataTable<TData, TValue>({
                                 columnToggle={columnToggle}
                                 customFilters={customFilters}
                                 smartSearch={smartSearch}
+                                segmentation={segmentation}
+                                showReset={showReset}
                                 analyticsPanel={analyticsPanel}
                                 createAction={createAction}
                             />
@@ -753,6 +762,8 @@ export function DataTable<TData, TValue>({
                         columnToggle={columnToggle}
                         customFilters={customFilters}
                         smartSearch={smartSearch}
+                        segmentation={segmentation}
+                        showReset={showReset}
                         analyticsPanel={analyticsPanel}
                         createAction={createAction}
                     />
