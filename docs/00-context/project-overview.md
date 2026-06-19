@@ -56,8 +56,8 @@ User → Nginx :80 → Next.js :3000 (SSR/App Router)
 - Multi-tenant SaaS (single-org deployment).
 - Offline-first / PWA.
 - Mobile-native apps.
-- HA / multi-region / horizontal scaling (ver [system-diagram.md](../10-architecture/system-diagram.md#deployment-units)).
-- Stack enterprise de observability (Prometheus/Grafana/Jaeger) — ver [observability.md](../40-quality/observability.md).
+- HA / multi-region / horizontal scaling (see [system-diagram.md](../10-architecture/system-diagram.md#deployment-units)).
+- Enterprise observability stack (Prometheus/Grafana/Jaeger) — see [observability.md](../40-quality/observability.md).
 
 ## Environments
 
@@ -66,7 +66,7 @@ User → Nginx :80 → Next.js :3000 (SSR/App Router)
 | Local | `localhost` (docker compose hybrid) | Sembrada vía `setup_demo_data` |
 | Prod | Home-server (Proxmox VM Ubuntu + docker compose) | Real, single-org |
 
-Sin entorno staging dedicado: pre-producción se valida vía rama feature local + tests + smoke. Cuando exista presupuesto para una VM staging, esta tabla debe agregarla.
+No dedicated staging environment: pre-production is validated via local feature branches + tests + smoke. When budget allows for a staging VM, this table should be updated.
 
 ## Further reading
 

@@ -114,35 +114,35 @@ class SaleOrderViewSet(ModelViewSet):
 - Never edit an applied migration — add a new one.
 - See [playbooks/add-migration.md](../30-playbooks/add-migration.md).
 
-## Auditoría / historial (simple-history)
+## Audit trail / history (simple-history)
 
-La auditoría de cambios usa `django-simple-history`. Hay **dos formas** de activarla — elegir la correcta evita el error más común (`MultipleRegistrationsError` al duplicar registros).
+Change auditing uses `django-simple-history`. There are **two ways** to enable it — choosing the right one avoids the most common error (`MultipleRegistrationsError` when duplicating records).
 
-### Vía herencia (preferida para documentos transaccionales)
+### Via inheritance (preferred for transactional documents)
 
-`core/models/abstracts.py` define dos bases abstractas con history **ya incluida**:
+`core/models/abstracts.py` defines two abstract base models with history **already included**:
 
-| Base abstracta | Hereda de | Qué aporta |
+| Abstract base | Inherits from | What it provides |
 |---|---|---|
 | `AuditedModel` | `TimeStampedModel` | `created_at`, `updated_at` + `history = HistoricalRecords(inherit=True)` |
-| `TransactionalDocument` | `AuditedModel` | Lo anterior + `number`, `status`, `notes`, `journal_entry`, totales |
+| `TransactionalDocument` | `AuditedModel` | Above + `number`, `status`, `notes`, `journal_entry`, totals |
 
-Cualquier modelo que extiende una de estas **ya está auditado** — no agregar `HistoricalRecords()` adicional. Cubre hoy: `Invoice`, `SaleOrder`, `SaleDelivery`, `SaleReturn`, `PurchaseOrder`, etc.
+Any model extending one of these **is already audited** — do not add additional `HistoricalRecords()`. Currently covers: `Invoice`, `SaleOrder`, `SaleDelivery`, `SaleReturn`, `PurchaseOrder`, etc.
 
 ```python
-# ✅ correcto — history viene heredada
+# ✅ correct — history is inherited
 class Invoice(TransactionalDocument):
     dte_type = models.CharField(...)
-    # NO declarar history aquí
+    # DO NOT declare history here
 
-# ❌ duplicación → MultipleRegistrationsError en startup
+# ❌ duplication → MultipleRegistrationsError on startup
 class Invoice(TransactionalDocument):
-    history = HistoricalRecords()  # ya existe vía herencia
+    history = HistoricalRecords()  # already exists via inheritance
 ```
 
-### Vía declaración explícita (modelos no transaccionales)
+### Via explicit declaration (non-transactional models)
 
-Para entidades que no son documentos transaccionales (catálogos, settings, masters) y quieren auditoría, declarar el campo localmente:
+For entities that are not transactional documents (catalogs, settings, masters) that need auditing, declare the field locally:
 
 ```python
 from simple_history.models import HistoricalRecords
@@ -152,26 +152,26 @@ class Product(models.Model):
     history = HistoricalRecords()
 ```
 
-Apps que usan este patrón: `inventory`, `treasury`, `accounting`, `hr`, `contacts`, `production`, `tax`.
+Apps using this pattern: `inventory`, `treasury`, `accounting`, `hr`, `contacts`, `production`, `tax`.
 
-### Cómo verificar si un modelo está auditado
+### How to verify if a model is audited
 
-`grep HistoricalRecords` no es confiable porque puede venir por herencia. Verificar en runtime:
+`grep HistoricalRecords` is unreliable because it can come via inheritance. Verify at runtime:
 
 ```python
 from sales.models import SaleOrder
-hasattr(SaleOrder, 'history')                    # True si está auditado
-SaleOrder.history.model._meta.db_table           # nombre de la tabla histórica
+hasattr(SaleOrder, 'history')                    # True if audited
+SaleOrder.history.model._meta.db_table           # history table name
 ```
 
-### Consumidores
+### Consumers
 
-- **UI**: `frontend/features/audit/components/ActivitySidebar.tsx` consume `useEntityHistory` y renderiza un timeline con diff campo a campo.
-- **Backend**: `core.views.GlobalAuditLogView` combina `ActionLog` (acciones privilegiadas) con los historiales por modelo.
+- **UI**: `frontend/features/audit/components/ActivitySidebar.tsx` consumes `useEntityHistory` and renders a timeline with field-by-field diff.
+- **Backend**: `core.views.GlobalAuditLogView` combines `ActionLog` (privileged actions) with per-model histories.
 
-### Estrategia general
+### Overall strategy
 
-Ver [docs/50-audit/observability/strategy.md](../50-audit/observability/strategy.md) para la decisión de arquitectura completa (audit log de negocio, SIEM, APM, analítica).
+See [docs/50-audit/observability/strategy.md](../50-audit/observability/strategy.md) for the full architecture decision (business audit log, SIEM, APM, analytics).
 
 ## Per-app quick reference
 
