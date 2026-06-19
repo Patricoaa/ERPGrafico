@@ -54,7 +54,7 @@ export function DocumentAttachmentDropzone({
                         onChange={(e) => onFileChange(e.target.files?.[0] || null)}
                         disabled={disabled}
                     />
-                    <div className="h-20 w-full border-2 border-dashed rounded-lg flex flex-col items-center justify-center bg-background/50 transition-all group-hover:bg-primary/5 group-hover:border-primary/30">
+                    <div className="h-20 w-full border-2 border-dashed rounded-md flex flex-col items-center justify-center bg-background/50 transition-all group-hover:bg-primary/5 group-hover:border-primary/30">
                         <Upload className="h-4 w-4 text-muted-foreground mb-1 group-hover:text-primary" />
                         <p className="text-[10px] font-bold text-muted-foreground uppercase text-center px-4">
                             Seleccionar o arrastrar archivo al recuadro
@@ -62,7 +62,7 @@ export function DocumentAttachmentDropzone({
                     </div>
                 </div>
             ) : (
-                <div className="flex items-center justify-between p-3 w-full bg-success/5 border rounded-lg animate-in zoom-in duration-300">
+                <div className="flex items-center justify-between p-3 w-full bg-success/5 border rounded-md animate-in zoom-in duration-300">
                     <div className="flex items-center gap-3">
                         <div className="p-1.5 bg-success/10 rounded text-success">
                             <FileText className="h-4 w-4" />

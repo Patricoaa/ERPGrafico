@@ -37,7 +37,7 @@ export function AttachmentList({
                 icon={Paperclip}
                 variant="compact"
                 title="No hay archivos adjuntos"
-                className={cn("border border-dashed rounded-lg bg-muted/5", className)}
+                className={cn("border border-dashed rounded-md bg-muted/5", className)}
             />
         )
     }
@@ -47,9 +47,9 @@ export function AttachmentList({
             {attachments.map((file) => (
                 <div
                     key={file.id}
-                    className="flex items-center gap-3 p-3 rounded-lg border bg-card hover:border-primary/50 transition-colors group"
+                    className="flex items-center gap-3 p-3 rounded-md border bg-card hover:border-primary/50 transition-colors group"
                 >
-                    <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
+                    <div className="h-10 w-10 rounded-md bg-primary/10 flex items-center justify-center flex-shrink-0">
                         <FileText className="h-5 w-5 text-primary" />
                     </div>
 
