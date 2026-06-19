@@ -31,7 +31,7 @@ export function StatementsView({ bankId, creditCardAccounts }: StatementsViewPro
             {
                 key: 'card',
                 label: 'Tarjeta',
-                type: 'enum',
+                type: 'identity-enum',
                 serverParam: 'card',
                 defaultValue: String(creditCardAccounts[0]?.id ?? ''),
                 options: creditCardAccounts.map(a => ({ label: a.name, value: String(a.id) })),
