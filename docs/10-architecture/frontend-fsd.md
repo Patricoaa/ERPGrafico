@@ -66,63 +66,63 @@ Promotion requires: (a) stable API signature, (b) tests, (c) entry in component-
 
 ## Aggregator pattern (read-only feature without root barrel)
 
-Una feature puede agregar otras features con propósito puramente visual. Es un patrón legítimo, no una excepción ilegal. Tiene reglas estrictas.
+A feature may aggregate other features for purely visual purposes. This is a legitimate pattern — not an illegal exception. It has strict rules.
 
-### Criterios — los 5 deben cumplirse para calificar como aggregator
+### Criteria — all 5 must be met to qualify as an aggregator
 
-1. **No tiene entidad backend propia.** No hay `/api/<aggregator>/` endpoint; no escribe a la DB; no posee state transitions.
-2. **Consume ≥2 features fuente** como data sources (vía sus hooks/componentes barreled).
-3. **No define estados canónicos.** Cualquier `status` que renderice es leído de la entidad fuente; nunca duplicado.
-4. **No tiene root barrel `index.ts`.** Tener uno implicaría "esta feature posee algo", lo cual contradice el criterio 1. Los consumidores importan desde subfolders barreled (`components/`, `types/`, `hooks/`, `utils/`).
-5. **Tests:** cubre solamente comportamiento visual + reaccionar a cambios de las fuentes. La lógica de negocio se testea en las features fuente.
+1. **Has no backend entity of its own.** No `/api/<aggregator>/` endpoint; does not write to DB; has no state transitions.
+2. **Consumes ≥2 source features** as data sources (via their barreled hooks/components).
+3. **Defines no canonical states.** Any `status` it renders is read from the source entity; never duplicated.
+4. **Has no root barrel `index.ts`.** Having one would imply "this feature owns something", contradicting criterion 1. Consumers import from barreled subfolders (`components/`, `types/`, `hooks/`, `utils/`).
+5. **Tests:** cover only visual behavior + reacting to source changes. Business logic is tested in the source features.
 
-### Cómo importar desde un aggregator
+### How to import from an aggregator
 
 ```ts
-// Desde una page o desde otra feature:
+// From a page or another feature:
 import { OrderHubPanel, OrderCard } from '@/features/orders/components'
 import { getHubStatuses } from '@/features/orders/utils/status'
 import type { Order } from '@/features/orders/types'
 ```
 
-**Esto NO viola** la regla "import desde barrel" — cada subfolder (`components/`, `types/`, `utils/`) tiene su propio `index.ts`. La regla se viola solo si importás un archivo concreto sin pasar por barrel (`from '@/features/orders/components/OrderCard'` ← prohibido).
+**This does NOT violate** the "import from barrel" rule — each subfolder (`components/`, `types/`, `utils/`) has its own `index.ts`. The rule is violated only if you import a concrete file bypassing the barrel (`from '@/features/orders/components/OrderCard'` ← prohibited).
 
-### Caso canónico actual: `features/orders`
+### Current canonical case: `features/orders`
 
-Hub de visualización para SaleOrder + PurchaseOrder + WorkOrder.
+Visualization hub for SaleOrder + PurchaseOrder + WorkOrder.
 
-| Componente | Propósito |
-|-----------|-----------|
-| `OrderHubPanel` | Side-panel completo con tabs (usado por sales, purchasing) |
-| `OrderHubIntegrated` | Hub interno con 5 fases (Origin → Production → Logistics → Billing → Treasury) |
-| `OrderCard` | Card resumen para una orden |
-| `OrderHeaderDashboard` | Header con status y totales |
-| `GlobalHubPanel` | Singleton a nivel app (montado en root layout) |
-| `OrderActionPanel` | Panel de acciones para una orden |
-| `DocumentListModal` / `PaymentHistoryModal` | Modales relacionados |
+| Component | Purpose |
+|-----------|---------|
+| `OrderHubPanel` | Full side panel with tabs (used by sales, purchasing) |
+| `OrderHubIntegrated` | Internal hub with 5 phases (Origin → Production → Logistics → Billing → Treasury) |
+| `OrderCard` | Summary card for an order |
+| `OrderHeaderDashboard` | Header with status and totals |
+| `GlobalHubPanel` | App-level singleton (mounted in root layout) |
+| `OrderActionPanel` | Action panel for an order |
+| `DocumentListModal` / `PaymentHistoryModal` | Related modals |
 | `phases/*` | `OriginPhase`, `ProductionPhase`, `LogisticsPhase`, `BillingPhase`, `TreasuryPhase` |
 
-Hook local: `useSaleOrderSearch()` — devuelve `{ orders, singleOrder, loading, fetchOrders, fetchSingleOrder }`. No se promueve a `/hooks/` porque su utilidad es solo dentro del aggregator.
+Local hook: `useSaleOrderSearch()` — returns `{ orders, singleOrder, loading, fetchOrders, fetchSingleOrder }`. Not promoted to `/hooks/` because its utility is only within the aggregator.
 
-Features fuente consumidas:
-- `features/sales` — SaleOrder data y acciones
-- `features/purchasing` — PurchaseOrder data y acciones
+Source features consumed:
+- `features/sales` — SaleOrder data and actions
+- `features/purchasing` — PurchaseOrder data and actions
 - `features/production` — WorkOrder status
 
-### Qué NO debe hacer un aggregator
+### What an aggregator must NOT do
 
-- Definir su propia API o endpoint backend.
-- Ejecutar mutations (cualquier write va a la feature fuente).
-- Mantener estado de servidor (`useQuery`/`useMutation`) — eso lo hace la feature fuente.
-- Tener root `index.ts` (señalizaría falsamente que "posee" algo).
+- Define its own API or backend endpoint.
+- Run mutations (any write goes to the source feature).
+- Maintain server state (`useQuery`/`useMutation`) — that is the source feature's responsibility.
+- Have a root `index.ts` (would falsely signal it "owns" something).
 
-### Cuándo NO usar el patrón aggregator (usar otra cosa)
+### When NOT to use the aggregator pattern (use something else)
 
-| Caso | Solución correcta |
-|------|-------------------|
-| Necesito escribir a múltiples entities en una transacción cross-domain | Servicio backend en `workflow/services.py` + un endpoint propio; del lado frontend, una feature regular con barrel |
-| Necesito un componente compartido entre 2 features | Promoción a `components/shared/` (regla habitual de promoción) |
-| Necesito un dashboard con métricas computadas | Endpoint backend `/api/dashboard/` + feature regular `features/dashboard` con barrel completo |
+| Case | Correct solution |
+|------|-----------------|
+| I need to write to multiple entities in a cross-domain transaction | Backend service in `workflow/services.py` + its own endpoint; on the frontend, a regular feature with barrel |
+| I need a shared component between 2 features | Promote to `components/shared/` (standard promotion rule) |
+| I need a dashboard with computed metrics | Backend endpoint `/api/dashboard/` + regular feature `features/dashboard` with full barrel |
 
 ## Data flow — mandatory pattern
 

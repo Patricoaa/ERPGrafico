@@ -240,7 +240,7 @@ Backend: `treasury.Check`. Lifecycle gobernado por `treasury.check_service.Check
 > **ADR-0039** removió el endoso de cheques recibidos (estado `ENDORSED`,
 > campos `endorsed_to` / `endorsement_movement`, servicio `endorse()`).
 > Ver `docs/10-architecture/adr/0039-removal-of-check-endorsement.md`
-> para el rationale. La parte de cheques girados de ADR-0035 sigue
+> para el fundamento técnico. La parte de cheques girados de ADR-0035 sigue
 > vigente (cheques propios, F4.1).
 
 > **ADR-0040** define la democión de factura/orden al protestar o anular un

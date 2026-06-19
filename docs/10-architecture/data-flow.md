@@ -104,13 +104,13 @@ Hooks do NOT expose `error` (the Error object) — UI gets toast via `showApiErr
 
 ## Real-time
 
-Implementado vía **Django Channels (WebSocket bidireccional)** y **SSE (broadcast unidireccional)**. Ver el contrato canónico en [`../20-contracts/realtime-channels.md`](../20-contracts/realtime-channels.md) — qué está en producción hoy, decisión WS vs SSE, auth, patrones backend+frontend.
+Implemented via **Django Channels (bidirectional WebSocket)** and **SSE (unidirectional broadcast)**. See the canonical contract at [`../20-contracts/realtime-channels.md`](../20-contracts/realtime-channels.md) — what is in production today, WS vs SSE decision, auth, backend+frontend patterns.
 
 ---
 
 ## F5 — Modelo de datos post-refactor
 
-> **Fuente autoritativa:** [ADR-0016 — Post-Refactor F5 GenericForeignKey + ProductTypeStrategy](adr/0016-post-refactor-architecture-f5.md). Cualquier evolución del modelo F5 (relaciones polimórficas, strategy de producto, ProductManufacturingProfile) **se documenta en ese ADR**, no acá. Este resumen es referencia rápida; en caso de divergencia con el ADR, gana el ADR.
+> **Authoritative source:** [ADR-0016 — Post-Refactor F5 GenericForeignKey + ProductTypeStrategy](adr/0016-post-refactor-architecture-f5.md). Any evolution of the F5 model (polymorphic relations, product strategy, ProductManufacturingProfile) **is documented in that ADR**, not here. This summary is a quick reference; in case of divergence with the ADR, the ADR wins.
 
 Resumen para orientación:
 

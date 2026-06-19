@@ -8,7 +8,7 @@ last_review: 2026-05-21
 
 # System Diagram
 
-> **Topología:** single-node sobre home-server (Proxmox + VM Ubuntu + Docker Compose). Sin balanceador delante, sin réplicas de DB, sin clusters. Escalar verticalmente (más RAM/CPU/disco) antes de considerar multi-node — ver §"Deployment units".
+> **Topology:** single-node on home-server (Proxmox + VM Ubuntu + Docker Compose). No load balancer, no DB replicas, no clusters. Scale vertically (more RAM/CPU/disk) before considering multi-node — see §"Deployment units".
 
 ## Runtime topology
 
@@ -78,7 +78,7 @@ DRF view enqueues: task.delay(args)
 
 ## Deployment units
 
-Todos los componentes corren como contenedores Docker en un único host. La estrategia de escalado real es **vertical** (aumentar recursos del host) o **mover servicios al cloud por separado** (R2 ya en uso para media) antes de plantear cualquier topología multi-node.
+All components run as Docker containers on a single host. The actual scaling strategy is **vertical** (increase host resources) or **move individual services to the cloud** (R2 already in use for media) before considering any multi-node topology.
 
 | Unit | Contenedor | Estrategia de escalado (v1) | Si presión sostenida |
 |------|-----------|-----------------------------|----------------------|
@@ -90,7 +90,7 @@ Todos los componentes corren como contenedores Docker en un único host. La estr
 | Redis | Sí | Single instance, AOF persistence opcional | — |
 | MinIO | Sí (local) | Single node; media de baja frecuencia delegada a Cloudflare R2 | R2 ya cubre HA de archivos críticos |
 
-**Lo que NO está en scope para v1:** Postgres read replicas, Redis Sentinel/Cluster, Nginx load balancer, MinIO multi-node, autoscaling. Ver [observability.md#roadmap](../40-quality/observability.md#roadmap-cuando-deje-de-aplicar-pyme) para las condiciones que disparan revisar esto.
+**What is NOT in scope for v1:** Postgres read replicas, Redis Sentinel/Cluster, Nginx load balancer, MinIO multi-node, autoscaling. See [observability.md#roadmap](../40-quality/observability.md#roadmap-cuando-deje-de-aplicar-pyme) for the conditions that trigger revisiting this.
 
 ## Trust boundaries
 

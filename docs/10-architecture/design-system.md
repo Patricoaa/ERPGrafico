@@ -56,9 +56,9 @@ Colors must be defined as raw OKLCH channels in `app/globals.css` to support Tai
 ### Data Cells
 For legacy and modern pages, all data display should be routed through centralized `DataCell` components. Do not build ad-hoc styled spans or divs for status badges, tags, or money displays. Use `MoneyDisplay` and `QuantityDisplay` strictly.
 
-### Consumiendo Componentes Base (Shadcn/UI)
-- **Inmutabilidad:** El directorio `components/ui/` contiene componentes autogenerados y nunca debe ser modificado manualmente para añadir lógicas de dominio o negocio.
-- **Extensibilidad:** Si necesitas alterar el comportamiento o los estilos fijos de un componente base, debes crear un *wrapper* o una nueva especialización dentro de `components/shared/` que importe y consuma el primitivo de `ui/`.
+### Consuming Base Components (Shadcn/UI)
+- **Immutability:** The `components/ui/` directory contains auto-generated components and must never be manually modified to add domain or business logic.
+- **Extensibility:** If you need to alter the behavior or fixed styles of a base component, create a *wrapper* or a new specialization inside `components/shared/` that imports and consumes the primitive from `ui/`.
 
 ### Visual Regressions to Avoid
 - **Black Primary:** Ensure `primary` is correctly mapped to a raw color that supports opacity.
