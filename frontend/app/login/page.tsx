@@ -30,7 +30,7 @@ export default function LoginPage() {
                                     className="h-14 w-auto object-contain mb-3"
                                 />
                             ) : (
-                                <div className="w-14 h-14 rounded-lg flex items-center justify-center bg-primary text-primary-foreground font-black text-lg mb-3">
+                                <div className="w-14 h-14 rounded-md flex items-center justify-center bg-primary text-primary-foreground font-black text-lg mb-3">
                                     {initials}
                                 </div>
                             )}

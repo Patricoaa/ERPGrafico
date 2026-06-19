@@ -18,7 +18,7 @@ export default function Error({
     return (
         <div className="flex h-screen w-full flex-col items-center justify-center gap-4 bg-muted/30 p-4">
             <div className="flex flex-col items-center gap-2 text-center">
-                <div className="rounded-lg bg-destructive/10 p-3 border border-destructive/20">
+                <div className="rounded-md bg-destructive/10 p-3 border border-destructive/20">
                     <AlertCircle className="h-6 w-6 text-destructive" />
                 </div>
                 <h2 className="text-xl font-heading font-black uppercase tracking-tighter">Algo salió mal</h2>

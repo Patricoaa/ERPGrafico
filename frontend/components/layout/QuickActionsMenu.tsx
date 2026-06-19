@@ -97,7 +97,7 @@ export function QuickActionsMenu({ isInboxOpen, onInboxToggle }: QuickActionsMen
 
     return (
         <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 pointer-events-none">
-            <div className="flex items-center gap-2 p-2 bg-sidebar border border-sidebar-border rounded-lg shadow-2xl pointer-events-auto">
+            <div className="flex items-center gap-2 p-2 bg-sidebar border border-sidebar-border rounded-md shadow-2xl pointer-events-auto">
                 <TooltipProvider delayDuration={0}>
                     {actions.map((action) => {
                         const isActive = pathname === action.url

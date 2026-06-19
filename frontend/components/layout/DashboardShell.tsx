@@ -58,7 +58,7 @@ function DashboardShellInner({ children }: { children: React.ReactNode }) {
                 {/* Hamburger: always-visible module selector trigger */}
                 <button
                     onClick={() => setIsModuleLauncherOpen(true)}
-                    className="flex-none flex items-center justify-center w-9 h-9 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors cursor-pointer focus:outline-none focus-visible:ring-1 focus-visible:ring-primary/30"
+                    className="flex-none flex items-center justify-center w-9 h-9 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors cursor-pointer focus:outline-none focus-visible:ring-1 focus-visible:ring-primary/30"
                     aria-label="Seleccionar módulo"
                 >
                     <Menu className="h-5 w-5" />
