@@ -5,3 +5,7 @@ export * from './EmployeeDrawer';
 export * from './AbsenceDrawer';
 export * from './AdvanceDrawer';
 export * from './CreatePayrollDrawer';
+export * from './EmployeeListView';
+export * from './AbsenceManagementView';
+export * from './PayrollListView';
+export * from './SalaryAdvanceView';
