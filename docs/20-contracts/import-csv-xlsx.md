@@ -41,7 +41,7 @@ Frontend usa la validación Zod del entity como **preview validation** — espej
    Reporte final: éxitos, fallos por fila.
 ```
 
-**Por qué 2 pasos:** importar es la operación bulk más destructiva del ERP. Un solo paso "subir y crear" garantiza un porcentaje de imports parcialmente fallidos sin contexto para el usuario. Preview obliga a corroborar antes del commit.
+**Por qué 2 pasos:** importar es la operación bulk más destructiva del ERP. Un solo paso “subir y crear” garantiza un porcentaje de imports parcialmente fallidos sin contexto para el usuario. Preview obliga a corroborar antes del commit.
 
 ---
 

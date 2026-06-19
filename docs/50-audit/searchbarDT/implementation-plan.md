@@ -8,7 +8,7 @@ decision: Option B — Server-Side Smart Search
 owner: frontend-team
 scope: frontend/components/shared + frontend/features/**/components + backend/**/views.py
 milestones:
-  - M0: ✅ COMPLETADO 2026-05-13 — Prerequisitos + tipos
+  - M0: ✅ COMPLETADO 2026-05-13 — Prerrequisitos + tipos
   - M1: ✅ COMPLETADO 2026-05-13 — SmartSearchBar en barrel
   - M2: ✅ COMPLETADO 2026-05-13 — Facturas + Tesorería
   - M3: ✅ COMPLETADO 2026-05-13 — Órdenes de Venta ✅ | Productos ✅ | Contactos ✅
@@ -72,7 +72,7 @@ Los siguientes ítems están **explícitamente excluidos** de este plan:
 
 ---
 
-## 5. Prerequisitos globales
+## 5. Prerrequisitos globales
 
 - [x] `nuqs` instalado — `nuqs@2.8.9` en `package.json` ✅ 2026-05-13
 - [x] `cmdk` evaluado — **no disponible**; se usa `Popover` nativo de shadcn ✅ 2026-05-13
@@ -461,7 +461,7 @@ Para cada módulo, verificar manualmente:
 
 | Milestone | Entregable | Estado | Fecha |
 |---|---|---|---|
-| **M0** | Prerequisitos + tipos definidos | ✅ COMPLETADO | 2026-05-13 |
+| **M0** | Prerrequisitos + tipos definidos | ✅ COMPLETADO | 2026-05-13 |
 | **M1** | `SmartSearchBar` completo en barrel | ✅ COMPLETADO | 2026-05-13 |
 | **M2** | Facturas + Tesorería activos | ✅ COMPLETADO | 2026-05-13 |
 | **M3** | Órdenes ✅ + Productos ✅ + Contactos ✅ | ✅ COMPLETADO | 2026-05-13 |

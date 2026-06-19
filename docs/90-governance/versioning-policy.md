@@ -93,7 +93,7 @@ Every push to `master` or `main` triggers the automated versioning pipeline. If 
 
 ## Traceability
 
-Every build displayed in the "Settings > System Status" includes:
+Every build displayed in the “Settings > System Status” includes:
 -   **Version Number**: Synchronized across Frontend and Backend.
 -   **Git Hash**: The short SHA of the commit.
 -   **Build Date**: The timestamp of the build.

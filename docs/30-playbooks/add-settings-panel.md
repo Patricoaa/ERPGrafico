@@ -17,7 +17,7 @@ forbidden:
   - non-singleton settings
 ---
 
-# Playbook: agregar un panel de configuración (settings page-level)
+# Playbook — Agregar un panel de configuración (settings page-level)
 
 Guía para añadir o migrar un panel de configuración singleton que sigue el patrón autosave centralizado.
 

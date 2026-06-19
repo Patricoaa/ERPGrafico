@@ -186,7 +186,7 @@ export function useDraftSync(sessionId: string, onRemoteUpdate: (p: DraftPayload
 
 **Reglas:**
 - Hook por feature en `features/[feature]/hooks/use*Sync.ts`. **Nunca** un hook genérico `useWebSocket` global — el manejo de mensajes es siempre específico del dominio.
-- Reconexión con backoff exponencial (1s, 2s, 4s, ...; cap 30s). Detener si el código de cierre es 4001 (no autorizado) o 4003 (forbidden).
+- Reconexión con backoff exponencial (1s, 2s, 4s, …; cap 30s). Detener si el código de cierre es 4001 (no autorizado) o 4003 (forbidden).
 - Heartbeat: el cliente envía `{ "type": "ping" }` cada 30s si lleva sin recibir nada; el servidor responde `{ "type": "pong" }`. Esto detecta TCP-half-open y permite reconexión.
 - **Auth:** JWT como query param `?token=<jwt>`. WebSocket no permite custom headers desde el browser. Aceptado pese a que el token queda en logs de Nginx — mitigación: tokens de vida corta (15 min, ver [security.md](../40-quality/security.md)).
 
