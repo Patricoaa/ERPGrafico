@@ -236,7 +236,7 @@ export const CashFlowTable: React.FC<CashFlowTableProps> = ({ data, embedded, sh
         <div className="space-y-6">
             {/* Integrity Alert Banner */}
             {!data.is_balanced && (
-                <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-4 flex items-center justify-between animate-in fade-in slide-in-from-top-4">
+                <div className="bg-destructive/10 border border-destructive/20 rounded-md p-4 flex items-center justify-between animate-in fade-in slide-in-from-top-4">
                     <div className="flex items-center gap-3">
                         <AlertCircle className="h-6 w-6" />
                         <div>
@@ -258,7 +258,7 @@ export const CashFlowTable: React.FC<CashFlowTableProps> = ({ data, embedded, sh
             )}
 
             {data.is_balanced && (
-                <div className="bg-success/5 border border-success/20 rounded-lg p-3 flex items-center gap-3">
+                <div className="bg-success/5 border border-success/20 rounded-md p-3 flex items-center gap-3">
                     <CheckCircle2 className="h-5 w-5 text-success" />
                     <span className="text-xs font-bold text-success uppercase tracking-widest">Estado: Conciliado con Tesorería</span>
                 </div>
@@ -285,7 +285,7 @@ export const CashFlowTable: React.FC<CashFlowTableProps> = ({ data, embedded, sh
                 description="Listado de cuentas contables con movimientos en el periodo que NO están mapeadas a una categoría de flujo de caja."
             >
                 <div className="space-y-4">
-                    <div className="p-4 bg-muted/50 rounded-lg border border-dashed flex justify-between items-center">
+                    <div className="p-4 bg-muted/50 rounded-md border border-dashed flex justify-between items-center">
                         <div>
                             <p className="text-[10px] font-bold text-muted-foreground uppercase">Diferencia Total</p>
                             <MoneyDisplay amount={data.discrepancy} className="text-2xl font-black text-destructive" />

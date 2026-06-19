@@ -95,7 +95,7 @@ export function SplitAllocationDialog({ open, onOpenChange, payment, treasuryAcc
         >
             <Form {...form}>
                 <div className="space-y-6 max-w-3xl mx-auto">
-                    <div className="flex justify-between items-center bg-muted/30 p-4 rounded-lg border border-border/50">
+                    <div className="flex justify-between items-center bg-muted/30 p-4 rounded-md border border-border/50">
                         <div>
                             <p className="text-xs font-black uppercase text-muted-foreground">Monto Total a Distribuir</p>
                             <p className="text-xl font-bold font-mono">{formatCurrency(totalPayment)}</p>

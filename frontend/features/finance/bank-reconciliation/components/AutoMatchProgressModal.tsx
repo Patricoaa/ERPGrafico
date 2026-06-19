@@ -246,7 +246,7 @@ export function AutoMatchProgressModal({
 
                 {/* Error message */}
                 {progress.status === 'FAILURE' && progress.error && (
-                    <div className="rounded-lg bg-destructive/5 border border-destructive/20 p-3">
+                    <div className="rounded-md bg-destructive/5 border border-destructive/20 p-3">
                         <p className="text-xs font-medium text-destructive">{progress.error}</p>
                     </div>
                 )}

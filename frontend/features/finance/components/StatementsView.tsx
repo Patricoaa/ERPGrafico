@@ -212,7 +212,7 @@ export function StatementsView({ activeTab }: StatementsViewProps) {
         const eP = (e / totalSum) * 100
 
         return (
-            <div className="mb-10 overflow-hidden rounded-lg border shadow-sm">
+            <div className="mb-10 overflow-hidden rounded-md border shadow-sm">
                 <div className="h-10 w-full flex text-[10px] font-bold uppercase tracking-tighter">
                     <div
                         style={{ width: `${aP}%` }}
@@ -394,7 +394,7 @@ export function StatementsView({ activeTab }: StatementsViewProps) {
                                                 return (d.sections || []).map((section: any, idx: number) => (
                                                     section.is_total ? (
                                                         <div key={idx} className={cn(
-                                                            "py-6 px-4 flex justify-between items-center rounded-lg my-4 transition-colors",
+                                                            "py-6 px-4 flex justify-between items-center rounded-md my-4 transition-colors",
                                                             idx === (d.sections?.length || 0) - 1
                                                                 ? "bg-primary text-primary-foreground shadow-lg"
                                                                 : "bg-muted/50 border"
