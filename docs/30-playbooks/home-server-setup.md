@@ -18,7 +18,7 @@ forbidden:
   - using cloud services for main stack
 ---
 
-# Playbook: Setup de Home Server (Proxmox + Cloudflare R2)
+# Playbook — Setup de Home Server (Proxmox + Cloudflare R2)
 
 Este manual guía la creación de un entorno de desarrollo profesional en hardware propio.
 **Arquitectura**: PC Vieja -> Proxmox -> VM Ubuntu Server -> Docker Stack -> Cloudflare R2.

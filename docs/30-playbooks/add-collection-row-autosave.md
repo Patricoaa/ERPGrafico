@@ -17,7 +17,7 @@ forbidden:
   - mixing row-level and page-level autosave
 ---
 
-# Playbook: autosave por fila en colecciones editables
+# Playbook — Autosave por fila en colecciones editables
 
 Guía para conectar `useAutoSaveForm` a colecciones donde **cada fila tiene su propio estado de guardado**, en lugar de un único form a nivel de página.
 

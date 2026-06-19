@@ -269,7 +269,7 @@ Nunca importar directamente desde `@/components/ui/skeleton`.
 | `isLoading` | `boolean` | **obligatorio** | Activa shimmer + `aria-busy` |
 | `children` | `ReactNode` | **obligatorio** | El DOM real a "congelar" |
 | `className` | `string` | — | Clase del wrapper |
-| `ariaLabel` | `string` | `'Cargando...'` | Label anunciado al activarse |
+| `ariaLabel` | `string` | `'Cargando…'` | Label anunciado al activarse |
 
 Cuando `isLoading=false` no renderiza ningún wrapper — devuelve `children` directamente (sin nodo extra en el DOM).
 
@@ -311,7 +311,7 @@ Wrapper de conveniencia para `<Suspense fallback={...}>`.
 | prop | type | default | notas |
 |------|------|---------|-------|
 | `variant` | `'table' \| 'card' \| 'list'` | `'table'` | Tipo de skeleton |
-| `message` | `string` | `'Cargando...'` | Forwarded como `ariaLabel` |
+| `message` | `string` | `'Cargando…'` | Forwarded como `ariaLabel` |
 | `className` | `string` | — | |
 
 ---

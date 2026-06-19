@@ -16,7 +16,7 @@ forbidden:
   - adding search without backend search view
 ---
 
-# Playbook: Agregar Entidad a la Búsqueda Global
+# Playbook — Agregar entidad a la búsqueda global
 
 Este instructivo detalla cómo hacer que un nuevo modelo de Django sea buscable desde la barra de búsqueda global del ERP.
 

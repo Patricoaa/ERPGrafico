@@ -9,7 +9,7 @@ stability: contract-changes-require-ADR
 
 # Idempotency — Convención multi-capa
 
-Idempotencia en ERPGrafico es **opt-in con lista cerrada**: solo los endpoints/tareas explícitamente en la "lista cerrada" la implementan. El resto puede ser no-idempotente. Esto es deliberado: idempotencia universal es costo operativo que la mayoría de operaciones no necesita.
+Idempotencia en ERPGrafico es **opt-in con lista cerrada**: solo los endpoints/tareas explícitamente en la “lista cerrada” la implementan. El resto puede ser no-idempotente. Esto es deliberado: idempotencia universal es costo operativo que la mayoría de operaciones no necesita.
 
 ## Por qué importa
 
@@ -221,7 +221,7 @@ def generate_invoice_pdf_and_send(self, invoice_id: int, idempotency_key: str):
 - `POST` que solo crea drafts/borradores (POSDraft, autosave): si se crean dos por error, el cleanup TTL los purga.
 - Mutaciones de UI sin efecto fiscal: `archive`, `restore`, `lock`, `unlock`, `like`, `tag`.
 
-Si dudás de si tu endpoint debe estar en la lista cerrada: pregunta "¿una doble ejecución produce un costo monetario, fiscal, legal o externo no reversible?" Si sí → idempotente. Si no → no.
+Si dudás de si tu endpoint debe estar en la lista cerrada: pregunta “¿una doble ejecución produce un costo monetario, fiscal, legal o externo no reversible?” Si sí → idempotente. Si no → no.
 
 ---
 
@@ -237,7 +237,7 @@ Si dudás de si tu endpoint debe estar en la lista cerrada: pregunta "¿una dobl
 
 ## Checklist para agregar un endpoint/tarea idempotente
 
-- [ ] Agregar entrada a la "lista cerrada" arriba (vía PR + ADR si es polémico).
+- [ ] Agregar entrada a la “lista cerrada” arriba (vía PR + ADR si es polémico).
 - [ ] Frontend: generar UUIDv4 en el handler origen + reenviar en retries.
 - [ ] Backend: decorar con `@idempotent_endpoint(scope=...)`.
 - [ ] Si dispara Celery: pasar el key como argumento de la tarea.

@@ -10,7 +10,7 @@ last_review: 2026-05-21
 
 ERPGrafico opera como deployment single-node en home-server con presupuesto operativo ~$0. La stack de observability se apoya en **Sentry + logs estructurados + endpoint `/healthz` + uptime monitoring externo gratuito**. NO se opera Prometheus, Grafana, Jaeger/Tempo, OpenTelemetry ni PagerDuty.
 
-Cuando el proyecto migre a multi-servicio o presupuesto SRE dedicado, esta doc debe revisarse — ver §"Roadmap" al final.
+Cuando el proyecto migre a multi-servicio o presupuesto SRE dedicado, esta doc debe revisarse — ver §“Roadmap” al final.
 
 ## Logs
 
@@ -97,11 +97,11 @@ trackEvent('sale_order.created', { customer_id, total_cents })
 
 ## Dashboards
 
-No hay Grafana. Las vistas que funcionan como "dashboards" para el proyecto:
+No hay Grafana. Las vistas que funcionan como “dashboards” para el proyecto:
 
 - **Sentry → Performance** — vista de latencia por transacción HTTP y tarea Celery.
 - **Sentry → Issues** — errores agrupados por fingerprint, deploy-tagged.
-- **Sentry → Releases** — diff de errores antes/después de cada release (sustituye los "deploy markers").
+- **Sentry → Releases** — diff de errores antes/después de cada release (sustituye los “deploy markers”).
 - **`/admin/`** (Django) — para KPIs de negocio low-fidelity (counts, listados). Si un KPI lo amerita, se construye un widget en `app/(dashboard)/` con el dato real desde el backend.
 
 ## Alerts

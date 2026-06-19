@@ -233,7 +233,7 @@ Ventaja: los filtros inválidos son ignorados silenciosamente (`.safeParse`), no
 
 ---
 
-## 10. Prerequisitos por módulo
+## 10. Prerrequisitos por módulo
 
 Antes de activar la search bar server-side en un módulo, verificar:
 

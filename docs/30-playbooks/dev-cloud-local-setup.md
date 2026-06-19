@@ -40,7 +40,7 @@ Stack de desarrollo optimizado para máquinas con recursos limitados.
 
 ---
 
-## Paso 0 — Prerequisitos
+## Paso 0 — Prerrequisitos
 
 ```bash
 # Python (verificar versión)
