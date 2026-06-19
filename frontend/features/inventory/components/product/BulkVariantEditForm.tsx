@@ -183,7 +183,7 @@ export function BulkVariantEditForm({ selectedVariants, availableVariants = [], 
                             />
                         )}
 
-                        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 p-4 border-2 border-primary/10 rounded-lg bg-primary/5">
+                        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 p-4 border-2 border-primary/10 rounded-md bg-primary/5">
                             <FormField<BulkEditValues>
                                 control={form.control}
                                 name="sale_price"
@@ -254,7 +254,7 @@ export function BulkVariantEditForm({ selectedVariants, availableVariants = [], 
                                 name="apply_has_bom"
                                 render={({ field }) => (
                                     <div className={cn(
-                                        "flex items-center justify-between p-4 rounded-lg border-2 transition-all",
+                                        "flex items-center justify-between p-4 rounded-md border-2 transition-all",
                                         field.value ? "bg-primary/5 border-primary/20" : "bg-background border-dashed border-muted-foreground/20"
                                     )}>
                                         <div className="space-y-1">
@@ -271,7 +271,7 @@ export function BulkVariantEditForm({ selectedVariants, availableVariants = [], 
                                     control={form.control}
                                     name="has_bom"
                                     render={({ field }) => (
-                                        <div className="flex flex-row items-center justify-between space-x-3 rounded-lg border-2 p-4 bg-background animate-in fade-in duration-200">
+                                        <div className="flex flex-row items-center justify-between space-x-3 rounded-md border-2 p-4 bg-background animate-in fade-in duration-200">
                                             <div className="space-y-1 leading-none">
                                                 <label className="text-xs font-bold uppercase">Requieren Lista de Materiales</label>
                                                 <p className="text-[10px] text-muted-foreground font-medium italic">
