@@ -17,7 +17,7 @@ Definitive vocabulary. When a term appears in code or docs, use this meaning —
 | **SaleOrder** | Commitment to deliver goods/services to customer | `sales.SaleOrder` |
 | **PurchaseOrder** | Commitment to acquire goods/services from supplier | `purchasing.PurchaseOrder` |
 | **WorkOrder** | Production job on shop floor, linked to SaleOrder | `production.WorkOrder` |
-| **Order hub** | Frontend aggregate view over the three above — NOT a backend entity | `features/orders` only |
+| **Order hub** | Frontend aggregate view over the 3 above — NOT a backend entity | `features/orders` only |
 
 ## Financial
 

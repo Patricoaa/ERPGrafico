@@ -69,7 +69,7 @@ ERPGrafico features an automated `CHANGELOG.md` at the root of the project. This
 
 ## Release Process
 
-We use an automated release process to ensure the Frontend and Backend are always in sync and the Changelog is updated.
+An automated release process is used to ensure the Frontend and Backend are always in sync and the Changelog is updated.
 
 ### Local Release (Manual):
 
