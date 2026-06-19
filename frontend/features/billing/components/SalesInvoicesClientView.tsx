@@ -7,12 +7,13 @@ import { ActionConfirmModal, DataTableView } from '@/components/shared'
 import { DataCell } from '@/components/shared'
 import { DataTableColumnHeader } from '@/components/shared'
 import { ColumnDef } from "@tanstack/react-table"
-import {IconButton, SmartSearchBar, useSmartSearch} from "@/components/shared"
+import {IconButton, SmartSearchBar, useSmartSearch, SegmentationBar, useSegmentation} from "@/components/shared"
 import { invoiceSearchDef } from "@/features/billing/searchDef"
+import { invoiceSegDef } from "@/features/billing/segmentationDef"
 import { ArrowRight, ArrowLeft } from "lucide-react"
 import { treasuryApi } from "@/features/treasury/api/treasuryApi"
 import { useInvoices } from "@/features/billing/hooks/useInvoices"
-import { Invoice } from "@/features/billing/types"
+import { Invoice, InvoiceFilters } from "@/features/billing/types"
 import { toast } from "sonner"
 import { SaleNoteModal } from "@/features/sales"
 import { PaymentModal } from "@/features/treasury/components/PaymentModal"
@@ -22,8 +23,10 @@ import { useConfirmAction } from "@/hooks/useConfirmAction"
 import { getDtePrefix } from "@/lib/entity-registry"
 
 export function SalesInvoicesClientView({ initialInvoices }: { initialInvoices?: Invoice[] }) {
-    const { filters, isFiltered } = useSmartSearch(invoiceSearchDef)
-    const { invoices, isLoading, isRefetching, refetch, annulInvoice } = useInvoices({ filters: { ...filters, mode: 'sale' }, initialData: initialInvoices })
+    const { filters: textFilters, isFiltered: isTextFiltered, clearAll: clearText } = useSmartSearch(invoiceSearchDef)
+    const { filters: segFilters, isFiltered: isSegFiltered, clearAll: clearSeg } = useSegmentation(invoiceSegDef)
+    const isFiltered = isTextFiltered || isSegFiltered
+    const { invoices, isLoading, isRefetching, refetch, annulInvoice } = useInvoices({ filters: { ...(textFilters as InvoiceFilters), ...(segFilters as Record<string, string>), mode: 'sale' }, initialData: initialInvoices })
     const { openHub, closeHub, hubConfig, isHubOpen } = useHubPanel()
     const [notingInvoice, setNotingInvoice] = useState<Invoice | null>(null)
     const [payingInv, setPayingInv] = useState<Invoice | null>(null)
@@ -168,6 +171,9 @@ export function SalesInvoicesClientView({ initialInvoices }: { initialInvoices?:
                     onRowClick={(row: Invoice) => toggleSelection(row)}
                     variant="embedded"
                     smartSearch={<SmartSearchBar searchDef={invoiceSearchDef} placeholder="Buscar facturas..." className="w-full" />}
+                    segmentation={<SegmentationBar def={invoiceSegDef} />}
+                    showReset={isFiltered}
+                    onReset={() => { clearText(); clearSeg() }}
                     defaultPageSize={20}
                     isSelected={(data: Invoice) => hubConfig?.invoiceId === data.id}
                     isHubOpen={isHubOpen}

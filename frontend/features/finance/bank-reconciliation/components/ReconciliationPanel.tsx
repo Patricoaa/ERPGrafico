@@ -13,8 +13,9 @@ import { SplitAllocationDialog } from "./SplitAllocationDialog"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useReconciledLinesQuery } from "../hooks/useReconciliationQueries"
 
-import { ActionConfirmModal, ActionDock, BaseModal, CancelButton, Chip, CollapsibleSheet, EmptyState, FormFooter, LabeledInput, LabeledSelect, PeriodValidationDateInput, SkeletonShell, SmartSearchBar, useSmartSearch } from '@/components/shared'
+import { ActionConfirmModal, ActionDock, BaseModal, CancelButton, Chip, CollapsibleSheet, EmptyState, FormFooter, LabeledInput, LabeledSelect, PeriodValidationDateInput, SkeletonShell, SmartSearchBar, useSmartSearch, SegmentationBar, useSegmentation } from '@/components/shared'
 import { reconciliationSearchDef } from "../searchDef"
+import { reconciliationSegDef } from "../segmentationDef"
 
 import { isZeroTolerance, safeDifference, safeSum, safeParseFloat } from "@/lib/math"
 import {
@@ -155,11 +156,14 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
     const [bankParams, setBankParams] = useState<QueryPaginationParams>({ page: 1, pageSize: 50 })
     const [systemParams, setSystemParams] = useState<QueryPaginationParams>({ page: 1, pageSize: 50 })
 
-    const { filters } = useSmartSearch(reconciliationSearchDef)
+    const { filters: textFilters, isFiltered: isTextFiltered, clearAll: clearText } = useSmartSearch(reconciliationSearchDef)
+    const { filters: segFilters, isFiltered: isSegFiltered, clearAll: clearSeg } = useSegmentation(reconciliationSegDef)
+    const isFiltered = isTextFiltered || isSegFiltered
+    const allFilters = { ...textFilters, ...segFilters }
 
     // Synchronize smart search filters to query parameters
     useEffect(() => {
-        const f = filters
+        const f = allFilters
         requestAnimationFrame(() => {
             setBankParams(prev => ({
                 ...prev,
@@ -178,7 +182,7 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                 date_to: f.date_to || "",
             }))
         })
-    }, [filters])
+    }, [allFilters])
 
     const router = useRouter()
     const pathname = usePathname()
@@ -731,13 +735,14 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
             <Tabs defaultValue="unreconciled" className="h-full flex flex-col w-full min-h-0">
                 {/* ─── Unified Workbench Toolbar ─── */}
                 <div className="flex items-center justify-between gap-4 w-full mb-3 h-9">
-                    {/* Left: Smart Search Bar (Unified Filtering for Both Tables) */}
-                    <div className="flex-1 min-w-0 h-9">
+                    {/* Left: Smart Search Bar + Segmentation (Unified Filtering for Both Tables) */}
+                    <div className="flex items-center gap-2 flex-1 min-w-0 h-9">
                         <SmartSearchBar
                             searchDef={reconciliationSearchDef}
-                            placeholder="Buscar movimientos y pagos por descripción, monto, tipo (type:IN/OUT) o rango de fechas..."
-                            className="w-full"
+                            placeholder="Buscar movimientos y pagos por descripción, monto..."
+                            className="flex-1"
                         />
+                        <SegmentationBar def={reconciliationSegDef} />
                     </div>
 
                     {/* Right: Actions & Navigation Group */}

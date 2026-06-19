@@ -4,8 +4,9 @@ import { showApiError, getErrorMessage } from "@/lib/errors"
 import React, { useState, useRef } from "react"
 import { useRouter, useSearchParams, usePathname } from "next/navigation"
 import { ColumnDef } from "@tanstack/react-table"
-import {ActionConfirmModal, DocumentCompletionModal, SmartSearchBar, useSmartSearch} from '@/components/shared'
+import {ActionConfirmModal, DocumentCompletionModal, SmartSearchBar, useSmartSearch, SegmentationBar, useSegmentation} from '@/components/shared'
 import { purchaseInvoiceSearchDef } from '../searchDef'
+import { purchaseInvoiceSegDef } from "@/features/billing/segmentationDef"
 import { FileBadge } from "lucide-react"
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 import { formatCurrency } from "@/lib/money"
@@ -22,12 +23,14 @@ import { DataTableColumnHeader } from '@/components/shared'
 import { useConfirmAction } from "@/hooks/useConfirmAction"
 
 import { usePurchaseInvoices } from "@/features/billing/hooks/usePurchaseInvoices"
-import { Invoice } from "@/features/billing/types"
+import { Invoice, InvoiceFilters } from "@/features/billing/types"
 import { getDtePrefix } from "@/lib/entity-registry"
 
 export function PurchaseInvoicesClientView() {
-    const { filters, isFiltered } = useSmartSearch(purchaseInvoiceSearchDef)
-    const { invoices: documents, isLoading, refetch: fetchDocuments } = usePurchaseInvoices({ filters })
+    const { filters: textFilters, isFiltered: isTextFiltered, clearAll: clearText } = useSmartSearch(purchaseInvoiceSearchDef)
+    const { filters: segFilters, isFiltered: isSegFiltered, clearAll: clearSeg } = useSegmentation(purchaseInvoiceSegDef)
+    const isFiltered = isTextFiltered || isSegFiltered
+    const { invoices: documents, isLoading, refetch: fetchDocuments } = usePurchaseInvoices({ filters: { ...(textFilters as Omit<InvoiceFilters, 'mode'>), ...(segFilters as Record<string, string>) } })
     const [payingDoc, setPayingDoc] = useState<any | null>(null)
     const [receivingDoc, setReceivingDoc] = useState<any | null>(null)
     const [notingDoc, setNotingDoc] = useState<any | null>(null)
@@ -234,6 +237,9 @@ export function PurchaseInvoicesClientView() {
                     }}
                     variant="embedded"
                     smartSearch={<SmartSearchBar searchDef={purchaseInvoiceSearchDef} placeholder="Buscar facturas de compra..." className="w-full" />}
+                    segmentation={<SegmentationBar def={purchaseInvoiceSegDef} />}
+                    showReset={isFiltered}
+                    onReset={() => { clearText(); clearSeg() }}
                     defaultPageSize={20}
                     isSelected={(inv: Invoice) => hubConfig?.invoiceId === inv.id}
                     isHubOpen={isHubOpen}
