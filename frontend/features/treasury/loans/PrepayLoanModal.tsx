@@ -110,7 +110,7 @@ export function PrepayLoanModal({ loan, open, onOpenChange }: Props) {
         >
             <div className="space-y-5">
                 {/* Resumen del saldo insoluto */}
-                <div className="rounded-lg border border-border p-4 space-y-2">
+                <div className="rounded-md border border-border p-4 space-y-2">
                     <h3 className="text-sm font-semibold flex items-center gap-2">
                         <Coins className="h-4 w-4" />
                         Saldo Insoluto
@@ -135,7 +135,7 @@ export function PrepayLoanModal({ loan, open, onOpenChange }: Props) {
                 </div>
 
                 {/* Desglose editable */}
-                <div className="rounded-lg border border-border p-4 space-y-3">
+                <div className="rounded-md border border-border p-4 space-y-3">
                     <h3 className="text-sm font-semibold flex items-center gap-2">
                         <Calculator className="h-4 w-4" />
                         Desglose del Pago
@@ -181,7 +181,7 @@ export function PrepayLoanModal({ loan, open, onOpenChange }: Props) {
 
                 {/* Conversión UF → CLP */}
                 {isUF && (
-                    <div className="rounded-lg border border-info/30 bg-info/5 p-4 space-y-2">
+                    <div className="rounded-md border border-info/30 bg-info/5 p-4 space-y-2">
                         <div className="flex items-center gap-2 text-sm font-semibold text-info">
                             <ArrowRight className="h-4 w-4" />
                             Conversión UF → CLP

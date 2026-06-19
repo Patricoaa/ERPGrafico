@@ -196,7 +196,7 @@ export function TransferDrawer({ open, onOpenChange, onSuccess, mode: modeProp }
                                             )}
                                         />
                                         {sourceAccount && toAccountId && amount && !isNaN(parseFloat(amount)) && (
-                                            <div className="p-2.5 rounded-lg bg-warning/5 border border-warning/20 flex flex-col items-center justify-center animate-in zoom-in-95 duration-300">
+                                            <div className="p-2.5 rounded-md bg-warning/5 border border-warning/20 flex flex-col items-center justify-center animate-in zoom-in-95 duration-300">
                                                 <p className="text-[10px] text-warning font-black uppercase tracking-widest mb-1">Impacto en Origen</p>
                                                 <p className="text-xs font-black text-warning">
                                                     <MoneyDisplay amount={(sourceAccount.current_balance ?? 0) - parseFloat(amount)} />

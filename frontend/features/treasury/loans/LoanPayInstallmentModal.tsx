@@ -117,7 +117,7 @@ export function LoanPayInstallmentModal({ installment, loanCurrency, penaltyRate
         >
             <div className="space-y-5">
                 {/* Desglose editable de la cuota */}
-                <div className="rounded-lg border border-border p-4 space-y-3">
+                <div className="rounded-md border border-border p-4 space-y-3">
                     <h3 className="text-sm font-semibold flex items-center gap-2">
                         <Coins className="h-4 w-4" />
                         Desglose de la cuota
@@ -164,7 +164,7 @@ export function LoanPayInstallmentModal({ installment, loanCurrency, penaltyRate
 
                 {/* Mora estimada (cuota vencida) */}
                 {estimatedPenalty > 0 && penaltyEdit === 0 && (
-                    <div className="rounded-lg border border-warning/30 bg-warning/5 p-4 space-y-2">
+                    <div className="rounded-md border border-warning/30 bg-warning/5 p-4 space-y-2">
                         <div className="flex items-center gap-2 text-sm font-semibold text-warning">
                             <AlertTriangle className="h-4 w-4" />
                             Mora por atraso ({daysLate} {daysLate === 1 ? 'día' : 'días'})
@@ -188,7 +188,7 @@ export function LoanPayInstallmentModal({ installment, loanCurrency, penaltyRate
 
                 {/* Conversión UF → CLP */}
                 {isUF && (
-                    <div className="rounded-lg border border-info/30 bg-info/5 p-4 space-y-2">
+                    <div className="rounded-md border border-info/30 bg-info/5 p-4 space-y-2">
                         <div className="flex items-center gap-2 text-sm font-semibold text-info">
                             <ArrowRight className="h-4 w-4" />
                             Conversión UF → CLP

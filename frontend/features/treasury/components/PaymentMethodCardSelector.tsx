@@ -262,14 +262,14 @@ export function PaymentMethodCardSelector({
         <div className="space-y-4">
             {/* Summary Cards */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                <div className={cn("bg-primary/5 rounded-lg border border-primary/10 flex justify-between items-center", compactMode ? "p-3 h-20" : "p-4 h-24")}>
+                <div className={cn("bg-primary/5 rounded-md border border-primary/10 flex justify-between items-center", compactMode ? "p-3 h-20" : "p-4 h-24")}>
                     <div>
                         <span className="text-[10px] font-bold uppercase text-muted-foreground block mb-1">{totalLabel}</span>
                         <MoneyDisplay amount={total} className={cn("text-primary", compactMode ? "text-lg" : "text-xl")} />
                     </div>
                 </div>
 
-                <div className={cn("bg-primary/5 rounded-lg border border-primary/10 flex justify-between items-center", compactMode ? "p-3 h-20" : "p-4 h-24")}>
+                <div className={cn("bg-primary/5 rounded-md border border-primary/10 flex justify-between items-center", compactMode ? "p-3 h-20" : "p-4 h-24")}>
                     <div>
                         <span className="text-[10px] font-bold uppercase text-muted-foreground block mb-1">{amountLabel}</span>
                         <MoneyDisplay amount={paymentData.amount || 0} className={cn("text-primary", compactMode ? "text-lg" : "text-xl")} />
@@ -278,7 +278,7 @@ export function PaymentMethodCardSelector({
 
                 {(paymentData.amount > 0 || difference < 0) && showChangeCard && (
                     <div className={cn(
-                        "rounded-lg border flex justify-between items-center shadow-sm transition-all animate-in zoom-in-95 duration-200",
+                        "rounded-md border flex justify-between items-center shadow-sm transition-all animate-in zoom-in-95 duration-200",
                         compactMode ? "p-3 h-20" : "p-4 h-24",
                         difference >= 0
                             ? "bg-success/5 border-success/10"
@@ -313,7 +313,7 @@ export function PaymentMethodCardSelector({
                             <label
                                 htmlFor={`method-${m.id}`}
                                 className={cn(
-                                    "flex flex-col rounded-lg border-2 border-muted bg-popover hover:bg-accent hover:text-accent-foreground [&:has([data-state=checked])]:border-primary transition-all h-full cursor-pointer",
+                                    "flex flex-col rounded-md border-2 border-muted bg-popover hover:bg-accent hover:text-accent-foreground [&:has([data-state=checked])]:border-primary transition-all h-full cursor-pointer",
                                     paymentData.method === m.id ? 'border-primary bg-primary/5 shadow-md scale-[1.01]' : '',
                                     !m.isAllowed ? 'opacity-50 grayscale cursor-not-allowed' : '',
                                     compactMode ? "gap-2 p-3" : "gap-4 p-6"
@@ -331,7 +331,7 @@ export function PaymentMethodCardSelector({
                                 <RadioGroupItem value={m.id} id={`method-${m.id}`} className="sr-only" disabled={!m.isAllowed} />
                                 <div className="flex flex-col items-center justify-center gap-4 h-full">
                                     <div className={cn(
-                                        "rounded-lg bg-background border-2 shadow-sm flex items-center justify-center relative",
+                                        "rounded-md bg-background border-2 shadow-sm flex items-center justify-center relative",
                                         m.color,
                                         compactMode ? "p-3" : "p-6"
                                     )}>
