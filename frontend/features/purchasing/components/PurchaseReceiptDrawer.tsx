@@ -108,7 +108,7 @@ export function PurchaseReceiptDrawer({ receiptId, id, open, onOpenChange }: Pur
                                 {r.lines?.length > 0 && (
                                     <div>
                                         <h4 className="text-sm font-medium mb-2">Líneas</h4>
-                                        <div className="border rounded-lg overflow-hidden">
+                                        <div className="border rounded-md overflow-hidden">
                                             <table className="w-full text-sm">
                                                 <thead className="bg-muted">
                                                     <tr>

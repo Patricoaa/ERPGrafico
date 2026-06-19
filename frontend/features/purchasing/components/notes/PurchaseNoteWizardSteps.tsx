@@ -50,7 +50,7 @@ export function Step1_GeneralInfo({
                     <div className="grid grid-cols-2 gap-4 p-1">
                         <div
                             className={cn(
-                                "cursor-pointer rounded-lg border-2 p-4 transition-all hover:bg-muted/50",
+                                "cursor-pointer rounded-md border-2 p-4 transition-all hover:bg-muted/50",
                                 noteType === "NOTA_CREDITO"
                                     ? "border-warning bg-warning/10/50 ring-2 ring-warning/20"
                                     : "border-muted"
@@ -72,7 +72,7 @@ export function Step1_GeneralInfo({
 
                         <div
                             className={cn(
-                                "cursor-pointer rounded-lg border-2 p-4 transition-all hover:bg-muted/50",
+                                "cursor-pointer rounded-md border-2 p-4 transition-all hover:bg-muted/50",
                                 noteType === "NOTA_DEBITO"
                                     ? "border-primary bg-primary/10/50 ring-2 ring-primary/20"
                                     : "border-muted"
@@ -169,12 +169,12 @@ export function Step2_LineItems({ lines, setLines, noteType }: Step2Props) {
                         Indica las cantidades y montos afectados por la nota.
                     </p>
                 </div>
-                <div className={`px-4 py-2 rounded-lg font-bold text-xs uppercase tracking-wider bg-muted text-muted-foreground`}>
+                <div className={`px-4 py-2 rounded-md font-bold text-xs uppercase tracking-wider bg-muted text-muted-foreground`}>
                     {lines.filter(l => l.note_quantity > 0).length} ítems seleccionados
                 </div>
             </div>
 
-            <div className="border rounded-lg overflow-hidden shadow-sm bg-card">
+            <div className="border rounded-md overflow-hidden shadow-sm bg-card">
                 <table className="w-full text-sm">
                     <thead className="bg-muted/30 border-b">
                         <tr>
@@ -281,7 +281,7 @@ export function Step2_LineItems({ lines, setLines, noteType }: Step2Props) {
                 )}
             </div>
 
-            <div className="bg-primary/10/50 border border-primary/10 p-4 rounded-lg flex gap-3 text-sm text-primary">
+            <div className="bg-primary/10/50 border border-primary/10 p-4 rounded-md flex gap-3 text-sm text-primary">
                 <AlertCircle className="h-5 w-5 shrink-0" />
                 <p>
                     Los montos calculados aquí son referenciales. El sistema ajustará automáticamente los impuestos (IVA)
@@ -372,7 +372,7 @@ export function Step3_Review({
 
                     <Separator />
 
-                    <div className="bg-muted/20 p-4 rounded-lg space-y-2">
+                    <div className="bg-muted/20 p-4 rounded-md space-y-2">
                         <div className="flex justify-between items-center text-sm">
                             <span className="text-muted-foreground">Monto Neto</span>
                             <DataCell.Currency value={totals.net} className="justify-end font-mono font-medium w-auto" />

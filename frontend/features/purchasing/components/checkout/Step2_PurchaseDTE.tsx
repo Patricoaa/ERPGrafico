@@ -89,7 +89,7 @@ export function Step2_PurchaseDTE({
             </div>
 
             <div className="space-y-4 animate-in fade-in slide-in-from-top-2 duration-300">
-                <div className="flex items-center space-x-2 p-3 bg-muted/30 rounded-lg border border-dashed">
+                <div className="flex items-center space-x-2 p-3 bg-muted/30 rounded-md border border-dashed">
                     <Checkbox
                         id="is-pending"
                         checked={dteData.isPending}
@@ -110,7 +110,7 @@ export function Step2_PurchaseDTE({
                 </div>
 
                 {!dteData.isPending && (
-                    <div className="grid grid-cols-2 gap-4 p-4 border rounded-lg bg-muted/10">
+                    <div className="grid grid-cols-2 gap-4 p-4 border rounded-md bg-muted/10">
                         <div className="space-y-2">
                             <FolioValidationInput
                                 value={dteData.number}
@@ -155,14 +155,14 @@ export function Step2_PurchaseDTE({
             </div>
 
             {dteData.type === 'BOLETA' && !dteData.isPending && (
-                <div className="flex items-start gap-2 p-3 bg-warning/10 text-warning rounded-lg text-xs leading-tight">
+                <div className="flex items-start gap-2 p-3 bg-warning/10 text-warning rounded-md text-xs leading-tight">
                     <AlertCircle className="h-4 w-4 shrink-0" />
                     <p>El folio de la boleta es obligatorio. Si no lo tiene ahora, marque &quot;Recibiré el documento luego&quot;.</p>
                 </div>
             )}
 
             {dteData.type !== 'BOLETA' && !dteData.isPending && (!dteData.attachment || !dteData.number) && (
-                <div className="flex items-start gap-2 p-3 bg-warning/10 text-warning rounded-lg text-xs leading-tight">
+                <div className="flex items-start gap-2 p-3 bg-warning/10 text-warning rounded-md text-xs leading-tight">
                     <AlertCircle className="h-4 w-4 shrink-0" />
                     <p>El folio y el adjunto son requeridos para registrar este tipo de documento.</p>
                 </div>

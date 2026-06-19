@@ -252,7 +252,7 @@ export function PurchaseOrderModal({ onSuccess, initialData, open: openProp, onO
                                         </div>
                                     </div>
 
-                                    <div className="rounded-lg border border-dashed">
+                                    <div className="rounded-md border border-dashed">
                                         <Table>
                                             <TableHeader>
                                                 <TableRow>
@@ -409,7 +409,7 @@ export function PurchaseOrderModal({ onSuccess, initialData, open: openProp, onO
                                     </div>
                                 </div>
 
-                                <div className="rounded-lg border border-dashed">
+                                <div className="rounded-md border border-dashed">
                                     <Table>
                                         <TableHeader>
                                             <TableRow>

@@ -49,7 +49,7 @@ export function Step0_Supplier({
         <div className="space-y-8 flex flex-col items-center justify-center min-h-[400px] max-w-2xl mx-auto">
             <div className="relative">
                 <div className="absolute -inset-4 bg-primary/10 rounded-full blur-xl animate-pulse" />
-                <div className="relative bg-background p-6 rounded-lg shadow-xl border-2 border-primary/20">
+                <div className="relative bg-background p-6 rounded-md shadow-xl border-2 border-primary/20">
                     <Building2 className="h-12 w-12 text-primary" />
                 </div>
             </div>
@@ -83,7 +83,7 @@ export function Step0_Supplier({
                 </div>
 
                 {!selectedSupplierId && !loading && (
-                    <div className="flex items-center gap-2 text-sm text-warning font-medium py-2 px-3 bg-warning/10 rounded-lg border border-warning/10 animate-in fade-in slide-in-from-top-2">
+                    <div className="flex items-center gap-2 text-sm text-warning font-medium py-2 px-3 bg-warning/10 rounded-md border border-warning/10 animate-in fade-in slide-in-from-top-2">
                         <AlertCircle className="h-4 w-4" />
                         Debe seleccionar un proveedor para proceder.
                     </div>
