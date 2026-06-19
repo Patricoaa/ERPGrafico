@@ -2,7 +2,7 @@
 
 import {useState, useEffect, useMemo} from "react"
 
-import { DataTable, SmartSearchBar, ToolbarCreateButton } from '@/components/shared'
+import { DataTable, SmartSearchBar, ToolbarCreateButton, SegmentationBar, useSegmentation, useSmartSearch } from '@/components/shared'
 import { DataTableColumnHeader } from '@/components/shared'
 import { DataCell, createActionsColumn } from '@/components/shared'
 import { ColumnDef } from "@tanstack/react-table"
@@ -15,6 +15,7 @@ import { GroupManagement } from "@/features/settings/components/GroupManagement"
 
 import { type AppUser } from "@/types/entities"
 import { userSearchDef } from "@/features/users/searchDef"
+import { userSegDef } from "@/features/users/segmentationDef"
 
 interface UsersSettingsViewProps {
     activeTab: string
@@ -25,7 +26,11 @@ import { useSelectedEntity } from "@/hooks/useSelectedEntity"
 import { useSearchParams, useRouter, usePathname } from "next/navigation"
 
 export function UsersSettingsView({ activeTab }: UsersSettingsViewProps) {
-    const { users, isLoading, refetch } = useUsers()
+    const { filters: textFilters, isFiltered: isTextFiltered, clearAll: clearText } = useSmartSearch(userSearchDef)
+    const { filters: segFilters, isFiltered: isSegFiltered, clearAll: clearSeg } = useSegmentation(userSegDef)
+    const isFiltered = isTextFiltered || isSegFiltered
+    const allFilters = { ...textFilters, ...segFilters }
+    const { users, isLoading, refetch } = useUsers(allFilters)
     const [isGroupModalOpen, setIsGroupModalOpen] = useState(false)
     const searchParams = useSearchParams()
     const router = useRouter()
@@ -175,6 +180,10 @@ export function UsersSettingsView({ activeTab }: UsersSettingsViewProps) {
                                 variant="embedded"
                                 isLoading={isLoading}
                                 smartSearch={<SmartSearchBar searchDef={userSearchDef} placeholder="Buscar usuario por nombre, email o username..." className="w-full" />}
+                                segmentation={<SegmentationBar def={userSegDef} />}
+                                showReset={isFiltered}
+                                onReset={() => { clearText(); clearSeg() }}
+                                isFiltered={isFiltered}
                                 createAction={usersCreateAction}
                             />
                         </div>
