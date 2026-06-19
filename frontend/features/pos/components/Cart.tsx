@@ -13,6 +13,7 @@ import {ShoppingCart, Zap, Clock, User, FileText, Truck, Calendar} from 'lucide-
 import { cn } from '@/lib/utils'
 import { CartItem } from './CartItem'
 import { formatCurrency } from "@/lib/money"
+import { useVatRate } from '@/hooks/useVatRate'
 import { useDeviceContext } from '@/hooks/useDeviceContext'
 import { useTouchMode } from '@/hooks/useTouchMode'
 import type { CartItem as CartItemType, Product, UoM, StockLimits, WizardState } from '@/types/pos'
@@ -78,6 +79,7 @@ export function Cart({
     posMode = 'SHOPPING',
     wizardState
 }: CartProps) {
+    const { rate } = useVatRate()
     const { isTouchPOS } = useDeviceContext()
     const { isTouchMode } = useTouchMode()
     const { canApplyLineDiscount, canApplyGlobalDiscount } = useSalesSettings()
@@ -268,7 +270,7 @@ export function Cart({
                             <span>{formatCurrency(totals.total_net)}</span>
                         </div>
                         <div className="flex justify-between text-xs text-muted-foreground">
-                            <span>IVA (19%)</span>
+                            <span>IVA ({rate}%)</span>
                             <span>{formatCurrency(totals.total_tax)}</span>
                         </div>
 

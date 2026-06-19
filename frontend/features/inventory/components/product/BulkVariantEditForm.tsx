@@ -9,6 +9,7 @@ import { Form, FormField } from "@/components/ui/form"
 import { LabeledInput, LabeledSelect, FormSection, SkeletonShell } from "@/components/shared"
 import { Checkbox } from "@/components/ui/checkbox"
 import {Save, DollarSign, AlertCircle} from "lucide-react"
+import { useVatRate } from '@/hooks/useVatRate'
 import { useUoMs } from "../../hooks/useUoMs"
 import { toast } from "sonner"
 import { cn } from "@/lib/utils"
@@ -47,6 +48,7 @@ interface BulkVariantEditFormProps {
 export function BulkVariantEditForm({ selectedVariants, availableVariants = [], templateData, onSaved, onCancel }: BulkVariantEditFormProps) {
     const [loading, setLoading] = useState(false)
     const { uoms, isLoading: isUoMsLoading } = useUoMs()
+    const { rate, multiplier } = useVatRate()
 
     // If template has UoM-specific prices, only INHERIT is allowed
     const hasUomPrices = Array.isArray((templateData as any)?.uom_prices)
@@ -118,8 +120,8 @@ export function BulkVariantEditForm({ selectedVariants, availableVariants = [], 
     const currentMode = form.watch('price_inheritance_mode');
     const overrideNetRaw = form.watch('sale_price');
     const overrideNet = parseFloat(overrideNetRaw as string) || 0;
-    const currentIva = overrideNetRaw ? overrideNet * 0.19 : 0;
-    const currentGross = overrideNetRaw ? overrideNet * 1.19 : 0;
+    const currentIva = overrideNetRaw ? overrideNet * (rate / 100) : 0;
+    const currentGross = overrideNetRaw ? overrideNet * multiplier : 0;
 
     const handleOverrideGrossChange = (value: string) => {
         const gross = parseFloat(value) || 0;
@@ -127,7 +129,7 @@ export function BulkVariantEditForm({ selectedVariants, availableVariants = [], 
             form.setValue("sale_price", "", { shouldDirty: true, shouldValidate: true });
             return;
         }
-        const net = gross / 1.19;
+        const net = gross / multiplier;
         form.setValue("sale_price", net.toFixed(2), { shouldDirty: true, shouldValidate: true });
     }
 
@@ -203,7 +205,7 @@ export function BulkVariantEditForm({ selectedVariants, availableVariants = [], 
                                 )}
                             />
                             <LabeledInput
-                                label="IVA (19%)"
+                                label={`IVA (${rate}%)`}
                                 type="number"
                                 value={overrideNetRaw ? currentIva.toFixed(2) : ""}
                                 placeholder="-"

@@ -18,6 +18,7 @@ import { toast } from "sonner"
 import { BarcodeModal } from "@/features/inventory/components/BarcodeModal"
 import { BOMDrawer } from "@/features/production/components/BOMDrawer"
 import type { BOM, ProductMinimal } from "@/features/production/types"
+import { useVatRate } from '@/hooks/useVatRate'
 import { useUoMs } from "../../hooks/useUoMs"
 import { useBOMs } from "@/features/production"
 import { useProductMutations } from "../../hooks/useProductMutations"
@@ -56,6 +57,7 @@ export function VariantQuickEditForm({
 }: VariantQuickEditFormProps) {
   const [mounted, setMounted] = useState(false)
   const { uoms, isUoMsLoading } = useUoMs()
+  const { rate, multiplier } = useVatRate()
   const { boms: availableBOMs, deleteBom, refetch: refetchVariantBOMs, isBOMsLoading } = useBOMs({ product_id: variant.id })
   const isFetchingInitialData = isUoMsLoading || isBOMsLoading
     const { updateProduct } = useProductMutations()
@@ -142,8 +144,8 @@ export function VariantQuickEditForm({
   else if (currentMode === 'SURCHARGE') effectiveNet = templateNet + currentSurcharge
   else effectiveNet = overrideNet
 
-  const currentIva = effectiveNet * 0.19
-  const currentGross = effectiveNet * 1.19
+  const currentIva = effectiveNet * (rate / 100)
+  const currentGross = effectiveNet * multiplier
 
   const handleOverrideNetChange = (value: string) => {
     if (currentMode !== 'OVERRIDE') return
@@ -152,7 +154,7 @@ export function VariantQuickEditForm({
 
   const handleOverrideGrossChange = (value: string) => {
     if (currentMode !== 'OVERRIDE') return
-    form.setValue("sale_price", Math.round((parseFloat(value) || 0) / 1.19), { shouldDirty: true, shouldValidate: true })
+    form.setValue("sale_price", Math.round((parseFloat(value) || 0) / multiplier), { shouldDirty: true, shouldValidate: true })
   }
 
   const handleCloneBOM = async () => {
@@ -281,7 +283,7 @@ export function VariantQuickEditForm({
                   className={cn("h-10 font-bold text-right", currentMode !== 'OVERRIDE' && "bg-muted/30 cursor-default")}
                 />
                 <LabeledInput
-                  label="IVA (19%)"
+                  label={`IVA (${rate}%)`}
                   type="number"
                   value={currentIva.toFixed(2)}
                   readOnly

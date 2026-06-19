@@ -1,56 +1,59 @@
 import { formatCurrency as canonicalFormatCurrency } from "@/lib/money";
 
-const TAX_RATE = 0.19;
-
 export const PricingUtils = {
     /**
      * Convierte precio NETO a BRUTO (con IVA)
      * @param net - Precio neto sin IVA
+     * @param taxRate - Tasa de IVA (ej: 0.19 para 19%). Default 0.19.
      * @returns Precio bruto con IVA (redondeado)
      */
-    netToGross: (net: number): number => {
+    netToGross: (net: number, taxRate: number = 0.19): number => {
         const roundedNet = Math.round(net);
-        const tax = Math.round(roundedNet * TAX_RATE);
+        const tax = Math.round(roundedNet * taxRate);
         return roundedNet + tax;
     },
 
     /**
      * Convierte precio BRUTO a NETO (sin IVA)
      * @param gross - Precio bruto con IVA
+     * @param taxRate - Tasa de IVA (ej: 0.19 para 19%). Default 0.19.
      * @returns Precio neto sin IVA (redondeado)
      */
-    grossToNet: (gross: number): number => {
-        return Math.round(gross / (1 + TAX_RATE));
+    grossToNet: (gross: number, taxRate: number = 0.19): number => {
+        return Math.round(gross / (1 + taxRate));
     },
 
     /**
      * Calcula el IVA desde el precio NETO
      * @param net - Precio neto sin IVA
+     * @param taxRate - Tasa de IVA (ej: 0.19 para 19%). Default 0.19.
      * @returns Monto del IVA (redondeado)
      */
-    calculateTax: (net: number): number => {
-        return Math.round(net * TAX_RATE);
+    calculateTax: (net: number, taxRate: number = 0.19): number => {
+        return Math.round(net * taxRate);
     },
 
     /**
      * Extrae el IVA desde el precio BRUTO
      * @param gross - Precio bruto con IVA
+     * @param taxRate - Tasa de IVA (ej: 0.19 para 19%). Default 0.19.
      * @returns Monto del IVA (redondeado)
      */
-    extractTax: (gross: number): number => {
-        const net = PricingUtils.grossToNet(gross);
+    extractTax: (gross: number, taxRate: number = 0.19): number => {
+        const net = PricingUtils.grossToNet(gross, taxRate);
         return gross - net;
     },
 
     /**
-     * Calcula total de línea BRUTO (cantidad * precio neto * 1.19)
+     * Calcula total de línea BRUTO (cantidad * precio neto * tasa IVA)
      * @param quantity - Cantidad
      * @param unitPriceNet - Precio unitario neto
+     * @param taxRate - Tasa de IVA (ej: 0.19 para 19%). Default 0.19.
      * @returns Total bruto de la línea (redondeado)
      */
-    calculateLineTotal: (quantity: number, unitPriceNet: number): number => {
+    calculateLineTotal: (quantity: number, unitPriceNet: number, taxRate: number = 0.19): number => {
         const net = Math.round(quantity * unitPriceNet);
-        return PricingUtils.netToGross(net);
+        return PricingUtils.netToGross(net, taxRate);
     },
 
     /**
@@ -121,14 +124,14 @@ export const PricingUtils = {
      * @param unitPriceGross - Precio unitario bruto (con IVA)
      * @returns Objeto con gross, net y tax de la línea
      */
-    calculateLineFromGross: (quantity: number, unitPriceGross: number, discountAmount: number = 0): {
+    calculateLineFromGross: (quantity: number, unitPriceGross: number, discountAmount: number = 0, taxRate: number = 0.19): {
         gross: number;
         net: number;
         tax: number;
     } => {
         const totalGross = Math.round(quantity * unitPriceGross);
         const gross = Math.max(0, totalGross - discountAmount);
-        const net = Math.round(gross / (1 + TAX_RATE));
+        const net = Math.round(gross / (1 + taxRate));
         const tax = gross - net;
         return { gross, net, tax };
     },
@@ -137,9 +140,10 @@ export const PricingUtils = {
      * Calcula totales de múltiples líneas (ahora soporta base BRUTA)
      * @param lines - Array de líneas con quantity y precio (neto o bruto)
      * @param useGross - Si es true, usa unit_price_gross como base
+     * @param taxRate - Tasa de IVA (ej: 0.19 para 19%). Default 0.19.
      * @returns Objeto con net, tax y gross totales
      */
-    calculateMultiLineTotal: (lines: Array<{ quantity: number; unit_price_net?: number; unit_price_gross?: number }>, useGross = false): {
+    calculateMultiLineTotal: (lines: Array<{ quantity: number; unit_price_net?: number; unit_price_gross?: number }>, useGross = false, taxRate: number = 0.19): {
         net: number;
         tax: number;
         gross: number;
@@ -148,14 +152,14 @@ export const PricingUtils = {
             const gross = lines.reduce((acc, line) =>
                 acc + Math.round(line.quantity * (line.unit_price_gross || 0)), 0
             );
-            const net = Math.round(gross / (1 + TAX_RATE));
+            const net = Math.round(gross / (1 + taxRate));
             const tax = gross - net;
             return { net, tax, gross };
         } else {
             const net = lines.reduce((acc, line) =>
                 acc + PricingUtils.calculateLineNet(line.quantity, line.unit_price_net || 0), 0
             );
-            const tax = Math.ceil(net * TAX_RATE);
+            const tax = Math.ceil(net * taxRate);
             const gross = net + tax;
             return { net, tax, gross };
         }

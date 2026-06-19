@@ -214,7 +214,7 @@ class FacturaStrategy(DTEStrategy):
             raise ValidationError("Falta configuración de cuenta por cobrar.")
 
         revenue_gross_grouping = _build_revenue_grouping(invoice)
-        tax_divisor = Decimal('1') + (settings.default_tax_rate / Decimal('100.00'))
+        tax_divisor = Decimal('1') + (settings.default_vat_rate / Decimal('100.00'))
 
         items: JournalItemList = [
             {
@@ -293,7 +293,7 @@ class BoletaStrategy(DTEStrategy):
             raise ValidationError("Falta configuración de cuenta por cobrar.")
 
         revenue_gross_grouping = _build_revenue_grouping(invoice)
-        tax_divisor = Decimal('1') + (settings.default_tax_rate / Decimal('100.00'))
+        tax_divisor = Decimal('1') + (settings.default_vat_rate / Decimal('100.00'))
 
         items: JournalItemList = [
             {
@@ -458,7 +458,7 @@ class ComprobantePagoStrategy(DTEStrategy):
             raise ValidationError("Falta configuración de cuenta por cobrar.")
 
         revenue_gross_grouping = _build_revenue_grouping(invoice)
-        tax_divisor = Decimal('1') + (settings.default_tax_rate / Decimal('100.00'))
+        tax_divisor = Decimal('1') + (settings.default_vat_rate / Decimal('100.00'))
 
         items: JournalItemList = [
             {

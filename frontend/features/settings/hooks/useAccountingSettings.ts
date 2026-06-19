@@ -2,7 +2,10 @@ import { useMemo } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import { settingsApi } from '../api/settingsApi'
-import { accountingSchema, defaultsSchema, taxSchema, hrSchema, type AccountingFormValues, type DefaultsFormValues, type TaxFormValues, type HRSettingsFormValues } from "@/features/settings/schemas/accounting"
+import { structureSchema, type StructureFormValues } from "@/features/settings/schemas/structure"
+import { defaultsSchema, type DefaultsFormValues } from "@/features/settings/schemas/defaults"
+import { taxSchema, type TaxFormValues } from "@/features/settings/schemas/tax"
+import { hrSchema, type HRSettingsFormValues } from "@/features/settings/schemas/hr"
 import { purchasingSchema, type PurchasingFormValues } from "@/features/settings/schemas/purchasing"
 
 export const ACCOUNTING_SETTINGS_QUERY_KEY = ['accounting-settings']
@@ -17,8 +20,8 @@ export function useAccountingSettings() {
     })
 
     const structure = useMemo(() => {
-        const formatted = {} as AccountingFormValues
-        const keys = Object.keys(accountingSchema.shape) as (keyof AccountingFormValues)[]
+        const formatted = {} as StructureFormValues
+        const keys = Object.keys(structureSchema.shape) as (keyof StructureFormValues)[]
         keys.forEach((key) => {
             const val = rawSettings[key]
             if (val === null || val === undefined) {
@@ -49,13 +52,7 @@ export function useAccountingSettings() {
         const keys = Object.keys(taxSchema.shape) as (keyof TaxFormValues)[]
         keys.forEach((key) => {
             const val = rawSettings[key]
-            if (val === null || val === undefined) {
-                (formatted as Record<string, unknown>)[key] = (key === 'default_vat_rate' ? 19.00 : null)
-            } else if (key === 'default_vat_rate') {
-                (formatted as Record<string, unknown>)[key] = parseFloat(val.toString())
-            } else {
-                (formatted as Record<string, unknown>)[key] = val.toString()
-            }
+            ;(formatted as Record<string, unknown>)[key] = (val ? val.toString() : null)
         })
         return formatted
     }, [rawSettings])

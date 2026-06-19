@@ -14,6 +14,7 @@ import { Button } from "@/components/ui/button"
 import {Plus, ShoppingCart} from "lucide-react"
 import { ProductSelector } from "@/components/selectors/ProductSelector"
 import { UoMSelector } from "@/components/selectors/UoMSelector"
+import { useVatRate } from '@/hooks/useVatRate'
 import { purchasingApi } from "../../api/purchasingApi"
 import { toast } from "sonner"
 
@@ -40,11 +41,12 @@ export function Step1_ProductSelection({
     onWarehouseChange,
     selectedSupplierId
 }: Step1_ProductSelectionProps) {
+    const { rate, multiplier } = useVatRate()
     const [products, setProducts] = useState<ProductMinimal[]>([])
     const [uoms, setUoMs] = useState<UoM[]>([])
     const [loading, setLoading] = useState(true)
     const [grossInput, setGrossInput] = useState<string>("")
-    const netResult = grossInput ? Math.round(Number(grossInput) / 1.19) : null
+    const netResult = grossInput ? Math.round(Number(grossInput) / multiplier) : null
     const ivaAmount = netResult !== null ? Math.round(Number(grossInput)) - netResult : null
 
     useEffect(() => {
@@ -70,7 +72,7 @@ export function Step1_ProductSelection({
     const handleAddLine = () => {
         setOrderLines([
             ...orderLines,
-            { product: "", product_name: "", quantity: 1, uom: "", uom_name: "", unit_cost: 0, tax_rate: 19 }
+            { product: "", product_name: "", quantity: 1, uom: "", uom_name: "", unit_cost: 0, tax_rate: rate }
         ])
     }
 
@@ -196,7 +198,7 @@ export function Step1_ProductSelection({
                                                                 </span>
                                                             </div>
                                                             <div className="flex justify-between">
-                                                                <span className="text-muted-foreground">IVA (19%)</span>
+                                                                <span className="text-muted-foreground">IVA ({rate}%)</span>
                                                                 <span className="font-medium">
                                                                     {formatCurrency(ivaAmount ?? 0)}
                                                                 </span>

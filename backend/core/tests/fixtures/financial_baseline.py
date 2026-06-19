@@ -189,7 +189,7 @@ def _generate_sale_journal_entries(
             day=rng.randint(1, 28),
         )
         net = Decimal(rng.randrange(50_000, 500_000, 1_000))
-        tax = (net * Decimal('0.19')).quantize(Decimal('1'))
+        tax = (net * get_default_vat_rate() / Decimal('100')).quantize(Decimal('1'))
         total = net + tax
 
         # Determine outcome
@@ -258,7 +258,7 @@ def _generate_purchase_journal_entries(
             day=rng.randint(1, 28),
         )
         net = Decimal(rng.randrange(80_000, 800_000, 1_000))
-        tax = (net * Decimal('0.19')).quantize(Decimal('1'))
+        tax = (net * get_default_vat_rate() / Decimal('100')).quantize(Decimal('1'))
         total = net + tax
 
         supplier = rng.choice(suppliers)
@@ -308,7 +308,7 @@ def _generate_credit_notes(
         # Reverso parcial: 30%-70% del total original
         ratio = Decimal(str(round(rng.uniform(0.30, 0.70), 2)))
         net = (source.total_net * ratio).quantize(Decimal('1'))
-        tax = (net * Decimal('0.19')).quantize(Decimal('1'))
+        tax = (net * get_default_vat_rate() / Decimal('100')).quantize(Decimal('1'))
         total = net + tax
 
         d = source.date + timedelta(days=rng.randint(5, 30))
@@ -362,7 +362,7 @@ def _generate_debit_notes(
     for i, source in enumerate(selected, start=1):
         ratio = Decimal(str(round(rng.uniform(0.05, 0.20), 2)))
         net = (source.total_net * ratio).quantize(Decimal('1'))
-        tax = (net * Decimal('0.19')).quantize(Decimal('1'))
+        tax = (net * get_default_vat_rate() / Decimal('100')).quantize(Decimal('1'))
         total = net + tax
 
         d = source.date + timedelta(days=rng.randint(5, 30))

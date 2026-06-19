@@ -16,6 +16,7 @@ import { toast } from "sonner"
 
 import { useHubPanel } from "@/components/providers/HubPanelProvider"
 import { getHubStatuses } from "@/lib/workflow-status"
+import { useVatRate } from '@/hooks/useVatRate'
 import { useConfirmAction } from "@/hooks/useConfirmAction"
 
 import { Tabs } from "@/components/ui/tabs"
@@ -50,6 +51,7 @@ export function PurchasingOrdersClientView({ viewMode, externalOpenCheckout, cre
     const { orders, isLoading: isLoadingOrders, isRefetching, refetch: fetchOrders, deleteOrder } = usePurchasingOrders(filters, initialOrders)
     const { notes, isLoading: isLoadingNotes } = usePurchasingNotes(initialNotes)
 
+    const { rate } = useVatRate()
     const searchParams = useSearchParams()
     const router = useRouter()
     const pathname = usePathname()
@@ -650,7 +652,7 @@ export function PurchasingOrdersClientView({ viewMode, externalOpenCheckout, cre
                 }}
                 order={null}
                 orderId={checkoutOrderId}
-                orderLines={[{ product: "", product_name: "", quantity: 1, uom: "", uom_name: "", unit_cost: 0, tax_rate: 19 } as any]}
+                orderLines={[{ product: "", product_name: "", quantity: 1, uom: "", uom_name: "", unit_cost: 0, tax_rate: rate } as any]}
                 total={0}
                 onComplete={() => {
                     fetchOrders()

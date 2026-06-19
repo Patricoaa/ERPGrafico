@@ -9,6 +9,7 @@ import dynamic from 'next/dynamic'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { PrintableReceipt, BaseModal } from '@/components/shared'
+import { useVatRate } from '@/hooks/useVatRate'
 import { useDeviceContext } from '@/hooks/useDeviceContext'
 import { Loader2, FileText, BarChart3, Save, Lock, Unlock, ArrowRightLeft, LogOut, ShoppingCart, Wallet, Check, Printer } from 'lucide-react'
 import { AnimatePresence, motion } from 'framer-motion'
@@ -119,6 +120,7 @@ export function POSClientView() {
 
     const { addProductToCart, updateQuantity, removeFromCart, clearCart, canCheckout, fetchEffectivePrice } = useCart()
     const { limits: stockLimits, calculateMaxQty } = useStockValidation()
+    const { rate } = useVatRate()
 
     // ── Real-time Sync ──────────────────────────────────────────
     const handleNewDraft = useCallback((draft: SyncDraft) => {
@@ -197,7 +199,7 @@ export function POSClientView() {
         unit_price: item.unit_price_gross,
         unit_price_net: item.unit_price_net,
         unit_price_gross: item.unit_price_gross,
-        tax_rate: (item as any).tax_rate || 19,
+        tax_rate: (item as any).tax_rate ?? rate,
         discount_amount: item.discount_amount,
         discount_percentage: item.discount_percentage,
         product_type: item.product_type,

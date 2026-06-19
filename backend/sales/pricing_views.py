@@ -41,9 +41,9 @@ class PricingViewSet(viewsets.ViewSet):
             except UoM.DoesNotExist:
                 pass
                 
+        from accounting.utils import get_vat_multiplier
         price_gross = PricingService.get_product_price(product, quantity, uom=uom)
-        # Assuming 19% VAT (IVA) as per inventory view logic
-        price_net = (price_gross / Decimal('1.19')).quantize(Decimal('1'), rounding='ROUND_HALF_UP')
+        price_net = (price_gross / get_vat_multiplier()).quantize(Decimal('1'), rounding='ROUND_HALF_UP')
         
         return Response({
             'price': float(price_net),

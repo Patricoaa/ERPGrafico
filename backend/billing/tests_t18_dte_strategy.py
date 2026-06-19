@@ -103,7 +103,7 @@ def make_settings(
     revenue: object = None,
 ) -> MagicMock:
     s = MagicMock()
-    s.default_tax_rate = tax_rate
+    s.default_vat_rate = tax_rate
     s.default_receivable_account = receivable or make_account("CxC Default")
     s.default_tax_payable_account = tax_payable or make_account("IVA Pagar")
     s.default_revenue_account = revenue or make_account("Ingresos Default")

@@ -652,8 +652,8 @@ class Product(models.Model):
             self.internal_code = f"{prefix}-{new_num}"
 
         # Synchronize Net and Gross prices
-        from decimal import Decimal
-        vat_rate = Decimal('1.19')
+        from accounting.utils import get_vat_multiplier
+        vat_rate = get_vat_multiplier()
         
         if self.pk:
             old_instance = Product.objects.get(pk=self.pk)
@@ -1201,8 +1201,8 @@ class PricingRule(models.Model):
         return self.name
 
     def save(self, *args, **kwargs):
-        from decimal import Decimal
-        vat_rate = Decimal('1.19')
+        from accounting.utils import get_vat_multiplier
+        vat_rate = get_vat_multiplier()
         
         if self.fixed_price and not self.fixed_price_gross:
             self.fixed_price_gross = (self.fixed_price * vat_rate).quantize(Decimal('1'), rounding='ROUND_HALF_UP')
@@ -1296,8 +1296,8 @@ class ProductUoMPrice(models.Model):
         return f"{self.product.name} / {self.uom.name}"
 
     def save(self, *args, **kwargs):
-        from decimal import Decimal
-        vat = Decimal('1.19')
+        from accounting.utils import get_vat_multiplier
+        vat = get_vat_multiplier()
         if self.price_net and not self.price_gross:
             self.price_gross = (self.price_net * vat).quantize(Decimal('1'), rounding='ROUND_HALF_UP')
         elif self.price_gross and not self.price_net:

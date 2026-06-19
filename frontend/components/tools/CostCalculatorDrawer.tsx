@@ -49,6 +49,7 @@ interface CostCalculatorDrawerProps {
     onOpenChange: (open: boolean) => void
 }
 
+import { useVatRate } from '@/hooks/useVatRate'
 import { useProducts } from "@/features/inventory/hooks/useProducts"
 import { useCategories } from "@/features/inventory/hooks/useCategories"
 import { useWindowWidth } from "@/hooks/useWindowWidth"
@@ -59,6 +60,7 @@ export function CostCalculatorDrawer({ open, onOpenChange }: CostCalculatorDrawe
     const [searchTerm, setSearchTerm] = useState("")
     const [selectedCategoryId, setSelectedCategoryId] = useState<number | null>(null)
 
+    const { rate, multiplier } = useVatRate()
     const windowWidth = useWindowWidth(150, open)
 
     const fullWidth = Math.min(windowWidth * 0.85, 1600)
@@ -313,8 +315,8 @@ export function CostCalculatorDrawer({ open, onOpenChange }: CostCalculatorDrawe
                                     <span>{formatCurrency(totalCost)}</span>
                                 </div>
                                 <div className="flex justify-between items-center text-xs text-muted-foreground uppercase tracking-widest font-bold">
-                                    <span>IVA Estimado (19%)</span>
-                                    <span>{formatCurrency(Math.round(totalCost * 0.19))}</span>
+                                    <span>IVA Estimado ({rate}%)</span>
+                                    <span>{formatCurrency(Math.round(totalCost * (rate / 100)))}</span>
                                 </div>
                                 <div className="flex justify-between items-center pt-3 border-t">
                                     <div className="flex flex-col">
@@ -323,7 +325,7 @@ export function CostCalculatorDrawer({ open, onOpenChange }: CostCalculatorDrawe
                                         </span>
                                     </div>
                                     <span className="text-3xl font-black text-primary tracking-tighter">
-                                        {formatCurrency(Math.round(totalCost * 1.19))}
+                                        {formatCurrency(Math.round(totalCost * multiplier))}
                                     </span>
                                 </div>
                             </div>

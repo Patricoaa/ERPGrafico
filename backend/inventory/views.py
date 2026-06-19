@@ -509,7 +509,8 @@ class ProductViewSet(BulkImportMixin, AuditHistory, viewsets.ModelViewSet):
         
         from .services import PricingService
         price_gross = PricingService.get_product_price(product, quantity, uom=uom)
-        price_net = (price_gross / Decimal('1.19')).quantize(Decimal('1'), rounding='ROUND_HALF_UP')
+        from accounting.utils import get_vat_multiplier
+        price_net = (price_gross / get_vat_multiplier()).quantize(Decimal('1'), rounding='ROUND_HALF_UP')
         
         return Response({
             'price': float(price_net),

@@ -16,6 +16,7 @@ import { toast } from "sonner"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { cn, translateProductType } from "@/lib/utils"
 import { resolveMediaUrl } from "@/features/inventory/api/inventoryApi"
+import { useVatRate } from '@/hooks/useVatRate'
 import { PricingUtils } from '@/features/inventory/utils/pricing'
 import { Checkbox } from "@/components/ui/checkbox"
 import { Archive as ArchiveIcon } from "lucide-react"
@@ -37,6 +38,7 @@ interface ProductClientViewProps {
 }
 
 export function ProductClientView({ externalOpen, onExternalOpenChange, createAction, initialProducts }: ProductClientViewProps) {
+    const { rate } = useVatRate()
     const { filters: smartFilters, isFiltered } = useSmartSearch(productSearchDef)
     const filters = useMemo<ProductFilters>(() => ({
         is_active: 'all',
@@ -330,7 +332,7 @@ export function ProductClientView({ externalOpen, onExternalOpenChange, createAc
         },
         {
             id: "tax",
-            header: ({ column }) => <DataTableColumnHeader column={column} title="IVA (19%)" className="justify-center" />,
+            header: ({ column }) => <DataTableColumnHeader column={column} title={`IVA (${rate}%)`} className="justify-center" />,
             cell: ({ row }) => {
                 if (row.original.is_dynamic_pricing) {
                     return (

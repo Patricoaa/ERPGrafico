@@ -82,8 +82,9 @@ class GrossFirstTotals(TotalsStrategy):
     invoice_field = 'sale_order'
 
     def compute(self, document, *, commit: bool = True) -> dict:
+        from accounting.utils import get_default_vat_rate
         total_sum = Decimal('0.00')
-        tax_rate = Decimal('19.00')
+        tax_rate = get_default_vat_rate()
 
         # Sumar subtotales de cada línea
         for line in document.lines.all():
@@ -133,8 +134,9 @@ class NetFirstTotals(TotalsStrategy):
     invoice_field = 'purchase_order'
 
     def compute(self, document, *, commit: bool = True) -> dict:
+        from accounting.utils import get_default_vat_rate
         total_sum = Decimal('0.00')
-        tax_rate = Decimal('19.00')
+        tax_rate = get_default_vat_rate()
 
         # Sumar subtotales de cada línea
         for line in document.lines.all():
