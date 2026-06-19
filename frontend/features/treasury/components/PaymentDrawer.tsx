@@ -228,7 +228,7 @@ export function PaymentDrawer({
                 </PrintableLayout>
             )}
             {!isViewMode && openProp === undefined && !initialData && (
-                <Button className="rounded-lg shadow-md" onClick={() => setOpen(true)}>
+                <Button className="rounded-sm shadow-md" onClick={() => setOpen(true)}>
                     {triggerText}
                 </Button>
             )}

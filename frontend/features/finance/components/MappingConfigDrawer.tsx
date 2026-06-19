@@ -268,7 +268,7 @@ export function MappingConfigDrawer({
                         <BulkActionDock selectedCount={items.length} onClear={clear}>
                             <ActionDock.Actions>
                                 <Select onValueChange={(value) => handleBulkUpdate(items, value, clear)}>
-                                    <SelectTrigger className="h-9 rounded-full border-border/40 bg-muted/30 text-[10px] font-black uppercase tracking-widest w-[200px] hover:bg-muted/50 transition-colors">
+                                    <SelectTrigger className="h-9 rounded-sm border-border/40 bg-muted/30 text-[10px] font-black uppercase tracking-widest w-[200px] hover:bg-muted/50 transition-colors">
                                         <Tag className="mr-2 h-3.5 w-3.5" />
                                         <SelectValue placeholder="Asignar Categoría" />
                                     </SelectTrigger>

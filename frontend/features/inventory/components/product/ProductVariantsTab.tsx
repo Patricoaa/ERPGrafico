@@ -198,7 +198,7 @@ export function ProductVariantsTab({ form, initialData, onEditVariant, onTabChan
             {/* Header / Actions */}
             <div className="flex items-center justify-between bg-card p-4 rounded-md border border-primary/20">
                 <div className="flex items-center gap-4">
-                    <div className="p-2.5 bg-primary/10 rounded-xl border border-primary/20">
+                    <div className="p-2.5 bg-primary/10 rounded-md border border-primary/20">
                         <Layers className="h-5 w-5 text-primary" />
                     </div>
                     <div>
@@ -475,7 +475,7 @@ export function ProductVariantsTab({ form, initialData, onEditVariant, onTabChan
                                 </Button>
 
                                 {!initialData?.id && (
-                                    <div className="mt-4 p-3 bg-warning/10 border border-warning/20 rounded-xl">
+                                    <div className="mt-4 p-3 bg-warning/10 border border-warning/20 rounded-md">
                                         <p className="text-[10px] text-warning text-center font-black uppercase tracking-tighter italic">
                                             * Las variantes se crearán automáticamente al guardar la ficha principal del producto.
                                         </p>

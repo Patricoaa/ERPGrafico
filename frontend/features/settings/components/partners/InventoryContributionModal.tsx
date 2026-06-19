@@ -202,7 +202,7 @@ export function InventoryContributionModal({
                 onClick={handleSubmit}
                 loading={isLoading}
                 className={cn(
-                    "rounded-lg text-xs font-bold",
+                    "rounded-sm text-xs font-bold",
                     moveType === 'IN' ? 'bg-success hover:bg-success/90 text-primary-foreground' : 'bg-destructive hover:bg-destructive/90 text-primary-foreground'
                 )}
             >

@@ -126,7 +126,7 @@ export function StatCard({
   }
 
   const baseCardClasses =
-    "rounded-xl border bg-card text-card-foreground shadow-sm flex flex-col flex-1 min-h-0"
+    "rounded-md border bg-card text-card-foreground shadow-sm flex flex-col flex-1 min-h-0"
 
   const Container = variant === "minimal" || variant === "fill" ? "div" : Card
 
@@ -135,7 +135,7 @@ export function StatCard({
       ? {
           className: cn(
             baseCardClasses,
-            "p-3",
+            "p-3 rounded-lg",
             accentBg[accent],
             active && activeRing[accent],
             className,

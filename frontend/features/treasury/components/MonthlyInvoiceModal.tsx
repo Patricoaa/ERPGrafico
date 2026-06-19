@@ -88,11 +88,11 @@ export function MonthlyInvoiceModal({ open, onOpenChange }: MonthlyInvoiceModalP
                 <FormFooter
                     actions={
                         <>
-                            <CancelButton onClick={() => onOpenChange(false)} className="rounded-lg text-xs font-bold border-primary/20 hover:bg-primary/5" />
+                            <CancelButton onClick={() => onOpenChange(false)} className="rounded-sm text-xs font-bold border-primary/20 hover:bg-primary/5" />
                             <SubmitButton
                                 loading={isGenerating}
                                 onClick={handleSubmit}
-                                className="rounded-lg text-xs font-bold"
+                                className="rounded-sm text-xs font-bold"
                             >
                                 {isGenerating ? "Procesando..." : "Generar y Finalizar"}
                             </SubmitButton>

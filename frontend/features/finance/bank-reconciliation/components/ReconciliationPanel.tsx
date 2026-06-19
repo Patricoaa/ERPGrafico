@@ -1387,7 +1387,7 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                             <Button
                                 variant="ghost"
                                 size="sm"
-                                className="h-9 text-xs text-destructive hover:bg-destructive/10 hover:text-destructive rounded-full px-4"
+                                className="h-9 text-xs text-destructive hover:bg-destructive/10 hover:text-destructive rounded-sm px-4"
                                 onClick={() => setActionDialog({ open: true, type: 'bulk_exclude' })}
                             >
                                 <Ban className="h-3 w-3 mr-1.5" />
@@ -1398,8 +1398,8 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                         <Button
                             variant="ghost"
                             size="sm"
-                            className="h-9 text-xs text-muted-foreground hover:bg-muted rounded-full px-4"
-                            onClick={() => { setSelectedLines([]); setSelectedPayments([]); }}
+                                className="h-9 text-xs text-muted-foreground hover:bg-muted rounded-sm px-4"
+                                onClick={() => { setSelectedLines([]); setSelectedPayments([]); }}
                         >
                             <X className="h-3 w-3 mr-1.5" />
                             Limpiar
@@ -1407,7 +1407,7 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
 
                         <Button
                             size="sm"
-                            className="h-9 px-6 text-xs font-bold shadow-sm transition-transform active:scale-95 rounded-full"
+                            className="h-9 px-6 text-xs font-bold shadow-sm transition-transform active:scale-95 rounded-sm"
                             onClick={() => setActionDialog({ open: true, type: 'confirm_match' })}
                             disabled={matching || selectedLines.length === 0 || selectedPayments.length === 0}
                         >
@@ -1460,7 +1460,7 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                     tabIcon={Brain}
                     fullWidth={400}
                 >
-                    <div className="flex flex-col h-full bg-background rounded-xl overflow-hidden text-foreground">
+                    <div className="flex flex-col h-full bg-background rounded-md overflow-hidden text-foreground">
                         <div className="p-4 border-b bg-muted/30 flex justify-between items-center shrink-0">
                             <div className="flex items-center gap-2">
                                 <div className="bg-primary/10 p-1.5 rounded-sm">

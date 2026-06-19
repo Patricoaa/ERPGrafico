@@ -171,15 +171,15 @@ export function ProductInventoryTab({ form, initialData, warehouses = [], uoms =
 
                                     {initialData && (
                                         <div className="grid grid-cols-3 gap-1 shadow-inner overflow-hidden">
-                                            <div className="flex flex-col items-center bg-background/10 py-3 rounded-xl border border">
+                                            <div className="flex flex-col items-center bg-background/10 py-3 rounded-md border border">
                                                 <span className="text-[9px] font-black uppercase tracking-tight text-muted-foreground mb-1">A Mano</span>
                                                 <span className="text-lg font-mono font-black">{initialData.current_stock || 0}</span>
                                             </div>
-                                            <div className="flex flex-col items-center bg-warning/5 py-3 rounded-xl border border-warning/20">
+                                            <div className="flex flex-col items-center bg-warning/5 py-3 rounded-md border border-warning/20">
                                                 <span className="text-[9px] font-black uppercase tracking-tight text-warning/80 mb-1">Reservado</span>
                                                 <span className="text-lg font-mono font-black text-warning">{initialData.qty_reserved || 0}</span>
                                             </div>
-                                            <div className="flex flex-col items-center bg-success/5 py-3 rounded-xl border border-success/20">
+                                            <div className="flex flex-col items-center bg-success/5 py-3 rounded-md border border-success/20">
                                                 <span className="text-[9px] font-black uppercase tracking-tight text-success mb-1">Disponible</span>
                                                 <span className="text-lg font-mono font-black text-success">{initialData.qty_available || 0}</span>
                                             </div>

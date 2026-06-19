@@ -234,7 +234,7 @@ export function BOMManager({ product, variantMode = false, onBomsChange }: BOMMa
                                         e.stopPropagation()
                                         handleCreate()
                                     }}
-                                    className="h-9 px-5 gap-2 rounded-lg font-black uppercase tracking-widest text-[10px] shadow-sm transition-all hover:-translate-y-0.5"
+                                    className="h-9 px-5 gap-2 rounded-sm font-black uppercase tracking-widest text-[10px] shadow-sm transition-all hover:-translate-y-0.5"
                                 >
                                     <Plus className="h-4 w-4" />
                                     Nueva Lista
@@ -243,7 +243,7 @@ export function BOMManager({ product, variantMode = false, onBomsChange }: BOMMa
                         </div>
 
                         {product?.has_variants && (
-                            <div className="mt-6 bg-primary/5 p-5 rounded-xl border border-primary/20 animate-in fade-in slide-in-from-top-2 duration-500">
+                            <div className="mt-6 bg-primary/5 p-5 rounded-md border border-primary/20 animate-in fade-in slide-in-from-top-2 duration-500">
                                 <div className="flex-1 flex flex-col md:flex-row items-center gap-4">
                                     <LabeledSelect
                                         label="Contexto de Manufactura"
@@ -272,7 +272,7 @@ export function BOMManager({ product, variantMode = false, onBomsChange }: BOMMa
                                             e.stopPropagation()
                                             handleCreate()
                                         }}
-                                        className="w-full md:w-auto h-10 px-6 gap-2 rounded-lg font-black uppercase tracking-widest text-[11px]  transition-all hover:-translate-y-0.5"
+                                        className="w-full md:w-auto h-10 px-6 gap-2 rounded-sm font-black uppercase tracking-widest text-[11px]  transition-all hover:-translate-y-0.5"
                                         disabled={selectedVariantId === "all"}
                                     >
                                         <Plus className="h-4 w-4" />
@@ -296,7 +296,7 @@ export function BOMManager({ product, variantMode = false, onBomsChange }: BOMMa
                                 e.stopPropagation()
                                 handleCreate()
                             }}
-                            className="h-8 gap-2 rounded-lg text-[10px] font-black uppercase tracking-widest border-2 border-primary/20 hover:bg-primary/5 text-primary"
+                            className="h-8 gap-2 rounded-sm text-[10px] font-black uppercase tracking-widest border-2 border-primary/20 hover:bg-primary/5 text-primary"
                             variant="outline"
                         >
                             <Plus className="h-3.5 w-3.5" />
