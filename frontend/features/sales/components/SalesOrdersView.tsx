@@ -11,8 +11,9 @@ import { useHubPanel } from "@/components/providers/HubPanelProvider"
 import { DomainHubStatus } from "@/components/shared"
 import { DataCell } from '@/components/shared'
 import { useSalesOrders, useSalesNotes, type SaleOrder, type SaleNote } from "@/features/sales"
-import { SmartSearchBar, useSmartSearch } from "@/components/shared"
+import { SmartSearchBar, useSmartSearch, SegmentationBar, useSegmentation } from "@/components/shared"
 import { salesOrderSearchDef, salesNoteSearchDef } from "@/features/sales/searchDef"
+import { salesOrderSegDef, salesNoteSegDef } from "@/features/sales/segmentationDef"
 import type { SaleOrderFilters } from "@/features/sales/types"
 import { cn } from "@/lib/utils"
 
@@ -51,19 +52,23 @@ export function SalesOrdersView({ viewMode, posSessionId, onActionSuccess, hideS
         router.push(query ? `${pathname}?${query}` : pathname, { scroll: false })
     }
 
-    const { filters: smartFilters, isFiltered } = useSmartSearch(salesOrderSearchDef)
+    const { filters: textFilters, isFiltered: isTextFiltered, clearAll: clearText } = useSmartSearch(salesOrderSearchDef)
+    const { filters: segFilters, isFiltered: isSegFiltered, clearAll: clearSeg } = useSegmentation(salesOrderSegDef)
+    const isFiltered = isTextFiltered || isSegFiltered
+
     const { orders, isLoading: isLoadingOrders, isRefetching, refetch: refetchOrders } = useSalesOrders({
         filters: {
-            ...(smartFilters as SaleOrderFilters),
+            ...(textFilters as SaleOrderFilters),
+            ...(segFilters as Record<string, string>),
             pos_session: posSessionId || undefined,
         },
         initialData: initialOrders,
     })
     const { notes, isLoading: isLoadingNotes, refetch: refetchNotes } = useSalesNotes({
         filters: {
-            customer_name: (smartFilters as Record<string, string>).customer_name,
-            date_after: (smartFilters as Record<string, string>).date_after,
-            date_before: (smartFilters as Record<string, string>).date_before,
+            customer_name: (textFilters as Record<string, string>).customer_name,
+            date_after: (segFilters as Record<string, string>).date_after,
+            date_before: (segFilters as Record<string, string>).date_before,
         }
     })
 
@@ -220,6 +225,12 @@ export function SalesOrdersView({ viewMode, posSessionId, onActionSuccess, hideS
                         ? <SmartSearchBar searchDef={salesOrderSearchDef} placeholder="Buscar órdenes..." />
                         : <SmartSearchBar searchDef={salesNoteSearchDef} placeholder="Buscar notas..." />
                     }
+                    segmentation={viewMode === 'orders'
+                        ? <SegmentationBar def={salesOrderSegDef} />
+                        : <SegmentationBar def={salesNoteSegDef} />
+                    }
+                    showReset={isFiltered}
+                    onReset={() => { clearText(); clearSeg() }}
                     sortOptions={true}
                     defaultPageSize={20}
                     isSelected={(data: any) => !!getSelectionId(data)}
