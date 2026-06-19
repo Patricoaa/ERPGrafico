@@ -12,7 +12,7 @@ export const contactSearchDef: SearchDefinition = {
     {
       key: 'type',
       label: 'Tipo',
-      type: 'enum',
+      type: 'identity-enum',
       serverParam: 'type',
       options: [
         { label: 'Cliente', value: 'CUSTOMER' },
