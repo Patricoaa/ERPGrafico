@@ -7,6 +7,7 @@ import { Calendar as CalendarIcon, X, ChevronDown } from 'lucide-react'
 import type { DateRange } from 'react-day-picker'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
 import { Calendar } from '@/components/ui/calendar'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
@@ -17,7 +18,7 @@ import {
   DropdownMenuRadioGroup,
   DropdownMenuRadioItem,
 } from '@/components/ui/dropdown-menu'
-import type { SegmentationDefinition, TabSegmentDef, DateSegmentDef, PeriodSegmentDef, SegmentDef } from '@/types/segmentation'
+import type { SegmentationDefinition, TabSegmentDef, DateSegmentDef, PeriodSegmentDef, RangeSegmentDef, SegmentDef } from '@/types/segmentation'
 import { useSegmentation } from './useSegmentation'
 
 interface SegmentationBarProps {
@@ -55,6 +56,9 @@ interface SegmentItemProps {
 function SegmentItem({ segment, filters, apply, remove }: SegmentItemProps) {
   if (segment.type === 'period') {
     return <PeriodSegment def={segment} filters={filters} apply={apply} remove={remove} />
+  }
+  if (segment.type === 'range') {
+    return <RangeSegment def={segment} filters={filters} apply={apply} remove={remove} />
   }
   if (segment.type === 'tabs') {
     const variant = segment.variant ?? 'tabs'
@@ -255,6 +259,92 @@ function PeriodSegment({ def, filters, apply, remove }: PeriodSegmentProps) {
         ))}
       </TabsList>
     </Tabs>
+  )
+}
+
+/* ─── RangeSegment ─── */
+
+interface RangeSegmentProps {
+  def: RangeSegmentDef
+  filters: Record<string, string>
+  apply: (param: string, value: string) => Promise<void>
+  remove: (param: string) => Promise<void>
+}
+
+function RangeSegment({ def, filters, apply, remove }: RangeSegmentProps) {
+  const fromVal = filters[def.serverParamFrom] ?? ''
+  const toVal = filters[def.serverParamTo] ?? ''
+
+  const [localFrom, setLocalFrom] = useState(fromVal)
+  const [localTo, setLocalTo] = useState(toVal)
+
+  const hasValue = fromVal !== '' || toVal !== ''
+
+  const applyRange = useCallback(async (from: string, to: string) => {
+    if (from) {
+      await apply(def.serverParamFrom, from)
+    } else {
+      await remove(def.serverParamFrom)
+    }
+    if (to) {
+      await apply(def.serverParamTo, to)
+    } else {
+      await remove(def.serverParamTo)
+    }
+  }, [def, apply, remove])
+
+  const handleBlur = useCallback(() => {
+    applyRange(localFrom, localTo)
+  }, [localFrom, localTo, applyRange])
+
+  const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      applyRange(localFrom, localTo)
+    }
+    if (e.key === 'Escape') {
+      setLocalFrom(fromVal)
+      setLocalTo(toVal)
+    }
+  }, [localFrom, localTo, fromVal, toVal, applyRange])
+
+  const handleClear = useCallback(() => {
+    setLocalFrom('')
+    setLocalTo('')
+    remove(def.serverParamFrom)
+    remove(def.serverParamTo)
+  }, [def, remove])
+
+  return (
+    <div className="flex items-center gap-1">
+      <Input
+        type="number"
+        value={localFrom}
+        onChange={(e) => setLocalFrom(e.target.value)}
+        onBlur={handleBlur}
+        onKeyDown={handleKeyDown}
+        placeholder={def.placeholderFrom ?? 'Desde'}
+        className="h-7 w-20 text-[10px] uppercase tracking-widest rounded-sm border-border/60 bg-transparent px-1.5 [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+      />
+      <span className="text-[10px] text-muted-foreground/50">—</span>
+      <Input
+        type="number"
+        value={localTo}
+        onChange={(e) => setLocalTo(e.target.value)}
+        onBlur={handleBlur}
+        onKeyDown={handleKeyDown}
+        placeholder={def.placeholderTo ?? 'Hasta'}
+        className="h-7 w-20 text-[10px] uppercase tracking-widest rounded-sm border-border/60 bg-transparent px-1.5 [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+      />
+      {hasValue && (
+        <button
+          type="button"
+          onClick={handleClear}
+          className="text-muted-foreground/40 hover:text-destructive transition-colors shrink-0 ml-0.5"
+        >
+          <X className="h-3 w-3" />
+        </button>
+      )}
+    </div>
   )
 }
 

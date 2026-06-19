@@ -3,28 +3,22 @@ import type { SearchDefinition } from '@/types/search'
 export const purchaseOrderSearchDef: SearchDefinition = {
   fields: [
     {
-      key: 'search',
+      key: 'supplier_name',
       label: 'Proveedor',
       type: 'text',
-      serverParam: 'search',
+      serverParam: 'supplier_name',
     },
     {
       key: 'number',
       label: 'Folio',
       type: 'text',
-      serverParam: 'search',
+      serverParam: 'number',
     },
     {
-      key: 'product',
+      key: 'product_name',
       label: 'Producto',
       type: 'text',
-      serverParam: 'search',
-    },
-    {
-      key: 'total',
-      label: 'Total',
-      type: 'text',
-      serverParam: 'total',
+      serverParam: 'product_name',
     },
   ],
 }

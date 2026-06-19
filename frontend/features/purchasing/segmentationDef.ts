@@ -57,6 +57,15 @@ export const purchaseOrderSegDef: SegmentationDefinition = {
       ],
     },
     {
+      key: 'total',
+      label: 'Monto Total',
+      type: 'range',
+      serverParamFrom: 'total_min',
+      serverParamTo: 'total_max',
+      placeholderFrom: 'Desde',
+      placeholderTo: 'Hasta',
+    },
+    {
       key: 'receipt_date',
       label: 'Fecha Entrega',
       type: 'date',

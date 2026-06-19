@@ -21,7 +21,12 @@ class PurchaseOrderFilterSet(FilterSet):
     receiving_status = django_filters.CharFilter(field_name='receiving_status')
     receipt_date_after = django_filters.DateFilter(field_name='receipt_date', lookup_expr='gte')
     receipt_date_before = django_filters.DateFilter(field_name='receipt_date', lookup_expr='lte')
-    total = django_filters.NumberFilter(field_name='total')
+    total_min = django_filters.NumberFilter(field_name='total', lookup_expr='gte')
+    total_max = django_filters.NumberFilter(field_name='total', lookup_expr='lte')
+
+    supplier_name = django_filters.CharFilter(field_name='supplier__name', lookup_expr='icontains')
+    number = django_filters.CharFilter(field_name='number', lookup_expr='icontains')
+    product_name = django_filters.CharFilter(method='filter_product_name')
 
     origin_status = django_filters.CharFilter(method='filter_origin_status')
     billing_status = django_filters.CharFilter(method='filter_billing_status')
@@ -32,8 +37,13 @@ class PurchaseOrderFilterSet(FilterSet):
         fields = [
             'status', 'date_after', 'date_before',
             'receiving_status', 'receipt_date_after', 'receipt_date_before',
-            'total', 'origin_status', 'billing_status', 'treasury_status',
+            'total_min', 'total_max',
+            'origin_status', 'billing_status', 'treasury_status',
+            'supplier_name', 'number', 'product_name',
         ]
+
+    def filter_product_name(self, queryset, name, value):
+        return queryset.filter(lines__product__name__icontains=value).distinct()
 
     def filter_origin_status(self, queryset, name, value):
         if value == 'success':
