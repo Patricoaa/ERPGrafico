@@ -211,7 +211,7 @@ export function BankManagement({ externalOpen, onOpenChange, createAction }: Ban
 
     return (
         <div className="h-full flex flex-col">
-            <div className="flex justify-between items-center bg-muted/30 p-4 rounded-lg border border-primary/10 hidden">
+            <div className="flex justify-between items-center bg-muted/30 p-4 rounded-md border border-primary/10 hidden">
                 <div>
                     <h2 className="text-xl font-bold tracking-tight text-primary flex items-center gap-2">
                         <Landmark className="h-5 w-5" /> Gestión de Bancos
@@ -536,7 +536,7 @@ export function PaymentMethodManagement({ externalOpen, onOpenChange, createActi
 
     return (
         <div className="h-full flex flex-col">
-            <div className="flex justify-between items-center bg-muted/30 p-4 rounded-lg border border-primary/10 hidden">
+            <div className="flex justify-between items-center bg-muted/30 p-4 rounded-md border border-primary/10 hidden">
                 <div>
                     <h2 className="text-xl font-bold tracking-tight text-primary flex items-center gap-2">
                         <CreditCard className="h-5 w-5" /> Métodos de Pago

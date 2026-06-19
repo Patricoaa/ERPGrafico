@@ -68,7 +68,7 @@ function emptyLoan(): NewLoan {
 
 function SkipHint({ text }: { text: string }) {
     return (
-        <div className="flex items-start gap-2 p-3 rounded-lg bg-muted/20 border border-border/40">
+        <div className="flex items-start gap-2 p-3 rounded-md bg-muted/20 border border-border/40">
             <Info className="h-3.5 w-3.5 text-muted-foreground/50 mt-0.5 shrink-0" />
             <p className="text-xs text-muted-foreground/70">{text}</p>
         </div>
@@ -85,7 +85,7 @@ function ItemCard({
     children: React.ReactNode
 }) {
     return (
-        <div className="rounded-lg border border-border/50 bg-background overflow-hidden">
+        <div className="rounded-md border border-border/50 bg-background overflow-hidden">
             <div className="flex items-center justify-between px-3 py-2 bg-muted/20 border-b border-border/40">
                 <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/60">
                     Ítem {index + 1}
@@ -547,7 +547,7 @@ export function BankCreationWizard({ open, onOpenChange, onSuccess }: BankCreati
                         <p className="text-sm text-center text-muted-foreground">
                             Revise lo que se creará al confirmar.
                         </p>
-                        <div className="rounded-lg border border-border/50 divide-y divide-border/40 overflow-hidden text-sm">
+                        <div className="rounded-md border border-border/50 divide-y divide-border/40 overflow-hidden text-sm">
                             <SummaryRow icon={Landmark} label="Banco" value={bankName} />
                             {checkingAccounts.filter((a) => a.name).map((a, i) => {
                                 const matchedAccount = a.accountId

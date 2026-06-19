@@ -253,7 +253,7 @@ export function LoanDetailModal({ loanId, open, onOpenChange }: Props) {
                     </div>
 
                     {loan.notes && (
-                        <div className="rounded-lg border border-border p-4">
+                        <div className="rounded-md border border-border p-4">
                             <h4 className="text-xs font-semibold text-muted-foreground uppercase mb-1">Notas</h4>
                             <p className="text-sm whitespace-pre-wrap">{loan.notes}</p>
                         </div>

@@ -239,7 +239,7 @@ export function TreasuryAccountDrawer({ open, onOpenChange, accountId, onSuccess
                             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 px-6 pb-6 pt-6">
                                 <fieldset disabled={isView} className="contents">
                                     {isSystemManaged && (
-                                        <div className="flex items-start gap-3 p-3 rounded-lg border border-warning/20 bg-warning/5 text-xs text-warning">
+                                        <div className="flex items-start gap-3 p-3 rounded-md border border-warning/20 bg-warning/5 text-xs text-warning">
                                             <Lock className="h-4 w-4 mt-0.5 shrink-0" />
                                             <p>Esta cuenta es gestionada automáticamente por el sistema. Para modificarla, actualice el Proveedor de Terminal correspondiente.</p>
                                         </div>
