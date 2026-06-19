@@ -137,7 +137,7 @@ function AssignmentModeToggle({
     onSwitch: (m: "user" | "group") => void
 }) {
     return (
-        <div className="flex items-center p-0.5 bg-muted rounded-lg border shadow-sm shrink-0 scale-90 sm:scale-100">
+        <div className="flex items-center p-0.5 bg-muted rounded-md border shadow-sm shrink-0 scale-90 sm:scale-100">
             <button
                 type="button"
                 className={cn(
@@ -213,10 +213,10 @@ function RowShell({
     children: React.ReactNode
 }) {
     return (
-        <div className="group relative bg-card border rounded-lg p-3 hover:shadow-md transition-all">
+        <div className="group relative bg-card border rounded-md p-3 hover:shadow-md transition-all">
             <div className="flex flex-col md:flex-row md:items-center gap-4">
                 <div className="flex items-center gap-3 min-w-[200px] flex-1">
-                    <div className="p-2 bg-primary/5 rounded-lg group-hover:bg-primary/10 transition-colors">
+                    <div className="p-2 bg-primary/5 rounded-md group-hover:bg-primary/10 transition-colors">
                         <Icon className="h-4 w-4 text-primary/70" />
                     </div>
                     <div className="space-y-0.5">
@@ -389,7 +389,7 @@ const RecurrentRuleRow = React.memo(function RecurrentRuleRow({ taskType, rule, 
         <RowShell icon={CalendarClock} name={taskType.name} description={taskType.description} badgeLabel="RECURRENTE" isRecurrent>
             <div className="flex flex-col sm:flex-row items-center gap-3">
                 {/* Day input */}
-                <div className="flex items-center gap-2 px-3 py-1 bg-muted/30 rounded-lg border border-border/50">
+                <div className="flex items-center gap-2 px-3 py-1 bg-muted/30 rounded-md border border-border/50">
                     <span className="text-[10px] whitespace-nowrap text-muted-foreground font-medium">Día Gen:</span>
                     <Controller
                         control={dayForm.control}
@@ -455,7 +455,7 @@ const MarginThresholdInput = React.memo(function MarginThresholdInput({ initialV
     const { status } = useAutoSaveForm({ form, onSave, debounceMs: 400 })
 
     return (
-        <div className="flex items-center gap-3 px-4 py-2 bg-muted/30 rounded-lg border border-border/50">
+        <div className="flex items-center gap-3 px-4 py-2 bg-muted/30 rounded-md border border-border/50">
             <div className="space-y-0.5">
                 <p className="text-[10px] font-bold uppercase tracking-tight text-muted-foreground">Umbral Mínimo (%)</p>
                 <p className="text-[9px] text-muted-foreground leading-none text-right">0 = Apagado</p>
@@ -532,7 +532,7 @@ const NotificationRuleRow = React.memo(function NotificationRuleRow({ type, rule
     const groupVal = form.watch("assigned_group")
 
     return (
-        <div className="group relative bg-card border rounded-lg p-4 hover:shadow-md transition-all">
+        <div className="group relative bg-card border rounded-md p-4 hover:shadow-md transition-all">
             <div className="flex flex-col md:flex-row md:items-center gap-6">
                 <div className="flex items-center gap-4 min-w-[250px] flex-1">
                     <BellRing className="h-5 w-5 text-muted-foreground/70" />
@@ -550,7 +550,7 @@ const NotificationRuleRow = React.memo(function NotificationRuleRow({ type, rule
 
                     {/* Notify creator toggle — POS_CREDIT_APPROVAL only */}
                     {type.id === "POS_CREDIT_APPROVAL" && (
-                        <div className="flex items-center gap-3 px-4 py-2 bg-muted/30 rounded-lg border border-border/50">
+                        <div className="flex items-center gap-3 px-4 py-2 bg-muted/30 rounded-md border border-border/50">
                             <div className="space-y-0.5">
                                 <Label className="text-[10px] font-bold uppercase tracking-tight">Notificar Creador</Label>
                                 <p className="text-[9px] text-muted-foreground leading-none">Quien inició acción</p>

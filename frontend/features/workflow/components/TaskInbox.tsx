@@ -514,7 +514,7 @@ export function TaskInbox() {
                              </div>
                          </SkeletonShell>
                      ) : operationalTasks.length === 0 ? (
-                         <div className="text-center py-12 bg-muted/10 rounded-lg border border-dashed text-muted-foreground">
+                         <div className="text-center py-12 bg-muted/10 rounded-md border border-dashed text-muted-foreground">
                              <ListTodo className="h-8 w-8 mx-auto mb-2 opacity-20" />
                              <p className="text-xs">No tienes tareas pendientes</p>
                          </div>
