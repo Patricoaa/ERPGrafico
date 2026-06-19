@@ -4,16 +4,21 @@ doc: searchbar-decision
 status: active
 owner: frontend-team
 created: 2026-05-13
-updated: 2026-05-13
-last_review: 2026-05-28
+updated: 2026-06-19
+last_review: 2026-06-19
 stability: stable
-scope: Decisión de búsqueda en vistas de tabla — SmartSearchBar + useSmartSearch vs useClientSearch vs sin searchbar
+scope: Decisión de búsqueda en vistas de tabla — SmartSearchBar + useSmartSearch vs useClientSearch vs sin searchbar. A partir de 2026-06 los filtros de estado/fecha migraron a SegmentationBar.
 ---
 
 # Contrato: SmartSearchBar — Árbol de Decisión
 
 Todo `DataTable` con búsqueda/filtrado debe usar `SmartSearchBar` como `leftAction`.
 El componente es siempre el mismo; la diferencia está en el hook de estado.
+
+**A partir de 2026-06:** SmartSearchBar maneja solo campos de tipo `text` e `identity-enum`.
+Los filtros de estado (tab/select) y fechas (calendario) se declaran como `SegmentationDefinition`
+y se renderizan con `<SegmentationBar>` en la Fila 1 del toolbar. Ver
+[segmentation-decision.md](segmentation-decision.md).
 
 ---
 
@@ -53,40 +58,64 @@ El componente es siempre el mismo; la diferencia está en el hook de estado.
 
 ---
 
-## Patrón canónico: server-side (useSmartSearch)
+## Tipos de campo en searchDef
+
+| `type` | Dónde se renderiza | Propósito |
+|---|---|---|
+| `text` | SmartSearchBar (input de texto libre) | Búsqueda por nombre, código, RUT, etc. |
+| `identity-enum` | SmartSearchBar (chip inline + dropdown) | Clasificación de entidad — ej. tipo de contacto (cliente/proveedor). **NO** para estado operacional. |
+
+Los filtros de estado y fecha **no** van en el searchDef. Van en `segmentationDef.ts`
+como `TabSegmentDef`, `DropdownSegmentDef` o `DateSegmentDef`. Ver
+[segmentation-decision.md](segmentation-decision.md).
+
+---
+
+## Patrón canónico: server-side (useSmartSearch) con segmentation
 
 ```tsx
-// 1. searchDef — features/[app]/searchDef.ts
+// 1. searchDef — features/[app]/searchDef.ts (solo text + identity-enum)
 export const myEntitySearchDef: SearchDefinition = {
   fields: [
     { key: 'search', label: 'Nombre', type: 'text', serverParam: 'search' },
-    { key: 'status', label: 'Estado', type: 'enum', serverParam: 'status',
-      options: [{ label: 'Activo', value: 'ACTIVE' }] },
   ],
 }
 
-// 2. En el componente (Client Component)
-const { filters } = useSmartSearch(myEntitySearchDef)
-const { data } = useMyEntities({ filters })          // hook pasa filters al backend
+// 2. segmentationDef — features/[app]/segmentationDef.ts
+export const myEntitySegDef: SegmentationDefinition = {
+  segments: [
+    {
+      key: 'status',
+      label: 'Estado',
+      type: 'tabs',
+      serverParam: 'status',
+      options: [
+        { label: 'Activo', value: 'ACTIVE' },
+        { label: 'Inactivo', value: 'INACTIVE' },
+      ],
+    },
+  ],
+}
+
+// 3. En el componente (Client Component)
+const { filters: textFilters, isFiltered: isTextFiltered, clearAll: clearText }
+  = useSmartSearch(myEntitySearchDef)
+const { filters: segFilters, isFiltered: isSegFiltered, clearAll: clearSeg }
+  = useSegmentation(myEntitySegDef)
+const isFiltered = isTextFiltered || isSegFiltered
+
+const { data } = useMyEntities({ ...textFilters, ...segFilters })
 
 <DataTable
   data={data ?? []}
   columns={columns}
   leftAction={<SmartSearchBar searchDef={myEntitySearchDef} placeholder="Buscar..." />}
+  // segmentation se pasa como prop aparte (Fila 1 del toolbar)
+  segmentation={<SegmentationBar def={myEntitySegDef} />}
+  showReset={isFiltered}
+  onReset={() => { clearText(); clearSeg() }}
+  isFiltered={isFiltered}
 />
-```
-
-**Backend necesario:**
-```python
-class MyFilterSet(django_filters.FilterSet):
-    class Meta:
-        model = MyModel
-        fields = ['status']
-
-class MyViewSet(viewsets.ModelViewSet):
-    filter_backends = [DjangoFilterBackend, filters.SearchFilter]
-    filterset_class = MyFilterSet
-    search_fields = ['name']
 ```
 
 ---
@@ -94,20 +123,19 @@ class MyViewSet(viewsets.ModelViewSet):
 ## Patrón canónico: client-side (useClientSearch)
 
 ```tsx
-// 1. searchDef — los serverParam no se envían al backend, pero se necesitan
-//    para que nuqs gestione la URL. clientKey apunta al campo del objeto de fila.
+// 1. searchDef — solo text fields con clientKey
 export const mySmallListSearchDef: SearchDefinition = {
   fields: [
     {
       key: 'search', label: 'Nombre', type: 'text',
-      serverParam: 'search',               // clave en URL
-      clientKey: ['name', 'code'],         // campos del row a comparar
+      serverParam: 'search',
+      clientKey: ['name', 'code'],
     },
   ],
 }
 
-// 2. En el componente (Client Component)
-const { data } = useMyStaticEntities()     // hook estático, sin filters
+// 2. En el componente
+const { data } = useMyStaticEntities()
 const { filterFn } = useClientSearch<MyEntity>(mySmallListSearchDef)
 const filtered = useMemo(() => filterFn(data ?? []), [data, filterFn])
 
@@ -118,20 +146,6 @@ const filtered = useMemo(() => filterFn(data ?? []), [data, filterFn])
 />
 ```
 
-**Sin cambios de backend.** El hook estático existente no necesita modificarse.
-
----
-
-## Migración client-side → server-side
-
-Cuando un dataset Tier 5 crece y justifica filtrado server-side:
-
-1. Backend: añadir `FilterSet` + `filter_backends` al ViewSet
-2. Hook: añadir `filters?: MyFilters` al hook; incluir en `queryKey` y `queryFn`
-3. Vista: cambiar `useClientSearch` → `useSmartSearch`; pasar `filters` al hook
-4. `filterFn` y `useMemo(filterFn(...))` → eliminar
-5. `SmartSearchBar` en `leftAction`: sin cambios
-
 ---
 
 ## Invariantes (violación = PR rechazado)
@@ -140,47 +154,49 @@ Cuando un dataset Tier 5 crece y justifica filtrado server-side:
 |---|---|
 | `filterColumn` / `searchPlaceholder` eliminados | No coexisten con SmartSearchBar |
 | `useAdvancedFilter` / `globalFilterFields` eliminados | SmartSearchBar reemplaza estos mecanismos |
-| `facetedFilters` eliminados | Los filtros de tipo `enum` van en el `searchDef` |
+| `facetedFilters` eliminados | Los filtros de tipo `enum` van en `segmentationDef`, no en searchDef |
 | Solo `SmartSearchBar` como `leftAction` | No usar SimpleSearchBar — no existe en el barrel |
 | `useClientSearch` solo para datasets sin paginación | Si el hook ya pagina server-side, usar `useSmartSearch` |
 | `clientKey` en `TextFieldDef` solo para `useClientSearch` | Ignorado por SmartSearchBar (server-side) |
+| Sin `type: 'enum'` ni `type: 'daterange'` en searchDef | Esos tipos fueron eliminados 2026-06. Usar SegmentationBar. |
 
 ---
 
 ## Tabla de decisión por ruta (estado actual)
 
-### Server-side activo (useSmartSearch)
-| Ruta | searchDef |
-|------|-----------|
-| `/billing/purchases` | `purchaseInvoiceSearchDef` |
-| `/sales/orders?tab=orders` | `saleOrderSearchDef` |
-| `/inventory/products` | `productSearchDef` |
-| `/contacts` | `contactSearchDef` |
-| `/treasury/movements` | `treasuryMovementSearchDef` |
-| `/accounting/entries` | `journalEntrySearchDef` |
-| `/purchasing/orders` | `purchaseOrderSearchDef` |
-| `/inventory/stock?tab=movements` | `stockMoveSearchDef` |
-| `/inventory/products?tab=pricing-rules` | `pricingRuleSearchDef` |
-| `/inventory/products?tab=subscriptions` | `subscriptionSearchDef` |
-| `/inventory/uoms?tab=units` | `uomSearchDef` |
-| `/sales/sessions` | `posSessionSearchDef` |
-| `/sales/terminals?tab=batches` | `terminalBatchSearchDef` |
-| `/sales/terminals?tab=devices` | `deviceSearchDef` |
-| `/hr/employees` | `employeeSearchDef` |
-| `/hr/absences` | `absenceSearchDef` |
-| `/hr/payrolls` | `payrollSearchDef` |
-| `/hr/advances` | `salaryAdvanceSearchDef` |
-| `/production/orders` | `workOrderSearchDef` |
-| `/production/boms` | `bomSearchDef` |
-| `/settings/users?tab=users` | `userSearchDef` |
-| `/accounting/ledger` | `accountSearchDef` |
-| `/treasury/accounts?tab=accounts` | `treasuryAccountSearchDef` |
-| `/inventory/attributes` | `attributeSearchDef` |
-| `/sales/orders?tab=notes` | `salesNoteSearchDef` |
+### Server-side activo (useSmartSearch) — con SegmentationBar
+| Ruta | searchDef | segmentationDef |
+|---|---|---|
+| `/contacts` | `contactSearchDef` | — (solo identity-enum) |
+| `/billing/invoices` | `invoiceSearchDef` | `invoiceSegDef` |
+| `/billing/purchases` | `purchaseInvoiceSearchDef` | `purchaseInvoiceSegDef` |
+| `/sales/orders?tab=orders` | `saleOrderSearchDef` | `salesOrderSegDef` |
+| `/sales/orders?tab=notes` | `salesNoteSearchDef` | `salesNoteSegDef` |
+| `/sales/sessions` | `posSessionSearchDef` | `posSessionSegDef` |
+| `/sales/terminals?tab=batches` | `terminalBatchSearchDef` | `terminalBatchSegDef` |
+| `/sales/terminals?tab=devices` | `deviceSearchDef` | `deviceSegDef` |
+| `/inventory/products` | `productSearchDef` | `productSegDef` |
+| `/inventory/stock?tab=movements` | `stockMoveSearchDef` | `stockMoveSegDef` |
+| `/inventory/products?tab=pricing-rules` | `pricingRuleSearchDef` | `pricingRuleSegDef` |
+| `/inventory/products?tab=subscriptions` | `subscriptionSearchDef` | `subscriptionSegDef` |
+| `/inventory/uoms?tab=units` | `uomSearchDef` | — (solo text) |
+| `/inventory/attributes` | `attributeSearchDef` | — (solo text) |
+| `/treasury/accounts?tab=accounts` | `treasuryAccountSearchDef` | `treasuryAccountSegDef` |
+| `/treasury/movements` | `treasuryMovementSearchDef` | `treasuryMovementsSegDef` |
+| `/purchasing/orders` | `purchaseOrderSearchDef` | `purchaseOrderSegDef` |
+| `/production/orders` | `workOrderSearchDef` | `workOrderSegDef` |
+| `/production/boms` | `bomSearchDef` | `bomSegDef` |
+| `/hr/employees` | `employeeSearchDef` | `employeeSegDef` |
+| `/hr/absences` | — (solo segmentation) | `absenceSegDef` |
+| `/hr/payrolls` | `payrollSearchDef` | `payrollSegDef` |
+| `/hr/advances` | — (solo segmentation) | `salaryAdvanceSegDef` |
+| `/accounting/ledger` | `accountSearchDef` | `accountSegDef` |
+| `/accounting/entries` | `journalEntrySearchDef` | `journalEntrySegDef` |
+| `/settings/users?tab=users` | `userSearchDef` | `userSegDef` |
 
 ### Client-side (useClientSearch)
 | Ruta | searchDef |
-|------|-----------|
+|---|---|
 | `/accounting/closures` | `fiscalYearSearchDef` |
 | `/accounting/tax` | `taxPeriodSearchDef` |
 | `/treasury/accounts?tab=banks` | `bankSearchDef` |
@@ -196,7 +212,20 @@ Cuando un dataset Tier 5 crece y justifica filtrado server-side:
 
 ### Sin searchbar
 | Ruta | Razón |
-|------|-------|
+|---|---|
 | `/treasury/reconciliation` | UI de matching, patrón diferente |
 | `/inventory/stock?tab=report` | Vista agregada |
 | `/sales/terminals?tab=pos-terminals` | Datos en memoria |
+
+---
+
+## Migración client-side → server-side
+
+Cuando un dataset Tier 5 crece y justifica filtrado server-side:
+
+1. Backend: añadir `FilterSet` + `filter_backends` al ViewSet
+2. Hook: añadir `filters?: MyFilters` al hook; incluir en `queryKey` y `queryFn`
+3. Vista: cambiar `useClientSearch` → `useSmartSearch`; pasar `filters` al hook
+4. `filterFn` y `useMemo(filterFn(...))` → eliminar
+5. Si hay filtros de estado/fecha, crear `segmentationDef` y agregar `SegmentationBar`
+6. `SmartSearchBar` en `leftAction` sin cambios (solo text)
