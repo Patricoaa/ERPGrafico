@@ -105,9 +105,8 @@ export function DataTableToolbar<TData>(props: DataTableToolbarProps<TData>) {
             <div className="w-full space-y-2">
                 {/* ── ROW 1: Segmentadores + Acciones ── */}
                 <div className="flex items-center justify-between gap-2 h-9 w-full">
-                    {/* Left: Segmentadores */}
-                    <div className="flex items-center gap-1.5 flex-1 min-w-0 overflow-x-auto">
-                        {/* View toggle — shadcn Tabs inline */}
+                    {/* Left: Selector de vistas */}
+                    <div className="flex items-center gap-1.5 shrink-0">
                         {viewOptions && viewOptions.length > 0 && (
                             <Tabs value={currentView} onValueChange={(v) => onViewChange?.(v)}>
                                 <TabsList className="h-7 p-0 gap-0 bg-transparent border-border/60">
@@ -124,7 +123,10 @@ export function DataTableToolbar<TData>(props: DataTableToolbarProps<TData>) {
                                 </TabsList>
                             </Tabs>
                         )}
+                    </div>
 
+                    {/* Left: Segmentadores */}
+                    <div className="flex items-center gap-1.5 flex-1 min-w-0 overflow-x-auto">
                         {/* Faceted filters — inline popover per filter */}
                         {facetedFilters.map((filter) => {
                             const column = table.getColumn(filter.column)
