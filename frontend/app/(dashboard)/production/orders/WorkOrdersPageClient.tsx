@@ -7,7 +7,8 @@ import { ActionConfirmModal, DataTable } from '@/components/shared'
 import { DataTableColumnHeader } from '@/components/shared'
 import { createActionsColumn, DataCell } from '@/components/shared'
 import { ColumnDef } from "@tanstack/react-table"
-import { List, Columns, CalendarDays, Printer, User, Check } from "lucide-react"
+import { Printer, User, Check } from "lucide-react"
+import { useViewMode } from "@/hooks/useViewMode"
 import {
     WorkOrderWizard,
     WorkOrderKanban,
@@ -31,7 +32,7 @@ interface WorkOrdersPageClientProps {
 }
 
 export default function WorkOrdersPageClient({ initialOrders }: WorkOrdersPageClientProps) {
-    const [viewMode, setViewMode] = useState<string>("list")
+    const { currentView, handleViewChange, viewOptions } = useViewMode("production.workorder")
     const searchParams = useSearchParams()
     const router = useRouter()
     const pathname = usePathname()
@@ -296,7 +297,7 @@ export default function WorkOrdersPageClient({ initialOrders }: WorkOrdersPageCl
             )}
 
             <div className="mt-2 flex-1 min-h-0">
-                <FadeIn key={viewMode} className="h-full">
+                <FadeIn key={currentView} className="h-full">
                     <DataTable
                         columns={columns}
                         data={orders}
@@ -331,16 +332,12 @@ export default function WorkOrdersPageClient({ initialOrders }: WorkOrdersPageCl
                                 Mis OTs
                             </div>
                         }
-                        viewOptions={[
-                            { label: "Lista", value: "list", icon: List },
-                            { label: "Tablero", value: "kanban", icon: Columns },
-                            { label: "Cronograma", value: "timeline", icon: CalendarDays },
-                        ]}
-                        currentView={viewMode}
-                        onViewChange={setViewMode}
+                        viewOptions={viewOptions}
+                        currentView={currentView}
+                        onViewChange={handleViewChange}
                         renderCustomView={
-                            viewMode === "kanban" ? renderKanbanView :
-                                viewMode === "timeline" ? renderTimelineView :
+                            currentView === "kanban" ? renderKanbanView :
+                                currentView === "timeline" ? renderTimelineView :
                                     undefined
                         }
                         createAction={<ToolbarCreateButton label="Nueva OT" href="/production/orders?modal=new" />}

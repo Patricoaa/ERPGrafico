@@ -17,7 +17,7 @@ import {
 /** Declarative view configuration for DataTable routes */
 export interface ViewPolicy {
   /** Available view modes for this entity's list page */
-  availableViews: ('list' | 'card' | 'grid' | 'kanban')[];
+  availableViews: ('list' | 'card' | 'grid' | 'kanban' | 'timeline')[];
   /** Default view when no ?view= param is present */
   defaultView: 'list' | 'card' | 'grid' | 'kanban';
   /** Card component strategy: 'domain' = DomainCard (workflow entities), 'entity' = EntityCard, 'custom' = domain-specific */
@@ -122,7 +122,7 @@ export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
     detailUrlPattern: '/production/orders/{id}',
     partnerField: 'name',
     workflowType: 'order',
-    viewPolicy: { availableViews: ['list', 'kanban'], defaultView: 'list', cardComponent: 'custom' },
+    viewPolicy: { availableViews: ['list', 'kanban', 'timeline'], defaultView: 'list', cardComponent: 'custom' },
     hasDrawer: true,
   },
   'production.bom': {
