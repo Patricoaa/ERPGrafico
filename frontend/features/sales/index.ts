@@ -1,4 +1,5 @@
 export * from './types'
+export * from './segmentationDef'
 export * from './api/salesApi'
 export * from './hooks/useSalesOrders'
 export * from './components/SalesOrdersClientView'

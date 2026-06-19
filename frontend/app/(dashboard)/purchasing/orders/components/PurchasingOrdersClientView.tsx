@@ -3,7 +3,7 @@
 import { showApiError, getErrorMessage } from "@/lib/errors"
 import React, { useEffect, useState, useMemo } from "react"
 import { useSearchParams, useRouter, usePathname } from "next/navigation"
-import { ActionConfirmModal, DataTableView, DocumentCompletionModal, DomainHubStatus, SmartSearchBar, useSmartSearch } from '@/components/shared'
+import { ActionConfirmModal, DataTableView, DocumentCompletionModal, DomainHubStatus, SmartSearchBar, useSmartSearch, SegmentationBar, useSegmentation } from '@/components/shared'
 import { DataTableColumnHeader, DataCell } from '@/components/shared'
 import type { AnalyticsPanelConfig } from '@/components/shared'
 import { type ColumnDef } from "@tanstack/react-table"
@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button"
 import { ArrowRight, ArrowLeft, BarChart3, Building2, DollarSign, Wallet, CreditCard, ShoppingBag, Hash } from "lucide-react"
 import api from "@/lib/api"
 import { PurchaseOrderModal, DocumentRegistrationModal, PurchaseCheckoutWizard, usePurchasingOrders, usePurchasingNotes, purchaseOrderSearchDef, usePurchasingAnalyticsData } from "@/features/purchasing"
+import { purchaseOrderSegDef } from "@/features/purchasing/segmentationDef"
 import type { PurchaseOrderAPI } from "@/features/purchasing"
 import { toast } from "sonner"
 
@@ -47,8 +48,11 @@ interface PurchasingOrdersClientViewProps {
 }
 
 export function PurchasingOrdersClientView({ viewMode, externalOpenCheckout, createAction, initialOrders, initialNotes }: PurchasingOrdersClientViewProps) {
-    const { filters, isFiltered } = useSmartSearch(purchaseOrderSearchDef)
-    const { orders, isLoading: isLoadingOrders, isRefetching, refetch: fetchOrders, deleteOrder } = usePurchasingOrders(filters, initialOrders)
+    const { filters: textFilters, isFiltered: isTextFiltered, clearAll: clearText } = useSmartSearch(purchaseOrderSearchDef)
+    const { filters: segFilters, isFiltered: isSegFiltered, clearAll: clearSeg } = useSegmentation(purchaseOrderSegDef)
+    const isFiltered = isTextFiltered || isSegFiltered
+    const allFilters = { ...textFilters, ...segFilters }
+    const { orders, isLoading: isLoadingOrders, isRefetching, refetch: fetchOrders, deleteOrder } = usePurchasingOrders(allFilters, initialOrders)
     const { notes, isLoading: isLoadingNotes } = usePurchasingNotes(initialNotes)
 
     const { rate } = useVatRate()
@@ -592,6 +596,9 @@ export function PurchasingOrdersClientView({ viewMode, externalOpenCheckout, cre
                         isLoading={viewMode === 'orders' ? isLoadingOrders : isLoadingNotes}
                         isRefetching={viewMode === 'orders' ? isRefetching : undefined}
                         smartSearch={<SmartSearchBar searchDef={purchaseOrderSearchDef} placeholder="Buscar por proveedor..." className="w-full" />}
+                        segmentation={<SegmentationBar def={purchaseOrderSegDef} />}
+                        showReset={isFiltered}
+                        onReset={() => { clearText(); clearSeg() }}
                         sortOptions={true}
                         createAction={createAction}
                         isSelected={(data: any) => viewMode === 'orders'
