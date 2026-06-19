@@ -85,12 +85,12 @@ export function DomainCard({
                                     {partnerName}
                                 </span>
                             )}
-                            <span className="flex items-center gap-1.5 text-xs text-muted-foreground flex-wrap leading-tight">
-                                <span className="font-mono font-semibold text-foreground/80">{displayId}</span>
-                                <span className="text-muted-foreground/30">·</span>
+                            <span className="flex items-center gap-1.5 text-xs text-muted-foreground/60 flex-wrap leading-tight">
+                                <span>{displayId}</span>
+                                <span className="text-muted-foreground/20">·</span>
                                 {visibleColumns?.date !== false && (
                                     <span className="flex items-center gap-1">
-                                        <Calendar className="h-3 w-3" />
+                                        <Calendar className="h-3 w-3 opacity-50" />
                                         {formatPlainDate(data.date)}
                                     </span>
                                 )}
@@ -159,27 +159,29 @@ export function DomainCard({
                     </div>
 
                     {visibleColumns?.total !== false && (
-                        <div className="flex flex-col items-end min-w-[90px] shrink-0">
-                            <span className="text-[9px] text-muted-foreground uppercase tracking-widest font-extrabold mb-0.5">
-                                Total
-                            </span>
-                            <MoneyDisplay
-                                amount={total}
-                                showColor={false}
-                                className="text-base font-heading font-bold tracking-tight"
-                            />
+                        <div className="flex items-start gap-4 shrink-0">
                             {hasPending && visibleColumns?.payment_status !== false && (
-                                <>
-                                    <span className="text-[9px] text-warning/80 uppercase tracking-widest font-extrabold mt-1.5 mb-0.5">
+                                <div className="flex flex-col items-end min-w-[80px]">
+                                    <span className="text-[9px] text-warning/80 uppercase tracking-widest font-extrabold mb-0.5">
                                         Pendiente
                                     </span>
                                     <MoneyDisplay
                                         amount={pending}
                                         showColor={false}
-                                        className="text-sm font-heading font-bold tracking-tight text-warning"
+                                        className="text-sm font-heading font-semibold tracking-tight text-warning"
                                     />
-                                </>
+                                </div>
                             )}
+                            <div className="flex flex-col items-end min-w-[80px]">
+                                <span className="text-[9px] text-muted-foreground uppercase tracking-widest font-extrabold mb-0.5">
+                                    Total
+                                </span>
+                                <MoneyDisplay
+                                    amount={total}
+                                    showColor={false}
+                                    className="text-sm font-heading font-semibold tracking-tight"
+                                />
+                            </div>
                         </div>
                     )}
                 </EntityCard.Body>
