@@ -264,7 +264,7 @@ export function SmartSearchBar({ searchDef, placeholder = 'Buscar...', className
         className={cn(
           'group flex items-center gap-1.5 h-9 px-2 py-1 rounded-sm overflow-x-auto scrollbar-hide border border-border/60',
           'bg-background transition-all',
-          'hover:bg-muted/50 hover:text-foreground hover:ring-2 hover:ring-primary/10',
+          'hover:bg-muted/50 hover:text-foreground',
           'focus-within:bg-muted/50 focus-within:ring-2 focus-within:ring-primary/20',
           isOpen && 'bg-muted/50 ring-2 ring-primary/20',
         )}
