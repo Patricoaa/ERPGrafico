@@ -656,32 +656,32 @@ export function DataTable<TData, TValue>({
 
         return (
             <div ref={containerRef} className="relative flex flex-col h-full w-full space-y-1 min-h-0">
-                    {/* Toolbar Section (Outside) */}
-                    {showToolbar && (
+                {/* Toolbar Section (Outside) */}
+                {showToolbar && (
                     <div className={cn(
-                        "w-full px-1 shrink-0",
+                        "w-full shrink-0",
                         !isInModal && "sticky top-0 z-20 bg-transparent py-2",
                         toolbarClassName
                     )}>
-                            <DataTableToolbar
-                                table={table}
-                                facetedFilters={facetedFilters}
-                                toolbarAction={toolbarAction}
-                                onReset={onReset}
-                                sortOptions={sortOptions}
-                                viewOptions={viewOptions}
-                                currentView={currentView}
-                                onViewChange={onViewChange}
-                                columnToggle={columnToggle}
-                                customFilters={customFilters}
-                                smartSearch={smartSearch}
-                                segmentation={segmentation}
-                                showReset={showReset}
-                                analyticsPanel={analyticsPanel}
-                                createAction={createAction}
-                            />
-                        </div>
-                    )}
+                        <DataTableToolbar
+                            table={table}
+                            facetedFilters={facetedFilters}
+                            toolbarAction={toolbarAction}
+                            onReset={onReset}
+                            sortOptions={sortOptions}
+                            viewOptions={viewOptions}
+                            currentView={currentView}
+                            onViewChange={onViewChange}
+                            columnToggle={columnToggle}
+                            customFilters={customFilters}
+                            smartSearch={smartSearch}
+                            segmentation={segmentation}
+                            showReset={showReset}
+                            analyticsPanel={analyticsPanel}
+                            createAction={createAction}
+                        />
+                    </div>
+                )}
 
                 <div className={cn("flex-1 min-h-0", renderCustomView ? "overflow-x-auto" : "flex flex-col overflow-hidden")}>
                     {renderCustomView ? (

@@ -31,7 +31,7 @@ export function ToolbarCreateButton({
     const button = (
         <Button
             className={cn(
-                "h-9 px-4 rounded-md text-[10px] font-black uppercase tracking-widest shadow-card",
+                "h-9 px-4 rounded-sm text-[10px] font-black uppercase tracking-widest shadow-card",
                 "bg-primary text-primary-foreground hover:bg-primary/90",
                 className
             )}

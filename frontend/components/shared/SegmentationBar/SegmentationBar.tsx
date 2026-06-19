@@ -272,79 +272,128 @@ interface RangeSegmentProps {
 }
 
 function RangeSegment({ def, filters, apply, remove }: RangeSegmentProps) {
+  const [open, setOpen] = useState(false)
+
   const fromVal = filters[def.serverParamFrom] ?? ''
   const toVal = filters[def.serverParamTo] ?? ''
 
-  const [localFrom, setLocalFrom] = useState(fromVal)
-  const [localTo, setLocalTo] = useState(toVal)
+  const [tempFrom, setTempFrom] = useState(fromVal)
+  const [tempTo, setTempTo] = useState(toVal)
 
   const hasValue = fromVal !== '' || toVal !== ''
 
-  const applyRange = useCallback(async (from: string, to: string) => {
-    if (from) {
-      await apply(def.serverParamFrom, from)
+  const handleOpenChange = useCallback((newOpen: boolean) => {
+    if (newOpen) {
+      setTempFrom(fromVal)
+      setTempTo(toVal)
+    }
+    setOpen(newOpen)
+  }, [fromVal, toVal])
+
+  const handleApply = useCallback(async () => {
+    if (tempFrom) {
+      await apply(def.serverParamFrom, tempFrom)
     } else {
       await remove(def.serverParamFrom)
     }
-    if (to) {
-      await apply(def.serverParamTo, to)
+    if (tempTo) {
+      await apply(def.serverParamTo, tempTo)
     } else {
       await remove(def.serverParamTo)
     }
-  }, [def, apply, remove])
+    setOpen(false)
+  }, [tempFrom, tempTo, def, apply, remove])
 
-  const handleBlur = useCallback(() => {
-    applyRange(localFrom, localTo)
-  }, [localFrom, localTo, applyRange])
-
-  const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
-    if (e.key === 'Enter') {
-      applyRange(localFrom, localTo)
-    }
-    if (e.key === 'Escape') {
-      setLocalFrom(fromVal)
-      setLocalTo(toVal)
-    }
-  }, [localFrom, localTo, fromVal, toVal, applyRange])
-
-  const handleClear = useCallback(() => {
-    setLocalFrom('')
-    setLocalTo('')
-    remove(def.serverParamFrom)
-    remove(def.serverParamTo)
+  const handleClear = useCallback(async () => {
+    setTempFrom('')
+    setTempTo('')
+    await remove(def.serverParamFrom)
+    await remove(def.serverParamTo)
+    setOpen(false)
   }, [def, remove])
 
+  const label = hasValue
+    ? `${fromVal}${toVal ? ` — ${toVal}` : ' — ...'}`
+    : null
+
   return (
-    <div className="flex items-center gap-1">
-      <Input
-        type="number"
-        value={localFrom}
-        onChange={(e) => setLocalFrom(e.target.value)}
-        onBlur={handleBlur}
-        onKeyDown={handleKeyDown}
-        placeholder={def.placeholderFrom ?? 'Desde'}
-        className="h-7 w-20 text-[10px] uppercase tracking-widest rounded-sm border-border/60 bg-transparent px-1.5 [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
-      />
-      <span className="text-[10px] text-muted-foreground/50">—</span>
-      <Input
-        type="number"
-        value={localTo}
-        onChange={(e) => setLocalTo(e.target.value)}
-        onBlur={handleBlur}
-        onKeyDown={handleKeyDown}
-        placeholder={def.placeholderTo ?? 'Hasta'}
-        className="h-7 w-20 text-[10px] uppercase tracking-widest rounded-sm border-border/60 bg-transparent px-1.5 [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
-      />
-      {hasValue && (
-        <button
-          type="button"
-          onClick={handleClear}
-          className="text-muted-foreground/40 hover:text-destructive transition-colors shrink-0 ml-0.5"
+    <Popover open={open} onOpenChange={handleOpenChange}>
+      <PopoverTrigger asChild>
+        <Button
+          variant="ghost"
+          size="sm"
+          className={cn(
+            'h-7 px-2 text-[10px] uppercase font-bold tracking-widest gap-1 rounded-sm shrink-0',
+            hasValue
+              ? 'bg-accent/50 text-foreground'
+              : 'text-muted-foreground hover:text-foreground',
+          )}
         >
-          <X className="h-3 w-3" />
-        </button>
-      )}
-    </div>
+          <span className="truncate max-w-[160px]">{label ?? def.label}</span>
+          {hasValue && (
+            <X
+              className="h-2.5 w-2.5 ml-0.5 hover:text-destructive"
+              onPointerDown={(e) => {
+                e.stopPropagation()
+                remove(def.serverParamFrom)
+                remove(def.serverParamTo)
+              }}
+            />
+          )}
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent align="start" className="w-auto p-3" sideOffset={4}>
+        <div className="flex flex-col gap-3">
+          <div className="flex items-center gap-2">
+            <Input
+              type="number"
+              value={tempFrom}
+              onChange={(e) => setTempFrom(e.target.value)}
+              placeholder={def.placeholderFrom ?? 'Desde'}
+              className="h-7 w-24 text-xs rounded-sm border-border/60 px-2 [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+              onKeyDown={(e) => { if (e.key === 'Enter') handleApply() }}
+            />
+            <span className="text-[10px] text-muted-foreground/50">—</span>
+            <Input
+              type="number"
+              value={tempTo}
+              onChange={(e) => setTempTo(e.target.value)}
+              placeholder={def.placeholderTo ?? 'Hasta'}
+              className="h-7 w-24 text-xs rounded-sm border-border/60 px-2 [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+              onKeyDown={(e) => { if (e.key === 'Enter') handleApply() }}
+            />
+          </div>
+          <div className="flex justify-between gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-7 text-[10px] uppercase tracking-widest"
+              onClick={handleClear}
+              disabled={!hasValue}
+            >
+              Limpiar
+            </Button>
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-7 text-[10px] uppercase tracking-widest"
+                onClick={() => setOpen(false)}
+              >
+                Cancelar
+              </Button>
+              <Button
+                size="sm"
+                className="h-7 text-[10px] uppercase tracking-widest"
+                onClick={handleApply}
+              >
+                Aplicar
+              </Button>
+            </div>
+          </div>
+        </div>
+      </PopoverContent>
+    </Popover>
   )
 }
 
