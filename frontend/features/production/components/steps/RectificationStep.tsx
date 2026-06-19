@@ -79,7 +79,7 @@ function CostImpactPanel({
     const unitDelta = actualUnitCost - plannedUnitCost
 
     return (
-        <div className="rounded-lg border border-primary/20 bg-primary/5 p-4 space-y-3">
+        <div className="rounded-md border border-primary/20 bg-primary/5 p-4 space-y-3">
             <p className="text-xs font-bold uppercase tracking-widest text-primary flex items-center gap-2">
                 <Info className="h-3.5 w-3.5" />
                 Impacto de costos estimado
@@ -278,7 +278,7 @@ export function RectificationStep({ order, onChange }: RectificationStepProps) {
                         <span className="text-sm font-medium text-foreground">Materiales de Stock</span>
                         <Chip size="xs">{stockMaterials.length}</Chip>
                     </div>
-                    <div className="rounded-lg border border-border overflow-hidden">
+                    <div className="rounded-md border border-border overflow-hidden">
                         <table className="w-full text-sm">
                             <thead>
                                 <tr className="bg-muted/40 border-b border-border">
@@ -383,7 +383,7 @@ export function RectificationStep({ order, onChange }: RectificationStepProps) {
                         <span className="text-sm font-medium text-foreground">Servicios Tercerizados</span>
                         <Chip size="xs">{outsourcedMaterials.length}</Chip>
                     </div>
-                    <div className="rounded-lg border border-border overflow-hidden">
+                    <div className="rounded-md border border-border overflow-hidden">
                         <table className="w-full text-sm">
                             <thead>
                                 <tr className="bg-muted/40 border-b border-border">
@@ -452,7 +452,7 @@ export function RectificationStep({ order, onChange }: RectificationStepProps) {
 
             {/* Produced Quantity (only for manual OTs with inventory tracking) */}
             {isManualWithInventory && (
-                <div className="rounded-lg border border-border p-4 bg-card space-y-3">
+                <div className="rounded-md border border-border p-4 bg-card space-y-3">
                     <div className="flex items-center gap-2">
                         <Scale className="h-4 w-4 text-primary" />
                         <span className="text-sm font-semibold text-foreground">Cantidad Real Producida</span>

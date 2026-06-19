@@ -99,7 +99,7 @@ export function WorkOrderBasicInfo({
             </div>
 
             {initialData ? (
-                <div className="p-4 bg-muted/20 border rounded-lg space-y-4">
+                <div className="p-4 bg-muted/20 border rounded-md space-y-4">
                     <Label className="text-[10px] uppercase text-muted-foreground font-bold flex items-center gap-1">
                         <FileText className="h-3.5 w-3.5" /> Detalle de Producto {otType === "LINKED" ? "en Venta" : "en Stock"}
                     </Label>
@@ -140,7 +140,7 @@ export function WorkOrderBasicInfo({
             ) : (
                 <>
                     {otType === "LINKED" && (
-                        <div className="p-4 bg-muted/20 border rounded-lg space-y-4">
+                        <div className="p-4 bg-muted/20 border rounded-md space-y-4">
                             <Label className="text-[10px] uppercase text-muted-foreground font-bold flex items-center gap-1">
                                 <FileText className="h-3.5 w-3.5" /> Detalle de Producto en Venta
                             </Label>

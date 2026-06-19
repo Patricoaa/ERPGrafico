@@ -27,7 +27,7 @@ export function OtTypeChooser({ onChoose }: OtTypeChooserProps) {
                     } as WorkOrderFormValues)}
                 >
                     <div className="absolute left-0 top-0 w-1 h-full bg-primary opacity-0 group-hover:opacity-100 transition-opacity" />
-                    <div className="bg-primary/10 p-2.5 rounded-lg group-hover:bg-primary/20 transition-colors">
+                    <div className="bg-primary/10 p-2.5 rounded-md group-hover:bg-primary/20 transition-colors">
                         <FileText className="h-5 w-5 text-primary" />
                     </div>
                     <div className="flex flex-col items-start">
@@ -46,7 +46,7 @@ export function OtTypeChooser({ onChoose }: OtTypeChooserProps) {
                     } as WorkOrderFormValues)}
                 >
                     <div className="absolute left-0 top-0 w-1 h-full bg-warning opacity-0 group-hover:opacity-100 transition-opacity" />
-                    <div className="bg-warning/10 p-2.5 rounded-lg group-hover:bg-warning/20 transition-colors">
+                    <div className="bg-warning/10 p-2.5 rounded-md group-hover:bg-warning/20 transition-colors">
                         <Plus className="h-5 w-5 text-warning" />
                     </div>
                     <div className="flex flex-col items-start">
