@@ -18,15 +18,15 @@ Async entity-search comboboxes in `components/selectors/`. These components perf
 - Internal state: they fetch their own initial value when `value` is pre-populated.
 - They are NOT in `components/shared/` because they have direct feature-hook dependencies (each calls a feature-specific search hook).
 - Import: `import { AccountSelector } from '@/components/selectors'`
-21: 
-22: ## Dropdown behavior
-23: 
-24: Entity selectors must adhere to the layout invariants defined in [component-contracts.md](./component-contracts.md#dropdown--popover-layout-invariants):
-25: 
-26: - **Width**: MUST match trigger width using `w-[var(--radix-popover-trigger-width)]`.
-27: - **Position**: MUST use `popper` style, aligning the dropdown with the **bottom border** of the notched fieldset (avoiding the `item-aligned` covering behavior of standard selects).
-28: 
-29: ---
+
+## Dropdown behavior
+
+Entity selectors must adhere to the layout invariants defined in [component-contracts.md](./component-contracts.md#dropdown--popover-layout-invariants):
+
+- **Width**: MUST match trigger width using `w-[var(--radix-popover-trigger-width)]`.
+- **Position**: MUST use `popper` style, aligning the dropdown with the **bottom border** of the notched fieldset (avoiding the `item-aligned` covering behavior of standard selects).
+
+---
 
 ## Trigger display — patrón compacto
 

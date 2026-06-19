@@ -58,7 +58,7 @@ graph TD
     A[¿Qué necesitas mostrar?]
     A -->|Dinero o Divisa| B(MoneyDisplay)
     A -->|Estado de una entidad| C(StatusBadge)
-    A -->|Tag o etiqueta genérica| D[Badge de shadcn]
+    A -->|Tag o etiqueta genérica| D[Chip]
     A -->|Contenedor/Tarjeta simple| E[Card de shadcn]
     A -->|KPI / métrica / stat| H(StatCard)
     A -->|Sin resultados/Vacio| F(EmptyState)

@@ -884,19 +884,16 @@ GET    /api/core/groups/          list (permission groups)
 
 ---
 
-## Money format (correction)
-
-The `_cents` convention in the SaleOrder example section above is illustrative only. Actual API monetary values are **plain decimals** (e.g. `"total": "150000.00"` for 150,000 CLP), NOT integer cents. CLP has no decimal fraction in practice so values are whole numbers, but the field type is `DecimalField`, not integer.
-
 ## Money format
 
-- All monetary amounts: plain **decimal strings** (e.g. `"150000"` or `"150000.00"`).
+- All monetary amounts: plain **decimal strings** (e.g. `"150000"` for CLP 150.000).
+- CLP has no decimal fraction in practice so values are whole numbers, but the field type is `DecimalField`, not integer.
+- `DecimalField(max_digits=14, decimal_places=0)` for CLP amounts.
 - Currency: CLP implicit. Multi-currency = ADR required.
-- Money stored as `DecimalField(max_digits=14, decimal_places=0)` for CLP amounts.
 
 ## ID format
 
-- Primary keys: UUIDv4 strings.
+- Primary keys: integer auto-increment PK (ver ADR-0016 — no se migró a UUID).
 - Never expose integer auto-increment in API.
 
 ## Date/time

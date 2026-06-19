@@ -28,14 +28,14 @@ graph TD
 
 ### Reglas Invariables (PR Reject si se violan)
 1. **Cero imports directos de `framer-motion` en páginas**: Queda prohibido importar `motion` de `framer-motion` para animaciones de entrada de páginas o pestañas secundarias. Debe usarse obligatoriamente el componente compartido `<FadeIn>`.
-2. **Cero duplicación de animación en páginas simples**: Las páginas que solo cambian de contenido mediante una ruta única no deben envolverse en ningún componente de animación local. La transición la realiza el [DashboardShell](file:///home/pato/Nextcloud/Pato/Aplicaciones/ERPGrafico/frontend/components/layout/DashboardShell.tsx).
+2. **Cero duplicación de animación en páginas simples**: Las páginas que solo cambian de contenido mediante una ruta única no deben envolverse en ningún componente de animación local. La transición la realiza el [DashboardShell](../../frontend/components/layout/DashboardShell.tsx).
 3. **Respeto Absoluto a Accesibilidad (Reduced Motion)**: Toda micro-animación local o global debe integrarse con las configuraciones de accesibilidad del sistema operativo para usuarios con sensibilidad al movimiento vestibular.
 
 ---
 
 ## 2. El Componente Compartido: `<FadeIn>`
 
-El componente [FadeIn.tsx](file:///home/pato/Nextcloud/Pato/Aplicaciones/ERPGrafico/frontend/components/shared/FadeIn.tsx) encapsula la lógica de transición optimizada para hardware, con soporte integrado de accesibilidad.
+El componente [FadeIn.tsx](../../frontend/components/shared/FadeIn.tsx) encapsula la lógica de transición optimizada para hardware, con soporte integrado de accesibilidad.
 
 ### Interfaz del Componente (`FadeInProps`)
 
@@ -139,6 +139,6 @@ A continuación se realiza una auditoría completa del árbol de páginas del fr
 
 Para ejecutar la unificación estética módulo a módulo con el menor riesgo:
 
-1. **Refactorizar el módulo Perfil**: Reemplazar los `<motion.div>` manuales en [ProfileView.tsx](file:///home/pato/Nextcloud/Pato/Aplicaciones/ERPGrafico/frontend/features/profile/components/ProfileView.tsx) por el nuevo componente unificado `<FadeIn>`. Esto servirá como *Proof of Concept* (Prueba de Concepto).
+1. **Refactorizar el módulo Perfil**: Reemplazar los `<motion.div>` manuales en [ProfileView.tsx](../../frontend/features/profile/components/ProfileView.tsx) por el nuevo componente unificado `<FadeIn>`. Esto servirá como *Proof of Concept* (Prueba de Concepto).
 2. **Implementar en Ventas y Compras**: Identificar los archivos contenedores de pestañas y envolverlos en `<FadeIn>`.
 3. **Auditar Rendimiento**: Monitorear las métricas de rendimiento (FPS y renderizados acumulados) tras la migración de cada módulo.
