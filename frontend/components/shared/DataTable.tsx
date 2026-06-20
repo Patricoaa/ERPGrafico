@@ -316,7 +316,8 @@ export function DataTable<TData, TValue>({
         (viewOptions && viewOptions.length > 0) ||
         sortOptions ||
         analyticsPanel ||
-        columnToggle
+        columnToggle ||
+        !!currentView
     )
     const selectedRows = table.getSelectedRowModel().rows
     const selectedItems = React.useMemo(() => selectedRows.map(r => r.original), [selectedRows])

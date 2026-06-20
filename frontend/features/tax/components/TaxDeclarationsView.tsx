@@ -356,7 +356,6 @@ export function TaxDeclarationsView({ externalOpen, onExternalOpenChange, create
                     entityLabel="tax.taxperiod"
                     variant="embedded"
                     smartSearch={<SmartSearchBar searchDef={taxPeriodSearchDef} placeholder="Buscar período..." className="w-full" />}
-                    sortOptions={true}
                     createAction={createAction}
                     renderLoadingView={useCallback(() => (
                         <div className="grid gap-3 pt-2">

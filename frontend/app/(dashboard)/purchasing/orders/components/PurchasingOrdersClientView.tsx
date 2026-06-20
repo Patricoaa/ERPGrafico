@@ -600,7 +600,6 @@ export function PurchasingOrdersClientView({ viewMode, externalOpenCheckout, cre
                         segmentation={<SegmentationBar def={purchaseOrderSegDef} basePeriod={basePeriod} />}
                         showReset={isFiltered}
                         onReset={() => { clearText(); clearSeg() }}
-                        sortOptions={true}
                         createAction={createAction}
                         isSelected={(data: any) => viewMode === 'orders'
                             ? hubConfig?.orderId === data.id

@@ -10,7 +10,7 @@ import { DomainCard } from "./DomainCard"
 
 interface DataTableViewProps<TData, TValue>
   extends Omit<DataTableProps<TData, TValue>,
-    "viewOptions" | "currentView" | "onViewChange" | "renderCustomView" | "renderLoadingView"
+    "viewOptions" | "currentView" | "onViewChange" | "renderCustomView" | "renderLoadingView" | "sortOptions"
   > {
   entityLabel: string
   renderCustomView?: (table: ReactTable<TData>) => React.ReactNode
@@ -32,12 +32,10 @@ export function DataTableView<TData, TValue>({
   isSelected,
   isHubOpen,
   cardGroupBy,
-  sortOptions,
   ...dataTableProps
 }: DataTableViewProps<TData, TValue>) {
   const policy = ENTITY_REGISTRY[entityLabel]?.viewPolicy
 
-  const effectiveSortOptions = cardGroupBy ? true : sortOptions
   const effectiveInitialSorting: SortingState | undefined = cardGroupBy
     ? [{ id: cardGroupBy.dateField, desc: true }]
     : undefined
@@ -113,7 +111,6 @@ export function DataTableView<TData, TValue>({
       onViewChange={handleViewChange}
       renderCustomView={internalCustomView}
       renderLoadingView={internalLoadingView}
-      sortOptions={effectiveSortOptions}
       initialSorting={effectiveInitialSorting}
     />
   )

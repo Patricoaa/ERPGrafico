@@ -782,14 +782,14 @@ function InsightsTable({ data, type, title, icon: Icon, onActionSuccess }: Insig
 
             <FormSection title={title} icon={Icon} className="pb-6" />
             <div className="flex-1 overflow-hidden p-0">
-                <DataTable
-                    columns={columns}
-                    data={filteredData}
-                    variant="embedded"
-                    defaultPageSize={10}
-                    sortOptions={true}
-                    renderCustomView={cardView}
-                />
+                    <DataTable
+                        columns={columns}
+                        data={filteredData}
+                        variant="embedded"
+                        defaultPageSize={10}
+                        currentView="card"
+                        renderCustomView={cardView}
+                    />
             </div>
         </div>
     )
@@ -869,7 +869,7 @@ function CreditLedgerTable({ data, loading, onActionSuccess }: { data: any[], lo
                         data={loading ? LEDGER_SKELETON : data}
                         variant="embedded"
                         defaultPageSize={10}
-                        sortOptions={true}
+                        currentView="card"
                         renderCustomView={createDomainCardView('sales.saleorder', {
                             onRowClick: (data: any) => openHub({ orderId: data.id, type: 'sale', onActionSuccess }),
                         })}
