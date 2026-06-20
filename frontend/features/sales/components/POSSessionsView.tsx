@@ -47,7 +47,8 @@ export const POSSessionsView = ({ hideHeader = false }: POSSessionsViewProps) =>
     const router = useRouter()
     const pathname = usePathname()
     const searchParams = useSearchParams()
-    const { filters: segFilters, isFiltered: isSegFiltered, clearAll: clearSeg } = useSegmentation(posSessionSegDef)
+    const basePeriod = { serverParamFrom: 'date_from', serverParamTo: 'date_to' }
+    const { filters: segFilters, isFiltered: isSegFiltered, clearAll: clearSeg } = useSegmentation(posSessionSegDef, basePeriod)
     const { sessions, isLoading, refetch } = usePOSSessions(segFilters)
 
     const { entity: selectedFromUrl, clearSelection } = useSelectedEntity<POSSession>({
@@ -185,7 +186,7 @@ export const POSSessionsView = ({ hideHeader = false }: POSSessionsViewProps) =>
                     variant="embedded"
                     isLoading={isLoading}
                     entityLabel="pos.session"
-                    segmentation={<SegmentationBar def={posSessionSegDef} />}
+                    segmentation={<SegmentationBar def={posSessionSegDef} basePeriod={basePeriod} />}
                     showReset={isSegFiltered}
                     onReset={clearSeg}
                     defaultPageSize={10}

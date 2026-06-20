@@ -54,7 +54,8 @@ interface SubscriptionsViewProps {
 
 export function SubscriptionsView({ hideHeader = false, externalOpen = false, createAction }: SubscriptionsViewProps) {
     const { filters: textFilters, isFiltered: isTextFiltered, clearAll: clearText } = useSmartSearch(subscriptionSearchDef)
-    const { filters: segFilters, isFiltered: isSegFiltered, clearAll: clearSeg } = useSegmentation(subscriptionSegDef)
+    const basePeriod = { serverParamFrom: 'date_from', serverParamTo: 'date_to' }
+    const { filters: segFilters, isFiltered: isSegFiltered, clearAll: clearSeg } = useSegmentation(subscriptionSegDef, basePeriod)
     const isFiltered = isTextFiltered || isSegFiltered
     const allFilters = useMemo(() => ({ ...textFilters, ...segFilters }), [textFilters, segFilters])
     const { subscriptions, isLoading: loading, refetch: fetchSubscriptions, pauseSubscription, resumeSubscription } = useSubscriptions(allFilters)
@@ -439,7 +440,7 @@ export function SubscriptionsView({ hideHeader = false, externalOpen = false, cr
                             isLoading={loading}
                             variant="embedded"
                             smartSearch={<SmartSearchBar searchDef={subscriptionSearchDef} placeholder="Buscar suscripciones..." className="w-full" />}
-                            segmentation={<SegmentationBar def={subscriptionSegDef} />}
+                            segmentation={<SegmentationBar def={subscriptionSegDef} basePeriod={basePeriod} />}
                             showReset={isFiltered}
                             onReset={() => { clearText(); clearSeg() }}
                             defaultPageSize={20}

@@ -33,7 +33,8 @@ export function TerminalBatchesManagement({
     createAction
 }: TerminalBatchesManagementProps) {
     const router = useRouter()
-    const { filters: segFilters, isFiltered: isSegFiltered, clearAll: clearSeg } = useSegmentation(terminalBatchSegDef)
+    const basePeriod = { serverParamFrom: 'date_from', serverParamTo: 'date_to' }
+    const { filters: segFilters, isFiltered: isSegFiltered, clearAll: clearSeg } = useSegmentation(terminalBatchSegDef, basePeriod)
     const { filterFn: filterBatches, isFiltered: isTextFiltered, clearAll: clearText } = useClientSearch<TerminalBatch>(terminalBatchSearchDef)
     const isFiltered = isTextFiltered || isSegFiltered
     const { batches, isLoading, refetch } = useTerminalBatches(segFilters)
@@ -144,7 +145,7 @@ export function TerminalBatchesManagement({
                     isLoading={isLoading}
                     variant="embedded"
                     smartSearch={<SmartSearchBar searchDef={terminalBatchSearchDef} placeholder="Buscar liquidación..." className="w-full" />}
-                    segmentation={<SegmentationBar def={terminalBatchSegDef} />}
+                    segmentation={<SegmentationBar def={terminalBatchSegDef} basePeriod={basePeriod} />}
                     showReset={isFiltered}
                     onReset={() => { clearText(); clearSeg() }}
                     createAction={createAction}

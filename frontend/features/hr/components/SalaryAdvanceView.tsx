@@ -25,7 +25,8 @@ export function SalaryAdvanceView({ initialAdvances }: SalaryAdvanceViewProps) {
     const createAction = <ToolbarCreateButton label="Nuevo Anticipo" href="/hr/advances?modal=new" />
     const searchParams = useSearchParams()
     const { filterFn: filterAdvances, isFiltered: isTextFiltered, clearAll: clearText } = useClientSearch<SalaryAdvance>(salaryAdvanceSearchDef)
-    const { filters: segFilters, isFiltered: isSegFiltered, clearAll: clearSeg } = useSegmentation(salaryAdvanceSegDef)
+    const basePeriod = { serverParamFrom: 'date_from', serverParamTo: 'date_to' }
+    const { filters: segFilters, isFiltered: isSegFiltered, clearAll: clearSeg } = useSegmentation(salaryAdvanceSegDef, basePeriod)
     const isFiltered = isTextFiltered || isSegFiltered
     const { advances, isLoading: loading, isRefetching, refetch: refetchAdvances } = useSalaryAdvances(segFilters, initialAdvances)
     const filteredAdvances = filterAdvances(advances)
@@ -162,7 +163,7 @@ export function SalaryAdvanceView({ initialAdvances }: SalaryAdvanceViewProps) {
                     entityLabel="hr.salaryadvance"
                     variant="embedded"
                     smartSearch={<SmartSearchBar searchDef={salaryAdvanceSearchDef} placeholder="Buscar anticipo..." className="w-full" />}
-                    segmentation={<SegmentationBar def={salaryAdvanceSegDef} />}
+                    segmentation={<SegmentationBar def={salaryAdvanceSegDef} basePeriod={basePeriod} />}
                     showReset={isFiltered}
                     onReset={() => { clearText(); clearSeg() }}
                     defaultPageSize={20}
