@@ -368,21 +368,19 @@ export function TreasuryMovementsClientView({ externalOpen, createAction }: Trea
                         const signedAmount = type === 'OUTBOUND' ? -amount : amount
 
                         return (
-                            <EntityCard key={m.id} onClick={() => handleViewDetails(m.id)} className="gap-2">
-                                <div className="-mx-4 -mt-4 px-4 pt-4 pb-3 border-b border-border/30">
-                                    <div className="flex items-center justify-center gap-2 text-xs font-medium text-foreground/80">
-                                        <span className="truncate">{sourceLabel}</span>
-                                        <ArrowRight className="h-3 w-3 shrink-0 text-muted-foreground/40" />
-                                        <span className="truncate">{destLabel}</span>
-                                    </div>
-                                </div>
-                                <div className="flex items-start gap-3">
+                            <EntityCard key={m.id} onClick={() => handleViewDetails(m.id)}>
+                                <div className="flex items-center gap-3">
                                     <div className={cn("flex h-8 w-8 shrink-0 items-center justify-center rounded-md", iconStyle)}>
                                         <Icon className="h-4 w-4" />
                                     </div>
                                     <div className="min-w-0 flex-1">
-                                        <div className="text-sm font-semibold">{m.display_id}</div>
-                                        <div className="mt-0.5 text-xs text-muted-foreground">{m.payment_method_display}</div>
+                                        <div className="truncate text-sm font-semibold">{m.display_id}</div>
+                                        <div className="truncate text-xs text-muted-foreground">{m.payment_method_display}</div>
+                                    </div>
+                                    <div className="flex items-center gap-1.5 shrink-0 text-xs font-medium text-foreground/80">
+                                        <span className="truncate max-w-28">{sourceLabel}</span>
+                                        <ArrowRight className="h-3 w-3 shrink-0 text-muted-foreground/40" />
+                                        <span className="truncate max-w-28">{destLabel}</span>
                                     </div>
                                     <DataCell.Currency value={signedAmount} />
                                 </div>
