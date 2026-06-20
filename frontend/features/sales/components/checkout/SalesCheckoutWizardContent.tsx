@@ -783,7 +783,7 @@ export function SalesCheckoutWizardContent({
 
                         {/* Credit Approval Alert */}
                         {creditApprovalRequired && (
-                            <Alert variant={isApproved ? "success" : "warning"} className="mb-4 border-l-[3px] shadow-sm" icon={null}>
+                            <Alert variant={isApproved ? "success" : "warning"} className="mb-4 border-l-[3px] shadow-card" icon={null}>
                                 <div className="flex items-start gap-4">
                                     <div className={cn(
                                         "p-2 rounded-sm",
@@ -823,7 +823,7 @@ export function SalesCheckoutWizardContent({
                                                                 Cancelar
                                                             </Button>
                                                             {approvalTaskId && (
-                                                                <Button size="sm" onClick={() => checkApprovalStatus(approvalTaskId, false)} className="h-8 bg-warning hover:bg-warning/90 text-warning-foreground border-none shadow-sm uppercase font-bold text-[10px]">
+                                                                <Button size="sm" onClick={() => checkApprovalStatus(approvalTaskId, false)} className="h-8 bg-warning hover:bg-warning/90 text-warning-foreground border-none shadow-card uppercase font-bold text-[10px]">
                                                                     Verificar
                                                                 </Button>
                                                             )}
@@ -834,11 +834,11 @@ export function SalesCheckoutWizardContent({
                                                                 Ajustar
                                                             </Button>
                                                             {canDirectApprove && (
-                                                                <Button size="sm" variant="secondary" onClick={handleDirectApproval} className="h-8 bg-warning/20 hover:bg-warning/30 text-warning border-none shadow-sm uppercase font-bold text-[10px]">
+                                                                <Button size="sm" variant="secondary" onClick={handleDirectApproval} className="h-8 bg-warning/20 hover:bg-warning/30 text-warning border-none shadow-card uppercase font-bold text-[10px]">
                                                                     Aprobar
                                                                 </Button>
                                                             )}
-                                                            <Button size="sm" onClick={handleRequestApproval} className="h-8 bg-primary hover:bg-primary/90 text-primary-foreground shadow-sm uppercase font-bold text-[10px]">
+                                                            <Button size="sm" onClick={handleRequestApproval} className="h-8 bg-primary hover:bg-primary/90 text-primary-foreground shadow-card uppercase font-bold text-[10px]">
                                                                 Solicitar
                                                             </Button>
                                                         </>
@@ -852,7 +852,7 @@ export function SalesCheckoutWizardContent({
                         )}
 
                         {securityErrorMessage && (
-                            <Alert variant="destructive" className="mb-4 border-l-[3px] shadow-sm" icon={null}>
+                            <Alert variant="destructive" className="mb-4 border-l-[3px] shadow-card" icon={null}>
                                 <div className="flex items-start gap-4">
                                     <div className="p-2 rounded-sm bg-destructive/10">
                                         <ShieldAlert className="h-4 w-4 text-destructive" />
