@@ -6,14 +6,14 @@ import { useSelectedEntity } from "@/hooks/useSelectedEntity"
 
 import { DataTableView, DataTableColumnHeader, EntityCard, StatusBadge, SegmentationBar, useSegmentation } from '@/components/shared'
 import { ColumnDef } from "@tanstack/react-table"
-import { DataCell, createActionsColumn } from '@/components/shared'
-import { FileText, Lock } from "lucide-react"
+import { DataCell } from '@/components/shared'
+import { posSessionActions, type POSSessionActionsCtx } from "@/features/sales/posSessionActions"
 import { toast } from "sonner"
 import { POSReport } from "@/features/pos/components/POSReport"
 import { SessionCloseModal } from "@/features/pos/components/SessionCloseModal"
 import { fetchPOSSessionSummary } from "@/features/pos/hooks/usePOSSessions"
 
-interface POSSession {
+export interface POSSession {
     id: number
     id_display: string
     user_name: string
@@ -98,6 +98,18 @@ export const POSSessionsView = ({ hideHeader = false }: POSSessionsViewProps) =>
         }
     }
 
+    const actionsCtx: POSSessionActionsCtx = {
+        onReport: (session, type) => {
+            const params = new URLSearchParams(searchParams.toString())
+            params.set('selected', String(session.id))
+            router.push(`${pathname}?${params.toString()}`, { scroll: false })
+        },
+        onCloseRegister: (session) => {
+            setSelectedSession(session)
+            setCloseDialogOpen(true)
+        },
+    }
+
     const columns: ColumnDef<POSSession>[] = [
         {
             accessorKey: "id",
@@ -153,28 +165,7 @@ export const POSSessionsView = ({ hideHeader = false }: POSSessionsViewProps) =>
             cell: ({ row }) =>
                 <DataCell.Status status={row.original.status} />,
         },
-        createActionsColumn<POSSession>({
-            renderActions: (session) => (
-                <>
-                    {session.status === 'OPEN' ? (
-                        <>
-                            <DataCell.Action icon={FileText} title="Reporte X" className="text-info" onClick={() => {
-                                const params = new URLSearchParams(searchParams.toString())
-                                params.set('selected', String(session.id))
-                                router.push(`${pathname}?${params.toString()}`, { scroll: false })
-                            }} />
-                            <DataCell.Action icon={Lock} title="Cerrar Caja" className="text-destructive" onClick={() => { setSelectedSession(session); setCloseDialogOpen(true); }} />
-                        </>
-                    ) : (
-                        <DataCell.Action icon={FileText} title="Reporte Z" className="text-success" onClick={() => {
-                            const params = new URLSearchParams(searchParams.toString())
-                            params.set('selected', String(session.id))
-                            router.push(`${pathname}?${params.toString()}`, { scroll: false })
-                        }} />
-                    )}
-                </>
-            )
-        })
+        posSessionActions.column(actionsCtx),
     ]
 
     return (
@@ -201,7 +192,7 @@ export const POSSessionsView = ({ hideHeader = false }: POSSessionsViewProps) =>
                             const params = new URLSearchParams(searchParams.toString())
                             params.set('selected', String(session.id))
                             router.push(`${pathname}?${params.toString()}`, { scroll: false })
-                        }}>
+                        }} actions={posSessionActions.render(session, actionsCtx)}>
                             <EntityCard.Header
                                 title={session.id_display}
                                 subtitle={session.user_name}
