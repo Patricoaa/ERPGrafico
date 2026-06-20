@@ -1,4 +1,5 @@
 export * from './types'
+export * from './contactActions'
 export * from './api/contactsApi'
 export * from './hooks/useContacts'
 export * from './hooks/usePartners'
