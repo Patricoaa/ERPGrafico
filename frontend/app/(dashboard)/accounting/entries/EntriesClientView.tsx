@@ -30,7 +30,8 @@ interface EntriesPageProps {
 
 export default function EntriesPage({ externalOpen, onExternalOpenChange, createAction }: EntriesPageProps) {
     const { filters: textFilters, isFiltered: isTextFiltered, clearAll: clearText } = useSmartSearch(journalEntrySearchDef)
-    const { filters: segFilters, isFiltered: isSegFiltered, clearAll: clearSeg } = useSegmentation(journalEntrySegDef)
+    const basePeriod = { serverParamFrom: 'date_after', serverParamTo: 'date_before' }
+    const { filters: segFilters, isFiltered: isSegFiltered, clearAll: clearSeg } = useSegmentation(journalEntrySegDef, basePeriod)
     const isFiltered = isTextFiltered || isSegFiltered
     const allFilters = { ...textFilters, ...segFilters }
     const { entries, isLoading, refetch } = useJournalEntries(allFilters)
@@ -241,7 +242,7 @@ export default function EntriesPage({ externalOpen, onExternalOpenChange, create
                     entityLabel="accounting.journalentry"
                     variant="embedded"
                     smartSearch={<SmartSearchBar searchDef={journalEntrySearchDef} placeholder="Buscar asientos..." className="w-full" />}
-                    segmentation={<SegmentationBar def={journalEntrySegDef} />}
+                    segmentation={<SegmentationBar def={journalEntrySegDef} basePeriod={basePeriod} />}
                     showReset={isFiltered}
                     onReset={() => { clearText(); clearSeg() }}
                     defaultPageSize={20}

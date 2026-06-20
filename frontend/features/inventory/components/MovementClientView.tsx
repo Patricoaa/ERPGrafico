@@ -45,7 +45,8 @@ import React from "react"
 
 export function MovementClientView({ externalOpen, onExternalOpenChange, createAction }: MovementClientViewProps) {
     const { filters: textFilters, isFiltered: isTextFiltered, clearAll: clearText } = useSmartSearch(stockMoveSearchDef)
-    const { filters: segFilters, isFiltered: isSegFiltered, clearAll: clearSeg } = useSegmentation(stockMoveSegDef)
+    const basePeriod = { serverParamFrom: 'date_from', serverParamTo: 'date_to' }
+    const { filters: segFilters, isFiltered: isSegFiltered, clearAll: clearSeg } = useSegmentation(stockMoveSegDef, basePeriod)
     const isFiltered = isTextFiltered || isSegFiltered
     const allFilters = useMemo(() => ({ ...textFilters, ...segFilters }), [textFilters, segFilters])
     const [pageState, setPageState] = useState({ pageIndex: 0, pageSize: 50 })
@@ -191,7 +192,7 @@ export function MovementClientView({ externalOpen, onExternalOpenChange, createA
                     pagination={pageState}
                     onPaginationChange={setPageState}
                     smartSearch={<SmartSearchBar searchDef={stockMoveSearchDef} placeholder="Buscar movimientos..." className="w-full" />}
-                    segmentation={<SegmentationBar def={stockMoveSegDef} />}
+                    segmentation={<SegmentationBar def={stockMoveSegDef} basePeriod={basePeriod} />}
                     showReset={isFiltered}
                     onReset={() => { clearText(); clearSeg() }}
                     createAction={createAction}
