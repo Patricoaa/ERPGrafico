@@ -227,7 +227,7 @@ export function Step1_ProductSelection({
 
                     return (
                         <TableRow key={field._key} className="hover:bg-primary/5 transition-colors">
-                            <TableCell className="py-1 px-3">
+                            <TableCell className="py-2 px-3">
                                 <ProductSelector
                                     value={lineProductId}
                                     context="purchase"
@@ -253,7 +253,7 @@ export function Step1_ProductSelection({
                                     return null
                                 })()}
                             </TableCell>
-                            <TableCell className="py-1 px-3 text-center">
+                            <TableCell className="py-2 px-3 text-center">
                                 <Input
                                     type="number"
                                     step="0.01"
@@ -263,7 +263,7 @@ export function Step1_ProductSelection({
                                     onChange={(e) => form.setValue(`lines.${index}.quantity`, parseFloat(e.target.value) || 0)}
                                 />
                             </TableCell>
-                            <TableCell className="py-1 px-3">
+                            <TableCell className="py-2 px-3">
                                 <UoMSelector
                                     product={product as any}
                                     context="purchase"
@@ -280,7 +280,7 @@ export function Step1_ProductSelection({
                                     className="h-8"
                                 />
                             </TableCell>
-                            <TableCell className="py-1 px-3">
+                            <TableCell className="py-2 px-3">
                                 <Input
                                     type="number"
                                     step="1"
@@ -289,10 +289,10 @@ export function Step1_ProductSelection({
                                     onChange={(e) => form.setValue(`lines.${index}.unit_cost`, parseFloat(e.target.value) || 0)}
                                 />
                             </TableCell>
-                            <TableCell className="py-1 px-3 text-right font-medium">
+                            <TableCell className="py-2 px-3 text-right font-medium">
                                 <MoneyDisplay amount={Number(lineQty) * Number(lineCost)} />
                             </TableCell>
-                            <TableCell className="py-1 px-3 text-center">
+                            <TableCell className="py-2 px-3 text-center">
                                 <DataCell.Action
                                     action="delete"
                                     onClick={() => remove(index)}
