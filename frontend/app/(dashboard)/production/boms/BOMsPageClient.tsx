@@ -4,13 +4,13 @@ import { formatCurrency } from "@/lib/money"
 import React, { useEffect, useState } from "react"
 import { useSearchParams, useRouter } from "next/navigation"
 import { ColumnDef } from "@tanstack/react-table"
-import { ActionConfirmModal, DataTableColumnHeader, DataTableView, EntityCard, StatusBadge } from '@/components/shared'
-import { createActionsColumn, DataCell } from '@/components/shared'
-import { Pencil, Trash2, Layers } from "lucide-react"
+import { ActionConfirmModal, DataTableColumnHeader, DataTableView, EntityCard, StatusBadge, Chip } from '@/components/shared'
+import { DataCell } from '@/components/shared'
+import { Layers } from "lucide-react"
 import api from "@/lib/api"
 import { BOMDrawer } from "@/features/production"
 import { toast } from "sonner"
-import { Chip } from "@/components/shared"
+import { bomActions, type BOMActionsCtx } from "./bomActions"
 
 import { ToolbarCreateButton, SmartSearchBar, useSmartSearch, SegmentationBar, useSegmentation } from "@/components/shared"
 import { useConfirmAction } from "@/hooks/useConfirmAction"
@@ -21,7 +21,7 @@ import { bomSegDef } from "@/features/production/segmentationDef"
 
 import type { BOM } from "@/features/production/types"
 
-interface BOMListItem extends BOM {
+export interface BOMListItem extends BOM {
     product_name: string
     product_code: string
     product_internal_code?: string
@@ -87,6 +87,11 @@ export default function BOMsPageClient({ initialBoms }: BOMsPageClientProps) {
         } catch {
             toast.error("Error al cargar detalles de la Lista de Materiales")
         }
+    }
+
+    const actionsCtx: BOMActionsCtx = {
+        onEdit: handleEdit,
+        onDelete: handleDelete,
     }
 
     const columns: ColumnDef<BOMListItem>[] = [
@@ -168,23 +173,7 @@ export default function BOMsPageClient({ initialBoms }: BOMsPageClientProps) {
             ),
             meta: { title: "Estado" },
         },
-        createActionsColumn<BOMListItem>({
-            renderActions: (bom) => (
-                <>
-                    <DataCell.Action
-                        icon={Pencil}
-                        title="Editar"
-                        onClick={() => handleEdit(bom.id!)}
-                    />
-                    <DataCell.Action
-                        icon={Trash2}
-                        title="Eliminar"
-                        className="text-destructive hover:text-destructive"
-                        onClick={() => handleDelete(bom.id!)}
-                    />
-                </>
-            )
-        }),
+        bomActions.column(actionsCtx),
     ]
 
     return (
@@ -211,7 +200,7 @@ export default function BOMsPageClient({ initialBoms }: BOMsPageClientProps) {
                         description: "Crea una lista de materiales (BOM) para definir cómo se fabrica un producto.",
                     }}
                     renderCard={(bom: BOMListItem) => (
-                        <EntityCard onClick={() => handleEdit(bom.id!)}>
+                        <EntityCard onClick={() => handleEdit(bom.id!)} actions={bomActions.render(bom, actionsCtx)}>
                             <EntityCard.Header
                                 title={bom.name}
                                 subtitle={bom.product_name}

@@ -10,7 +10,7 @@ import { format } from "date-fns"
 
 import { useTerminalBatches } from "@/features/treasury"
 import type { TerminalBatch } from "@/features/treasury/types"
-import { DataCell, createActionsColumn, SegmentationBar, useSegmentation, SmartSearchBar, useClientSearch } from '@/components/shared'
+import { DataCell, SegmentationBar, useSegmentation, SmartSearchBar, useClientSearch } from '@/components/shared'
 import { SkeletonShell } from "@/components/shared"
 import { terminalBatchSegDef } from "@/features/treasury/segmentationDef"
 import { terminalBatchSearchDef } from "@/features/treasury/searchDef"
@@ -130,9 +130,6 @@ export function TerminalBatchesManagement({
                 title: "Estado"
             }
         },
-        createActionsColumn<TerminalBatch>({
-            renderActions: () => null
-        })
     ], [])
 
     return (
