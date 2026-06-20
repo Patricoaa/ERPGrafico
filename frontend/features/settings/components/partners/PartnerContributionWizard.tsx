@@ -243,7 +243,7 @@ export function PartnerContributionWizard({
                         className={cn(
                             "group flex flex-col items-center gap-4 p-6 rounded-md border-2 transition-all text-center",
                             method === "CASH"
-                                ? "border-success bg-success/5 shadow-lg shadow-success/10"
+                                ? "border-success bg-success/5 shadow-floating shadow-success/10"
                                 : "border-muted hover:border-success/30 hover:bg-muted/50"
                         )}
                     >
@@ -264,7 +264,7 @@ export function PartnerContributionWizard({
                         className={cn(
                             "group flex flex-col items-center gap-4 p-6 rounded-md border-2 transition-all text-center",
                             method === "ASSETS"
-                                ? "border-warning bg-warning/5 shadow-lg shadow-warning/10"
+                                ? "border-warning bg-warning/5 shadow-floating shadow-warning/10"
                                 : "border-muted hover:border-warning/30 hover:bg-muted/50"
                         )}
                     >

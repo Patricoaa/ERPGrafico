@@ -235,14 +235,14 @@ export function InventoryContributionModal({
                     <TabsList className="grid w-full grid-cols-2 bg-muted/50 rounded-full h-11 p-1 border">
                         <TabsTrigger
                             value="IN"
-                            className="rounded-full text-[11px] uppercase font-bold tracking-wider data-[state=active]:bg-background data-[state=active]:text-success data-[state=active]:border data-[state=active]:border-success/20 data-[state=active]:shadow-sm h-full"
+                            className="rounded-full text-[11px] uppercase font-bold tracking-wider data-[state=active]:bg-background data-[state=active]:text-success data-[state=active]:border data-[state=active]:border-success/20 data-[state=active]:shadow-card h-full"
                         >
                             <ArrowDownCircle className="mr-2 h-4 w-4" />
                             Aporte
                         </TabsTrigger>
                         <TabsTrigger
                             value="OUT"
-                            className="rounded-full text-[11px] uppercase font-bold tracking-wider data-[state=active]:bg-background data-[state=active]:text-destructive data-[state=active]:border data-[state=active]:border-destructive/20 data-[state=active]:shadow-sm h-full"
+                            className="rounded-full text-[11px] uppercase font-bold tracking-wider data-[state=active]:bg-background data-[state=active]:text-destructive data-[state=active]:border data-[state=active]:border-destructive/20 data-[state=active]:shadow-card h-full"
                         >
                             <ArrowUpCircle className="mr-2 h-4 w-4" />
                             Retiro

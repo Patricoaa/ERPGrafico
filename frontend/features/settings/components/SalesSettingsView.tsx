@@ -29,12 +29,12 @@ const DiscountPermissionControl = ({ form, userField, groupField }: { form: UseF
 
     return (
         <div className="flex flex-col gap-3">
-            <div className="flex items-center p-0.5 bg-muted rounded-md border shadow-sm w-fit self-start">
+            <div className="flex items-center p-0.5 bg-muted rounded-md border shadow-card w-fit self-start">
                 <button
                     type="button"
                     className={cn(
                         "px-3 py-1 rounded-md text-[10px] font-medium transition-all flex items-center gap-1.5",
-                        mode === 'user' ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
+                        mode === 'user' ? "bg-background text-foreground shadow-card" : "text-muted-foreground hover:text-foreground"
                     )}
                     onClick={() => {
                         setMode('user')
@@ -48,7 +48,7 @@ const DiscountPermissionControl = ({ form, userField, groupField }: { form: UseF
                     type="button"
                     className={cn(
                         "px-3 py-1 rounded-md text-[10px] font-medium transition-all flex items-center gap-1.5",
-                        mode === 'group' ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
+                        mode === 'group' ? "bg-background text-foreground shadow-card" : "text-muted-foreground hover:text-foreground"
                     )}
                     onClick={() => {
                         setMode('group')

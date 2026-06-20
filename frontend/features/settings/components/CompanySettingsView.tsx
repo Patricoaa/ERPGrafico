@@ -218,7 +218,7 @@ export function CompanySettingsView({ activeTab }: { activeTab: string }) {
                                                             type="button"
                                                             variant="outline"
                                                             size="icon"
-                                                            className="h-[52px] w-[52px] shadow-sm"
+                                                            className="h-[52px] w-[52px] shadow-card"
                                                             onClick={() => syncFromContact()}
                                                             disabled={syncing || !isLinked}
                                                             title="Sincronizar datos"
