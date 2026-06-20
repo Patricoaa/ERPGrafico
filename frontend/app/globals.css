@@ -261,6 +261,11 @@
   --color-pantone-orange: oklch(var(--pantone-orange-raw));
   --color-pantone-violet: oklch(var(--pantone-violet-raw));
 
+  --shadow-card: 0 1px 3px oklch(0.12 0.02 240 / 0.06);
+  --shadow-elevated: 0 4px 16px oklch(0.12 0.02 240 / 0.08), 0 1px 4px oklch(0.12 0.02 240 / 0.04);
+  --shadow-floating: 0 8px 32px oklch(0.12 0.02 240 / 0.12), 0 2px 8px oklch(0.12 0.02 240 / 0.06);
+  --shadow-overlay: 0 16px 48px oklch(0.12 0.02 240 / 0.16);
+
   --color-sidebar: oklch(var(--sidebar-raw));
   --color-sidebar-foreground: oklch(var(--sidebar-foreground-raw));
   --color-sidebar-primary: oklch(var(--primary-raw));
@@ -320,14 +325,6 @@
   --duration-normal: 250ms;
   --duration-slow: 400ms;
 
-  /* 
-   * ELEVATION SYSTEM — Depth tokens for consistent layering
-   * Uses foreground hue (240) for tinted shadows that match the industrial palette.
-   */
-  --shadow-card: 0 1px 3px oklch(0.12 0.02 240 / 0.06);
-  --shadow-elevated: 0 4px 16px oklch(0.12 0.02 240 / 0.08), 0 1px 4px oklch(0.12 0.02 240 / 0.04);
-  --shadow-floating: 0 8px 32px oklch(0.12 0.02 240 / 0.12), 0 2px 8px oklch(0.12 0.02 240 / 0.06);
-  --shadow-overlay: 0 16px 48px oklch(0.12 0.02 240 / 0.16);
 
   /* 
    * RHYTHM & SPACING 
