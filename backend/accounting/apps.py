@@ -15,7 +15,7 @@ class AccountingConfig(AppConfig):
 
         try:
             from core.registry import UniversalRegistry, SearchableEntity
-            from accounting.models import Account, JournalEntry
+            from accounting.models import Account, JournalEntry, FiscalYear, Budget
             UniversalRegistry.register(SearchableEntity(
                 model=Account,
                 label='accounting.account',
@@ -45,6 +45,36 @@ class AccountingConfig(AppConfig):
                 list_url='/accounting/entries',
                 detail_url_pattern='/accounting/entries/{id}',
                 permission='accounting.view_journalentry',
+            ))
+            UniversalRegistry.register(SearchableEntity(
+                model=FiscalYear,
+                label='accounting.fiscalyear',
+                title_singular='Ejercicio Contable',
+                title_plural='Ejercicios Contables',
+                icon='calendar',
+                search_fields=('year',),
+                short_display_template='EJ-{year}',
+                display_template='Ejercicio {year}',
+                subtitle_template='{status}',
+                extra_info_template='{start_date} / {end_date}',
+                list_url='/accounting/closures',
+                detail_url_pattern='/accounting/closures/{id}',
+                permission='accounting.view_fiscalyear',
+            ))
+            UniversalRegistry.register(SearchableEntity(
+                model=Budget,
+                label='accounting.budget',
+                title_singular='Presupuesto',
+                title_plural='Presupuestos',
+                icon='pie-chart',
+                search_fields=('name', 'description'),
+                short_display_template='BUD-{id}',
+                display_template='{name}',
+                subtitle_template='{start_date} / {end_date}',
+                extra_info_template='{description}',
+                list_url='/finance/budgets',
+                detail_url_pattern='/finance/budgets/{id}',
+                permission='accounting.view_budget',
             ))
         except Exception:
             pass

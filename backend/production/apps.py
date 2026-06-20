@@ -17,7 +17,7 @@ class ProductionConfig(AppConfig):
 
         try:
             from core.registry import UniversalRegistry, SearchableEntity
-            from production.models import WorkOrder
+            from production.models import WorkOrder, BillOfMaterials
             UniversalRegistry.register(SearchableEntity(
                 model=WorkOrder,
                 label='production.workorder',
@@ -32,6 +32,21 @@ class ProductionConfig(AppConfig):
                 list_url='/production/orders',
                 detail_url_pattern='/production/orders/{id}',
                 permission='production.view_workorder',
+            ))
+            UniversalRegistry.register(SearchableEntity(
+                model=BillOfMaterials,
+                label='production.bom',
+                title_singular='Lista de Materiales',
+                title_plural='Listas de Materiales',
+                icon='clipboard-list',
+                search_fields=('name', 'product__name'),
+                short_display_template='BOM-{id}',
+                display_template='{name}',
+                subtitle_template='{product.name}',
+                extra_info_template='{status}',
+                list_url='/production/boms',
+                detail_url_pattern='/production/boms/{id}',
+                permission='production.view_billofmaterials',
             ))
         except Exception:
             pass
