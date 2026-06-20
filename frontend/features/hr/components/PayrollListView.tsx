@@ -8,8 +8,9 @@ import { CreatePayrollDrawer, PayrollDetailDrawer, deletePayroll, paySalary, pay
 import type { Payroll } from "@/types/hr"
 import { ColumnDef } from "@tanstack/react-table"
 import { DataTableView, DataTableColumnHeader } from '@/components/shared'
-import { createActionsColumn, DataCell } from '@/components/shared'
-import { Eye, Trash2, Coins, CreditCard, Wallet, FileText } from "lucide-react"
+import { DataCell } from '@/components/shared'
+import { FileText } from "lucide-react"
+import { payrollActions, type PayrollActionsCtx } from '@/features/hr/payrollActions'
 import { PaymentModal } from "@/features/treasury"
 import { Button } from "@/components/ui/button"
 import {
@@ -156,6 +157,24 @@ export function PayrollListView({ initialPayrolls }: PayrollListViewProps) {
         }
     }
 
+    const actionsCtx: PayrollActionsCtx = {
+        onViewDetail: openDetail,
+        onRegisterAdvance: (p) => { setSelectedPayroll(p); setPaymentMode('ADVANCE') },
+        onPaySalary: (p) => { setSelectedPayroll(p); setPaymentMode('SALARY') },
+        onPayPrevired: (p) => { setSelectedPayroll(p); setPaymentMode('PREVIRED') },
+        onDeleteDraft: async (id) => {
+            if (confirm("¿Eliminar borrador?")) {
+                try {
+                    await deletePayroll(id);
+                    toast.success("Borrador eliminado");
+                    fetchPayrolls();
+                } catch {
+                    toast.error("Error al eliminar");
+                }
+            }
+        },
+    }
+
     const columns: ColumnDef<Payroll>[] = [
         {
             accessorKey: "display_id",
@@ -245,77 +264,7 @@ export function PayrollListView({ initialPayrolls }: PayrollListViewProps) {
             cell: ({ row }) =>
                 <DataCell.Status status={(row.original as Payroll & Record<string, string>).previred_paid_status || ""} />
         },
-        createActionsColumn<Payroll>({
-            headerLabel: "Acciones",
-            renderActions: (p) => (
-                <>
-                    <DataCell.Action
-                        icon={Eye}
-                        title="Ver Detalle"
-                        onClick={(e) => { e.stopPropagation(); openDetail(p.id) }}
-                    />
-
-                    {p.status === 'DRAFT' && (
-                        <DataCell.Action
-                            icon={Wallet}
-                            title="Registrar Anticipo"
-                            className="text-primary hover:text-primary"
-                            onClick={(e) => {
-                                e.stopPropagation();
-                                setSelectedPayroll(p);
-                                setPaymentMode('ADVANCE');
-                            }}
-                        />
-                    )}
-
-                    {p.status === 'POSTED' && (p as Payroll & Record<string, string>).remuneration_paid_status !== 'PAID' && (
-                        <DataCell.Action
-                            icon={Coins}
-                            title="Registrar Pago Sueldo"
-                            className="text-success hover:text-success"
-                            onClick={(e) => {
-                                e.stopPropagation();
-                                setSelectedPayroll(p);
-                                setPaymentMode('SALARY');
-                            }}
-                        />
-                    )}
-
-                    {p.status === 'POSTED' && (p as Payroll & Record<string, string>).previred_paid_status !== 'PAID' && (
-                        <DataCell.Action
-                            icon={CreditCard}
-                            title="Pagar Previred"
-                            className="text-warning hover:text-warning"
-                            onClick={(e) => {
-                                e.stopPropagation();
-                                setSelectedPayroll(p);
-                                setPaymentMode('PREVIRED');
-                            }}
-                        />
-                    )}
-
-                    {p.status === 'DRAFT' && (
-                        <DataCell.Action
-                            icon={Trash2}
-                            title="Eliminar borrador"
-                            className="text-destructive hover:text-destructive"
-                            onClick={async (e) => {
-                                e.stopPropagation();
-                                if (confirm("¿Eliminar borrador?")) {
-                                    try {
-                                        await deletePayroll(p.id);
-                                        toast.success("Borrador eliminado");
-                                        fetchPayrolls();
-                                    } catch {
-                                        toast.error("Error al eliminar");
-                                    }
-                                }
-                            }}
-                        />
-                    )}
-                </>
-            )
-        }),
+        payrollActions.column(actionsCtx, "Acciones"),
     ]
 
     return (

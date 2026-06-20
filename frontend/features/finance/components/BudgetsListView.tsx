@@ -4,7 +4,7 @@ import React, { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 
-import { Pencil, FileText, Calendar, Wallet } from "lucide-react"
+import { Calendar, Wallet } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { BaseModal, CancelButton, FormFooter, LabeledInput } from '@/components/shared'
 import { toast } from "sonner"
@@ -12,7 +12,8 @@ import { DataTableView, DataTableColumnHeader } from '@/components/shared'
 import { ColumnDef } from "@tanstack/react-table"
 
 import { BudgetEditor } from "@/features/finance/components/BudgetEditor"
-import { createActionsColumn, DataCell } from '@/components/shared'
+import { DataCell } from '@/components/shared'
+import { budgetActions, type BudgetActionsCtx } from "@/features/finance/budgetActions"
 
 import { useSearchParams, usePathname } from "next/navigation"
 
@@ -97,6 +98,15 @@ export function BudgetsListView({ externalOpen, onExternalOpenChange, createActi
         }
     }
 
+    const actionsCtx: BudgetActionsCtx = {
+        onEdit: (id) => {
+            const params = new URLSearchParams(searchParams.toString())
+            params.set('selected', String(id))
+            router.push(`${pathname}?${params.toString()}`, { scroll: false })
+        },
+        onViewExecution: (id) => router.push(`/finances/budgets/${id}`),
+    }
+
     const columns: ColumnDef<Budget>[] = [
         {
             accessorKey: "name",
@@ -134,28 +144,7 @@ export function BudgetsListView({ externalOpen, onExternalOpenChange, createActi
                 </div>
             ),
         },
-        createActionsColumn<Budget>({
-            renderActions: (item) => (
-                <>
-                    <DataCell.Action
-                        icon={Pencil}
-                        title="Editar Montos"
-                        onClick={() => {
-                            const params = new URLSearchParams(searchParams.toString())
-                            params.set('selected', String(item.id))
-                            router.push(`${pathname}?${params.toString()}`, { scroll: false })
-                        }}
-                    />
-                    <DataCell.Action
-                        icon={FileText}
-                        title="Ver Ejecución"
-                        onClick={() => {
-                            router.push(`/finances/budgets/${item.id}`)
-                        }}
-                    />
-                </>
-            )
-        }),
+        budgetActions.column(actionsCtx),
     ]
 
     return (

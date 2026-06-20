@@ -7,7 +7,8 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Chip, FadeIn, MoneyDisplay, StatCard } from '@/components/shared'
 import { DataTable } from '@/components/shared'
 import { DataTableColumnHeader } from '@/components/shared'
-import { createActionsColumn, DataCell } from '@/components/shared'
+import { DataCell } from '@/components/shared'
+import { partnerTransactionActions, type PartnerTransactionActionsCtx } from './partnerTransactionActions'
 import {
     CalendarDays,
     User,
@@ -53,6 +54,8 @@ export function PartnerProfileTab({ contactId }: Props) {
         setDetailsOpen(false)
         setSelectedMovementId(null)
     }
+
+    const actionsCtx: PartnerTransactionActionsCtx = { onViewMovement: handleViewDetails }
 
     const columns: ColumnDef<PartnerTransaction>[] = [
         {
@@ -105,22 +108,7 @@ export function PartnerProfileTab({ contactId }: Props) {
                 )
             },
         },
-        createActionsColumn<PartnerTransaction>({
-            renderActions: (tx) => {
-                const movementId = tx.treasury_movement
-                return (
-                    movementId ? (
-                        <DataCell.Action
-                            icon={Eye}
-                            title="Ver Detalle Transaccional"
-                            onClick={() => handleViewDetails(movementId)}
-                        />
-                    ) : (
-                        <span className="text-[10px] text-muted-foreground italic">No vinculado</span>
-                    )
-                )
-            }
-        })
+        partnerTransactionActions.column(actionsCtx)
     ]
 
     if (isLoading) return <SkeletonShell isLoading ariaLabel="Cargando..." />

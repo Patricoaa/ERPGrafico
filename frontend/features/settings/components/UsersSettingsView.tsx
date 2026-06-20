@@ -4,11 +4,12 @@ import {useState, useEffect, useMemo} from "react"
 
 import { DataTable, SmartSearchBar, ToolbarCreateButton, SegmentationBar, useSegmentation, useSmartSearch } from '@/components/shared'
 import { DataTableColumnHeader } from '@/components/shared'
-import { DataCell, createActionsColumn } from '@/components/shared'
+import { DataCell } from '@/components/shared'
 import { ColumnDef } from "@tanstack/react-table"
 import { FadeIn, Chip } from "@/components/shared"
+import { userActions, type UserActionsCtx } from './userActions'
 
-import { Edit, Users } from "lucide-react"
+import { Users } from "lucide-react"
 import { UserDrawer } from "@/features/users/components/UserDrawer"
 import { Tabs, TabsContent } from "@/components/ui/tabs"
 import { GroupManagement } from "@/features/settings/components/GroupManagement"
@@ -51,6 +52,14 @@ export function UsersSettingsView({ activeTab }: UsersSettingsViewProps) {
             })
         }
     }, [selectedFromUrl])
+
+    const actionsCtx: UserActionsCtx = {
+        onEdit: (id) => {
+            const params = new URLSearchParams(searchParams.toString())
+            params.set('selected', String(id))
+            router.push(`${pathname}?${params.toString()}`, { scroll: false })
+        },
+    }
 
     const columns: ColumnDef<AppUser>[] = useMemo(() => [
         {
@@ -137,21 +146,7 @@ export function UsersSettingsView({ activeTab }: UsersSettingsViewProps) {
                 <DataCell.Status status={row.original.is_active ? "active" : "inactive"} />
             ),
         },
-        createActionsColumn<AppUser>({
-            renderActions: (user) => {
-                return (
-                    <DataCell.Action
-                        icon={Edit}
-                        title="Editar"
-                        onClick={() => {
-                            const params = new URLSearchParams(searchParams.toString())
-                            params.set('selected', String(user.id))
-                            router.push(`${pathname}?${params.toString()}`, { scroll: false })
-                        }}
-                    />
-                )
-            }
-        })
+        userActions.column(actionsCtx)
     ], [refetch])
 
     const usersCreateAction = useMemo(() => (
