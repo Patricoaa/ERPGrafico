@@ -10,9 +10,10 @@ import { format } from "date-fns"
 
 import { useTerminalBatches } from "@/features/treasury"
 import type { TerminalBatch } from "@/features/treasury/types"
-import { DataCell, createActionsColumn, SegmentationBar, useSegmentation } from '@/components/shared'
+import { DataCell, createActionsColumn, SegmentationBar, useSegmentation, SmartSearchBar, useClientSearch } from '@/components/shared'
 import { SkeletonShell } from "@/components/shared"
 import { terminalBatchSegDef } from "@/features/treasury/segmentationDef"
+import { terminalBatchSearchDef } from "@/features/treasury/searchDef"
 
 // Lazy load feature components
 const LazyTerminalBatchForm = lazy(() => import("./TerminalBatchForm"))
@@ -33,7 +34,10 @@ export function TerminalBatchesManagement({
 }: TerminalBatchesManagementProps) {
     const router = useRouter()
     const { filters: segFilters, isFiltered: isSegFiltered, clearAll: clearSeg } = useSegmentation(terminalBatchSegDef)
+    const { filterFn: filterBatches, isFiltered: isTextFiltered, clearAll: clearText } = useClientSearch<TerminalBatch>(terminalBatchSearchDef)
+    const isFiltered = isTextFiltered || isSegFiltered
     const { batches, isLoading, refetch } = useTerminalBatches(segFilters)
+    const filteredBatches = filterBatches(batches)
     const [openCreate, setOpenCreate] = useState(false)
     const [openInvoice, setOpenInvoice] = useState(false)
     const [isMounted, setIsMounted] = useState(false)
@@ -136,14 +140,15 @@ export function TerminalBatchesManagement({
                 <DataTableView
                     entityLabel="treasury.terminalbatch"
                     columns={columns}
-                    data={batches}
+                    data={filteredBatches}
                     isLoading={isLoading}
                     variant="embedded"
+                    smartSearch={<SmartSearchBar searchDef={terminalBatchSearchDef} placeholder="Buscar liquidación..." className="w-full" />}
                     segmentation={<SegmentationBar def={terminalBatchSegDef} />}
-                    showReset={isSegFiltered}
-                    onReset={clearSeg}
+                    showReset={isFiltered}
+                    onReset={() => { clearText(); clearSeg() }}
                     createAction={createAction}
-                    isFiltered={isSegFiltered}
+                    isFiltered={isFiltered}
                     emptyState={{
                         context: "treasury",
                         title: "Aún no hay liquidaciones",
