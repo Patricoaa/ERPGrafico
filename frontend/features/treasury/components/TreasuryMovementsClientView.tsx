@@ -4,9 +4,10 @@ import React, { useState, useEffect, lazy, Suspense } from "react"
 import { DataTableView, EntityCard, StatusBadge, SegmentationBar, useSegmentation, SmartSearchBar, useSmartSearch } from '@/components/shared'
 import { DataTableColumnHeader } from '@/components/shared'
 import { ColumnDef } from "@tanstack/react-table"
-import {ArrowDown} from "lucide-react"
+import { ArrowDown, ArrowDownToLine, ArrowUpFromLine, ArrowLeftRight, Scale, Ban, ArrowRight } from "lucide-react"
 
 import { DataCell, createActionsColumn } from '@/components/shared'
+import { cn } from "@/lib/utils"
 import { useGlobalModalActions } from "@/components/providers/GlobalModalProvider"
 
 import { SkeletonShell } from "@/components/shared"
@@ -330,6 +331,8 @@ export function TreasuryMovementsClientView({ externalOpen, createAction }: Trea
                         const type = m.movement_type
                         const isWriteOff = m.payment_method === 'WRITE_OFF'
 
+                        const isTransferOrAdj = type === 'TRANSFER' || type === 'ADJUSTMENT'
+
                         let status = "info" as any
                         let label = m.movement_type_display
 
@@ -342,10 +345,28 @@ export function TreasuryMovementsClientView({ externalOpen, createAction }: Trea
                         } else if (type === 'OUTBOUND') {
                             status = "sent"
                             label = "Retiro"
-                        } else if (type === 'TRANSFER' || type === 'ADJUSTMENT') {
+                        } else if (isTransferOrAdj) {
                             status = "in_progress"
                             label = type === 'TRANSFER' ? "Traspaso" : "Ajuste"
                         }
+
+                        const Icon = isWriteOff
+                            ? Ban
+                            : type === 'INBOUND'
+                                ? ArrowDownToLine
+                                : type === 'OUTBOUND'
+                                    ? ArrowUpFromLine
+                                    : type === 'TRANSFER'
+                                        ? ArrowLeftRight
+                                        : Scale
+
+                        const iconStyle = isWriteOff
+                            ? "text-muted-foreground/50 bg-muted/50"
+                            : type === 'INBOUND'
+                                ? "text-success bg-success/10"
+                                : type === 'OUTBOUND'
+                                    ? "text-destructive bg-destructive/10"
+                                    : "text-warning bg-warning/10"
 
                         let sourceLabel = m.partner_name || m.from_account_name || 'Origen'
                         let destLabel = m.to_account_name || m.partner_name || 'Destino'
@@ -356,7 +377,7 @@ export function TreasuryMovementsClientView({ externalOpen, createAction }: Trea
                         } else if (type === 'OUTBOUND') {
                             sourceLabel = m.from_account_name || 'Caja'
                             destLabel = m.partner_name || 'Particular'
-                        } else if (type === 'TRANSFER' || type === 'ADJUSTMENT') {
+                        } else if (isTransferOrAdj) {
                             sourceLabel = m.from_account_name || 'Origen'
                             destLabel = m.to_account_name || 'Destino'
                         }
@@ -367,20 +388,28 @@ export function TreasuryMovementsClientView({ externalOpen, createAction }: Trea
                         return (
                             <EntityCard key={m.id} onClick={() => handleViewDetails(m.id)}>
                                 <EntityCard.Header
-                                    title={`Movimiento ${m.display_id}`}
-                                    subtitle={m.date}
+                                    title={
+                                        <div className="flex items-center gap-2">
+                                            <div className={cn("flex h-8 w-8 shrink-0 items-center justify-center rounded-md", iconStyle)}>
+                                                <Icon className="h-4 w-4" />
+                                            </div>
+                                            <span>{m.display_id}</span>
+                                        </div>
+                                    }
+                                    subtitle={m.payment_method_display}
                                     trailing={
-                                        <div className="flex flex-col items-end gap-2">
+                                        <div className="flex flex-col items-end gap-1">
                                             <StatusBadge status={status} label={label} size="sm" className="uppercase font-bold tracking-tight" />
                                             <DataCell.Currency value={signedAmount} />
                                         </div>
                                     }
                                 />
                                 <EntityCard.Body>
-                                    <EntityCard.Field label="Origen" value={sourceLabel} />
-                                    <EntityCard.Field label="Destino" value={destLabel} />
-                                    <EntityCard.Field label="Método" value={m.payment_method_display} />
-                                    <EntityCard.Field label="Usuario" value={m.created_by_name} />
+                                    <div className="flex items-center justify-center gap-2 col-span-2 py-1 text-xs font-medium text-foreground/80">
+                                        <span className="truncate">{sourceLabel}</span>
+                                        <ArrowRight className="h-3 w-3 shrink-0 text-muted-foreground/40" />
+                                        <span className="truncate">{destLabel}</span>
+                                    </div>
                                 </EntityCard.Body>
                             </EntityCard>
                         )
