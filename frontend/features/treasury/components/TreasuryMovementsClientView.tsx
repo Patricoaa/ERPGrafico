@@ -369,16 +369,14 @@ export function TreasuryMovementsClientView({ externalOpen, createAction }: Trea
                                     iconClassName={iconStyle}
                                     title={m.display_id}
                                     subtitle={m.payment_method_display}
-                                    trailing={
-                                        <div className="flex items-center gap-3">
-                                            <div className="flex items-center gap-1.5 text-xs font-medium text-foreground/80 whitespace-nowrap">
-                                                <span>{sourceLabel}</span>
-                                                <ArrowRight className="h-3 w-3 shrink-0 text-muted-foreground/40" />
-                                                <span>{destLabel}</span>
-                                            </div>
-                                            <DataCell.Currency value={signedAmount} />
+                                    center={
+                                        <div className="flex items-center gap-1.5 text-xs font-medium text-foreground/80 whitespace-nowrap">
+                                            <span>{sourceLabel}</span>
+                                            <ArrowRight className="h-3 w-3 shrink-0 text-muted-foreground/40" />
+                                            <span>{destLabel}</span>
                                         </div>
                                     }
+                                    trailing={<DataCell.Currency value={signedAmount} />}
                                 />
                             </EntityCard>
                         )
