@@ -56,7 +56,8 @@ export function PayrollListView({ initialPayrolls }: PayrollListViewProps) {
     const pathname = usePathname()
     const searchParams = useSearchParams()
     const { filters: textFilters, isFiltered: isTextFiltered, clearAll: clearText } = useSmartSearch(payrollSearchDef)
-    const { filters: segFilters, isFiltered: isSegFiltered, clearAll: clearSeg } = useSegmentation(payrollSegDef)
+    const basePeriod = { serverParamFrom: 'date_from', serverParamTo: 'date_to' }
+    const { filters: segFilters, isFiltered: isSegFiltered, clearAll: clearSeg } = useSegmentation(payrollSegDef, basePeriod)
     const isFiltered = isTextFiltered || isSegFiltered
     const { payrolls, isLoading: loading, isRefetching, refetch: fetchPayrolls } = usePayrolls({ ...textFilters, ...segFilters }, initialPayrolls)
 
@@ -334,7 +335,7 @@ export function PayrollListView({ initialPayrolls }: PayrollListViewProps) {
                     entityLabel="hr.payroll"
                     variant="embedded"
                     smartSearch={<SmartSearchBar searchDef={payrollSearchDef} placeholder="Buscar por empleado o período..." className="w-full" />}
-                    segmentation={<SegmentationBar def={payrollSegDef} />}
+                    segmentation={<SegmentationBar def={payrollSegDef} basePeriod={basePeriod} />}
                     showReset={isFiltered}
                     onReset={() => { clearText(); clearSeg() }}
                     defaultPageSize={20}
