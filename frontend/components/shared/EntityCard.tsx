@@ -78,6 +78,8 @@ interface EntityCardHeaderProps {
     subtitle?: React.ReactNode
     /** Status badge(s) or any trailing slot */
     trailing?: React.ReactNode
+    /** Optional centered slot between title and trailing */
+    center?: React.ReactNode
     /** Optional icon rendered in a 32×32 rounded container before the title */
     icon?: LucideIcon
     /** Styling for the icon container (e.g. "text-success bg-success/10") */
@@ -85,7 +87,37 @@ interface EntityCardHeaderProps {
     className?: string
 }
 
-function EntityCardHeader({ title, subtitle, trailing, icon: Icon, iconClassName, className }: EntityCardHeaderProps) {
+function EntityCardHeader({ title, subtitle, trailing, center, icon: Icon, iconClassName, className }: EntityCardHeaderProps) {
+    if (center) {
+        return (
+            <div className={cn("grid grid-cols-[1fr_auto_1fr] items-start gap-2", className)}>
+                <div className="flex items-start gap-3 min-w-0">
+                    {Icon && (
+                        <div className={cn("flex h-8 w-8 shrink-0 items-center justify-center rounded-md", iconClassName ?? "bg-muted")}>
+                            <Icon className="h-4 w-4" />
+                        </div>
+                    )}
+                    <div className="min-w-0">
+                        <div className="truncate text-sm font-semibold leading-tight tracking-tight">
+                            {title}
+                        </div>
+                        {subtitle && (
+                            <div className="mt-0.5 truncate text-xs text-muted-foreground">
+                                {subtitle}
+                            </div>
+                        )}
+                    </div>
+                </div>
+                <div className="flex items-center justify-center self-center">
+                    {center}
+                </div>
+                <div className="flex items-start justify-end">
+                    {trailing}
+                </div>
+            </div>
+        )
+    }
+
     return (
         <div className={cn("flex items-start justify-between gap-2", className)}>
             <div className="flex items-start gap-3 min-w-0 flex-1">
