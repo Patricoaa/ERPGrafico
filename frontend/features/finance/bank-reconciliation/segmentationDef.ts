@@ -12,12 +12,5 @@ export const reconciliationSegDef: SegmentationDefinition = {
         { label: 'Cargos / Egresos', value: 'OUT' },
       ],
     },
-    {
-      key: 'date',
-      label: 'Fecha',
-      type: 'date',
-      serverParamFrom: 'date_from',
-      serverParamTo: 'date_to',
-    },
   ],
 }

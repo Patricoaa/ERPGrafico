@@ -13,14 +13,6 @@ export const stockMoveSegDef: SegmentationDefinition = {
         { label: 'Ajuste', value: 'ADJ' },
       ],
     },
-    {
-      key: 'date',
-      label: 'Fecha',
-      type: 'date',
-      serverParamDate: 'date',
-      serverParamFrom: 'date_from',
-      serverParamTo: 'date_to',
-    },
   ],
 }
 

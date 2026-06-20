@@ -157,7 +157,8 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
     const [systemParams, setSystemParams] = useState<QueryPaginationParams>({ page: 1, pageSize: 50 })
 
     const { filters: textFilters, isFiltered: isTextFiltered, clearAll: clearText } = useSmartSearch(reconciliationSearchDef)
-    const { filters: segFilters, isFiltered: isSegFiltered, clearAll: clearSeg } = useSegmentation(reconciliationSegDef)
+    const basePeriod = { serverParamFrom: 'date_from', serverParamTo: 'date_to' }
+    const { filters: segFilters, isFiltered: isSegFiltered, clearAll: clearSeg } = useSegmentation(reconciliationSegDef, basePeriod)
     const isFiltered = isTextFiltered || isSegFiltered
     const allFilters = { ...textFilters, ...segFilters }
 
@@ -742,7 +743,7 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                             placeholder="Buscar movimientos y pagos por descripción, monto..."
                             className="flex-1"
                         />
-                        <SegmentationBar def={reconciliationSegDef} />
+                        <SegmentationBar def={reconciliationSegDef} basePeriod={basePeriod} />
                     </div>
 
                     {/* Right: Actions & Navigation Group */}

@@ -33,13 +33,6 @@ export const terminalBatchSegDef: SegmentationDefinition = {
         { label: 'Facturado', value: 'INVOICED' },
       ],
     },
-    {
-      key: 'date',
-      label: 'Fecha',
-      type: 'date',
-      serverParamFrom: 'date_from',
-      serverParamTo: 'date_to',
-    },
   ],
 }
 
