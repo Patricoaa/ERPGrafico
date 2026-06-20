@@ -6,14 +6,13 @@ import { AdvanceDrawer } from "@/features/hr"
 import { createAdvance, deleteAdvance, getEmployees, getPayrolls } from "@/features/hr"
 import { PaymentModal } from "@/features/treasury"
 import type { SalaryAdvance, Employee, Payroll } from "@/types/hr"
-import { Pencil, Trash2 } from "lucide-react"
 import { DataTableView, DataTableColumnHeader } from '@/components/shared'
-import { createActionsColumn, DataCell, EntityCard } from '@/components/shared'
+import { DataCell, EntityCard } from '@/components/shared'
 import { ColumnDef } from "@tanstack/react-table"
 import { useSearchParams } from "next/navigation"
 
 import { ToolbarCreateButton, SegmentationBar, useSegmentation, SmartSearchBar, useClientSearch } from "@/components/shared"
-import { useSalaryAdvances } from "@/features/hr"
+import { useSalaryAdvances, salaryAdvanceActions, type SalaryAdvanceActionsCtx } from "@/features/hr"
 import { salaryAdvanceSegDef } from "../segmentationDef"
 import { salaryAdvanceSearchDef } from "../searchDef"
 
@@ -67,14 +66,17 @@ export function SalaryAdvanceView({ initialAdvances }: SalaryAdvanceViewProps) {
         return () => { cancelled = true }
     }, [])
 
-    const handleDelete = async (id: number) => {
-        try {
-            await deleteAdvance(id)
-            toast.success("Anticipo eliminado")
-            refetchAdvances()
-        } catch {
-            toast.error("Error al eliminar anticipo")
-        }
+    const salaryAdvanceActionsCtx: SalaryAdvanceActionsCtx = {
+        onEdit: (advance) => { setEditingAdvance(advance); setDialogOpen(true) },
+        onDelete: async (id) => {
+            try {
+                await deleteAdvance(id)
+                toast.success("Anticipo eliminado")
+                refetchAdvances()
+            } catch {
+                toast.error("Error al eliminar anticipo")
+            }
+        },
     }
 
     const columns: ColumnDef<SalaryAdvance>[] = [
@@ -127,29 +129,7 @@ export function SalaryAdvanceView({ initialAdvances }: SalaryAdvanceViewProps) {
                 </div>
             )
         },
-        createActionsColumn<SalaryAdvance>({
-            renderActions: (advance) => (
-                <>
-                    {!advance.is_discounted && (
-                        <DataCell.Action
-                            icon={Pencil}
-                            title="Editar"
-                            onClick={() => { setEditingAdvance(advance); setDialogOpen(true) }}
-                        />
-                    )}
-                    <DataCell.Action
-                        icon={Trash2}
-                        title="Eliminar"
-                        className="text-destructive hover:text-destructive"
-                        onClick={() => {
-                            if (confirm("¿Eliminar anticipo? Esta acción no se puede deshacer.")) {
-                                handleDelete(advance.id)
-                            }
-                        }}
-                    />
-                </>
-            )
-        })
+        salaryAdvanceActions.column(salaryAdvanceActionsCtx)
     ]
 
     return (
@@ -176,7 +156,7 @@ export function SalaryAdvanceView({ initialAdvances }: SalaryAdvanceViewProps) {
                     }}
                     cardGroupBy={{ dateField: 'date', amountField: 'amount' }}
                     renderCard={(advance) => (
-                        <EntityCard key={advance.id}>
+                        <EntityCard key={advance.id} actions={salaryAdvanceActions.render(advance, salaryAdvanceActionsCtx)}>
                             <EntityCard.Header
                                 title={advance.employee_name || '---'}
                                 subtitle={`Anticipo ${advance.employee_display_id || ''}`}
