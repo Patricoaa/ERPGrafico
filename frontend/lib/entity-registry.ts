@@ -5,7 +5,7 @@ import {
   List, LayoutDashboard, LayoutGrid, Kanban, CalendarDays, ClipboardCheck,
   Building2, Smartphone, CreditCard, Calendar, CalendarX2, Repeat,
   Tag, Percent, Ruler, PieChart, HandCoins, ClipboardList, PackageCheck,
-  CheckSquare, Banknote,
+  CheckSquare, Banknote, Monitor, Wallet,
   type LucideIcon 
 } from 'lucide-react';
 
@@ -41,12 +41,6 @@ export interface EntityMetadata {
   workflowType?: 'order' | 'invoice' | 'note';
   /** Declarative view mode policy */
   viewPolicy?: ViewPolicy;
-  /**
-   * If true, this entity has a drawer registered in lib/entity-drawers.tsx.
-   * EntityBadge and openEntity() will open the drawer in-context instead of
-   * navigating to detailUrlPattern. The drawer registration is the source of truth.
-   */
-  hasDrawer?: boolean;
 }
 
 export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
@@ -123,7 +117,6 @@ export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
     partnerField: 'name',
     workflowType: 'order',
     viewPolicy: { availableViews: ['list', 'kanban', 'timeline'], defaultView: 'list', cardComponent: 'custom' },
-    hasDrawer: true,
   },
   'production.bom': {
     label: 'production.bom',
@@ -156,7 +149,6 @@ export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
     shortTemplate: 'PRD-{id}',
     listUrl: '/inventory/products',
     detailUrlPattern: '/inventory/products/{id}',
-    hasDrawer: true,
     viewPolicy: { availableViews: ['list', 'card'], defaultView: 'list', cardComponent: 'entity', gridLayout: 'single-column' },
   },
   'inventory.subscription': {
@@ -180,7 +172,6 @@ export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
     shortTemplate: '{code}',
     listUrl: '/inventory/stock/warehouses',
     detailUrlPattern: '/inventory/warehouses/{id}',
-    hasDrawer: true,
     viewPolicy: { availableViews: ['list'], defaultView: 'list' },
   },
   'treasury.loaninstallment': {
@@ -249,7 +240,6 @@ export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
     shortTemplate: '{code}',
     listUrl: '/accounting/ledger',
     detailUrlPattern: '/accounting/accounts/{id}/ledger',
-    hasDrawer: true,
   },
   'accounting.budget': {
     label: 'accounting.budget',
@@ -271,7 +261,6 @@ export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
     shortTemplate: 'AS-{number}',
     listUrl: '/accounting/entries',
     detailUrlPattern: '/accounting/entries/{id}',
-    hasDrawer: true,
     viewPolicy: { availableViews: ['list'], defaultView: 'list' },
   },
   'tax.taxperiod': {
@@ -295,7 +284,6 @@ export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
     listUrl: '/contacts',
     detailUrlPattern: '/contacts/{id}',
     viewPolicy: { availableViews: ['list', 'card'], defaultView: 'list', cardComponent: 'entity', gridLayout: 'single-column' },
-    hasDrawer: true,
   },
   'hr.employee': {
     label: 'hr.employee',
@@ -306,7 +294,6 @@ export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
     shortTemplate: 'EMP-{id}',
     listUrl: '/hr/employees',
     detailUrlPattern: '/hr/employees/{id}',
-    hasDrawer: true,
     viewPolicy: { availableViews: ['list', 'card'], defaultView: 'list', cardComponent: 'entity', gridLayout: 'single-column' },
   },
   'hr.absence': {
@@ -319,7 +306,6 @@ export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
     listUrl: '/hr/absences',
     detailUrlPattern: '/hr/absences/{id}',
     partnerField: 'employee_name',
-    hasDrawer: true,
     viewPolicy: { availableViews: ['list', 'card'], defaultView: 'list', cardComponent: 'entity', gridLayout: 'single-column' },
   },
   'hr.payroll': {
@@ -331,7 +317,6 @@ export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
     shortTemplate: 'LIQ-{id}',
     listUrl: '/hr/payrolls',
     detailUrlPattern: '/hr/payrolls/{id}',
-    hasDrawer: true,
     viewPolicy: { availableViews: ['list'], defaultView: 'list' },
   },
   'hr.salaryadvance': {
@@ -343,7 +328,6 @@ export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
     shortTemplate: 'ANT-{id}',
     listUrl: '/hr/advances',
     detailUrlPattern: '/hr/advances/{id}',
-    hasDrawer: true,
     viewPolicy: { availableViews: ['list', 'card'], defaultView: 'list', cardComponent: 'entity' },
   },
   'core.user': {
@@ -355,7 +339,6 @@ export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
     shortTemplate: '{username}',
     listUrl: '/settings/users',
     detailUrlPattern: '/settings/users/{id}',
-    hasDrawer: true,
     viewPolicy: { availableViews: ['list'], defaultView: 'list' },
   },
   'workflow.task': {
@@ -378,7 +361,6 @@ export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
     shortTemplate: 'BJ-{id}',
     listUrl: '/finances/statements',
     detailUrlPattern: '/finances/statements?selected={id}',
-    hasDrawer: true,
     viewPolicy: { availableViews: ['list'], defaultView: 'list' },
   },
   'finance.payment': {
@@ -390,7 +372,6 @@ export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
     shortTemplate: 'PAY-{id}',
     listUrl: '/finances',
     detailUrlPattern: '/finances?selected={id}',
-    hasDrawer: true,
     viewPolicy: { availableViews: ['list'], defaultView: 'list' },
   },
   'users.group': {
@@ -402,7 +383,6 @@ export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
     shortTemplate: 'GRP-{id}',
     listUrl: '/settings/users',
     detailUrlPattern: '/settings/users?selected={id}',
-    hasDrawer: true,
     viewPolicy: { availableViews: ['list'], defaultView: 'list' },
   },
 
@@ -417,7 +397,6 @@ export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
     listUrl: '/purchasing/orders',
     detailUrlPattern: '/purchasing/receipts/{id}',
     partnerField: 'supplier_name',
-    hasDrawer: true,
   },
   'purchasing.purchasereturn': {
     label: 'purchasing.purchasereturn',
@@ -429,7 +408,6 @@ export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
     listUrl: '/purchasing/orders',
     detailUrlPattern: '/purchasing/returns/{id}',
     partnerField: 'supplier_name',
-    hasDrawer: true,
   },
 
   // ── Tax ────────────────────────────────────────────────────────────────
@@ -442,7 +420,6 @@ export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
     shortTemplate: 'PER-{id}',
     listUrl: '/tax/declarations',
     detailUrlPattern: '/tax/periods/{id}',
-    hasDrawer: true,
   },
   'tax.f29declaration': {
     label: 'tax.f29declaration',
@@ -453,7 +430,6 @@ export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
     shortTemplate: 'F29-{id}',
     listUrl: '/tax/declarations',
     detailUrlPattern: '/tax/declarations/{id}',
-    hasDrawer: true,
   },
 
   // ── Contacts (partner entities) ────────────────────────────────────────
@@ -489,6 +465,94 @@ export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
     listUrl: '/treasury/operaciones/methods',
     detailUrlPattern: '/treasury/operaciones/methods?selected={id}',
   },
+  'treasury.treasuryaccount': {
+    label: 'treasury.treasuryaccount',
+    title: 'Cuenta de Tesorería',
+    titlePlural: 'Cuentas de Tesorería',
+    icon: Landmark,
+    iconName: 'Landmark',
+    shortTemplate: '{code}',
+    listUrl: '/treasury/centro-bancos',
+    detailUrlPattern: '/treasury/centro-bancos/{id}',
+    viewPolicy: { availableViews: ['list', 'card'], defaultView: 'list', cardComponent: 'entity' },
+  },
+  'treasury.bankstatement': {
+    label: 'treasury.bankstatement',
+    title: 'Cartola Bancaria',
+    titlePlural: 'Cartolas Bancarias',
+    icon: BookOpen,
+    iconName: 'BookOpen',
+    shortTemplate: 'CAR-{id}',
+    listUrl: '/treasury/centro-bancos',
+    detailUrlPattern: '/treasury/centro-bancos?statement={id}',
+    viewPolicy: { availableViews: ['list', 'card'], defaultView: 'list', cardComponent: 'entity' },
+  },
+  'treasury.check': {
+    label: 'treasury.check',
+    title: 'Cheque',
+    titlePlural: 'Cheques',
+    icon: Banknote,
+    iconName: 'Banknote',
+    shortTemplate: 'CHQ-{number}',
+    listUrl: '/treasury/operaciones/movements',
+    detailUrlPattern: '/treasury/operaciones/movements?check={id}',
+    viewPolicy: { availableViews: ['list'], defaultView: 'list' },
+  },
+  'treasury.bankloan': {
+    label: 'treasury.bankloan',
+    title: 'Crédito Bancario',
+    titlePlural: 'Créditos Bancarios',
+    icon: HandCoins,
+    iconName: 'HandCoins',
+    shortTemplate: 'CRE-{code}',
+    listUrl: '/treasury/loans',
+    detailUrlPattern: '/treasury/loans?selected={id}',
+    viewPolicy: { availableViews: ['list', 'card'], defaultView: 'list', cardComponent: 'entity' },
+  },
+  'treasury.terminal': {
+    label: 'treasury.terminal',
+    title: 'Terminal',
+    titlePlural: 'Terminales',
+    icon: Smartphone,
+    iconName: 'Smartphone',
+    shortTemplate: '{name}',
+    listUrl: '/treasury/centro-bancos',
+    detailUrlPattern: '/treasury/centro-bancos?terminal={id}',
+    viewPolicy: { availableViews: ['list'], defaultView: 'list' },
+  },
+  'treasury.terminalprovider': {
+    label: 'treasury.terminalprovider',
+    title: 'Proveedor de Pago',
+    titlePlural: 'Proveedores de Pago',
+    icon: Building2,
+    iconName: 'Building2',
+    shortTemplate: '{name}',
+    listUrl: '/treasury/centro-bancos',
+    detailUrlPattern: '/treasury/centro-bancos?provider={id}',
+    viewPolicy: { availableViews: ['list'], defaultView: 'list' },
+  },
+  'treasury.terminaldevice': {
+    label: 'treasury.terminaldevice',
+    title: 'Dispositivo',
+    titlePlural: 'Dispositivos',
+    icon: Monitor,
+    iconName: 'Monitor',
+    shortTemplate: 'DEV-{id}',
+    listUrl: '/treasury/centro-bancos',
+    detailUrlPattern: '/treasury/centro-bancos?device={id}',
+    viewPolicy: { availableViews: ['list'], defaultView: 'list' },
+  },
+  'treasury.terminalbatch': {
+    label: 'treasury.terminalbatch',
+    title: 'Lote de Terminal',
+    titlePlural: 'Lotes de Terminal',
+    icon: ClipboardCheck,
+    iconName: 'ClipboardCheck',
+    shortTemplate: 'LOT-{id}',
+    listUrl: '/treasury/centro-bancos',
+    detailUrlPattern: '/treasury/centro-bancos?batch={id}',
+    viewPolicy: { availableViews: ['list'], defaultView: 'list' },
+  },
 
   // ── HR (missing entities) ──────────────────────────────────────────────
   'hr.payrollconcept': {
@@ -512,6 +576,65 @@ export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
     shortTemplate: 'CF-{id}',
     listUrl: '/inventory/products',
     detailUrlPattern: '/inventory/products/custom-fields',
+  },
+  'inventory.category': {
+    label: 'inventory.category',
+    title: 'Categoría',
+    titlePlural: 'Categorías',
+    icon: LayoutGrid,
+    iconName: 'LayoutGrid',
+    shortTemplate: 'CAT-{id}',
+    listUrl: '/inventory/products',
+    detailUrlPattern: '/inventory/products?category={id}',
+    viewPolicy: { availableViews: ['list'], defaultView: 'list' },
+  },
+  'inventory.uom': {
+    label: 'inventory.uom',
+    title: 'Unidad de Medida',
+    titlePlural: 'Unidades de Medida',
+    icon: Ruler,
+    iconName: 'Ruler',
+    shortTemplate: '{name}',
+    listUrl: '/inventory/products/units',
+    detailUrlPattern: '/inventory/products/units?selected={id}',
+    viewPolicy: { availableViews: ['list'], defaultView: 'list' },
+  },
+  'inventory.pricingrule': {
+    label: 'inventory.pricingrule',
+    title: 'Regla de Precio',
+    titlePlural: 'Reglas de Precio',
+    icon: Percent,
+    iconName: 'Percent',
+    shortTemplate: 'REG-{id}',
+    listUrl: '/inventory/products',
+    detailUrlPattern: '/inventory/products?rule={id}',
+    viewPolicy: { availableViews: ['list'], defaultView: 'list' },
+  },
+
+  // ── Contacts (partner entities) ────────────────────────────────────────
+  'contacts.partnertransaction': {
+    label: 'contacts.partnertransaction',
+    title: 'Transacción de Socio',
+    titlePlural: 'Transacciones de Socios',
+    icon: ArrowRightLeft,
+    iconName: 'ArrowRightLeft',
+    shortTemplate: 'TRX-{id}',
+    listUrl: '/finances/partners',
+    detailUrlPattern: '/finances/partners?transaction={id}',
+    viewPolicy: { availableViews: ['list'], defaultView: 'list' },
+  },
+
+  // ── POS ────────────────────────────────────────────────────────────────
+  'pos.session': {
+    label: 'pos.session',
+    title: 'Sesión POS',
+    titlePlural: 'Sesiones POS',
+    icon: ShoppingCart,
+    iconName: 'ShoppingCart',
+    shortTemplate: 'POS-{id}',
+    listUrl: '/pos/sessions',
+    detailUrlPattern: '/pos/sessions?selected={id}',
+    viewPolicy: { availableViews: ['list', 'card'], defaultView: 'list', cardComponent: 'entity' },
   },
 };
 
@@ -653,6 +776,18 @@ export const LEGACY_TYPE_LABEL_MAP: Record<string, string> = {
   // Tax
   'f29_declaration': 'tax.f29declaration',
   'accounting_period': 'tax.accountingperiod',
+  // Treasury (additional)
+  'treasury_account':   'treasury.treasuryaccount',
+  'bank_loan':          'treasury.bankloan',
+  'terminal':           'treasury.terminal',
+  'terminal_provider':  'treasury.terminalprovider',
+  'terminal_device':    'treasury.terminaldevice',
+  // Inventory
+  'category':           'inventory.category',
+  'uom':                'inventory.uom',
+  'pricing_rule':       'inventory.pricingrule',
+  // Contacts
+  'partner_transaction':'contacts.partnertransaction',
 };
 
 /** Resolves a legacy snake_case docType to a registry label. Returns undefined if unknown. */
@@ -687,6 +822,10 @@ export function detectEntityLabel(text: string): string | null {
   if (t.includes('CUO_') || t.includes('CUO-')) return 'treasury.loaninstallment';
   if (t.includes('MOV_') || t.includes('MOV-')) return 'inventory.stockmove';
   if (t.includes('AS_') || t.includes('AS-')) return 'accounting.journalentry';
+  if (t.includes('CAT_') || t.includes('CAT-')) return 'inventory.category';
+  if (t.includes('REG_') || t.includes('REG-')) return 'inventory.pricingrule';
+  if (t.includes('POS_') || t.includes('POS-')) return 'pos.session';
+  if (t.includes('LOT_') || t.includes('LOT-')) return 'treasury.terminalbatch';
   
   return null;
 }

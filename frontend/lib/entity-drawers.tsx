@@ -205,7 +205,8 @@ const AccountingPeriodDrawer = dynamic(
  * Add a new entry here when you want an entity to open in-context
  * instead of navigating to its detail page.
  *
- * The corresponding entry in ENTITY_REGISTRY must also set `hasDrawer: true`.
+ * The label MUST match an entry in ENTITY_REGISTRY (lib/entity-registry.ts).
+ * Consulte the registry for canonical identity fields (icon, title, URLs).
  *
  * Drawers marked with (*) require full entity data via the `data` prop.
  * EntityBadge always satisfies this automatically (it passes the table row data).
