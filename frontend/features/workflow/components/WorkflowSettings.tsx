@@ -137,12 +137,12 @@ function AssignmentModeToggle({
     onSwitch: (m: "user" | "group") => void
 }) {
     return (
-        <div className="flex items-center p-0.5 bg-muted rounded-md border shadow-sm shrink-0 scale-90 sm:scale-100">
+        <div className="flex items-center p-0.5 bg-muted rounded-md border shadow-card shrink-0 scale-90 sm:scale-100">
             <button
                 type="button"
                 className={cn(
                     "px-2 py-1 rounded-md text-[10px] font-medium transition-all flex items-center gap-1.5",
-                    mode === "user" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground",
+                    mode === "user" ? "bg-background text-foreground shadow-card" : "text-muted-foreground hover:text-foreground",
                 )}
                 onClick={() => onSwitch("user")}
             >
@@ -152,7 +152,7 @@ function AssignmentModeToggle({
                 type="button"
                 className={cn(
                     "px-2 py-1 rounded-md text-[10px] font-medium transition-all flex items-center gap-1.5",
-                    mode === "group" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground",
+                    mode === "group" ? "bg-background text-foreground shadow-card" : "text-muted-foreground hover:text-foreground",
                 )}
                 onClick={() => onSwitch("group")}
             >
@@ -213,7 +213,7 @@ function RowShell({
     children: React.ReactNode
 }) {
     return (
-        <div className="group relative bg-card border rounded-md p-3 hover:shadow-md transition-all">
+        <div className="group relative bg-card border rounded-md p-3 hover:shadow-elevated transition-all">
             <div className="flex flex-col md:flex-row md:items-center gap-4">
                 <div className="flex items-center gap-3 min-w-[200px] flex-1">
                     <div className="p-2 bg-primary/5 rounded-md group-hover:bg-primary/10 transition-colors">
@@ -532,7 +532,7 @@ const NotificationRuleRow = React.memo(function NotificationRuleRow({ type, rule
     const groupVal = form.watch("assigned_group")
 
     return (
-        <div className="group relative bg-card border rounded-md p-4 hover:shadow-md transition-all">
+        <div className="group relative bg-card border rounded-md p-4 hover:shadow-elevated transition-all">
             <div className="flex flex-col md:flex-row md:items-center gap-6">
                 <div className="flex items-center gap-4 min-w-[250px] flex-1">
                     <BellRing className="h-5 w-5 text-muted-foreground/70" />

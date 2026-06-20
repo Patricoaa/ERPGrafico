@@ -278,7 +278,7 @@ export function PaymentMethodCardSelector({
 
                 {(paymentData.amount > 0 || difference < 0) && showChangeCard && (
                     <div className={cn(
-                        "rounded-md border flex justify-between items-center shadow-sm transition-all animate-in zoom-in-95 duration-200",
+                        "rounded-md border flex justify-between items-center shadow-card transition-all animate-in zoom-in-95 duration-200",
                         compactMode ? "p-3 h-20" : "p-4 h-24",
                         difference >= 0
                             ? "bg-success/5 border-success/10"
@@ -314,7 +314,7 @@ export function PaymentMethodCardSelector({
                                 htmlFor={`method-${m.id}`}
                                 className={cn(
                                     "flex flex-col rounded-md border-2 border-muted bg-popover hover:bg-accent hover:text-accent-foreground [&:has([data-state=checked])]:border-primary transition-all h-full cursor-pointer",
-                                    paymentData.method === m.id ? 'border-primary bg-primary/5 shadow-md scale-[1.01]' : '',
+                                    paymentData.method === m.id ? 'border-primary bg-primary/5 shadow-elevated scale-[1.01]' : '',
                                     !m.isAllowed ? 'opacity-50 grayscale cursor-not-allowed' : '',
                                     compactMode ? "gap-2 p-3" : "gap-4 p-6"
                                 )}
@@ -331,12 +331,12 @@ export function PaymentMethodCardSelector({
                                 <RadioGroupItem value={m.id} id={`method-${m.id}`} className="sr-only" disabled={!m.isAllowed} />
                                 <div className="flex flex-col items-center justify-center gap-4 h-full">
                                     <div className={cn(
-                                        "rounded-md bg-background border-2 shadow-sm flex items-center justify-center relative",
+                                        "rounded-md bg-background border-2 shadow-card flex items-center justify-center relative",
                                         m.color,
                                         compactMode ? "p-3" : "p-6"
                                     )}>
                                         {m.id === 'CREDIT_BALANCE' && operation === 'sales' && (
-                                            <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-primary text-primary-foreground px-3 py-1 rounded-full text-xs font-black shadow-md border-2 border-background animate-in zoom-in duration-300 z-10 whitespace-nowrap">
+                                            <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-primary text-primary-foreground px-3 py-1 rounded-full text-xs font-black shadow-elevated border-2 border-background animate-in zoom-in duration-300 z-10 whitespace-nowrap">
                                                 <MoneyDisplay amount={customerCreditBalance} inline className="text-primary-foreground" />
                                             </div>
                                         )}

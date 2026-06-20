@@ -275,7 +275,7 @@ export function TaskInbox() {
             <Card
                 key={task.id}
                 className={cn(
-                    "p-3 transition-all cursor-pointer border-border/50 bg-card hover:bg-muted/50 hover:border-primary/50 hover:shadow-lg backdrop-blur-sm group rounded-md flex flex-col gap-3",
+                    "p-3 transition-all cursor-pointer border-border/50 bg-card hover:bg-muted/50 hover:border-primary/50 hover:shadow-floating backdrop-blur-sm group rounded-md flex flex-col gap-3",
                     isCompleted && "opacity-50 grayscale-[0.5]"
                 )}
                 onClick={() => navigateToTask(task)}

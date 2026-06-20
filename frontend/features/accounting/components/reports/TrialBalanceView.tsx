@@ -70,7 +70,7 @@ export function TrialBalanceView() {
             </div>
 
             {/* Main Report Card */}
-            <Card className="overflow-hidden border-border/50 shadow-sm">
+            <Card className="overflow-hidden border-border/50 shadow-card">
                 <ScrollArea className="w-full">
                     <div className="min-w-[1000px]">
                         <table className="w-full border-collapse">

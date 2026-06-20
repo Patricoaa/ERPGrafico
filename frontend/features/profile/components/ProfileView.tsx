@@ -156,7 +156,7 @@ function ThemeSelectionCard() {
                         className={cn(
                             "cursor-pointer border-2 p-5 rounded-md flex flex-col items-center justify-center gap-3 transition-all duration-normal ease-premium",
                             theme === 'light'
-                                ? "border-primary bg-primary/5 scale-[1.01] shadow-sm"
+                                ? "border-primary bg-primary/5 scale-[1.01] shadow-card"
                                 : "border-border hover:border-muted-foreground/30 bg-muted/5"
                         )}
                     >
@@ -173,7 +173,7 @@ function ThemeSelectionCard() {
                         className={cn(
                             "cursor-pointer border-2 p-5 rounded-md flex flex-col items-center justify-center gap-3 transition-all duration-normal ease-premium",
                             theme === 'dark'
-                                ? "border-primary bg-primary/5 scale-[1.01] shadow-sm"
+                                ? "border-primary bg-primary/5 scale-[1.01] shadow-card"
                                 : "border-border hover:border-muted-foreground/30 bg-muted/5"
                         )}
                     >
@@ -190,7 +190,7 @@ function ThemeSelectionCard() {
                         className={cn(
                             "cursor-pointer border-2 p-5 rounded-md flex flex-col items-center justify-center gap-3 transition-all duration-normal ease-premium",
                             theme === 'system'
-                                ? "border-primary bg-primary/5 scale-[1.01] shadow-sm"
+                                ? "border-primary bg-primary/5 scale-[1.01] shadow-card"
                                 : "border-border hover:border-muted-foreground/30 bg-muted/5"
                         )}
                     >

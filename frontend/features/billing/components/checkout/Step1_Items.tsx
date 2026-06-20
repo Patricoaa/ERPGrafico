@@ -190,7 +190,7 @@ export function Step1_Items({
                                             />
                                             {selected && showMaxBadge && (
                                                 <div className="absolute -top-3 -right-3">
-                                                    <Chip size="xs" intent={isCreditNote ? "primary" : "warning"} className="border-2 border-background shadow-sm">
+                                                    <Chip size="xs" intent={isCreditNote ? "primary" : "warning"} className="border-2 border-background shadow-card">
                                                         MAX {maxQty}
                                                     </Chip>
                                                 </div>

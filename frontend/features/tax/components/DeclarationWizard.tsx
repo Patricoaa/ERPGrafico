@@ -206,7 +206,7 @@ export function DeclarationWizard({ isOpen, onOpenChange, periodId, onSuccess, e
                                         key={y}
                                         className={cn(
                                             "cursor-pointer rounded-md border border-transparent px-4 py-5 text-center transition-all duration-200",
-                                            period.year === y ? "bg-primary/10 border-primary/20 scale-[1.02] shadow-sm shadow-primary/5" : "bg-muted/5 hover:bg-muted/10 text-muted-foreground"
+                                            period.year === y ? "bg-primary/10 border-primary/20 scale-[1.02] shadow-card shadow-primary/5" : "bg-muted/5 hover:bg-muted/10 text-muted-foreground"
                                         )}
                                         onClick={() => setPeriod(p => ({ ...p, year: y }))}
                                     >
@@ -227,7 +227,7 @@ export function DeclarationWizard({ isOpen, onOpenChange, periodId, onSuccess, e
                                             className={cn(
                                                 "rounded-md border border-transparent px-2 py-4 text-center transition-all duration-200",
                                                 disabled ? "opacity-20 cursor-not-allowed grayscale" : "cursor-pointer",
-                                                isSelected ? "bg-primary/10 border-primary/20 scale-[1.05] shadow-md shadow-primary/5 z-10" : (!disabled ? "bg-muted/5 hover:bg-muted/10" : "")
+                                                isSelected ? "bg-primary/10 border-primary/20 scale-[1.05] shadow-elevated shadow-primary/5 z-10" : (!disabled ? "bg-muted/5 hover:bg-muted/10" : "")
                                             )}
                                             onClick={() => !disabled && setPeriod(p => ({ ...p, month: m }))}
                                         >

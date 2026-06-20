@@ -78,7 +78,7 @@ export function PurchaseProcessSummarySidebar({
                         key={step.id}
                         className={cn(
                             "rounded-lg transition-all duration-200",
-                            isActive && "bg-primary text-primary-foreground shadow-sm",
+                            isActive && "bg-primary text-primary-foreground shadow-card",
                             isPast && "bg-success/10 text-success",
                             isFuture && "text-muted-foreground"
                         )}

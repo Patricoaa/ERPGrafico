@@ -121,13 +121,13 @@ export function FiscalYearClosingWizard({
             component: preview ? (
                 <div className="space-y-6">
                     <div className="grid grid-cols-2 gap-4">
-                        <Card className="rounded-none border-dashed bg-card/50 shadow-sm p-5 border-t-2 border-t-income bg-income/5">
+                        <Card className="rounded-none border-dashed bg-card/50 shadow-card p-5 border-t-2 border-t-income bg-income/5">
                             <p className="text-[10px] font-bold uppercase text-income tracking-widest mb-2">Total Ingresos</p>
                             <p className="text-2xl font-mono font-black text-income">
                                 {formatCurrency(parseFloat(preview.income_total || '0'))}
                             </p>
                         </Card>
-                        <Card className="rounded-none border-dashed bg-card/50 shadow-sm p-5 border-t-2 border-t-expense bg-expense/5">
+                        <Card className="rounded-none border-dashed bg-card/50 shadow-card p-5 border-t-2 border-t-expense bg-expense/5">
                             <p className="text-[10px] font-bold uppercase text-expense tracking-widest mb-2">Total Egresos</p>
                             <p className="text-2xl font-mono font-black text-expense">
                                 {formatCurrency(Math.abs(parseFloat(preview.expense_total || '0')))}
@@ -135,7 +135,7 @@ export function FiscalYearClosingWizard({
                         </Card>
                     </div>
 
-                    <Card className="rounded-none shadow-2xl ring-1 ring-border bg-card p-6 bg-primary/5 border-primary/20 flex items-center justify-between">
+                    <Card className="rounded-none shadow-elevated ring-1 ring-border bg-card p-6 bg-primary/5 border-primary/20 flex items-center justify-between">
                         <div>
                             <p className="text-xs font-bold uppercase text-muted-foreground tracking-widest mb-2">Resultado Neto Proyectado</p>
                             <p className="text-3xl font-mono font-black text-foreground tabular-nums tracking-tighter">
