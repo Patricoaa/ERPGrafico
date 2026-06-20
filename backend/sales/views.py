@@ -4,6 +4,7 @@ from rest_framework.response import Response
 from django_filters.rest_framework import DjangoFilterBackend
 import django_filters
 from django.contrib.contenttypes.models import ContentType
+from core.api.search import DistinctSearchFilter
 from .models import SaleOrder, SalesSettings, SaleDelivery, SaleReturn
 from .serializers import (
     SaleOrderSerializer, 
@@ -212,9 +213,9 @@ class SaleOrderFilterSet(django_filters.FilterSet):
 class SaleOrderViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
     queryset = SaleOrder.objects.all().order_by('-date', '-id')
     permission_classes = [StandardizedModelPermissions]
-    filter_backends = [DjangoFilterBackend, drf_filters.SearchFilter]
+    filter_backends = [DjangoFilterBackend, DistinctSearchFilter]
     filterset_class = SaleOrderFilterSet
-    search_fields = ['customer__name', 'customer__tax_id', 'number']
+    search_fields = ['customer__name', 'customer__tax_id', 'number', 'lines__product__name']
     
     def get_serializer_class(self):
         if self.action == 'create':

@@ -103,6 +103,7 @@ export interface SaleOrderFilters {
     total_max?: string
     number?: string
     product_name?: string
+    search?: string
     delivery_status?: string
     origin_status?: string
     billing_status?: string

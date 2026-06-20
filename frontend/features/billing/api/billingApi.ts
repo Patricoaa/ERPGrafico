@@ -36,6 +36,7 @@ export const billingApi = {
         if (filters?.number)       params.append('number', filters.number)
         // partner_name no tiene campo directo en filterset → usar search=
         if (filters?.partner_name) params.append('search', filters.partner_name)
+        if (filters?.search) params.append('search', filters.search)
 
         const { data } = await api.get<Invoice[]>('/billing/invoices/', { params })
         return data
