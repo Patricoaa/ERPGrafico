@@ -394,7 +394,7 @@ export function BOMDrawer({
                                                     icon={field.value ? <CheckCircle2 className="h-4 w-4 text-primary" /> : <Workflow className="h-4 w-4 text-muted-foreground/30" />}
                                                     className={cn(
                                                         "transition-all",
-                                                        field.value ? "bg-primary/5 border-primary/20 shadow-sm" : "border-dashed"
+                                                        field.value ? "bg-primary/5 border-primary/20 shadow-card" : "border-dashed"
                                                     )}
                                                 />
                                             )}
