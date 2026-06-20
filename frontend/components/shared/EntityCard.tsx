@@ -246,13 +246,13 @@ function EntityCardSkeleton({ className, variant = "full" }: { className?: strin
         <EntityCardRoot className={cn("animate-in fade-in duration-500", className)}>
             <EntityCardHeader
                 title={
-                    <div className="flex items-center gap-3">
-                        <Skeleton className="h-10 w-10 rounded-sm shrink-0" />
-                        <Skeleton className="h-5 w-48" />
+                    <div className="flex items-center gap-3 min-w-0">
+                        <Skeleton className="h-8 w-8 rounded-md shrink-0" />
+                        <Skeleton className="h-5 w-48 shrink-0" />
                     </div>
                 }
                 subtitle={
-                    <div className="flex items-center gap-2.5 pl-[52px]">
+                    <div className="flex items-center gap-2.5">
                         <Skeleton className="h-4 w-20 rounded-sm" />
                         <Skeleton className="h-4 w-24" />
                     </div>
