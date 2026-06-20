@@ -117,7 +117,7 @@ export function ProfileSidePanel({ profile, open = true, onOpenChange }: Profile
             <div className="flex-1 overflow-y-auto overflow-x-hidden text-foreground ">
                 {/* Header / Avatar Area */}
                 <div className="flex flex-col items-center justify-center py-10 px-6 gap-5 border-border/10 relative overflow-hidden">
-                    <Avatar className="h-24 w-24 border-2 border-primary/20 shadow-xl ring-4 ring-background relative z-10">
+                    <Avatar className="h-24 w-24 border-2 border-primary/20 shadow-elevated ring-4 ring-background relative z-10">
                         <AvatarImage src="" alt={user.username} />
                         <AvatarFallback className="text-2xl font-black text-foreground bg-muted">
                             {initials}

@@ -208,7 +208,7 @@ export function ManualTerminalNotice({
                     </Button>
                     <ActionSlideButton
                         variant="primary"
-                        className="flex-[1.5] h-12 shadow-lg shadow-primary/10 active:translate-y-1 transition-all"
+                        className="flex-[1.5] h-12 shadow-floating shadow-primary/10 active:translate-y-1 transition-all"
                         onClick={onConfirm}
                         disabled={isLoading}
                     >

@@ -174,7 +174,7 @@ export function Step2_LineItems({ lines, setLines, noteType }: Step2Props) {
                 </div>
             </div>
 
-            <div className="border rounded-md overflow-hidden shadow-sm bg-card">
+            <div className="border rounded-md overflow-hidden shadow-card bg-card">
                 <table className="w-full text-sm">
                     <thead className="bg-muted/30 border-b">
                         <tr>

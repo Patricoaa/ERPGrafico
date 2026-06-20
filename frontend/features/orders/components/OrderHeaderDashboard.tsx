@@ -115,7 +115,7 @@ export function OrderHeaderDashboard({
                             return (
                                 <div key={step.id} className={cn("relative z-10 flex flex-col items-center gap-2 group", step.status === 'not_applicable' && "hidden sm:flex")}>
                                     <div className={cn(
-                                        "w-8 h-8 rounded-full flex items-center justify-center border-2 transition-all duration-300 shadow-sm bg-background",
+                                        "w-8 h-8 rounded-full flex items-center justify-center border-2 transition-all duration-300 shadow-card bg-background",
                                         getStepStatusColor(step.status),
                                         isActive && "scale-110 ",
                                         step.status === 'not_applicable' && "bg-transparent border-dashed",

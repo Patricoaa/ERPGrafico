@@ -264,7 +264,7 @@ export function MovementWizard({
                                         />
                                     </div>
                                     <div className="flex justify-center my-1 relative z-10">
-                                        <div className="bg-background border-2 rounded-full p-2 shadow-sm text-muted-foreground">
+                                        <div className="bg-background border-2 rounded-full p-2 shadow-card text-muted-foreground">
                                             <ArrowRightLeft className="w-4 h-4 rotate-90" />
                                         </div>
                                     </div>

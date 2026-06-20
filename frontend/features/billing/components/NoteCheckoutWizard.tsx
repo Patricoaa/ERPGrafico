@@ -466,7 +466,7 @@ export function NoteCheckoutWizard({
                     {!isLastStep ? (
                         <Button
                             onClick={handleNext}
-                            className="w-40 h-12 font-bold shadow-md transition-all"
+                            className="w-40 h-12 font-bold shadow-elevated transition-all"
                             disabled={isStepLoading || (currentStepId === 'dte' && !isPeriodValid)}
                         >
                             {isStepLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
@@ -476,7 +476,7 @@ export function NoteCheckoutWizard({
                     ) : (
                         <ActionSlideButton
                             onClick={handleFinish}
-                            className="w-48 h-12 bg-success hover:bg-success font-bold shadow-md transition-all"
+                            className="w-48 h-12 bg-success hover:bg-success font-bold shadow-elevated transition-all"
                             loading={loading}
                         >
                             <CheckCircle2 className="mr-2 h-4 w-4" />

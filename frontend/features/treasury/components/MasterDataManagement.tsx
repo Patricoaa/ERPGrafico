@@ -543,7 +543,7 @@ export function PaymentMethodManagement({ externalOpen, onOpenChange, createActi
                     </h2>
                     <p className="text-sm text-muted-foreground">Configure los métodos de pago habilitados por cuenta.</p>
                 </div>
-                <Button onClick={openCreate} className="shadow-sm">
+                <Button onClick={openCreate} className="shadow-card">
                     <Plus className="mr-2 h-4 w-4" /> Nuevo Método
                 </Button>
             </div>
