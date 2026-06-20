@@ -31,7 +31,7 @@ export function SegmentationBar({ def }: SegmentationBarProps) {
   return (
     <>
       {def.segments.map((segment) => (
-        <div key={segment.key} className="flex items-center shrink-0 bg-muted/30 rounded-sm px-1 h-9">
+        <div key={segment.key} className="flex items-center shrink-0 bg-background rounded-sm px-1 h-9">
           <SegmentItem
             segment={segment}
             filters={filters}
