@@ -61,9 +61,9 @@ export function ContactCardGrid({ selectedId, onSelect, placeholder = "Buscar co
                             <Card
                                 key={contact.id}
                                 className={cn(
-                                    "relative flex flex-col p-4 cursor-pointer transition-all duration-150 hover:shadow-md",
+                                    "relative flex flex-col p-4 cursor-pointer transition-all duration-150 hover:shadow-elevated",
                                     isSelected
-                                        ? "ring-2 ring-primary border-primary shadow-sm bg-primary/5"
+                                        ? "ring-2 ring-primary border-primary shadow-card bg-primary/5"
                                         : "border-border/60 hover:border-primary/30",
                                     isTouchPOS && "active:scale-[0.98]"
                                 )}

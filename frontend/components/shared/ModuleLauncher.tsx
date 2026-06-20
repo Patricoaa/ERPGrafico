@@ -104,9 +104,9 @@ export function ModuleLauncher({ open, onClose }: ModuleLauncherProps) {
                                                 onClick={onClose}
                                                 className={cn(
                                                     "group relative flex flex-col items-center justify-center gap-2 p-[clamp(0.75rem,2vw,1.25rem)] rounded-md border transition-all duration-200",
-                                                    "hover:shadow-md hover:border-border/30",
+                                                    "hover:shadow-elevated hover:border-border/30",
                                                     isActive
-                                                        ? "bg-primary/5 border-primary/20 shadow-sm"
+                                                        ? "bg-primary/5 border-primary/20 shadow-card"
                                                         : "bg-card border-border/10 hover:bg-muted/30"
                                                 )}
                                             >

@@ -131,7 +131,7 @@ export function ManufacturingSpecsEditor({
   const phaseCardClass = (enabled: boolean) => cn(
     "relative group p-6 rounded-md border transition-all duration-300",
     enabled
-      ? "bg-card shadow-sm border-primary/30 ring-1 ring-primary/5"
+      ? "bg-card shadow-card border-primary/30 ring-1 ring-primary/5"
       : "bg-muted/30 border-border/40 opacity-60 grayscale-[0.5]",
     disabled && "pointer-events-none"
   )
@@ -308,7 +308,7 @@ export function ManufacturingSpecsEditor({
                       className={cn(
                         "h-7 text-[10px] uppercase font-black tracking-tight transition-all",
                         value.print_type === type
-                          ? "bg-primary text-primary-foreground shadow-sm"
+                          ? "bg-primary text-primary-foreground shadow-card"
                           : "text-muted-foreground hover:bg-primary/5 hover:text-primary"
                       )}
                       onClick={() => set({ print_type: type })}

@@ -128,7 +128,7 @@ export function UniversalSearch() {
                     <DialogContent
                         size="md"
                         showCloseButton={false}
-                        className="gap-0 overflow-hidden border-none p-0 shadow-2xl backdrop-blur-3xl dark:bg-overlay/95"
+                        className="gap-0 overflow-hidden border-none p-0 shadow-overlay backdrop-blur-3xl dark:bg-overlay/95"
                         aria-label="Búsqueda universal"
                     >
                         <DialogTitle className="sr-only">Búsqueda universal</DialogTitle>
@@ -241,7 +241,7 @@ export function UniversalSearch() {
 
                                 {!isLoading && filteredResults.length === 0 && debouncedQuery.length < 2 && (
                                     <li className="flex flex-col items-center justify-center py-16 text-center">
-                                        <div className="relative mb-4 flex h-16 w-16 items-center justify-center rounded-md bg-gradient-to-br from-primary/20 to-primary/5 shadow-lg overflow-hidden">
+                                        <div className="relative mb-4 flex h-16 w-16 items-center justify-center rounded-md bg-gradient-to-br from-primary/20 to-primary/5 shadow-floating overflow-hidden">
                                             <div className="absolute inset-0 animate-pulse rounded-md bg-primary/5 blur-lg" />
                                             {logo ? (
                                                 <img src={logo} alt="Logo" className="relative h-full w-full object-cover" />

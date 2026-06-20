@@ -155,7 +155,7 @@ function LineChartRenderer(props: LineChartConfig) {
                         ? '$' + Math.round(yVal).toLocaleString('es-CL')
                         : String(point.data.yFormatted)
                     return (
-                        <div className="bg-popover text-popover-foreground border border-border rounded-md px-3 py-1.5 text-xs shadow-sm whitespace-nowrap">
+                        <div className="bg-popover text-popover-foreground border border-border rounded-md px-3 py-1.5 text-xs shadow-floating whitespace-nowrap">
                             <span className="font-medium">{String(point.data.xFormatted)}</span>
                             <span className="ml-2 font-bold">{yFormatted}</span>
                         </div>
@@ -205,7 +205,7 @@ function PieChartRenderer(props: PieChartConfig) {
                         formatted = val.toLocaleString('es-CL')
                     }
                     return (
-                        <div className="bg-popover text-popover-foreground border border-border rounded-md px-3 py-1.5 text-xs shadow-sm whitespace-nowrap">
+                        <div className="bg-popover text-popover-foreground border border-border rounded-md px-3 py-1.5 text-xs shadow-floating whitespace-nowrap">
                             <span className="font-medium">{String(datum.id)}</span>
                             <span className="ml-2 font-bold">{formatted}</span>
                         </div>

@@ -49,7 +49,7 @@ export function CommentSystem({
                                 {comment.user.substring(0, 2).toUpperCase()}
                             </span>
                         </div>
-                        <div className="flex-1 bg-background rounded-md border p-2 space-y-1 shadow-sm">
+                        <div className="flex-1 bg-background rounded-md border p-2 space-y-1 shadow-card">
                             <div className="flex items-center justify-between gap-2 border-b border-border/50 pb-1 mb-1">
                                 <span className="text-[10px] font-bold truncate">{comment.user}</span>
                                 <span className="text-[9px] text-muted-foreground whitespace-nowrap">

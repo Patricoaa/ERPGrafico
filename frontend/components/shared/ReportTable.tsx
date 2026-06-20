@@ -235,7 +235,7 @@ export const ReportTable: React.FC<ReportTableProps> = ({
                     ))}
                     {(totalLabel || isLoading) && (
                         <TableRow className={cn(
-                            "font-black border-t-2 shadow-sm relative z-10",
+                            "font-black border-t-2 shadow-card relative z-10",
                             accentBgColor[accentColor]
                         )}>
                             <TableCell className="p-5 text-foreground uppercase tracking-tighter text-sm font-black italic">
@@ -264,7 +264,7 @@ export const ReportTable: React.FC<ReportTableProps> = ({
     const container = embedded ? (
         tableContent
     ) : (
-        <div className="rounded-none border bg-card shadow-sm overflow-hidden">
+        <div className="rounded-none border bg-card shadow-card overflow-hidden">
             {title && (
                 <div className="p-4 border-b bg-muted/30 flex justify-between items-center h-12">
                     <h3 className="font-bold uppercase tracking-widest text-xs text-muted-foreground animate-in slide-in-from-left-2">{title}</h3>

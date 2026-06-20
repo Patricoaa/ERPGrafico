@@ -83,7 +83,7 @@ export function VariantSelectorModal({
                 </span>
             }
             size="xl"
-            contentClassName="max-w-3xl rounded-lg p-0 overflow-hidden border-none shadow-2xl"
+            contentClassName="max-w-3xl rounded-lg p-0 overflow-hidden border-none shadow-overlay"
             headerClassName="p-6 bg-primary text-primary-foreground"
         >
             <div className="p-6">
