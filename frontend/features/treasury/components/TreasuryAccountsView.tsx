@@ -1,7 +1,7 @@
 "use client"
 
 import React, { useState, useEffect } from "react"
-import { useTreasuryAccounts, type TreasuryAccount } from "@/features/treasury"
+import { useTreasuryAccounts, type TreasuryAccount, treasuryAccountActions, type TreasuryAccountActionsCtx } from "@/features/treasury"
 import { EntityCard, SmartSearchBar, useSmartSearch, SegmentationBar, useSegmentation } from '@/components/shared'
 import { treasuryAccountSearchDef } from "../searchDef"
 import { treasuryAccountSegDef } from "../segmentationDef"
@@ -11,13 +11,12 @@ import {
 import { DataTableView } from '@/components/shared'
 import { DataTableColumnHeader } from '@/components/shared'
 
-import { Lock } from "lucide-react"
 import { Tabs, TabsContent } from "@/components/ui/tabs"
 import { BankManagement, PaymentMethodManagement } from "@/features/treasury"
 import { TreasuryAccountWizard } from "./TreasuryAccountWizard"
 
 import { useGlobalModalActions } from "@/components/providers/GlobalModalProvider"
-import { DataCell, createActionsColumn, FadeIn, EntityBadge } from '@/components/shared'
+import { DataCell, FadeIn, EntityBadge } from '@/components/shared'
 
 import { useRouter, usePathname, useSearchParams } from "next/navigation"
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
@@ -111,6 +110,11 @@ export const TreasuryAccountsView: React.FC<TreasuryAccountsViewProps> = ({ acti
         LOAN: "Préstamo Bancario",
         BRIDGE: "Puente",
         CHECK_PORTFOLIO: "Cheques en Cartera",
+    }
+
+    const actionsCtx: TreasuryAccountActionsCtx = {
+        onEdit: (item) => handleEdit(item),
+        onDelete: (id) => handleDelete(id),
     }
 
     const columns: ColumnDef<TreasuryAccount>[] = [
@@ -220,23 +224,7 @@ export const TreasuryAccountsView: React.FC<TreasuryAccountsViewProps> = ({ acti
                 )
             },
         },
-        createActionsColumn<TreasuryAccount>({
-            renderActions: (item) => (
-                item.is_system_managed ? (
-                    <DataCell.Action
-                        action="lock"
-                        title="Gestionada por sistema"
-                        onClick={() => handleEdit(item)}
-                        className="text-muted-foreground cursor-default opacity-50"
-                    />
-                ) : (
-                    <>
-                        <DataCell.Action action="edit" onClick={() => handleEdit(item)} />
-                        <DataCell.Action action="delete" onClick={() => handleDelete(item.id)} />
-                    </>
-                )
-            ),
-        }),
+        treasuryAccountActions.column(actionsCtx),
     ]
 
     return (
@@ -268,12 +256,9 @@ export const TreasuryAccountsView: React.FC<TreasuryAccountsViewProps> = ({ acti
                                 const hasBank = !!acc.bank
                                 const hasProviders = providers.length > 0
                                 return (
-                                    <EntityCard key={acc.id} onClick={() => handleEdit(acc)}>
+                                    <EntityCard key={acc.id} onClick={() => handleEdit(acc)} actions={treasuryAccountActions.render(acc, actionsCtx)}>
                                         <EntityCard.Header
                                             title={acc.name}
-                                            trailing={
-                                                acc.is_system_managed ? <Lock className="h-4 w-4 text-muted-foreground opacity-50" /> : null
-                                            }
                                         />
                                         <EntityCard.Body>
                                             <EntityCard.Field label="Tipología" value={acc.account_type_display || typeLabels[acc.account_type?.toUpperCase()] || acc.account_type} />

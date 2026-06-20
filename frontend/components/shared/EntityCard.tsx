@@ -15,6 +15,11 @@ interface EntityCardRootProps {
     onClick?: () => void
     className?: string
     children: React.ReactNode
+    /**
+     * Action buttons rendered in the top-right corner.
+     * Uses stopPropagation so they don't trigger onClick on the card itself.
+     */
+    actions?: React.ReactNode
 }
 
 function EntityCardRoot({
@@ -23,6 +28,7 @@ function EntityCardRoot({
     onClick,
     className,
     children,
+    actions,
 }: EntityCardRootProps) {
     return (
         <div
@@ -46,6 +52,17 @@ function EntityCardRoot({
                 className
             )}
         >
+            {actions && (
+                <div
+                    className={cn(
+                        "absolute right-4 top-4 z-10 inline-flex items-center gap-1",
+                        variant === "compact" && "right-3 top-3"
+                    )}
+                    onClick={(e) => e.stopPropagation()}
+                >
+                    {actions}
+                </div>
+            )}
 
             {children}
         </div>
@@ -61,21 +78,32 @@ interface EntityCardHeaderProps {
     subtitle?: React.ReactNode
     /** Status badge(s) or any trailing slot */
     trailing?: React.ReactNode
+    /** Optional icon rendered in a 32×32 rounded container before the title */
+    icon?: LucideIcon
+    /** Styling for the icon container (e.g. "text-success bg-success/10") */
+    iconClassName?: string
     className?: string
 }
 
-function EntityCardHeader({ title, subtitle, trailing, className }: EntityCardHeaderProps) {
+function EntityCardHeader({ title, subtitle, trailing, icon: Icon, iconClassName, className }: EntityCardHeaderProps) {
     return (
         <div className={cn("flex items-start justify-between gap-2", className)}>
-            <div className="min-w-0 flex-1">
-                <div className="truncate text-sm font-semibold leading-tight tracking-tight">
-                    {title}
-                </div>
-                {subtitle && (
-                    <div className="mt-0.5 truncate text-xs text-muted-foreground">
-                        {subtitle}
+            <div className="flex items-start gap-3 min-w-0 flex-1">
+                {Icon && (
+                    <div className={cn("flex h-8 w-8 shrink-0 items-center justify-center rounded-md", iconClassName ?? "bg-muted")}>
+                        <Icon className="h-4 w-4" />
                     </div>
                 )}
+                <div className="min-w-0 flex-1">
+                    <div className="truncate text-sm font-semibold leading-tight tracking-tight">
+                        {title}
+                    </div>
+                    {subtitle && (
+                        <div className="mt-0.5 truncate text-xs text-muted-foreground">
+                            {subtitle}
+                        </div>
+                    )}
+                </div>
             </div>
             {trailing && <div className="shrink-0">{trailing}</div>}
         </div>
