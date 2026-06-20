@@ -48,17 +48,17 @@ export function HRHeader() {
     const getHeaderConfig = () => {
         switch (activeValue) {
             case 'config':
-                return { title: "Configuración de RRHH", description: "Gestione indicadores económicos, conceptos de nómina e instituciones previsionales.", icon: "settings" }
+                return { title: "Configuración de RRHH", description: "Gestione indicadores económicos, conceptos de nómina e instituciones previsionales.", iconName: "settings" }
             case 'employees':
-                return { title: "Nómina de Personal", description: "Gestión de fichas de empleados y cargos.", icon: "users-2" }
+                return { title: "Nómina de Personal", description: "Gestión de fichas de empleados y cargos.", iconName: "users-2" }
             case 'absences':
-                return { title: "Inasistencias y Licencias", description: "Control de ausencias, permisos y licencias médicas.", icon: "calendar-off" }
+                return { title: "Inasistencias y Licencias", description: "Control de ausencias, permisos y licencias médicas.", iconName: "calendar-off" }
             case 'advances':
-                return { title: "Anticipos de Sueldo", description: "Gestión de adelantos y préstamos de personal.", icon: "hand-coins" }
+                return { title: "Anticipos de Sueldo", description: "Gestión de adelantos y préstamos de personal.", iconName: "hand-coins" }
             case 'payrolls':
-                return { title: "Liquidaciones y Remuneraciones", description: "Cálculo de haberes, descuentos y generación de pagos.", icon: "file-spreadsheet" }
+                return { title: "Liquidaciones y Remuneraciones", description: "Cálculo de haberes, descuentos y generación de pagos.", iconName: "file-spreadsheet" }
             default:
-                return { title: "RRHH", description: "", icon: getEntityIconName('hr.employee') ?? "user-cog" }
+                return { title: "RRHH", description: "", iconName: getEntityIconName('hr.employee') ?? "user-cog" }
         }
     }
 
@@ -68,7 +68,7 @@ export function HRHeader() {
         <PageHeader 
             title={config.title} 
             description={config.description} 
-            iconName={config.icon} 
+            iconName={config.iconName} 
             variant="minimal" 
             navigation={navigation}
         />

@@ -17,8 +17,6 @@ import type { NavigationConfig } from "@/components/providers/HeaderProvider"
 
 interface HeaderNavDropdownsProps {
     navigation: NavigationConfig
-    /** Icon rendered before the primary dropdown title */
-    iconName?: string
 }
 
 /**
@@ -26,7 +24,7 @@ interface HeaderNavDropdownsProps {
  * Replaces horizontal PageTabs with:
  *   [Icon] [Active View ▾]  ·  [Active Sub-view ▾]
  */
-export function HeaderNavDropdowns({ navigation, iconName }: HeaderNavDropdownsProps) {
+export function HeaderNavDropdowns({ navigation }: HeaderNavDropdownsProps) {
     const { tabs, activeValue, subActiveValue, subSubActiveValue, subSubSubActiveValue, breadcrumbs } = navigation
 
     // Derive current module id from pathname (same logic as DashboardShell)
@@ -53,7 +51,7 @@ export function HeaderNavDropdowns({ navigation, iconName }: HeaderNavDropdownsP
             {navigation.moduleName && (
                 <div className="flex items-center">
                     {(() => {
-                        const modIcon = iconName || getModuleIconName(currentModuleId)
+                        const modIcon = getModuleIconName(currentModuleId)
                         return modIcon ? (
                             <DynamicIcon name={modIcon} className="h-4 w-4 shrink-0 text-primary/70 mr-1.5" />
                         ) : null
