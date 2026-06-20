@@ -2,7 +2,8 @@
 
 import React, { useState, useCallback } from "react"
 import { Table as ReactTable, type Row, type VisibilityState } from "@tanstack/react-table"
-import { DomainCard, EntityCard, EmptyState, resolveEmptyState, type DataTableEmptyState } from "@/components/shared"
+import { DomainCard, EntityCard, EmptyState, MoneyDisplay, resolveEmptyState, type DataTableEmptyState } from "@/components/shared"
+import { groupByDate } from "@/lib/group-by-date"
 
 import { Button } from "@/components/ui/button"
 import {
@@ -11,7 +12,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { Download, Upload, ChevronDown } from "lucide-react"
+import { Download, Upload, ChevronDown, Calendar } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { ENTITY_REGISTRY } from "@/lib/entity-registry"
 
@@ -131,6 +132,138 @@ export function createEntityCardView(
   }
   EntityCardView.displayName = "EntityCardView"
   return EntityCardView
+}
+
+/**
+ * Creates a renderCustomView function for date-grouped card views.
+ * Groups cards by date with sticky headers showing date label + total sum.
+ * Complements SegmentationBar (which filters data at API level) by organizing
+ * already-filtered cards visually on screen.
+ *
+ * Usage:
+ *   renderCustomView={isCustomView ? createCardGroupView({
+ *     renderCard: (m) => <EntityCard key={m.id}>...</EntityCard>,
+ *     cardGroupBy: { dateField: 'date', amountField: 'amount' },
+ *     gridLayout: 'single-column',
+ *   }) : undefined}
+ */
+export function createCardGroupView<TData>(
+  options: {
+    renderCard: (data: TData) => React.ReactNode
+    cardGroupBy: {
+      dateField: string
+      amountField?: string
+    }
+    gridLayout?: "single-column" | "multi-column"
+    emptyState?: DataTableEmptyState
+    isFiltered?: boolean
+  },
+) {
+  const {
+    renderCard,
+    cardGroupBy,
+    gridLayout = "single-column",
+    emptyState,
+    isFiltered,
+  } = options
+
+  const innerGridClass =
+    gridLayout === "multi-column"
+      ? "grid grid-cols-[repeat(auto-fill,minmax(280px,1fr))] gap-3"
+      : "grid gap-2"
+
+  const GroupedCardView = (table: ReactTable<TData>) => {
+    const rows = table.getRowModel().rows
+    if (rows.length === 0) {
+      const resolved = resolveEmptyState(emptyState, isFiltered)
+      return React.createElement(
+        "div",
+        { className: "flex h-full min-h-[12rem] items-center justify-center" },
+        React.createElement(EmptyState, {
+          context: resolved.context,
+          icon: resolved.icon,
+          title: resolved.title,
+          description: resolved.description,
+          action: resolved.action,
+          className: "h-full w-full",
+        }),
+      )
+    }
+
+    const data = rows.map((r) => r.original)
+    const groups = groupByDate(data, cardGroupBy.dateField, cardGroupBy.amountField)
+
+    return React.createElement(
+      "div",
+      { className: "space-y-1" },
+      groups.map((group) =>
+        React.createElement(
+          "div",
+          { key: group.dateKey || "no-date", className: "mb-4" },
+          React.createElement(
+            "div",
+            {
+              className:
+                "sticky top-0 z-10 bg-background/95 backdrop-blur-sm border-b border-border/20 pb-2 pt-3 mb-3",
+            },
+            React.createElement(
+              "div",
+              { className: "flex items-center justify-between px-1" },
+              React.createElement(
+                "div",
+                { className: "flex items-center gap-2 min-w-0" },
+                React.createElement(Calendar, {
+                  className: "h-4 w-4 shrink-0 text-muted-foreground/50",
+                }),
+                React.createElement(
+                  "span",
+                  { className: "text-sm font-semibold text-foreground truncate" },
+                  group.label,
+                ),
+                group.sublabel &&
+                  React.createElement(
+                    "span",
+                    {
+                      className:
+                        "hidden sm:inline text-xs text-muted-foreground/50 truncate",
+                    },
+                    group.sublabel,
+                  ),
+              ),
+              group.total !== 0 &&
+                React.createElement(
+                  "div",
+                  { className: "flex items-center gap-1.5 shrink-0 ml-4" },
+                  React.createElement(
+                    "span",
+                    {
+                      className:
+                        "text-[10px] font-black uppercase tracking-widest text-muted-foreground/40",
+                    },
+                    "Total",
+                  ),
+                  React.createElement(MoneyDisplay, {
+                    amount: group.total,
+                    showColor: false,
+                    className: "text-sm font-bold",
+                  }),
+                ),
+            ),
+          ),
+          React.createElement(
+            "div",
+            { className: innerGridClass },
+            group.items.map((item) => {
+              const node = renderCard(item)
+              return node
+            }),
+          ),
+        ),
+      ),
+    )
+  }
+  GroupedCardView.displayName = "GroupedCardView"
+  return GroupedCardView
 }
 
 /**

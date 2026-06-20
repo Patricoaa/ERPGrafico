@@ -65,7 +65,8 @@ interface TreasuryMovementsClientViewProps {
 export function TreasuryMovementsClientView({ externalOpen, createAction }: TreasuryMovementsClientViewProps) {
     const { openEntity } = useGlobalModalActions()
     const { filters: textFilters, isFiltered: isTextFiltered, clearAll: clearText } = useSmartSearch(treasuryMovementsSearchDef)
-    const { filters: segFilters, isFiltered: isSegFiltered, clearAll: clearSeg } = useSegmentation(treasuryMovementsSegDef)
+    const basePeriod = { serverParamFrom: 'date_from', serverParamTo: 'date_to' }
+    const { filters: segFilters, isFiltered: isSegFiltered, clearAll: clearSeg } = useSegmentation(treasuryMovementsSegDef, basePeriod)
     const isFiltered = isTextFiltered || isSegFiltered
     const allFilters = { ...textFilters, ...segFilters }
     const [pageState, setPageState] = useState({ pageIndex: 0, pageSize: 50 })
@@ -314,7 +315,7 @@ export function TreasuryMovementsClientView({ externalOpen, createAction }: Trea
                     pagination={pageState}
                     onPaginationChange={setPageState}
                     smartSearch={<SmartSearchBar searchDef={treasuryMovementsSearchDef} placeholder="Buscar movimiento..." className="w-full" />}
-                    segmentation={<SegmentationBar def={treasuryMovementsSegDef} />}
+                    segmentation={<SegmentationBar def={treasuryMovementsSegDef} basePeriod={basePeriod} />}
                     showReset={isFiltered}
                     onReset={() => { clearText(); clearSeg() }}
                     createAction={createAction}
@@ -324,6 +325,7 @@ export function TreasuryMovementsClientView({ externalOpen, createAction }: Trea
                         title: "Aún no hay movimientos de caja",
                         description: "Los ingresos y egresos de fondos que registres aparecerán aquí.",
                     }}
+                    cardGroupBy={{ dateField: 'date', amountField: 'amount' }}
                     renderCard={(m) => {
                         const type = m.movement_type
                         const isWriteOff = m.payment_method === 'WRITE_OFF'
