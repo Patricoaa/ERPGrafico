@@ -11,6 +11,37 @@ export const employeeSearchDef: SearchDefinition = {
   ],
 }
 
+export const salaryAdvanceSearchDef: SearchDefinition = {
+  fields: [
+    {
+      key: 'employee_name',
+      label: 'Empleado',
+      type: 'text',
+      serverParam: 'employee_name',
+      clientKey: ['employee_name'],
+    },
+    {
+      key: 'display_id',
+      label: 'N° Anticipo',
+      type: 'text',
+      serverParam: 'display_id',
+      clientKey: ['display_id'],
+    },
+  ],
+}
+
+export const absenceSearchDef: SearchDefinition = {
+  fields: [
+    {
+      key: 'employee_name',
+      label: 'Empleado',
+      type: 'text',
+      serverParam: 'employee_name',
+      clientKey: ['employee_name'],
+    },
+  ],
+}
+
 export const payrollSearchDef: SearchDefinition = {
   fields: [
     {

@@ -12,9 +12,10 @@ import { createActionsColumn, DataCell } from '@/components/shared'
 import { ColumnDef } from "@tanstack/react-table"
 import { useSearchParams } from "next/navigation"
 
-import { ToolbarCreateButton, SegmentationBar, useSegmentation } from "@/components/shared"
+import { ToolbarCreateButton, SegmentationBar, useSegmentation, SmartSearchBar, useClientSearch } from "@/components/shared"
 import { useSalaryAdvances } from "@/features/hr"
 import { salaryAdvanceSegDef } from "../segmentationDef"
+import { salaryAdvanceSearchDef } from "../searchDef"
 
 interface SalaryAdvanceViewProps {
     initialAdvances?: SalaryAdvance[]
@@ -23,8 +24,11 @@ interface SalaryAdvanceViewProps {
 export function SalaryAdvanceView({ initialAdvances }: SalaryAdvanceViewProps) {
     const createAction = <ToolbarCreateButton label="Nuevo Anticipo" href="/hr/advances?modal=new" />
     const searchParams = useSearchParams()
-    const { filters: segFilters, isFiltered, clearAll: clearSeg } = useSegmentation(salaryAdvanceSegDef)
+    const { filterFn: filterAdvances, isFiltered: isTextFiltered, clearAll: clearText } = useClientSearch<SalaryAdvance>(salaryAdvanceSearchDef)
+    const { filters: segFilters, isFiltered: isSegFiltered, clearAll: clearSeg } = useSegmentation(salaryAdvanceSegDef)
+    const isFiltered = isTextFiltered || isSegFiltered
     const { advances, isLoading: loading, isRefetching, refetch: refetchAdvances } = useSalaryAdvances(segFilters, initialAdvances)
+    const filteredAdvances = filterAdvances(advances)
     const [employees, setEmployees] = useState<Employee[]>([])
     const [payrolls, setPayrolls] = useState<Payroll[]>([])
 
@@ -152,14 +156,15 @@ export function SalaryAdvanceView({ initialAdvances }: SalaryAdvanceViewProps) {
             <div className="flex-1 min-h-0">
                 <DataTableView
                     columns={columns}
-                    data={advances}
+                    data={filteredAdvances}
                     isLoading={loading}
                     isRefetching={isRefetching}
                     entityLabel="hr.salaryadvance"
                     variant="embedded"
+                    smartSearch={<SmartSearchBar searchDef={salaryAdvanceSearchDef} placeholder="Buscar anticipo..." className="w-full" />}
                     segmentation={<SegmentationBar def={salaryAdvanceSegDef} />}
                     showReset={isFiltered}
-                    onReset={() => { clearSeg() }}
+                    onReset={() => { clearText(); clearSeg() }}
                     defaultPageSize={20}
                     createAction={createAction}
                     isFiltered={isFiltered}

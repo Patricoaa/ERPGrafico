@@ -11,9 +11,10 @@ import { DataTableColumnHeader } from '@/components/shared'
 import { createActionsColumn, DataCell } from '@/components/shared'
 import { EntityCard } from "@/components/shared"
 import { Pencil, Trash2 } from "lucide-react"
-import { ToolbarCreateButton, SegmentationBar, useSegmentation } from "@/components/shared"
+import { ToolbarCreateButton, SegmentationBar, useSegmentation, SmartSearchBar, useClientSearch } from "@/components/shared"
 import { useAbsences, deleteAbsence, getEmployees } from "@/features/hr"
 import { absenceSegDef } from "../segmentationDef"
+import { absenceSearchDef } from "../searchDef"
 
 interface AbsenceManagementViewProps {
     initialAbsences?: Absence[]
@@ -23,8 +24,11 @@ export function AbsenceManagementView({ initialAbsences }: AbsenceManagementView
     const createAction = <ToolbarCreateButton label="Nueva Inasistencia" href="/hr/absences?modal=new" />
     const router = useRouter()
     const searchParams = useSearchParams()
-    const { filters: segFilters, isFiltered, clearAll: clearSeg } = useSegmentation(absenceSegDef)
+    const { filterFn: filterAbsences, isFiltered: isTextFiltered, clearAll: clearText } = useClientSearch<Absence>(absenceSearchDef)
+    const { filters: segFilters, isFiltered: isSegFiltered, clearAll: clearSeg } = useSegmentation(absenceSegDef)
+    const isFiltered = isTextFiltered || isSegFiltered
     const { absences, isLoading: loading, isRefetching, refetch: fetchAbsences } = useAbsences(segFilters, initialAbsences)
+    const filteredAbsences = filterAbsences(absences)
     const [employees, setEmployees] = useState<Employee[]>([])
 
     const isNewModalOpen = searchParams.get("modal") === "new"
@@ -118,13 +122,14 @@ export function AbsenceManagementView({ initialAbsences }: AbsenceManagementView
                 <DataTableView
                     entityLabel="hr.absence"
                     columns={columns}
-                    data={absences}
+                    data={filteredAbsences}
                     isLoading={loading}
                     isRefetching={isRefetching}
                     variant="embedded"
+                    smartSearch={<SmartSearchBar searchDef={absenceSearchDef} placeholder="Buscar inasistencia..." className="w-full" />}
                     segmentation={<SegmentationBar def={absenceSegDef} />}
                     showReset={isFiltered}
-                    onReset={() => { clearSeg() }}
+                    onReset={() => { clearText(); clearSeg() }}
                     defaultPageSize={20}
                     onRowClick={(row: Absence) => { setEditingAbsence(row); setDialogOpen(true) }}
                     createAction={createAction}
