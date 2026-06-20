@@ -49,7 +49,8 @@ interface PurchasingOrdersClientViewProps {
 
 export function PurchasingOrdersClientView({ viewMode, externalOpenCheckout, createAction, initialOrders, initialNotes }: PurchasingOrdersClientViewProps) {
     const { filters: textFilters, isFiltered: isTextFiltered, clearAll: clearText } = useSmartSearch(purchaseOrderSearchDef)
-    const { filters: segFilters, isFiltered: isSegFiltered, clearAll: clearSeg } = useSegmentation(purchaseOrderSegDef)
+    const basePeriod = { serverParamFrom: 'date_after', serverParamTo: 'date_before' }
+    const { filters: segFilters, isFiltered: isSegFiltered, clearAll: clearSeg } = useSegmentation(purchaseOrderSegDef, basePeriod)
     const isFiltered = isTextFiltered || isSegFiltered
     const allFilters = { ...textFilters, ...segFilters }
     const { orders, isLoading: isLoadingOrders, isRefetching, refetch: fetchOrders, deleteOrder } = usePurchasingOrders(allFilters, initialOrders)
@@ -596,7 +597,7 @@ export function PurchasingOrdersClientView({ viewMode, externalOpenCheckout, cre
                         isLoading={viewMode === 'orders' ? isLoadingOrders : isLoadingNotes}
                         isRefetching={viewMode === 'orders' ? isRefetching : undefined}
                         smartSearch={<SmartSearchBar searchDef={purchaseOrderSearchDef} placeholder="Buscar por proveedor..." className="w-full" />}
-                        segmentation={<SegmentationBar def={purchaseOrderSegDef} />}
+                        segmentation={<SegmentationBar def={purchaseOrderSegDef} basePeriod={basePeriod} />}
                         showReset={isFiltered}
                         onReset={() => { clearText(); clearSeg() }}
                         sortOptions={true}

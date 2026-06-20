@@ -28,7 +28,8 @@ import { getDtePrefix } from "@/lib/entity-registry"
 
 export function PurchaseInvoicesClientView() {
     const { filters: textFilters, isFiltered: isTextFiltered, clearAll: clearText } = useSmartSearch(purchaseInvoiceSearchDef)
-    const { filters: segFilters, isFiltered: isSegFiltered, clearAll: clearSeg } = useSegmentation(purchaseInvoiceSegDef)
+    const basePeriod = { serverParamFrom: 'date_from', serverParamTo: 'date_to' }
+    const { filters: segFilters, isFiltered: isSegFiltered, clearAll: clearSeg } = useSegmentation(purchaseInvoiceSegDef, basePeriod)
     const isFiltered = isTextFiltered || isSegFiltered
     const { invoices: documents, isLoading, refetch: fetchDocuments } = usePurchaseInvoices({ filters: { ...(textFilters as Omit<InvoiceFilters, 'mode'>), ...(segFilters as Record<string, string>) } })
     const [payingDoc, setPayingDoc] = useState<any | null>(null)
@@ -237,7 +238,7 @@ export function PurchaseInvoicesClientView() {
                     }}
                     variant="embedded"
                     smartSearch={<SmartSearchBar searchDef={purchaseInvoiceSearchDef} placeholder="Buscar facturas de compra..." className="w-full" />}
-                    segmentation={<SegmentationBar def={purchaseInvoiceSegDef} />}
+                    segmentation={<SegmentationBar def={purchaseInvoiceSegDef} basePeriod={basePeriod} />}
                     showReset={isFiltered}
                     onReset={() => { clearText(); clearSeg() }}
                     defaultPageSize={20}

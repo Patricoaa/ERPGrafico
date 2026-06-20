@@ -54,8 +54,9 @@ export function SalesOrdersView({ viewMode, posSessionId, onActionSuccess, hideS
 
     const searchDef = viewMode === 'orders' ? salesOrderSearchDef : salesNoteSearchDef
     const segDef = viewMode === 'orders' ? salesOrderSegDef : salesNoteSegDef
+    const basePeriod = { serverParamFrom: 'date_after', serverParamTo: 'date_before' }
     const { filters: textFilters, isFiltered: isTextFiltered, clearAll: clearText } = useSmartSearch(searchDef)
-    const { filters: segFilters, isFiltered: isSegFiltered, clearAll: clearSeg } = useSegmentation(segDef)
+    const { filters: segFilters, isFiltered: isSegFiltered, clearAll: clearSeg } = useSegmentation(segDef, basePeriod)
     const isFiltered = isTextFiltered || isSegFiltered
 
     const { orders, isLoading: isLoadingOrders, isRefetching, refetch: refetchOrders } = useSalesOrders({
@@ -227,8 +228,8 @@ export function SalesOrdersView({ viewMode, posSessionId, onActionSuccess, hideS
                         : <SmartSearchBar searchDef={salesNoteSearchDef} placeholder="Buscar notas..." />
                     }
                     segmentation={viewMode === 'orders'
-                        ? <SegmentationBar def={salesOrderSegDef} />
-                        : <SegmentationBar def={salesNoteSegDef} />
+                        ? <SegmentationBar def={salesOrderSegDef} basePeriod={basePeriod} />
+                        : <SegmentationBar def={salesNoteSegDef} basePeriod={basePeriod} />
                     }
                     showReset={isFiltered}
                     onReset={() => { clearText(); clearSeg() }}

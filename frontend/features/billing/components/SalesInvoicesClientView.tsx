@@ -24,7 +24,8 @@ import { getDtePrefix } from "@/lib/entity-registry"
 
 export function SalesInvoicesClientView({ initialInvoices }: { initialInvoices?: Invoice[] }) {
     const { filters: textFilters, isFiltered: isTextFiltered, clearAll: clearText } = useSmartSearch(invoiceSearchDef)
-    const { filters: segFilters, isFiltered: isSegFiltered, clearAll: clearSeg } = useSegmentation(invoiceSegDef)
+    const basePeriod = { serverParamFrom: 'date_from', serverParamTo: 'date_to' }
+    const { filters: segFilters, isFiltered: isSegFiltered, clearAll: clearSeg } = useSegmentation(invoiceSegDef, basePeriod)
     const isFiltered = isTextFiltered || isSegFiltered
     const { invoices, isLoading, isRefetching, refetch, annulInvoice } = useInvoices({ filters: { ...(textFilters as InvoiceFilters), ...(segFilters as Record<string, string>), mode: 'sale' }, initialData: initialInvoices })
     const { openHub, closeHub, hubConfig, isHubOpen } = useHubPanel()
@@ -171,7 +172,7 @@ export function SalesInvoicesClientView({ initialInvoices }: { initialInvoices?:
                     onRowClick={(row: Invoice) => toggleSelection(row)}
                     variant="embedded"
                     smartSearch={<SmartSearchBar searchDef={invoiceSearchDef} placeholder="Buscar facturas..." className="w-full" />}
-                    segmentation={<SegmentationBar def={invoiceSegDef} />}
+                    segmentation={<SegmentationBar def={invoiceSegDef} basePeriod={basePeriod} />}
                     showReset={isFiltered}
                     onReset={() => { clearText(); clearSeg() }}
                     defaultPageSize={20}

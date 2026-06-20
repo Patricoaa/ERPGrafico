@@ -3,13 +3,6 @@ import type { SegmentationDefinition } from '@/types/segmentation'
 export const salesOrderSegDef: SegmentationDefinition = {
   segments: [
     {
-      key: 'period',
-      label: 'Período',
-      type: 'period',
-      serverParamFrom: 'date_after',
-      serverParamTo: 'date_before',
-    },
-    {
       key: 'origin_status',
       label: 'Origen',
       type: 'tabs',
@@ -82,13 +75,6 @@ export const salesOrderSegDef: SegmentationDefinition = {
 
 export const salesNoteSegDef: SegmentationDefinition = {
   segments: [
-    {
-      key: 'period',
-      label: 'Período',
-      type: 'period',
-      serverParamFrom: 'date_after',
-      serverParamTo: 'date_before',
-    },
     {
       key: 'status',
       label: 'Estado',
