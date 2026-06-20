@@ -97,7 +97,7 @@ function EntityCardHeader({ title, subtitle, trailing, center, icon: Icon, iconC
                             <Icon className="h-4 w-4" />
                         </div>
                     )}
-                    <div className="min-w-0">
+                    <div className="min-w-0 flex-1">
                         <div className="truncate text-sm font-semibold leading-tight tracking-tight">
                             {title}
                         </div>
@@ -111,7 +111,7 @@ function EntityCardHeader({ title, subtitle, trailing, center, icon: Icon, iconC
                 <div className="flex items-center justify-center self-center">
                     {center}
                 </div>
-                <div className="flex items-start justify-end">
+                <div className="justify-self-end">
                     {trailing}
                 </div>
             </div>
