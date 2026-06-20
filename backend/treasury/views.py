@@ -513,6 +513,17 @@ class TreasuryMovementViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
                     Q(movement_type='ADJUSTMENT', amount__lt=0) # Adjustments can be negative
                 )
 
+        display_id = self.request.query_params.get('display_id')
+        if display_id:
+            import re
+            match = re.search(r'(\d+)$', display_id)
+            if match:
+                qs = qs.filter(id=match.group(1))
+
+        partner_name = self.request.query_params.get('partner_name')
+        if partner_name:
+            qs = qs.filter(contact__name__icontains=partner_name)
+
         return qs
 
     filterset_fields = [
