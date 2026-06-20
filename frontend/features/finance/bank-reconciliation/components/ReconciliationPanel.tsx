@@ -138,7 +138,7 @@ function DroppableBankLine({ id, children }: { id: number, children: React.React
         className: cn(
             child.props.className,
             "transition-all duration-200",
-            isOver && "bg-primary/20 scale-[1.01] shadow-lg ring-2 ring-primary ring-inset z-10 relative"
+            isOver && "bg-primary/20 scale-[1.01] shadow-overlay ring-2 ring-primary ring-inset z-10 relative"
         )
     });
 }
@@ -654,7 +654,7 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                         )}
                         {isSuggested && (
                             <div className="flex items-center gap-1 mt-0.5">
-                                <Sparkles className="h-2.5 w-2.5 text-warning shadow-sm" />
+                                <Sparkles className="h-2.5 w-2.5 text-warning shadow-card" />
                                 <span className="text-[10px] font-black uppercase text-warning"> {/* intentional: badge density */} Match Sugerido</span>
                             </div>
                         )}
@@ -751,13 +751,13 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                         <TabsList className="bg-muted/30 p-0.5 rounded-md border border-border/40 h-9 gap-0.5 overflow-hidden items-center">
                             <TabsTrigger
                                 value="unreconciled"
-                                className="text-[10px] font-black uppercase tracking-wider px-3 h-7 py-0 flex items-center justify-center rounded-sm data-[state=active]:bg-background data-[state=active]:shadow-sm data-[state=active]:text-primary transition-all"
+                                className="text-[10px] font-black uppercase tracking-wider px-3 h-7 py-0 flex items-center justify-center rounded-sm data-[state=active]:bg-background data-[state=active]:shadow-card data-[state=active]:text-primary transition-all"
                             >
                                 Pendientes
                             </TabsTrigger>
                             <TabsTrigger
                                 value="reconciled"
-                                className="text-[10px] font-black uppercase tracking-wider px-3 h-7 py-0 flex items-center justify-center rounded-sm data-[state=active]:bg-background data-[state=active]:shadow-sm data-[state=active]:text-primary transition-all"
+                                className="text-[10px] font-black uppercase tracking-wider px-3 h-7 py-0 flex items-center justify-center rounded-sm data-[state=active]:bg-background data-[state=active]:shadow-card data-[state=active]:text-primary transition-all"
                             >
                                 Conciliados
                             </TabsTrigger>
@@ -951,7 +951,7 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                                         <div className="w-[40%] p-6 flex flex-col justify-start border-r border-border/40 relative">
                                             {/* Connecting Visual Resource */}
                                             <div className="absolute top-1/2 -right-3 -translate-y-1/2 z-10">
-                                                <div className="h-6 w-6 rounded-full bg-background border border-border/40 flex items-center justify-center text-primary shadow-sm group-hover/card:border-primary/40 transition-all">
+                                                <div className="h-6 w-6 rounded-full bg-background border border-border/40 flex items-center justify-center text-primary shadow-card group-hover/card:border-primary/40 transition-all">
                                                     <CheckCircle2 className="h-3.5 w-3.5" />
                                                 </div>
                                             </div>
@@ -967,7 +967,7 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                                                         const bankAmount = Math.abs(parseFloat(line.credit) - parseFloat(line.debit));
 
                                                         return (
-                                                            <div key={line.id} className="flex items-center justify-between p-3 bg-muted/30 border border-border/40 rounded-md hover:border-primary/20 transition-all shadow-sm">
+                                                            <div key={line.id} className="flex items-center justify-between p-3 bg-muted/30 border border-border/40 rounded-md hover:border-primary/20 transition-all shadow-card">
                                                                 <div className="flex items-center gap-3">
                                                                     <div className="h-8 w-8 rounded-sm bg-background border border-border/40 flex items-center justify-center text-muted-foreground shrink-0">
                                                                         <FileText className="h-4 w-4" />
@@ -1300,7 +1300,7 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                                                 setSelectedPayments([s.payment_data as any])
                                             }
                                         }}
-                                        className="flex items-center gap-3 bg-warning/10 border border-warning/20 hover:bg-warning/20 transition-all rounded-full py-1 pl-3 pr-1 group shadow-sm hover:shadow-md"
+                                        className="flex items-center gap-3 bg-warning/10 border border-warning/20 hover:bg-warning/20 transition-all rounded-full py-1 pl-3 pr-1 group shadow-card hover:shadow-elevated"
                                     >
                                         <span className="text-[10px] font-bold truncate max-w-[150px]">{suggestions[0].payment_data?.contact_name || suggestions[0].batch_data?.display_id || suggestions[0].batch_data?.name}</span>
                                         <div className="h-5 w-5 rounded-full bg-warning/20 flex items-center justify-center group-hover:bg-warning/30 transition-all duration-300">
@@ -1308,7 +1308,7 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                                         </div>
                                     </button>
                                 ) : (
-                                    <div className="bg-warning/10 border border-warning/20 rounded-full py-1 px-3 shadow-sm">
+                                    <div className="bg-warning/10 border border-warning/20 rounded-full py-1 px-3 shadow-card">
                                         <span className="text-[9px] text-warning">{suggestions.length} Coincidencias</span>
                                     </div>
                                 )}
@@ -1333,7 +1333,7 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                                                 setSelectedLines([s.line_data as any])
                                             }
                                         }}
-                                        className="flex items-center gap-3 bg-warning/10 border border-warning/20 hover:bg-warning/20 transition-all rounded-full py-1 pr-3 pl-1 group shadow-sm hover:shadow-md"
+                                        className="flex items-center gap-3 bg-warning/10 border border-warning/20 hover:bg-warning/20 transition-all rounded-full py-1 pr-3 pl-1 group shadow-card hover:shadow-elevated"
                                     >
                                         <div className="h-5 w-5 rounded-full bg-warning/20 flex items-center justify-center group-hover:bg-warning/30 transition-all duration-300">
                                             <ChevronLeft className="h-3 w-3 text-warning group-hover:-translate-x-0.5 transition-transform" />
@@ -1341,7 +1341,7 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                                         <span className="text-[10px] font-bold truncate max-w-[150px]">{lineSuggestions[0].line_data?.description}</span>
                                     </button>
                                 ) : (
-                                    <div className="bg-warning/10 border border-warning/20 rounded-full py-1 px-3 shadow-sm">
+                                    <div className="bg-warning/10 border border-warning/20 rounded-full py-1 px-3 shadow-card">
                                         <span className="text-[9px] text-warning">{lineSuggestions.length} Coincidencias</span>
                                     </div>
                                 )}
@@ -1412,7 +1412,7 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
 
                         <Button
                             size="sm"
-                            className="h-9 px-6 text-xs font-bold shadow-sm transition-transform active:scale-95 rounded-sm"
+                            className="h-9 px-6 text-xs font-bold shadow-card transition-transform active:scale-95 rounded-sm"
                             onClick={() => setActionDialog({ open: true, type: 'confirm_match' })}
                             disabled={matching || selectedLines.length === 0 || selectedPayments.length === 0}
                         >

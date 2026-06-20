@@ -31,7 +31,7 @@ interface ImportPreviewStepProps {
 
 function MetricCard({ title, value, icon: Icon, subtitle }: { title: string, value: string | React.ReactNode, icon: React.ElementType, subtitle?: string }) {
     return (
-        <div className="flex items-center p-4 bg-background border border-border/40 rounded-md shadow-sm">
+        <div className="flex items-center p-4 bg-background border border-border/40 rounded-md shadow-card">
             <div className="p-3 bg-muted/50 rounded-full mr-4">
                 <Icon className="h-5 w-5 text-muted-foreground" />
             </div>

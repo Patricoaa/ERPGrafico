@@ -164,7 +164,7 @@ function BudgetVarianceTableBase({ data, loading }: BudgetVarianceTableProps) {
 
     return (
         <SkeletonShell isLoading={loading ?? false} ariaLabel="Cargando variación presupuestal">
-            <div className="relative overflow-x-auto border rounded-sm shadow-sm bg-card">
+            <div className="relative overflow-x-auto border rounded-sm shadow-card bg-card">
                 <Table>
                     <TableHeader className="bg-muted/50">
                         <TableRow className="hover:bg-transparent border-b-2">

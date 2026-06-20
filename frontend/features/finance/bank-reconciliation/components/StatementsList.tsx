@@ -249,7 +249,7 @@ export function StatementsList({ externalOpen = false, createAction, bankId, acc
 
     const internalImportButton = accounts !== undefined ? (
         <Button
-            className="h-9 px-4 rounded-md text-[10px] font-black uppercase tracking-widest shadow-sm bg-primary text-primary-foreground hover:bg-primary/90"
+            className="h-9 px-4 rounded-md text-[10px] font-black uppercase tracking-widest shadow-card bg-primary text-primary-foreground hover:bg-primary/90"
             onClick={() => setImportModalOpen(true)}
         >
             <Upload className="h-3.5 w-3.5 mr-2" />
