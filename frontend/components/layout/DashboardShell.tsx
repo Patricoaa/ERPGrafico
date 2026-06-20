@@ -80,7 +80,7 @@ function DashboardShellInner({ children }: { children: React.ReactNode }) {
                                 className="flex items-center gap-3 pointer-events-auto min-w-0"
                             >
                                 {config.isLoading && (
-                                    <Skeleton className="p-2 bg-primary/10 text-primary border border-primary/10 shadow-sm shrink-0">
+                                    <Skeleton className="p-2 bg-primary/10 text-primary border border-primary/10 shadow-card shrink-0">
                                         <Loader2 className="h-4 w-4 animate-spin" />
                                     </Skeleton>
                                 )}

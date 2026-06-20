@@ -260,7 +260,7 @@ export default function BankStatementDetailPage({
             <div className="flex-1 min-h-0 overflow-y-auto custom-scrollbar space-y-4 pt-2 pb-4">
                 {/* Summary Grid */}
                 <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-4">
-                    <Card className="shadow-sm bg-card border">
+                    <Card className="shadow-card bg-card border">
                         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1">
                             <CardTitle className="text-xs font-bold uppercase text-muted-foreground tracking-wider">Apertura</CardTitle>
                             <Banknote className="h-3.5 w-3.5 text-primary" />
@@ -273,7 +273,7 @@ export default function BankStatementDetailPage({
                             </p>
                         </CardContent>
                     </Card>
-                    <Card className="shadow-sm bg-card border">
+                    <Card className="shadow-card bg-card border">
                         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1">
                             <CardTitle className="text-xs font-bold uppercase text-muted-foreground tracking-wider">Cierre</CardTitle>
                             <TrendingUp className="h-3.5 w-3.5 text-success" />
@@ -286,7 +286,7 @@ export default function BankStatementDetailPage({
                             </p>
                         </CardContent>
                     </Card>
-                    <Card className="shadow-sm bg-card border">
+                    <Card className="shadow-card bg-card border">
                         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1">
                             <CardTitle className="text-xs font-bold uppercase text-muted-foreground tracking-wider">Cargos (Sale)</CardTitle>
                             <TrendingDown className="h-3.5 w-3.5 text-destructive" />
@@ -298,7 +298,7 @@ export default function BankStatementDetailPage({
                             </p>
                         </CardContent>
                     </Card>
-                    <Card className="shadow-sm bg-card border">
+                    <Card className="shadow-card bg-card border">
                         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1">
                             <CardTitle className="text-xs font-bold uppercase text-muted-foreground tracking-wider">Abonos (Entra)</CardTitle>
                             <TrendingUp className="h-3.5 w-3.5 text-success/50" />
@@ -313,7 +313,7 @@ export default function BankStatementDetailPage({
                 </div>
 
                 {/* Progress */}
-                <div className="bg-card p-4 rounded-md border shadow-sm">
+                <div className="bg-card p-4 rounded-md border shadow-card">
                     <div className="flex items-center justify-between mb-2">
                         <div className="flex items-center gap-2">
                             <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Estado de la Conciliación</span>
