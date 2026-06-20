@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useMemo } from "react"
+import { useMemo } from "react"
 import { Calendar, ArrowRight, ArrowLeft, Monitor, GitBranch, type LucideIcon } from "lucide-react"
 import { cn, formatPlainDate } from "@/lib/utils"
 import { MoneyDisplay } from "./MoneyDisplay"
@@ -82,35 +82,27 @@ export function DomainCard({
             )}
         >
             <EntityCard.Header
-                title={
-                    <div className="flex items-center gap-3">
-                        {React.createElement(Icon, { className: cn("h-5 w-5 shrink-0", iconClassNameOverride ?? iconColor) })}
-                        <div className="flex flex-col min-w-0">
-                            {visibleColumns?.partner_name !== false && (
-                                <span className="font-heading font-extrabold text-base text-foreground truncate leading-tight">
-                                    {partnerName}
-                                </span>
-                            )}
-                            <span className="flex items-center gap-1.5 text-xs text-muted-foreground/60 flex-wrap leading-tight">
-                                <span>{displayId}</span>
-                                <span className="text-muted-foreground/20">·</span>
-                                {visibleColumns?.date !== false && (
-                                    <span className="flex items-center gap-1">
-                                        <Calendar className="h-3 w-3 opacity-50" />
-                                        {formatPlainDate(data.date)}
-                                    </span>
-                                )}
-                                {label === 'sales.saleorder' && data.pos_session && (
-                                    <span className="flex items-center gap-1 text-primary bg-primary/5 px-1.5 py-0.5 rounded-md">
-                                        <Monitor className="h-3 w-3" />
-                                        #{data.pos_session}
-                                    </span>
-                                )}
+                icon={Icon}
+                iconClassName={iconClassNameOverride ?? iconColor}
+                title={visibleColumns?.partner_name !== false ? partnerName : undefined}
+                subtitle={
+                    <span className="flex items-center gap-1.5 flex-wrap">
+                        <span>{displayId}</span>
+                        <span className="text-muted-foreground/20">·</span>
+                        {visibleColumns?.date !== false && (
+                            <span className="flex items-center gap-1">
+                                <Calendar className="h-3 w-3 opacity-50" />
+                                {formatPlainDate(data.date)}
                             </span>
-                        </div>
-                    </div>
+                        )}
+                        {label === 'sales.saleorder' && data.pos_session && (
+                            <span className="flex items-center gap-1 text-primary bg-primary/5 px-1.5 py-0.5 rounded-md">
+                                <Monitor className="h-3 w-3" />
+                                #{data.pos_session}
+                            </span>
+                        )}
+                    </span>
                 }
-                subtitle={undefined}
                 trailing={
                     <div className="flex items-center gap-4">
                         {visibleColumns?.status !== false && (
