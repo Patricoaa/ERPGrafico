@@ -2,13 +2,14 @@
 
 import React, { useState, useMemo } from 'react'
 import type { ColumnDef } from '@tanstack/react-table'
-import { AlertTriangle, ArrowDownToLine, CheckCheck, XCircle, Ban } from 'lucide-react'
+import { AlertTriangle } from 'lucide-react'
 import {
     DataTableView, DataTableColumnHeader, DataCell,
-    createActionsColumn, StatusBadge, MoneyDisplay, Skeleton, EntityCard,
+    StatusBadge, MoneyDisplay, Skeleton, EntityCard,
 } from '@/components/shared'
 import { useChecks, useCheckMutations } from './hooks'
 import { CheckDepositModal } from './CheckDepositModal'
+import { checkActions, type CheckActionsCtx } from './checkActions'
 import type { Check, CheckDirection } from './types'
 
 const ACTIONABLE_FROM: Record<string, string[]> = {
@@ -46,6 +47,16 @@ export function ChecksView({ bankId, direction }: ChecksViewProps = {}) {
     }
 
     const isIssued = direction === 'ISSUED'
+
+    const actionsCtx: CheckActionsCtx = {
+        isIssued,
+        canDo,
+        onDeposit: setDepositTarget,
+        onClear: (id) => clear(id),
+        onBounce: (id) => bounce({ id }),
+        onMarkCashed: (id) => markCashed(id),
+        onVoid: (id) => voidCheck({ id }),
+    }
 
     const columns: ColumnDef<Check>[] = [
         {
@@ -95,27 +106,7 @@ export function ChecksView({ bankId, direction }: ChecksViewProps = {}) {
             header: ({ column }) => <DataTableColumnHeader column={column} title="Estado" />,
             cell: ({ row }) => <StatusBadge status={row.original.status} />,
         },
-        createActionsColumn<Check>({
-            renderActions: (check) => (
-                <>
-                    {!isIssued && canDo('deposit', check) && (
-                        <DataCell.Action icon={ArrowDownToLine} title="Depositar" onClick={() => setDepositTarget(check)} />
-                    )}
-                    {!isIssued && canDo('clear', check) && (
-                        <DataCell.Action icon={CheckCheck} title="Marcar cobrado" onClick={() => clear(check.id)} />
-                    )}
-                    {!isIssued && canDo('bounce', check) && (
-                        <DataCell.Action icon={XCircle} title="Protestar" onClick={() => bounce({ id: check.id })} />
-                    )}
-                    {isIssued && canDo('mark_cashed', check) && (
-                        <DataCell.Action icon={CheckCheck} title="Marcar cobrado por banco" onClick={() => markCashed(check.id)} />
-                    )}
-                    {canDo('void', check) && (
-                        <DataCell.Action icon={Ban} title="Anular" onClick={() => voidCheck({ id: check.id })} />
-                    )}
-                </>
-            ),
-        }),
+        checkActions.column(actionsCtx),
     ]
 
     return (
@@ -133,7 +124,7 @@ export function ChecksView({ bankId, direction }: ChecksViewProps = {}) {
                             : { context: 'treasury', title: 'Sin cheques en cartera', description: 'Los cheques recibidos en ventas o registro de pagos aparecerán aquí.' }
                     }
                     renderCard={(check: Check) => (
-                        <EntityCard>
+                        <EntityCard actions={checkActions.render(check, actionsCtx)}>
                             <EntityCard.Header
                                 title={check.check_number}
                                 trailing={<StatusBadge status={check.status} />}
@@ -161,23 +152,6 @@ export function ChecksView({ bankId, direction }: ChecksViewProps = {}) {
                                     }
                                 />
                             </EntityCard.Body>
-                            <EntityCard.Footer>
-                                {!isIssued && canDo('deposit', check) && (
-                                    <DataCell.Action icon={ArrowDownToLine} title="Depositar" onClick={() => setDepositTarget(check)} />
-                                )}
-                                {!isIssued && canDo('clear', check) && (
-                                    <DataCell.Action icon={CheckCheck} title="Marcar cobrado" onClick={() => clear(check.id)} />
-                                )}
-                                {!isIssued && canDo('bounce', check) && (
-                                    <DataCell.Action icon={XCircle} title="Protestar" onClick={() => bounce({ id: check.id })} />
-                                )}
-                                {isIssued && canDo('mark_cashed', check) && (
-                                    <DataCell.Action icon={CheckCheck} title="Marcar cobrado por banco" onClick={() => markCashed(check.id)} />
-                                )}
-                                {canDo('void', check) && (
-                                    <DataCell.Action icon={Ban} title="Anular" onClick={() => voidCheck({ id: check.id })} />
-                                )}
-                            </EntityCard.Footer>
                         </EntityCard>
                     )}
                 />
