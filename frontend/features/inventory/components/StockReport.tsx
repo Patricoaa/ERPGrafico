@@ -5,14 +5,15 @@ import React, { useState, useMemo } from "react"
 import { BaseModal, DataTable } from '@/components/shared'
 import { DataTableColumnHeader } from '@/components/shared'
 import { ColumnDef } from "@tanstack/react-table"
-import { ArrowRightLeft, History } from "lucide-react"
+import { ArrowRightLeft } from "lucide-react"
 
 import { AdjustmentForm } from "@/features/inventory/components/AdjustmentForm"
 
 import { CancelButton, SubmitButton, FormFooter, SmartSearchBar, useSmartSearch } from "@/components/shared"
 import { stockReportSearchDef } from "@/features/inventory/searchDef"
 import { ProductInsightsModal } from "@/features/inventory/components/ProductInsightsModal"
-import { DataCell, createActionsColumn } from '@/components/shared'
+import { DataCell } from '@/components/shared'
+import { stockReportActions, type StockReportActionsCtx } from './stockReportActions'
 import { PageContainer } from "@/components/shared"
 import { cn } from "@/lib/utils"
 
@@ -24,6 +25,11 @@ export function StockReport() {
     const [adjustingProduct, setAdjustingProduct] = useState<any | null>(null)
     const [insightsProduct, setInsightsProduct] = useState<any | null>(null)
     const [isFormLoading, setIsFormLoading] = useState(false)
+
+    const stockReportActionsCtx: StockReportActionsCtx = {
+        onAdjust: (product) => setAdjustingProduct(product),
+        onHistory: (product) => setInsightsProduct(product),
+    }
 
     const filteredReport = useMemo(() => {
         if (!smartFilters || Object.keys(smartFilters).length === 0) return report;
@@ -150,14 +156,7 @@ export function StockReport() {
             },
         },
 
-        createActionsColumn<any>({
-            renderActions: (item) => (
-                <>
-                    <DataCell.Action icon={ArrowRightLeft} title="Ajustar Stock" onClick={() => setAdjustingProduct(item)} />
-                    <DataCell.Action icon={History} title="Ver Historial" onClick={() => setInsightsProduct(item)} />
-                </>
-            ),
-        }),
+        stockReportActions.column(stockReportActionsCtx),
     ], [setAdjustingProduct, setInsightsProduct])
 
     return (

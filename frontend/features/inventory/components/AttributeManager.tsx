@@ -3,13 +3,14 @@
 import { showApiError } from "@/lib/errors"
 
 import React, { useState, useMemo, useCallback } from "react"
-import { Plus, Trash2, Tag, Eye, X } from "lucide-react"
+import { Plus, Trash2, Tag, X } from "lucide-react"
 import { useRouter, usePathname, useSearchParams } from "next/navigation"
 import { toast } from "sonner"
 
 import { BaseModal, DataTable } from '@/components/shared'
 import { DataTableColumnHeader } from '@/components/shared'
-import { DataCell, createActionsColumn } from '@/components/shared'
+import { DataCell } from '@/components/shared'
+import { attributeActions, type AttributeActionsCtx } from './attributeActions'
 import { ColumnDef } from "@tanstack/react-table"
 import { Checkbox } from "@/components/ui/checkbox"
 import type { BulkAction } from "@/components/shared"
@@ -148,6 +149,16 @@ export function AttributeManager({ externalOpen, createAction }: AttributeManage
 
     const handleDeleteValue = useCallback((id: number) => deleteValueConfirm.requestConfirm(id), [deleteValueConfirm])
 
+    const attributeActionsCtx: AttributeActionsCtx = {
+        onViewEdit: (attr) => {
+            const a = attr as ProductAttribute
+            setSelectedAttribute(a)
+            setNewAttrName(a.name)
+            setIsAttrModalOpen(true)
+        },
+        onDelete: (id) => handleDeleteAttribute(id),
+    }
+
     const bulkDeleteConfirm = useConfirmAction<ProductAttribute[]>(async (items) => {
         try {
             await Promise.all(items.map(a => deleteAttribute(a.id)))
@@ -240,28 +251,7 @@ export function AttributeManager({ externalOpen, createAction }: AttributeManage
                 )
             },
         },
-        createActionsColumn<ProductAttribute>({
-            renderActions: (item) => (
-                <>
-                    <DataCell.Action
-                        icon={Eye}
-                        title="Ver/Editar Atributo"
-                        color="text-primary"
-                        onClick={() => {
-                            setSelectedAttribute(item)
-                            setNewAttrName(item.name)
-                            setIsAttrModalOpen(true)
-                        }}
-                    />
-                    <DataCell.Action
-                        icon={Trash2}
-                        title="Eliminar Atributo"
-                        className="text-destructive"
-                        onClick={() => handleDeleteAttribute(item.id)}
-                    />
-                </>
-            ),
-        }),
+        attributeActions.column(attributeActionsCtx) as ColumnDef<ProductAttribute>,
     ], [handleDeleteValue, handleDeleteAttribute])
 
     const bulkActions = useMemo<BulkAction<ProductAttribute>[]>(() => [

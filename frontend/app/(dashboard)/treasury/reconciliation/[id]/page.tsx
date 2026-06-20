@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import {
     Calendar, Banknote, TrendingUp, TrendingDown,
-    Undo2, Info, AlertCircle, ExternalLink, Activity
+    Info, AlertCircle, ExternalLink, Activity
 } from "lucide-react"
 import { ActionConfirmModal, PageHeader, SkeletonShell } from '@/components/shared'
 
@@ -21,7 +21,8 @@ import { DataTable } from '@/components/shared'
 import { DataTableColumnHeader } from '@/components/shared'
 import { ColumnDef } from "@tanstack/react-table"
 
-import { createActionsColumn, DataCell } from '@/components/shared'
+import { DataCell } from '@/components/shared'
+import { statementLineUnmatchActions, type StatementLineUnmatchActionsCtx } from '@/features/treasury/components/statementLineUnmatchActions'
 import { Progress } from "@/components/ui/progress"
 import { useConfirmAction } from "@/hooks/useConfirmAction"
 
@@ -74,6 +75,15 @@ export default function StatementDetailPage({ params }: { params: Promise<{ id: 
     const [unmatchDialog, setUnmatchDialog] = useState<{ open: boolean, lineId: number | null }>({ open: false, lineId: null })
     const [confirming, setConfirming] = useState(false)
     const [paymentModal, setPaymentModal] = useState<{ open: boolean, id: number }>({ open: false, id: 0 })
+
+    const statementLineUnmatchActionsCtx: StatementLineUnmatchActionsCtx = {
+        onUnmatch: (lineId) => setUnmatchDialog({ open: true, lineId }),
+        canUnmatch: (item) => {
+            const line = item as { reconciliation_state?: string }
+            const state = line.reconciliation_state || ''
+            return ['MATCHED', 'RECONCILED', 'EXCLUDED'].includes(state) && statement?.state !== 'CONFIRMED'
+        },
+    }
 
     const fetchStatement = async () => {
         try {
@@ -234,21 +244,7 @@ export default function StatementDetailPage({ params }: { params: Promise<{ id: 
                 )
             },
         },
-        createActionsColumn<BankStatementLine>({
-            renderActions: (line) => {
-                const state = line.reconciliation_state
-                const canUnmatch = ['MATCHED', 'RECONCILED', 'EXCLUDED'].includes(state) && statement?.state !== 'CONFIRMED'
-
-                return canUnmatch ? (
-                    <DataCell.Action
-                        icon={Undo2}
-                        title="Deshacer reconciliación"
-                        className="text-muted-foreground hover:text-destructive"
-                        onClick={() => setUnmatchDialog({ open: true, lineId: line.id })}
-                    />
-                ) : <></>
-            }
-        }),
+        statementLineUnmatchActions.column(statementLineUnmatchActionsCtx) as ColumnDef<BankStatementLine>,
     ]
 
     if (loading) return (

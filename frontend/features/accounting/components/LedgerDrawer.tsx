@@ -3,9 +3,9 @@
 import React, { useState, useEffect } from "react"
 import { useRouter, usePathname, useSearchParams } from "next/navigation"
 import { useServerDate } from "@/hooks/useServerDate"
-import { Book, ArrowUpRight, ArrowDownRight, Scale, Calculator, Eye, Trash2 } from "lucide-react"
+import { Book, ArrowUpRight, ArrowDownRight, Scale, Calculator } from "lucide-react"
 import { getEntityIcon } from "@/lib/entity-registry"
-import { ActionConfirmModal, DataCell, DataTable, DataTableColumnHeader, DateRangeFilter, Drawer, IconButton, MoneyDisplay, SkeletonShell, createActionsColumn } from '@/components/shared'
+import { ActionConfirmModal, DataCell, DataTable, DataTableColumnHeader, DateRangeFilter, Drawer, IconButton, MoneyDisplay, SkeletonShell } from '@/components/shared'
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 import { ColumnDef } from "@tanstack/react-table"
 import { Card, CardContent } from "@/components/ui/card"
@@ -19,6 +19,7 @@ import { useDeleteJournalEntry } from "@/features/accounting/hooks/useJournalEnt
 import { es } from "date-fns/locale"
 
 import type { LedgerMovement } from "@/features/accounting/types"
+import { ledgerMovementActions, type LedgerMovementActionsCtx } from './ledgerMovementActions'
 
 interface LedgerDrawerProps {
     accountId: number
@@ -163,6 +164,11 @@ function LedgerContent({
     const deleteConfirm = useConfirmAction<number>((entryId) => deleteMutation.mutateAsync(entryId))
     const handleDeleteEntry = (entryId: number) => deleteConfirm.requestConfirm(entryId)
 
+    const ledgerMovementActionsCtx: LedgerMovementActionsCtx = {
+        onViewEntry: (entryId) => openEntry(entryId),
+        onDeleteEntry: handleDeleteEntry,
+    }
+
     const columns: ColumnDef<LedgerMovement>[] = [
         {
             accessorKey: "date",
@@ -237,24 +243,7 @@ function LedgerContent({
                 )
             },
         },
-        createActionsColumn<LedgerMovement>({
-            renderActions: (mov) => (
-                <>
-                    <DataCell.Action
-                        icon={Eye}
-                        title="Ver Asiento"
-                        color="text-primary"
-                        onClick={() => openEntry(mov.entry_id)}
-                    />
-                    <DataCell.Action
-                        icon={Trash2}
-                        title="Eliminar Asiento"
-                        className="text-destructive"
-                        onClick={() => handleDeleteEntry(mov.entry_id)}
-                    />
-                </>
-            ),
-        })
+        ledgerMovementActions.column(ledgerMovementActionsCtx)
     ]
 
     return (

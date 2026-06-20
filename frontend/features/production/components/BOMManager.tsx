@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import {
-    Plus, Edit, Trash2, Workflow, Box, Layers, Copy, History
+    Plus, Workflow, Box, Layers, History
 } from "lucide-react"
 
 import { BOMDrawer } from "./BOMDrawer"
@@ -13,7 +13,8 @@ import { cn } from "@/lib/utils"
 import { DataTable } from '@/components/shared'
 import { ColumnDef } from "@tanstack/react-table"
 import { DataTableColumnHeader } from '@/components/shared'
-import { DataCell, createActionsColumn } from '@/components/shared'
+import { DataCell } from '@/components/shared'
+import { bomManagerActions, type BOMManagerActionsCtx } from './bomManagerActions'
 
 import { BOM, ProductMinimal } from "../types"
 
@@ -102,6 +103,12 @@ export function BOMManager({ product, variantMode = false, onBomsChange }: BOMMa
         )
     }
 
+    const bomManagerActionsCtx: BOMManagerActionsCtx = {
+        onClone: (bom) => handleClone(bom as BOM),
+        onEdit: (bom) => handleEdit(bom as BOM),
+        onDelete: (bom) => handleDelete(bom as BOM, false),
+    }
+
     const columns: ColumnDef<BOM>[] = [
         {
             accessorKey: "name",
@@ -184,31 +191,7 @@ export function BOMManager({ product, variantMode = false, onBomsChange }: BOMMa
                 </div>
             )
         },
-        createActionsColumn<BOM>({
-            headerLabel: "Opciones",
-            renderActions: (item) => (
-                <>
-                    <DataCell.Action
-                        icon={Copy}
-                        title="Clonar Receta"
-                        className="text-success hover:text-success"
-                        onClick={() => handleClone(item)}
-                    />
-                    <DataCell.Action
-                        icon={Edit}
-                        title="Editar"
-                        className="text-primary hover:text-primary"
-                        onClick={() => handleEdit(item)}
-                    />
-                    <DataCell.Action
-                        icon={Trash2}
-                        title="Eliminar"
-                        className="text-destructive hover:text-destructive"
-                        onClick={() => handleDelete(item)}
-                    />
-                </>
-            )
-        })
+        bomManagerActions.column(bomManagerActionsCtx) as ColumnDef<BOM>
     ]
 
     return (
