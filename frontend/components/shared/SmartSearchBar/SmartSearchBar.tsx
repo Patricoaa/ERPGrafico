@@ -287,7 +287,7 @@ export function SmartSearchBar({ searchDef, placeholder = 'Buscar...', className
         <div
           className={cn(
             'absolute z-50 left-0 right-0 mt-1',
-            'bg-popover/95 backdrop-blur-md border border-border/80 rounded-lg shadow-floating',
+            'bg-popover/95 backdrop-blur-md border border-border/80 rounded-sm shadow-floating',
             'overflow-hidden',
           )}
           role="listbox"
