@@ -23,6 +23,7 @@ export function useTreasuryMovements(filters: TreasuryMovementFilters = {}) {
     if (rest.amount_max !== undefined) params.amount_max = rest.amount_max
     if (rest.direction)        params.direction        = rest.direction
     if (rest.is_reconciled !== undefined) params.is_reconciled = rest.is_reconciled
+    if (rest.payment_method) params.payment_method = rest.payment_method
     if (rest.payment_method_new) params.payment_method_new = rest.payment_method_new
     if (rest.search)              params.search              = rest.search
 
