@@ -68,11 +68,11 @@ export function DataTableToolbar<TData>(props: DataTableToolbarProps<TData>) {
         facetedFilters = [],
         toolbarAction,
         onReset,
-        sortOptions = false,
+        sortOptions,
         viewOptions,
         currentView,
         onViewChange,
-        columnToggle = true,
+        columnToggle,
         customFilters,
         smartSearch,
         segmentation,
@@ -89,6 +89,9 @@ export function DataTableToolbar<TData>(props: DataTableToolbarProps<TData>) {
             setAnalyticsOpen(true)
         }
     }
+
+    const effectiveColumnToggle = columnToggle ?? (currentView === 'list' || !currentView)
+    const effectiveSortOptions = sortOptions ?? (currentView === 'card' || currentView === 'grid')
 
     const sortableColumns = table.getAllColumns().filter(
         (column) => column.getCanSort() && column.columnDef.header
@@ -211,11 +214,11 @@ export function DataTableToolbar<TData>(props: DataTableToolbarProps<TData>) {
                             </Tooltip>
                         )}
 
-                        {columnToggle && (
+                        {effectiveColumnToggle && (
                             <DataTableColumnToggle table={table} />
                         )}
 
-                        {sortOptions && sortableColumns.length > 0 && (
+                        {effectiveSortOptions && sortableColumns.length > 0 && (
                             <DropdownMenu>
                                 <Tooltip>
                                     <TooltipTrigger asChild>

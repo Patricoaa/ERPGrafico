@@ -233,7 +233,6 @@ export function SalesOrdersView({ viewMode, posSessionId, onActionSuccess, hideS
                     }
                     showReset={isFiltered}
                     onReset={() => { clearText(); clearSeg() }}
-                    sortOptions={true}
                     defaultPageSize={20}
                     isSelected={(data: any) => !!getSelectionId(data)}
                     isHubOpen={onSelectOrder ? !!selectedId : isHubOpen}

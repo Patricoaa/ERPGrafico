@@ -622,7 +622,6 @@ function PersonalTab({
                                         variant="standalone"
                                         noBorder={true}
                                         toolbarClassName="px-6 pt-6 pb-2 pl-14"
-                                        sortOptions={false}
                                         facetedFilters={[{
                                             column: "period_label",
                                             title: "Período",
@@ -680,7 +679,6 @@ function PersonalTab({
                                         variant="standalone"
                                         noBorder={true}
                                         toolbarClassName="px-6 pt-6 pb-2"
-                                        sortOptions={false}
                                     />
                                 ) : (
                                     <EmptyState
