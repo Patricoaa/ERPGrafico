@@ -66,7 +66,7 @@ export function WorkOrderTimelineView({ orders, onManage, isLoading }: TimelineP
             {columns.map(({ label, key, orders: colOrders }) => (
                 <div
                     key={key}
-                    className="flex-shrink-0 w-80 flex flex-col rounded-md border shadow-sm bg-background"
+                    className="flex-shrink-0 w-80 flex flex-col rounded-md border shadow-card bg-background"
                 >
                     <div className="p-4 border-b flex items-center justify-between">
                         <div className="flex items-center gap-2">
@@ -88,7 +88,7 @@ export function WorkOrderTimelineView({ orders, onManage, isLoading }: TimelineP
                                 <Card
                                     key={order.id}
                                     onClick={() => onManage(order.id)}
-                                    className="cursor-pointer hover:shadow-md transition-all border-none shadow-sm rounded-md active:scale-95 duration-100"
+                                    className="cursor-pointer hover:shadow-elevated transition-all border-none shadow-card rounded-md active:scale-95 duration-100"
                                 >
                                     <CardContent className="p-3 space-y-2">
                                         <div className="flex items-center justify-between">
