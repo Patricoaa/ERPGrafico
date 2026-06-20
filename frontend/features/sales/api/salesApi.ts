@@ -25,6 +25,7 @@ export const salesApi = {
         if (filters?.payment_status) params.append('payment_status', filters.payment_status)
         if (filters?.production_status) params.append('production_status', filters.production_status)
         if (filters?.pos_session) params.append('pos_session', String(filters.pos_session))
+        if (filters?.search) params.append('search', filters.search)
 
         const { data } = await api.get<SaleOrder[]>('/sales/orders/', { params })
         return data
