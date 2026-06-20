@@ -7,7 +7,7 @@ export const fiscalYearSearchDef: SearchDefinition = {
       label: 'Ejercicio',
       type: 'text',
       serverParam: 'year',
-      clientKey: 'year',
+      clientKey: ['year'],
     },
   ],
 }

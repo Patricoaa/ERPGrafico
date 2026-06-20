@@ -1,5 +1,21 @@
 import type { SegmentationDefinition } from '@/types/segmentation'
 
+export const fiscalYearSegDef: SegmentationDefinition = {
+  segments: [
+    {
+      key: 'status',
+      label: 'Estado',
+      type: 'tabs',
+      serverParam: 'status',
+      options: [
+        { label: 'Abierto', value: 'OPEN' },
+        { label: 'En Cierre', value: 'CLOSING' },
+        { label: 'Cerrado', value: 'CLOSED' },
+      ],
+    },
+  ],
+}
+
 export const accountSegDef: SegmentationDefinition = {
   segments: [
     {
@@ -39,14 +55,6 @@ export const journalEntrySegDef: SegmentationDefinition = {
         { label: 'Reversión', value: 'REVERSAL' },
         { label: 'Anulado', value: 'CANCELLED' },
       ],
-    },
-    {
-      key: 'date',
-      label: 'Fecha',
-      type: 'date',
-      serverParamDate: 'date',
-      serverParamFrom: 'date_after',
-      serverParamTo: 'date_before',
     },
   ],
 }

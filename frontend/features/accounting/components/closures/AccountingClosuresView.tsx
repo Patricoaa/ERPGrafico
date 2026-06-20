@@ -17,9 +17,10 @@ import { DataTableColumnHeader } from '@/components/shared';
 import { createActionsColumn, DataCell } from '@/components/shared';
 ;
 import { PlayCircle, ShieldAlert, LockOpen } from 'lucide-react';
-import { ToolbarCreateButton, SmartSearchBar, useClientSearch } from '@/components/shared';
+import { ToolbarCreateButton, SmartSearchBar, useClientSearch, useSegmentation, SegmentationBar } from '@/components/shared';
 import { ClosuresSkeleton } from './ClosuresSkeleton';
 import { fiscalYearSearchDef } from '../../searchDef';
+import { fiscalYearSegDef } from '../../segmentationDef';
 
 interface AccountingClosuresViewProps {
     externalOpen?: boolean;
@@ -165,7 +166,15 @@ export function AccountingClosuresView({ externalOpen, onExternalOpenChange }: A
         }
     };
 
-    const { filterFn } = useClientSearch<{ year: number; periods: AccountingPeriod[]; fiscalYear: FiscalYear | undefined; status: string }>(fiscalYearSearchDef)
+    const { filterFn, isFiltered: isTextFiltered, clearAll: clearText } = useClientSearch<{ year: number; periods: AccountingPeriod[]; fiscalYear: FiscalYear | undefined; status: string }>(fiscalYearSearchDef)
+    const { filters: segFilters, isFiltered: isSegFiltered, clearAll: clearSeg } = useSegmentation(fiscalYearSegDef)
+    const isFiltered = isTextFiltered || isSegFiltered
+
+    const filteredGrouped = useMemo(() => {
+        let result = groupedData
+        if (segFilters.status) result = result.filter(g => (g.fiscalYear?.status || 'OPEN') === segFilters.status)
+        return filterFn(result.map(r => ({ ...r, status: r.fiscalYear?.status ?? 'OPEN' })))
+    }, [groupedData, segFilters.status, filterFn])
 
     if (isLoadingYr || isLoadingPeriods) {
         return <ClosuresSkeleton />;
@@ -258,10 +267,13 @@ export function AccountingClosuresView({ externalOpen, onExternalOpenChange }: A
                 <DataTableView
                     entityLabel="accounting.fiscalyear"
                     columns={columns}
-                    data={filterFn(groupedData.map(r => ({ ...r, status: r.fiscalYear?.status ?? 'OPEN' })))}
+                    data={filteredGrouped}
                     isLoading={actionLoadingYr || actionLoadingPeriod}
                     variant="standalone"
                     smartSearch={<SmartSearchBar searchDef={fiscalYearSearchDef} placeholder="Buscar ejercicio..." className="w-full" />}
+                    segmentation={<SegmentationBar def={fiscalYearSegDef} />}
+                    showReset={isFiltered}
+                    onReset={() => { clearText(); clearSeg() }}
                     defaultPageSize={10}
                     createAction={
                         <ToolbarCreateButton
