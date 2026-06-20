@@ -8,7 +8,8 @@ import { ActionConfirmModal, DataTableColumnHeader, DataTableView, EntityCard, S
 import { ColumnDef } from "@tanstack/react-table"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Trash2 } from "lucide-react"
-import { DataCell, createActionsColumn } from '@/components/shared'
+import { DataCell } from '@/components/shared'
+import { uomActions, type UoMActionsCtx } from "@/features/inventory/uomActions"
 
 import type { BulkAction } from "@/components/shared"
 import { UoMDrawer } from "./UoMDrawer"
@@ -68,6 +69,10 @@ export function UoMClientView({ externalOpen, onExternalOpenChange, createAction
         }
     })
     const handleDelete = (id: number) => deleteConfirm.requestConfirm(id)
+    const actionsCtx: UoMActionsCtx = {
+        onEdit: (id) => openSelected(id),
+        onDelete: (id) => handleDelete(id),
+    }
     const columns = useMemo<ColumnDef<UoM>[]>(() => [
         {
             id: "select",
@@ -133,15 +138,8 @@ export function UoMClientView({ externalOpen, onExternalOpenChange, createAction
                 <DataCell.Number value={row.getValue("ratio")} />
             ),
         },
-        createActionsColumn<UoM>({
-            renderActions: (item) => (
-                <>
-                    <DataCell.Action action="edit" onClick={() => openSelected(item.id)} />
-                    <DataCell.Action action="delete" onClick={() => handleDelete(item.id)} />
-                </>
-            ),
-        }),
-    ], [handleDelete, openSelected])
+        uomActions.column(actionsCtx),
+    ], [actionsCtx, handleDelete, openSelected])
 
     const bulkActions = useMemo<BulkAction<UoM>[]>(() => [
         {
@@ -172,7 +170,7 @@ export function UoMClientView({ externalOpen, onExternalOpenChange, createAction
                         description: "Define unidades para medir, comprar y vender tus productos.",
                     }}
                     renderCard={(uom: UoM) => (
-                        <EntityCard onClick={() => openSelected(uom.id)}>
+                        <EntityCard onClick={() => openSelected(uom.id)} actions={uomActions.render(uom, actionsCtx)}>
                             <EntityCard.Header
                                 title={uom.name}
                                 subtitle={uom.category_name}

@@ -6,12 +6,13 @@ import React, {useState, useMemo} from "react"
 import { useRouter, usePathname, useSearchParams } from "next/navigation"
 // deleteUoMCategory consumido vía useUoMs.
 import { ActionConfirmModal, DataTableColumnHeader, DataTableView, EntityCard } from '@/components/shared'
-import { DataCell, createActionsColumn } from '@/components/shared'
+import { DataCell } from '@/components/shared'
 import { ColumnDef } from "@tanstack/react-table"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Trash2 } from "lucide-react"
 import type { BulkAction } from "@/components/shared"
 import { UoMCategoryDrawer } from "./UoMCategoryDrawer"
+import { uomCategoryActions, type UoMCategoryActionsCtx } from "@/features/inventory/uomCategoryActions"
 import { toast } from "sonner"
 
 import { useConfirmAction } from "@/hooks/useConfirmAction"
@@ -84,6 +85,11 @@ export function UoMCategoryClientView({ externalOpen, onExternalOpenChange, crea
 
     const handleDelete = (id: number) => deleteConfirm.requestConfirm(id)
 
+    const actionsCtx: UoMCategoryActionsCtx = {
+        onEdit: (item) => { setCurrentCategory(item); setIsModalOpen(true) },
+        onDelete: (id) => handleDelete(id),
+    }
+
     const columns = useMemo<ColumnDef<UoMCategory>[]>(() => [
         {
             id: "select",
@@ -120,15 +126,8 @@ export function UoMCategoryClientView({ externalOpen, onExternalOpenChange, crea
                 </DataCell.Text>
             ),
         },
-        createActionsColumn<UoMCategory>({
-            renderActions: (item) => (
-                <>
-                    <DataCell.Action action="edit" onClick={() => { setCurrentCategory(item); setIsModalOpen(true) }} />
-                    <DataCell.Action action="delete" onClick={() => handleDelete(item.id)} />
-                </>
-            ),
-        }),
-    ], [])
+        uomCategoryActions.column(actionsCtx),
+    ], [actionsCtx])
 
     const bulkActions = useMemo<BulkAction<UoMCategory>[]>(() => [
         {
@@ -160,7 +159,7 @@ export function UoMCategoryClientView({ externalOpen, onExternalOpenChange, crea
                         description: "Agrupa unidades de medida relacionadas (peso, longitud, volumen…).",
                     }}
                     renderCard={(cat: UoMCategory) => (
-                        <EntityCard onClick={() => { setCurrentCategory(cat); setIsModalOpen(true) }}>
+                        <EntityCard onClick={() => { setCurrentCategory(cat); setIsModalOpen(true) }} actions={uomCategoryActions.render(cat, actionsCtx)}>
                             <EntityCard.Header title={cat.name} />
                         </EntityCard>
                     )}
