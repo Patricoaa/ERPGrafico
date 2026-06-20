@@ -1,4 +1,4 @@
-import { Home, Package, type LucideIcon } from "lucide-react"
+import { Home, Package, Wallet, type LucideIcon } from "lucide-react"
 import { getEntityIcon, getEntityIconName } from "@/lib/entity-registry"
 
 export interface ModuleConfig {
@@ -19,7 +19,7 @@ export const MODULE_REGISTRY: Record<string, ModuleConfig> = {
   contacts:    { id: "contacts",    label: "Contactos",     icon: Home,          iconName: "home",          primaryEntityLabel: 'contacts.contact',                     permission: null,                                         defaultUrl: "/contacts?view=list" },
   inventory:   { id: "inventory",   label: "Inventario",    icon: Package,        iconName: "package",        primaryEntityLabel: 'inventory.product',                    permission: "inventory.view_dashboard_inventory",        defaultUrl: "/inventory/products?view=list" },
   production:  { id: "production",  label: "Producción",    icon: Home,          iconName: "home",           primaryEntityLabel: 'production.workorder',                  permission: "production.view_dashboard_production",       defaultUrl: "/production/orders?view=list" },
-  treasury:    { id: "treasury",    label: "Tesorería",     icon: Home,          iconName: "home",           primaryEntityLabel: 'treasury.treasurymovement',            permission: "treasury.view_dashboard_treasury",          defaultUrl: "/treasury/operaciones/movements?view=card" },
+  treasury:    { id: "treasury",    label: "Tesorería",     icon: Wallet,        iconName: "wallet",        primaryEntityLabel: null,                                   permission: "treasury.view_dashboard_treasury",          defaultUrl: "/treasury/operaciones/movements?view=card" },
   purchasing:  { id: "purchasing",  label: "Compras",       icon: Home,          iconName: "home",           primaryEntityLabel: 'purchasing.purchaseorder',             permission: "purchasing.view_dashboard_purchasing",      defaultUrl: "/purchasing/orders?view=card" },
   finances:    { id: "finances",    label: "Finanzas",      icon: Home,          iconName: "home",           primaryEntityLabel: 'finance.bankjournal',                  permission: "finances.view_dashboard_finances",          defaultUrl: "/finances/statements/bs" },
   hr:          { id: "hr",          label: "RRHH",          icon: Home,          iconName: "home",           primaryEntityLabel: 'hr.employee',                          permission: "hr.view_dashboard_hr",                     defaultUrl: "/hr/employees?view=list" },

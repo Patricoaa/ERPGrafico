@@ -71,7 +71,7 @@ export function TreasuryHeader() {
         {
             value: "terminal-cobro",
             label: "Terminal de Cobro",
-            iconName: "cpu",
+            iconName: "credit-card",
             href: "/treasury/terminal-cobro/providers",
             subTabs: [
                 { value: "providers", label: "Proveedores", iconName: getEntityIconName('treasury.terminalprovider'), href: getViewModeUrl('treasury.terminalprovider', "/treasury/terminal-cobro/providers") },
