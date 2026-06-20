@@ -938,7 +938,7 @@ export function SalesCheckoutWizardContent({
                                         loading={loading}
                                         disabled={loading || isWaitingApproval}
                                         icon={<Check className="mr-2 h-4 w-4" />}
-                                        className="w-48 bg-success hover:bg-success/90 font-black uppercase tracking-widest text-[10px] text-success-foreground shadow-lg shadow-success/20"
+                                        className="w-48 bg-success hover:bg-success/90 font-black uppercase tracking-widest text-[10px] text-success-foreground shadow-elevated shadow-success/20"
                                     >
                                         Finalizar Venta
                                     </SubmitButton>
