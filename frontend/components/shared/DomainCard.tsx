@@ -168,7 +168,7 @@ export function DomainCard({
                                     <MoneyDisplay
                                         amount={pending}
                                         showColor={false}
-                                        className="text-sm font-heading font-semibold tracking-tight text-warning"
+                                        className="text-sm font-heading tracking-tight text-warning"
                                     />
                                 </div>
                             )}
@@ -179,7 +179,7 @@ export function DomainCard({
                                 <MoneyDisplay
                                     amount={total}
                                     showColor={false}
-                                    className="text-sm font-heading font-semibold tracking-tight"
+                                    className="text-sm font-heading tracking-tight"
                                 />
                             </div>
                         </div>
