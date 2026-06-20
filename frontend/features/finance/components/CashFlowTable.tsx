@@ -264,7 +264,7 @@ export const CashFlowTable: React.FC<CashFlowTableProps> = ({ data, embedded, sh
                 </div>
             )}
 
-            <div className={cn(!embedded && "rounded-md border bg-card shadow-sm overflow-hidden", !data.is_balanced && "border-destructive/30")}>
+            <div className={cn(!embedded && "rounded-md border bg-card shadow-card overflow-hidden", !data.is_balanced && "border-destructive/30")}>
                 {!embedded && (
                     <div className="p-4 border-b bg-muted/30 flex justify-between items-center">
                         <h3 className="font-bold uppercase tracking-widest text-sm text-muted-foreground">Estado de Flujo de Efectivo (M. Indirecto)</h3>

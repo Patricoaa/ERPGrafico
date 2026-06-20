@@ -70,7 +70,7 @@ export function AnalysisView({ activeTab }: AnalysisViewProps) {
 
     return (
         <PageContainer scrollable>
-            <div className="flex flex-wrap items-center justify-between gap-4 mb-6 bg-card/60 backdrop-blur-md p-4 rounded-md border border-border/50 shadow-sm shadow-black/5 transition-all">
+            <div className="flex flex-wrap items-center justify-between gap-4 mb-6 bg-card/60 backdrop-blur-md p-4 rounded-md border border-border/50 shadow-card shadow-black/5 transition-all">
                 <div className="flex items-center gap-3">
                     {/* ButtonGroup for Mapeo and Vista */}
                     <div className="flex items-center -space-x-px shadow-xs rounded-sm">
@@ -80,7 +80,7 @@ export function AnalysisView({ activeTab }: AnalysisViewProps) {
                                     variant="ghost"
                                     size="sm"
                                     onClick={() => openMappingDrawer()}
-                                    className="text-[10px] font-black uppercase tracking-wider text-primary gap-1.5 bg-primary/5 hover:bg-primary/10 border border-border/50 px-3.5 py-2 rounded-l-md rounded-r-none transition-all duration-300 shadow-sm hover:scale-[1.01]"
+                                    className="text-[10px] font-black uppercase tracking-wider text-primary gap-1.5 bg-primary/5 hover:bg-primary/10 border border-border/50 px-3.5 py-2 rounded-l-md rounded-r-none transition-all duration-300 shadow-card hover:scale-[1.01]"
                                 >
                                     <SlidersHorizontal className="h-3.5 w-3.5" />
                                     Mapeo
@@ -97,7 +97,7 @@ export function AnalysisView({ activeTab }: AnalysisViewProps) {
                                             <ChevronDown className="h-3 w-3 opacity-60 ml-0.5" />
                                         </Button>
                                     </DropdownMenuTrigger>
-                                    <DropdownMenuContent align="start" className="w-40 bg-card/95 backdrop-blur-md border border-border/50 rounded-sm shadow-xl p-1 z-50">
+                                    <DropdownMenuContent align="start" className="w-40 bg-card/95 backdrop-blur-md border border-border/50 rounded-sm shadow-floating p-1 z-50">
                                         <DropdownMenuRadioGroup value={headerFormat} onValueChange={(val) => setHeaderFormat(val as HeaderFormat)}>
                                             <DropdownMenuRadioItem value="year" className="text-[9px] font-black uppercase tracking-wider cursor-pointer">
                                                 Año
@@ -124,7 +124,7 @@ export function AnalysisView({ activeTab }: AnalysisViewProps) {
                                         <ChevronDown className="h-3 w-3 opacity-60 ml-0.5" />
                                     </Button>
                                 </DropdownMenuTrigger>
-                                <DropdownMenuContent align="start" className="w-40 bg-card/95 backdrop-blur-md border border-border/50 rounded-sm shadow-xl p-1 z-50">
+                                <DropdownMenuContent align="start" className="w-40 bg-card/95 backdrop-blur-md border border-border/50 rounded-sm shadow-floating p-1 z-50">
                                     <DropdownMenuRadioGroup value={headerFormat} onValueChange={(val) => setHeaderFormat(val as HeaderFormat)}>
                                         <DropdownMenuRadioItem value="year" className="text-[9px] font-black uppercase tracking-wider cursor-pointer">
                                             Año

@@ -482,7 +482,7 @@ export default function StatementImportModal({ open, onOpenChange, onSuccess, de
                                     className={cn(
                                         "h-6 px-3 transition-all",
                                         mapping[f] !== null
-                                            ? "shadow-sm shadow-success/5"
+                                                    ? "shadow-card shadow-success/5"
                                             : "bg-muted/50 border-border text-muted-foreground/40 line-through"
                                     )}
                                 >

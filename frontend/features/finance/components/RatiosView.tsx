@@ -167,7 +167,7 @@ export const RatiosView: React.FC<RatiosViewProps> = ({ date, showComparison, co
             {/* Charts Section */}
             <div className="grid gap-6 md:grid-cols-2">
                 {/* Debt Structure */}
-                <Card className="rounded-none shadow-2xl ring-1 ring-border bg-card border-t-success ring-0 shadow-xl">
+                <Card className="rounded-none shadow-elevated ring-1 ring-border bg-card border-t-success ring-0">
                     <CardHeader>
                         <CardTitle>Estructura de Financiamiento</CardTitle>
                         <CardDescription>Distribución entre Deuda y Patrimonio</CardDescription>
@@ -207,7 +207,7 @@ export const RatiosView: React.FC<RatiosViewProps> = ({ date, showComparison, co
                 </Card>
 
                 {/* Assets Composition */}
-                <Card className="rounded-none shadow-2xl ring-1 ring-border bg-card border-t-info ring-0 shadow-xl">
+                <Card className="rounded-none shadow-elevated ring-1 ring-border bg-card border-t-info ring-0">
                     <CardHeader>
                         <CardTitle>Composición de Activos</CardTitle>
                         <CardDescription>Corrientes vs No Corrientes</CardDescription>
@@ -261,7 +261,7 @@ export const RatiosView: React.FC<RatiosViewProps> = ({ date, showComparison, co
                         data: trendData.map((d) => ({ x: d.period, y: d[key as keyof typeof d] as number })),
                     }))
                     return (
-                        <Card className="rounded-none shadow-2xl ring-1 ring-border bg-card md:col-span-2 border-t-primary/50 ring-0 shadow-xl">
+                        <Card className="rounded-none shadow-elevated ring-1 ring-border bg-card md:col-span-2 border-t-primary/50 ring-0">
                             <CardHeader>
                                 <CardTitle>Evolución de Ratios Financieros</CardTitle>
                                 <CardDescription>Comparación período actual vs anterior</CardDescription>
@@ -307,7 +307,7 @@ export const RatiosView: React.FC<RatiosViewProps> = ({ date, showComparison, co
                 })()}
 
                 {/* Working Capital Bar Chart */}
-                <Card className="rounded-none shadow-2xl ring-1 ring-border bg-card md:col-span-2 border-t-muted ring-0 shadow-xl">
+                <Card className="rounded-none shadow-elevated ring-1 ring-border bg-card md:col-span-2 border-t-muted ring-0">
                     <CardHeader>
                         <CardTitle>Análisis de Capital de Trabajo</CardTitle>
                         <CardDescription>Activos y Pasivos Corrientes</CardDescription>

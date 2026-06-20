@@ -149,7 +149,7 @@ export function ReconciliationIntelligence({ externalOpen }: { externalOpen?: bo
                         </div>
 
                         {/* Weight Config */}
-                        <Card className="p-4 border-primary/10 shadow-sm relative overflow-hidden">
+                        <Card className="p-4 border-primary/10 shadow-card relative overflow-hidden">
                             <div className="absolute top-0 right-0 p-4 opacity-[0.02] pointer-events-none">
                                 <Brain className="h-20 w-20" />
                             </div>
@@ -224,7 +224,7 @@ export function ReconciliationIntelligence({ externalOpen }: { externalOpen?: bo
                                         <h4 className="text-xs font-bold uppercase tracking-wider">Automatización</h4>
                                     </div>
                                     <Controller control={form.control} name="auto_confirm" render={({ field }) => (
-                                        <div className="flex items-center justify-between p-4 border rounded-md bg-background shadow-sm hover:border-primary/30 transition-colors cursor-pointer group"
+                                        <div className="flex items-center justify-between p-4 border rounded-md bg-background shadow-card hover:border-primary/30 transition-colors cursor-pointer group"
                                             onClick={() => field.onChange(!field.value)}>
                                             <div className="space-y-1">
                                                 <p className="text-sm font-bold">Auto-Confirmación</p>

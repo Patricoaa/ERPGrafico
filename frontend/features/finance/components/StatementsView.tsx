@@ -212,7 +212,7 @@ export function StatementsView({ activeTab }: StatementsViewProps) {
         const eP = (e / totalSum) * 100
 
         return (
-            <div className="mb-10 overflow-hidden rounded-md border shadow-sm">
+            <div className="mb-10 overflow-hidden rounded-md border shadow-card">
                 <div className="h-10 w-full flex text-[10px] font-bold uppercase tracking-tighter">
                     <div
                         style={{ width: `${aP}%` }}
@@ -243,7 +243,7 @@ export function StatementsView({ activeTab }: StatementsViewProps) {
     return (
         <PageContainer scrollable>
             <div className="max-w-5xl mx-auto w-full pt-4">
-                <div className="flex flex-wrap items-center justify-between gap-4 mb-6 bg-card/60 backdrop-blur-md p-4 rounded-md border border-border/50 shadow-sm shadow-black/5 transition-all">
+                <div className="flex flex-wrap items-center justify-between gap-4 mb-6 bg-card/60 backdrop-blur-md p-4 rounded-md border border-border/50 shadow-card shadow-black/5 transition-all">
                     <div className="flex items-center gap-3">
                         {/* ButtonGroup for Mapeo and Vista */}
                         <div className="flex items-center -space-x-px shadow-xs rounded-sm">
@@ -251,7 +251,7 @@ export function StatementsView({ activeTab }: StatementsViewProps) {
                                 variant="ghost"
                                 size="sm"
                                 onClick={() => openMappingDrawer()}
-                                className="text-[10px] font-black uppercase tracking-wider gap-1.5 hover:bg-primary/10 border border-border/50 px-3.5 py-2 rounded-l-md rounded-r-none transition-all duration-300 shadow-sm hover:scale-[1.01]"
+                                className="text-[10px] font-black uppercase tracking-wider gap-1.5 hover:bg-primary/10 border border-border/50 px-3.5 py-2 rounded-l-md rounded-r-none transition-all duration-300 shadow-card hover:scale-[1.01]"
                             >
                                 <SlidersHorizontal className="h-3.5 w-3.5" />
                                 Mapeo
@@ -268,7 +268,7 @@ export function StatementsView({ activeTab }: StatementsViewProps) {
                                         <ChevronDown className="h-3 w-3 opacity-60 ml-0.5" />
                                     </Button>
                                 </DropdownMenuTrigger>
-                                <DropdownMenuContent align="start" className="w-40 bg-card/95 backdrop-blur-md border border-border/50 rounded-sm shadow-xl p-1 z-50">
+                                <DropdownMenuContent align="start" className="w-40 bg-card/95 backdrop-blur-md border border-border/50 rounded-sm shadow-floating p-1 z-50">
                                     <DropdownMenuRadioGroup value={headerFormat} onValueChange={(val) => setHeaderFormat(val as HeaderFormat)}>
                                         <DropdownMenuRadioItem value="year" className="text-[9px] font-black uppercase tracking-wider cursor-pointer">
                                             Año
@@ -317,7 +317,7 @@ export function StatementsView({ activeTab }: StatementsViewProps) {
                 <FadeIn key={activeTab}>
                     <div className="mt-0 outline-none ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
                         {activeTab === "bs" && (
-                            <Card className="rounded-md border bg-card/60 backdrop-blur-md shadow-xl shadow-black/5 ring-1 ring-border/50 overflow-hidden transition-all duration-300">
+                            <Card className="rounded-md border bg-card/60 backdrop-blur-md shadow-elevated shadow-black/5 ring-1 ring-border/50 overflow-hidden transition-all duration-300">
                                 <CardContent className="p-6 md:p-10 pt-10">
                                     <ReportHeader title="Situación Financiera" dateRange={date} compDateRange={compDate} showComparison={showComparison} headerFormat={headerFormat} accent="primary" />
                                     {bsData ? (
@@ -384,7 +384,7 @@ export function StatementsView({ activeTab }: StatementsViewProps) {
 
                     <div className="mt-0 outline-none ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
                         {activeTab === "pl" && (
-                            <Card className="rounded-md border bg-card/60 backdrop-blur-md shadow-xl shadow-black/5 ring-1 ring-border/50 overflow-hidden transition-all duration-300">
+                            <Card className="rounded-md border bg-card/60 backdrop-blur-md shadow-elevated shadow-black/5 ring-1 ring-border/50 overflow-hidden transition-all duration-300">
                                 <CardContent className="p-6 md:p-10 pt-10">
                                     <ReportHeader title="Estado de Resultados" dateRange={date} compDateRange={compDate} showComparison={showComparison} headerFormat={headerFormat} accent="success" />
                                     {plData ? (
@@ -396,7 +396,7 @@ export function StatementsView({ activeTab }: StatementsViewProps) {
                                                         <div key={idx} className={cn(
                                                             "py-6 px-4 flex justify-between items-center rounded-md my-4 transition-colors",
                                                             idx === (d.sections?.length || 0) - 1
-                                                                ? "bg-primary text-primary-foreground shadow-lg"
+                                                                ? "bg-primary text-primary-foreground shadow-elevated"
                                                                 : "bg-muted/50 border"
                                                         )}>
                                                             <span className="text-lg font-bold uppercase tracking-tight">{section.name}</span>
@@ -449,7 +449,7 @@ export function StatementsView({ activeTab }: StatementsViewProps) {
 
                     <div className="mt-0 outline-none ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
                         {activeTab === "cf" && (
-                            <Card className="rounded-md border bg-card/60 backdrop-blur-md shadow-xl shadow-black/5 ring-1 ring-border/50 overflow-hidden transition-all duration-300">
+                            <Card className="rounded-md border bg-card/60 backdrop-blur-md shadow-elevated shadow-black/5 ring-1 ring-border/50 overflow-hidden transition-all duration-300">
                                 <CardContent className="p-6 md:p-10 pt-10">
                                     <ReportHeader title="Estado de Flujo de Efectivo" dateRange={date} compDateRange={compDate} showComparison={showComparison} headerFormat={headerFormat} accent="info" />
                                     {cfData ? (
