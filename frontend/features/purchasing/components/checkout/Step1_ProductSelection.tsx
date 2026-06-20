@@ -258,7 +258,7 @@ export function Step1_ProductSelection({
                                     type="number"
                                     step="0.01"
                                     min="0"
-                                    className="w-full text-center h-8"
+                                    className="w-full text-center h-8 bg-background"
                                     value={lineQty}
                                     onChange={(e) => form.setValue(`lines.${index}.quantity`, parseFloat(e.target.value) || 0)}
                                 />
@@ -284,7 +284,7 @@ export function Step1_ProductSelection({
                                 <Input
                                     type="number"
                                     step="1"
-                                    className="w-full h-8"
+                                    className="w-full h-8 bg-background"
                                     value={lineCost}
                                     onChange={(e) => form.setValue(`lines.${index}.unit_cost`, parseFloat(e.target.value) || 0)}
                                 />
