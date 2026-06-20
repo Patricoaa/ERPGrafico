@@ -203,9 +203,9 @@ class SaleOrderFilterSet(django_filters.FilterSet):
         if value == 'none':
             return queryset.filter(work_orders__isnull=True)
         elif value == 'in_progress':
-            return queryset.filter(work_orders__status='IN_PROGRESS').distinct()
+            return queryset.filter(work_orders__status__in=['DRAFT', 'IN_PROGRESS']).distinct()
         elif value == 'finished':
-            return queryset.exclude(work_orders__isnull=True).exclude(work_orders__status='IN_PROGRESS').distinct()
+            return queryset.exclude(work_orders__isnull=True).exclude(work_orders__status__in=['DRAFT', 'IN_PROGRESS']).distinct()
         return queryset
 
 
