@@ -5,24 +5,27 @@ import { useGroups } from "../hooks"
 import { ActionConfirmModal, DataTable } from '@/components/shared'
 import { DataTableColumnHeader } from '@/components/shared'
 import { ColumnDef } from "@tanstack/react-table"
-import { DataCell, createActionsColumn } from '@/components/shared'
+import { DataCell } from '@/components/shared'
 import { Users } from "lucide-react"
 import { GroupDrawer } from "@/features/users/components/GroupDrawer"
+import { groupActions, type GroupActionsCtx } from './groupActions'
+import type { Group } from "../api/types"
 
 import { SmartSearchBar, useClientSearch } from "@/components/shared"
 import { groupSearchDef } from "@/features/settings/searchDef"
 
-interface GroupManagementProps {
+interface GroupsClientViewProps {
     externalOpen?: boolean
     onExternalOpenChange?: (open: boolean) => void
     createAction?: React.ReactNode
 }
 
-export function GroupManagement({ externalOpen, onExternalOpenChange, createAction }: GroupManagementProps) {
+export function GroupsClientView({ externalOpen, onExternalOpenChange, createAction }: GroupsClientViewProps) {
     const { groups, loading, fetchGroups, deleteGroup } = useGroups()
-    const { filterFn } = useClientSearch<Record<string, unknown>>(groupSearchDef)
+    const { filterFn } = useClientSearch<Group>(groupSearchDef)
     const [deleteId, setDeleteId] = useState<number | null>(null)
     const [showCreateModal, setShowCreateModal] = useState(false)
+    const [editingGroup, setEditingGroup] = useState<Group | null>(null)
 
     useEffect(() => {
         if (externalOpen) {
@@ -38,7 +41,12 @@ export function GroupManagement({ externalOpen, onExternalOpenChange, createActi
         if (success) setDeleteId(null)
     }
 
-    const columns: ColumnDef<Record<string, unknown>>[] = [
+    const groupActionsCtx: GroupActionsCtx = {
+        onEdit: (group) => setEditingGroup(group),
+        onDelete: (id) => setDeleteId(id),
+    }
+
+    const columns: ColumnDef<Group>[] = [
         {
             accessorKey: "name",
             header: ({ column }) => (
@@ -60,34 +68,20 @@ export function GroupManagement({ externalOpen, onExternalOpenChange, createActi
             ),
             cell: ({ row }) => <DataCell.Number value={row.getValue("user_count")} />,
         },
-        createActionsColumn<Record<string, unknown>>({
-            renderActions: (group) => (
-                <>
-                    <GroupDrawer
-                        initialData={group as { id: number; name: string }}
-                        onSuccess={fetchGroups}
-                        trigger={<DataCell.Action action="edit" />}
-                    />
-                    <DataCell.Action
-                        action="delete"
-                        onClick={() => setDeleteId(group.id as number)}
-                    />
-                </>
-            )
-        })
+        groupActions.column(groupActionsCtx)
     ]
 
     return (
         <div className="h-full flex flex-col">
             <div className="flex-1 min-h-0">
-                <DataTable
-                    columns={columns}
-                    data={filterFn(groups as unknown as Record<string, unknown>[])}
-                    isLoading={loading}
-                    variant="embedded"
-                    smartSearch={<SmartSearchBar searchDef={groupSearchDef} placeholder="Buscar grupo..." className="w-full" />}
-                    createAction={createAction}
-                />
+                    <DataTable
+                        columns={columns}
+                        data={filterFn(groups)}
+                        isLoading={loading}
+                        variant="embedded"
+                        smartSearch={<SmartSearchBar searchDef={groupSearchDef} placeholder="Buscar grupo..." className="w-full" />}
+                        createAction={createAction}
+                    />
             </div>
 
             <GroupDrawer
@@ -99,6 +93,16 @@ export function GroupManagement({ externalOpen, onExternalOpenChange, createActi
                 onSuccess={() => {
                     setShowCreateModal(false)
                     onExternalOpenChange?.(false)
+                    fetchGroups()
+                }}
+            />
+
+            <GroupDrawer
+                open={!!editingGroup}
+                onOpenChange={(open) => { if (!open) setEditingGroup(null) }}
+                initialData={editingGroup || undefined}
+                onSuccess={() => {
+                    setEditingGroup(null)
                     fetchGroups()
                 }}
             />

@@ -26,9 +26,10 @@ interface LedgerDrawerProps {
     accountName: string
     accountCode: string
     trigger?: React.ReactNode
+    noTrigger?: boolean
 }
 
-export function LedgerDrawer({ accountId, accountName, accountCode, trigger }: LedgerDrawerProps) {
+export function LedgerDrawer({ accountId, accountName, accountCode, trigger, noTrigger }: LedgerDrawerProps) {
     const { serverDate } = useServerDate()
     const router = useRouter()
     const pathname = usePathname()
@@ -68,7 +69,7 @@ export function LedgerDrawer({ accountId, accountName, accountCode, trigger }: L
 
     return (
         <>
-            {trigger ? (
+            {!noTrigger && (trigger ? (
                 React.isValidElement(trigger) ? (
                     React.cloneElement(trigger as React.ReactElement<{ onClick?: (e: React.MouseEvent) => void }>, {
                         onClick: (e: React.MouseEvent) => {
@@ -92,7 +93,7 @@ export function LedgerDrawer({ accountId, accountName, accountCode, trigger }: L
                 >
                     <Book className="h-4 w-4 text-primary" />
                 </IconButton>
-            )}
+            ))}
             <Drawer
                 open={open}
                 onOpenChange={setOpen}

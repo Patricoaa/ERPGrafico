@@ -8,10 +8,7 @@ import { toast } from "sonner"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Form, FormField } from "@/components/ui/form"
 import { Button } from "@/components/ui/button"
-import {
-    Trash2,
-    Settings2,
-} from "lucide-react"
+import { Settings2 } from "lucide-react"
 
 import { ActionConfirmModal, ActionSlideButton, AutoSaveStatusBadge, BaseModal, Chip, FadeIn, LabeledInput, LabeledSelect, SkeletonShell, ToolbarCreateButton } from '@/components/shared'
 import { useAutoSaveForm } from "@/hooks/useAutoSaveForm"
@@ -40,7 +37,7 @@ import { useConfirmAction } from "@/hooks/useConfirmAction"
 import { DataTable } from '@/components/shared'
 import { ColumnDef } from "@tanstack/react-table"
 ;
-import { DataCell, createActionsColumn } from '@/components/shared'
+import { payrollConceptActions, type PayrollConceptActionsCtx } from './payrollConceptActions'
 
 import { globalSettingsSchema, conceptSchema, afpSchema, type GlobalHRFormValues, type ConceptFormValues, type AFPFormValues } from "./HRSettingsView.schema"
 
@@ -48,6 +45,7 @@ export function HRSettingsView({ activeTab = "global" }: { activeTab?: string })
     const [loading, setLoading] = useState(true)
     const [concepts, setConcepts] = useState<PayrollConcept[]>([])
     const [afps, setAfps] = useState<AFP[]>([])
+    const [editingConcept, setEditingConcept] = useState<PayrollConcept | null>(null)
 
     // Global Settings Form
     const globalForm = useForm<z.infer<typeof globalSettingsSchema>>({
@@ -120,6 +118,11 @@ export function HRSettingsView({ activeTab = "global" }: { activeTab?: string })
 
     useUnsavedChangesGuard(globalStatus)
 
+    const payrollConceptActionsCtx: PayrollConceptActionsCtx = {
+        onEdit: (concept) => setEditingConcept(concept),
+        onDelete: (id) => conceptDeleteConfirm.requestConfirm(id),
+    }
+
     const conceptColumns: ColumnDef<PayrollConcept>[] = [
         {
             accessorKey: "name",
@@ -164,21 +167,7 @@ export function HRSettingsView({ activeTab = "global" }: { activeTab?: string })
                 </div>
             )
         },
-        createActionsColumn<PayrollConcept>({
-            renderActions: (concept) => (
-                <>
-                    <ConceptDialog concept={concept} onSaved={fetchData} />
-                    {!concept.is_system && (
-                        <DataCell.Action
-                            icon={Trash2}
-                            title="Eliminar"
-                            className="text-destructive h-8 w-8 hover:bg-destructive/10 hover:text-destructive"
-                            onClick={() => conceptDeleteConfirm.requestConfirm(concept.id)}
-                        />
-                    )}
-                </>
-            )
-        })
+        payrollConceptActions.column(payrollConceptActionsCtx),
     ]
 
     if (loading) return <SkeletonShell isLoading={loading} ariaLabel="Cargando configuración de RRHH" />
@@ -317,6 +306,14 @@ export function HRSettingsView({ activeTab = "global" }: { activeTab?: string })
                 )}
             </FadeIn>
 
+            <ConceptDialog
+                key={editingConcept?.id ?? 'new'}
+                concept={editingConcept || undefined}
+                onSaved={fetchData}
+                open={!!editingConcept}
+                onOpenChange={(open) => { if (!open) setEditingConcept(null) }}
+            />
+
             <ActionConfirmModal
                 open={conceptDeleteConfirm.isOpen}
                 onOpenChange={(open) => { if (!open) conceptDeleteConfirm.cancel() }}
@@ -340,9 +337,21 @@ export function HRSettingsView({ activeTab = "global" }: { activeTab?: string })
 
 // --- DIALOGS ---
 
-function ConceptDialog({ concept, onSaved }: { concept?: PayrollConcept, onSaved: () => void }) {
-    const [open, setOpen] = useState(false)
+function ConceptDialog({ concept, onSaved, open: controlledOpen, onOpenChange: setControlledOpen }: {
+    concept?: PayrollConcept
+    onSaved: () => void
+    open?: boolean
+    onOpenChange?: (open: boolean) => void
+}) {
+    const [internalOpen, setInternalOpen] = useState(false)
     const [saving, setSaving] = useState(false)
+
+    const isControlled = controlledOpen !== undefined
+    const isOpen = isControlled ? controlledOpen : internalOpen
+    const setOpen = (val: boolean) => {
+        if (isControlled) setControlledOpen?.(val)
+        else setInternalOpen(val)
+    }
 
     const form = useForm<ConceptFormValues>({
         resolver: zodResolver(conceptSchema),
@@ -388,14 +397,12 @@ function ConceptDialog({ concept, onSaved }: { concept?: PayrollConcept, onSaved
 
     return (
         <>
-            {concept ? (
-                <DataCell.Action icon={Settings2} title="Configurar" onClick={() => setOpen(true)} />
-            ) : (
+            {!isControlled && (
                 <ToolbarCreateButton onClick={() => setOpen(true)} label="Nuevo Concepto" />
             )}
 
             <BaseModal
-                open={open}
+                open={isOpen}
                 onOpenChange={setOpen}
                 size="md"
                 title={

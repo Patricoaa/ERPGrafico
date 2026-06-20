@@ -1,6 +1,6 @@
 export * from './BillingSettingsView';
 export * from './CompanySettingsView';
-export * from './GroupManagement';
+export * from './GroupsClientView';
 export * from './HRSettingsView';
 export * from './InitialCapitalModal';
 export * from './PartnerEditDrawer';
@@ -10,3 +10,6 @@ export * from './UsersSettingsView';
 export * from './PartnersSettingsView';
 export * from './UnifiedAccountsView';
 export * from './VatRatesView';
+export * from './groupActions';
+export * from './payrollConceptActions';
+export * from './userActions';
