@@ -1,5 +1,5 @@
 import { Metadata } from "next"
-import { CreditPortfolioView } from "@/features/credits"
+import { CreditPortfolioClientView } from "@/features/credits"
 import { ToolbarCreateButton } from '@/components/shared'
 
 export const metadata: Metadata = {
@@ -18,7 +18,7 @@ export default async function CreditsPage({ searchParams }: PageProps) {
     )
 
     return (
-        <CreditPortfolioView
+        <CreditPortfolioClientView
             activeTab="portfolio"
             externalOpen={modal === 'new'}
             createAction={createAction}

@@ -1,7 +1,7 @@
 "use client"
 
 import { UnbilledChargesView } from './UnbilledChargesView'
-import { StatementsView } from './StatementsView'
+import { StatementsClientView } from './StatementsClientView'
 
 interface CardChargesViewProps {
     bankId: number
@@ -18,7 +18,7 @@ export function CardChargesView({ bankId, subtab }: CardChargesViewProps) {
                     <UnbilledChargesView bankId={bankId} />
                 )}
                 {activeSubTab === 'statements' && (
-                    <StatementsView bankId={bankId} />
+                    <StatementsClientView bankId={bankId} />
                 )}
             </div>
         </div>

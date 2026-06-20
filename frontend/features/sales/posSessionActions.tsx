@@ -1,5 +1,5 @@
 import { DataCell, createEntityActions } from '@/components/shared'
-import type { POSSession } from '@/features/sales/components/POSSessionsView'
+import type { POSSession } from '@/features/sales/components/POSSessionsClientView'
 import { FileText, Lock } from "lucide-react"
 
 export interface POSSessionActionsCtx {

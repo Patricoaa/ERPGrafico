@@ -1,4 +1,3 @@
-export { LoansView } from './LoansView'
 export { LoansClientView } from './LoansClientView'
 export { LoanRegisterDrawer } from './LoanRegisterDrawer'
 export { LoanViewDrawer } from './LoanViewDrawer'

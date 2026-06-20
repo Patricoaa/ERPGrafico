@@ -1,4 +1,4 @@
-import { BankPageHeader, BankCenterView } from "@/features/treasury"
+import { BankPageHeader, BankCenterDashboard } from "@/features/treasury"
 
 export default async function UnbilledPage({ params }: { params: Promise<{ bankId: string }> }) {
     const { bankId } = await params
@@ -6,7 +6,7 @@ export default async function UnbilledPage({ params }: { params: Promise<{ bankI
     return (
         <div className="h-full flex flex-col">
             <BankPageHeader bankId={id} title="Tarjeta de crédito" subtab="unbilled" />
-            <BankCenterView bankId={id} subtab="unbilled" />
+            <BankCenterDashboard bankId={id} subtab="unbilled" />
         </div>
     )
 }

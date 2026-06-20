@@ -31,7 +31,7 @@ interface ProductAttributeValue {
     value: string
 }
 
-interface AttributeManagerProps {
+interface AttributesClientViewProps {
     externalOpen?: boolean
     createAction?: React.ReactNode
 }
@@ -40,7 +40,7 @@ import { useAttributes } from "@/features/inventory/hooks/useAttributes"
 import { SmartSearchBar, useSmartSearch } from "@/components/shared"
 import { attributeSearchDef } from "../searchDef"
 
-export function AttributeManager({ externalOpen, createAction }: AttributeManagerProps) {
+export function AttributesClientView({ externalOpen, createAction }: AttributesClientViewProps) {
     const { filters, isFiltered } = useSmartSearch(attributeSearchDef)
     const {
         attributes,

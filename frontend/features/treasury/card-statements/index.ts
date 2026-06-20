@@ -1,4 +1,4 @@
-export { StatementsView } from './StatementsView'
+export { StatementsClientView } from './StatementsClientView'
 export { StatementDetailModal } from './StatementDetailModal'
 export { PayStatementModal } from './PayStatementModal'
 export { CardChargesView } from './CardChargesView'

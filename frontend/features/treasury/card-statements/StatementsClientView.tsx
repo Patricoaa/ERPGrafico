@@ -19,7 +19,7 @@ import { statementActions, type StatementActionsCtx } from './statementActions'
 import type { CreditCardStatement } from './types'
 import { useStatementsAnalyticsData } from './useStatementsAnalyticsData'
 
-interface StatementsViewProps {
+interface StatementsClientViewProps {
     bankId: number
 }
 
@@ -30,7 +30,7 @@ const statementsSearchDef: SearchDefinition = {
     ],
 }
 
-export function StatementsView({ bankId }: StatementsViewProps) {
+export function StatementsClientView({ bankId }: StatementsClientViewProps) {
     const { data: overview, isLoading: overviewLoading } = useBankOverview(bankId)
     const overviewData = (overview && !overviewLoading ? overview : null) as BankOverviewData | null
     const creditCardAccounts = useMemo(

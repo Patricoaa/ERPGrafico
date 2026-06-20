@@ -22,21 +22,21 @@ import {
     DropdownMenuRadioItem
 } from "@/components/ui/dropdown-menu"
 
-const RatiosView = dynamic(() => import("@/features/finance/components/RatiosView").then(mod => mod.RatiosView), {
+const RatiosDashboard = dynamic(() => import("@/features/finance/components/RatiosDashboard").then(mod => mod.RatiosDashboard), {
     ssr: false,
     loading: () => <CardSkeleton variant="grid" count={4} />
 })
 
-const BIAnalyticsView = dynamic(() => import("@/features/finance/components/BIAnalyticsView").then(mod => mod.BIAnalyticsView), {
+const BIAnalyticsDashboard = dynamic(() => import("@/features/finance/components/BIAnalyticsDashboard").then(mod => mod.BIAnalyticsDashboard), {
     ssr: false,
     loading: () => <CardSkeleton variant="grid" count={4} />
 })
 
-interface AnalysisViewProps {
+interface AnalysisDashboardProps {
     activeTab: string
 }
 
-export function AnalysisView({ activeTab }: AnalysisViewProps) {
+export function AnalysisDashboard({ activeTab }: AnalysisDashboardProps) {
     const [showComparison, setShowComparison] = useState(false)
     const { open: mappingOpen, onOpenChange: setMappingOpen, resolvedMappingType, openDrawer: openMappingDrawer } = useMappingDrawer('bs')
     type HeaderFormat = 'year' | 'month-year' | 'day-month-year'
@@ -176,13 +176,13 @@ export function AnalysisView({ activeTab }: AnalysisViewProps) {
                 <FadeIn key={activeTab}>
                     <TabsContent value="ratios">
                         {activeTab === "ratios" && (
-                            <RatiosView date={date} showComparison={showComparison} compDate={compDate} />
+                            <RatiosDashboard date={date} showComparison={showComparison} compDate={compDate} />
                         )}
                     </TabsContent>
 
                     <TabsContent value="bi">
                         {activeTab === "bi" && (
-                            <BIAnalyticsView date={date} />
+                            <BIAnalyticsDashboard date={date} />
                         )}
                     </TabsContent>
                 </FadeIn>

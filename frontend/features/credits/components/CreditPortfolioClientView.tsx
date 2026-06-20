@@ -17,7 +17,7 @@ import { useEntityRouteActions } from "@/hooks/useEntityRouteActions"
 const EMPTY_CONTACTS: CreditContact[] = []
 const EMPTY_HISTORY: CreditHistoryEntry[] = []
 
-export function CreditPortfolioView({
+export function CreditPortfolioClientView({
     activeTab = 'portfolio',
     externalOpen = false,
     createAction

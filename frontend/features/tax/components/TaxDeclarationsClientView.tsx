@@ -33,13 +33,13 @@ import { taxPeriodSearchDef } from "@/features/tax/searchDef"
 import { useTaxPeriods, useLazyTaxDeclarations } from "../hooks/useTaxQueries"
 import { useCreateTaxPayment } from "../hooks/useTaxMutations"
 
-interface TaxDeclarationsViewProps {
+interface TaxDeclarationsClientViewProps {
     externalOpen?: boolean
     onExternalOpenChange?: (open: boolean) => void
     createAction?: React.ReactNode
 }
 
-export function TaxDeclarationsView({ externalOpen, onExternalOpenChange, createAction }: TaxDeclarationsViewProps) {
+export function TaxDeclarationsClientView({ externalOpen, onExternalOpenChange, createAction }: TaxDeclarationsClientViewProps) {
     const searchParams = useSearchParams()
     const router = useRouter()
     const pathname = usePathname()

@@ -36,14 +36,14 @@ export interface POSSession {
     total_other_cash_outflow: number
 }
 
-interface POSSessionsViewProps {
+interface POSSessionsClientViewProps {
     hideHeader?: boolean
 }
 
 import { usePOSSessions } from "@/features/pos/hooks/usePOSSessions"
 import { posSessionSegDef } from "@/features/pos/segmentationDef"
 
-export const POSSessionsView = ({ hideHeader = false }: POSSessionsViewProps) => {
+export const POSSessionsClientView = ({ hideHeader = false }: POSSessionsClientViewProps) => {
     const router = useRouter()
     const pathname = usePathname()
     const searchParams = useSearchParams()

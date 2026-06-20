@@ -9,8 +9,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { useBankOverview } from '../hooks/useBankOverview'
 import type { BankOverviewData } from '../hooks/useBankOverview'
-import { ChecksView } from '../checks/ChecksView'
-import { LoansView } from '../loans/LoansView'
+import { ChecksClientView } from '../checks/ChecksClientView'
+import { LoansClientView } from '../loans/LoansClientView'
 import { CardChargesView } from '../card-statements/CardChargesView'
 import { StatementsList } from '@/features/finance/bank-reconciliation/components'
 
@@ -110,7 +110,7 @@ function OverviewContent({ data }: { data: BankOverviewData }) {
     )
 }
 
-export function BankCenterView({ bankId, subtab }: { bankId: number; subtab?: string }) {
+export function BankCenterDashboard({ bankId, subtab }: { bankId: number; subtab?: string }) {
     const pathname = usePathname()
     const segments = pathname.split('/').filter(Boolean)
     const activeTab = segments[3] || 'overview'
@@ -151,13 +151,13 @@ export function BankCenterView({ bankId, subtab }: { bankId: number; subtab?: st
 
             {activeTab === 'checks' && (
                 <div className="flex-1 min-h-0">
-                    <ChecksView bankId={bankId} direction="ISSUED" />
+                    <ChecksClientView bankId={bankId} direction="ISSUED" />
                 </div>
             )}
 
             {activeTab === 'loans' && (
                 <div className="flex-1 min-h-0">
-                    <LoansView bankId={bankId} />
+                    <LoansClientView bankId={bankId} />
                 </div>
             )}
 

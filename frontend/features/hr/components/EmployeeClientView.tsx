@@ -15,11 +15,11 @@ import { useEmployees } from "@/features/hr"
 import { employeeSearchDef } from "../searchDef"
 import { employeeSegDef } from "../segmentationDef"
 
-interface EmployeeListViewProps {
+interface EmployeeClientViewProps {
     initialEmployees?: Employee[]
 }
 
-export function EmployeeListView({ initialEmployees }: EmployeeListViewProps) {
+export function EmployeeClientView({ initialEmployees }: EmployeeClientViewProps) {
     const createAction = <ToolbarCreateButton label="Nuevo Empleado" href="/hr/employees?modal=new" />
     const router = useRouter()
     const pathname = usePathname()

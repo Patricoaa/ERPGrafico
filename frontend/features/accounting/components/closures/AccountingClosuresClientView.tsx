@@ -21,12 +21,12 @@ import { ClosuresSkeleton } from './ClosuresSkeleton';
 import { fiscalYearSearchDef } from '../../searchDef';
 import { fiscalYearSegDef } from '../../segmentationDef';
 
-interface AccountingClosuresViewProps {
+interface AccountingClosuresClientViewProps {
     externalOpen?: boolean;
     onExternalOpenChange?: (open: boolean) => void;
 }
 
-export function AccountingClosuresView({ externalOpen, onExternalOpenChange }: AccountingClosuresViewProps) {
+export function AccountingClosuresClientView({ externalOpen, onExternalOpenChange }: AccountingClosuresClientViewProps) {
     const searchParams = useSearchParams();
     const router = useRouter();
     const pathname = usePathname();

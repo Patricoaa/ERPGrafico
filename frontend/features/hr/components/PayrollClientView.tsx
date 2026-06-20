@@ -25,11 +25,11 @@ import { usePayrolls } from "@/features/hr"
 import { payrollSearchDef } from "../searchDef"
 import { payrollSegDef } from "../segmentationDef"
 
-interface PayrollListViewProps {
+interface PayrollClientViewProps {
     initialPayrolls?: Payroll[]
 }
 
-export function PayrollListView({ initialPayrolls }: PayrollListViewProps) {
+export function PayrollClientView({ initialPayrolls }: PayrollClientViewProps) {
     const createAction = (
         <div className="flex items-center gap-2">
             <ToolbarCreateButton label="Generar Liquidaciones" href="/hr/payrolls?modal=new" />

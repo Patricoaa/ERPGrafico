@@ -47,13 +47,13 @@ interface Stats {
     upcoming_renewals_30_days: number
 }
 
-interface SubscriptionsViewProps {
+interface SubscriptionsClientViewProps {
     hideHeader?: boolean
     externalOpen?: boolean
     createAction?: React.ReactNode
 }
 
-export function SubscriptionsView({ hideHeader = false, externalOpen = false, createAction }: SubscriptionsViewProps) {
+export function SubscriptionsClientView({ hideHeader = false, externalOpen = false, createAction }: SubscriptionsClientViewProps) {
     const { filters: textFilters, isFiltered: isTextFiltered, clearAll: clearText } = useSmartSearch(subscriptionSearchDef)
     const basePeriod = { serverParamFrom: 'date_from', serverParamTo: 'date_to' }
     const { filters: segFilters, isFiltered: isSegFiltered, clearAll: clearSeg } = useSegmentation(subscriptionSegDef, basePeriod)

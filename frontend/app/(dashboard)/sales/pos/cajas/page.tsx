@@ -1,5 +1,5 @@
 import { ToolbarCreateButton } from '@/components/shared'
-import { SalesPosView } from "@/features/sales"
+import { SalesPosLayout } from "@/features/sales"
 
 interface PageProps {
     searchParams: Promise<{ modal?: string }>
@@ -10,7 +10,7 @@ export default async function PosCajasPage({ searchParams }: PageProps) {
     const createAction = <ToolbarCreateButton label="Nueva Caja" href="/sales/pos/cajas?modal=new-terminal" />
 
     return (
-        <SalesPosView
+        <SalesPosLayout
             activeTab="cajas"
             modal={modal}
             createAction={createAction}

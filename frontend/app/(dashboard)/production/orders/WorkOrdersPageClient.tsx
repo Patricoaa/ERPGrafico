@@ -13,7 +13,7 @@ import { useViewMode } from "@/hooks/useViewMode"
 import {
     WorkOrderWizard,
     WorkOrderKanban,
-    WorkOrderTimelineView,
+    WorkOrderTimeline,
     useWorkOrders,
     useWorkOrderListActions,
 } from "@/features/production"
@@ -266,7 +266,7 @@ export default function WorkOrdersPageClient({ initialOrders }: WorkOrdersPageCl
     ), [loading, handleManage, handleDuplicate, handleCancel, handleDelete])
 
     const renderTimelineView = useCallback((table: import("@tanstack/react-table").Table<WorkOrder>) => (
-        <WorkOrderTimelineView
+        <WorkOrderTimeline
             orders={table.getFilteredRowModel().rows.map((row: import("@tanstack/react-table").Row<WorkOrder>) => row.original)}
             onManage={handleManage}
             isLoading={loading}

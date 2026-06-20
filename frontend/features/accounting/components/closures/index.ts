@@ -1,2 +1,2 @@
-export * from './AccountingClosuresView';
+export * from './AccountingClosuresClientView';
 export * from './ClosuresSkeleton';

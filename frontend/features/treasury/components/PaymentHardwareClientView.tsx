@@ -25,19 +25,19 @@ import { deviceActions, type DeviceActionsCtx } from './deviceActions'
 import { ProviderDrawer } from "./ProviderDrawer"
 import { DeviceDrawer } from "./DeviceDrawer"
 
-interface PaymentHardwareManagementProps {
+interface PaymentHardwareClientViewProps {
     externalDeviceOpen?: boolean
     externalProviderOpen?: boolean
     activeTab?: "providers" | "devices"
     createAction?: React.ReactNode
 }
 
-export function PaymentHardwareManagement({
+export function PaymentHardwareClientView({
     externalDeviceOpen,
     externalProviderOpen,
     activeTab: externalActiveTab,
     createAction
-}: PaymentHardwareManagementProps) {
+}: PaymentHardwareClientViewProps) {
     const router = useRouter()
     const [activeTab, setActiveTab] = useState<"providers" | "devices">("devices")
 
@@ -341,4 +341,4 @@ export function PaymentHardwareManagement({
     )
 }
 
-export default PaymentHardwareManagement
+export default PaymentHardwareClientView
