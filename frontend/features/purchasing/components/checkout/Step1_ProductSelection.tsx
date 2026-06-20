@@ -234,7 +234,7 @@ export function Step1_ProductSelection({
                                     onChange={(val) => handleProductChange(index, val)}
                                     variant="inline"
                                     placeholder="Seleccionar..."
-                                    className="border border-input rounded-sm"
+                                    className="border border-input rounded-sm h-8"
                                 />
                                 {(() => {
                                     const prefSupplierId = product?.preferred_supplier && (
@@ -277,6 +277,7 @@ export function Step1_ProductSelection({
                                     showConversionHint={true}
                                     quantity={Number(lineQty) || 1}
                                     variant="inline"
+                                    className="h-8"
                                 />
                             </TableCell>
                             <TableCell className="py-1 px-3">
