@@ -8,11 +8,10 @@ import type { Absence, Employee } from "@/types/hr"
 import { ColumnDef } from "@tanstack/react-table"
 import { DataTableView } from '@/components/shared'
 import { DataTableColumnHeader } from '@/components/shared'
-import { createActionsColumn, DataCell } from '@/components/shared'
+import { DataCell } from '@/components/shared'
 import { EntityCard } from "@/components/shared"
-import { Pencil, Trash2 } from "lucide-react"
 import { ToolbarCreateButton, SegmentationBar, useSegmentation, SmartSearchBar, useClientSearch } from "@/components/shared"
-import { useAbsences, deleteAbsence, getEmployees } from "@/features/hr"
+import { useAbsences, deleteAbsence, getEmployees, absenceActions, type AbsenceActionsCtx } from "@/features/hr"
 import { absenceSegDef } from "../segmentationDef"
 import { absenceSearchDef } from "../searchDef"
 
@@ -51,15 +50,18 @@ export function AbsenceManagementView({ initialAbsences }: AbsenceManagementView
         getEmployees().then(setEmployees).catch(() => { })
     }, [])
 
-    const handleDelete = async (id: number) => {
-        if (!confirm("¿Eliminar esta inasistencia?")) return
-        try {
-            await deleteAbsence(id)
-            toast.success("Inasistencia eliminada")
-            fetchAbsences()
-        } catch {
-            toast.error("Error al eliminar inasistencia")
-        }
+    const absenceActionsCtx: AbsenceActionsCtx = {
+        onEdit: (absence) => { setEditingAbsence(absence); setDialogOpen(true) },
+        onDelete: async (id) => {
+            if (!confirm("¿Eliminar esta inasistencia?")) return
+            try {
+                await deleteAbsence(id)
+                toast.success("Inasistencia eliminada")
+                fetchAbsences()
+            } catch {
+                toast.error("Error al eliminar inasistencia")
+            }
+        },
     }
 
     const columns: ColumnDef<Absence>[] = [
@@ -89,23 +91,7 @@ export function AbsenceManagementView({ initialAbsences }: AbsenceManagementView
             header: ({ column }) => <DataTableColumnHeader column={column} title="Días" className="justify-center" />,
             cell: ({ row }) => <div className="flex justify-center w-full"><DataCell.Text className="font-mono">{row.getValue("days")}</DataCell.Text></div>,
         },
-        createActionsColumn<Absence>({
-            renderActions: (absence) => (
-                <>
-                    <DataCell.Action
-                        icon={Pencil}
-                        title="Editar"
-                        onClick={() => { setEditingAbsence(absence); setDialogOpen(true) }}
-                    />
-                    <DataCell.Action
-                        icon={Trash2}
-                        title="Eliminar"
-                        className="text-destructive hover:text-destructive"
-                        onClick={() => handleDelete(absence.id)}
-                    />
-                </>
-            )
-        }),
+        absenceActions.column(absenceActionsCtx),
     ]
 
     return (
@@ -141,7 +127,7 @@ export function AbsenceManagementView({ initialAbsences }: AbsenceManagementView
                         description: "Las ausencias, permisos y licencias que registres aparecerán aquí.",
                     }}
                     renderCard={(absence: Absence) => (
-                        <EntityCard key={absence.id} onClick={() => { setEditingAbsence(absence); setDialogOpen(true) }}>
+                        <EntityCard key={absence.id} onClick={() => { setEditingAbsence(absence); setDialogOpen(true) }} actions={absenceActions.render(absence, absenceActionsCtx)}>
                             <EntityCard.Header
                                 title={absence.employee_name}
                                 subtitle={absence.absence_type_display}
