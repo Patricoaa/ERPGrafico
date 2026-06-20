@@ -205,7 +205,7 @@ export function BulkVariantEditFormV2({
       document.body
     )}
     <SkeletonShell isLoading={isUoMsLoading} ariaLabel="Cargando edición masiva">
-    <div className="flex flex-col h-full bg-card rounded-md border shadow-sm overflow-hidden animate-in fade-in slide-in-from-right-4 duration-300">
+    <div className="flex flex-col h-full bg-card rounded-md border shadow-card overflow-hidden animate-in fade-in slide-in-from-right-4 duration-300">
       <Tabs value={activeTab} onValueChange={setActiveTab} className="flex flex-col h-full">
 
         {/* Tab navigation */}

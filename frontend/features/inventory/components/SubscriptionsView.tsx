@@ -406,28 +406,28 @@ export function SubscriptionsView({ hideHeader = false, externalOpen = false, cr
                                 value={stats.active_subscriptions}
                                 variant="minimal"
                                 accent="muted"
-                                className="bg-card/50 shadow-sm flex-col gap-1 items-center md:items-start p-4 rounded-md"
+                                className="bg-card/50 shadow-card flex-col gap-1 items-center md:items-start p-4 rounded-md"
                             />
                             <StatCard
                                 label="Costo Mensual Total"
                                 value={<DataCell.Currency value={stats.total_monthly_cost} />}
                                 variant="minimal"
                                 accent="muted"
-                                className="bg-card/50 shadow-sm flex-col gap-1 items-center md:items-start p-4 rounded-md"
+                                className="bg-card/50 shadow-card flex-col gap-1 items-center md:items-start p-4 rounded-md"
                             />
                             <StatCard
                                 label="Próximas Renovaciones"
                                 value={stats.upcoming_renewals_30_days}
                                 variant="minimal"
                                 accent="warning"
-                                className="bg-card/50 shadow-sm flex-col gap-1 items-center md:items-start p-4 rounded-md"
+                                className="bg-card/50 shadow-card flex-col gap-1 items-center md:items-start p-4 rounded-md"
                             />
                             <StatCard
                                 label="Estado Pausadas"
                                 value={stats.paused_subscriptions}
                                 variant="minimal"
                                 accent="muted"
-                                className="bg-card/50 shadow-sm flex-col gap-1 items-center md:items-start p-4 rounded-md"
+                                className="bg-card/50 shadow-card flex-col gap-1 items-center md:items-start p-4 rounded-md"
                             />
                         </div>
                     )}

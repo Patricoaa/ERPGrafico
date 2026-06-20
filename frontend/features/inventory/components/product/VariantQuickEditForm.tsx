@@ -202,7 +202,7 @@ export function VariantQuickEditForm({
       document.body
     )}
     <SkeletonShell isLoading={isFetchingInitialData} ariaLabel="Cargando editor rápido de variante" className="flex-1 flex flex-col">
-    <div className="flex flex-col h-full bg-card rounded-md border shadow-sm overflow-hidden animate-in fade-in slide-in-from-right-4 duration-300">
+    <div className="flex flex-col h-full bg-card rounded-md border shadow-card overflow-hidden animate-in fade-in slide-in-from-right-4 duration-300">
       <Tabs value={activeTab} onValueChange={setActiveTab} className="flex flex-col h-full">
 
         {/* Tab navigation */}
@@ -343,7 +343,7 @@ export function VariantQuickEditForm({
                   type="button"
                   variant="outline"
                   size="icon"
-                  className="shrink-0 h-10 w-10 rounded-md border-primary/10 hover:bg-primary/5 shadow-sm transition-all mb-1 self-end"
+                  className="shrink-0 h-10 w-10 rounded-md border-primary/10 hover:bg-primary/5 shadow-card transition-all mb-1 self-end"
                   onClick={() => setIsBarcodeModalOpen(true)}
                   title="Generador de Barras"
                 >

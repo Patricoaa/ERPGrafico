@@ -277,7 +277,7 @@ export function ProductVariantsTab({ form, initialData, onEditVariant, onTabChan
                 )}>
                     <div className="overflow-y-auto scrollbar-thin flex-1">
                         <Table>
-                            <TableHeader className="bg-muted/50 sticky top-0 z-10 shadow-sm">
+                            <TableHeader className="bg-muted/50 sticky top-0 z-10 shadow-card">
                                 <TableRow>
                                     <TableHead className="w-12 pl-4">
                                         <Checkbox
@@ -466,7 +466,7 @@ export function ProductVariantsTab({ form, initialData, onEditVariant, onTabChan
                             <div className="shrink-0 pt-4 mt-4">
                                 <Button
                                     type="button"
-                                    className="w-full rounded-md font-black uppercase tracking-widest text-[11px] shadow-md bg-primary hover:bg-primary/90 text-primary-foreground transition-all hover:scale-[1.01] active:scale-[0.98]"
+                                    className="w-full rounded-md font-black uppercase tracking-widest text-[11px] shadow-elevated bg-primary hover:bg-primary/90 text-primary-foreground transition-all hover:scale-[1.01] active:scale-[0.98]"
                                     onClick={handleGenerateVariants}
                                     disabled={isGenerating || availableAttributes.length === 0}
                                 >
