@@ -172,7 +172,7 @@ export function SubscriptionHistoryModal({ subscriptionId, open, onOpenChange }:
                                                 </div>
                                             </div>
 
-                                            <div className="h-[400px] w-full bg-card rounded-md border p-6 shadow-sm">
+                                            <div className="h-[400px] w-full bg-card rounded-md border p-6 shadow-card">
                                                 <ResponsiveBar
                                                     data={filteredPriceHistory as unknown as { date: string; unit_cost: number }[]}
                                                     keys={["unit_cost"]}
@@ -191,7 +191,7 @@ export function SubscriptionHistoryModal({ subscriptionId, open, onOpenChange }:
                                                         format: (v) => formatCurrency(v),
                                                     }}
                                                     tooltip={({ value, indexValue }) => (
-                                                        <ChartTooltip className="bg-popover p-3 shadow-lg" style={{ color: 'var(--popover-foreground)' }}>
+                                                                                                                 <ChartTooltip className="bg-popover p-3 shadow-floating" style={{ color: 'var(--popover-foreground)' }}>
                                                             <p className="text-[10px] uppercase font-black tracking-widest text-muted-foreground mb-1">
                                                                 {format(new Date(indexValue as string), 'PPP', { locale: es })}
                                                             </p>
@@ -218,7 +218,7 @@ export function SubscriptionHistoryModal({ subscriptionId, open, onOpenChange }:
 
                                         {/* ORDERS TAB */}
                                         <UnderlineTabsContent value="orders" className="mt-0">
-                                            <div className="rounded-md border shadow-sm overflow-hidden bg-card">
+                                            <div className="rounded-md border shadow-card overflow-hidden bg-card">
                                                 <OrderTable
                                                     orders={data.orders}
                                                     onOpenHub={(orderId) => openHub({
@@ -232,7 +232,7 @@ export function SubscriptionHistoryModal({ subscriptionId, open, onOpenChange }:
 
                                         {/* NOTES TAB */}
                                         <UnderlineTabsContent value="notes" className="mt-0">
-                                            <div className="rounded-md border shadow-sm overflow-hidden bg-card">
+                                            <div className="rounded-md border shadow-card overflow-hidden bg-card">
                                                 <NoteTable
                                                     notes={data.notes}
                                                     onOpenHub={(invoiceId) => openHub({

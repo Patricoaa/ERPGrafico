@@ -198,7 +198,7 @@ export function ProductSubscriptionTab({ form, isEditing }: ProductSubscriptionT
                                         checked={field.value ?? false}
                                         onCheckedChange={field.onChange}
                                         icon={<Wallet className={cn("h-4 w-4 transition-colors", field.value ? "text-primary" : "text-muted-foreground/30")} />}
-                                        className={cn(field.value ? "bg-primary/5 border-primary/20 shadow-sm" : "border-dashed")}
+                                        className={cn(field.value ? "bg-primary/5 border-primary/20 shadow-card" : "border-dashed")}
                                     />
                                 )}
                             />
@@ -217,7 +217,7 @@ export function ProductSubscriptionTab({ form, isEditing }: ProductSubscriptionT
                                         checked={field.value}
                                         onCheckedChange={field.onChange}
                                         icon={<Calendar className={cn("h-4 w-4 transition-colors", field.value ? "text-warning" : "text-muted-foreground/30")} />}
-                                        className={cn(field.value ? "bg-warning/5 border-warning/20 shadow-sm" : "border-dashed")}
+                                        className={cn(field.value ? "bg-warning/5 border-warning/20 shadow-card" : "border-dashed")}
                                     />
                                 )}
                             />
