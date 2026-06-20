@@ -24,6 +24,7 @@ export function useTreasuryMovements(filters: TreasuryMovementFilters = {}) {
     if (rest.direction)        params.direction        = rest.direction
     if (rest.is_reconciled !== undefined) params.is_reconciled = rest.is_reconciled
     if (rest.payment_method_new) params.payment_method_new = rest.payment_method_new
+    if (rest.search)              params.search              = rest.search
 
     const { data: page_, isLoading, isFetching, refetch } = useQuery({
         queryKey: [...MOVEMENTS_KEYS.lists(), { page, page_size, ...rest }],

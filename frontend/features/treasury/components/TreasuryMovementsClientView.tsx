@@ -1,7 +1,7 @@
 "use client"
 
 import React, { useState, useEffect, lazy, Suspense } from "react"
-import { DataTableView, EntityCard, StatusBadge, SegmentationBar, useSegmentation } from '@/components/shared'
+import { DataTableView, EntityCard, StatusBadge, SegmentationBar, useSegmentation, SmartSearchBar, useSmartSearch } from '@/components/shared'
 import { DataTableColumnHeader } from '@/components/shared'
 import { ColumnDef } from "@tanstack/react-table"
 import {ArrowDown} from "lucide-react"
@@ -13,6 +13,7 @@ import { SkeletonShell } from "@/components/shared"
 import { useSearchParams, useRouter, usePathname } from "next/navigation"
 import { useTreasuryMovements, type TreasuryMovementFilters } from "@/features/treasury/hooks/useTreasuryMovements"
 import { treasuryMovementsSegDef } from "@/features/treasury/segmentationDef"
+import { treasuryMovementsSearchDef } from "@/features/treasury/searchDef"
 import { useSelectedEntity } from "@/hooks/useSelectedEntity"
 
 
@@ -63,10 +64,13 @@ interface TreasuryMovementsClientViewProps {
 
 export function TreasuryMovementsClientView({ externalOpen, createAction }: TreasuryMovementsClientViewProps) {
     const { openEntity } = useGlobalModalActions()
+    const { filters: textFilters, isFiltered: isTextFiltered, clearAll: clearText } = useSmartSearch(treasuryMovementsSearchDef)
     const { filters: segFilters, isFiltered: isSegFiltered, clearAll: clearSeg } = useSegmentation(treasuryMovementsSegDef)
+    const isFiltered = isTextFiltered || isSegFiltered
+    const allFilters = { ...textFilters, ...segFilters }
     const [pageState, setPageState] = useState({ pageIndex: 0, pageSize: 50 })
     const { page, movements, totalCount, isLoading, refetch } = useTreasuryMovements({
-        ...(segFilters as TreasuryMovementFilters),
+        ...(allFilters as TreasuryMovementFilters),
         page: pageState.pageIndex + 1,
         page_size: pageState.pageSize,
     })
@@ -309,11 +313,12 @@ export function TreasuryMovementsClientView({ externalOpen, createAction }: Trea
                     rowCount={totalCount}
                     pagination={pageState}
                     onPaginationChange={setPageState}
+                    smartSearch={<SmartSearchBar searchDef={treasuryMovementsSearchDef} placeholder="Buscar movimiento..." className="w-full" />}
                     segmentation={<SegmentationBar def={treasuryMovementsSegDef} />}
-                    showReset={isSegFiltered}
-                    onReset={clearSeg}
+                    showReset={isFiltered}
+                    onReset={() => { clearText(); clearSeg() }}
                     createAction={createAction}
-                    isFiltered={isSegFiltered}
+                    isFiltered={isFiltered}
                     emptyState={{
                         context: "treasury",
                         title: "Aún no hay movimientos de caja",

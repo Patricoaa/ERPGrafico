@@ -59,6 +59,42 @@ export const deviceSegDef: SegmentationDefinition = {
   ],
 }
 
+export const bankSegDef: SegmentationDefinition = {
+  segments: [
+    {
+      key: 'is_active',
+      label: 'Estado',
+      type: 'tabs',
+      serverParam: 'is_active',
+      variant: 'dropdown',
+      options: [
+        { label: 'Activo', value: 'true' },
+        { label: 'Archivado', value: 'false' },
+      ],
+    },
+  ],
+}
+
+export const paymentMethodSegDef: SegmentationDefinition = {
+  segments: [
+    {
+      key: 'method_type',
+      label: 'Categoría',
+      type: 'tabs',
+      serverParam: 'method_type',
+      variant: 'dropdown',
+      options: [
+        { label: 'Efectivo Directo', value: 'CASH' },
+        { label: 'Tarjeta (Dispositivo)', value: 'CARD_TERMINAL' },
+        { label: 'Transferencia Bancaria', value: 'TRANSFER' },
+        { label: 'Tarjeta Débito Empresa', value: 'DEBIT_CARD' },
+        { label: 'Tarjeta Crédito Empresa', value: 'CREDIT_CARD' },
+        { label: 'Cheque', value: 'CHECK' },
+      ],
+    },
+  ],
+}
+
 export const treasuryMovementsSegDef: SegmentationDefinition = {
   segments: [
     {

@@ -19,9 +19,10 @@ import { Form, FormField } from "@/components/ui/form"
 import {
     CancelButton, LabeledInput, LabeledSelect, FormSection, MultiSelectTagInput,
     BaseModal, FormFooter, FormSplitLayout, ActionSlideButton, ActionConfirmModal,
-    SmartSearchBar, useClientSearch, Chip
+    SmartSearchBar, useClientSearch, useSegmentation, SegmentationBar, Chip
 } from "@/components/shared"
 import { bankSearchDef, paymentMethodSearchDef } from "@/features/treasury/searchDef"
+import { bankSegDef, paymentMethodSegDef } from "@/features/treasury/segmentationDef"
 import { TreasuryAccountSelector } from "@/components/selectors/TreasuryAccountSelector"
 import { Column } from "@tanstack/react-table";
 import { useBanks, usePaymentMethods } from "@/features/treasury/hooks/useMasterData"
@@ -62,7 +63,8 @@ interface BankManagementProps {
 export function BankManagement({ externalOpen, onOpenChange, createAction }: BankManagementProps) {
     const { banks, refetch, archiveBank, restoreBank } = useBanks()
     const { overviews } = useAllBanksOverview()
-    const { filterFn: filterBanks } = useClientSearch<Bank>(bankSearchDef)
+    const { filterFn: filterBanks, isFiltered: isTextFiltered, clearAll: clearText } = useClientSearch<Bank>(bankSearchDef)
+    const { filters: segFilters, isFiltered: isSegFiltered, clearAll: clearSeg } = useSegmentation(bankSegDef)
     const [dialogOpen, setDialogOpen] = useState(false)
     const [wizardOpen, setWizardOpen] = useState(false)
     const [selectedBank, setSelectedBank] = useState<Bank | null>(null)
@@ -209,6 +211,14 @@ export function BankManagement({ externalOpen, onOpenChange, createAction }: Ban
         })
     ]
 
+    const isFiltered = isTextFiltered || isSegFiltered
+    const filteredBanks = React.useMemo(() => {
+        let result = banks
+        if (segFilters.is_active === 'true') result = result.filter(b => b.is_active)
+        else if (segFilters.is_active === 'false') result = result.filter(b => !b.is_active)
+        return filterBanks(result)
+    }, [banks, segFilters.is_active, filterBanks])
+
     return (
         <div className="h-full flex flex-col">
             <div className="flex justify-between items-center bg-muted/30 p-4 rounded-md border border-primary/10 hidden">
@@ -223,9 +233,12 @@ export function BankManagement({ externalOpen, onOpenChange, createAction }: Ban
             <div className="flex-1 min-h-0">
                 <DataTable
                     columns={columns}
-                    data={filterBanks(banks)}
+                    data={filteredBanks}
                     variant="embedded"
                     smartSearch={<SmartSearchBar searchDef={bankSearchDef} placeholder="Buscar banco..." className="w-full" />}
+                    segmentation={<SegmentationBar def={bankSegDef} />}
+                    showReset={isFiltered}
+                    onReset={() => { clearText(); clearSeg() }}
                     createAction={createAction}
                 />
             </div>
@@ -439,7 +452,8 @@ interface PaymentMethodManagementProps {
 
 export function PaymentMethodManagement({ externalOpen, onOpenChange, createAction }: PaymentMethodManagementProps) {
     const { methods, refetch, deleteMethod } = usePaymentMethods()
-    const { filterFn: filterMethods } = useClientSearch<PaymentMethod>(paymentMethodSearchDef)
+    const { filterFn: filterMethods, isFiltered: isTextFiltered, clearAll: clearText } = useClientSearch<PaymentMethod>(paymentMethodSearchDef)
+    const { filters: segFilters, isFiltered: isSegFiltered, clearAll: clearSeg } = useSegmentation(paymentMethodSegDef)
     const [dialogOpen, setDialogOpen] = useState(false)
     const [selectedMethod, setSelectedMethod] = useState<PaymentMethod | null>(null)
 
@@ -534,6 +548,13 @@ export function PaymentMethodManagement({ externalOpen, onOpenChange, createActi
         })
     ]
 
+    const isFiltered = isTextFiltered || isSegFiltered
+    const filteredMethods = React.useMemo(() => {
+        let result = methods
+        if (segFilters.method_type) result = result.filter(m => m.method_type === segFilters.method_type)
+        return filterMethods(result)
+    }, [methods, segFilters.method_type, filterMethods])
+
     return (
         <div className="h-full flex flex-col">
             <div className="flex justify-between items-center bg-muted/30 p-4 rounded-md border border-primary/10 hidden">
@@ -551,9 +572,12 @@ export function PaymentMethodManagement({ externalOpen, onOpenChange, createActi
             <div className="flex-1 min-h-0">
                 <DataTable
                     columns={columns}
-                    data={filterMethods(methods)}
+                    data={filteredMethods}
                     variant="embedded"
                     smartSearch={<SmartSearchBar searchDef={paymentMethodSearchDef} placeholder="Buscar método de pago..." className="w-full" />}
+                    segmentation={<SegmentationBar def={paymentMethodSegDef} />}
+                    showReset={isFiltered}
+                    onReset={() => { clearText(); clearSeg() }}
                     createAction={createAction}
                 />
             </div>

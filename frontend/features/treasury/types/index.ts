@@ -309,6 +309,7 @@ export interface TreasuryMovementFilters {
     direction?: 'IN' | 'OUT'
     is_reconciled?: boolean
     payment_method_new?: string | number
+    search?: string
     page?: number
     page_size?: number
 }
