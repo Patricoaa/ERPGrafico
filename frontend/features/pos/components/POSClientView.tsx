@@ -450,10 +450,10 @@ export function POSClientView() {
                                             size="sm"
                                             className={cn(
                                                 "h-10 min-w-[40px] px-2 text-[10px] font-mono font-bold transition-all duration-300 gap-1.5 relative rounded-sm",
-                                                currentDraftId === d.id ? "bg-primary/5 border-primary text-primary shadow-sm border-solid ring-1 ring-primary/20" : "border-dashed text-muted-foreground",
+                                                currentDraftId === d.id ? "bg-primary/5 border-primary text-primary shadow-card border-solid ring-1 ring-primary/20" : "border-dashed text-muted-foreground",
                                                 isSaving && currentDraftId === d.id && "animate-pulse opacity-70",
                                                 lockedByOther && "border-destructive/40 opacity-60",
-                                                isWaitingPayment && currentDraftId !== d.id && "border-warning text-warning bg-warning/10 shadow-sm border-solid ring-1 ring-warning/30 animate-in zoom-in-95 duration-500"
+                                                isWaitingPayment && currentDraftId !== d.id && "border-warning text-warning bg-warning/10 shadow-card border-solid ring-1 ring-warning/30 animate-in zoom-in-95 duration-500"
                                             )}
                                             onClick={() => handleLoadDraft(d)}
                                             title={lockedByOther ? `En uso por ${lockInfo.lockedByName}` : isWaitingPayment ? "Registrar Pago (Pendiente)" : undefined}
@@ -535,7 +535,7 @@ export function POSClientView() {
             <div className="relative grid grid-cols-1 md:grid-cols-12 gap-3 flex-1 min-h-0 overflow-hidden">
                 {currentSession !== undefined && currentSession === null && (
                     <div className="absolute inset-0 z-30 bg-background/60 backdrop-blur-[2px] flex items-center justify-center">
-                        <Card className="w-full max-w-md shadow-sm border-primary/20 p-8 text-center space-y-4 rounded-md">
+                        <Card className="w-full max-w-md shadow-card border-primary/20 p-8 text-center space-y-4 rounded-md">
                             <Lock className="h-12 w-12 text-primary mx-auto mb-2" />
                             <h3 className="text-2xl font-bold">Caja Cerrada</h3>
                             <p className="text-muted-foreground">Debe abrir una sesión de caja para realizar ventas.</p>
@@ -564,7 +564,7 @@ export function POSClientView() {
                                 </Card>
                             </motion.div>
                         ) : (
-                            <motion.div key={currentDraftId || 'checkout-new'} initial={{ opacity: 0, scale: 0.98, x: 20 }} animate={{ opacity: 1, scale: 1, x: 0 }} exit={{ opacity: 0, x: 20 }} className="flex-1 flex flex-col min-h-0 bg-background border rounded-md shadow-sm overflow-hidden relative border-primary/20">
+                            <motion.div key={currentDraftId || 'checkout-new'} initial={{ opacity: 0, scale: 0.98, x: 20 }} animate={{ opacity: 1, scale: 1, x: 0 }} exit={{ opacity: 0, x: 20 }} className="flex-1 flex flex-col min-h-0 bg-background border rounded-md shadow-card overflow-hidden relative border-primary/20">
                                 <SalesCheckoutWizardContent
                                     key={currentDraftId || 'checkout-new'}
                                     order={null}
@@ -638,7 +638,7 @@ export function POSClientView() {
                 size="sm"
                 title={
                     <div className="flex flex-col items-center w-full">
-                        <div className="mx-auto bg-primary text-primary-foreground p-4 rounded-full mb-4 shadow-sm">
+                        <div className="mx-auto bg-primary text-primary-foreground p-4 rounded-full mb-4 shadow-card">
                             <Check className="h-10 w-10 stroke-[3px]" />
                         </div>
                         <span className="text-xl font-black tracking-tight text-center text-foreground">¡Venta Exitosa!</span>
@@ -648,7 +648,7 @@ export function POSClientView() {
                 footer={
                     <div className="flex flex-col sm:flex-row gap-3 w-full mt-4">
                         <Button
-                            className="flex-1 h-14 rounded-sm text-lg font-black uppercase tracking-widest bg-primary hover:bg-primary/90 shadow-sm group"
+                            className="flex-1 h-14 rounded-sm text-lg font-black uppercase tracking-widest bg-primary hover:bg-primary/90 shadow-card group"
                             onClick={() => {
                                 handlePrint();
                                 setCompletedSaleData(null);
@@ -705,7 +705,7 @@ export function POSClientView() {
                 footer={
                     <div className="flex flex-col sm:flex-row gap-3 w-full mt-2">
                         <Button
-                            className="flex-1 h-12 rounded-sm text-sm font-bold uppercase tracking-wider bg-warning hover:bg-warning shadow-sm disabled:opacity-50"
+                            className="flex-1 h-12 rounded-sm text-sm font-bold uppercase tracking-wider bg-warning hover:bg-warning shadow-card disabled:opacity-50"
                             onClick={handleWithdraw}
                             disabled={isWithdrawing || !selectedPartnerId}
                         >

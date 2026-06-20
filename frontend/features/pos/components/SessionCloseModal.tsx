@@ -242,7 +242,7 @@ export function SessionCloseModal({
             case 2: // Review & Difference
                 return (
                     <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-300">
-                        <div className="bg-card border rounded-md p-4 space-y-3 shadow-sm">
+                        <div className="bg-card border rounded-md p-4 space-y-3 shadow-card">
                             <div className="flex justify-between items-center text-sm">
                                 <span className="text-muted-foreground">Efectivo Esperado (Sistema):</span>
                                 <span className="font-medium">{formatCurrency(expected)}</span>
