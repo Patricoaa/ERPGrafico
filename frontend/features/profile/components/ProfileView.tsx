@@ -23,13 +23,14 @@ import { cn } from "@/lib/utils"
 import {
     Loader2, User, ShieldCheck, KeyRound, Mail,
     Building2, Briefcase, Calendar, CreditCard, Wallet,
-    FileDown, Download, Eye, Clock, CheckCircle2, FileText,
+    Download, Clock, CheckCircle2, FileText,
     ChevronDown, ChevronRight, Sun, Moon, Monitor
 } from "lucide-react"
 import { EmptyState, LabeledInput } from "@/components/shared"
 import { EmployeePayrollPreview } from "./EmployeePayrollPreview"
 import { PartnerProfileTab } from "./PartnerProfileTab"
-import { DataCell, createActionsColumn } from '@/components/shared'
+import { DataCell } from '@/components/shared'
+import { profilePayrollActions, type ProfilePayrollActionsCtx } from './profilePayrollActions'
 
 import { useTheme } from "next-themes"
 import { useThemeSync } from "../hooks/useThemeSync"
@@ -321,6 +322,19 @@ function PersonalTab({
     const [previewPayrollId, setPreviewPayrollId] = useState<number | null>(null)
     const [previewOpen, setPreviewOpen] = useState(false)
 
+    const profilePayrollActionsCtx: ProfilePayrollActionsCtx = {
+        onViewDetail: (id) => { setPreviewPayrollId(id); setPreviewOpen(true) },
+        onDownloadPdf: async (id) => {
+            try {
+                const p = payrolls.find(p => p.id === id)
+                await downloadPayrollPdf(id, `${p?.display_id}_${p?.period_label?.replace(' ', '_')}.pdf`)
+                toast.success("Liquidación descargada")
+            } catch {
+                toast.error("Error al descargar")
+            }
+        },
+    }
+
     type UnifiedPayment = {
         id: string;
         date: string;
@@ -459,34 +473,7 @@ function PersonalTab({
                 )
             }
         },
-        createActionsColumn<Payroll>({
-            renderActions: (p) => (
-                <>
-                    <DataCell.Action
-                        icon={Eye}
-                        title="Ver detalle"
-                        onClick={(e) => {
-                            e.stopPropagation()
-                            setPreviewPayrollId(p.id)
-                            setPreviewOpen(true)
-                        }}
-                    />
-                    <DataCell.Action
-                        icon={FileDown}
-                        title="Descargar PDF"
-                        onClick={async (e) => {
-                            e.stopPropagation()
-                            try {
-                                await downloadPayrollPdf(p.id, `${p.display_id}_${p.period_label?.replace(' ', '_')}.pdf`)
-                                toast.success("Liquidación descargada")
-                            } catch {
-                                toast.error("Error al descargar")
-                            }
-                        }}
-                    />
-                </>
-            )
-        }),
+        profilePayrollActions.column(profilePayrollActionsCtx) as ColumnDef<Payroll>,
     ]
 
     // Unified Payment columns

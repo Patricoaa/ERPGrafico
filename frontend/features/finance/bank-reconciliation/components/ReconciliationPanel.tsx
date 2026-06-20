@@ -65,7 +65,9 @@ import { DataTable } from '@/components/shared'
 import { LazyDrawer } from "@/features/_shared/transaction-drawer"
 import { ColumnDef, RowSelectionState, PaginationState, Updater } from "@tanstack/react-table"
 import { DataTableColumnHeader } from '@/components/shared'
-import { createActionsColumn, DataCell } from '@/components/shared'
+import { DataCell } from '@/components/shared'
+import { statementLineActions, type StatementLineActionsCtx } from './statementLineActions'
+import { systemItemActions, type SystemItemActionsCtx } from './systemItemActions'
 
 import { Label } from "@/components/ui/label"
 import { toast } from "sonner"
@@ -258,6 +260,15 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
     const [splitDialog, setSplitDialog] = useState<{ open: boolean, payment: ReconciliationSystemItem | null }>({
         open: false, payment: null
     })
+
+    const statementLineActionsCtx: StatementLineActionsCtx = {
+        onExclude: (lineId) => setActionDialog({ open: true, type: 'exclude', lineId }),
+        onRestore: (lineId) => restoreMutation.mutate(lineId),
+    }
+
+    const systemItemActionsCtx: SystemItemActionsCtx = {
+        onSplit: (payment) => setSplitDialog({ open: true, payment }),
+    }
 
     const [confidenceThreshold, setConfidenceThreshold] = useState<number>(90)
 
@@ -577,28 +588,7 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
             },
             size: 100,
         },
-        createActionsColumn<BankStatementLine>({
-            headerLabel: "",
-            renderActions: (item) => [
-                item.reconciliation_status === 'EXCLUDED' ? (
-                    <DataCell.Action
-                        key="restore"
-                        icon={RotateCcw}
-                        title="Restaurar"
-                        className="text-success hover:text-success/80"
-                        onClick={(e) => { e.stopPropagation(); restoreMutation.mutate(item.id) }}
-                    />
-                ) : (
-                    <DataCell.Action
-                        key="exclude"
-                        icon={Ban}
-                        title="Excluir"
-                        className="text-muted-foreground hover:text-destructive"
-                        onClick={(e) => { e.stopPropagation(); setActionDialog({ open: true, type: 'exclude', lineId: item.id }) }}
-                    />
-                ),
-            ]
-        })
+        statementLineActions.column(statementLineActionsCtx)
     ], [lineSuggestions, setActionDialog, setCreateMatchDialog])
 
     const paymentColumns = useMemo<ColumnDef<ReconciliationSystemItem>[]>(() => [
@@ -706,21 +696,7 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
             },
             size: 100,
         },
-        createActionsColumn<ReconciliationSystemItem>({
-            headerLabel: "",
-            renderActions: (item) => [
-                <DataCell.Action
-                    key="split"
-                    icon={SplitSquareHorizontal}
-                    title="Distribuir"
-                    className="text-primary hover:text-primary/80"
-                    onClick={(e) => {
-                        e.stopPropagation();
-                        setSplitDialog({ open: true, payment: item })
-                    }}
-                />
-            ]
-        })
+        systemItemActions.column(systemItemActionsCtx)
     ], [suggestions])
 
     // ─── Render ───────────────────────────────────────────────────────────────

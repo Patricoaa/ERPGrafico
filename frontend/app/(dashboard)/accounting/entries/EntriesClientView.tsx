@@ -9,9 +9,9 @@ import { toast } from "sonner"
 import { JournalEntryDrawer } from "@/features/accounting"
 import api from "@/lib/api"
 
-import { CheckCircle, RotateCcw } from "lucide-react"
 import { DataTableView, DataTableColumnHeader } from '@/components/shared'
-import { DataCell, createActionsColumn, Chip } from '@/components/shared'
+import { DataCell, Chip } from '@/components/shared'
+import { journalEntryActions, type JournalEntryActionsCtx } from './journalEntryActions'
 
 import { useRouter, usePathname, useSearchParams } from "next/navigation"
 import { useJournalEntries, type JournalEntry } from "@/features/accounting"
@@ -147,6 +147,14 @@ export default function EntriesPage({ externalOpen, onExternalOpenChange, create
         }
     }
 
+    const journalEntryActionsCtx: JournalEntryActionsCtx = {
+        onEdit: (id) => openSelected(id),
+        onDetail: (id) => openDetail(id),
+        onPublish: (id) => handlePost(id),
+        onDelete: (id) => handleDelete(id),
+        onReverse: (id) => handleReverse(id),
+    }
+
     const columns: ColumnDef<JournalEntry>[] = useMemo(() => [
         {
             accessorKey: "display_id",
@@ -198,37 +206,7 @@ export default function EntriesPage({ externalOpen, onExternalOpenChange, create
             },
             enableSorting: false,
         },
-        createActionsColumn<JournalEntry>({
-            renderActions: (entry) => (
-                <>
-                    {entry.status === 'DRAFT' ? (
-                        <DataCell.Action action="edit" onClick={() => openSelected(entry.id)} />
-                    ) : (
-                        <DataCell.Action action="detail" onClick={() => openDetail(entry.id)} />
-                    )}
-                    {entry.status === 'DRAFT' && (
-                        <DataCell.Action
-                            icon={CheckCircle}
-                            title="Publicar"
-                            onClick={() => handlePost(entry.id)}
-                        />
-                    )}
-                    {entry.status === 'DRAFT' && (
-                        <DataCell.Action
-                            action="delete"
-                            onClick={() => handleDelete(entry.id)}
-                        />
-                    )}
-                    {(entry.status === 'POSTED' || entry.status === 'CLOSED') && entry.is_manual && (
-                        <DataCell.Action
-                            icon={RotateCcw}
-                            title="Reversar"
-                            onClick={() => handleReverse(entry.id)}
-                        />
-                    )}
-                </>
-            )
-        }),
+        journalEntryActions.column(journalEntryActionsCtx),
     ], [openSelected, openDetail, handlePost, handleDelete, handleReverse])
 
 

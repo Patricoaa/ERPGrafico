@@ -31,7 +31,8 @@ import { useReactToPrint } from "react-to-print"
 import { PrintableLayout } from "@/features/_shared/transaction-drawer"
 import type { DrawerMode } from "@/features/_shared/drawer/types"
 import { createDomainCardView } from "@/lib/view-helpers"
-import { DataCell, createActionsColumn, EmptyState, Chip } from '@/components/shared'
+import { DataCell, EmptyState, Chip } from '@/components/shared'
+import { contactDocumentActions, type ContactDocumentActionsCtx } from './contactDocumentActions'
 import { Separator } from "@/components/ui/separator"
 import { DataTable } from '@/components/shared'
 
@@ -672,6 +673,17 @@ function InsightsTable({ data, type, title, icon: Icon, onActionSuccess }: Insig
         })
     }, [type, openEntity, openHub, onActionSuccess])
 
+    const contactDocumentActionsCtx: ContactDocumentActionsCtx = {
+        onHub: (item) => {
+            const i = item as any
+            if (type === 'work_order') {
+                openEntity('production.workorder', i.id)
+            } else {
+                openHub({ orderId: i.id, type: type === 'purchase' ? 'purchase' : 'sale' })
+            }
+        },
+    }
+
     const columns: ColumnDef<Record<string, unknown>>[] = [
         {
             accessorKey: "date",
@@ -709,21 +721,7 @@ function InsightsTable({ data, type, title, icon: Icon, onActionSuccess }: Insig
                 return <DomainHubStatus data={item} label={type === 'purchase' ? 'purchasing.purchaseorder' : 'sales.saleorder'} />
             }
         },
-        createActionsColumn<Record<string, unknown>>({
-            renderActions: (item) => (
-                <DataCell.Action
-                    action="hub"
-                    onClick={() => {
-                        const i = item as any
-                        if (type === 'work_order') {
-                            openEntity('production.workorder', i.id)
-                        } else {
-                            openHub({ orderId: i.id, type: type === 'purchase' ? 'purchase' : 'sale' })
-                        }
-                    }}
-                />
-            )
-        })
+        contactDocumentActions.column(contactDocumentActionsCtx)
     ]
 
     return (

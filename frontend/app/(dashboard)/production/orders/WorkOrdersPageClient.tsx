@@ -5,7 +5,8 @@ import { useSearchParams, useRouter } from "next/navigation"
 import { usePathname } from "next/navigation"
 import { ActionConfirmModal, DataTable } from '@/components/shared'
 import { DataTableColumnHeader } from '@/components/shared'
-import { createActionsColumn, DataCell } from '@/components/shared'
+import { DataCell } from '@/components/shared'
+import { workOrderActions, type WorkOrderActionsCtx } from './workOrderActions'
 import { ColumnDef } from "@tanstack/react-table"
 import { Printer, User, Check } from "lucide-react"
 import { useViewMode } from "@/hooks/useViewMode"
@@ -116,6 +117,17 @@ export default function WorkOrdersPageClient({ initialOrders }: WorkOrdersPageCl
     })
 
     const handleDuplicate = (id: number) => duplicateConfirm.requestConfirm(id)
+
+    const workOrderActionsCtx: WorkOrderActionsCtx = {
+        onEdit: (id) => {
+            const params = new URLSearchParams(searchParams.toString())
+            params.set('selected', String(id))
+            router.push(`${pathname}?${params.toString()}`, { scroll: false })
+        },
+        onDuplicate: handleDuplicate,
+        onAnnul: handleCancel,
+        onDelete: handleDelete,
+    }
 
     const columns = useMemo<ColumnDef<WorkOrder>[]>(() => [
         {
@@ -235,30 +247,7 @@ export default function WorkOrdersPageClient({ initialOrders }: WorkOrdersPageCl
             cell: ({ row }) => <div className="flex justify-center"><DataCell.Date value={row.getValue("due_date")} /></div>,
             meta: { title: "Fecha Entrega" },
         },
-        createActionsColumn<WorkOrder>({
-            renderActions: (order) => {
-                const isEditable = ['MATERIAL_ASSIGNMENT', 'MATERIAL_APPROVAL', 'PREPRESS'].includes(order.current_stage)
-                const canAnnul = !['DRAFT', 'FINISHED', 'CANCELLED'].includes(order.status)
-                const overflow = [
-                    { action: 'duplicate' as const, onClick: () => handleDuplicate(order.id) },
-                    ...(canAnnul ? [{ action: 'annul' as const, onClick: () => handleCancel(order.id) }] : []),
-                    ...(isEditable ? [{ action: 'delete' as const, onClick: () => handleDelete(order.id) }] : []),
-                ]
-                return (
-                    <>
-                        <DataCell.Action
-                            action="edit"
-                            onClick={() => {
-                                const params = new URLSearchParams(searchParams.toString())
-                                params.set('selected', String(order.id))
-                                router.push(`${pathname}?${params.toString()}`, { scroll: false })
-                            }}
-                        />
-                        <DataCell.ActionMenu items={overflow} />
-                    </>
-                )
-            }
-        }),
+        workOrderActions.column(workOrderActionsCtx) as ColumnDef<WorkOrder>,
     ], [handleDuplicate, handleCancel, handleDelete, searchParams, router, pathname])
 
     const renderKanbanView = useCallback((table: import("@tanstack/react-table").Table<WorkOrder>) => (

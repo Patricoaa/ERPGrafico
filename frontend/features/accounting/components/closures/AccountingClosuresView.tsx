@@ -14,9 +14,8 @@ import { useSelectedEntity } from '@/hooks/useSelectedEntity';
 import { DataTableView, EmptyState, StatusBadge } from '@/components/shared';
 import { ColumnDef } from '@tanstack/react-table';
 import { DataTableColumnHeader } from '@/components/shared';
-import { createActionsColumn, DataCell } from '@/components/shared';
-;
-import { PlayCircle, ShieldAlert, LockOpen } from 'lucide-react';
+import { DataCell } from '@/components/shared';
+import { fiscalYearActions, type FiscalYearActionsCtx, type FiscalYearRow } from './fiscalYearActions';
 import { ToolbarCreateButton, SmartSearchBar, useClientSearch, useSegmentation, SegmentationBar } from '@/components/shared';
 import { ClosuresSkeleton } from './ClosuresSkeleton';
 import { fiscalYearSearchDef } from '../../searchDef';
@@ -200,6 +199,12 @@ export function AccountingClosuresView({ externalOpen, onExternalOpenChange }: A
         );
     }
 
+    const fiscalYearActionsCtx: FiscalYearActionsCtx = {
+        onExecuteClosing: (year) => handlePreviewClosing(year),
+        onReopen: (year) => reopenFiscalYear(year),
+        onGenerateOpening: (year) => generateOpeningEntry(year),
+    }
+
     const columns: ColumnDef<typeof groupedData[0]>[] = [
         {
             accessorKey: "year",
@@ -226,39 +231,7 @@ export function AccountingClosuresView({ externalOpen, onExternalOpenChange }: A
             header: ({ column }) => <DataTableColumnHeader column={column} title="Periodos" />,
             cell: ({ row }) => <div className="text-muted-foreground">{row.original.periods.length} meses registrados</div>,
         },
-        createActionsColumn<typeof groupedData[0]>({
-            renderActions: (row) => {
-                const status = row.fiscalYear?.status || 'OPEN';
-                const isClosed = status === 'CLOSED';
-                return (
-                    <>
-                        {!isClosed ? (
-                            <DataCell.Action
-                                icon={ShieldAlert}
-                                title="Ejecutar Cierre"
-                                onClick={() => handlePreviewClosing(row.year)}
-                                disabled={row.periods.length === 0 || row.periods.some(p => p.status !== 'CLOSED')}
-                            />
-                        ) : (
-                            <>
-                                <DataCell.Action
-                                    icon={LockOpen}
-                                    title="Reabrir Ejercicio"
-                                    className="text-warning"
-                                    onClick={() => reopenFiscalYear(row.year)}
-                                />
-                                <DataCell.Action
-                                    icon={PlayCircle}
-                                    title="Generar Asiento Apertura"
-                                    className="text-success"
-                                    onClick={() => generateOpeningEntry(row.year)}
-                                />
-                            </>
-                        )}
-                    </>
-                );
-            }
-        })
+        fiscalYearActions.column(fiscalYearActionsCtx) as ColumnDef<typeof groupedData[0]>
     ];
 
     return (

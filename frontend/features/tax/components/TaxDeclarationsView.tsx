@@ -21,7 +21,7 @@ import { useSearchParams, useRouter, usePathname } from "next/navigation"
 import { useServerDate } from "@/hooks/useServerDate"
 import { DataTableColumnHeader, DataTableView, EntityCard, StatusBadge } from '@/components/shared'
 import { ColumnDef } from "@tanstack/react-table"
-import { DataCell, createActionsColumn } from '@/components/shared'
+import { taxDeclarationActions, type TaxDeclarationActionsCtx } from './taxDeclarationActions'
 import { cn } from "@/lib/utils"
 
 import { TaxPeriod, TaxDeclaration, TaxPaymentData } from "../types"
@@ -197,9 +197,13 @@ export function TaxDeclarationsView({ externalOpen, onExternalOpenChange, create
         : (serverDate
             ? format(serverDate, "MMMM yyyy", { locale: es }).toUpperCase()
             : format(new Date(), "MMMM yyyy", { locale: es }).toUpperCase())
-
-    const isLatestClosed = latestPeriod?.status === "CLOSED"
+    const isLatestClosed = latestPeriod?.status === 'CLOSED'
     const currentVatToPay = latestPeriod?.declaration_summary?.vat_to_pay || 0
+
+    const taxDeclarationActionsCtx: TaxDeclarationActionsCtx = {
+        onPayment: (period) => handleOpenPayment(period as TaxPeriod),
+        onWizard: (period) => handleOpenWizard(period as TaxPeriod),
+    }
 
     const columns: ColumnDef<TaxPeriod>[] = [
         {
@@ -262,34 +266,7 @@ export function TaxDeclarationsView({ externalOpen, onExternalOpenChange, create
                 )
             }
         },
-        createActionsColumn<TaxPeriod>({
-            renderActions: (period) => {
-                const summary = period.declaration_summary
-                const isFullyPaid = summary?.is_fully_paid
-                const showPaymentButton = !!summary || period.status === 'CLOSED'
-                const canOpenChecklist = period.status === 'OPEN'
-
-                return (
-                    <>
-                        {showPaymentButton && (
-                            <DataCell.Action
-                                icon={isFullyPaid ? HistoryIcon : DollarSign}
-                                title={isFullyPaid ? "Ver Pagos" : "Pagar"}
-                                onClick={(e) => { e.stopPropagation(); handleOpenPayment(period); }}
-                                className={isFullyPaid ? "text-success" : "text-success"}
-                            />
-                        )}
-                        {canOpenChecklist && (
-                            <DataCell.Action
-                                icon={ArrowRight}
-                                title="Iniciar declaración/cierre F29"
-                                onClick={(e) => { e.stopPropagation(); handleOpenWizard(period); }}
-                            />
-                        )}
-                    </>
-                )
-            }
-        })
+        taxDeclarationActions.column(taxDeclarationActionsCtx) as ColumnDef<TaxPeriod>
     ]
 
     return (
