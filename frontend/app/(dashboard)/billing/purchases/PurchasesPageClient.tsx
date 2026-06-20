@@ -412,6 +412,7 @@ export default function PurchasesPageClient({ initialInvoices }: PurchasesPageCl
                         },
                     ]}
                     defaultPageSize={20}
+                    cardGroupBy={{ dateField: 'date', amountField: 'total' }}
                 />
             </div>
 

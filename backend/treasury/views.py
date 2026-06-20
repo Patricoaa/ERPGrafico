@@ -440,8 +440,7 @@ class TreasuryMovementViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
     queryset = TreasuryMovement.objects.all().order_by('-date', '-created_at')
     serializer_class = TreasuryMovementSerializer
     pagination_class = StandardResultsSetPagination
-    filter_backends = [DjangoFilterBackend, drf_filters.SearchFilter]
-    search_fields = ['contact__name', 'contact__tax_id', 'reference', 'description']
+    filter_backends = [DjangoFilterBackend]
 
     def get_queryset(self):
         qs = self.queryset
@@ -520,9 +519,17 @@ class TreasuryMovementViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
             if match:
                 qs = qs.filter(id=match.group(1))
 
-        partner_name = self.request.query_params.get('partner_name')
-        if partner_name:
-            qs = qs.filter(contact__name__icontains=partner_name)
+        search = self.request.query_params.get('search')
+        if search:
+            from django.db.models import Q
+            q = Q(contact__name__icontains=search) | \
+                Q(contact__tax_id__icontains=search) | \
+                Q(reference__icontains=search) | \
+                Q(description__icontains=search) | \
+                Q(notes__icontains=search)
+            if search.isdigit():
+                q |= Q(id=search)
+            qs = qs.filter(q)
 
         return qs
 

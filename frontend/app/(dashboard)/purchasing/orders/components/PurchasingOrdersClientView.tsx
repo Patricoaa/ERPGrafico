@@ -616,6 +616,7 @@ export function PurchasingOrdersClientView({ viewMode, externalOpenCheckout, cre
                                 ? "Crea una orden de compra para registrar tus adquisiciones a proveedores."
                                 : "Las notas asociadas a tus documentos de compra aparecerán aquí.",
                         }}
+                        cardGroupBy={{ dateField: 'date', amountField: 'total' }}
                     />
                 </div>
             </Tabs>

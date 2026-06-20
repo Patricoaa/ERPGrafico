@@ -132,7 +132,8 @@ export function UnbilledChargesView({
         ],
     }), [creditCardAccounts])
 
-    const { filters: segFilters, isFiltered: isSegFiltered, apply, clearAll: clearSeg } = useSegmentation(segDef)
+    const basePeriod = { serverParamFrom: 'date_from', serverParamTo: 'date_to' }
+    const { filters: segFilters, isFiltered: isSegFiltered, apply, clearAll: clearSeg } = useSegmentation(segDef, basePeriod)
     const { filterFn, isFiltered: isTextFiltered, clearAll: clearText } = useClientSearch<UnbilledItemRow>(unbilledSearchDef)
 
     const selectedCardAccount = segFilters.card ? Number(segFilters.card) : (creditCardAccounts[0]?.id ?? 0)
@@ -560,7 +561,7 @@ export function UnbilledChargesView({
                             onScopeChange: (v) => apply('scope', v),
                         },
                     }}
-                    segmentation={<SegmentationBar def={segDef} />}
+                    segmentation={<SegmentationBar def={segDef} basePeriod={basePeriod} />}
                     createAction={actionButtons}
                     emptyState={{
                         context: 'treasury',

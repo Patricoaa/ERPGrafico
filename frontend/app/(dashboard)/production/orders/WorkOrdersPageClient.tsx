@@ -52,7 +52,8 @@ export default function WorkOrdersPageClient({ initialOrders }: WorkOrdersPageCl
     }
 
     const { filters: textFilters, isFiltered: isTextFiltered, clearAll: clearText } = useSmartSearch(workOrderSearchDef)
-    const { filters: segFilters, isFiltered: isSegFiltered, clearAll: clearSeg } = useSegmentation(workOrderSegDef)
+    const basePeriod = { serverParamFrom: 'date_from', serverParamTo: 'date_to' }
+    const { filters: segFilters, isFiltered: isSegFiltered, clearAll: clearSeg } = useSegmentation(workOrderSegDef, basePeriod)
     const isFiltered = isTextFiltered || isSegFiltered
     const allFilters = { ...textFilters, ...segFilters }
     const { orders, isLoading: loading, isRefetching, refetch: refetchOrders } = useWorkOrders({
@@ -318,7 +319,7 @@ export default function WorkOrdersPageClient({ initialOrders }: WorkOrdersPageCl
                         smartSearch={
                             <SmartSearchBar searchDef={workOrderSearchDef} placeholder="Buscar OTs..." className="w-full" />
                         }
-                        segmentation={<SegmentationBar def={workOrderSegDef} />}
+                        segmentation={<SegmentationBar def={workOrderSegDef} basePeriod={basePeriod} />}
                         showReset={isFiltered}
                         onReset={() => { clearText(); clearSeg() }}
                         customFilters={

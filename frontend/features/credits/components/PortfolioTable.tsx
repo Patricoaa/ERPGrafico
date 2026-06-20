@@ -309,6 +309,7 @@ export function PortfolioTable({
     onRefresh,
     createAction,
     smartSearch,
+    segmentation,
 }: {
     columns: ColumnDef<CreditContact>[],
     data: CreditContact[],
@@ -316,6 +317,7 @@ export function PortfolioTable({
     onRefresh: () => void,
     createAction?: React.ReactNode,
     smartSearch?: React.ReactNode,
+    segmentation?: React.ReactNode,
 }) {
     const columnsWithExpander = useMemo<ColumnDef<CreditContact>[]>(() => [
         {
@@ -361,6 +363,7 @@ export function PortfolioTable({
                     }}
                     createAction={createAction}
                     smartSearch={smartSearch}
+                    segmentation={segmentation}
                 />
             </div>
         </div>

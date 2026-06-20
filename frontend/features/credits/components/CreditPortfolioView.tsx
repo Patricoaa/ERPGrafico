@@ -7,8 +7,9 @@ import { DataTable } from '@/components/shared'
 import { PortfolioKpiGrid } from "./PortfolioKpiGrid"
 import { PortfolioTable } from "./PortfolioTable"
 import { getPortfolioColumns, historyColumns } from "./PortfolioColumns"
-import { SmartSearchBar, useClientSearch } from "@/components/shared"
+import { SmartSearchBar, useClientSearch, useSegmentation, SegmentationBar } from "@/components/shared"
 import { creditContactSearchDef, creditHistorySearchDef } from "../searchDef"
+import { creditContactSegDef, creditHistorySegDef } from "../segmentationDef"
 import { useCreditPortfolio, useCreditHistory } from "../hooks/useCredits"
 import { useSelectedEntity } from "@/hooks/useSelectedEntity"
 import { useEntityRouteActions } from "@/hooks/useEntityRouteActions"
@@ -41,14 +42,24 @@ export function CreditPortfolioView({
 
     const { filterFn: filterContacts } = useClientSearch<CreditContact>(creditContactSearchDef)
     const { filterFn: filterHistory } = useClientSearch<CreditHistoryEntry>(creditHistorySearchDef)
+    const { filters: segContactFilters } = useSegmentation(creditContactSegDef)
+    const { filters: segHistoryFilters } = useSegmentation(creditHistorySegDef)
 
     const contacts = useMemo(
-        () => filterContacts(rawContacts),
-        [rawContacts, filterContacts],
+        () => {
+            let result = rawContacts
+            if (segContactFilters.risk_level) result = result.filter(c => c.credit_risk_level === segContactFilters.risk_level)
+            return filterContacts(result)
+        },
+        [rawContacts, filterContacts, segContactFilters.risk_level],
     )
     const history = useMemo(
-        () => filterHistory(rawHistory ?? EMPTY_HISTORY),
-        [rawHistory, filterHistory],
+        () => {
+            let result = rawHistory ?? EMPTY_HISTORY
+            if (segHistoryFilters.origin) result = result.filter(h => h.credit_assignment_origin === segHistoryFilters.origin)
+            return filterHistory(result)
+        },
+        [rawHistory, filterHistory, segHistoryFilters.origin],
     )
 
     const handleModalSuccess = useCallback(async () => {
@@ -76,6 +87,7 @@ export function CreditPortfolioView({
                             onRefresh={refetch}
                             createAction={createAction}
                             smartSearch={<SmartSearchBar searchDef={creditContactSearchDef} placeholder="Cliente o RUT..." className="w-full" />}
+                            segmentation={<SegmentationBar def={creditContactSegDef} />}
                         />
                     </div>
                 </div>
@@ -87,6 +99,7 @@ export function CreditPortfolioView({
                         variant="embedded"
                         isLoading={loadingHistory}
                         smartSearch={<SmartSearchBar searchDef={creditHistorySearchDef} placeholder="Cliente o folio..." className="w-full" />}
+                        segmentation={<SegmentationBar def={creditHistorySegDef} />}
                     />
                 </div>
             )}
