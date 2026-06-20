@@ -90,7 +90,7 @@ export function EntityHeader({
       {/* Icon and Basic Info */}
       <div className="flex flex-col gap-4">
         <div className="flex items-center gap-4">
-          <div className="p-3 bg-primary/10 rounded-md shadow-sm border border-primary/20 flex-shrink-0">
+          <div className="p-3 bg-primary/10 rounded-md shadow-card border border-primary/20 flex-shrink-0">
             <Icon className="h-6 w-6 text-primary" />
           </div>
           <div className="flex flex-col">

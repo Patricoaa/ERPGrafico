@@ -89,7 +89,7 @@ export function HeaderNavDropdowns({ navigation, iconName }: HeaderNavDropdownsP
                     <DropdownMenuContent
                         align="start"
                         sideOffset={8}
-                        className="min-w-[200px] rounded-lg border-border/40 shadow-xl shadow-black/10 bg-popover/95 backdrop-blur-md p-1"
+                        className="min-w-[200px] rounded-lg border-border/40 shadow-floating shadow-black/10 bg-popover/95 backdrop-blur-md p-1"
                     >
                         {regularTabs.map((tab) => {
                             const isActive = tab.value === activeValue
@@ -163,7 +163,7 @@ export function HeaderNavDropdowns({ navigation, iconName }: HeaderNavDropdownsP
                     <DropdownMenuContent
                         align="start"
                         sideOffset={8}
-                        className="min-w-[200px] rounded-lg border-border/40 shadow-xl shadow-black/10 bg-popover/95 backdrop-blur-md p-1"
+                        className="min-w-[200px] rounded-lg border-border/40 shadow-floating shadow-black/10 bg-popover/95 backdrop-blur-md p-1"
                     >
                         {activeSubTabs.map((sub) => {
                                 const isActive = sub.value === subActiveValue
@@ -237,7 +237,7 @@ export function HeaderNavDropdowns({ navigation, iconName }: HeaderNavDropdownsP
                     <DropdownMenuContent
                         align="start"
                         sideOffset={8}
-                        className="min-w-[200px] rounded-lg border-border/40 shadow-xl shadow-black/10 bg-popover/95 backdrop-blur-md p-1"
+                        className="min-w-[200px] rounded-lg border-border/40 shadow-floating shadow-black/10 bg-popover/95 backdrop-blur-md p-1"
                     >
                         {activeSubSubTabs.map((sub) => {
                                 const isActive = sub.value === subSubActiveValue
@@ -311,7 +311,7 @@ export function HeaderNavDropdowns({ navigation, iconName }: HeaderNavDropdownsP
                     <DropdownMenuContent
                         align="start"
                         sideOffset={8}
-                        className="min-w-[200px] rounded-lg border-border/40 shadow-xl shadow-black/10 bg-popover/95 backdrop-blur-md p-1"
+                        className="min-w-[200px] rounded-lg border-border/40 shadow-floating shadow-black/10 bg-popover/95 backdrop-blur-md p-1"
                     >
                         {activeSubSubSubTabs.map((sub) => {
                                 const isActive = sub.value === subSubSubActiveValue

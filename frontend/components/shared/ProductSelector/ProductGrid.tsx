@@ -97,14 +97,14 @@ function ProductGridComponent({
                 return (
                     <Card
                         className={cn(
-                            "group cursor-pointer hover:shadow-md transition-all border overflow-hidden flex flex-col h-full rounded-md p-2 bg-card",
+                            "group cursor-pointer hover:shadow-elevated transition-all border overflow-hidden flex flex-col h-full rounded-md p-2 bg-card",
                             isTouchPOS && "active:scale-95",
                             isDisabled && "opacity-50 grayscale cursor-not-allowed"
                         )}
                         onClick={() => !isDisabled && onProductClick(product)}
                     >
                         <div className={cn(
-                            "aspect-square bg-muted/20 rounded-sm flex items-center justify-center relative overflow-hidden border shadow-sm",
+                            "aspect-square bg-muted/20 rounded-sm flex items-center justify-center relative overflow-hidden border shadow-card",
                             isTouchPOS && "min-h-[120px]"
                         )}>
                             {product.image ? (
@@ -119,7 +119,7 @@ function ProductGridComponent({
                             {/* Hover Indicator (Centered Large Icon) */}
                             {!isDisabled && (
                                 <div className="absolute inset-0 bg-background/10 backdrop-blur-[1px] opacity-0 group-hover:opacity-100 transition-opacity z-10 flex items-center justify-center">
-                                    <div className="h-12 w-12 rounded-full bg-primary text-primary-foreground shadow-xl flex items-center justify-center transform scale-50 group-hover:scale-100 transition-transform duration-300 ease-out">
+                                    <div className="h-12 w-12 rounded-full bg-primary text-primary-foreground shadow-floating flex items-center justify-center transform scale-50 group-hover:scale-100 transition-transform duration-300 ease-out">
                                         <Plus className="h-6 w-6" />
                                     </div>
                                 </div>
@@ -129,7 +129,7 @@ function ProductGridComponent({
                             {onToggleFavorite && (
                                 <button
                                     className={cn(
-                                        "absolute top-2 left-2 z-20 flex h-7 w-7 items-center justify-center rounded-full bg-background/90 backdrop-blur-sm border shadow-sm hover:scale-110 active:scale-95 transition-all",
+                                        "absolute top-2 left-2 z-20 flex h-7 w-7 items-center justify-center rounded-full bg-background/90 backdrop-blur-sm border shadow-floating hover:scale-110 active:scale-95 transition-all",
                                         product.is_favorite ? "text-destructive border-destructive/10 bg-destructive/10" : "text-muted-foreground"
                                     )}
                                     onClick={(e) => {
@@ -152,7 +152,7 @@ function ProductGridComponent({
 
                                 {/* Stock/Availability Badge */}
                                 {product.product_type === 'STORABLE' && (
-                                    <div className="flex items-center gap-1 bg-background/90 backdrop-blur-sm px-2 py-0.5 rounded-full shadow-sm border text-[10px] font-bold text-muted-foreground">
+                                    <div className="flex items-center gap-1 bg-background/90 backdrop-blur-sm px-2 py-0.5 rounded-full shadow-floating border text-[10px] font-bold text-muted-foreground">
                                         <div className={`h-2 w-2 rounded-full ${(limits[`prod_${product.id}`] ?? product.qty_available ?? 0) > 0 ? 'bg-success' : 'bg-destructive'}`} />
                                         {limits[`prod_${product.id}`] ?? product.qty_available ?? 0}
                                     </div>
@@ -160,14 +160,14 @@ function ProductGridComponent({
 
                                 {/* MANUFACTURABLE badges */}
                                 {isManufacturable && mfgSubType === 'SIMPLE' && (
-                                    <div className="flex items-center gap-1 bg-background/90 backdrop-blur-sm px-2 py-0.5 rounded-full shadow-sm border text-[10px] font-bold text-muted-foreground">
+                                    <div className="flex items-center gap-1 bg-background/90 backdrop-blur-sm px-2 py-0.5 rounded-full shadow-floating border text-[10px] font-bold text-muted-foreground">
                                         <div className={`h-2 w-2 rounded-full ${(limits[`prod_${product.id}`] ?? product.qty_available ?? 0) > 0 ? 'bg-success' : 'bg-destructive'}`} />
                                         {limits[`prod_${product.id}`] ?? product.qty_available ?? 0}
                                     </div>
                                 )}
 
                                 {isManufacturable && mfgSubType === 'EXPRESS' && (
-                                    <div className="flex items-center gap-1 bg-background/90 backdrop-blur-sm px-2 py-0.5 rounded-full shadow-sm border text-[10px] font-bold text-muted-foreground">
+                                    <div className="flex items-center gap-1 bg-background/90 backdrop-blur-sm px-2 py-0.5 rounded-full shadow-floating border text-[10px] font-bold text-muted-foreground">
                                         {!product.has_bom ? (
                                             <>
                                                 <div className="h-2 w-2 rounded-full bg-muted-foreground" />
@@ -183,7 +183,7 @@ function ProductGridComponent({
                                 )}
 
                                 {isManufacturable && mfgSubType === 'ADVANCED' && (
-                                    <div className="flex items-center gap-1 bg-background/90 backdrop-blur-sm px-2 py-0.5 rounded-full shadow-sm border text-[10px] font-bold text-muted-foreground">
+                                    <div className="flex items-center gap-1 bg-background/90 backdrop-blur-sm px-2 py-0.5 rounded-full shadow-floating border text-[10px] font-bold text-muted-foreground">
                                         {product.has_bom ? (
                                             <>
                                                 <div className={`h-2 w-2 rounded-full ${(product.manufacturable_quantity ?? 0) > 0 ? 'bg-primary' : 'bg-warning'}`} />
@@ -201,7 +201,7 @@ function ProductGridComponent({
                                 {(product.product_type === 'SERVICE' ||
                                     product.product_type === 'SUBSCRIPTION' ||
                                     product.product_type === 'CONSUMABLE') && (
-                                        <div className="flex items-center gap-1 bg-background/90 backdrop-blur-sm px-2 py-0.5 rounded-full shadow-sm border text-[10px] font-bold text-muted-foreground">
+                                        <div className="flex items-center gap-1 bg-background/90 backdrop-blur-sm px-2 py-0.5 rounded-full shadow-floating border text-[10px] font-bold text-muted-foreground">
                                             <div className="h-2 w-2 rounded-full bg-success" />
                                             Disponible
                                         </div>

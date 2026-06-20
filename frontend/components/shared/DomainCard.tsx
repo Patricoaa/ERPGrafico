@@ -71,7 +71,7 @@ export function DomainCard({
             onClick={isDetailView ? undefined : handleClick}
             className={cn(
                 !isSelected && isHubOpen && "opacity-40 grayscale-[0.2] blur-[0.2px]",
-                isDetailView && "cursor-default shadow-sm",
+                isDetailView && "cursor-default shadow-card",
                 className
             )}
         >

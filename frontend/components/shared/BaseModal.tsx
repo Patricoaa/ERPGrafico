@@ -95,7 +95,7 @@ export function BaseModal({
                 className={cn(
                     "p-0 flex flex-col max-h-[95vh]",
                     allowOverflow ? "overflow-visible" : "overflow-hidden",
-                    isTransaction && "border-none shadow-2xl",
+                    isTransaction && "border-none shadow-overlay",
                     className
                 )}
                 {...props}

@@ -98,7 +98,7 @@ export function EmptyState({
         >
             {/* Precision Icon Container */}
             <div className={cn(
-                "relative flex items-center justify-center rounded-md border border-border bg-muted shadow-sm mb-6",
+                "relative flex items-center justify-center rounded-md border border-border bg-muted shadow-card mb-6",
                 variant === 'full' ? "h-20 w-20" : "h-14 w-14"
             )}>
                 <Icon className={cn(
