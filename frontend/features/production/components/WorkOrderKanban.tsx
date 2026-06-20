@@ -45,7 +45,7 @@ function KanbanCard({ order, onManage, onDuplicate, onAnnul, onDelete }: { order
         <Card
             onClick={() => onManage(order.id)}
             className={cn(
-                "cursor-pointer hover:shadow-md transition-all border-none shadow-sm rounded-md",
+                "cursor-pointer hover:shadow-elevated transition-all border-none shadow-card rounded-md",
                 "active:scale-95 duration-100"
             )}
         >
@@ -123,7 +123,7 @@ export function WorkOrderKanban({ orders, onManage, onDuplicate, onAnnul, onDele
                     <div
                         key={stage.id}
                         className={cn(
-                            "flex-shrink-0 w-80 rounded-md flex flex-col border shadow-sm",
+                            "flex-shrink-0 w-80 rounded-md flex flex-col border shadow-card",
                             stage.color
                         )}
                     >

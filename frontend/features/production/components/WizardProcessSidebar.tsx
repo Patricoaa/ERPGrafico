@@ -65,8 +65,8 @@ export function WizardProcessSidebar({
                             className={cn(
                                 "group rounded-lg transition-all duration-200",
                                 isClickable ? "cursor-pointer" : "cursor-not-allowed",
-                                isActive && isCreationStep && "bg-accent text-accent-foreground shadow-sm",
-                                isActive && !isCreationStep && "bg-primary text-primary-foreground shadow-sm",
+                                isActive && isCreationStep && "bg-accent text-accent-foreground shadow-card",
+                                isActive && !isCreationStep && "bg-primary text-primary-foreground shadow-card",
                                 isPast && !isActive && isCreationStep && "bg-success/5 text-success hover:bg-success/10",
                                 isPast && !isActive && !isCreationStep && "bg-success/10 text-success hover:bg-success/20",
                                 isCurrent && !isActive && isCreationStep && "bg-accent/50 border border-accent/20 text-accent-foreground hover:border-accent/50",

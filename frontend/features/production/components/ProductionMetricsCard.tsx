@@ -11,7 +11,7 @@ export function ProductionMetricsCard() {
 
     if (isLoading) {
         return (
-            <Card className="col-span-full border-border/40 shadow-sm animate-in fade-in">
+            <Card className="col-span-full border-border/40 shadow-card animate-in fade-in">
                 <CardHeader className="pb-2">
                     <CardTitle className="text-lg font-bold flex items-center gap-2">
                         <Printer className="w-5 h-5 text-muted-foreground" />
@@ -32,7 +32,7 @@ export function ProductionMetricsCard() {
     if (error || !data) return null;
 
     return (
-        <Card className="col-span-full border-border/40 shadow-sm bg-background">
+        <Card className="col-span-full border-border/40 shadow-card bg-background">
             <CardHeader className="pb-2 flex flex-row items-center justify-between">
                 <CardTitle className="text-lg font-bold flex items-center gap-2">
                     <Printer className="w-5 h-5 text-primary/80" />

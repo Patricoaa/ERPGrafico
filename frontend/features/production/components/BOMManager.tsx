@@ -234,7 +234,7 @@ export function BOMManager({ product, variantMode = false, onBomsChange }: BOMMa
                                         e.stopPropagation()
                                         handleCreate()
                                     }}
-                                    className="h-9 px-5 gap-2 rounded-sm font-black uppercase tracking-widest text-[10px] shadow-sm transition-all hover:-translate-y-0.5"
+                                    className="h-9 px-5 gap-2 rounded-sm font-black uppercase tracking-widest text-[10px] shadow-card transition-all hover:-translate-y-0.5"
                                 >
                                     <Plus className="h-4 w-4" />
                                     Nueva Lista
@@ -321,7 +321,7 @@ export function BOMManager({ product, variantMode = false, onBomsChange }: BOMMa
                                 <Button
                                     type="button"
                                     onClick={handleCreate}
-                                    className="gap-2 h-10 px-6 text-xs font-black uppercase tracking-widest shadow-md hover:-translate-y-0.5 transition-transform"
+                                    className="gap-2 h-10 px-6 text-xs font-black uppercase tracking-widest shadow-elevated hover:-translate-y-0.5 transition-transform"
                                 >
                                     <Plus className="h-4 w-4" />
                                     Crear receta base
