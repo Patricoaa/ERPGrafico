@@ -89,11 +89,5 @@ export const treasuryMovementsSearchDef: SearchDefinition = {
       type: 'text',
       serverParam: 'display_id',
     },
-    {
-      key: 'partner_name',
-      label: 'Contacto',
-      type: 'text',
-      serverParam: 'partner_name',
-    },
   ],
 }
