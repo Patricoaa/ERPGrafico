@@ -102,7 +102,7 @@ export function Cart({
     }
 
     return (
-        <Card className="py-2 flex-1 flex flex-col overflow-hidden border bg-background/50 shadow-sm rounded-md">
+        <Card className="py-2 flex-1 flex flex-col overflow-hidden border bg-background/50 shadow-card rounded-md">
             <CardContent className="p-0 flex-1 flex flex-col overflow-hidden">
                 {/* Header */}
                 <div className="px-4 py-1.5 border-b bg-background/50 shrink-0">
@@ -248,7 +248,7 @@ export function Cart({
                                 <Button
                                     variant="default"
                                     className={cn(
-                                        "w-full font-bold bg-warning text-warning-foreground hover:bg-warning/90 shadow-sm",
+                                        "w-full font-bold bg-warning text-warning-foreground hover:bg-warning/90 shadow-card",
                                         isTouchPOS ? "h-14 text-base" : "h-10 text-sm"
                                     )}
                                     onClick={onWithdrawClick}
@@ -324,7 +324,7 @@ export function Cart({
                         <Button
                             id="confirm-sale-btn"
                             className={cn(
-                                "w-full shadow-lg font-black uppercase tracking-tight",
+                                "w-full shadow-floating font-black uppercase tracking-tight",
                                 isTouchPOS ? "h-20 text-2xl" : "h-12 text-lg"
                             )}
                             size="lg"

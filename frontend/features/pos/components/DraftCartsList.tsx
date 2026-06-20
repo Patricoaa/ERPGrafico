@@ -262,7 +262,7 @@ export function DraftCartsList({
                                 </span>
                             )}
                             {draft.wizard_state?.isWaitingPayment && !lockedByOther && (
-                                <span className="h-4 px-1.5 text-[9px] font-bold uppercase rounded-full border bg-warning/10 text-warning border-warning/20 gap-1 flex items-center shrink-0 shadow-sm">
+                                <span className="h-4 px-1.5 text-[9px] font-bold uppercase rounded-full border bg-warning/10 text-warning border-warning/20 gap-1 flex items-center shrink-0 shadow-card">
                                     <Wallet className="h-2.5 w-2.5" />
                                     Por Pagar
                                 </span>

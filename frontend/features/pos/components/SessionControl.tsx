@@ -618,7 +618,7 @@ export const SessionControl = forwardRef<SessionControlHandle, SessionControlPro
                             <p className="text-muted-foreground">{selectedTerminal?.name}</p>
                         </div>
 
-                        <div className="bg-card border rounded-md p-4 space-y-3 shadow-sm">
+                        <div className="bg-card border rounded-md p-4 space-y-3 shadow-card">
                             <div className="flex justify-between items-center text-sm">
                                 <span className="text-muted-foreground">Fondo en Sistema:</span>
                                 <span className="font-medium">{formatCurrency(expectedBalance)}</span>
@@ -866,7 +866,7 @@ export const SessionControl = forwardRef<SessionControlHandle, SessionControlPro
                             />
                         )}
                         {lastAudit && reportType === 'Z' && (
-                            <div className="bg-card border rounded-md p-4 space-y-2 shadow-sm text-sm">
+                            <div className="bg-card border rounded-md p-4 space-y-2 shadow-card text-sm">
                                 <div className="font-bold text-xs uppercase text-muted-foreground">Resultado del Conteo</div>
                                 <div className="flex justify-between">
                                     <span>Esperado:</span>
