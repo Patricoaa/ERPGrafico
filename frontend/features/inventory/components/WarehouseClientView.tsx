@@ -3,7 +3,8 @@
 import { showApiError } from "@/lib/errors"
 import { useEffect, useState, useMemo } from "react"
 import { useRouter, usePathname, useSearchParams } from "next/navigation"
-import {ActionConfirmModal, DataCell, DataTableColumnHeader, DataTableView, EntityCard, createActionsColumn} from '@/components/shared'
+import {ActionConfirmModal, DataCell, DataTableColumnHeader, DataTableView} from '@/components/shared'
+import { warehouseActions, type WarehouseActionsCtx } from "@/features/inventory/warehouseActions"
 import { ColumnDef } from "@tanstack/react-table"
 import { Checkbox } from "@/components/ui/checkbox"
 import { WarehouseDrawer } from "./WarehouseDrawer"
@@ -102,6 +103,11 @@ export function WarehouseClientView({ externalOpen, onExternalOpenChange, create
         }
     }
 
+    const actionsCtx: WarehouseActionsCtx = {
+        onEdit: (id) => openSelected(id),
+        onDelete: (warehouse) => handleDelete(warehouse),
+    }
+
     const columns = useMemo<ColumnDef<Warehouse>[]>(() => [
         {
             id: "select",
@@ -152,15 +158,8 @@ export function WarehouseClientView({ externalOpen, onExternalOpenChange, create
                 </DataCell.Secondary>
             ),
         },
-        createActionsColumn<Warehouse>({
-            renderActions: (item) => (
-                <>
-                    <DataCell.Action action="edit" onClick={() => openSelected(item.id)} />
-                    <DataCell.Action action="delete" onClick={() => handleDelete(item)} />
-                </>
-            ),
-        }),
-    ], [handleDelete])
+        warehouseActions.column(actionsCtx),
+    ], [actionsCtx, handleDelete])
 
     const bulkActions = useMemo<BulkAction<Warehouse>[]>(() => [
         {

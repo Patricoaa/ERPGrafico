@@ -26,7 +26,8 @@ import { ArchivingRestrictionsModal } from "@/features/inventory/components/Arch
 import { DataTableView } from '@/components/shared'
 import type { Product } from "@/types/entities"
 import { DataTableColumnHeader } from '@/components/shared'
-import { DataCell, createActionsColumn, StatCard } from '@/components/shared'
+import { DataCell, StatCard } from '@/components/shared'
+import { subscriptionActions, type SubscriptionActionsCtx } from "@/features/inventory/subscriptionActions"
 import { PageHeader, PageHeaderButton, SmartSearchBar, useSmartSearch, SegmentationBar, useSegmentation } from "@/components/shared"
 import { Restriction } from "@/features/inventory/types"
 import { PageContainer } from "@/components/shared"
@@ -161,6 +162,20 @@ export function SubscriptionsView({ hideHeader = false, externalOpen = false, cr
         return sub.recurrence_display
     }
 
+    const actionsCtx: SubscriptionActionsCtx = {
+        onEdit: (productId) => openEditForm(productId),
+        onPause: (id) => handlePause(id),
+        onResume: (id) => handleResume(id),
+        onViewHistory: (id) => {
+            setCurrentHistorySubscriptionId(id)
+            setIsHistoryOpen(true)
+        },
+        onArchive: (product) => {
+            setCurrentArchivingProduct(product)
+            setIsConfirmModalOpen(true)
+        },
+    }
+
     const columns = useMemo<ColumnDef<Subscription>[]>(() => [
         {
             id: "select",
@@ -274,55 +289,8 @@ export function SubscriptionsView({ hideHeader = false, externalOpen = false, cr
                 </div>
             ),
         },
-        createActionsColumn<Subscription>({
-            renderActions: (sub) => (
-                <>
-                    <DataCell.Action
-                        icon={Pencil}
-                        title="Editar Producto"
-                        onClick={() => openEditForm(sub.product)}
-                    />
-
-                    {sub.status === "ACTIVE" && (
-                        <DataCell.Action
-                            icon={Pause}
-                            title="Pausar Suscripción"
-                            color="text-warning"
-                            onClick={() => handlePause(sub.id)}
-                        />
-                    )}
-                    {sub.status === "PAUSED" && (
-                        <DataCell.Action
-                            icon={Play}
-                            title="Reanudar Suscripción"
-                            color="text-success"
-                            onClick={() => handleResume(sub.id)}
-                        />
-                    )}
-
-                    <DataCell.Action
-                        icon={History}
-                        title="Ver Historial"
-                        color="text-primary"
-                        onClick={() => {
-                            setCurrentHistorySubscriptionId(sub.id)
-                            setIsHistoryOpen(true)
-                        }}
-                    />
-
-                    <DataCell.Action
-                        icon={Archive}
-                        title="Archivar Producto"
-                        className="text-destructive/70 hover:text-destructive"
-                        onClick={() => {
-                            setCurrentArchivingProduct({ id: sub.product, name: sub.product_name })
-                            setIsConfirmModalOpen(true)
-                        }}
-                    />
-                </>
-            ),
-        }),
-    ], [handlePause, handleResume, openEditForm, handleArchive])
+        subscriptionActions.column(actionsCtx),
+    ], [actionsCtx])
 
     const bulkActions = useMemo<BulkAction<Subscription>[]>(() => [
         {
@@ -453,7 +421,7 @@ export function SubscriptionsView({ hideHeader = false, externalOpen = false, cr
                                 description: "Crea una suscripción para gestionar cobros o pagos recurrentes.",
                             }}
                             renderCard={(sub: Subscription) => (
-                                <EntityCard key={sub.id}>
+                                <EntityCard key={sub.id} actions={subscriptionActions.render(sub, actionsCtx)}>
                                     <EntityCard.Header
                                         title={sub.product_name}
                                         subtitle={`${sub.recurrence_display || ''}${sub.amount ? ` - $${sub.amount}` : ''}`}
