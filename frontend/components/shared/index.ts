@@ -126,6 +126,7 @@ export * from './DataTableCells';
 // Utilities
 export * from './DynamicIcon'
 export * from './ErrorBoundary'
+export * from './entity-actions'
 export * from './Numpad'
 
 export * from './PrintableReceipt'

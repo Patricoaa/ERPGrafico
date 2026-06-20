@@ -7,7 +7,6 @@ import { ColumnDef } from "@tanstack/react-table"
 import { ArrowDown, ArrowDownToLine, ArrowUpFromLine, ArrowLeftRight, Scale, Ban, ArrowRight } from "lucide-react"
 
 import { DataCell, createActionsColumn } from '@/components/shared'
-import { cn } from "@/lib/utils"
 import { useGlobalModalActions } from "@/components/providers/GlobalModalProvider"
 
 import { useSearchParams, useRouter, usePathname } from "next/navigation"
@@ -366,23 +365,22 @@ export function TreasuryMovementsClientView({ externalOpen, createAction }: Trea
 
                         return (
                             <EntityCard key={m.id} onClick={() => handleViewDetails(m.id)}>
-                                <div className="flex items-center justify-between">
-                                    <div className="flex items-center gap-2">
-                                        <div className={cn("flex h-8 w-8 shrink-0 items-center justify-center rounded-md", iconStyle)}>
-                                            <Icon className="h-4 w-4" />
+                                <EntityCard.Header
+                                    icon={Icon}
+                                    iconClassName={iconStyle}
+                                    title={m.display_id}
+                                    subtitle={m.payment_method_display}
+                                    trailing={
+                                        <div className="flex items-center gap-3">
+                                            <div className="flex items-center gap-1.5 text-xs font-medium text-foreground/80 whitespace-nowrap">
+                                                <span>{sourceLabel}</span>
+                                                <ArrowRight className="h-3 w-3 shrink-0 text-muted-foreground/40" />
+                                                <span>{destLabel}</span>
+                                            </div>
+                                            <DataCell.Currency value={signedAmount} />
                                         </div>
-                                        <div>
-                                            <div className="text-sm font-semibold whitespace-nowrap">{m.display_id}</div>
-                                            <div className="text-xs text-muted-foreground whitespace-nowrap">{m.payment_method_display}</div>
-                                        </div>
-                                    </div>
-                                    <div className="flex items-center gap-1.5 text-xs font-medium text-foreground/80 whitespace-nowrap">
-                                        <span>{sourceLabel}</span>
-                                        <ArrowRight className="h-3 w-3 shrink-0 text-muted-foreground/40" />
-                                        <span>{destLabel}</span>
-                                    </div>
-                                    <div className="shrink-0"><DataCell.Currency value={signedAmount} /></div>
-                                </div>
+                                    }
+                                />
                             </EntityCard>
                         )
                     }}

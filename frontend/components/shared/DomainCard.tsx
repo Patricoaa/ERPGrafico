@@ -1,7 +1,7 @@
 "use client"
 
 import React, { useMemo } from "react"
-import { Calendar, ArrowRight, ArrowLeft, Monitor, GitBranch } from "lucide-react"
+import { Calendar, ArrowRight, ArrowLeft, Monitor, GitBranch, type LucideIcon } from "lucide-react"
 import { cn, formatPlainDate } from "@/lib/utils"
 import { MoneyDisplay } from "./MoneyDisplay"
 import { EntityCard } from "./EntityCard"
@@ -20,6 +20,10 @@ interface DomainCardProps {
     visibleColumns?: Record<string, boolean>
     /** Whether it is being used in a detail view header */
     isDetailView?: boolean
+    /** Override the auto-derived entity icon */
+    icon?: LucideIcon
+    /** Override the auto-derived icon container styling */
+    iconClassName?: string
 }
 
 /**
@@ -36,10 +40,12 @@ export function DomainCard({
     isHubOpen = false,
     className,
     visibleColumns,
-    isDetailView = false
+    isDetailView = false,
+    icon: iconOverride,
+    iconClassName: iconClassNameOverride
 }: DomainCardProps) {
     const { openHub } = useHubPanel()
-    const Icon = useMemo(() => getEntityIcon(label), [label])
+    const Icon = useMemo(() => iconOverride ?? getEntityIcon(label), [label, iconOverride])
     
     // ─── Identity ─────────────────────────────────────────────────────────────
     const partnerName = getPartnerName(label, data)
@@ -78,7 +84,7 @@ export function DomainCard({
             <EntityCard.Header
                 title={
                     <div className="flex items-center gap-3">
-                        {React.createElement(Icon, { className: cn("h-5 w-5 shrink-0", iconColor) })}
+                        {React.createElement(Icon, { className: cn("h-5 w-5 shrink-0", iconClassNameOverride ?? iconColor) })}
                         <div className="flex flex-col min-w-0">
                             {visibleColumns?.partner_name !== false && (
                                 <span className="font-heading font-extrabold text-base text-foreground truncate leading-tight">
