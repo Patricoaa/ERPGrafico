@@ -91,7 +91,6 @@ function DashboardShellInner({ children }: { children: React.ReactNode }) {
                                     {config.navigation ? (
                                         <HeaderNavDropdowns
                                             navigation={config.navigation}
-                                            iconName={config.iconName}
                                         />
                                     ) : (
                                         <div className="flex flex-col w-min">
