@@ -369,20 +369,22 @@ export function TreasuryMovementsClientView({ externalOpen, createAction }: Trea
 
                         return (
                             <EntityCard key={m.id} onClick={() => handleViewDetails(m.id)}>
-                                <div className="flex items-center gap-3">
-                                    <div className={cn("flex h-8 w-8 shrink-0 items-center justify-center rounded-md", iconStyle)}>
-                                        <Icon className="h-4 w-4" />
+                                <div className="flex items-center justify-between">
+                                    <div className="flex items-center gap-2">
+                                        <div className={cn("flex h-8 w-8 shrink-0 items-center justify-center rounded-md", iconStyle)}>
+                                            <Icon className="h-4 w-4" />
+                                        </div>
+                                        <div>
+                                            <div className="text-sm font-semibold whitespace-nowrap">{m.display_id}</div>
+                                            <div className="text-xs text-muted-foreground whitespace-nowrap">{m.payment_method_display}</div>
+                                        </div>
                                     </div>
-                                    <div className="min-w-0 flex-1">
-                                        <div className="truncate text-sm font-semibold">{m.display_id}</div>
-                                        <div className="truncate text-xs text-muted-foreground">{m.payment_method_display}</div>
-                                    </div>
-                                    <div className="flex items-center gap-1.5 shrink-0 text-xs font-medium text-foreground/80">
-                                        <span className="truncate max-w-28">{sourceLabel}</span>
+                                    <div className="flex items-center gap-1.5 text-xs font-medium text-foreground/80 whitespace-nowrap">
+                                        <span>{sourceLabel}</span>
                                         <ArrowRight className="h-3 w-3 shrink-0 text-muted-foreground/40" />
-                                        <span className="truncate max-w-28">{destLabel}</span>
+                                        <span>{destLabel}</span>
                                     </div>
-                                    <DataCell.Currency value={signedAmount} />
+                                    <div className="shrink-0"><DataCell.Currency value={signedAmount} /></div>
                                 </div>
                             </EntityCard>
                         )
