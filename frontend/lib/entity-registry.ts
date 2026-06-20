@@ -217,6 +217,17 @@ export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
     partnerField: (data) => data.card_account_name || '---',
     viewPolicy: { availableViews: ['list', 'card'], defaultView: 'list', cardComponent: 'entity', gridLayout: 'single-column' },
   },
+  'treasury.treasurymovement': {
+    label: 'treasury.treasurymovement',
+    title: 'Movimiento de Tesorería',
+    titlePlural: 'Movimientos de Tesorería',
+    icon: ArrowLeftRight,
+    iconName: 'ArrowLeftRight',
+    shortTemplate: 'TRX-{id}',
+    listUrl: '/treasury/operaciones/movements',
+    detailUrlPattern: '/treasury/operaciones/movements?selected={id}',
+    viewPolicy: { availableViews: ['list', 'card'], defaultView: 'card', cardComponent: 'entity', gridLayout: 'single-column' },
+  },
   'accounting.fiscalyear': {
     label: 'accounting.fiscalyear',
     title: 'Ejercicio Contable',

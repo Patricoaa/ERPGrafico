@@ -466,6 +466,114 @@ El grupo de botones del toolbar (Sort, Columnas, Vista, Acciones) usa el patrón
 - Botones internos: `rounded-none border-0`
 - El `divide-x` reemplaza `border-r last:border-r-0` en cada hijo
 
+---
+
+## 11. Agrupación de Cards por Fecha — `cardGroupBy` / `createCardGroupView`
+
+### 11.1 Propósito
+
+Agrupar visualmente las tarjetas de una vista `"card"` por fecha, mostrando un **encabezado de grupo** con:
+- Label inteligente de fecha ("Hoy", "Ayer", "lunes", o fecha formateada)
+- Sublabel con la fecha completa (ej: "19 de junio de 2026")
+- **Total acumulado** de montos para el segmento (si se configura `amountField`)
+
+Los encabezados son sticky (`sticky top-0 z-10`) para mantenerse visibles al hacer scroll dentro del grupo.
+
+### 11.2 Activación vía `DataTableView` (camino preferido)
+
+Agregar la prop `cardGroupBy` al `DataTableView`. Funciona con ambos tipos de card:
+
+```tsx
+// entity cardComponent — con renderCard
+<DataTableView
+  entityLabel="treasury.movement"
+  cardGroupBy={{ dateField: 'date', amountField: 'amount' }}
+  renderCard={(m: TreasuryMovement) => (
+    <EntityCard key={m.id} onClick={() => handleViewDetails(m.id)}>
+      <EntityCard.Header title={`Movimiento ${m.display_id}`} subtitle={m.date} trailing={<StatusBadge ... />} />
+      <EntityCard.Body>
+        <EntityCard.Field label="Monto" value={<DataCell.Currency value={m.amount} />} />
+      </EntityCard.Body>
+    </EntityCard>
+  )}
+/>
+
+// domain cardComponent — sin renderCard
+<DataTableView
+  entityLabel="sales.saleorder"
+  cardGroupBy={{ dateField: 'date', amountField: 'total' }}
+/>
+```
+
+### 11.3 Activación vía Factory (uso directo con `renderCustomView`)
+
+Usar `createCardGroupView` directamente para vistas custom:
+
+```tsx
+import { createCardGroupView, createCardLoadingView } from "@/lib/view-helpers"
+
+renderCustomView={isCustomView ? createCardGroupView({
+  renderCard: (data) => <DomainCard label="sales.saleorder" data={data} />,
+  cardGroupBy: { dateField: 'date', amountField: 'total' },
+  gridLayout: 'single-column',
+  emptyState: { context: 'filter' },
+  isFiltered: isFiltered,
+}) : undefined}
+renderLoadingView={isCustomView ? createCardLoadingView('single-column') : undefined}
+```
+
+### 11.4 API del factory
+
+```ts
+function createCardGroupView<TData>(options: {
+  renderCard: (data: TData) => React.ReactNode
+  cardGroupBy: {
+    dateField: string   // campo que contiene la fecha (ISO string o Date)
+    amountField?: string // campo opcional para sumar montos
+  }
+  gridLayout?: 'single-column' | 'multi-column'
+  emptyState?: DataTableEmptyState
+  isFiltered?: boolean
+}): (table: ReactTable<TData>) => React.ReactNode
+```
+
+### 11.5 Comportamiento de labels de fecha
+
+| Condición | Label | Sublabel |
+|-----------|-------|----------|
+| Misma fecha que hoy | `"Hoy"` | Fecha formateada (ej: "19 de junio de 2026") |
+| Día anterior | `"Ayer"` | Fecha formateada |
+| Últimos 7 días | Nombre del día (ej: "lunes") | Fecha formateada |
+| Más de 7 días | Fecha formateada | — (vacío) |
+| Sin fecha (null/vacío) | `"Sin fecha"` | — |
+
+### 11.6 Reglas de renderizado
+
+- Los encabezados usan `sticky top-0 z-10` para mantenerse visibles durante el scroll
+- El total usa `MoneyDisplay` con `showColor={false}` (color neutral)
+- Si no hay `amountField` o el total es 0, se omite la columna de total
+- Cards se renderizan en gap `gap-2` (single-column) o `gap-3` (multi-column)
+- El skeleton de carga usa el mismo `createCardLoadingView` que las vistas no segmentadas
+
+### 11.7 Visual
+
+```
+┌────────────────────────────────────────────────────────┐
+│ ◷  Hoy                           Total    $1.500.000   │  ← sticky header
+│    19 de junio de 2026                                  │
+│ ───────────────────────────────────────────────────────  │
+├────────────────────────────────────────────────────────┤
+│ [EntityCard]                                             │
+│ [EntityCard]                                             │
+├────────────────────────────────────────────────────────┤
+│ ◷  Ayer                          Total     $850.000    │  ← sticky header
+│    18 de junio de 2026                                  │
+│ ───────────────────────────────────────────────────────  │
+├────────────────────────────────────────────────────────┤
+│ [EntityCard]                                             │
+└────────────────────────────────────────────────────────┘
+```
+
 ## Checklist de PR
 
 Cada PR que toque `DataTable` o sus consumidores debe verificar:
@@ -485,3 +593,10 @@ Cada PR que toque `DataTable` o sus consumidores debe verificar:
 - [ ] `variant="compact"` siempre declara `gridTemplate`
 - [ ] `variant="compact"` con `renderRowActions`: `gridTemplate` tiene `columns.length + 1` tracks
 - [ ] Expandable rows nuevos usan `renderSubComponent` o `createExpandableRowView` — **no** `ExpandableTableRow`
+- [ ] Si se usa `cardGroupBy`: `dateField` requerido; `amountField` opcional
+- [ ] `cardGroupBy` compatible con `cardComponent: 'domain'` y `cardComponent: 'entity'`
+- [ ] `createCardGroupView` usa `renderCard` con firma `(data: TData) => ReactNode` (no recibe `row`)
+- [ ] Los grupos se ordenan descendente por fecha (más reciente primero)
+- [ ] Items sin fecha se agrupan al final bajo "Sin fecha"
+- [ ] La agrupación visual (`cardGroupBy`) es ortogonal al filtrado del toolbar (`SegmentationBar`) — uno filtra, el otro organiza
+- [ ] Usar `groupByDate` desde `@/lib/group-by-date` si se necesita agrupación fuera del factory
