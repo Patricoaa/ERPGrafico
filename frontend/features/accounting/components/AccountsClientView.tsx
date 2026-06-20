@@ -6,14 +6,14 @@ import {
 } from "@tanstack/react-table"
 import { ActionConfirmModal, DataTable, StatusBadge } from '@/components/shared'
 import { DataTableColumnHeader } from '@/components/shared'
-import {Book, Trash2, Pencil} from "lucide-react"
 import { IconButton } from "@/components/shared"
 
 import { AccountDrawer } from "@/features/finance/components/AccountDrawer"
 import { LedgerDrawer } from "@/features/accounting/components/LedgerDrawer"
 import { useAccounts } from "@/features/accounting/hooks/useAccounts"
 import { Account } from "@/features/accounting/types"
-import { DataCell, createActionsColumn } from '@/components/shared'
+import { DataCell } from '@/components/shared'
+import { accountActions, type AccountActionsCtx } from './accountActions'
 
 import { useRouter, usePathname, useSearchParams } from "next/navigation"
 import { ChevronRight, ChevronDown } from "lucide-react"
@@ -41,6 +41,7 @@ export function AccountsClientView({ externalOpen, onExternalOpenChange, createA
     const [isFormOpen, setIsFormOpen] = useState(false)
     const [editingAccount, setEditingAccount] = useState<Account | null>(null)
     const [formParentId, setFormParentId] = useState<string | null>(null)
+    const [ledgerTarget, setLedgerTarget] = useState<{ id: number; name: string; code: string } | null>(null)
 
     // Guard for async operations during mount/unmount
     const isMounted = useRef(false)
@@ -122,7 +123,18 @@ export function AccountsClientView({ externalOpen, onExternalOpenChange, createA
         }
     }
 
-    const columns: ColumnDef<Account>[] = React.useMemo(() => [
+    const columns: ColumnDef<Account>[] = React.useMemo(() => {
+        const actionCtx: AccountActionsCtx = {
+            onViewLedger: (account) => {
+                const params = new URLSearchParams(searchParams.toString())
+                params.set('ledger_account', String(account.id))
+                router.push(`${pathname}?${params.toString()}`, { scroll: false })
+                setLedgerTarget({ id: account.id, name: account.name, code: account.code })
+            },
+            onEdit: handleEditAccount,
+            onDelete: (id) => setDeleteTarget(id),
+        }
+        return [
         {
             accessorKey: "code",
             header: ({ column }) => (
@@ -222,37 +234,9 @@ export function AccountsClientView({ externalOpen, onExternalOpenChange, createA
                 </div>
             ),
         },
-        createActionsColumn<Account>({
-            renderActions: (account) => (
-                <>
-                    {account.is_selectable && (
-                        <LedgerDrawer
-                            accountId={account.id}
-                            accountName={account.name}
-                            accountCode={account.code}
-                            trigger={
-                                <DataCell.Action
-                                    icon={Book}
-                                    title="Ver Libro Mayor"
-                                    color="text-primary"
-                                />
-                            }
-                        />
-                    )}
-                    <DataCell.Action
-                        icon={Pencil}
-                        title="Editar"
-                        onClick={() => handleEditAccount(account)}
-                    />
-                    <DataCell.Action
-                        icon={Trash2}
-                        title="Eliminar"
-                        onClick={() => handleDelete(account.id)}
-                    />
-                </>
-            ),
-        }),
-    ], [])
+        accountActions.column(actionCtx),
+        ]
+    }, [])
 
     return (
         <div className="h-full flex flex-col">
@@ -299,6 +283,15 @@ export function AccountsClientView({ externalOpen, onExternalOpenChange, createA
                     }
                 }}
             />
+
+            {ledgerTarget && (
+                <LedgerDrawer
+                    accountId={ledgerTarget.id}
+                    accountName={ledgerTarget.name}
+                    accountCode={ledgerTarget.code}
+                    noTrigger
+                />
+            )}
 
             <ActionConfirmModal
                 open={deleteTarget !== null}
