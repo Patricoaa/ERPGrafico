@@ -1,7 +1,7 @@
 "use client"
 
 import React, { useMemo } from "react"
-import { type Row, type Table as ReactTable } from "@tanstack/react-table"
+import { type Row, type SortingState, type Table as ReactTable } from "@tanstack/react-table"
 import { useViewMode } from "@/hooks/useViewMode"
 import { ENTITY_REGISTRY } from "@/lib/entity-registry"
 import { createDomainCardView, createEntityCardView, createCardLoadingView, createCardGroupView } from "@/lib/view-helpers"
@@ -32,9 +32,15 @@ export function DataTableView<TData, TValue>({
   isSelected,
   isHubOpen,
   cardGroupBy,
+  sortOptions,
   ...dataTableProps
 }: DataTableViewProps<TData, TValue>) {
   const policy = ENTITY_REGISTRY[entityLabel]?.viewPolicy
+
+  const effectiveSortOptions = cardGroupBy ? true : sortOptions
+  const effectiveInitialSorting: SortingState | undefined = cardGroupBy
+    ? [{ id: cardGroupBy.dateField, desc: true }]
+    : undefined
   const { currentView, handleViewChange, viewOptions, isCustomView } = useViewMode(entityLabel)
 
   const internalCustomView = useMemo(() => {
@@ -107,6 +113,8 @@ export function DataTableView<TData, TValue>({
       onViewChange={handleViewChange}
       renderCustomView={internalCustomView}
       renderLoadingView={internalLoadingView}
+      sortOptions={effectiveSortOptions}
+      initialSorting={effectiveInitialSorting}
     />
   )
 }

@@ -3,6 +3,7 @@
 import * as React from "react"
 import {
     ColumnDef,
+    SortingState,
     VisibilityState,
     flexRender,
     getCoreRowModel,
@@ -95,6 +96,7 @@ export interface DataTableProps<TData, TValue> {
     getSubRows?: (originalRow: TData, index: number) => TData[] | undefined
     autoExpand?: boolean
     initialColumnFilters?: { id: string; value: unknown }[]
+    initialSorting?: SortingState
     /** Primary create action rendered at the right-most end of the toolbar, after the button group */
     createAction?: React.ReactNode
     /**
@@ -186,6 +188,7 @@ export function DataTable<TData, TValue>({
     emptyState: customEmptyState,
     isFiltered,
     initialColumnFilters = EMPTY_ARRAY,
+    initialSorting,
     renderRow,
     manualPagination,
     pageCount,
@@ -256,6 +259,7 @@ export function DataTable<TData, TValue>({
             columnVisibility: initialVisibility,
             expanded: autoExpand ? true : {},
             columnFilters: initialColumnFilters,
+            sorting: initialSorting,
         },
         // IMPORTANT: pasar `onPaginationChange: undefined` sobrescribe el default
         // `makeStateUpdater('pagination', table)` de TanStack v8 (merge por spread
