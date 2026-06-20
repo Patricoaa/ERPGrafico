@@ -3,12 +3,8 @@ import { formatCurrency } from "@/lib/money"
 
 import React, { useEffect, useState, useCallback } from "react"
 import {
-    TrendingUp,
     Plus,
-    ArrowRightLeft,
     AlertCircle,
-    Banknote,
-    History,
     MoveHorizontal
 } from "lucide-react"
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
@@ -28,9 +24,9 @@ import {
     SkeletonShell,
         DataTable,
     DataCell,
-    createActionsColumn,
     Chip
 } from "@/components/shared"
+import { partnerActions, type PartnerActionsCtx } from './partnerActions'
 import {
     SubscriptionMovementModal,
     EquityTransferModal,
@@ -166,6 +162,20 @@ export function EquityCompositionTab({
 
     const hasPartners = partners.length > 0
 
+    const partnerActionsCtx: PartnerActionsCtx = {
+        onFormalizeExcessCapital: (id, amount) => {
+            setSubModalParams({ partnerId: id.toString(), amount: amount.toString() })
+            setIsSubscriptionOpen(true)
+        },
+        onPayDividends: (id) => { setSelectedPartnerId(id); setIsDividendOpen(true) },
+        onDistributeEarnings: (id) => { setSelectedPartnerId(id); setIsMobilizeOpen(true) },
+        onViewLedger: (id) => {
+            const params = new URLSearchParams(searchParams.toString())
+            params.set("ledger", id.toString())
+            router.push(`${pathname}?${params.toString()}`, { scroll: false })
+        },
+    }
+
     const columns: ColumnDef<Partner>[] = [
         {
             accessorKey: "name",
@@ -284,59 +294,7 @@ export function EquityCompositionTab({
                 </div>
             )
         },
-        createActionsColumn<Partner>({
-            renderActions: (partner) => {
-                const hasEarnings = parseFloat(partner.partner_earnings_balance) > 0
-                const hasDividends = parseFloat(partner.partner_dividends_payable_balance) > 0
-
-                return (
-                    <>
-                        {parseFloat(partner.partner_excess_capital) > 0 && (
-                            <DataCell.Action
-                                icon={TrendingUp}
-                                title="Formalizar Exceso de Capital"
-                                className="text-warning"
-                                onClick={() => {
-                                    setSubModalParams({
-                                        partnerId: partner.id.toString(),
-                                        amount: partner.partner_excess_capital.toString()
-                                    })
-                                    setIsSubscriptionOpen(true)
-                                }}
-                            />
-                        )}
-                        <DataCell.Action
-                            icon={Banknote}
-                            title="Pagar Dividendos"
-                            className={hasDividends ? "text-primary" : "text-muted-foreground/30 pointer-events-none"}
-                            onClick={() => {
-                                setSelectedPartnerId(partner.id)
-                                setIsDividendOpen(true)
-                            }}
-                        />
-                        <DataCell.Action
-                            icon={ArrowRightLeft}
-                            title="Distribuir Utilidades Retenidas"
-                            className={hasEarnings ? "text-primary/70" : "text-muted-foreground/30 pointer-events-none"}
-                            onClick={() => {
-                                setSelectedPartnerId(partner.id)
-                                setIsMobilizeOpen(true)
-                            }}
-                        />
-                        <DataCell.Action
-                            icon={History}
-                            title="Ver Libro Auxiliar"
-                            className="text-primary font-black"
-                            onClick={() => {
-                                const params = new URLSearchParams(searchParams.toString())
-                                params.set("ledger", partner.id.toString())
-                                router.push(`${pathname}?${params.toString()}`, { scroll: false })
-                            }}
-                        />
-                    </>
-                )
-            }
-        })
+        partnerActions.column(partnerActionsCtx)
     ]
 
     return (
