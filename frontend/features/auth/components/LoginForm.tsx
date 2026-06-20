@@ -58,7 +58,7 @@ export function LoginForm() {
             className="w-full max-w-sm relative z-10"
         >
             {/* Form header */}
-            <div className="mb-8">
+            <div className="mb-8 text-center">
                 <h2 className="font-heading font-black text-2xl uppercase tracking-tighter text-foreground mb-2">
                     Iniciar sesión
                 </h2>
