@@ -97,7 +97,7 @@ export function QuickActionsMenu({ isInboxOpen, onInboxToggle }: QuickActionsMen
 
     return (
         <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 pointer-events-none">
-            <div className="flex items-center gap-2 p-2 bg-sidebar border border-sidebar-border rounded-md shadow-2xl pointer-events-auto">
+            <div className="flex items-center gap-2 p-2 bg-sidebar border border-sidebar-border rounded-md shadow-overlay pointer-events-auto">
                 <TooltipProvider delayDuration={0}>
                     {actions.map((action) => {
                         const isActive = pathname === action.url
@@ -149,7 +149,7 @@ export function QuickActionsMenu({ isInboxOpen, onInboxToggle }: QuickActionsMen
                                     <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-1 h-1 bg-primary-foreground rounded-full" />
                                 )}
                                 {pendingCount > 0 && !isInboxOpen && (
-                                    <span className="absolute -top-1.5 -right-1.5 min-w-[18px] h-[18px] flex items-center justify-center bg-destructive text-destructive-foreground text-[10px] font-bold rounded-full px-1 shadow-sm border border-background">
+                                    <span className="absolute -top-1.5 -right-1.5 min-w-[18px] h-[18px] flex items-center justify-center bg-destructive text-destructive-foreground text-[10px] font-bold rounded-full px-1 shadow-card border border-background">
                                         {pendingCount > 99 ? '99+' : pendingCount}
                                     </span>
                                 )}

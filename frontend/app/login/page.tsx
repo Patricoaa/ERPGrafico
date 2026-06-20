@@ -20,7 +20,7 @@ export default function LoginPage() {
                     transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
                     className="w-full max-w-sm relative z-10 mx-6"
                 >
-                    <div className="rounded-xl border bg-card shadow-sm p-8 canvas-prepress">
+                    <div className="rounded-xl border bg-card shadow-card p-8 canvas-prepress">
                         {/* Logo */}
                         <div className="mb-8 flex flex-col items-center">
                             {logo ? (

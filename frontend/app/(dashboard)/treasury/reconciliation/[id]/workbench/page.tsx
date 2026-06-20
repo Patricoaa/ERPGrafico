@@ -79,7 +79,7 @@ export default function WorkbenchPage({ params }: { params: Promise<{ id: string
                         <Button
                             onClick={() => confirmAction.requestConfirm()}
                             disabled={confirmAction.isConfirming}
-                            className="bg-success hover:bg-success/90 shadow-sm px-5 font-bold text-sm"
+                            className="bg-success hover:bg-success/90 shadow-card px-5 font-bold text-sm"
                         >
                             {confirmAction.isConfirming ? (
                                 <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Finalizando...</>

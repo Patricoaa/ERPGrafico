@@ -245,7 +245,7 @@ export default function AuditPageClient({ initialLogs }: AuditPageClientProps) {
                 {loading ? (
                     <>
                         {[1, 2, 3, 4].map((i) => (
-                            <Card key={i} className="shadow-sm">
+                            <Card key={i} className="shadow-card">
                                 <CardContent className="p-4 flex items-center gap-4">
                                     <Skeleton className="h-10 w-10 rounded-full" />
                                     <div className="space-y-2">
@@ -258,7 +258,7 @@ export default function AuditPageClient({ initialLogs }: AuditPageClientProps) {
                     </>
                 ) : (
                     <>
-                        <Card className="bg-success/10 border-success/20 shadow-sm rounded-sm">
+                        <Card className="bg-success/10 border-success/20 shadow-card rounded-sm">
                             <CardContent className="p-4 flex items-center gap-4">
                                 <div className="p-2 bg-success/10 rounded-sm">
                                     <LogIn className="h-5 w-5 text-success" />
@@ -270,7 +270,7 @@ export default function AuditPageClient({ initialLogs }: AuditPageClientProps) {
                             </CardContent>
                         </Card>
 
-                        <Card className="bg-primary/5 border-primary/10 shadow-sm rounded-sm">
+                        <Card className="bg-primary/5 border-primary/10 shadow-card rounded-sm">
                             <CardContent className="p-4 flex items-center gap-4">
                                 <div className="p-2 bg-primary/10 rounded-sm">
                                     <Activity className="h-5 w-5 text-primary" />
@@ -282,7 +282,7 @@ export default function AuditPageClient({ initialLogs }: AuditPageClientProps) {
                             </CardContent>
                         </Card>
 
-                        <Card className="bg-info/5 border-info/10 shadow-sm rounded-sm">
+                        <Card className="bg-info/5 border-info/10 shadow-card rounded-sm">
                             <CardContent className="p-4 flex items-center gap-4">
                                 <div className="p-2 bg-info/10 rounded-sm">
                                     <Settings className="h-5 w-5 text-info" />
@@ -294,7 +294,7 @@ export default function AuditPageClient({ initialLogs }: AuditPageClientProps) {
                             </CardContent>
                         </Card>
 
-                        <Card className="bg-destructive/5 border-destructive/10 shadow-sm rounded-sm">
+                        <Card className="bg-destructive/5 border-destructive/10 shadow-card rounded-sm">
                             <CardContent className="p-4 flex items-center gap-4">
                                 <div className="p-2 bg-destructive/10 rounded-sm">
                                     <ShieldAlert className="h-5 w-5 text-destructive" />
