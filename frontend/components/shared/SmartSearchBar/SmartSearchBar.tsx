@@ -193,7 +193,7 @@ export function SmartSearchBar({ searchDef, placeholder = 'Buscar...', className
     <div ref={containerRef} className={cn('relative w-full', className)}>
       <div
         className={cn(
-          'group flex items-center gap-1.5 h-9 px-2 py-1 rounded-sm overflow-x-auto scrollbar-hide border border-border/60',
+          'group flex items-center gap-1.5 h-9 px-2 py-1 rounded-sm overflow-x-auto scrollbar-hide',
           'bg-background transition-all',
           'hover:bg-muted/50 hover:text-foreground',
           'focus-within:bg-muted/50',
@@ -287,7 +287,7 @@ export function SmartSearchBar({ searchDef, placeholder = 'Buscar...', className
         <div
           className={cn(
             'absolute z-50 left-0 right-0 mt-1',
-            'bg-popover/95 backdrop-blur-md border border-border/80 rounded-sm shadow-floating',
+            'bg-popover/95 backdrop-blur-md rounded-sm shadow-floating',
             'overflow-hidden',
           )}
           role="listbox"
@@ -343,7 +343,7 @@ export function SmartSearchBar({ searchDef, placeholder = 'Buscar...', className
 
           {/* Dynamic Suggestions for Text Field */}
           {activeSuggestionsUrl && (
-            <div className="p-1 border-t border-border/30">
+            <div className="p-1">
               {suggestionQuery.length < 2 ? (
                 <p className="px-3 py-2 text-[10px] text-muted-foreground/60">Escribe 2 o más caracteres para ver sugerencias</p>
               ) : isSuggestionsLoading ? (
