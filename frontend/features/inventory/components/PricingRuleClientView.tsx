@@ -2,7 +2,7 @@
 
 import { showApiError } from "@/lib/errors"
 
-import React, { useState, useMemo } from "react"
+import React, { useMemo } from "react"
 import { useRouter, usePathname, useSearchParams } from "next/navigation"
 import { ActionConfirmModal, DataTableColumnHeader, DataTableView, EntityCard, StatusBadge } from '@/components/shared'
 import { DataCell } from '@/components/shared'
@@ -13,6 +13,8 @@ import { pricingRuleActions, type PricingRuleActionsCtx } from "@/features/inven
 import { toast } from "sonner"
 
 import { useConfirmAction } from "@/hooks/useConfirmAction"
+import { useSelectedEntity } from "@/hooks/useSelectedEntity"
+import { useEntityRouteActions } from "@/hooks/useEntityRouteActions"
 
 interface PricingRule {
     id: number
@@ -56,19 +58,21 @@ export function PricingRuleClientView({ externalOpen, onExternalOpenChange, crea
     const isFiltered = isTextFiltered || isSegFiltered
     const allFilters = useMemo(() => ({ ...textFilters, ...segFilters }), [textFilters, segFilters])
     const { rules, isLoading, refetch, deletePricingRule } = usePricingRules(allFilters)
-    const [editingRule, setEditingRule] = useState<PricingRule | null>(null)
-    const [isFormOpen, setIsFormOpen] = useState(false)
 
     const router = useRouter()
     const pathname = usePathname()
     const searchParams = useSearchParams()
 
-    const handleCloseModal = () => {
-        setIsFormOpen(false)
-        setEditingRule(null)
-        onExternalOpenChange?.(false)
+    const isCreateModal = searchParams.get("modal") === "new"
+    const { entity: selectedFromUrl, clearSelection } = useSelectedEntity<PricingRule>({ endpoint: '/inventory/pricing-rules' })
+    const { openSelected } = useEntityRouteActions()
 
-        if (externalOpen || searchParams.get("modal")) {
+    const dialogOpen = isCreateModal || !!selectedFromUrl || !!externalOpen
+
+    const handleCloseModal = () => {
+        clearSelection()
+        onExternalOpenChange?.(false)
+        if (searchParams.get("modal")) {
             const params = new URLSearchParams(searchParams.toString())
             params.delete("modal")
             router.replace(`${pathname}?${params.toString()}`, { scroll: false })
@@ -90,7 +94,7 @@ export function PricingRuleClientView({ externalOpen, onExternalOpenChange, crea
     const handleDelete = (id: number) => deleteConfirm.requestConfirm(id)
 
     const actionsCtx: PricingRuleActionsCtx = {
-        onEdit: (item) => { setEditingRule(item); setIsFormOpen(true) },
+        onEdit: (item) => openSelected(item.id),
         onDelete: (id) => handleDelete(id),
     }
 
@@ -220,15 +224,11 @@ export function PricingRuleClientView({ externalOpen, onExternalOpenChange, crea
     return (
         <div className="h-full flex flex-col">
             <PricingRuleDrawer
-                initialData={editingRule || undefined}
-                onSuccess={refetch}
-                open={isFormOpen || !!externalOpen}
+                initialData={isCreateModal ? undefined : (selectedFromUrl ?? undefined)}
+                onSuccess={() => { handleCloseModal(); refetch() }}
+                open={dialogOpen}
                 onOpenChange={(open: boolean) => {
-                    if (!open) {
-                        handleCloseModal()
-                    } else {
-                        setIsFormOpen(true)
-                    }
+                    if (!open) handleCloseModal()
                 }}
             />
 
@@ -251,7 +251,7 @@ export function PricingRuleClientView({ externalOpen, onExternalOpenChange, crea
                         description: "Crea reglas para automatizar descuentos y precios por producto o categoría.",
                     }}
                     renderCard={(rule: PricingRule) => (
-                        <EntityCard onClick={() => { setEditingRule(rule); setIsFormOpen(true) }} actions={pricingRuleActions.render(rule, actionsCtx)}>
+                        <EntityCard onClick={() => openSelected(rule.id)} actions={pricingRuleActions.render(rule, actionsCtx)}>
                             <EntityCard.Header
                                 title={rule.name}
                                 subtitle={rule.product_name ?? rule.category_name ?? 'Sin producto/categoría'}

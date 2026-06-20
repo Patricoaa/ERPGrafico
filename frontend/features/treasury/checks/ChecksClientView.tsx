@@ -1,6 +1,7 @@
 "use client"
 
-import React, { useState, useMemo } from 'react'
+import React, { useMemo, useCallback } from 'react'
+import { useRouter, usePathname, useSearchParams } from 'next/navigation'
 import type { ColumnDef } from '@tanstack/react-table'
 import { AlertTriangle } from 'lucide-react'
 import {
@@ -33,11 +34,33 @@ export function ChecksClientView({ bankId, direction }: ChecksClientViewProps = 
         return Object.keys(p).length ? p : undefined
     }, [bankId, direction])
 
+    const router = useRouter()
+    const pathname = usePathname()
+    const searchParams = useSearchParams()
+
     const { data: checks = [], isLoading } = useChecks(queryParams)
 
     const { clear, bounce, void: voidCheck, markCashed } = useCheckMutations()
 
-    const [depositTarget, setDepositTarget] = useState<Check | null>(null)
+    const selectedId = searchParams.get("selected") ? Number(searchParams.get("selected")) : null
+    const action = searchParams.get("action")
+    const isDepositOpen = !!selectedId && action === "deposit"
+
+    const depositCheck = useMemo(
+        () => isDepositOpen ? checks.find(c => c.id === selectedId) ?? null : null,
+        [selectedId, isDepositOpen, checks],
+    )
+
+    const clearAll = useCallback(() => {
+        const params = new URLSearchParams(searchParams.toString())
+        const changed = params.has("selected") || params.has("action")
+        params.delete("selected")
+        params.delete("action")
+        if (changed) {
+            const query = params.toString()
+            router.replace(query ? `${pathname}?${query}` : pathname, { scroll: false })
+        }
+    }, [router, pathname, searchParams])
 
     const canDo = (action: string, check: Check) =>
         ACTIONABLE_FROM[action]?.includes(check.status) ?? false
@@ -51,7 +74,12 @@ export function ChecksClientView({ bankId, direction }: ChecksClientViewProps = 
     const actionsCtx: CheckActionsCtx = {
         isIssued,
         canDo,
-        onDeposit: setDepositTarget,
+        onDeposit: (check) => {
+            const params = new URLSearchParams(searchParams.toString())
+            params.set("selected", String(check.id))
+            params.set("action", "deposit")
+            router.push(`${pathname}?${params.toString()}`, { scroll: false })
+        },
         onClear: (id) => clear(id),
         onBounce: (id) => bounce({ id }),
         onMarkCashed: (id) => markCashed(id),
@@ -157,13 +185,11 @@ export function ChecksClientView({ bankId, direction }: ChecksClientViewProps = 
                 />
             </div>
 
-            {depositTarget && (
-                <CheckDepositModal
-                    check={depositTarget}
-                    open={!!depositTarget}
-                    onOpenChange={(open) => { if (!open) setDepositTarget(null) }}
-                />
-            )}
+            <CheckDepositModal
+                check={depositCheck!}
+                open={isDepositOpen}
+                onOpenChange={(open) => { if (!open) clearAll() }}
+            />
         </div>
     )
 }

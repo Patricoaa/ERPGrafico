@@ -1,7 +1,7 @@
 "use client"
 
-import React, { useState } from 'react'
-import { useSearchParams } from 'next/navigation'
+import React, { useMemo, useCallback } from 'react'
+import { useRouter, usePathname, useSearchParams } from 'next/navigation'
 import type { ColumnDef } from '@tanstack/react-table'
 import { FileText, AlertTriangle, Plus } from 'lucide-react'
 import {
@@ -19,16 +19,45 @@ import type { BankLoan } from './types'
 
 export function LoansClientView({ bankId: bankIdProp }: { bankId?: number } = {}) {
     const searchParams = useSearchParams()
+    const pathname = usePathname()
+    const router = useRouter()
     const bankId = bankIdProp ?? (searchParams.get("bank") ? Number(searchParams.get("bank")) : undefined)
     const { data: loans = [], isLoading, isError } = useLoans(
         bankId ? { lender: String(bankId) } : undefined,
     )
 
-    const [registerOpen, setRegisterOpen] = useState(false)
-    const [disburseOpen, setDisburseOpen] = useState(false)
-    const [disburseLoan, setDisburseLoan] = useState<BankLoan | null>(null)
-    const [viewLoanId, setViewLoanId] = useState<number | null>(null)
-    const [amortizationLoanId, setAmortizationLoanId] = useState<number | null>(null)
+    const selectedId = searchParams.get("selected") ? Number(searchParams.get("selected")) : null
+    const action = searchParams.get("action")
+    const isCreateOpen = searchParams.get("modal") === "new"
+
+    const isDetailOpen = !!selectedId && (action === "detail" || !action)
+    const isDisburseOpen = !!selectedId && action === "disburse"
+    const isAmortizationOpen = !!selectedId && action === "amortization"
+
+    const selectedLoan = useMemo(
+        () => selectedId ? loans.find(l => l.id === selectedId) ?? null : null,
+        [selectedId, loans],
+    )
+
+    const clearAll = useCallback(() => {
+        const params = new URLSearchParams(searchParams.toString())
+        const changed = params.has("selected") || params.has("action") || params.has("modal")
+        params.delete("selected")
+        params.delete("action")
+        params.delete("modal")
+        if (changed) {
+            const query = params.toString()
+            router.replace(query ? `${pathname}?${query}` : pathname, { scroll: false })
+        }
+    }, [router, pathname, searchParams])
+
+    const openLoan = useCallback((id: number, actionType: string) => {
+        const params = new URLSearchParams(searchParams.toString())
+        params.set("selected", String(id))
+        params.set("action", actionType)
+        params.delete("modal")
+        router.push(`${pathname}?${params.toString()}`, { scroll: false })
+    }, [router, pathname, searchParams])
 
     if (isLoading) {
         return <Skeleton className="h-full" />
@@ -45,16 +74,20 @@ export function LoansClientView({ bankId: bankIdProp }: { bankId?: number } = {}
     }
 
     const registerAction = (
-        <Button onClick={() => setRegisterOpen(true)}>
+        <Button onClick={() => {
+            const params = new URLSearchParams(searchParams.toString())
+            params.set("modal", "new")
+            router.replace(`${pathname}?${params.toString()}`, { scroll: false })
+        }}>
             <Plus className="h-4 w-4 mr-2" />
             Registrar Crédito
         </Button>
     )
 
     const actionsCtx: LoanActionsCtx = {
-        onViewDetail: setViewLoanId,
-        onAmortization: setAmortizationLoanId,
-        onDisburse: (loan) => { setDisburseLoan(loan); setDisburseOpen(true) },
+        onViewDetail: (id) => openLoan(id, "detail"),
+        onAmortization: (id) => openLoan(id, "amortization"),
+        onDisburse: (loan) => openLoan(loan.id, "disburse"),
     }
 
     const columns: ColumnDef<BankLoan>[] = [
@@ -144,7 +177,7 @@ export function LoansClientView({ bankId: bankIdProp }: { bankId?: number } = {}
                         description: 'Registra tu primer crédito bancario para llevar el control de cuotas y amortización.',
                     }}
                     renderCard={(loan: BankLoan) => (
-                        <EntityCard actions={loanActions.render(loan, actionsCtx)}>
+                        <EntityCard onClick={() => openLoan(loan.id, "detail")} actions={loanActions.render(loan, actionsCtx)}>
                             <EntityCard.Header
                                 title={loan.display_id}
                                 subtitle={loan.loan_number || undefined}
@@ -183,27 +216,24 @@ export function LoansClientView({ bankId: bankIdProp }: { bankId?: number } = {}
             </div>
 
             <LoanRegisterDrawer
-                open={registerOpen}
-                onOpenChange={setRegisterOpen}
+                open={isCreateOpen}
+                onOpenChange={(open) => { if (!open) clearAll() }}
                 bankId={bankId}
             />
             <LoanViewDrawer
-                loanId={viewLoanId}
-                open={viewLoanId != null}
-                onOpenChange={(open) => { if (!open) setViewLoanId(null) }}
+                loanId={selectedId}
+                open={isDetailOpen}
+                onOpenChange={(open) => { if (!open) clearAll() }}
             />
             <LoanDisburseDrawer
-                open={disburseOpen}
-                onOpenChange={(open) => {
-                    setDisburseOpen(open)
-                    if (!open) setDisburseLoan(null)
-                }}
-                loan={disburseLoan}
+                open={isDisburseOpen}
+                onOpenChange={(open) => { if (!open) clearAll() }}
+                loan={selectedLoan}
             />
             <LoanDetailModal
-                loanId={amortizationLoanId}
-                open={amortizationLoanId != null}
-                onOpenChange={(open) => { if (!open) setAmortizationLoanId(null) }}
+                loanId={selectedId}
+                open={isAmortizationOpen}
+                onOpenChange={(open) => { if (!open) clearAll() }}
             />
         </div>
     )

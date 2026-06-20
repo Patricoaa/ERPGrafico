@@ -1,7 +1,7 @@
 "use client"
 
 import React, { useState, useEffect } from "react"
-import { useRouter, useSearchParams } from "next/navigation"
+import { useRouter, usePathname, useSearchParams } from "next/navigation"
 import { toast } from "sonner"
 import { AbsenceDrawer } from "@/features/hr"
 import type { Absence, Employee } from "@/types/hr"
@@ -14,6 +14,8 @@ import { ToolbarCreateButton, SegmentationBar, useSegmentation, SmartSearchBar, 
 import { useAbsences, deleteAbsence, getEmployees, absenceActions, type AbsenceActionsCtx } from "@/features/hr"
 import { absenceSegDef } from "../segmentationDef"
 import { absenceSearchDef } from "../searchDef"
+import { useSelectedEntity } from "@/hooks/useSelectedEntity"
+import { useEntityRouteActions } from "@/hooks/useEntityRouteActions"
 
 interface AbsenceManagementViewProps {
     initialAbsences?: Absence[]
@@ -22,6 +24,7 @@ interface AbsenceManagementViewProps {
 export function AbsenceManagementView({ initialAbsences }: AbsenceManagementViewProps) {
     const createAction = <ToolbarCreateButton label="Nueva Inasistencia" href="/hr/absences?modal=new" />
     const router = useRouter()
+    const pathname = usePathname()
     const searchParams = useSearchParams()
     const { filterFn: filterAbsences, isFiltered: isTextFiltered, clearAll: clearText } = useClientSearch<Absence>(absenceSearchDef)
     const basePeriod = { serverParamFrom: 'date_from', serverParamTo: 'date_to' }
@@ -32,17 +35,16 @@ export function AbsenceManagementView({ initialAbsences }: AbsenceManagementView
     const [employees, setEmployees] = useState<Employee[]>([])
 
     const isNewModalOpen = searchParams.get("modal") === "new"
-    const [editingAbsence, setEditingAbsence] = useState<Absence | null>(null)
-    const dialogOpen = isNewModalOpen || !!editingAbsence
+    const { entity: selectedFromUrl, clearSelection } = useSelectedEntity<Absence>({ endpoint: '/hr/absences' })
+    const { openSelected } = useEntityRouteActions()
+    const dialogOpen = isNewModalOpen || !!selectedFromUrl
 
-    const setDialogOpen = (open: boolean) => {
-        if (!open) {
-            setEditingAbsence(null)
-            if (isNewModalOpen) {
-                const params = new URLSearchParams(searchParams.toString())
-                params.delete("modal")
-                router.push(`?${params.toString()}`, { scroll: false })
-            }
+    const handleClose = () => {
+        clearSelection()
+        if (isNewModalOpen) {
+            const params = new URLSearchParams(searchParams.toString())
+            params.delete("modal")
+            router.replace(`${pathname}?${params.toString()}`, { scroll: false })
         }
     }
 
@@ -51,7 +53,7 @@ export function AbsenceManagementView({ initialAbsences }: AbsenceManagementView
     }, [])
 
     const absenceActionsCtx: AbsenceActionsCtx = {
-        onEdit: (absence) => { setEditingAbsence(absence); setDialogOpen(true) },
+        onEdit: (absence) => openSelected(absence.id),
         onDelete: async (id) => {
             if (!confirm("¿Eliminar esta inasistencia?")) return
             try {
@@ -99,10 +101,10 @@ export function AbsenceManagementView({ initialAbsences }: AbsenceManagementView
 
             <AbsenceDrawer
                 open={dialogOpen}
-                onOpenChange={setDialogOpen}
-                absence={editingAbsence}
+                onOpenChange={(open) => { if (!open) handleClose() }}
+                absence={selectedFromUrl}
                 employees={employees}
-                onSaved={() => { setDialogOpen(false); fetchAbsences() }}
+                onSaved={() => { handleClose(); fetchAbsences() }}
             />
 
             <div className="flex-1 min-h-0">
@@ -118,7 +120,7 @@ export function AbsenceManagementView({ initialAbsences }: AbsenceManagementView
                     showReset={isFiltered}
                     onReset={() => { clearText(); clearSeg() }}
                     defaultPageSize={20}
-                    onRowClick={(row: Absence) => { setEditingAbsence(row); setDialogOpen(true) }}
+                    onRowClick={(row: Absence) => openSelected(row.id)}
                     createAction={createAction}
                     isFiltered={isFiltered}
                     emptyState={{
@@ -127,7 +129,7 @@ export function AbsenceManagementView({ initialAbsences }: AbsenceManagementView
                         description: "Las ausencias, permisos y licencias que registres aparecerán aquí.",
                     }}
                     renderCard={(absence: Absence) => (
-                        <EntityCard key={absence.id} onClick={() => { setEditingAbsence(absence); setDialogOpen(true) }} actions={absenceActions.render(absence, absenceActionsCtx)}>
+                        <EntityCard key={absence.id} onClick={() => openSelected(absence.id)} actions={absenceActions.render(absence, absenceActionsCtx)}>
                             <EntityCard.Header
                                 title={absence.employee_name}
                                 subtitle={absence.absence_type_display}

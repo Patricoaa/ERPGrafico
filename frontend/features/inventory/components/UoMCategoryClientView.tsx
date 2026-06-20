@@ -2,7 +2,7 @@
 
 import { showApiError } from "@/lib/errors"
 
-import React, {useState, useMemo} from "react"
+import React, { useMemo } from "react"
 import { useRouter, usePathname, useSearchParams } from "next/navigation"
 // deleteUoMCategory consumido vía useUoMs.
 import { ActionConfirmModal, DataTableColumnHeader, DataTableView, EntityCard } from '@/components/shared'
@@ -16,6 +16,8 @@ import { uomCategoryActions, type UoMCategoryActionsCtx } from "@/features/inven
 import { toast } from "sonner"
 
 import { useConfirmAction } from "@/hooks/useConfirmAction"
+import { useSelectedEntity } from "@/hooks/useSelectedEntity"
+import { useEntityRouteActions } from "@/hooks/useEntityRouteActions"
 
 interface UoMCategory {
     id: number
@@ -36,20 +38,20 @@ export function UoMCategoryClientView({ externalOpen, onExternalOpenChange, crea
     const { categories, isLoading, refetch, deleteUoMCategory } = useUoMs()
     const { filterFn, isFiltered } = useClientSearch<UoMCategory>(uomCategorySearchDef)
 
-    // Modal State
-    const [isModalOpen, setIsModalOpen] = useState(false)
-    const [currentCategory, setCurrentCategory] = useState<Partial<UoMCategory>>({})
-
     const router = useRouter()
     const pathname = usePathname()
     const searchParams = useSearchParams()
 
-    const handleCloseModal = () => {
-        setIsModalOpen(false)
-        setCurrentCategory({})
-        onExternalOpenChange?.(false)
+    const isCreateModal = searchParams.get("modal") === "new"
+    const { entity: selectedFromUrl, clearSelection } = useSelectedEntity<UoMCategory>({ endpoint: '/inventory/uom-categories' })
+    const { openSelected } = useEntityRouteActions()
 
-        if (externalOpen || searchParams.get("modal")) {
+    const dialogOpen = isCreateModal || !!selectedFromUrl || !!externalOpen
+
+    const handleCloseModal = () => {
+        clearSelection()
+        onExternalOpenChange?.(false)
+        if (searchParams.get("modal")) {
             const params = new URLSearchParams(searchParams.toString())
             params.delete("modal")
             router.replace(`${pathname}?${params.toString()}`, { scroll: false })
@@ -57,8 +59,8 @@ export function UoMCategoryClientView({ externalOpen, onExternalOpenChange, crea
     }
 
     const handleSave = async (category?: UoMCategory) => {
-        setIsModalOpen(false)
         if (category) {
+            handleCloseModal()
             refetch()
         }
     }
@@ -86,7 +88,7 @@ export function UoMCategoryClientView({ externalOpen, onExternalOpenChange, crea
     const handleDelete = (id: number) => deleteConfirm.requestConfirm(id)
 
     const actionsCtx: UoMCategoryActionsCtx = {
-        onEdit: (item) => { setCurrentCategory(item); setIsModalOpen(true) },
+        onEdit: (item) => openSelected(item.id),
         onDelete: (id) => handleDelete(id),
     }
 
@@ -159,7 +161,7 @@ export function UoMCategoryClientView({ externalOpen, onExternalOpenChange, crea
                         description: "Agrupa unidades de medida relacionadas (peso, longitud, volumen…).",
                     }}
                     renderCard={(cat: UoMCategory) => (
-                        <EntityCard onClick={() => { setCurrentCategory(cat); setIsModalOpen(true) }} actions={uomCategoryActions.render(cat, actionsCtx)}>
+                        <EntityCard onClick={() => openSelected(cat.id)} actions={uomCategoryActions.render(cat, actionsCtx)}>
                             <EntityCard.Header title={cat.name} />
                         </EntityCard>
                     )}
@@ -167,15 +169,11 @@ export function UoMCategoryClientView({ externalOpen, onExternalOpenChange, crea
             </div>
 
             <UoMCategoryDrawer
-                open={isModalOpen || !!externalOpen}
+                open={dialogOpen}
                 onOpenChange={(open) => {
-                    if (!open) {
-                        handleCloseModal()
-                    } else {
-                        setIsModalOpen(true)
-                    }
+                    if (!open) handleCloseModal()
                 }}
-                initialData={currentCategory.id ? currentCategory : undefined}
+                initialData={isCreateModal ? undefined : (selectedFromUrl ?? undefined)}
                 onSuccess={handleSave}
             />
 

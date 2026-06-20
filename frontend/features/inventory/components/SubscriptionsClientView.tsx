@@ -2,7 +2,7 @@
 
 import { showApiError } from "@/lib/errors"
 
-import { useState, useMemo, useCallback } from "react"
+import { useState, useMemo, useCallback, useEffect } from "react"
 import { useRouter, usePathname, useSearchParams } from "next/navigation"
 import {
     ColumnDef
@@ -63,15 +63,9 @@ export function SubscriptionsClientView({ hideHeader = false, externalOpen = fal
     const { data: stats } = useSubscriptionStats<Stats>()
     const { updateProduct, fetchProductById } = useProducts()
 
-    // Form & Actions state
-    const [isFormOpen, setIsFormOpen] = useState(false)
-    const [editingProduct, setEditingProduct] = useState<Product | null>(null)
+    // Archive confirmation state (local — not URL-driven, it's a transient flow)
     const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false)
     const [currentArchivingProduct, setCurrentArchivingProduct] = useState<{ id: number, name: string } | null>(null)
-    const [isHistoryOpen, setIsHistoryOpen] = useState(false)
-    const [currentHistorySubscriptionId, setCurrentHistorySubscriptionId] = useState<number | null>(null)
-
-    // Restrictions state
     const [restrictions, setRestrictions] = useState<Restriction[]>([])
     const [isRestrictionsDialogOpen, setIsRestrictionsDialogOpen] = useState(false)
     const [isRetrying, setIsRetrying] = useState(false)
@@ -80,16 +74,50 @@ export function SubscriptionsClientView({ hideHeader = false, externalOpen = fal
     const pathname = usePathname()
     const searchParams = useSearchParams()
 
-    const handleCloseModal = () => {
-        setIsFormOpen(false)
-        setEditingProduct(null)
+    // URL-driven state
+    const selectedId = searchParams.get("selected") ? Number(searchParams.get("selected")) : null
+    const action = searchParams.get("action")
+    const isCreateOpen = searchParams.get("modal") === "new" || !!externalOpen
+    const isEditOpen = isCreateOpen || (!!selectedId && action === "edit")
+    const isHistoryOpen = !!selectedId && action === "history"
 
-        if (externalOpen || searchParams.get("modal")) {
-            const params = new URLSearchParams(searchParams.toString())
-            params.delete("modal")
-            router.replace(`${pathname}?${params.toString()}`, { scroll: false })
+    // Find subscription from the local list
+    const selectedSubscription = useMemo(
+        () => selectedId && (action === "edit" || action === "history")
+            ? subscriptions.find(s => s.id === selectedId) ?? null
+            : null,
+        [selectedId, action, subscriptions],
+    )
+
+    // Fetch product for edit mode
+    const [editingProduct, setEditingProduct] = useState<Product | null>(null)
+    useEffect(() => {
+        if (selectedSubscription && action === "edit") {
+            fetchProductById(selectedSubscription.product).then((p) => setEditingProduct(p as Product)).catch(() => {})
+        } else if (!isEditOpen) {
+            setEditingProduct(null)
         }
-    }
+    }, [selectedSubscription, action, fetchProductById, isEditOpen])
+
+    const clearAll = useCallback(() => {
+        const params = new URLSearchParams(searchParams.toString())
+        const changed = params.has("selected") || params.has("action") || params.has("modal")
+        params.delete("selected")
+        params.delete("action")
+        params.delete("modal")
+        if (changed) {
+            const query = params.toString()
+            router.replace(query ? `${pathname}?${query}` : pathname, { scroll: false })
+        }
+    }, [router, pathname, searchParams])
+
+    const openSubscription = useCallback((id: number, actionType: string) => {
+        const params = new URLSearchParams(searchParams.toString())
+        params.set("selected", String(id))
+        params.set("action", actionType)
+        params.delete("modal")
+        router.push(`${pathname}?${params.toString()}`, { scroll: false })
+    }, [router, pathname, searchParams])
 
     // stats viene reactivo de useSubscriptionStats (declarado al inicio).
     // pause/resume invalidan SUBSCRIPTIONS + PRODUCTS_KEYS automáticamente.
@@ -132,18 +160,6 @@ export function SubscriptionsClientView({ hideHeader = false, externalOpen = fal
         }
     }, [currentArchivingProduct, isRestrictionsDialogOpen, updateProduct])
 
-    const openEditForm = useCallback(async (productId: number) => {
-        try {
-            // fetchProductById usa cache de TanStack Query si está fresh, fetch en otro caso.
-            const product = await fetchProductById(productId)
-            setEditingProduct(product as Product)
-            setIsFormOpen(true)
-        } catch (error) {
-            console.error("Error fetching product details:", error)
-            showApiError(error, "Error al cargar detalles del producto")
-        }
-    }, [fetchProductById])
-
     const handleResume = useCallback(async (id: number) => {
         try {
             await resumeSubscription(id)
@@ -163,13 +179,13 @@ export function SubscriptionsClientView({ hideHeader = false, externalOpen = fal
     }
 
     const actionsCtx: SubscriptionActionsCtx = {
-        onEdit: (productId) => openEditForm(productId),
+        onEdit: (productId) => {
+            const sub = subscriptions.find(s => s.product === productId)
+            if (sub) openSubscription(sub.id, "edit")
+        },
         onPause: (id) => handlePause(id),
         onResume: (id) => handleResume(id),
-        onViewHistory: (id) => {
-            setCurrentHistorySubscriptionId(id)
-            setIsHistoryOpen(true)
-        },
+        onViewHistory: (id) => openSubscription(id, "history"),
         onArchive: (product) => {
             setCurrentArchivingProduct(product)
             setIsConfirmModalOpen(true)
@@ -351,8 +367,9 @@ export function SubscriptionsClientView({ hideHeader = false, externalOpen = fal
                     titleActions={
                         <PageHeaderButton
                             onClick={() => {
-                                setEditingProduct(null)
-                                setIsFormOpen(true)
+                                const params = new URLSearchParams(searchParams.toString())
+                                params.set("modal", "new")
+                                router.replace(`${pathname}?${params.toString()}`, { scroll: false })
                             }}
                             iconName="plus"
                             circular
@@ -421,7 +438,7 @@ export function SubscriptionsClientView({ hideHeader = false, externalOpen = fal
                                 description: "Crea una suscripción para gestionar cobros o pagos recurrentes.",
                             }}
                             renderCard={(sub: Subscription) => (
-                                <EntityCard key={sub.id} actions={subscriptionActions.render(sub, actionsCtx)}>
+                                <EntityCard key={sub.id} onClick={() => openSubscription(sub.id, "edit")} actions={subscriptionActions.render(sub, actionsCtx)}>
                                     <EntityCard.Header
                                         title={sub.product_name}
                                         subtitle={`${sub.recurrence_display || ''}${sub.amount ? ` - $${sub.amount}` : ''}`}
@@ -442,16 +459,13 @@ export function SubscriptionsClientView({ hideHeader = false, externalOpen = fal
             </div>
 
             <ProductDrawer
-                open={isFormOpen || !!externalOpen}
+                open={isEditOpen}
                 onOpenChange={(open) => {
-                    if (!open) {
-                        handleCloseModal()
-                    } else {
-                        setIsFormOpen(true)
-                    }
+                    if (!open) clearAll()
                 }}
                 initialData={editingProduct || undefined}
                 onSuccess={() => {
+                    clearAll()
                     fetchSubscriptions()
                 }}
                 lockedType="SUBSCRIPTION"
@@ -482,8 +496,8 @@ export function SubscriptionsClientView({ hideHeader = false, externalOpen = fal
 
             <SubscriptionHistoryModal
                 open={isHistoryOpen}
-                onOpenChange={setIsHistoryOpen}
-                subscriptionId={currentHistorySubscriptionId}
+                onOpenChange={(open) => { if (!open) clearAll() }}
+                subscriptionId={selectedSubscription?.id ?? null}
             />
 
             <ArchivingRestrictionsModal
