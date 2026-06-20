@@ -7,8 +7,8 @@ import type { Employee } from "@/types/hr"
 import { ColumnDef } from "@tanstack/react-table"
 import { DataTableView, EntityCard, StatusBadge } from '@/components/shared'
 import { DataTableColumnHeader } from '@/components/shared'
-import { createActionsColumn, DataCell } from '@/components/shared'
-import { Pencil } from "lucide-react"
+import { DataCell } from '@/components/shared'
+import { employeeActions, type EmployeeActionsCtx } from "@/features/hr/employeeActions"
 import { ToolbarCreateButton, SmartSearchBar, useSmartSearch, SegmentationBar, useSegmentation } from "@/components/shared"
 import { useSelectedEntity } from "@/hooks/useSelectedEntity"
 import { useEmployees } from "@/features/hr"
@@ -47,6 +47,14 @@ export function EmployeeListView({ initialEmployees }: EmployeeListViewProps) {
                 router.push(`?${params.toString()}`, { scroll: false })
             }
         }
+    }
+
+    const actionsCtx: EmployeeActionsCtx = {
+        onEdit: (id) => {
+            const params = new URLSearchParams(searchParams.toString())
+            params.set('selected', String(id))
+            router.push(`${pathname}?${params.toString()}`, { scroll: false })
+        },
     }
 
     const columns: ColumnDef<Employee>[] = [
@@ -125,20 +133,7 @@ export function EmployeeListView({ initialEmployees }: EmployeeListViewProps) {
                 <DataCell.Status status={row.getValue("status") as string} label={row.original.status_display} />
             ),
         },
-        createActionsColumn<Employee>({
-            renderActions: (employee) => (
-                <DataCell.Action
-                    icon={Pencil}
-                    title="Editar Empleado"
-                    onClick={(e) => {
-                        e.stopPropagation();
-                        const params = new URLSearchParams(searchParams.toString())
-                        params.set('selected', String(employee.id))
-                        router.push(`${pathname}?${params.toString()}`, { scroll: false })
-                    }}
-                />
-            )
-        }),
+        employeeActions.column(actionsCtx),
     ]
 
     return (
@@ -168,7 +163,7 @@ export function EmployeeListView({ initialEmployees }: EmployeeListViewProps) {
                             const params = new URLSearchParams(searchParams.toString())
                             params.set('selected', String(emp.id))
                             router.push(`${pathname}?${params.toString()}`, { scroll: false })
-                        }}>
+                        }} actions={employeeActions.render(emp, actionsCtx)}>
                             <EntityCard.Header
                                 title={emp.contact_detail?.name || "Sin nombre"}
                                 subtitle={emp.contact_detail?.tax_id || emp.display_id}

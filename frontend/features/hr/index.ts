@@ -1,4 +1,5 @@
 export * from './components'
+export * from './employeeActions'
 export * from './api/hrApi'
 export * from './hooks/usePayrolls'
 export { useAbsences } from './hooks/useAbsences'

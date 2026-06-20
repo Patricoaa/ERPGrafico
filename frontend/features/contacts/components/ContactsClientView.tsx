@@ -9,7 +9,8 @@ import { formatRUT } from "@/lib/utils/format"
 import { DataTableView } from '@/components/shared'
 import { DataTableColumnHeader } from '@/components/shared'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
-import { DataCell, createActionsColumn, Chip, EntityCard } from '@/components/shared'
+import { DataCell, Chip, EntityCard } from '@/components/shared'
+import { contactActions, type ContactActionsCtx } from "@/features/contacts/contactActions"
 import { useContacts, type Contact } from "@/features/contacts"
 import { LoadingFallback, SmartSearchBar, SegmentationBar, StatusBadge, useSmartSearch, useSegmentation } from "@/components/shared"
 import { contactSearchDef } from "@/features/contacts/searchDef"
@@ -103,6 +104,11 @@ export function ContactsClientView({ isNewModalOpen = false, createAction, initi
 
     const getContactTypeBadge = (type: string) => {
         return <StatusBadge status={type} size="sm" />
+    }
+
+    const actionsCtx: ContactActionsCtx = {
+        onEdit: (id) => openSelected(id),
+        onDelete: (contact) => handleDelete(contact),
     }
 
     const columns: ColumnDef<Contact>[] = [
@@ -206,22 +212,7 @@ export function ContactsClientView({ isNewModalOpen = false, createAction, initi
             header: ({ column }) => <DataTableColumnHeader column={column} title="Teléfono" className="justify-center" />,
             cell: ({ row }) => <DataCell.Text>{row.getValue("phone") || "-"}</DataCell.Text>,
         },
-        createActionsColumn<Contact>({
-            renderActions: (contact) => (
-                <>
-                    <DataCell.Action
-                        action="edit"
-                        onClick={() => openSelected(contact.id)}
-                    />
-                    {!contact.is_default_customer && !contact.is_default_vendor && (
-                        <DataCell.Action
-                            action="delete"
-                            onClick={() => handleDelete(contact)}
-                        />
-                    )}
-                </>
-            ),
-        }),
+        contactActions.column(actionsCtx),
     ]
 
     return (
@@ -246,7 +237,7 @@ export function ContactsClientView({ isNewModalOpen = false, createAction, initi
                             description: "Crea tu primer cliente o proveedor para empezar a operar.",
                         }}
                         renderCard={(contact: Contact) => (
-                            <EntityCard key={contact.id} onClick={() => openSelected(contact.id)}>
+                            <EntityCard key={contact.id} onClick={() => openSelected(contact.id)} actions={contactActions.render(contact, actionsCtx)}>
                                 <EntityCard.Header
                                     title={contact.name}
                                     subtitle={contact.tax_id || 'S/Rut'}
