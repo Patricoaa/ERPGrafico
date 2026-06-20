@@ -16,11 +16,11 @@ import { useSalaryAdvances, salaryAdvanceActions, type SalaryAdvanceActionsCtx }
 import { salaryAdvanceSegDef } from "../segmentationDef"
 import { salaryAdvanceSearchDef } from "../searchDef"
 
-interface SalaryAdvanceViewProps {
+interface SalaryAdvanceClientViewProps {
     initialAdvances?: SalaryAdvance[]
 }
 
-export function SalaryAdvanceView({ initialAdvances }: SalaryAdvanceViewProps) {
+export function SalaryAdvanceClientView({ initialAdvances }: SalaryAdvanceClientViewProps) {
     const createAction = <ToolbarCreateButton label="Nuevo Anticipo" href="/hr/advances?modal=new" />
     const searchParams = useSearchParams()
     const { filterFn: filterAdvances, isFiltered: isTextFiltered, clearAll: clearText } = useClientSearch<SalaryAdvance>(salaryAdvanceSearchDef)

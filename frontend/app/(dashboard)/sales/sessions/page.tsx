@@ -1,5 +1,5 @@
 import { Metadata } from "next"
-import { POSSessionsView } from "@/features/sales"
+import { POSSessionsClientView } from "@/features/sales"
 
 export const metadata: Metadata = {
     title: "Historial de Sesiones | ERPGrafico",
@@ -9,7 +9,7 @@ export const metadata: Metadata = {
 export default function POSSessionsPage() {
     return (
         <div className="h-full flex flex-col">
-            <POSSessionsView hideHeader />
+            <POSSessionsClientView hideHeader />
         </div>
     )
 }

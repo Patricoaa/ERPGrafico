@@ -14,7 +14,7 @@
  *   - /accounting/accounts/[id]/ledger  → Libro Mayor por cuenta (vista de datos)
  *   - /treasury/reconciliation/[id]     → Vista de reconciliación (UI propia)
  *   - /treasury/reconciliation/[id]/workbench → Mesa de Conciliación (UI compleja)
- *   - /finances/budgets/[id]            → BudgetDetailView (UI propia preexistente)
+ *   - /finances/budgets/[id]            → BudgetDetail (UI propia preexistente)
  *   - /hr/payrolls/[id]                 → PayrollDetailContent (UI propia preexistente)
  *   - /billing/invoices/[id]            → Router client-side que split por is_sale_document
  *

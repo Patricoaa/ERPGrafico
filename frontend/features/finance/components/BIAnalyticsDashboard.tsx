@@ -15,7 +15,7 @@ import { format } from "date-fns";
 
 import { PageContainer } from "@/components/shared"
 
-interface BIAnalyticsViewProps {
+interface BIAnalyticsDashboardProps {
     date?: DateRange;
 }
 
@@ -47,7 +47,7 @@ interface BIAnalyticsData {
     };
 }
 
-export const BIAnalyticsView: React.FC<BIAnalyticsViewProps> = ({ date }) => {
+export const BIAnalyticsDashboard: React.FC<BIAnalyticsDashboardProps> = ({ date }) => {
     const params: Record<string, unknown> = {
         is_async: true,
         ...(date?.to && { end_date: format(date.to, 'yyyy-MM-dd') }),

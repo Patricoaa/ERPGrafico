@@ -1,5 +1,5 @@
-import { StatementsView } from "@/features/finance"
+import { FinancialStatementsReport } from "@/features/finance"
 
 export default async function StatementsCfPage() {
-    return <StatementsView activeTab="cf" />
+    return <FinancialStatementsReport activeTab="cf" />
 }

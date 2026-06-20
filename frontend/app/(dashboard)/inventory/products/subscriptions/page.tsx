@@ -1,4 +1,4 @@
-import { SubscriptionsView } from "@/features/inventory"
+import { SubscriptionsClientView } from "@/features/inventory"
 import { ToolbarCreateButton } from "@/components/shared"
 
 interface PageProps {
@@ -10,7 +10,7 @@ export default async function ProductsSubscriptionsPage({ searchParams }: PagePr
     const createAction = <ToolbarCreateButton label="Nueva Suscripción" href="/inventory/products/subscriptions?modal=new" />
 
     return (
-        <SubscriptionsView
+        <SubscriptionsClientView
             hideHeader
             externalOpen={modal === 'new'}
             createAction={createAction}

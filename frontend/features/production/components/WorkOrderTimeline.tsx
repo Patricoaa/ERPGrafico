@@ -30,7 +30,7 @@ function startOfDay(d: Date) {
     return new Date(d.getFullYear(), d.getMonth(), d.getDate())
 }
 
-export function WorkOrderTimelineView({ orders, onManage, isLoading }: TimelineProps) {
+export function WorkOrderTimeline({ orders, onManage, isLoading }: TimelineProps) {
     const columns: Column[] = useMemo(() => {
         const today = startOfDay(new Date())
         const tomorrow = new Date(today); tomorrow.setDate(today.getDate() + 1)

@@ -66,13 +66,13 @@ const PAYMENT_TYPE_META: Record<string, PaymentTypeMeta> = {
     },
 }
 
-interface PosTerminalListProps {
+interface PosTerminalClientViewProps {
     externalOpen?: boolean
     onExternalOpenChange?: (open: boolean) => void
     createAction?: React.ReactNode
 }
 
-export function PosTerminalList({ externalOpen, onExternalOpenChange, createAction }: PosTerminalListProps) {
+export function PosTerminalClientView({ externalOpen, onExternalOpenChange, createAction }: PosTerminalClientViewProps) {
     const { terminals, toggleActive, deleteTerminal, refetch, isLoading } = usePosTerminals()
     const [dialogOpen, setDialogOpen] = useState(false)
     const [editingTerminal, setEditingTerminal] = useState<Terminal | null>(null)
@@ -272,4 +272,4 @@ export function PosTerminalList({ externalOpen, onExternalOpenChange, createActi
     )
 }
 
-export default PosTerminalList
+export default PosTerminalClientView

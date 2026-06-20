@@ -1,6 +1,6 @@
 import type { Metadata } from "next"
 import { ToolbarCreateButton } from '@/components/shared'
-import { PaymentHardwareManagement } from "@/features/treasury"
+import { PaymentHardwareClientView } from "@/features/treasury"
 
 export const metadata: Metadata = {
     title: "Proveedores | ERPGrafico",
@@ -17,7 +17,7 @@ export default async function TerminalCobroProvidersPage({ searchParams }: PageP
     )
 
     return (
-        <PaymentHardwareManagement
+        <PaymentHardwareClientView
             activeTab="providers"
             externalProviderOpen={modal === 'provider'}
             createAction={createAction}

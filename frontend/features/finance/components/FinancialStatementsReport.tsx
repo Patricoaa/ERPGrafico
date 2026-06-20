@@ -99,13 +99,13 @@ function ReportHeader({ title, dateRange, compDateRange, showComparison, headerF
     )
 }
 
-interface StatementsViewProps {
+interface FinancialStatementsReportProps {
     activeTab: string
 }
 
 import { useStatements } from "@/features/finance/hooks/useStatements"
 
-export function StatementsView({ activeTab }: StatementsViewProps) {
+export function FinancialStatementsReport({ activeTab }: FinancialStatementsReportProps) {
     const [showComparison, setShowComparison] = useState(false)
     const { open: mappingOpen, onOpenChange: setMappingOpen, resolvedMappingType, openDrawer: openMappingDrawer } = useMappingDrawer(
         activeTab === 'pl' ? 'is' : activeTab === 'cf' ? 'cf' : 'bs'

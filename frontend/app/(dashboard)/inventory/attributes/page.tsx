@@ -1,4 +1,4 @@
-import { AttributeManager } from "@/features/inventory"
+import { AttributesClientView } from "@/features/inventory"
 import { ToolbarCreateButton } from '@/components/shared'
 
 interface PageProps {
@@ -11,7 +11,7 @@ export default async function AttributesPage({ searchParams }: PageProps) {
 
     return (
         <div className="h-full flex flex-col">
-            <AttributeManager
+            <AttributesClientView
                 externalOpen={isModalOpen}
                 createAction={
                     <ToolbarCreateButton

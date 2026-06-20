@@ -1,5 +1,5 @@
 import type { Metadata } from "next"
-import { BudgetsListView } from "@/features/finance"
+import { BudgetsClientView } from "@/features/finance"
 import { ToolbarCreateButton } from '@/components/shared'
 
 export const metadata: Metadata = {
@@ -16,5 +16,5 @@ export default async function BudgetsListPage({ searchParams }: PageProps) {
         <ToolbarCreateButton label="Nuevo Presupuesto" href="/finances/budgets/list?modal=new" />
     )
 
-    return <BudgetsListView externalOpen={modal === 'new'} createAction={createAction} />
+    return <BudgetsClientView externalOpen={modal === 'new'} createAction={createAction} />
 }

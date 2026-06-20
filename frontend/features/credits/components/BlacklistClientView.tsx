@@ -189,7 +189,7 @@ function BlacklistContactPanel({ contact, onRefresh }: { contact: CreditContact,
     )
 }
 
-export function BlacklistView() {
+export function BlacklistClientView() {
     const { contacts: rawContacts, isLoading: loading, refetch: fetchData } = useBlacklistedPortfolio()
     const { filterFn } = useClientSearch<CreditContact>(creditContactSearchDef)
     const { filters: segFilters } = useSegmentation(creditContactSegDef)

@@ -3,7 +3,7 @@
 import { Skeleton } from '@/components/shared'
 import { useAllBanksOverview } from '../hooks/useAllBanksOverview'
 
-export function BankCenterAllView() {
+export function BankCenterAllDashboard() {
     const { overviews, isLoading } = useAllBanksOverview()
 
     if (isLoading) {

@@ -23,13 +23,13 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip
 import { useSelectedEntity } from "@/hooks/useSelectedEntity"
 
 
-interface TreasuryAccountsViewProps {
+interface TreasuryAccountsClientViewProps {
     activeTab: string
     externalOpen?: boolean
     createAction?: React.ReactNode
 }
 
-export const TreasuryAccountsView: React.FC<TreasuryAccountsViewProps> = ({ activeTab, externalOpen, createAction }) => {
+export const TreasuryAccountsClientView: React.FC<TreasuryAccountsClientViewProps> = ({ activeTab, externalOpen, createAction }) => {
     const { openEntity } = useGlobalModalActions()
     const { filters: textFilters, isFiltered: isTextFiltered, clearAll: clearText } = useSmartSearch(treasuryAccountSearchDef)
     const { filters: segFilters, isFiltered: isSegFiltered, clearAll: clearSeg } = useSegmentation(treasuryAccountSegDef)
@@ -366,4 +366,4 @@ export const TreasuryAccountsView: React.FC<TreasuryAccountsViewProps> = ({ acti
     )
 }
 
-export default TreasuryAccountsView
+export default TreasuryAccountsClientView

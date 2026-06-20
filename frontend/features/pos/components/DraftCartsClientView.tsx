@@ -57,7 +57,7 @@ interface LockInfo {
     isOwnLock: boolean
 }
 
-interface DraftCartsListProps {
+interface DraftCartsClientViewProps {
     posSessionId: number | null
     onLoadDraft: (draft: DraftCart | SyncDraft) => void
     onDraftDeleted?: () => void
@@ -70,7 +70,7 @@ interface DraftCartsListProps {
     getLockInfo?: (draftId: number) => LockInfo
 }
 
-export function DraftCartsList({
+export function DraftCartsClientView({
     posSessionId,
     onLoadDraft,
     onDraftDeleted,
@@ -79,7 +79,7 @@ export function DraftCartsList({
     showTrigger = true,
     syncDrafts,
     getLockInfo,
-}: DraftCartsListProps) {
+}: DraftCartsClientViewProps) {
     const [drafts, setDrafts] = useState<DraftCart[]>([])
     const [loading, setLoading] = useState(false)
     const [internalOpen, setInternalOpen] = useState(false)

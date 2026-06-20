@@ -4,16 +4,16 @@ import React, { useState, useEffect, lazy, Suspense } from "react"
 import { Tabs, TabsContent } from "@/components/ui/tabs"
 import { CardSkeleton, SkeletonShell, FadeIn } from "@/components/shared"
 
-const PosTerminalList = lazy(() => import("@/features/sales/components/PosTerminalList"))
-const POSSessionsView = lazy(() => import("@/features/sales/components/POSSessionsView").then(m => ({ default: m.POSSessionsView })))
+const PosTerminalClientView = lazy(() => import("@/features/sales/components/PosTerminalClientView"))
+const POSSessionsClientView = lazy(() => import("@/features/sales/components/POSSessionsClientView").then(m => ({ default: m.POSSessionsClientView })))
 
-interface SalesPosViewProps {
+interface SalesPosLayoutProps {
     activeTab: string
     modal?: string
     createAction?: React.ReactNode
 }
 
-export const SalesPosView: React.FC<SalesPosViewProps> = ({ activeTab, modal, createAction }) => {
+export const SalesPosLayout: React.FC<SalesPosLayoutProps> = ({ activeTab, modal, createAction }) => {
     const [isTerminalModalOpen, setIsTerminalModalOpen] = useState(false)
 
     useEffect(() => {
@@ -27,7 +27,7 @@ export const SalesPosView: React.FC<SalesPosViewProps> = ({ activeTab, modal, cr
             <TabsContent value="cajas" className="mt-0 outline-none flex-1 min-h-0">
                 <Suspense fallback={<CardSkeleton variant="grid" count={3} />}>
                     <FadeIn className="h-full">
-                        <PosTerminalList
+                        <PosTerminalClientView
                             externalOpen={isTerminalModalOpen}
                             onExternalOpenChange={setIsTerminalModalOpen}
                             createAction={activeTab === "cajas" ? createAction : undefined}
@@ -39,7 +39,7 @@ export const SalesPosView: React.FC<SalesPosViewProps> = ({ activeTab, modal, cr
             <TabsContent value="sessions" className="mt-0 outline-none flex-1 min-h-0">
                 <Suspense fallback={<SkeletonShell isLoading ariaLabel="Cargando..." />}>
                     <FadeIn className="h-full">
-                        <POSSessionsView hideHeader />
+                        <POSSessionsClientView hideHeader />
                     </FadeIn>
                 </Suspense>
             </TabsContent>
@@ -47,4 +47,4 @@ export const SalesPosView: React.FC<SalesPosViewProps> = ({ activeTab, modal, cr
     )
 }
 
-export default SalesPosView
+export default SalesPosLayout

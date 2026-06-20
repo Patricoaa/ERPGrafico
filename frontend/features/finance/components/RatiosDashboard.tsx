@@ -13,13 +13,13 @@ import { format } from "date-fns";
 import { SkeletonShell, StatCard } from "@/components/shared";
 ;
 
-interface RatiosViewProps {
+interface RatiosDashboardProps {
     date?: DateRange;
     showComparison?: boolean;
     compDate?: DateRange;
 }
 
-export const RatiosView: React.FC<RatiosViewProps> = ({ date, showComparison, compDate }) => {
+export const RatiosDashboard: React.FC<RatiosDashboardProps> = ({ date, showComparison, compDate }) => {
     const params: Record<string, unknown> = {
         is_async: true,
         ...(date?.to && { end_date: format(date.to, 'yyyy-MM-dd') }),

@@ -1,5 +1,5 @@
 import { ToolbarCreateButton } from "@/components/shared"
-import { TaxDeclarationsView } from "@/features/tax"
+import { TaxDeclarationsClientView } from "@/features/tax"
 
 interface PageProps {
     searchParams: Promise<{ modal?: string }>
@@ -16,6 +16,6 @@ export default async function TaxPage({ searchParams }: PageProps) {
     )
 
     return (
-        <TaxDeclarationsView externalOpen={modal === 'new'} createAction={createAction} />
+        <TaxDeclarationsClientView externalOpen={modal === 'new'} createAction={createAction} />
     )
 }

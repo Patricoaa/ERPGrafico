@@ -8,7 +8,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Calculator, Calendar, CheckCircle2, AlertCircle } from 'lucide-react';
 import { DataCell, EmptyState, PeriodValidationDateInput, SkeletonShell } from '@/components/shared';
 
-export function TrialBalanceView() {
+export function TrialBalanceReport() {
     // Default dates: current year start to now
     const now = new Date();
     const currentYear = now.getFullYear();

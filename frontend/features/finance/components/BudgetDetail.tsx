@@ -11,7 +11,7 @@ import { toast } from "sonner"
 import Link from "next/link"
 import type { ColumnDef } from "@tanstack/react-table"
 
-interface BudgetDetailViewProps {
+interface BudgetDetailProps {
     budgetId: string
 }
 
@@ -92,7 +92,7 @@ const columns: ColumnDef<BudgetExecutionItem>[] = [
     },
 ]
 
-export function BudgetDetailView({ budgetId }: BudgetDetailViewProps) {
+export function BudgetDetail({ budgetId }: BudgetDetailProps) {
     const { data, isLoading, isError } = useBudgetDetailData(budgetId ? Number(budgetId) : null)
 
     const budget = data?.budget ?? null

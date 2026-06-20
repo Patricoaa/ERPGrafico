@@ -1,6 +1,6 @@
 import type { Metadata } from "next"
 import { ToolbarCreateButton } from '@/components/shared'
-import { TreasuryAccountsView } from "@/features/treasury"
+import { TreasuryAccountsClientView } from "@/features/treasury"
 
 export const metadata: Metadata = {
     title: "Métodos de Pago | ERPGrafico",
@@ -15,5 +15,5 @@ export default async function OperacionesMethodsPage({ searchParams }: PageProps
     const modalOpen = modal === "new"
     const action = <ToolbarCreateButton label="Nuevo Método" href="/treasury/operaciones/methods?modal=new" />
 
-    return <TreasuryAccountsView activeTab="methods" externalOpen={modalOpen} createAction={action} />
+    return <TreasuryAccountsClientView activeTab="methods" externalOpen={modalOpen} createAction={action} />
 }

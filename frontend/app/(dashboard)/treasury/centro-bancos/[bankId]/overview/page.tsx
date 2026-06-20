@@ -1,4 +1,4 @@
-import { BankPageHeader, BankCenterView } from "@/features/treasury"
+import { BankPageHeader, BankCenterDashboard } from "@/features/treasury"
 
 export default async function BankOverviewPage({ params }: { params: Promise<{ bankId: string }> }) {
     const { bankId } = await params
@@ -6,7 +6,7 @@ export default async function BankOverviewPage({ params }: { params: Promise<{ b
     return (
         <div className="h-full flex flex-col">
             <BankPageHeader bankId={id} />
-            <BankCenterView bankId={id} />
+            <BankCenterDashboard bankId={id} />
         </div>
     )
 }

@@ -1,6 +1,6 @@
 export * from './AdjustmentForm';
 export * from './ArchivingRestrictionsModal';
-export * from './AttributeManager';
+export * from './AttributesClientView';
 export * from './BarcodeModal';
 export * from './CategoryClientView';
 export * from './MovementClientView';
@@ -9,7 +9,7 @@ export * from './ProductInsightsModal';
 export * from './ProductClientView';
 export * from './StockReport';
 export * from './SubscriptionHistoryModal';
-export * from './SubscriptionsView';
+export * from './SubscriptionsClientView';
 export * from './UoMCategoryClientView';
 export * from './UoMsView';
 export * from './UoMClientView';

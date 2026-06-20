@@ -20,12 +20,12 @@ const ACTIONABLE_FROM: Record<string, string[]> = {
     mark_cashed: ['ISSUED'],
 }
 
-interface ChecksViewProps {
+interface ChecksClientViewProps {
     bankId?: number
     direction?: CheckDirection
 }
 
-export function ChecksView({ bankId, direction }: ChecksViewProps = {}) {
+export function ChecksClientView({ bankId, direction }: ChecksClientViewProps = {}) {
     const queryParams = useMemo(() => {
         const p: Record<string, string> = {}
         if (bankId) p.bank = String(bankId)

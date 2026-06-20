@@ -18,8 +18,8 @@ import {
 import { FiscalYearPreviewResult } from '../../types';
 import { cn } from '@/lib/utils';
 
-// Lazy load TrialBalanceView
-const TrialBalanceView = lazy(() => import('../reports/TrialBalanceView').then(m => ({ default: m.TrialBalanceView })));
+// Lazy load TrialBalanceReport
+const TrialBalanceReport = lazy(() => import('../reports/TrialBalanceReport').then(m => ({ default: m.TrialBalanceReport })));
 
 interface FiscalYearClosingWizardProps {
     isOpen: boolean;
@@ -291,7 +291,7 @@ export function FiscalYearClosingWizard({
         >
             <div className="h-full flex flex-col p-4">
                 <Suspense fallback={<SkeletonShell isLoading ariaLabel="Cargando..." />}>
-                    <TrialBalanceView />
+                    <TrialBalanceReport />
                 </Suspense>
             </div>
         </BaseModal>

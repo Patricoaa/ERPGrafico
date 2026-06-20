@@ -1,6 +1,6 @@
 import type { Metadata } from "next"
 import { ToolbarCreateButton } from '@/components/shared'
-import { TerminalBatchesManagement } from "@/features/treasury"
+import { TerminalBatchesClientView } from "@/features/treasury"
 
 export const metadata: Metadata = {
     title: "Liquidaciones | ERPGrafico",
@@ -17,7 +17,7 @@ export default async function TerminalCobroBatchesPage({ searchParams }: PagePro
     )
 
     return (
-        <TerminalBatchesManagement
+        <TerminalBatchesClientView
             showTitle={false}
             externalOpenBatch={modal === 'batch'}
             externalOpenInvoice={modal === 'invoice'}

@@ -17,7 +17,7 @@ import { budgetActions, type BudgetActionsCtx } from "@/features/finance/budgetA
 
 import { useSearchParams, usePathname } from "next/navigation"
 
-interface BudgetsListViewProps {
+interface BudgetsClientViewProps {
     externalOpen?: boolean
     onExternalOpenChange?: (open: boolean) => void
     createAction?: React.ReactNode
@@ -26,7 +26,7 @@ interface BudgetsListViewProps {
 import { useBudgets, type Budget } from "@/features/finance/hooks/useBudgets"
 import { useSelectedEntity } from "@/hooks/useSelectedEntity"
 
-export function BudgetsListView({ externalOpen, onExternalOpenChange, createAction }: BudgetsListViewProps) {
+export function BudgetsClientView({ externalOpen, onExternalOpenChange, createAction }: BudgetsClientViewProps) {
     const router = useRouter()
     const pathname = usePathname()
     const searchParams = useSearchParams()

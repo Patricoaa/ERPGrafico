@@ -1,5 +1,5 @@
-import { AnalysisView } from "@/features/finance"
+import { AnalysisDashboard } from "@/features/finance"
 
 export default async function AnalysisRatiosPage() {
-    return <AnalysisView activeTab="ratios" />
+    return <AnalysisDashboard activeTab="ratios" />
 }

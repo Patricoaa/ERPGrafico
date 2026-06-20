@@ -29,7 +29,8 @@ Este documento es la fuente de verdad sobre **cómo nombrar** todos los artefact
 | `Modal` | `<BaseModal>` / `<Dialog>` (centrado en pantalla) | Auto-contenido: incluye su surface | `CreditAssignmentModal`, `ExclusionModal` |
 | `Sheet` | `<Sheet>` de shadcn (side panel nativo) | Auto-contenido: incluye su surface | `PayrollDetailSheet`, `MappingConfigSheet` |
 | `Wizard` | `<GenericWizard>` (flujo multi-paso) | Auto-contenido: incluye su surface | `WorkOrderWizard`, `DeclarationWizard` |
-| `View` | Sin surface — ocupa su contenedor padre (página o tab) | Stateful, "página" dentro de feature | `SalesOrdersClientView`, `BudgetsListView` |
+| `ClientView` | `<DataTableView>` — listado maestro de entidad | Stateful, tabla con toolbar, filtros, CRUD | `ProductClientView`, `ContactsClientView` |
+| `View` | Sin surface — ocupa su contenedor padre (página o tab) | Stateful, vista que NO es listado de entidad (reporte, dashboard, detalle) | `TrialBalanceView`, `StatementsView` |
 | `Form` | **Sin surface** — solo el formulario, el padre decide la surface | Reutilizable dentro de Drawer o Modal | `UoMForm` *(si se reutiliza en dos contextos)* |
 | `Step` | Sin surface — slide de un wizard | Siempre hijo de un `Wizard` | `Step1_Items`, `ManufacturingConfigStep` |
 | `Sidebar` | Panel lateral fijo / persistente (no slide-over) | Sección de layout | `ActivitySidebar`, `SaleOrderSidebar` |
@@ -37,7 +38,6 @@ Este documento es la fuente de verdad sobre **cómo nombrar** todos los artefact
 | `Card` | Tarjeta visual de datos | Presentacional | `PayrollCard`, `DomainCard` |
 | `Selector` | Input de selección de entidad | Input especializado | `AccountSelector`, `ProductSelector` |
 | `Provider` | React Context Provider | Infraestructura de estado | `RealtimeProvider`, `GlobalModalProvider` |
-| `Management` | Vista de administración inline (tabla + CRUD sin page route) | Sub-sección de settings/tab | `TerminalManagement`, `GroupManagement` |
 
 ### 1.2 Reglas de derivación
 
@@ -64,6 +64,14 @@ Este documento es la fuente de verdad sobre **cómo nombrar** todos los artefact
    ```
 
 6. **Sufijos no apilables.** No usar `SomethingModalDrawer`, `SomethingSheetModal`, etc.
+
+7. **Usar `ClientView` para listados maestros de entidad.**  
+   Si el componente es un listado paginado con `<DataTableView>` para CRUD de una entidad → sufijo `ClientView`.  
+   Si es un reporte, dashboard, detalle o cualquier vista que NO sea un listado de entidad → sufijo `View`.
+
+8. **`List` no es sufijo autorizado para vistas de página.**  
+   Los archivos `*List` deben ser listas reutilizables inline (sub-componentes), no vistas de página.  
+   Para vistas de página con tabla, usar `ClientView`.
 
 ### 1.3 Árbol de decisión rápida
 
@@ -254,6 +262,17 @@ Los siguientes archivos violan la convención de sufijos y deben renombrarse al 
 
 > No renombrar en masa. Aplicar Boy Scout Rule: corregir cuando el archivo se toque por otra razón.
 
+### 7.1 Migración `*View`/`*List`/`*Management` → `*ClientView`
+
+En 2026-06 se centralizó la convención de vistas de listado de entidad a `*ClientView`. Quedan como deuda técnica los siguientes archivos con sufijos no estándar (Boy Scout Rule al próximo toque):
+
+| Archivo actual | Nombre correcto | Razón |
+|---|---|---|
+| `hr/AbsenceManagementView.tsx` | `AbsenceClientView` | Listado con DataTable |
+| `inventory/ProductList.tsx` | Eliminar (alias de `ProductClientView`) | Re-export deprecated |
+
+> Los alias `*List` en inventory (`ProductList`, `CategoryList`, etc.) están marcados como `@deprecated` y se eliminarán en sprint +2.
+
 ---
 
 ## 8. Checklist de PR
@@ -262,6 +281,7 @@ Antes de abrir un PR que agrega o renombra artefactos:
 
 - [ ] El sufijo del componente coincide con la surface que renderiza.
 - [ ] El nombre del archivo coincide con el export principal.
+- [ ] Vistas de listado de entidad usan sufijo `ClientView` (no `List`, `Management` ni `View` solos).
 - [ ] Hooks siguen el patrón `use[Entity][Calificador]`.
 - [ ] Tipos son `PascalCase` sin `I` prefix ni `Type` suffix.
 - [ ] No se usó `FormModal` ni `FormDrawer`.

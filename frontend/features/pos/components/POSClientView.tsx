@@ -48,7 +48,7 @@ import {
 import { type CheckoutResponse } from '@/features/sales/types'
 import type { Product } from '@/types/pos'
 import type { TransactionData } from '@/types/transactions'
-import { type DraftCart } from './DraftCartsList'
+import { type DraftCart } from './DraftCartsClientView'
 import type { CheckoutWizardState } from '@/features/sales/components/checkout/SalesCheckoutWizardContent'
 
 import { SearchBar, CategoryDropdown } from '@/components/shared'
@@ -74,8 +74,8 @@ const POSVariantSelectorModal = dynamic(
     { ssr: false }
 )
 
-const DraftCartsList = dynamic(
-    () => import('@/features/pos/components/DraftCartsList').then(mod => ({ default: mod.DraftCartsList })),
+const DraftCartsClientView = dynamic(
+    () => import('@/features/pos/components/DraftCartsClientView').then(mod => ({ default: mod.DraftCartsClientView })),
     { ssr: false }
 )
 
@@ -627,7 +627,7 @@ export function POSClientView() {
             </div>
 
             <POSVariantSelectorModal open={variantModalOpen} onOpenChange={setVariantModalOpen} product={selectedProductForVariant} onSelect={v => addProductToCart(v as any)} items={items} bomCache={bomCache as any} componentCache={componentCache as any} calculateMaxQty={calculateMaxQty} />
-            <DraftCartsList open={draftsListOpen} onOpenChange={setDraftsListOpen} posSessionId={currentSession?.id || null} onLoadDraft={handleLoadDraft} showTrigger={false} syncDrafts={syncDrafts as any} getLockInfo={getLockInfo} />
+            <DraftCartsClientView open={draftsListOpen} onOpenChange={setDraftsListOpen} posSessionId={currentSession?.id || null} onLoadDraft={handleLoadDraft} showTrigger={false} syncDrafts={syncDrafts as any} getLockInfo={getLockInfo} />
             <NumpadModal open={numpadOpen} onOpenChange={setNumpadOpen} title={numpadConfig?.field === 'qty' ? "Cantidad" : "Precio"} value={numpadValue} onChange={setNumpadValue} onConfirm={() => handleNumpadConfirm(parseFloat(numpadValue))} allowDecimal />
             <ScannerFeedback ref={scannerFeedbackRef} />
             <SalesOrdersDrawer open={ordersModalOpen} onOpenChange={setOrdersModalOpen} posSessionId={currentSession?.id} />

@@ -1,6 +1,7 @@
 "use client"
 
 import React, { useState } from 'react'
+import { useSearchParams } from 'next/navigation'
 import type { ColumnDef } from '@tanstack/react-table'
 import { FileText, AlertTriangle, Plus } from 'lucide-react'
 import {
@@ -16,7 +17,9 @@ import { LoanDetailModal } from './LoanDetailModal'
 import { loanActions, type LoanActionsCtx } from './loanActions'
 import type { BankLoan } from './types'
 
-export function LoansView({ bankId }: { bankId?: number } = {}) {
+export function LoansClientView({ bankId: bankIdProp }: { bankId?: number } = {}) {
+    const searchParams = useSearchParams()
+    const bankId = bankIdProp ?? (searchParams.get("bank") ? Number(searchParams.get("bank")) : undefined)
     const { data: loans = [], isLoading, isError } = useLoans(
         bankId ? { lender: String(bankId) } : undefined,
     )

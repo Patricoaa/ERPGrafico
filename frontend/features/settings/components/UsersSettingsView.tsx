@@ -12,7 +12,7 @@ import { userActions, type UserActionsCtx } from './userActions'
 import { Users } from "lucide-react"
 import { UserDrawer } from "@/features/users/components/UserDrawer"
 import { Tabs, TabsContent } from "@/components/ui/tabs"
-import { GroupManagement } from "@/features/settings/components/GroupManagement"
+import { GroupsClientView } from "@/features/settings/components/GroupsClientView"
 
 import { type AppUser } from "@/types/entities"
 import { userSearchDef } from "@/features/users/searchDef"
@@ -204,7 +204,7 @@ export function UsersSettingsView({ activeTab }: UsersSettingsViewProps) {
                     </TabsContent>
 
                     <TabsContent value="groups" className="mt-0 outline-none flex-1 min-h-0">
-                        <GroupManagement
+                        <GroupsClientView
                             externalOpen={isGroupModalOpen}
                             onExternalOpenChange={setIsGroupModalOpen}
                             createAction={groupsCreateAction}

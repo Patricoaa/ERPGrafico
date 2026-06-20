@@ -1,6 +1,6 @@
 import type { Metadata } from "next"
 import { ToolbarCreateButton } from '@/components/shared'
-import { PaymentHardwareManagement } from "@/features/treasury"
+import { PaymentHardwareClientView } from "@/features/treasury"
 
 export const metadata: Metadata = {
     title: "Dispositivos | ERPGrafico",
@@ -17,7 +17,7 @@ export default async function TerminalCobroDevicesPage({ searchParams }: PagePro
     )
 
     return (
-        <PaymentHardwareManagement
+        <PaymentHardwareClientView
             activeTab="devices"
             externalDeviceOpen={modal === 'device'}
             createAction={createAction}

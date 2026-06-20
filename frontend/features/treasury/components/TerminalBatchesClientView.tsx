@@ -19,19 +19,19 @@ import { terminalBatchSearchDef } from "@/features/treasury/searchDef"
 const LazyTerminalBatchForm = lazy(() => import("./TerminalBatchForm"))
 const MonthlyInvoiceModal = lazy(() => import("./MonthlyInvoiceModal"))
 
-interface TerminalBatchesManagementProps {
+interface TerminalBatchesClientViewProps {
     showTitle?: boolean
     externalOpenBatch?: boolean
     externalOpenInvoice?: boolean
     createAction?: React.ReactNode
 }
 
-export function TerminalBatchesManagement({
+export function TerminalBatchesClientView({
     showTitle = true,
     externalOpenBatch,
     externalOpenInvoice,
     createAction
-}: TerminalBatchesManagementProps) {
+}: TerminalBatchesClientViewProps) {
     const router = useRouter()
     const basePeriod = { serverParamFrom: 'date_from', serverParamTo: 'date_to' }
     const { filters: segFilters, isFiltered: isSegFiltered, clearAll: clearSeg } = useSegmentation(terminalBatchSegDef, basePeriod)
@@ -229,5 +229,5 @@ function TerminalBatchModal({ open, onOpenChange, onSuccess }: { open: boolean, 
     )
 }
 
-export default TerminalBatchesManagement
+export default TerminalBatchesClientView
 
