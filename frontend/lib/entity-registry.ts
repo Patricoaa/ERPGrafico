@@ -1,6 +1,6 @@
 import { 
   ReceiptText, Truck, Undo2, FileText,
-  Wrench, Package, ArrowLeftRight, Landmark, BookOpen, 
+  Wrench, Package, ArrowLeftRight, ArrowRightLeft, Landmark, BookOpen, 
   Hash, Users, User, UserCheck, Book, ShoppingCart, Receipt,
   List, LayoutDashboard, LayoutGrid, Kanban, CalendarDays, ClipboardCheck,
   Building2, Smartphone, CreditCard, Calendar, CalendarX2, Repeat,
@@ -145,6 +145,7 @@ export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
     shortTemplate: 'MOV-{id}',
     listUrl: '/inventory/stock/movements',
     detailUrlPattern: '/inventory/stock-moves/{id}',
+    viewPolicy: { availableViews: ['list', 'card'], defaultView: 'list', cardComponent: 'entity', gridLayout: 'single-column' },
   },
   'inventory.product': {
     label: 'inventory.product',
@@ -221,8 +222,8 @@ export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
     label: 'treasury.treasurymovement',
     title: 'Movimiento de Tesorería',
     titlePlural: 'Movimientos de Tesorería',
-    icon: ArrowLeftRight,
-    iconName: 'ArrowLeftRight',
+    icon: ArrowRightLeft,
+    iconName: 'ArrowRightLeft',
     shortTemplate: 'TRX-{id}',
     listUrl: '/treasury/operaciones/movements',
     detailUrlPattern: '/treasury/operaciones/movements?selected={id}',
