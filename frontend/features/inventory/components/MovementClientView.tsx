@@ -4,7 +4,8 @@ import { useState, useMemo, useEffect } from "react"
 import { useRouter, usePathname, useSearchParams } from "next/navigation"
 import { BaseModal, Chip, DataTableView } from '@/components/shared'
 import { DataTableColumnHeader } from '@/components/shared'
-import { DataCell, createActionsColumn, EntityCard, CardActions } from '@/components/shared'
+import { DataCell, EntityCard, CardActions } from '@/components/shared'
+import { stockMoveActions, type StockMoveActionsCtx } from "@/features/inventory/stockMoveActions"
 import { ColumnDef } from "@tanstack/react-table"
 
 import {Eye, ArrowRightLeft} from "lucide-react"
@@ -13,7 +14,7 @@ import { LazyDrawer, type TransactionType } from "@/features/_shared/transaction
 import { AdjustmentForm } from "@/features/inventory/components/AdjustmentForm"
 import { CancelButton, SubmitButton, FormFooter } from "@/components/shared"
 
-interface StockMove {
+export interface StockMove {
     id: number
     display_id?: string
     date: string
@@ -98,6 +99,14 @@ export function MovementClientView({ externalOpen, onExternalOpenChange, createA
         }
     }
 
+    const actionsCtx: StockMoveActionsCtx = {
+        onViewDetails: (id) => {
+            const params = new URLSearchParams(searchParams.toString())
+            params.set('selected', String(id))
+            router.push(`${pathname}?${params.toString()}`, { scroll: false })
+        },
+    }
+
     const columns = useMemo<ColumnDef<StockMove>[]>(() => [
         {
             id: "folio",
@@ -164,21 +173,8 @@ export function MovementClientView({ externalOpen, onExternalOpenChange, createA
             },
             size: 100,
         },
-        createActionsColumn<StockMove>({
-            renderActions: (item) => (
-                <DataCell.Action
-                    icon={Eye}
-                    title="Ver Detalles"
-                    color="text-primary"
-                    onClick={() => {
-                        const params = new URLSearchParams(searchParams.toString())
-                        params.set('selected', String(item.id))
-                        router.push(`${pathname}?${params.toString()}`, { scroll: false })
-                    }}
-                />
-            ),
-        }),
-    ], [])
+        stockMoveActions.column(actionsCtx),
+    ], [actionsCtx])
 
     return (
         <div className="h-full flex flex-col">
@@ -216,6 +212,7 @@ export function MovementClientView({ externalOpen, onExternalOpenChange, createA
                                     params.set('selected', String(move.id))
                                     router.push(`${pathname}?${params.toString()}`, { scroll: false })
                                 }}
+                                actions={stockMoveActions.render(move, actionsCtx)}
                             >
                                 <EntityCard.Header
                                     title={move.product_name}
