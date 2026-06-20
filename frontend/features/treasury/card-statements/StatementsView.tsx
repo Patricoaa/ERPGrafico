@@ -2,10 +2,10 @@
 
 import { useState, useMemo } from 'react'
 import type { ColumnDef } from '@tanstack/react-table'
-import { CreditCard, AlertTriangle, Eye, Receipt, Wallet } from 'lucide-react'
+import { CreditCard, AlertTriangle, Receipt } from 'lucide-react'
 import {
     DataTableView, DataTableColumnHeader, DataCell,
-    createActionsColumn, StatusBadge, MoneyDisplay, Skeleton, EmptyState, EntityCard,
+    StatusBadge, MoneyDisplay, Skeleton, EmptyState, EntityCard,
     SegmentationBar, useSegmentation, SmartSearchBar, useClientSearch,
 } from '@/components/shared'
 import type { SegmentationDefinition } from '@/types/segmentation'
@@ -15,6 +15,7 @@ import { useBankOverview } from '../hooks/useBankOverview'
 import type { BankOverviewData } from '../hooks/useBankOverview'
 import { StatementDetailModal } from './StatementDetailModal'
 import { PayStatementModal } from './PayStatementModal'
+import { statementActions, type StatementActionsCtx } from './statementActions'
 import type { CreditCardStatement } from './types'
 import { useStatementsAnalyticsData } from './useStatementsAnalyticsData'
 
@@ -115,6 +116,11 @@ export function StatementsView({ bankId }: StatementsViewProps) {
         )
     }
 
+    const actionsCtx: StatementActionsCtx = {
+        onPay: setPayingStatement,
+        onViewDetail: setSelectedId,
+    }
+
     const columns: ColumnDef<CreditCardStatement>[] = [
         {
             accessorKey: 'display_id',
@@ -158,30 +164,8 @@ export function StatementsView({ bankId }: StatementsViewProps) {
             header: ({ column }) => <DataTableColumnHeader column={column} title="Estado" />,
             cell: ({ row }) => <StatusBadge status={row.original.status} />,
         },
-        createActionsColumn<CreditCardStatement>({
-            renderActions: (stmt) => renderStatementActions(stmt),
-        }),
+        statementActions.column(actionsCtx),
     ]
-
-    function renderStatementActions(stmt: CreditCardStatement) {
-        const canPay = stmt.status !== 'PAID' && stmt.status !== 'CANCELED'
-        return (
-            <>
-                {canPay && (
-                    <DataCell.Action
-                        icon={Wallet}
-                        title="Pagar"
-                        onClick={() => setPayingStatement(stmt)}
-                    />
-                )}
-                <DataCell.Action
-                    icon={Eye}
-                    title="Ver detalle"
-                    onClick={() => setSelectedId(stmt.id)}
-                />
-            </>
-        )
-    }
 
     return (
         <div className="h-full flex flex-col">
@@ -285,7 +269,7 @@ export function StatementsView({ bankId }: StatementsViewProps) {
                         description: 'Los estados de cuenta de la tarjeta de crédito aparecerán aquí.',
                     }}
                     renderCard={(stmt: CreditCardStatement) => (
-                        <EntityCard>
+                        <EntityCard actions={statementActions.render(stmt, actionsCtx)}>
                             <EntityCard.Header
                                 title={stmt.display_id}
                                 subtitle={stmt.card_account_name}
@@ -305,9 +289,6 @@ export function StatementsView({ bankId }: StatementsViewProps) {
                                     value={new Date(stmt.due_date).toLocaleDateString('es-CL')}
                                 />
                             </EntityCard.Body>
-                            <EntityCard.Footer>
-                                {renderStatementActions(stmt)}
-                            </EntityCard.Footer>
                         </EntityCard>
                     )}
                 />
