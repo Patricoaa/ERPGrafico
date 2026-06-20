@@ -2,10 +2,10 @@
 
 import React, { useState } from 'react'
 import type { ColumnDef } from '@tanstack/react-table'
-import { FileText, AlertTriangle, Plus, Eye, Send, ClipboardList } from 'lucide-react'
+import { FileText, AlertTriangle, Plus } from 'lucide-react'
 import {
     DataTableView, DataTableColumnHeader, DataCell,
-    createActionsColumn, StatusBadge, MoneyDisplay, Skeleton, EmptyState, EntityCard,
+    StatusBadge, MoneyDisplay, Skeleton, EmptyState, EntityCard,
 } from '@/components/shared'
 import { Button } from '@/components/ui/button'
 import { useLoans } from './hooks'
@@ -13,6 +13,7 @@ import { LoanRegisterDrawer } from './LoanRegisterDrawer'
 import { LoanViewDrawer } from './LoanViewDrawer'
 import { LoanDisburseDrawer } from './LoanDisburseDrawer'
 import { LoanDetailModal } from './LoanDetailModal'
+import { loanActions, type LoanActionsCtx } from './loanActions'
 import type { BankLoan } from './types'
 
 export function LoansView({ bankId }: { bankId?: number } = {}) {
@@ -46,6 +47,12 @@ export function LoansView({ bankId }: { bankId?: number } = {}) {
             Registrar Crédito
         </Button>
     )
+
+    const actionsCtx: LoanActionsCtx = {
+        onViewDetail: setViewLoanId,
+        onAmortization: setAmortizationLoanId,
+        onDisburse: (loan) => { setDisburseLoan(loan); setDisburseOpen(true) },
+    }
 
     const columns: ColumnDef<BankLoan>[] = [
         {
@@ -115,39 +122,8 @@ export function LoansView({ bankId }: { bankId?: number } = {}) {
             header: ({ column }) => <DataTableColumnHeader column={column} title="Estado" />,
             cell: ({ row }) => <StatusBadge status={row.original.status} />,
         },
-        createActionsColumn<BankLoan>({
-            renderActions: (loan) => renderLoanActions(loan),
-        }),
+        loanActions.column(actionsCtx),
     ]
-
-    function renderLoanActions(loan: BankLoan) {
-        return (
-            <>
-                <DataCell.Action
-                    icon={Eye}
-                    title="Ver detalle"
-                    onClick={() => setViewLoanId(loan.id)}
-                />
-                {loan.status !== 'DRAFT' && (
-                    <DataCell.Action
-                        icon={ClipboardList}
-                        title="Tabla de amortización"
-                        onClick={() => setAmortizationLoanId(loan.id)}
-                    />
-                )}
-                {loan.status === 'DRAFT' && (
-                    <DataCell.Action
-                        icon={Send}
-                        title="Desembolsar"
-                        onClick={() => {
-                            setDisburseLoan(loan)
-                            setDisburseOpen(true)
-                        }}
-                    />
-                )}
-            </>
-        )
-    }
 
     return (
         <div className="h-full flex flex-col">
@@ -165,7 +141,7 @@ export function LoansView({ bankId }: { bankId?: number } = {}) {
                         description: 'Registra tu primer crédito bancario para llevar el control de cuotas y amortización.',
                     }}
                     renderCard={(loan: BankLoan) => (
-                        <EntityCard>
+                        <EntityCard actions={loanActions.render(loan, actionsCtx)}>
                             <EntityCard.Header
                                 title={loan.display_id}
                                 subtitle={loan.loan_number || undefined}
@@ -198,9 +174,6 @@ export function LoansView({ bankId }: { bankId?: number } = {}) {
                                         : '—'}
                                 />
                             </EntityCard.Body>
-                            <EntityCard.Footer>
-                                {renderLoanActions(loan)}
-                            </EntityCard.Footer>
                         </EntityCard>
                     )}
                 />

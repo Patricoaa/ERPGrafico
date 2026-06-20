@@ -4,25 +4,23 @@ import React, { useState, useEffect, useCallback } from "react"
 import { useRouter } from "next/navigation"
 import { useTerminalProviders, useTerminalDevices, type PaymentTerminalProvider, type PaymentTerminalDevice } from "../hooks/useTerminalProviders"
 import { Button } from "@/components/ui/button"
-import { ActionConfirmModal, EntityCard, IconButton, SmartSearchBar, StatusBadge, useClientSearch, useSmartSearch, SegmentationBar, useSegmentation } from '@/components/shared'
+import { ActionConfirmModal, EntityCard, SmartSearchBar, StatusBadge, useClientSearch, useSmartSearch, SegmentationBar, useSegmentation } from '@/components/shared'
 import { deviceSearchDef, providerSearchDef } from "@/features/treasury/searchDef"
 import { deviceSegDef } from "@/features/treasury/segmentationDef"
 import {
-    Settings,
-    Trash2,
     Building2,
-
     Smartphone,
     CreditCard,
-    Link as LinkIcon,
     User as UserIcon
 } from "lucide-react"
 
 import { useConfirmAction } from "@/hooks/useConfirmAction"
 import { DataTableView } from '@/components/shared'
 import { DataTableColumnHeader } from '@/components/shared'
-import { createActionsColumn, DataCell } from '@/components/shared'
+import { DataCell } from '@/components/shared'
 import { ColumnDef } from "@tanstack/react-table"
+import { providerActions, type ProviderActionsCtx } from './providerActions'
+import { deviceActions, type DeviceActionsCtx } from './deviceActions'
 
 import { ProviderDrawer } from "./ProviderDrawer"
 import { DeviceDrawer } from "./DeviceDrawer"
@@ -116,6 +114,11 @@ export function PaymentHardwareManagement({
         } catch { }
     })
 
+    const providerActionsCtx: ProviderActionsCtx = {
+        onEdit: handleEditProvider,
+        onDelete: (provider) => deleteProviderConfirm.requestConfirm(provider),
+    }
+
     const providerColumns: ColumnDef<PaymentTerminalProvider>[] = [
         {
             accessorKey: "name",
@@ -140,24 +143,13 @@ export function PaymentHardwareManagement({
                 <DataCell.Status status={row.original.is_active ? "active" : "inactive"} />,
             filterFn: (row, id, value) => value.includes(row.getValue(id) ? "ACTIVE" : "INACTIVE")
         },
-        createActionsColumn<PaymentTerminalProvider>({
-            renderActions: (provider) => (
-                <>
-                    <DataCell.Action
-                        icon={Settings}
-                        title="Editar"
-                        onClick={() => handleEditProvider(provider)}
-                    />
-                    <DataCell.Action
-                        icon={Trash2}
-                        title="Eliminar"
-                        className="text-destructive hover:text-destructive"
-                        onClick={() => deleteProviderConfirm.requestConfirm(provider)}
-                    />
-                </>
-            )
-        })
+        providerActions.column(providerActionsCtx)
     ]
+
+    const deviceActionsCtx: DeviceActionsCtx = {
+        onEdit: handleEditDevice,
+        onDelete: (device) => deleteDeviceConfirm.requestConfirm(device),
+    }
 
     const deviceColumns: ColumnDef<PaymentTerminalDevice>[] = [
         {
@@ -183,23 +175,7 @@ export function PaymentHardwareManagement({
                 <DataCell.Status status={row.original.is_active ? "active" : "inactive"} />,
             filterFn: (row, id, value) => value.includes(row.getValue(id) ? "ACTIVE" : "INACTIVE")
         },
-        createActionsColumn<PaymentTerminalDevice>({
-            renderActions: (device) => (
-                <>
-                    <DataCell.Action
-                        icon={Settings}
-                        title="Editar"
-                        onClick={() => handleEditDevice(device)}
-                    />
-                    <DataCell.Action
-                        icon={Trash2}
-                        title="Eliminar"
-                        className="text-destructive hover:text-destructive"
-                        onClick={() => deleteDeviceConfirm.requestConfirm(device)}
-                    />
-                </>
-            )
-        })
+        deviceActions.column(deviceActionsCtx)
     ]
 
     return (
@@ -226,7 +202,7 @@ export function PaymentHardwareManagement({
                             </Button>
                         )}
                         renderCard={(provider: PaymentTerminalProvider) => (
-                            <EntityCard key={provider.id}>
+                            <EntityCard key={provider.id} actions={providerActions.render(provider, providerActionsCtx)}>
                                 <EntityCard.Header
                                     title={
                                         <div className="flex items-center gap-2">
@@ -234,15 +210,7 @@ export function PaymentHardwareManagement({
                                             {provider.name}
                                         </div>
                                     }
-                                    trailing={
-                                        <div className="flex flex-col items-end gap-2">
-                                            <StatusBadge status={provider.is_active ? "active" : "inactive"} size="sm" />
-                                            <div className="flex items-center gap-1">
-                                                <IconButton onClick={() => handleEditProvider(provider)} className="h-7 w-7"><Settings className="h-3 w-3" /></IconButton>
-                                                <IconButton onClick={() => deleteProviderConfirm.requestConfirm(provider)} className="h-7 w-7 text-destructive hover:bg-destructive/10 hover:text-destructive"><Trash2 className="h-3 w-3" /></IconButton>
-                                            </div>
-                                        </div>
-                                    }
+                                    trailing={<StatusBadge status={provider.is_active ? "active" : "inactive"} size="sm" />}
                                 />
                                 <EntityCard.Body>
                                     <EntityCard.Field
@@ -287,7 +255,7 @@ export function PaymentHardwareManagement({
                             </Button>
                         )}
                         renderCard={(device: PaymentTerminalDevice) => (
-                            <EntityCard key={device.id}>
+                            <EntityCard key={device.id} actions={deviceActions.render(device, deviceActionsCtx)}>
                                 <EntityCard.Header
                                     title={
                                         <div className="flex items-center gap-2">
@@ -295,15 +263,7 @@ export function PaymentHardwareManagement({
                                             {device.name}
                                         </div>
                                     }
-                                    trailing={
-                                        <div className="flex flex-col items-end gap-2">
-                                            <StatusBadge status={device.is_active ? "active" : "inactive"} size="sm" />
-                                            <div className="flex items-center gap-1">
-                                                <IconButton onClick={() => handleEditDevice(device)} className="h-7 w-7"><Settings className="h-3 w-3" /></IconButton>
-                                                <IconButton onClick={() => deleteDeviceConfirm.requestConfirm(device)} className="h-7 w-7 text-destructive hover:bg-destructive/10 hover:text-destructive"><Trash2 className="h-3 w-3" /></IconButton>
-                                            </div>
-                                        </div>
-                                    }
+                                    trailing={<StatusBadge status={device.is_active ? "active" : "inactive"} size="sm" />}
                                 />
                                 <EntityCard.Body>
                                     <EntityCard.Field
