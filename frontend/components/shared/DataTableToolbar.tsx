@@ -272,7 +272,7 @@ export function DataTableToolbar<TData>(props: DataTableToolbarProps<TData>) {
 
                         {/* Selector de vistas (oculto si hay 0 o 1 vista) */}
                         {viewOptions && viewOptions.length > 1 && (
-                            <div className="flex items-center gap-1.5 shrink-0 bg-muted/30 rounded-sm px-1 h-9">
+                            <div className="flex items-center gap-1.5 shrink-0 bg-background rounded-sm px-1 h-9">
                                 <Tabs value={currentView} onValueChange={(v) => onViewChange?.(v)}>
                                     <TabsList className="h-7 p-0 gap-0 bg-transparent border-border/60">
                                         {viewOptions.map((option) => (
