@@ -126,6 +126,9 @@ export function createEntityCardView(
       { className: gridClass },
       rows.map((row) => {
         const node = options.renderCard(row.original, row)
+        if (React.isValidElement(node)) {
+          return React.cloneElement(node, { key: (row.original as any).id ?? row.id } as any)
+        }
         return node
       })
     )
@@ -249,6 +252,9 @@ export function createCardGroupView<TData>(
             { className: innerGridClass },
             group.items.map((item) => {
               const node = renderCard(item)
+              if (React.isValidElement(node)) {
+                return React.cloneElement(node, { key: (item as any).id } as any)
+              }
               return node
             }),
           ),
