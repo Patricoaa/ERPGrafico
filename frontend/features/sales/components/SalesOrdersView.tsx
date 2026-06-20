@@ -245,6 +245,7 @@ export function SalesOrdersView({ viewMode, posSessionId, onActionSuccess, hideS
                             ? "Crea una orden de venta o regístrala desde el punto de venta."
                             : "Las notas de crédito y débito asociadas a tus ventas aparecerán aquí.",
                     }}
+                    cardGroupBy={{ dateField: 'date', amountField: 'total' }}
                 />
             </div>
         </div>

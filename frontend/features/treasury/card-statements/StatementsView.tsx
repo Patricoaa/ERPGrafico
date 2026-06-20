@@ -63,7 +63,8 @@ export function StatementsView({ bankId }: StatementsViewProps) {
         ],
     }), [creditCardAccounts])
 
-    const { filters: segFilters, isFiltered: isSegFiltered, apply, clearAll: clearSeg } = useSegmentation(segDef)
+    const basePeriod = { serverParamFrom: 'date_from', serverParamTo: 'date_to' }
+    const { filters: segFilters, isFiltered: isSegFiltered, apply, clearAll: clearSeg } = useSegmentation(segDef, basePeriod)
     const { filterFn, isFiltered: isTextFiltered, clearAll: clearText } = useClientSearch<CreditCardStatement>(statementsSearchDef)
 
     const cardAccountId = segFilters.card ? Number(segFilters.card) : (creditCardAccounts[0]?.id ?? null)
@@ -276,7 +277,7 @@ export function StatementsView({ bankId }: StatementsViewProps) {
                             onDateRangeChange: setDateRange,
                         },
                     }}
-                    segmentation={<SegmentationBar def={segDef} />}
+                    segmentation={<SegmentationBar def={segDef} basePeriod={basePeriod} />}
                     emptyState={{
                         context: 'treasury',
                         icon: CreditCard,

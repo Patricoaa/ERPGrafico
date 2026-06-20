@@ -25,7 +25,8 @@ export function AbsenceManagementView({ initialAbsences }: AbsenceManagementView
     const router = useRouter()
     const searchParams = useSearchParams()
     const { filterFn: filterAbsences, isFiltered: isTextFiltered, clearAll: clearText } = useClientSearch<Absence>(absenceSearchDef)
-    const { filters: segFilters, isFiltered: isSegFiltered, clearAll: clearSeg } = useSegmentation(absenceSegDef)
+    const basePeriod = { serverParamFrom: 'date_from', serverParamTo: 'date_to' }
+    const { filters: segFilters, isFiltered: isSegFiltered, clearAll: clearSeg } = useSegmentation(absenceSegDef, basePeriod)
     const isFiltered = isTextFiltered || isSegFiltered
     const { absences, isLoading: loading, isRefetching, refetch: fetchAbsences } = useAbsences(segFilters, initialAbsences)
     const filteredAbsences = filterAbsences(absences)
@@ -127,7 +128,7 @@ export function AbsenceManagementView({ initialAbsences }: AbsenceManagementView
                     isRefetching={isRefetching}
                     variant="embedded"
                     smartSearch={<SmartSearchBar searchDef={absenceSearchDef} placeholder="Buscar inasistencia..." className="w-full" />}
-                    segmentation={<SegmentationBar def={absenceSegDef} />}
+                    segmentation={<SegmentationBar def={absenceSegDef} basePeriod={basePeriod} />}
                     showReset={isFiltered}
                     onReset={() => { clearText(); clearSeg() }}
                     defaultPageSize={20}

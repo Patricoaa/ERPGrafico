@@ -247,9 +247,10 @@ export function PurchaseInvoicesClientView() {
                     isFiltered={isFiltered}
                     emptyState={{
                         context: "purchase",
-                        title: "Aún no hay facturas de compra",
-                        description: "Las facturas de proveedores que registres aparecerán aquí.",
+                        title: "Aún no hay documentos de compra",
+                        description: "Los documentos de compra registrados aparecerán aquí.",
                     }}
+                    cardGroupBy={{ dateField: 'date', amountField: 'total' }}
                 />
             </div>
             {payingDoc && <PaymentModal open={!!payingDoc} onOpenChange={(open) => !open && setPayingDoc(null)} onConfirm={handlePayment} isPurchase={true} total={parseFloat(payingDoc.total)} pendingAmount={payingDoc.pending_amount ?? parseFloat(payingDoc.total)} hideDteFields={true} isRefund={payingDoc.dte_type === 'NOTA_CREDITO'} existingInvoice={{ dte_type: payingDoc.dte_type, number: payingDoc.number, document_attachment: null }} />}

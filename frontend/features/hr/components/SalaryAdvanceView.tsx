@@ -8,7 +8,7 @@ import { PaymentModal } from "@/features/treasury"
 import type { SalaryAdvance, Employee, Payroll } from "@/types/hr"
 import { Pencil, Trash2 } from "lucide-react"
 import { DataTableView, DataTableColumnHeader } from '@/components/shared'
-import { createActionsColumn, DataCell } from '@/components/shared'
+import { createActionsColumn, DataCell, EntityCard } from '@/components/shared'
 import { ColumnDef } from "@tanstack/react-table"
 import { useSearchParams } from "next/navigation"
 
@@ -174,6 +174,25 @@ export function SalaryAdvanceView({ initialAdvances }: SalaryAdvanceViewProps) {
                         title: "Aún no hay anticipos",
                         description: "Registra anticipos de sueldo para descontarlos en la nómina.",
                     }}
+                    cardGroupBy={{ dateField: 'date', amountField: 'amount' }}
+                    renderCard={(advance) => (
+                        <EntityCard key={advance.id}>
+                            <EntityCard.Header
+                                title={advance.employee_name || '---'}
+                                subtitle={`Anticipo ${advance.employee_display_id || ''}`}
+                                trailing={
+                                    <DataCell.Status
+                                        status={advance.is_discounted ? "DISCOUNTED" : "PENDING"}
+                                        label={advance.is_discounted ? "Descontado" : "Pendiente"}
+                                    />
+                                }
+                            />
+                            <EntityCard.Body>
+                                <EntityCard.Field label="Fecha" value={<DataCell.Date value={advance.date} />} />
+                                <EntityCard.Field label="Monto" value={<DataCell.Currency value={parseFloat(advance.amount)} className="text-warning font-bold" />} />
+                            </EntityCard.Body>
+                        </EntityCard>
+                    )}
                 />
             </div>
 

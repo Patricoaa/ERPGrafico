@@ -9,8 +9,9 @@ import {
     recoverDebt
 } from '@/features/credits/api/creditsApi'
 import { CreditContact, CreditLedgerEntry } from '@/features/credits/api/creditsApi'
-import {SmartSearchBar, useClientSearch} from '@/components/shared'
+import {SmartSearchBar, useClientSearch, useSegmentation, SegmentationBar} from '@/components/shared'
 import { creditContactSearchDef } from "../searchDef"
+import { creditContactSegDef } from "../segmentationDef"
 import { useBlacklistedPortfolio } from "../hooks/useCredits"
 
 import { DataTable } from '@/components/shared'
@@ -191,7 +192,12 @@ function BlacklistContactPanel({ contact, onRefresh }: { contact: CreditContact,
 export function BlacklistView() {
     const { contacts: rawContacts, isLoading: loading, refetch: fetchData } = useBlacklistedPortfolio()
     const { filterFn } = useClientSearch<CreditContact>(creditContactSearchDef)
-    const contacts = useMemo(() => filterFn(rawContacts), [rawContacts, filterFn])
+    const { filters: segFilters } = useSegmentation(creditContactSegDef)
+    const contacts = useMemo(() => {
+        let result = rawContacts
+        if (segFilters.risk_level) result = result.filter(c => c.credit_risk_level === segFilters.risk_level)
+        return filterFn(result)
+    }, [rawContacts, filterFn, segFilters.risk_level])
 
     const columns = useMemo<ColumnDef<CreditContact>[]>(() => [
         {
@@ -254,6 +260,7 @@ export function BlacklistView() {
                     variant="embedded"
                     isLoading={loading}
                     smartSearch={<SmartSearchBar searchDef={creditContactSearchDef} placeholder="Cliente o RUT..." className="w-full" />}
+                    segmentation={<SegmentationBar def={creditContactSegDef} />}
                     renderSubComponent={(row) => (
                         <BlacklistContactPanel contact={row.original} onRefresh={fetchData} />
                     )}
