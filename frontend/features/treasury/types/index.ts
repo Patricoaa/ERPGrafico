@@ -311,6 +311,8 @@ export interface TreasuryMovementFilters {
     payment_method?: string
     payment_method_new?: string | number
     search?: string
+    display_id?: string
+    partner_name?: string
     page?: number
     page_size?: number
 }
