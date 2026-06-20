@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useCallback } from 'react'
+import React, { useState, useCallback, useMemo } from 'react'
 import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
 import { Calendar as CalendarIcon, X, ChevronDown } from 'lucide-react'
@@ -23,13 +23,38 @@ import { useSegmentation } from './useSegmentation'
 
 interface SegmentationBarProps {
   def: SegmentationDefinition
+  basePeriod?: {
+    serverParamFrom: string
+    serverParamTo: string
+  }
 }
 
-export function SegmentationBar({ def }: SegmentationBarProps) {
-  const { filters, apply, remove } = useSegmentation(def)
+export function SegmentationBar({ def, basePeriod }: SegmentationBarProps) {
+  const effectiveDef = useMemo(() => {
+    if (!basePeriod) return def
+    return {
+      segments: [
+        { key: '_base_period', label: 'Período', type: 'period', serverParamFrom: basePeriod.serverParamFrom, serverParamTo: basePeriod.serverParamTo } as PeriodSegmentDef,
+        ...def.segments,
+      ],
+    }
+  }, [def, basePeriod])
+
+  const { filters, apply, remove } = useSegmentation(effectiveDef)
 
   return (
     <>
+      {basePeriod && (
+        <div className="flex items-center shrink-0 bg-background rounded-sm px-1 h-9">
+          <BasePeriodSegment
+            serverParamFrom={basePeriod.serverParamFrom}
+            serverParamTo={basePeriod.serverParamTo}
+            filters={filters}
+            apply={apply}
+            remove={remove}
+          />
+        </div>
+      )}
       {def.segments.map((segment) => (
         <div key={segment.key} className="flex items-center shrink-0 bg-background rounded-sm px-1 h-9">
           <SegmentItem
@@ -259,6 +284,191 @@ function PeriodSegment({ def, filters, apply, remove }: PeriodSegmentProps) {
         ))}
       </TabsList>
     </Tabs>
+  )
+}
+
+/* ─── BasePeriodSegment ─── */
+
+interface BasePeriodSegmentProps {
+  serverParamFrom: string
+  serverParamTo: string
+  filters: Record<string, string>
+  apply: (param: string, value: string) => Promise<void>
+  remove: (param: string) => Promise<void>
+}
+
+function BasePeriodSegment({ serverParamFrom, serverParamTo, filters, apply, remove }: BasePeriodSegmentProps) {
+  const fromVal = filters[serverParamFrom]
+  const toVal = filters[serverParamTo]
+
+  const activePreset: PeriodValue = (['today', 'this_month', 'this_year'] as PeriodValue[]).find((pv) => {
+    const range = getPeriodDateRange(pv)
+    return range?.from === fromVal && range?.to === toVal
+  }) ?? ''
+
+  const hasCustomRange = !!((fromVal || toVal) && !activePreset)
+
+  const [rangeOpen, setRangeOpen] = useState(false)
+  const [tempRange, setTempRange] = useState<DateRange | undefined>()
+
+  const handleOpenChange = useCallback((open: boolean) => {
+    if (open) {
+      setTempRange(
+        fromVal
+          ? { from: parseDateLocal(fromVal), to: toVal ? parseDateLocal(toVal) : undefined }
+          : undefined,
+      )
+    }
+    setRangeOpen(open)
+  }, [fromVal, toVal])
+
+  const handleRangeApply = useCallback(async () => {
+    if (tempRange?.from) {
+      await apply(serverParamFrom, format(tempRange.from, 'yyyy-MM-dd'))
+      if (tempRange.to) {
+        await apply(serverParamTo, format(tempRange.to, 'yyyy-MM-dd'))
+      } else {
+        await remove(serverParamTo)
+      }
+    }
+    setRangeOpen(false)
+  }, [tempRange, serverParamFrom, serverParamTo, apply, remove])
+
+  const handleRangeClear = useCallback(async () => {
+    setTempRange(undefined)
+    await remove(serverParamFrom)
+    await remove(serverParamTo)
+    setRangeOpen(false)
+  }, [serverParamFrom, serverParamTo, remove])
+
+  const handlePreset = useCallback((value: string) => {
+    if (value === '') {
+      remove(serverParamFrom)
+      remove(serverParamTo)
+    } else {
+      const range = getPeriodDateRange(value as PeriodValue)
+      if (range) {
+        apply(serverParamFrom, range.from)
+        apply(serverParamTo, range.to)
+      }
+    }
+  }, [serverParamFrom, serverParamTo, apply, remove])
+
+  const customLabel = hasCustomRange
+    ? `${format(parseDateLocal(fromVal!), 'dd/MM/yy', { locale: es })} — ${toVal ? format(parseDateLocal(toVal), 'dd/MM/yy', { locale: es }) : '...'}`
+    : null
+
+  const btnClass = (isActive: boolean) =>
+    cn(
+      'h-7 px-2 text-[10px] uppercase font-bold tracking-widest gap-1 rounded-sm shrink-0',
+      isActive
+        ? 'bg-accent/50 text-foreground shadow-none'
+        : 'text-muted-foreground hover:text-foreground',
+    )
+
+  return (
+    <div className="flex items-center gap-0 shrink-0">
+      <Button
+        variant="ghost"
+        size="sm"
+        onClick={() => handlePreset('')}
+        className={btnClass(!fromVal && !toVal)}
+      >
+        Todos
+      </Button>
+      <Button
+        variant="ghost"
+        size="sm"
+        onClick={() => handlePreset('today')}
+        className={btnClass(activePreset === 'today')}
+      >
+        Hoy
+      </Button>
+      <Button
+        variant="ghost"
+        size="sm"
+        onClick={() => handlePreset('this_month')}
+        className={btnClass(activePreset === 'this_month')}
+      >
+        Este Mes
+      </Button>
+      <Button
+        variant="ghost"
+        size="sm"
+        onClick={() => handlePreset('this_year')}
+        className={btnClass(activePreset === 'this_year')}
+      >
+        Este Año
+      </Button>
+      <Popover open={rangeOpen} onOpenChange={handleOpenChange}>
+        <PopoverTrigger asChild>
+          <Button
+            variant="ghost"
+            size="sm"
+            className={cn(btnClass(hasCustomRange), 'flex items-center gap-1')}
+          >
+            {customLabel ? (
+              <>
+                <CalendarIcon className="h-3 w-3 shrink-0" />
+                <span className="truncate max-w-[120px]">{customLabel}</span>
+                <X
+                  className="h-2.5 w-2.5 ml-0.5 hover:text-destructive shrink-0"
+                  onPointerDown={(e) => {
+                    e.stopPropagation()
+                    handleRangeClear()
+                  }}
+                />
+              </>
+            ) : (
+              'Rango'
+            )}
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent align="start" className="w-auto p-3" sideOffset={4}>
+          <div className="flex flex-col gap-3">
+            <div className="flex justify-center">
+              <Calendar
+                mode="range"
+                selected={tempRange}
+                onSelect={setTempRange}
+                locale={es}
+                numberOfMonths={2}
+                captionLayout="dropdown"
+              />
+            </div>
+            <div className="flex justify-between gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-7 text-[10px] uppercase tracking-widest"
+                onClick={handleRangeClear}
+                disabled={!fromVal && !toVal}
+              >
+                Limpiar
+              </Button>
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-7 text-[10px] uppercase tracking-widest"
+                  onClick={() => setRangeOpen(false)}
+                >
+                  Cancelar
+                </Button>
+                <Button
+                  size="sm"
+                  className="h-7 text-[10px] uppercase tracking-widest"
+                  onClick={handleRangeApply}
+                  disabled={!tempRange?.from}
+                >
+                  Aplicar
+                </Button>
+              </div>
+            </div>
+          </div>
+        </PopoverContent>
+      </Popover>
+    </div>
   )
 }
 

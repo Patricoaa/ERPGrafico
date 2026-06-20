@@ -20,7 +20,10 @@ function getSegmentParams(segment: SegmentDef): string[] {
   return params
 }
 
-export function useSegmentation(def: SegmentationDefinition): UseSegmentationReturn {
+export function useSegmentation(
+  def: SegmentationDefinition,
+  basePeriod?: { serverParamFrom: string; serverParamTo: string },
+): UseSegmentationReturn {
   const parsers = useMemo(() => {
     const map: Record<string, any> = {}
     for (const segment of def.segments) {
@@ -28,8 +31,12 @@ export function useSegmentation(def: SegmentationDefinition): UseSegmentationRet
         map[param] = parseAsString
       }
     }
+    if (basePeriod) {
+      map[basePeriod.serverParamFrom] = parseAsString
+      map[basePeriod.serverParamTo] = parseAsString
+    }
     return map
-  }, [def])
+  }, [def, basePeriod])
 
   const [paramValues, setParamValues] = useQueryStates(parsers)
   const [, setCursor] = useQueryState('cursor', parseAsString)
