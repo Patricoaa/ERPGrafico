@@ -367,7 +367,7 @@ export function PosTerminalDrawer({ open, onOpenChange, terminal, onSuccess, mod
                                                                         "flex items-center space-x-3 p-3 rounded-md border transition-all group",
                                                                         isView ? "cursor-default opacity-70" : "cursor-pointer",
                                                                         isSelected
-                                                                            ? "bg-primary/5 border-primary/40 shadow-sm ring-1 ring-primary/20"
+                                                                            ? "bg-primary/5 border-primary/40 shadow-card ring-1 ring-primary/20"
                                                                             : "bg-background hover:bg-muted/30 border-border/60 hover:border-border"
                                                                     )}
                                                                 >

@@ -115,7 +115,7 @@ export function AdvancedManufacturingDrawer({
                     <motion.div
                         initial={{ rotate: -15, scale: 0.8 }}
                         animate={{ rotate: 0, scale: 1 }}
-                        className="p-4 rounded-md bg-primary text-primary-foreground shadow-xl"
+                        className="p-4 rounded-md bg-primary text-primary-foreground shadow-elevated"
                     >
                         <Paintbrush className="h-8 w-8" />
                     </motion.div>
