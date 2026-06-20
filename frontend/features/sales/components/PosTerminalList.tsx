@@ -6,13 +6,14 @@ import type { Terminal } from "@/features/treasury"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 
-import { ActionConfirmModal, DataTableView, EntityCard, IconButton, StatusBadge } from '@/components/shared'
+import { ActionConfirmModal, DataTableView, EntityCard, StatusBadge } from '@/components/shared'
 import { Badge } from "@/components/ui/badge"
 
 import { DataTableColumnHeader } from '@/components/shared'
-import {createActionsColumn, DataCell} from '@/components/shared'
+import {DataCell} from '@/components/shared'
+import { posTerminalActions, type PosTerminalActionsCtx } from "@/features/sales/posTerminalActions"
 import { ColumnDef } from "@tanstack/react-table"
-import { Plus, Power, PowerOff, Trash2, Settings, MapPin, Smartphone, Banknote, CreditCard, Landmark, FileCheck, MoreHorizontal } from "lucide-react"
+import { Plus, MapPin, Smartphone, Banknote, CreditCard, Landmark, FileCheck, MoreHorizontal } from "lucide-react"
 
 import { useConfirmAction } from "@/hooks/useConfirmAction"
 import { PosTerminalDrawer } from "./PosTerminalDrawer"
@@ -113,6 +114,12 @@ export function PosTerminalList({ externalOpen, onExternalOpenChange, createActi
         deleteConfirm.requestConfirm(terminal)
     }
 
+    const actionsCtx: PosTerminalActionsCtx = {
+        onEdit: (terminal) => handleEdit(terminal),
+        onToggleActive: (terminal) => handleToggleActive(terminal),
+        onDelete: (terminal) => handleDelete(terminal),
+    }
+
     const columns: ColumnDef<Terminal>[] = [
         {
             accessorKey: "code",
@@ -138,29 +145,7 @@ export function PosTerminalList({ externalOpen, onExternalOpenChange, createActi
             ),
             filterFn: (row, id, value) => value.includes(row.getValue(id) ? "ACTIVE" : "INACTIVE")
         },
-        createActionsColumn<Terminal>({
-            renderActions: (terminal) => (
-                <>
-                    <DataCell.Action
-                        icon={Settings}
-                        title="Editar"
-                        onClick={() => handleEdit(terminal)}
-                    />
-                    <DataCell.Action
-                        icon={terminal.is_active ? PowerOff : Power}
-                        title={terminal.is_active ? "Desactivar" : "Activar"}
-                        className={terminal.is_active ? "text-muted-foreground hover:text-destructive" : ""}
-                        onClick={() => handleToggleActive(terminal)}
-                    />
-                    <DataCell.Action
-                        icon={Trash2}
-                        title="Eliminar"
-                        className="text-destructive hover:text-destructive"
-                        onClick={() => handleDelete(terminal)}
-                    />
-                </>
-            )
-        })
+        posTerminalActions.column(actionsCtx),
     ]
 
     return (
@@ -203,17 +188,12 @@ export function PosTerminalList({ externalOpen, onExternalOpenChange, createActi
                         const totalMethods = Object.values(methodsByType).reduce((a, b) => a + b, 0)
 
                         return (
-                            <EntityCard key={terminal.id} className={!terminal.is_active ? "opacity-70 bg-muted/20" : ""}>
+                            <EntityCard key={terminal.id} className={!terminal.is_active ? "opacity-70 bg-muted/20" : ""} actions={posTerminalActions.render(terminal, actionsCtx)}>
                                 <EntityCard.Header
                                     title={terminal.name}
                                     subtitle={terminal.code}
                                     trailing={
-                                        <div className="flex flex-col items-end gap-2">
-                                            <StatusBadge status={terminal.is_active ? "active" : "inactive"} size="sm" className="uppercase font-bold tracking-tight" />
-                                            <div className="flex items-center gap-1">
-                                                <IconButton onClick={() => handleEdit(terminal)} className="h-7 w-7"><Settings className="h-3 w-3" /></IconButton>
-                                            </div>
-                                        </div>
+                                        <StatusBadge status={terminal.is_active ? "active" : "inactive"} size="sm" className="uppercase font-bold tracking-tight" />
                                     }
                                 />
                                 <EntityCard.Body>

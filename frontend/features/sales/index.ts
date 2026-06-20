@@ -1,4 +1,6 @@
 export * from './types'
+export * from './posSessionActions'
+export * from './posTerminalActions'
 export * from './segmentationDef'
 export * from './api/salesApi'
 export * from './hooks/useSalesOrders'
