@@ -204,48 +204,42 @@ export function createCardGroupView<TData>(
             "div",
             {
               className:
-                "sticky top-0 z-10 bg-background/95 backdrop-blur-sm border-b border-border/20 pb-2 pt-3 mb-3",
+                "pb-2 pt-3 mb-3",
             },
             React.createElement(
               "div",
-              { className: "flex items-center justify-between px-1" },
+              { className: "flex items-center gap-2" },
+              React.createElement(Calendar, {
+                className: "h-4 w-4 shrink-0 text-muted-foreground/50",
+              }),
               React.createElement(
-                "div",
-                { className: "flex items-center gap-2 min-w-0" },
-                React.createElement(Calendar, {
-                  className: "h-4 w-4 shrink-0 text-muted-foreground/50",
-                }),
+                "span",
+                { className: "text-xs font-semibold text-foreground truncate" },
+                group.label,
+              ),
+              group.sublabel &&
                 React.createElement(
                   "span",
-                  { className: "text-sm font-semibold text-foreground truncate" },
-                  group.label,
+                  {
+                    className:
+                      "hidden sm:inline text-xs text-muted-foreground/50 truncate",
+                  },
+                  group.sublabel,
                 ),
-                group.sublabel &&
-                  React.createElement(
-                    "span",
-                    {
-                      className:
-                        "hidden sm:inline text-xs text-muted-foreground/50 truncate",
-                    },
-                    group.sublabel,
-                  ),
-              ),
               group.total !== 0 &&
                 React.createElement(
-                  "div",
-                  { className: "flex items-center gap-1.5 shrink-0 ml-4" },
+                  React.Fragment,
+                  null,
+                  React.createElement("span", { className: "text-muted-foreground/20" }, "\u00B7"),
                   React.createElement(
                     "span",
-                    {
-                      className:
-                        "text-[10px] font-black uppercase tracking-widest text-muted-foreground/40",
-                    },
+                    { className: "text-[10px] font-black uppercase tracking-widest text-muted-foreground/40" },
                     "Total",
                   ),
                   React.createElement(MoneyDisplay, {
                     amount: group.total,
                     showColor: false,
-                    className: "text-sm font-bold",
+                    className: "text-xs font-bold",
                   }),
                 ),
             ),
