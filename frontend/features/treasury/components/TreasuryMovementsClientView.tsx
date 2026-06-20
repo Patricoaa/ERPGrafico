@@ -10,7 +10,6 @@ import { DataCell, createActionsColumn } from '@/components/shared'
 import { cn } from "@/lib/utils"
 import { useGlobalModalActions } from "@/components/providers/GlobalModalProvider"
 
-import { SkeletonShell } from "@/components/shared"
 import { useSearchParams, useRouter, usePathname } from "next/navigation"
 import { useTreasuryMovements, type TreasuryMovementFilters } from "@/features/treasury/hooks/useTreasuryMovements"
 import { treasuryMovementsSegDef } from "@/features/treasury/segmentationDef"
@@ -293,15 +292,13 @@ export function TreasuryMovementsClientView({ externalOpen, createAction }: Trea
 
     return (
         <div className="h-full flex flex-col">
-            <SkeletonShell isLoading={isLoading} ariaLabel="Cargando modal de movimiento de tesorería">
-                <Suspense fallback={<div />}>
-                    <CashMovementModal
-                        open={openModal}
-                        onOpenChange={(open: boolean) => setOpenModal(open)}
-                        onSuccess={refetch}
-                    />
-                </Suspense>
-            </SkeletonShell>
+            <Suspense fallback={<div />}>
+                <CashMovementModal
+                    open={openModal}
+                    onOpenChange={(open: boolean) => setOpenModal(open)}
+                    onSuccess={refetch}
+                />
+            </Suspense>
 
             <div className="flex-1 min-h-0">
                 <DataTableView
@@ -392,18 +389,16 @@ export function TreasuryMovementsClientView({ externalOpen, createAction }: Trea
                 />
             </div>
 
-            <SkeletonShell isLoading={isLoading} ariaLabel="Cargando vista de detalle de movimiento">
-                {selectedMovementId && (
-                    <CashMovementDrawer
-                        id={selectedMovementId}
-                        open={detailsOpen}
-                        onOpenChange={(open) => {
-                            setDetailsOpen(open)
-                            if (!open) clearSelection()
-                        }}
-                    />
-                )}
-            </SkeletonShell>
+            {selectedMovementId && (
+                <CashMovementDrawer
+                    id={selectedMovementId}
+                    open={detailsOpen}
+                    onOpenChange={(open) => {
+                        setDetailsOpen(open)
+                        if (!open) clearSelection()
+                    }}
+                />
+            )}
         </div>
     )
 }
