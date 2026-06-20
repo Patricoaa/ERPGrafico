@@ -430,14 +430,20 @@ El toolbar del DataTable sigue una jerarquía visual consistente con el [design 
 
 **Regla:** Usar siempre la opacidad del nivel correspondiente. No inventar opacidades intermedias (`/60`).
 
-### 10.2 Shadow tokens
+### 10.2 Shadow tokens (elevation system)
 
-| Nivel | Token | Elementos |
-|-------|-------|-----------|
-| Card/surface | `shadow-card` | Button group container, ToolbarCreateButton, TableHeader |
-| Floating/overlay | `shadow-floating` | DropdownMenuContent, PopoverContent |
+| Token | CSS value | Elementos |
+|-------|-----------|-----------|
+| `shadow-card` | `0 1px 3px oklch(0.12 0.02 240 / 0.06)` | Cards, containers, tables, buttons, badges, small surfaces |
+| `shadow-elevated` | `0 4px 16px oklch(0.12 0.02 240 / 0.08), 0 1px 4px oklch(0.12 0.02 240 / 0.04)` | Hover states, elevated cards (RatiosView, BIAnalyticsView), button emphasis |
+| `shadow-floating` | `0 8px 32px oklch(0.12 0.02 240 / 0.12), 0 2px 8px oklch(0.12 0.02 240 / 0.06)` | DropdownMenu, Popover, Select, tooltips, floating sidebars, scroll buttons |
+| `shadow-overlay` | `0 16px 48px oklch(0.12 0.02 240 / 0.16)` | Modals (BaseModal), Sheets/Drawers, search dialogs, full-screen overlays |
 
-**Regla:** Usar siempre los tokens semánticos del elevation system (`shadow-card`, `shadow-floating`), nunca Tailwind defaults (`shadow-sm`, `shadow-xl`, `shadow-md`).
+**Regla:** Usar **siempre** los tokens semánticos del elevation system. **Prohibido** usar Tailwind defaults (`shadow-sm`, `shadow-md`, `shadow-lg`, `shadow-xl`, `shadow-2xl`).
+
+**Excepciones permitidas:**
+- `shadow-none` — remoción explícita de sombra (selectores, tabs underline, contenedores anidados)
+- `shadow-inner` — elementos decorativos inset (drag handles, dock containers) — no hay token semántico equivalente
 
 ### 10.3 Radius hierarchy
 
