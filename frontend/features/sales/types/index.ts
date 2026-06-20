@@ -62,6 +62,7 @@ export type SaleNote = Invoice
 
 export interface SaleOrder {
     id: number
+    display_id?: string
     number: string
     customer_name: string
     date: string
