@@ -308,6 +308,7 @@ export interface TreasuryMovementFilters {
     amount_max?: number | string
     direction?: 'IN' | 'OUT'
     is_reconciled?: boolean
+    payment_method?: string
     payment_method_new?: string | number
     search?: string
     page?: number
