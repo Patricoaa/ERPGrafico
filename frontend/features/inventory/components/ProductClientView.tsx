@@ -22,10 +22,11 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { Archive as ArchiveIcon } from "lucide-react"
 import { ArchivingRestrictionsModal } from "./ArchivingRestrictionsModal"
 
-import { DataCell, createActionsColumn, MoneyDisplay } from '@/components/shared'
+import { DataCell, MoneyDisplay } from '@/components/shared'
 import { EntityCard } from "@/components/shared"
 import { useProducts } from "@/features/inventory/hooks/useProducts"
 import { Product, Restriction, ProductFilters } from "@/features/inventory/types"
+import { productActions, type ProductActionsCtx } from "@/features/inventory/productActions"
 import { useSelectedEntity } from "@/hooks/useSelectedEntity"
 import { Chip, SmartSearchBar, useSmartSearch, SegmentationBar, useSegmentation } from "@/components/shared"
 import { productSearchDef } from "@/features/inventory/searchDef"
@@ -172,6 +173,15 @@ export function ProductClientView({ externalOpen, onExternalOpenChange, createAc
         params.delete('selected')
         const query = params.toString()
         router.replace(query ? `${pathname}?${query}` : pathname, { scroll: false })
+    }
+
+    const actionsCtx: ProductActionsCtx = {
+        onEdit: (id) => {
+            const params = new URLSearchParams(searchParams.toString())
+            params.set('selected', String(id))
+            router.push(`${pathname}?${params.toString()}`, { scroll: false })
+        },
+        onArchive: (product) => handleArchive(product),
     }
 
     const columns = useMemo<ColumnDef<Product>[]>(() => [
@@ -384,25 +394,8 @@ export function ProductClientView({ externalOpen, onExternalOpenChange, createAc
                 </div>
             ),
         },
-        createActionsColumn<Product>({
-            renderActions: (item) => (
-                <>
-                    <DataCell.Action
-                        action="edit"
-                        onClick={() => {
-                            const params = new URLSearchParams(searchParams.toString())
-                            params.set('selected', String(item.id))
-                            router.push(`${pathname}?${params.toString()}`, { scroll: false })
-                        }}
-                    />
-                    <DataCell.Action
-                        action={item.is_active ? "archive" : "restore"}
-                        onClick={() => handleArchive(item)}
-                    />
-                </>
-            ),
-        }),
-    ], [expandedTemplates])
+        productActions.column(actionsCtx),
+    ], [actionsCtx, expandedTemplates])
 
     const initialColumnVisibility = useMemo(() => ({ is_active: false }), [])
 
@@ -460,7 +453,7 @@ export function ProductClientView({ externalOpen, onExternalOpenChange, createAc
                             const params = new URLSearchParams(searchParams.toString())
                             params.set('selected', String(product.id))
                             router.push(`${pathname}?${params.toString()}`, { scroll: false })
-                        }}>
+                        }} actions={productActions.render(product, actionsCtx)}>
                             <EntityCard.Header
                                 title={product.name}
                                 subtitle={<span className="font-mono text-xs">{product.code}</span>}
