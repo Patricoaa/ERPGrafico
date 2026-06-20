@@ -234,6 +234,7 @@ export function Step1_ProductSelection({
                                     onChange={(val) => handleProductChange(index, val)}
                                     variant="inline"
                                     placeholder="Seleccionar..."
+                                    className="border border-input rounded-sm"
                                 />
                                 {(() => {
                                     const prefSupplierId = product?.preferred_supplier && (
