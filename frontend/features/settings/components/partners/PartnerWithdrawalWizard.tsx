@@ -241,7 +241,7 @@ export function PartnerWithdrawalWizard({
                         className={cn(
                             "group flex flex-col items-center gap-4 p-6 rounded-md border-2 transition-all text-center",
                             method === "CASH"
-                                ? "border-destructive bg-destructive/5 shadow-lg shadow-destructive/10"
+                                ? "border-destructive bg-destructive/5 shadow-floating shadow-destructive/10"
                                 : "border-muted hover:border-destructive/30 hover:bg-muted/50"
                         )}
                     >
@@ -262,7 +262,7 @@ export function PartnerWithdrawalWizard({
                         className={cn(
                             "group flex flex-col items-center gap-4 p-6 rounded-md border-2 transition-all text-center",
                             method === "ASSETS"
-                                ? "border-warning bg-warning/5 shadow-lg shadow-warning/10"
+                                ? "border-warning bg-warning/5 shadow-floating shadow-warning/10"
                                 : "border-muted hover:border-warning/30 hover:bg-muted/50"
                         )}
                     >

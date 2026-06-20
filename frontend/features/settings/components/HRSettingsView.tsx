@@ -140,7 +140,7 @@ export function HRSettingsView({ activeTab = "global" }: { activeTab?: string })
                 const category = row.original.category
                 const isHaber = category.includes('HABER')
                 return (
-                    <Chip size="xs" intent={isHaber ? "success" : "destructive"} className="h-5 shadow-sm rounded-sm">
+                    <Chip size="xs" intent={isHaber ? "success" : "destructive"} className="h-5 shadow-card rounded-sm">
                         {row.getValue("category_display")}
                     </Chip>
                 )

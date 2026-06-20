@@ -277,7 +277,7 @@ export function PartnerLedgerTab() {
                             <TableCell className="text-right py-4">
                                 <div className="flex flex-col items-end">
                                     <span className="text-[9px] font-black uppercase text-primary tracking-[0.2em] mb-1.5 opacity-60">Running Balance</span>
-                                    <div className="bg-primary text-primary-foreground px-3 py-1.5 rounded text-sm font-black tracking-tighter shadow-lg shadow-primary/10">
+                                    <div className="bg-primary text-primary-foreground px-3 py-1.5 rounded text-sm font-black tracking-tighter shadow-floating shadow-primary/10">
                                         {rows.length > 0 ? formatCurrency(rows[0].original.balance_after) : '$0'}
                                     </div>
                                 </div>

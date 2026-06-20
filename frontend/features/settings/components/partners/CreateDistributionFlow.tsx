@@ -329,11 +329,11 @@ export function CreateDistributionFlow({ open, onOpenChange, onSuccess, initialR
             component: (
                 <div className="space-y-4">
                     <div className="grid grid-cols-2 gap-4">
-                        <Card className="rounded-none border-dashed bg-card/50 shadow-sm p-4 bg-muted/20">
+                        <Card className="rounded-none border-dashed bg-card/50 shadow-card p-4 bg-muted/20">
                             <p className="text-[10px] font-bold uppercase text-muted-foreground tracking-widest mb-1">Monto a Distribuir</p>
                             <DataCell.Currency value={draftResolution?.net_result || 0} className="justify-start text-xl font-bold text-primary" />
                         </Card>
-                        <Card className="rounded-none border-dashed bg-card/50 shadow-sm p-4 bg-muted/20">
+                        <Card className="rounded-none border-dashed bg-card/50 shadow-card p-4 bg-muted/20">
                             <p className="text-[10px] font-bold uppercase text-muted-foreground tracking-widest mb-1">Ejercicio</p>
                             <p className="text-xl font-heading font-black">{draftResolution?.fiscal_year}</p>
                         </Card>
