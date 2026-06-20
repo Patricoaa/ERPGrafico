@@ -1,6 +1,7 @@
 "use client"
 
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useCallback } from 'react'
+import { useRouter, usePathname, useSearchParams } from 'next/navigation'
 import type { ColumnDef } from '@tanstack/react-table'
 import { CreditCard, AlertTriangle, Receipt } from 'lucide-react'
 import {
@@ -31,6 +32,9 @@ const statementsSearchDef: SearchDefinition = {
 }
 
 export function StatementsClientView({ bankId }: StatementsClientViewProps) {
+    const router = useRouter()
+    const pathname = usePathname()
+    const searchParams = useSearchParams()
     const { data: overview, isLoading: overviewLoading } = useBankOverview(bankId)
     const overviewData = (overview && !overviewLoading ? overview : null) as BankOverviewData | null
     const creditCardAccounts = useMemo(
@@ -39,8 +43,11 @@ export function StatementsClientView({ bankId }: StatementsClientViewProps) {
         ).map(a => ({ id: a.id, name: a.name, currency: a.currency })) ?? []),
         [overviewData],
     )
-    const [selectedId, setSelectedId] = useState<number | null>(null)
-    const [payingStatement, setPayingStatement] = useState<CreditCardStatement | null>(null)
+
+    const selectedId = searchParams.get("selected") ? Number(searchParams.get("selected")) : null
+    const action = searchParams.get("action")
+    const isDetailOpen = !!selectedId && (action === "detail" || !action)
+    const isPayOpen = !!selectedId && action === "pay"
 
     const segDef: SegmentationDefinition = useMemo(() => ({
         segments: [
@@ -116,9 +123,32 @@ export function StatementsClientView({ bankId }: StatementsClientViewProps) {
         )
     }
 
+    const clearAll = useCallback(() => {
+        const params = new URLSearchParams(searchParams.toString())
+        const changed = params.has("selected") || params.has("action")
+        params.delete("selected")
+        params.delete("action")
+        if (changed) {
+            const query = params.toString()
+            router.replace(query ? `${pathname}?${query}` : pathname, { scroll: false })
+        }
+    }, [router, pathname, searchParams])
+
+    const openStatement = useCallback((id: number, actionType: string) => {
+        const params = new URLSearchParams(searchParams.toString())
+        params.set("selected", String(id))
+        params.set("action", actionType)
+        router.push(`${pathname}?${params.toString()}`, { scroll: false })
+    }, [router, pathname, searchParams])
+
+    const selectedStatement = useMemo(
+        () => selectedId ? statements.find(s => s.id === selectedId) ?? null : null,
+        [selectedId, statements],
+    )
+
     const actionsCtx: StatementActionsCtx = {
-        onPay: setPayingStatement,
-        onViewDetail: setSelectedId,
+        onPay: (stmt) => openStatement(stmt.id, "pay"),
+        onViewDetail: (id) => openStatement(id, "detail"),
     }
 
     const columns: ColumnDef<CreditCardStatement>[] = [
@@ -269,7 +299,7 @@ export function StatementsClientView({ bankId }: StatementsClientViewProps) {
                         description: 'Los estados de cuenta de la tarjeta de crédito aparecerán aquí.',
                     }}
                     renderCard={(stmt: CreditCardStatement) => (
-                        <EntityCard actions={statementActions.render(stmt, actionsCtx)}>
+                        <EntityCard onClick={() => openStatement(stmt.id, "detail")} actions={statementActions.render(stmt, actionsCtx)}>
                             <EntityCard.Header
                                 title={stmt.display_id}
                                 subtitle={stmt.card_account_name}
@@ -296,13 +326,13 @@ export function StatementsClientView({ bankId }: StatementsClientViewProps) {
 
             <StatementDetailModal
                 statementId={selectedId}
-                open={selectedId != null}
-                onOpenChange={(open) => { if (!open) setSelectedId(null) }}
+                open={isDetailOpen}
+                onOpenChange={(open) => { if (!open) clearAll() }}
             />
             <PayStatementModal
-                statement={payingStatement}
-                open={payingStatement != null}
-                onOpenChange={(open) => { if (!open) setPayingStatement(null) }}
+                statement={selectedStatement}
+                open={isPayOpen}
+                onOpenChange={(open) => { if (!open) clearAll() }}
             />
         </div>
     )

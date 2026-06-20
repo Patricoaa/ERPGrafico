@@ -1,7 +1,7 @@
 "use client"
 
 import React, { useState, useEffect, useCallback } from "react"
-import { useRouter } from "next/navigation"
+import { useRouter, usePathname, useSearchParams } from "next/navigation"
 import { useTerminalProviders, useTerminalDevices, type PaymentTerminalProvider, type PaymentTerminalDevice } from "../hooks/useTerminalProviders"
 import { Button } from "@/components/ui/button"
 import { ActionConfirmModal, EntityCard, SmartSearchBar, StatusBadge, useClientSearch, useSmartSearch, SegmentationBar, useSegmentation } from '@/components/shared'
@@ -15,6 +15,7 @@ import {
 } from "lucide-react"
 
 import { useConfirmAction } from "@/hooks/useConfirmAction"
+import { useSelectedEntity } from "@/hooks/useSelectedEntity"
 import { DataTableView } from '@/components/shared'
 import { DataTableColumnHeader } from '@/components/shared'
 import { DataCell } from '@/components/shared'
@@ -39,6 +40,8 @@ export function PaymentHardwareClientView({
     createAction
 }: PaymentHardwareClientViewProps) {
     const router = useRouter()
+    const pathname = usePathname()
+    const searchParams = useSearchParams()
     const [activeTab, setActiveTab] = useState<"providers" | "devices">("devices")
 
     useEffect(() => {
@@ -55,52 +58,61 @@ export function PaymentHardwareClientView({
     const { providers, isLoading: isLoadingProviders, refetch: refetchProviders, deleteProvider } = useTerminalProviders()
     const { devices, isLoading: isLoadingDevices, refetch: refetchDevices, deleteDevice } = useTerminalDevices(deviceFilters)
 
-    const [providerDialogOpen, setProviderDialogOpen] = useState(false)
-    const [editingProvider, setEditingProvider] = useState<PaymentTerminalProvider | null>(null)
+    const isCreateProvider = searchParams.get("modal") === "new-provider"
+    const isCreateDevice = searchParams.get("modal") === "new-device"
+    const { entity: selectedProvider, clearSelection: clearProvider } = useSelectedEntity<PaymentTerminalProvider>({ endpoint: '/treasury/terminal-providers', paramName: 'selected-provider' })
+    const { entity: selectedDevice, clearSelection: clearDevice } = useSelectedEntity<PaymentTerminalDevice>({ endpoint: '/treasury/terminal-devices', paramName: 'selected-device' })
 
-    const [deviceDialogOpen, setDeviceDialogOpen] = useState(false)
-    const [editingDevice, setEditingDevice] = useState<PaymentTerminalDevice | null>(null)
+    const providerDialogOpen = isCreateProvider || !!selectedProvider
+    const deviceDialogOpen = isCreateDevice || !!selectedDevice
 
-    const clearModalParam = useCallback(() => {
-        const searchParams = new URLSearchParams(window.location.search)
-        if (searchParams.has('modal')) {
-            searchParams.delete('modal')
-            const query = searchParams.toString()
-            router.replace(query ? `?${query}` : window.location.pathname, { scroll: false })
+    const clearAllParams = useCallback(() => {
+        clearProvider()
+        clearDevice()
+        const params = new URLSearchParams(searchParams.toString())
+        const changed = params.has("modal") || params.has("selected-provider") || params.has("selected-device")
+        params.delete("modal")
+        params.delete("selected-provider")
+        params.delete("selected-device")
+        if (changed) {
+            const query = params.toString()
+            router.replace(query ? `${pathname}?${query}` : pathname, { scroll: false })
         }
-    }, [router])
+    }, [router, pathname, searchParams, clearProvider, clearDevice])
 
-    const handleCreateProvider = () => {
-        setEditingProvider(null)
-        setProviderDialogOpen(true)
-    }
+    const openProviderSelected = useCallback((id: number) => {
+        const params = new URLSearchParams(searchParams.toString())
+        params.set("selected-provider", String(id))
+        params.delete("modal")
+        router.push(`${pathname}?${params.toString()}`, { scroll: false })
+    }, [router, pathname, searchParams])
 
-    const handleCreateDevice = () => {
-        setEditingDevice(null)
-        setDeviceDialogOpen(true)
-    }
+    const openDeviceSelected = useCallback((id: number) => {
+        const params = new URLSearchParams(searchParams.toString())
+        params.set("selected-device", String(id))
+        params.delete("modal")
+        router.push(`${pathname}?${params.toString()}`, { scroll: false })
+    }, [router, pathname, searchParams])
 
     useEffect(() => {
         if (externalDeviceOpen) {
-            requestAnimationFrame(() => handleCreateDevice())
+            requestAnimationFrame(() => {
+                const params = new URLSearchParams(searchParams.toString())
+                params.set("modal", "new-device")
+                router.replace(`${pathname}?${params.toString()}`, { scroll: false })
+            })
         }
     }, [externalDeviceOpen])
 
     useEffect(() => {
         if (externalProviderOpen) {
-            requestAnimationFrame(() => handleCreateProvider())
+            requestAnimationFrame(() => {
+                const params = new URLSearchParams(searchParams.toString())
+                params.set("modal", "new-provider")
+                router.replace(`${pathname}?${params.toString()}`, { scroll: false })
+            })
         }
     }, [externalProviderOpen])
-
-    const handleEditProvider = (provider: PaymentTerminalProvider) => {
-        setEditingProvider(provider)
-        setProviderDialogOpen(true)
-    }
-
-    const handleEditDevice = (device: PaymentTerminalDevice) => {
-        setEditingDevice(device)
-        setDeviceDialogOpen(true)
-    }
 
     const deleteProviderConfirm = useConfirmAction<PaymentTerminalProvider>(async (provider) => {
         try {
@@ -115,7 +127,7 @@ export function PaymentHardwareClientView({
     })
 
     const providerActionsCtx: ProviderActionsCtx = {
-        onEdit: handleEditProvider,
+        onEdit: (provider) => openProviderSelected(provider.id),
         onDelete: (provider) => deleteProviderConfirm.requestConfirm(provider),
     }
 
@@ -147,7 +159,7 @@ export function PaymentHardwareClientView({
     ]
 
     const deviceActionsCtx: DeviceActionsCtx = {
-        onEdit: handleEditDevice,
+        onEdit: (device) => openDeviceSelected(device.id),
         onDelete: (device) => deleteDeviceConfirm.requestConfirm(device),
     }
 
@@ -197,12 +209,16 @@ export function PaymentHardwareClientView({
                             description: "Configura un proveedor (Transbank, etc.) para registrar sus dispositivos.",
                         }}
                         createAction={createAction || (
-                            <Button onClick={handleCreateProvider} className="h-9">
+                            <Button onClick={() => {
+                                const params = new URLSearchParams(searchParams.toString())
+                                params.set("modal", "new-provider")
+                                router.replace(`${pathname}?${params.toString()}`, { scroll: false })
+                            }} className="h-9">
                                 Configurar proveedor
                             </Button>
                         )}
                         renderCard={(provider: PaymentTerminalProvider) => (
-                            <EntityCard key={provider.id} actions={providerActions.render(provider, providerActionsCtx)}>
+                            <EntityCard key={provider.id} onClick={() => openProviderSelected(provider.id)} actions={providerActions.render(provider, providerActionsCtx)}>
                                 <EntityCard.Header
                                     title={
                                         <div className="flex items-center gap-2">
@@ -250,12 +266,16 @@ export function PaymentHardwareClientView({
                             description: "Registra terminales de pago (POS) para conciliar sus transacciones.",
                         }}
                         createAction={createAction || (
-                            <Button onClick={handleCreateDevice} className="h-9">
+                            <Button onClick={() => {
+                                const params = new URLSearchParams(searchParams.toString())
+                                params.set("modal", "new-device")
+                                router.replace(`${pathname}?${params.toString()}`, { scroll: false })
+                            }} className="h-9">
                                 Registrar dispositivo
                             </Button>
                         )}
                         renderCard={(device: PaymentTerminalDevice) => (
-                            <EntityCard key={device.id} actions={deviceActions.render(device, deviceActionsCtx)}>
+                            <EntityCard key={device.id} onClick={() => openDeviceSelected(device.id)} actions={deviceActions.render(device, deviceActionsCtx)}>
                                 <EntityCard.Header
                                     title={
                                         <div className="flex items-center gap-2">
@@ -301,22 +321,20 @@ export function PaymentHardwareClientView({
             <ProviderDrawer
                 open={providerDialogOpen}
                 onOpenChange={(v) => {
-                    setProviderDialogOpen(v)
-                    if (!v) clearModalParam()
+                    if (!v) clearAllParams()
                 }}
-                provider={editingProvider}
-                onSuccess={refetchProviders}
+                provider={isCreateProvider ? null : selectedProvider}
+                onSuccess={() => { clearAllParams(); refetchProviders() }}
             />
 
             <DeviceDrawer
                 open={deviceDialogOpen}
                 onOpenChange={(v) => {
-                    setDeviceDialogOpen(v)
-                    if (!v) clearModalParam()
+                    if (!v) clearAllParams()
                 }}
-                device={editingDevice}
+                device={isCreateDevice ? null : selectedDevice}
                 providers={providers}
-                onSuccess={refetchDevices}
+                onSuccess={() => { clearAllParams(); refetchDevices() }}
             />
 
             {/* Confirmation Modals */}

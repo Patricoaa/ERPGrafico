@@ -43,11 +43,8 @@ export function TaxDeclarationsClientView({ externalOpen, onExternalOpenChange, 
     const searchParams = useSearchParams()
     const router = useRouter()
     const pathname = usePathname()
-    const [isWizardOpen, setIsWizardOpen] = useState(false)
-    const [isPaymentOpen, setIsPaymentOpen] = useState(false)
-    const [selectedPeriodId, setSelectedPeriodId] = useState<number | undefined>(undefined)
     const [selectedDeclaration, setSelectedDeclaration] = useState<TaxDeclaration | null>(null)
-    const { entity: selectedFromUrl, clearSelection } = useSelectedEntity<TaxPeriod>({
+    const { entity: selectedFromUrl } = useSelectedEntity<TaxPeriod>({
         endpoint: '/tax/periods'
     })
 
@@ -58,10 +55,11 @@ export function TaxDeclarationsClientView({ externalOpen, onExternalOpenChange, 
     const periods = ((periodsData as { results?: TaxPeriod[] })?.results || (periodsData as TaxPeriod[]) || []) as TaxPeriod[]
     const isLoading = isLoadingPeriods
 
+    const action = searchParams.get('action')
+    const isWizardOpen = !!selectedFromUrl && (!action || action !== 'pay')
+    const isPaymentOpen = !!selectedFromUrl && action === 'pay'
+
     const handleCloseModal = () => {
-        setIsWizardOpen(false)
-        setIsPaymentOpen(false)
-        setSelectedPeriodId(undefined)
         setSelectedDeclaration(null)
         onExternalOpenChange?.(false)
 
@@ -70,27 +68,6 @@ export function TaxDeclarationsClientView({ externalOpen, onExternalOpenChange, 
         params.delete("action")
         params.delete("modal")
         router.replace(`${pathname}?${params.toString()}`, { scroll: false })
-    }
-
-    const handleWizardOpenChange = (open: boolean) => {
-        if (!open) {
-            handleCloseModal()
-        } else {
-            setIsWizardOpen(true)
-        }
-    }
-
-    useEffect(() => {
-        if (externalOpen) {
-            requestAnimationFrame(() => {
-                setIsWizardOpen(true)
-            })
-        }
-    }, [externalOpen])
-
-    const openWizardModal = (period: TaxPeriod) => {
-        setSelectedPeriodId(period.id)
-        setIsWizardOpen(true)
     }
 
     const openPaymentModal = async (period: TaxPeriod) => {
@@ -115,7 +92,6 @@ export function TaxDeclarationsClientView({ externalOpen, onExternalOpenChange, 
                 vat_withholding: 0,
                 tax_rate: 0
             })
-            setIsPaymentOpen(true)
         } else {
             try {
                 const declarations = await fetchDeclarations({ tax_period__year: period.year, tax_period__month: period.month })
@@ -124,7 +100,6 @@ export function TaxDeclarationsClientView({ externalOpen, onExternalOpenChange, 
                         ...declarations[0],
                         tax_period_display: `${period.month_display} ${period.year}`
                     })
-                    setIsPaymentOpen(true)
                 } else {
                     toast.error("No se encontró una declaración válida para pagar")
                 }
@@ -134,23 +109,14 @@ export function TaxDeclarationsClientView({ externalOpen, onExternalOpenChange, 
         }
     }
 
-    // State watchers for URL params without re-fetching
+    // Trigger payment data fetch when URL has action=pay
     useEffect(() => {
-        if (selectedFromUrl) {
-            const action = searchParams.get('action')
+        if (selectedFromUrl && action === 'pay') {
             requestAnimationFrame(() => {
-                if (action === 'pay') {
-                    if (!isPaymentOpen && selectedDeclaration?.tax_period_year !== selectedFromUrl.year) {
-                        openPaymentModal(selectedFromUrl)
-                    }
-                } else {
-                    if (!isWizardOpen && selectedPeriodId !== selectedFromUrl.id) {
-                        openWizardModal(selectedFromUrl)
-                    }
-                }
+                openPaymentModal(selectedFromUrl)
             })
         }
-    }, [selectedFromUrl, searchParams])
+    }, [selectedFromUrl, action])
 
     const handleOpenWizard = (period: TaxPeriod) => {
         const params = new URLSearchParams(searchParams.toString())
@@ -182,7 +148,7 @@ export function TaxDeclarationsClientView({ externalOpen, onExternalOpenChange, 
             })
 
             toast.success("Pago de impuestos registrado correctamente")
-            setIsPaymentOpen(false)
+            handleCloseModal()
         } catch {
             // Error handled by mutation's onError
         }
@@ -429,12 +395,11 @@ export function TaxDeclarationsClientView({ externalOpen, onExternalOpenChange, 
             </div>
             <DeclarationWizard
                 isOpen={isWizardOpen || !!externalOpen}
-                onOpenChange={handleWizardOpenChange}
-                periodId={selectedPeriodId}
+                onOpenChange={(open) => !open && handleCloseModal()}
+                periodId={selectedFromUrl?.id}
                 onSuccess={() => {
                     refetchPeriods()
-                    setIsWizardOpen(false)
-                    setSelectedPeriodId(undefined)
+                    handleCloseModal()
                 }}
                 existingPeriods={periods}
             />

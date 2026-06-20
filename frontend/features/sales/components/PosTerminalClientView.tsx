@@ -1,6 +1,7 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useEffect, useMemo } from "react"
+import { useSearchParams, usePathname, useRouter } from "next/navigation"
 import { usePosTerminals } from "@/features/sales"
 import type { Terminal } from "@/features/treasury"
 import { cn } from "@/lib/utils"
@@ -16,6 +17,8 @@ import { ColumnDef } from "@tanstack/react-table"
 import { Plus, MapPin, Smartphone, Banknote, CreditCard, Landmark, FileCheck, MoreHorizontal } from "lucide-react"
 
 import { useConfirmAction } from "@/hooks/useConfirmAction"
+import { useSelectedEntity } from "@/hooks/useSelectedEntity"
+import { useEntityRouteActions } from "@/hooks/useEntityRouteActions"
 import { PosTerminalDrawer } from "./PosTerminalDrawer"
 
 const PAYMENT_TYPE_ORDER = ['CASH', 'CARD', 'CARD_TERMINAL', 'TRANSFER', 'CHECK', 'OTHER'] as const
@@ -74,25 +77,24 @@ interface PosTerminalClientViewProps {
 
 export function PosTerminalClientView({ externalOpen, onExternalOpenChange, createAction }: PosTerminalClientViewProps) {
     const { terminals, toggleActive, deleteTerminal, refetch, isLoading } = usePosTerminals()
-    const [dialogOpen, setDialogOpen] = useState(false)
-    const [editingTerminal, setEditingTerminal] = useState<Terminal | null>(null)
+    const searchParams = useSearchParams()
+    const pathname = usePathname()
+    const router = useRouter()
 
-    const handleEdit = (terminal: Terminal) => {
-        setEditingTerminal(terminal)
-        setDialogOpen(true)
-    }
+    const isCreateModal = searchParams.get("modal") === "new"
+    const { entity: selectedFromUrl, clearSelection } = useSelectedEntity<Terminal>({ endpoint: '/treasury/pos-terminals' })
+    const { openSelected } = useEntityRouteActions()
+    const dialogOpen = isCreateModal || !!selectedFromUrl || !!externalOpen
 
-    const handleCreate = () => {
-        setEditingTerminal(null)
-        setDialogOpen(true)
+    const handleCloseDialog = () => {
+        clearSelection()
         onExternalOpenChange?.(false)
-    }
-
-    useEffect(() => {
-        if (externalOpen) {
-            requestAnimationFrame(() => handleCreate())
+        if (searchParams.get("modal")) {
+            const params = new URLSearchParams(searchParams.toString())
+            params.delete("modal")
+            router.replace(`${pathname}?${params.toString()}`, { scroll: false })
         }
-    }, [externalOpen])
+    }
 
     const handleToggleActive = async (terminal: Terminal) => {
         try {
@@ -115,7 +117,7 @@ export function PosTerminalClientView({ externalOpen, onExternalOpenChange, crea
     }
 
     const actionsCtx: PosTerminalActionsCtx = {
-        onEdit: (terminal) => handleEdit(terminal),
+        onEdit: (terminal) => openSelected(terminal.id),
         onToggleActive: (terminal) => handleToggleActive(terminal),
         onDelete: (terminal) => handleDelete(terminal),
     }
@@ -169,7 +171,11 @@ export function PosTerminalClientView({ externalOpen, onExternalOpenChange, crea
                         }
                     ]}
                     createAction={createAction || (
-                        <Button onClick={handleCreate} className="h-9">
+                        <Button onClick={() => {
+                            const params = new URLSearchParams(searchParams.toString())
+                            params.set("modal", "new")
+                            router.replace(`${pathname}?${params.toString()}`, { scroll: false })
+                        }} className="h-9">
                             <Plus className="mr-2 h-4 w-4" /> Crear Caja
                         </Button>
                     )}
@@ -188,7 +194,7 @@ export function PosTerminalClientView({ externalOpen, onExternalOpenChange, crea
                         const totalMethods = Object.values(methodsByType).reduce((a, b) => a + b, 0)
 
                         return (
-                            <EntityCard key={terminal.id} className={!terminal.is_active ? "opacity-70 bg-muted/20" : ""} actions={posTerminalActions.render(terminal, actionsCtx)}>
+                            <EntityCard key={terminal.id} onClick={() => openSelected(terminal.id)} className={!terminal.is_active ? "opacity-70 bg-muted/20" : ""} actions={posTerminalActions.render(terminal, actionsCtx)}>
                                 <EntityCard.Header
                                     title={terminal.name}
                                     subtitle={terminal.code}
@@ -253,11 +259,10 @@ export function PosTerminalClientView({ externalOpen, onExternalOpenChange, crea
             <PosTerminalDrawer
                 open={dialogOpen}
                 onOpenChange={(open: boolean) => {
-                    setDialogOpen(open)
-                    if (!open) onExternalOpenChange?.(false)
+                    if (!open) handleCloseDialog()
                 }}
-                terminal={editingTerminal}
-                onSuccess={refetch}
+                terminal={isCreateModal ? null : selectedFromUrl}
+                onSuccess={() => { handleCloseDialog(); refetch() }}
             />
 
             <ActionConfirmModal

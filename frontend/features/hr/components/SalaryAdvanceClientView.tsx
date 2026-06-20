@@ -1,6 +1,7 @@
 "use client"
 
 import React, { useState, useEffect } from "react"
+import { useRouter, usePathname, useSearchParams } from "next/navigation"
 import { toast } from "sonner"
 import { AdvanceDrawer } from "@/features/hr"
 import { createAdvance, deleteAdvance, getEmployees, getPayrolls } from "@/features/hr"
@@ -9,12 +10,13 @@ import type { SalaryAdvance, Employee, Payroll } from "@/types/hr"
 import { DataTableView, DataTableColumnHeader } from '@/components/shared'
 import { DataCell, EntityCard } from '@/components/shared'
 import { ColumnDef } from "@tanstack/react-table"
-import { useSearchParams } from "next/navigation"
 
 import { ToolbarCreateButton, SegmentationBar, useSegmentation, SmartSearchBar, useClientSearch } from "@/components/shared"
 import { useSalaryAdvances, salaryAdvanceActions, type SalaryAdvanceActionsCtx } from "@/features/hr"
 import { salaryAdvanceSegDef } from "../segmentationDef"
 import { salaryAdvanceSearchDef } from "../searchDef"
+import { useSelectedEntity } from "@/hooks/useSelectedEntity"
+import { useEntityRouteActions } from "@/hooks/useEntityRouteActions"
 
 interface SalaryAdvanceClientViewProps {
     initialAdvances?: SalaryAdvance[]
@@ -22,6 +24,8 @@ interface SalaryAdvanceClientViewProps {
 
 export function SalaryAdvanceClientView({ initialAdvances }: SalaryAdvanceClientViewProps) {
     const createAction = <ToolbarCreateButton label="Nuevo Anticipo" href="/hr/advances?modal=new" />
+    const router = useRouter()
+    const pathname = usePathname()
     const searchParams = useSearchParams()
     const { filterFn: filterAdvances, isFiltered: isTextFiltered, clearAll: clearText } = useClientSearch<SalaryAdvance>(salaryAdvanceSearchDef)
     const basePeriod = { serverParamFrom: 'date_from', serverParamTo: 'date_to' }
@@ -33,20 +37,19 @@ export function SalaryAdvanceClientView({ initialAdvances }: SalaryAdvanceClient
     const [payrolls, setPayrolls] = useState<Payroll[]>([])
 
     const isNewModalOpen = searchParams.get("modal") === "new"
-    const [editingAdvance, setEditingAdvance] = useState<SalaryAdvance | null>(null)
-    const dialogOpen = isNewModalOpen || !!editingAdvance
+    const { entity: selectedFromUrl, clearSelection } = useSelectedEntity<SalaryAdvance>({ endpoint: '/hr/advances' })
+    const { openSelected } = useEntityRouteActions()
+    const dialogOpen = isNewModalOpen || !!selectedFromUrl
 
     const [paymentModalOpen, setPaymentModalOpen] = useState(false)
     const [tempAdvanceData, setTempAdvanceData] = useState<Record<string, unknown> | null>(null)
 
-    const setDialogOpen = (open: boolean) => {
-        if (!open) {
-            setEditingAdvance(null)
-            if (isNewModalOpen) {
-                const params = new URLSearchParams(searchParams.toString())
-                params.delete("modal")
-                window.history.replaceState(null, "", `?${params.toString()}`)
-            }
+    const handleClose = () => {
+        clearSelection()
+        if (isNewModalOpen) {
+            const params = new URLSearchParams(searchParams.toString())
+            params.delete("modal")
+            router.replace(`${pathname}?${params.toString()}`, { scroll: false })
         }
     }
 
@@ -67,7 +70,7 @@ export function SalaryAdvanceClientView({ initialAdvances }: SalaryAdvanceClient
     }, [])
 
     const salaryAdvanceActionsCtx: SalaryAdvanceActionsCtx = {
-        onEdit: (advance) => { setEditingAdvance(advance); setDialogOpen(true) },
+        onEdit: (advance) => openSelected(advance.id),
         onDelete: async (id) => {
             try {
                 await deleteAdvance(id)
@@ -156,7 +159,7 @@ export function SalaryAdvanceClientView({ initialAdvances }: SalaryAdvanceClient
                     }}
                     cardGroupBy={{ dateField: 'date', amountField: 'amount' }}
                     renderCard={(advance) => (
-                        <EntityCard key={advance.id} actions={salaryAdvanceActions.render(advance, salaryAdvanceActionsCtx)}>
+                        <EntityCard key={advance.id} onClick={() => openSelected(advance.id)} actions={salaryAdvanceActions.render(advance, salaryAdvanceActionsCtx)}>
                             <EntityCard.Header
                                 title={advance.employee_name || '---'}
                                 subtitle={`Anticipo ${advance.employee_display_id || ''}`}
@@ -178,18 +181,17 @@ export function SalaryAdvanceClientView({ initialAdvances }: SalaryAdvanceClient
 
             <AdvanceDrawer
                 open={dialogOpen}
-                onOpenChange={(o) => { setDialogOpen(o); if (!o) setEditingAdvance(null) }}
-                advance={editingAdvance}
+                onOpenChange={(o) => { if (!o) handleClose() }}
+                advance={selectedFromUrl}
                 employees={employees}
                 payrolls={payrolls}
                 onSaved={(data) => {
-                    if (editingAdvance) {
+                    if (selectedFromUrl) {
                         refetchAdvances()
-                        setDialogOpen(false)
-                        setEditingAdvance(null)
+                        handleClose()
                     } else {
                         setTempAdvanceData(data || null)
-                        setDialogOpen(false)
+                        handleClose()
                         setPaymentModalOpen(true)
                     }
                 }}
