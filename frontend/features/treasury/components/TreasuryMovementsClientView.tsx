@@ -6,7 +6,8 @@ import { DataTableColumnHeader } from '@/components/shared'
 import { ColumnDef } from "@tanstack/react-table"
 import { ArrowDown, ArrowDownToLine, ArrowUpFromLine, ArrowLeftRight, Scale, Ban, ArrowRight } from "lucide-react"
 
-import { DataCell, createActionsColumn } from '@/components/shared'
+import { DataCell } from '@/components/shared'
+import { treasuryMovementActions, type TreasuryMovementActionsCtx } from './treasuryMovementActions'
 import { useGlobalModalActions } from "@/components/providers/GlobalModalProvider"
 
 import { useSearchParams, useRouter, usePathname } from "next/navigation"
@@ -108,6 +109,8 @@ export function TreasuryMovementsClientView({ externalOpen, createAction }: Trea
         params.set('selected', String(id))
         router.push(`${pathname}?${params.toString()}`, { scroll: false })
     }, [searchParams, pathname, router])
+
+    const actionsCtx: TreasuryMovementActionsCtx = { onDetail: handleViewDetails }
 
     const columns = React.useMemo<ColumnDef<TreasuryMovement>[]>(() => [
         {
@@ -282,11 +285,7 @@ export function TreasuryMovementsClientView({ externalOpen, createAction }: Trea
                 )
             },
         },
-        createActionsColumn<TreasuryMovement>({
-            renderActions: (item) => (
-                <DataCell.Action action="detail" onClick={() => handleViewDetails(item.id)} />
-            ),
-        })
+        treasuryMovementActions.column(actionsCtx)
     ], [openEntity, handleViewDetails])
 
     return (

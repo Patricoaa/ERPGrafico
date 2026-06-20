@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useMemo } from "react"
 import { useRouter } from "next/navigation"
-import { Eye, Upload } from "lucide-react"
+import { Upload } from "lucide-react"
 import { useStatementsQuery } from "../hooks/useReconciliationQueries"
 import { useSelectedEntity } from "@/hooks/useSelectedEntity"
 import type { BankStatement } from "../types"
@@ -10,7 +10,8 @@ import { StatementImportModal } from "@/features/treasury"
 import { DataTable, StatusBadge, SmartSearchBar, SegmentationBar, useClientSearch, useSegmentation } from '@/components/shared'
 import { DataTableColumnHeader } from '@/components/shared'
 import type { ColumnDef } from "@tanstack/react-table"
-import { createActionsColumn, DataCell } from '@/components/shared'
+import { DataCell } from '@/components/shared'
+import { statementActions, type StatementActionsCtx } from './statementActions'
 import { Progress } from "@/components/ui/progress"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Button } from "@/components/ui/button"
@@ -113,6 +114,10 @@ export function StatementsList({ externalOpen = false, createAction, bankId, acc
         }
     }
 
+    const actionsCtx: StatementActionsCtx = {
+        onView: (id) => router.push(statementDetailUrl(id)),
+    }
+
     const columns: ColumnDef<BankStatement>[] = [
         {
             accessorKey: "display_id",
@@ -209,17 +214,7 @@ export function StatementsList({ externalOpen = false, createAction, bankId, acc
                 </div>
             ),
         },
-        createActionsColumn<BankStatement>({
-            renderActions: (item) => (
-                <DataCell.Action
-                    icon={Eye}
-                    title="Ver"
-                    onClick={() => {
-                        router.push(statementDetailUrl(item.id))
-                    }}
-                />
-            )
-        })
+        statementActions.column(actionsCtx)
     ]
 
     const accountFilter = accounts !== undefined ? (
