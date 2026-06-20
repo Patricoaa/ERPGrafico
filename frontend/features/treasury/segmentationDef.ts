@@ -123,5 +123,14 @@ export const treasuryMovementsSegDef: SegmentationDefinition = {
         { label: 'Otro', value: 'OTHER' },
       ],
     },
+    {
+      key: 'amount',
+      label: 'Monto',
+      type: 'range',
+      serverParamFrom: 'amount_min',
+      serverParamTo: 'amount_max',
+      placeholderFrom: 'Mín',
+      placeholderTo: 'Máx',
+    },
   ],
 }
