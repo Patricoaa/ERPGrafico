@@ -5,10 +5,11 @@ import { showApiError } from "@/lib/errors"
 import React, { useState, useMemo } from "react"
 import { useRouter, usePathname, useSearchParams } from "next/navigation"
 import { ActionConfirmModal, DataTableColumnHeader, DataTableView, EntityCard, StatusBadge } from '@/components/shared'
-import { DataCell, createActionsColumn } from '@/components/shared'
+import { DataCell } from '@/components/shared'
 import { ColumnDef } from "@tanstack/react-table"
 // useDeletePricingRule consumido vía usePricingRules.
 import { PricingRuleDrawer } from "@/features/sales/components/PricingRuleDrawer"
+import { pricingRuleActions, type PricingRuleActionsCtx } from "@/features/inventory/pricingRuleActions"
 import { toast } from "sonner"
 
 import { useConfirmAction } from "@/hooks/useConfirmAction"
@@ -87,6 +88,11 @@ export function PricingRuleClientView({ externalOpen, onExternalOpenChange, crea
     })
 
     const handleDelete = (id: number) => deleteConfirm.requestConfirm(id)
+
+    const actionsCtx: PricingRuleActionsCtx = {
+        onEdit: (item) => { setEditingRule(item); setIsFormOpen(true) },
+        onDelete: (id) => handleDelete(id),
+    }
 
     const columns = useMemo<ColumnDef<PricingRule>[]>(() => [
         {
@@ -208,15 +214,8 @@ export function PricingRuleClientView({ externalOpen, onExternalOpenChange, crea
                 </div>
             ),
         },
-        createActionsColumn<PricingRule>({
-            renderActions: (item) => (
-                <>
-                    <DataCell.Action action="edit" onClick={() => { setEditingRule(item); setIsFormOpen(true) }} />
-                    <DataCell.Action action="delete" onClick={() => handleDelete(item.id)} />
-                </>
-            ),
-        }),
-    ], [])
+        pricingRuleActions.column(actionsCtx),
+    ], [actionsCtx])
 
     return (
         <div className="h-full flex flex-col">
@@ -252,7 +251,7 @@ export function PricingRuleClientView({ externalOpen, onExternalOpenChange, crea
                         description: "Crea reglas para automatizar descuentos y precios por producto o categoría.",
                     }}
                     renderCard={(rule: PricingRule) => (
-                        <EntityCard onClick={() => { setEditingRule(rule); setIsFormOpen(true) }}>
+                        <EntityCard onClick={() => { setEditingRule(rule); setIsFormOpen(true) }} actions={pricingRuleActions.render(rule, actionsCtx)}>
                             <EntityCard.Header
                                 title={rule.name}
                                 subtitle={rule.product_name ?? rule.category_name ?? 'Sin producto/categoría'}
