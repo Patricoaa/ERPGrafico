@@ -6,10 +6,12 @@ import { DataTable } from '@/components/shared'
 import { DataTableColumnHeader } from '@/components/shared'
 import { Button } from "@/components/ui/button"
 import {
-    Plus, CreditCard, Landmark, Lock, ChevronDown, Eye
+    Plus, CreditCard, Landmark, Lock, ChevronDown
 } from "lucide-react"
 import { cn } from "@/lib/utils"
-import { DataCell, createActionsColumn } from '@/components/shared'
+import { DataCell } from '@/components/shared'
+import { bankActions, type BankActionsCtx } from './bankActions'
+import { paymentMethodActions, type PaymentMethodActionsCtx } from './paymentMethodActions'
 import { ActivitySidebar } from "@/features/audit/components"
 import { useConfirmAction } from "@/hooks/useConfirmAction"
 import { useForm } from "react-hook-form"
@@ -104,6 +106,13 @@ export function BankManagement({ externalOpen, onOpenChange, createAction }: Ban
         setDialogOpen(true)
     }
 
+    const bankActionsCtx: BankActionsCtx = {
+        onView: (id) => router.push(`/treasury/centro-bancos/${id}/overview`),
+        onEdit: openEdit,
+        onArchive: (id) => archiveConfirm.requestConfirm(id),
+        onRestore: (id) => restoreConfirm.requestConfirm(id),
+    }
+
     const columns = [
         {
             accessorKey: "name",
@@ -192,23 +201,7 @@ export function BankManagement({ externalOpen, onOpenChange, createAction }: Ban
             ),
             accessorFn: (row: Bank) => (row.is_active ? "Activo" : "Archivado"),
         },
-        createActionsColumn<Bank>({
-            renderActions: (item) => (
-                <>
-                    <DataCell.Action
-                        icon={Eye}
-                        title="Ver detalles"
-                        onClick={() => router.push(`/treasury/centro-bancos/${item.id}/overview`)}
-                    />
-                    <DataCell.Action action="edit" onClick={() => openEdit(item)} />
-                    {item.is_active ? (
-                        <DataCell.Action action="archive" onClick={() => handleArchive(item.id)} />
-                    ) : (
-                        <DataCell.Action action="restore" onClick={() => handleRestore(item.id)} />
-                    )}
-                </>
-            )
-        })
+        bankActions.column(bankActionsCtx)
     ]
 
     const isFiltered = isTextFiltered || isSegFiltered
@@ -479,6 +472,11 @@ export function PaymentMethodManagement({ externalOpen, onOpenChange, createActi
         setDialogOpen(true)
     }
 
+    const paymentMethodActionsCtx: PaymentMethodActionsCtx = {
+        onEdit: openEdit,
+        onDelete: (id) => handleDelete(id),
+    }
+
     const methodTypeLabels: Record<string, string> = {
         CASH: "Efectivo Directo",
         CARD_TERMINAL: "Tarjeta (Dispositivo Integrado)",
@@ -530,22 +528,7 @@ export function PaymentMethodManagement({ externalOpen, onOpenChange, createActi
                 </div>
             )
         },
-        createActionsColumn<PaymentMethod>({
-            renderActions: (item) => (
-                item.is_terminal_integration ? (
-                    <DataCell.Action
-                        action="lock"
-                        title="Gestionado por terminal — modifique el dispositivo"
-                        className="text-muted-foreground cursor-default opacity-50"
-                    />
-                ) : (
-                    <>
-                        <DataCell.Action action="edit" onClick={() => openEdit(item)} />
-                        <DataCell.Action action="delete" onClick={() => handleDelete(item.id)} />
-                    </>
-                )
-            )
-        })
+        paymentMethodActions.column(paymentMethodActionsCtx)
     ]
 
     const isFiltered = isTextFiltered || isSegFiltered

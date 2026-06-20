@@ -5,16 +5,14 @@ import React, { useEffect, useState, useMemo, useRef, useCallback } from "react"
 import { useRouter, usePathname, useSearchParams } from "next/navigation"
 
 import { ColumnDef } from "@tanstack/react-table"
-import {ActionConfirmModal, Chip, DataCell, DataTable, StatusBadge, createActionsColumn} from '@/components/shared'
+import {ActionConfirmModal, Chip, DataCell, DataTable, StatusBadge} from '@/components/shared'
+import { profitDistributionActions, type ProfitDistributionActionsCtx } from './profitDistributionActions'
 
 import { partnersApi } from "@/features/contacts/api/partnersApi"
 import {ProfitDistribution} from "@/features/contacts/types/partner"
 import { formatPlainDate, cn } from "@/lib/utils"
 import {
     Calendar,
-    Wallet,
-    Wand2,
-    Play
 } from "lucide-react"
 import { toast } from "sonner"
 import { CreateDistributionFlow } from "./CreateDistributionFlow"
@@ -103,6 +101,13 @@ export function ProfitDistributionsTab({ initialFlowOpen = false, createAction }
     }
 
     const handleExecute = (resolution: ProfitDistribution) => setConfirmExecute(resolution)
+
+    const actionsCtx: ProfitDistributionActionsCtx = {
+        onViewDetail: (dist) => setState(prev => ({ ...prev, viewingDist: dist })),
+        onRetake: (dist) => setState(prev => ({ ...prev, selectedResolution: dist, isFlowOpen: true })),
+        onExecute: handleExecute,
+        onPayDividends: (dist) => setState(prev => ({ ...prev, selectedResolution: dist, isMassPaymentOpen: true })),
+    }
 
     const onConfirmExecute = async () => {
         if (!confirmExecute) return
@@ -242,35 +247,7 @@ export function ProfitDistributionsTab({ initialFlowOpen = false, createAction }
                 )
             }
         },
-        createActionsColumn<ProfitDistribution>({
-            renderActions: (dist) => {
-                if (dist.status === 'CANCELLED') return (
-                    <DataCell.Action action="detail" onClick={() => setState(prev => ({ ...prev, viewingDist: dist }))} />
-                )
-
-                return (
-                    <>
-                        <DataCell.Action action="detail" onClick={() => setState(prev => ({ ...prev, viewingDist: dist }))} />
-
-                        {dist.status === 'DRAFT' && (
-                            <DataCell.Action icon={Wand2} title="Retomar Proceso" className="text-success" onClick={() => {
-                                setState(prev => ({ ...prev, selectedResolution: dist, isFlowOpen: true }))
-                            }} />
-                        )}
-
-                        {dist.status === 'APPROVED' && (
-                            <DataCell.Action icon={Play} title="Ejecutar Contablemente" className="text-primary" onClick={() => handleExecute(dist)} />
-                        )}
-
-                        {dist.status === 'EXECUTED' && (dist.lines?.some((l) => l.destination === 'DIVIDEND')) && (
-                            <DataCell.Action icon={Wallet} title="Pagar Dividendos" className="text-primary" onClick={() => {
-                                setState(prev => ({ ...prev, selectedResolution: dist, isMassPaymentOpen: true }))
-                            }} />
-                        )}
-                    </>
-                )
-            }
-        })
+        profitDistributionActions.column(actionsCtx)
     ], [])
 
     return (
