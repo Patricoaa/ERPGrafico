@@ -330,25 +330,7 @@ export function TreasuryMovementsClientView({ externalOpen, createAction }: Trea
                     renderCard={(m) => {
                         const type = m.movement_type
                         const isWriteOff = m.payment_method === 'WRITE_OFF'
-
                         const isTransferOrAdj = type === 'TRANSFER' || type === 'ADJUSTMENT'
-
-                        let status = "info" as any
-                        let label = m.movement_type_display
-
-                        if (isWriteOff) {
-                            status = "voided"
-                            label = "Castigo"
-                        } else if (type === 'INBOUND') {
-                            status = "received"
-                            label = "Depósito"
-                        } else if (type === 'OUTBOUND') {
-                            status = "sent"
-                            label = "Retiro"
-                        } else if (isTransferOrAdj) {
-                            status = "in_progress"
-                            label = type === 'TRANSFER' ? "Traspaso" : "Ajuste"
-                        }
 
                         const Icon = isWriteOff
                             ? Ban
@@ -386,31 +368,24 @@ export function TreasuryMovementsClientView({ externalOpen, createAction }: Trea
                         const signedAmount = type === 'OUTBOUND' ? -amount : amount
 
                         return (
-                            <EntityCard key={m.id} onClick={() => handleViewDetails(m.id)}>
-                                <EntityCard.Header
-                                    title={
-                                        <div className="flex items-center gap-2">
-                                            <div className={cn("flex h-8 w-8 shrink-0 items-center justify-center rounded-md", iconStyle)}>
-                                                <Icon className="h-4 w-4" />
-                                            </div>
-                                            <span>{m.display_id}</span>
-                                        </div>
-                                    }
-                                    subtitle={m.payment_method_display}
-                                    trailing={
-                                        <div className="flex flex-col items-end gap-1">
-                                            <StatusBadge status={status} label={label} size="sm" className="uppercase font-bold tracking-tight" />
-                                            <DataCell.Currency value={signedAmount} />
-                                        </div>
-                                    }
-                                />
-                                <EntityCard.Body>
-                                    <div className="flex items-center justify-center gap-2 col-span-2 py-1 text-xs font-medium text-foreground/80">
+                            <EntityCard key={m.id} onClick={() => handleViewDetails(m.id)} className="gap-2">
+                                <div className="-mx-4 -mt-4 px-4 pt-4 pb-3 border-b border-border/30">
+                                    <div className="flex items-center justify-center gap-2 text-xs font-medium text-foreground/80">
                                         <span className="truncate">{sourceLabel}</span>
                                         <ArrowRight className="h-3 w-3 shrink-0 text-muted-foreground/40" />
                                         <span className="truncate">{destLabel}</span>
                                     </div>
-                                </EntityCard.Body>
+                                </div>
+                                <div className="flex items-start gap-3">
+                                    <div className={cn("flex h-8 w-8 shrink-0 items-center justify-center rounded-md", iconStyle)}>
+                                        <Icon className="h-4 w-4" />
+                                    </div>
+                                    <div className="min-w-0 flex-1">
+                                        <div className="text-sm font-semibold">{m.display_id}</div>
+                                        <div className="mt-0.5 text-xs text-muted-foreground">{m.payment_method_display}</div>
+                                    </div>
+                                    <DataCell.Currency value={signedAmount} />
+                                </div>
                             </EntityCard>
                         )
                     }}
