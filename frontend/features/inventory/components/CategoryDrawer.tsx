@@ -377,7 +377,7 @@ export function CategoryDrawer({
                                     checked={!!field.value}
                                     onCheckedChange={field.onChange}
                                     icon={<LucideIcons.Calculator className={cn("h-4 w-4 transition-colors", field.value ? "text-primary" : "text-muted-foreground/30")} />}
-                                    className={cn(field.value ? "bg-primary/5 border-primary/20 shadow-sm" : "border-dashed")}
+                                    className={cn(field.value ? "bg-primary/5 border-primary/20 shadow-card" : "border-dashed")}
                                 />
                             )}
                         />

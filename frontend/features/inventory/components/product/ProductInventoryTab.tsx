@@ -135,7 +135,7 @@ export function ProductInventoryTab({ form, initialData, warehouses = [], uoms =
                                     }}
                                     disabled={isSwitchDisabled}
                                     icon={<Warehouse className={cn("h-4 w-4 transition-colors", field.value ? "text-primary" : "text-muted-foreground/30")} />}
-                                    className={cn(field.value ? "bg-primary/5 border-primary/20 shadow-sm" : "border-dashed")}
+                                    className={cn(field.value ? "bg-primary/5 border-primary/20 shadow-card" : "border-dashed")}
                                 />
 
                                 {/* Kept mounted with CSS visibility — avoids unmount of Radix Popover-based selectors during production-mode commits, which would loop via usePresence/safelyDetachRef. */}

@@ -114,7 +114,7 @@ import { StatCard } from "@/components/shared"
 │ [children]                  │
 └─────────────────────────────┘
 ```
-- Wrapper: `<Card>` with `border-l-4 border-l-{accent}` + `shadow-sm`
+- Wrapper: `<Card>` with `border-l-4 border-l-{accent}` + `shadow-card`
 - When `onClick`: `cursor-pointer hover:border-primary/20`
 - When `active`: `ring-2 ring-{accent} ring-offset-2`
 - When `href`: wrapped in `<Link>`
