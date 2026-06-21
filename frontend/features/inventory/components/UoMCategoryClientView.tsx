@@ -161,8 +161,9 @@ export function UoMCategoryClientView({ externalOpen, onExternalOpenChange, crea
                         description: "Agrupa unidades de medida relacionadas (peso, longitud, volumen…).",
                     }}
                     renderCard={(cat: UoMCategory) => (
-                        <EntityCard onClick={() => openSelected(cat.id)} actions={uomCategoryActions.render(cat, actionsCtx)}>
+                        <EntityCard onClick={() => openSelected(cat.id)}>
                             <EntityCard.Header title={cat.name} />
+                            <EntityCard.Body actions={uomCategoryActions.render(cat, actionsCtx)} />
                         </EntityCard>
                     )}
                 />

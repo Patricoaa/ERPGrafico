@@ -278,7 +278,7 @@ export const TreasuryAccountsClientView: React.FC<TreasuryAccountsClientViewProp
                                 const Icon = accountTypeIcons[typeKey]
                                 const iconStyle = accountTypeIconStyles[typeKey]
                                 return (
-                                    <EntityCard key={acc.id} onClick={() => handleEdit(acc)} actions={treasuryAccountActions.render(acc, actionsCtx)}>
+                                    <EntityCard key={acc.id} onClick={() => handleEdit(acc)}>
                                         <EntityCard.Header
                                             icon={Icon}
                                             iconClassName={iconStyle}
@@ -298,7 +298,7 @@ export const TreasuryAccountsClientView: React.FC<TreasuryAccountsClientViewProp
                                                 <DataCell.Currency value={acc.current_balance} currency={acc.currency} className="font-bold" />
                                             }
                                         />
-                                        <EntityCard.Body>
+                                        <EntityCard.Body actions={treasuryAccountActions.render(acc, actionsCtx)}>
                                             <EntityCard.Field label="Cuenta Contable" value={
                                                 name ? (
                                                     <div className="flex flex-col gap-0.5">

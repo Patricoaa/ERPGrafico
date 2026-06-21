@@ -170,7 +170,7 @@ export function UoMClientView({ externalOpen, onExternalOpenChange, createAction
                         description: "Define unidades para medir, comprar y vender tus productos.",
                     }}
                     renderCard={(uom: UoM) => (
-                        <EntityCard onClick={() => openSelected(uom.id)} actions={uomActions.render(uom, actionsCtx)}>
+                        <EntityCard onClick={() => openSelected(uom.id)}>
                             <EntityCard.Header
                                 title={uom.name}
                                 subtitle={uom.category_name}
@@ -182,7 +182,7 @@ export function UoMClientView({ externalOpen, onExternalOpenChange, createAction
                                     />
                                 }
                             />
-                            <EntityCard.Body>
+                            <EntityCard.Body actions={uomActions.render(uom, actionsCtx)}>
                                 <EntityCard.Field label="Ratio" value={<DataCell.Number value={uom.ratio} />} />
                             </EntityCard.Body>
                         </EntityCard>

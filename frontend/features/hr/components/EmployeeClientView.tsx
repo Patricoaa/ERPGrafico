@@ -163,7 +163,7 @@ export function EmployeeClientView({ initialEmployees }: EmployeeClientViewProps
                             const params = new URLSearchParams(searchParams.toString())
                             params.set('selected', String(emp.id))
                             router.push(`${pathname}?${params.toString()}`, { scroll: false })
-                        }} actions={employeeActions.render(emp, actionsCtx)}>
+                        }}>
                             <EntityCard.Header
                                 title={emp.contact_detail?.name || "Sin nombre"}
                                 subtitle={emp.contact_detail?.tax_id || emp.display_id}
@@ -171,7 +171,7 @@ export function EmployeeClientView({ initialEmployees }: EmployeeClientViewProps
                                     <StatusBadge status={emp.status} label={emp.status_display} size="sm" />
                                 }
                             />
-                            <EntityCard.Body>
+                            <EntityCard.Body actions={employeeActions.render(emp, actionsCtx)}>
                                 <EntityCard.Field label="Cargo" value={emp.position || '—'} />
                                 <EntityCard.Field label="Dpto." value={emp.department || '—'} />
                                 <EntityCard.Field label="Previsión" value={`AFP: ${emp.afp_detail?.name || 'N/A'}`} />

@@ -299,13 +299,13 @@ export function StatementsClientView({ bankId }: StatementsClientViewProps) {
                         description: 'Los estados de cuenta de la tarjeta de crédito aparecerán aquí.',
                     }}
                     renderCard={(stmt: CreditCardStatement) => (
-                        <EntityCard onClick={() => openStatement(stmt.id, "detail")} actions={statementActions.render(stmt, actionsCtx)}>
+                        <EntityCard onClick={() => openStatement(stmt.id, "detail")}>
                             <EntityCard.Header
                                 title={stmt.display_id}
                                 subtitle={stmt.card_account_name}
                                 trailing={<StatusBadge status={stmt.status} />}
                             />
-                            <EntityCard.Body>
+                            <EntityCard.Body actions={statementActions.render(stmt, actionsCtx)}>
                                 <EntityCard.Field
                                     label="Período"
                                     value={`${String(stmt.period_month).padStart(2, '0')}/${stmt.period_year}`}

@@ -438,13 +438,13 @@ export function SubscriptionsClientView({ hideHeader = false, externalOpen = fal
                                 description: "Crea una suscripción para gestionar cobros o pagos recurrentes.",
                             }}
                             renderCard={(sub: Subscription) => (
-                                <EntityCard key={sub.id} onClick={() => openSubscription(sub.id, "edit")} actions={subscriptionActions.render(sub, actionsCtx)}>
+                                <EntityCard key={sub.id} onClick={() => openSubscription(sub.id, "edit")}>
                                     <EntityCard.Header
                                         title={sub.product_name}
                                         subtitle={`${sub.recurrence_display || ''}${sub.amount ? ` - $${sub.amount}` : ''}`}
                                         trailing={<StatusBadge status={sub.status} label={sub.status_display || sub.status} size="sm" />}
                                     />
-                                    <EntityCard.Body>
+                                    <EntityCard.Body actions={subscriptionActions.render(sub, actionsCtx)}>
                                         <EntityCard.Field label="Categoría" value={sub.category_name || '-'} />
                                         <EntityCard.Field label="Proveedor" value={sub.supplier_name || '-'} />
                                         {sub.next_payment_date && (
