@@ -54,6 +54,7 @@ export const productSegDef: SegmentationDefinition = {
       label: 'Tipo',
       type: 'tabs',
       serverParam: 'product_type',
+      variant: 'dropdown',
       options: [
         { label: 'Almacenable', value: 'STORABLE' },
         { label: 'Consumible', value: 'CONSUMABLE' },
