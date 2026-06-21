@@ -15,11 +15,6 @@ interface EntityCardRootProps {
     onClick?: () => void
     className?: string
     children: React.ReactNode
-    /**
-     * Action buttons rendered in the top-right corner.
-     * Uses stopPropagation so they don't trigger onClick on the card itself.
-     */
-    actions?: React.ReactNode
 }
 
 function EntityCardRoot({
@@ -28,7 +23,6 @@ function EntityCardRoot({
     onClick,
     className,
     children,
-    actions,
 }: EntityCardRootProps) {
     return (
         <div
@@ -52,18 +46,6 @@ function EntityCardRoot({
                 className
             )}
         >
-            {actions && (
-                <div
-                    className={cn(
-                        "absolute right-4 top-4 z-10 inline-flex items-center gap-1",
-                        variant === "compact" && "right-3 top-3"
-                    )}
-                    onClick={(e) => e.stopPropagation()}
-                >
-                    {actions}
-                </div>
-            )}
-
             {children}
         </div>
     )
@@ -147,12 +129,25 @@ function EntityCardHeader({ title, subtitle, trailing, center, icon: Icon, iconC
 interface EntityCardBodyProps {
     /** Override grid columns via className. Default: auto-fit responsive grid */
     className?: string
-    children: React.ReactNode
+    children?: React.ReactNode
+    /**
+     * Action buttons rendered at the top-right of the body.
+     * Uses stopPropagation so they don't trigger onClick on the card itself.
+     */
+    actions?: React.ReactNode
 }
 
-function EntityCardBody({ children, className }: EntityCardBodyProps) {
+function EntityCardBody({ children, className, actions }: EntityCardBodyProps) {
     return (
         <div className={cn("grid grid-cols-[repeat(auto-fit,minmax(180px,1fr))] gap-x-4 gap-y-2", className)}>
+            {actions && (
+                <div
+                    className="col-span-full flex justify-end items-center gap-1"
+                    onClick={(e) => e.stopPropagation()}
+                >
+                    {actions}
+                </div>
+            )}
             {children}
         </div>
     )

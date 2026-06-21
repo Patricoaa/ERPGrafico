@@ -453,7 +453,7 @@ export function ProductClientView({ externalOpen, onExternalOpenChange, createAc
                             const params = new URLSearchParams(searchParams.toString())
                             params.set('selected', String(product.id))
                             router.push(`${pathname}?${params.toString()}`, { scroll: false })
-                        }} actions={productActions.render(product, actionsCtx)}>
+                        }}>
                             <EntityCard.Header
                                 title={product.name}
                                 subtitle={<span className="font-mono text-xs">{product.code}</span>}
@@ -464,7 +464,7 @@ export function ProductClientView({ externalOpen, onExternalOpenChange, createAc
                                     />
                                 }
                             />
-                            <EntityCard.Body>
+                            <EntityCard.Body actions={productActions.render(product, actionsCtx)}>
                                 <EntityCard.Field label="Tipo" value={translateProductType(product.product_type)} />
                                 <EntityCard.Field label="Categoría" value={product.category_name} />
                                 <EntityCard.Field

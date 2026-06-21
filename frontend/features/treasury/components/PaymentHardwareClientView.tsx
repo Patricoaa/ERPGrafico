@@ -218,7 +218,7 @@ export function PaymentHardwareClientView({
                             </Button>
                         )}
                         renderCard={(provider: PaymentTerminalProvider) => (
-                            <EntityCard key={provider.id} onClick={() => openProviderSelected(provider.id)} actions={providerActions.render(provider, providerActionsCtx)}>
+                            <EntityCard key={provider.id} onClick={() => openProviderSelected(provider.id)}>
                                 <EntityCard.Header
                                     title={
                                         <div className="flex items-center gap-2">
@@ -228,7 +228,7 @@ export function PaymentHardwareClientView({
                                     }
                                     trailing={<StatusBadge status={provider.is_active ? "active" : "inactive"} size="sm" />}
                                 />
-                                <EntityCard.Body>
+                                <EntityCard.Body actions={providerActions.render(provider, providerActionsCtx)}>
                                     <EntityCard.Field
                                         label="Recaudación"
                                         value={provider.receivable_account_name || "No configurada"}
@@ -275,7 +275,7 @@ export function PaymentHardwareClientView({
                             </Button>
                         )}
                         renderCard={(device: PaymentTerminalDevice) => (
-                            <EntityCard key={device.id} onClick={() => openDeviceSelected(device.id)} actions={deviceActions.render(device, deviceActionsCtx)}>
+                            <EntityCard key={device.id} onClick={() => openDeviceSelected(device.id)}>
                                 <EntityCard.Header
                                     title={
                                         <div className="flex items-center gap-2">
@@ -285,7 +285,7 @@ export function PaymentHardwareClientView({
                                     }
                                     trailing={<StatusBadge status={device.is_active ? "active" : "inactive"} size="sm" />}
                                 />
-                                <EntityCard.Body>
+                                <EntityCard.Body actions={deviceActions.render(device, deviceActionsCtx)}>
                                     <EntityCard.Field
                                         label="Proveedor"
                                         value={device.provider_name || "Sin proveedor"}

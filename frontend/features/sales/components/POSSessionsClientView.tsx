@@ -192,13 +192,13 @@ export const POSSessionsClientView = ({ hideHeader = false }: POSSessionsClientV
                             const params = new URLSearchParams(searchParams.toString())
                             params.set('selected', String(session.id))
                             router.push(`${pathname}?${params.toString()}`, { scroll: false })
-                        }} actions={posSessionActions.render(session, actionsCtx)}>
+                        }}>
                             <EntityCard.Header
                                 title={session.id_display}
                                 subtitle={session.user_name}
                                 trailing={<StatusBadge status={session.status} label={session.status_display} size="sm" />}
                             />
-                            <EntityCard.Body>
+                            <EntityCard.Body actions={posSessionActions.render(session, actionsCtx)}>
                                 <EntityCard.Field label="Cuenta" value={session.treasury_account_name} />
                                 <EntityCard.Field label="Apertura" value={<DataCell.Date value={session.opened_at} showTime />} />
                             </EntityCard.Body>

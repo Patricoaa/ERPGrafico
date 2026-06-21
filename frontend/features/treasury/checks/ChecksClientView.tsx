@@ -152,12 +152,12 @@ export function ChecksClientView({ bankId, direction }: ChecksClientViewProps = 
                             : { context: 'treasury', title: 'Sin cheques en cartera', description: 'Los cheques recibidos en ventas o registro de pagos aparecerán aquí.' }
                     }
                     renderCard={(check: Check) => (
-                        <EntityCard actions={checkActions.render(check, actionsCtx)}>
+                        <EntityCard>
                             <EntityCard.Header
                                 title={check.check_number}
                                 trailing={<StatusBadge status={check.status} />}
                             />
-                            <EntityCard.Body>
+                            <EntityCard.Body actions={checkActions.render(check, actionsCtx)}>
                                 <EntityCard.Field
                                     label={isIssued ? 'Beneficiario' : 'Girador'}
                                     value={check.counterparty_name ?? check.drawer_name ?? '—'}

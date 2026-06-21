@@ -212,13 +212,12 @@ export function MovementClientView({ externalOpen, onExternalOpenChange, createA
                                     params.set('selected', String(move.id))
                                     router.push(`${pathname}?${params.toString()}`, { scroll: false })
                                 }}
-                                actions={stockMoveActions.render(move, actionsCtx)}
-                            >
+                                >
                                 <EntityCard.Header
                                     title={move.product_name}
                                     subtitle={move.display_id ?? String(move.id)}
                                 />
-                                <EntityCard.Body>
+                                <EntityCard.Body actions={stockMoveActions.render(move, actionsCtx)}>
                                     <EntityCard.Field label="Fecha" value={<DataCell.Date value={move.date} />} />
                                     <EntityCard.Field label="Almacén" value={move.warehouse_name} />
                                     <EntityCard.Field label="Cantidad" value={<DataCell.NumericFlow value={move.quantity} unit={move.uom_name} showSign />} />
