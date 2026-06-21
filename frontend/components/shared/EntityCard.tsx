@@ -138,17 +138,25 @@ interface EntityCardBodyProps {
 }
 
 function EntityCardBody({ children, className, actions }: EntityCardBodyProps) {
+    if (!actions) {
+        return (
+            <div className={cn("grid grid-cols-[repeat(auto-fit,minmax(180px,1fr))] gap-x-4 gap-y-2", className)}>
+                {children}
+            </div>
+        )
+    }
+
     return (
-        <div className={cn("grid grid-cols-[repeat(auto-fit,minmax(180px,1fr))] gap-x-4 gap-y-2", className)}>
-            {actions && (
-                <div
-                    className="col-span-full flex justify-end items-center gap-1"
-                    onClick={(e) => e.stopPropagation()}
-                >
-                    {actions}
-                </div>
-            )}
-            {children}
+        <div className={cn("flex items-start justify-between gap-4", className)}>
+            <div className="grid grid-cols-[repeat(auto-fit,minmax(180px,1fr))] gap-x-4 gap-y-2 flex-1 min-w-0">
+                {children}
+            </div>
+            <div
+                className="shrink-0 flex items-center gap-1 pt-0.5"
+                onClick={(e) => e.stopPropagation()}
+            >
+                {actions}
+            </div>
         </div>
     )
 }
