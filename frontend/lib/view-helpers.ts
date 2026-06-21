@@ -2,7 +2,7 @@
 
 import React, { useState, useCallback } from "react"
 import { Table as ReactTable, type Row, type VisibilityState } from "@tanstack/react-table"
-import { DomainCard, EntityCard, EmptyState, MoneyDisplay, resolveEmptyState, type DataTableEmptyState } from "@/components/shared"
+import { DomainCard, EntityCard, EmptyState, MoneyDisplay, resolveEmptyState, type DataTableEmptyState, type EntityCardSkeletonProps } from "@/components/shared"
 import { groupByDate } from "@/lib/group-by-date"
 
 import { Button } from "@/components/ui/button"
@@ -268,13 +268,16 @@ export function createCardGroupView<TData>(
 
 /**
  * Creates a renderLoadingView for card/grid views using EntityCard.Skeleton.
- * 
+ *
  * Usage:
  *   renderLoadingView={isCustomView ? createCardLoadingView('single-column', 8) : undefined}
+ *   // With section control:
+ *   renderLoadingView={createCardLoadingView('single-column', 6, { showBody: false, showFooter: true })}
  */
 export function createCardLoadingView(
   layout: 'single-column' | 'multi-column' = 'single-column',
-  count: number = 8
+  count: number = 8,
+  skeletonProps?: Pick<EntityCardSkeletonProps, 'showHeader' | 'showBody' | 'showFooter'>
 ) {
   const gridClass = layout === 'multi-column'
     ? "grid grid-cols-[repeat(auto-fill,minmax(280px,1fr))] gap-3 pt-2"
@@ -288,6 +291,7 @@ export function createCardLoadingView(
         React.createElement(EntityCard.Skeleton, {
           key: i,
           variant: layout === 'multi-column' ? 'compact' : undefined,
+          ...skeletonProps,
         })
       )
     )
