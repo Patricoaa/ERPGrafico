@@ -2,11 +2,11 @@
 
 import React, { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
-import { DataTable } from '@/components/shared'
+import { DataTable, DataTableView } from '@/components/shared'
 import { DataTableColumnHeader } from '@/components/shared'
 import { Button } from "@/components/ui/button"
 import {
-    Plus, CreditCard, Landmark, Lock, ChevronDown
+    Plus, CreditCard, Landmark, Lock, ChevronDown, Wallet, ArrowRightLeft, HandCoins, Monitor, FileText, Ban, CircleSlash, type LucideIcon
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { DataCell } from '@/components/shared'
@@ -31,6 +31,7 @@ import { useBanks, usePaymentMethods } from "@/features/treasury/hooks/useMaster
 import { useAllBanksOverview } from "@/features/treasury/hooks/useAllBanksOverview"
 import type { Bank, PaymentMethod } from "@/features/treasury/types"
 import { BankCreationWizard } from "./BankCreationWizard"
+import { EntityCard } from "@/components/shared"
 
 // --- Schemas ---
 
@@ -486,6 +487,65 @@ export function PaymentMethodManagement({ externalOpen, onOpenChange, createActi
         CHECK: "Cheque",
     }
 
+    const methodTypeIcons: Record<string, LucideIcon> = {
+        CASH: Wallet,
+        CARD_TERMINAL: Monitor,
+        TRANSFER: ArrowRightLeft,
+        DEBIT_CARD: CreditCard,
+        CREDIT_CARD: CreditCard,
+        CHECK: FileText,
+        CARD: CreditCard,
+        CREDIT: HandCoins,
+        OTHER: CircleSlash,
+    }
+
+    const methodTypeIconStyles: Record<string, string> = {
+        CASH: "text-success bg-success/10",
+        CARD_TERMINAL: "text-info bg-info/10",
+        TRANSFER: "text-primary bg-primary/10",
+        DEBIT_CARD: "text-warning bg-warning/10",
+        CREDIT_CARD: "text-warning bg-warning/10",
+        CHECK: "text-muted-foreground bg-muted/50",
+        CARD: "text-warning bg-warning/10",
+        CREDIT: "text-info bg-info/10",
+        OTHER: "text-muted-foreground bg-muted/50",
+    }
+
+    const renderMethodCard = (method: PaymentMethod) => {
+        const Icon = methodTypeIcons[method.method_type] || CreditCard
+        const iconStyle = methodTypeIconStyles[method.method_type] || "text-muted-foreground bg-muted/50"
+        return (
+            <EntityCard key={method.id} onClick={() => openEdit(method)}>
+                <EntityCard.Header
+                    icon={Icon}
+                    iconClassName={iconStyle}
+                    title={method.name}
+                    subtitle={
+                        <span className="flex items-center gap-1.5 flex-wrap">
+                            {method.method_type_display || methodTypeLabels[method.method_type] || method.method_type}
+                        </span>
+                    }
+                    center={
+                        <div className="flex items-center gap-2">
+                            {method.allow_for_sales && (
+                                <Chip size="xs" intent="success">Ventas</Chip>
+                            )}
+                            {method.allow_for_purchases && (
+                                <Chip size="xs" intent="info">Compras</Chip>
+                            )}
+                        </div>
+                    }
+                    trailing={
+                        <div className="flex flex-col gap-0.5 items-end">
+                            <span className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/50">Cta. Tesorería</span>
+                            <span className="text-xs font-medium text-foreground/80 whitespace-nowrap">{method.treasury_account_name}</span>
+                        </div>
+                    }
+                />
+            </EntityCard>
+        )
+    }
+
     const columns = [
         {
             accessorKey: "name",
@@ -553,7 +613,8 @@ export function PaymentMethodManagement({ externalOpen, onOpenChange, createActi
             </div>
 
             <div className="flex-1 min-h-0">
-                <DataTable
+                <DataTableView
+                    entityLabel="treasury.paymentmethod"
                     columns={columns}
                     data={filteredMethods}
                     variant="embedded"
@@ -562,6 +623,7 @@ export function PaymentMethodManagement({ externalOpen, onOpenChange, createActi
                     showReset={isFiltered}
                     onReset={() => { clearText(); clearSeg() }}
                     createAction={createAction}
+                    renderCard={renderMethodCard}
                 />
             </div>
 

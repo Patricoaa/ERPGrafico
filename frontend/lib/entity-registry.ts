@@ -464,6 +464,7 @@ export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
     shortTemplate: '{name}',
     listUrl: '/treasury/operaciones/methods',
     detailUrlPattern: '/treasury/operaciones/methods?selected={id}',
+    viewPolicy: { availableViews: ['list', 'card'], defaultView: 'card', cardComponent: 'entity' },
   },
   'treasury.treasuryaccount': {
     label: 'treasury.treasuryaccount',
