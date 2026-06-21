@@ -26,6 +26,7 @@ export const terminalBatchSegDef: SegmentationDefinition = {
       key: 'status',
       label: 'Estado',
       type: 'tabs',
+      variant: 'dropdown',
       serverParam: 'status',
       options: [
         { label: 'Pendiente', value: 'PENDING' },
