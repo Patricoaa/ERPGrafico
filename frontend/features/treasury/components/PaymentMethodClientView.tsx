@@ -5,6 +5,7 @@ import {
     Plus, CreditCard, Landmark, Lock, ChevronDown, Wallet, ArrowRightLeft, HandCoins, Monitor, FileText, Ban, CircleSlash, type LucideIcon
 } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { Button } from "@/components/ui/button"
 import { DataCell } from '@/components/shared'
 import { DataTableColumnHeader } from '@/components/shared'
 import { DataTableView } from '@/components/shared'
@@ -224,32 +225,43 @@ export function PaymentMethodManagement({ externalOpen, onOpenChange, createActi
                     smartSearch={<SmartSearchBar searchDef={paymentMethodSearchDef} placeholder="Buscar método de pago..." className="w-full" />}
                     segmentation={
                         <div className="flex items-center gap-2">
-                            <DropdownMenu>
-                                <DropdownMenuTrigger asChild>
-                                    <button className="inline-flex items-center gap-1.5 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors px-2 py-1 rounded-md border border-border/50 hover:bg-muted/50">
-                                        <span>Disponible</span>
-                                        <ChevronDown className="h-3 w-3" />
-                                    </button>
-                                </DropdownMenuTrigger>
-                                <DropdownMenuContent align="start" className="w-44">
-                                    <DropdownMenuCheckboxItem
-                                        checked={usageFilter.includes('sales')}
-                                        onCheckedChange={(checked) => {
-                                            setUsageFilter(prev => checked ? [...prev, 'sales'] : prev.filter(v => v !== 'sales'))
-                                        }}
-                                    >
-                                        Ventas
-                                    </DropdownMenuCheckboxItem>
-                                    <DropdownMenuCheckboxItem
-                                        checked={usageFilter.includes('purchases')}
-                                        onCheckedChange={(checked) => {
-                                            setUsageFilter(prev => checked ? [...prev, 'purchases'] : prev.filter(v => v !== 'purchases'))
-                                        }}
-                                    >
-                                        Compras
-                                    </DropdownMenuCheckboxItem>
-                                </DropdownMenuContent>
-                            </DropdownMenu>
+                            <div className="flex items-center shrink-0 bg-background rounded-sm px-1 h-9">
+                                <DropdownMenu>
+                                    <DropdownMenuTrigger asChild>
+                                        <Button
+                                            variant="ghost"
+                                            size="sm"
+                                            className={cn(
+                                                'h-7 px-2 text-[10px] uppercase font-bold tracking-widest gap-1 rounded-sm shrink-0',
+                                                usageFilter.length > 0
+                                                    ? 'bg-accent/50 text-foreground'
+                                                    : 'text-muted-foreground hover:text-foreground',
+                                            )}
+                                        >
+                                            <span>{usageFilter.length > 0 ? `Disponible (${usageFilter.length})` : 'Disponible'}</span>
+                                            <ChevronDown className="h-3 w-3" />
+                                        </Button>
+                                    </DropdownMenuTrigger>
+                                    <DropdownMenuContent align="start" className="w-44">
+                                        <DropdownMenuCheckboxItem
+                                            checked={usageFilter.includes('sales')}
+                                            onCheckedChange={(checked) => {
+                                                setUsageFilter(prev => checked ? [...prev, 'sales'] : prev.filter(v => v !== 'sales'))
+                                            }}
+                                        >
+                                            Ventas
+                                        </DropdownMenuCheckboxItem>
+                                        <DropdownMenuCheckboxItem
+                                            checked={usageFilter.includes('purchases')}
+                                            onCheckedChange={(checked) => {
+                                                setUsageFilter(prev => checked ? [...prev, 'purchases'] : prev.filter(v => v !== 'purchases'))
+                                            }}
+                                        >
+                                            Compras
+                                        </DropdownMenuCheckboxItem>
+                                    </DropdownMenuContent>
+                                </DropdownMenu>
+                            </div>
                             <SegmentationBar def={paymentMethodSegDef} />
                         </div>
                     }
