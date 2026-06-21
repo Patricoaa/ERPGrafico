@@ -127,31 +127,6 @@ class ProductSimpleSerializer(serializers.ModelSerializer):
             'product_type', 'requires_advanced_manufacturing', 'uom', 'uom_name', 'uom_category', 'image', 'image_thumbnail'
         ]
 
-class ProductListSerializer(serializers.ModelSerializer):
-    """Lightweight serializer for product list views — excludes expensive computed fields."""
-    category_name = serializers.CharField(source='category.name', read_only=True)
-    uom_name = serializers.CharField(source='uom.name', read_only=True)
-    image_thumbnail = serializers.SerializerMethodField()
-
-    def get_image_thumbnail(self, obj):
-        if obj.image and hasattr(obj, 'image_thumbnail'):
-            try:
-                return self.context['request'].build_absolute_uri(obj.image_thumbnail.url) if self.context.get('request') else obj.image_thumbnail.url
-            except Exception:
-                return None
-        return None
-
-    class Meta:
-        model = Product
-        fields = [
-            'id', 'code', 'internal_code', 'name', 'variant_display_name',
-            'product_type', 'category_name', 'uom_name',
-            'sale_price', 'sale_price_gross', 'is_active',
-            'track_inventory', 'can_be_sold', 'can_be_purchased',
-            'is_dynamic_pricing', 'has_variants',
-            'image_thumbnail',
-        ]
-
 class ProductSerializer(serializers.ModelSerializer):
     category_name = serializers.CharField(source='category.name', read_only=True)
     uom_name = serializers.CharField(source='uom.name', read_only=True)
