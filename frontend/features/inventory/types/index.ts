@@ -125,6 +125,7 @@ export interface ProductFilters {
     is_active?: string | boolean
     can_be_sold?: boolean
     can_be_purchased?: boolean
+    has_variants?: boolean
     parent_template__isnull?: boolean
     search?: string
     product_type?: string

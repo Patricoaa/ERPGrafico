@@ -11,7 +11,7 @@ import { ColumnDef } from "@tanstack/react-table"
 
 import type { BulkAction } from "@/components/shared"
 import { ProductDrawer } from "./ProductDrawer"
-import { ChevronDown, Plus, AlertTriangle, Layers } from "lucide-react"
+import { ChevronDown, Plus, AlertTriangle, Layers, ChevronDown as ChevronDownIcon } from "lucide-react"
 import { toast } from "sonner"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { cn, translateProductType } from "@/lib/utils"
@@ -25,12 +25,22 @@ import { ArchivingRestrictionsModal } from "./ArchivingRestrictionsModal"
 import { DataCell, MoneyDisplay } from '@/components/shared'
 import { EntityCard } from "@/components/shared"
 import { useProducts } from "@/features/inventory/hooks/useProducts"
+import { useCategories } from "@/features/inventory/hooks/useCategories"
 import { Product, Restriction, ProductFilters } from "@/features/inventory/types"
 import { productActions, type ProductActionsCtx } from "@/features/inventory/productActions"
 import { useSelectedEntity } from "@/hooks/useSelectedEntity"
 import { Chip, SmartSearchBar, useSmartSearch, SegmentationBar, useSegmentation } from "@/components/shared"
 import { productSearchDef } from "@/features/inventory/searchDef"
 import { productSegDef } from "@/features/inventory/segmentationDef"
+import { useQueryState, parseAsString } from "nuqs"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuTrigger,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
+} from "@/components/ui/dropdown-menu"
+import { Button } from "@/components/ui/button"
 
 interface ProductClientViewProps {
     externalOpen?: boolean
@@ -41,15 +51,35 @@ interface ProductClientViewProps {
 
 export function ProductClientView({ externalOpen, onExternalOpenChange, createAction, initialProducts }: ProductClientViewProps) {
     const { rate } = useVatRate()
+    const { categories: categoryOptions } = useCategories()
     const { filters: textFilters, isFiltered: isTextFiltered, clearAll: clearText } = useSmartSearch(productSearchDef)
     const { filters: segFilters, isFiltered: isSegFiltered, clearAll: clearSeg } = useSegmentation(productSegDef)
-    const isFiltered = isTextFiltered || isSegFiltered
-    const filters = useMemo<ProductFilters>(() => ({
-        parent_template__isnull: true,
-        page_size: 1000,
-        ...textFilters as Partial<ProductFilters>,
-        ...segFilters as Partial<ProductFilters>,
-    }), [textFilters, segFilters])
+    const [categoryValue, setCategoryValue] = useQueryState('category', parseAsString)
+    const isCategoryFiltered = categoryValue !== null
+    const isFiltered = isTextFiltered || isSegFiltered || isCategoryFiltered
+    const filters = useMemo<ProductFilters>(() => {
+        const segs = { ...segFilters } as Record<string, string>
+
+        // Parse availability multi-select into can_be_sold / can_be_purchased
+        const availability = segs['availability']
+        if (availability) {
+            const values = availability.split(',').filter(Boolean)
+            if (values.includes('sale')) segs.can_be_sold = 'true'
+            if (values.includes('purchase')) segs.can_be_purchased = 'true'
+        } else {
+            delete segs.can_be_sold
+            delete segs.can_be_purchased
+        }
+        delete segs['availability']
+
+        return {
+            parent_template__isnull: true,
+            page_size: 1000,
+            ...textFilters as Partial<ProductFilters>,
+            ...segs as unknown as Partial<ProductFilters>,
+            ...(categoryValue ? { category: Number(categoryValue) } as Partial<ProductFilters> : {}),
+        }
+    }, [textFilters, segFilters, categoryValue])
 
     const { products, isLoading, refetch, updateProduct } = useProducts({ filters, initialData: initialProducts })
     const [editingProduct, setEditingProduct] = useState<Product | null>(null)
@@ -445,8 +475,15 @@ export function ProductClientView({ externalOpen, onExternalOpenChange, createAc
                     variant="embedded"
                     smartSearch={<SmartSearchBar searchDef={productSearchDef} placeholder="Buscar producto..." className="w-full" />}
                     segmentation={<SegmentationBar def={productSegDef} />}
+                    customFilters={
+                        <CategoryFilter
+                            categories={categoryOptions}
+                            value={categoryValue}
+                            onChange={setCategoryValue}
+                        />
+                    }
                     showReset={isFiltered}
-                    onReset={() => { clearText(); clearSeg() }}
+                    onReset={() => { clearText(); clearSeg(); setCategoryValue(null) }}
                     initialColumnVisibility={initialColumnVisibility}
                     renderCard={(product: Product) => (
                         <EntityCard key={product.id} onClick={() => {
@@ -554,5 +591,65 @@ export function ProductClientView({ externalOpen, onExternalOpenChange, createAc
                 }
             />
         </div >
+    )
+}
+
+/* ─── CategoryFilter ─── */
+
+interface CategoryFilterProps {
+    categories: { id: number; name: string }[]
+    value: string | null
+    onChange: (value: string | null) => Promise<unknown>
+}
+
+function CategoryFilter({ categories, value, onChange }: CategoryFilterProps) {
+    const currentLabel = value
+        ? categories.find((c) => String(c.id) === value)?.name
+        : null
+
+    return (
+        <div className="flex items-center shrink-0 bg-background rounded-sm px-1 h-9">
+            <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                    <Button
+                        variant="ghost"
+                        size="sm"
+                        className={cn(
+                            'h-7 px-2 text-[10px] uppercase font-bold tracking-widest gap-1 rounded-sm shrink-0',
+                            value
+                                ? 'bg-accent/50 text-foreground'
+                                : 'text-muted-foreground hover:text-foreground',
+                        )}
+                    >
+                        {currentLabel ?? 'Categoría'}
+                        <ChevronDownIcon className="h-3 w-3" />
+                    </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="start" className="w-[200px] p-1">
+                    <DropdownMenuRadioGroup
+                        value={value ?? ''}
+                        onValueChange={(v) => onChange(v === '' ? null : v)}
+                    >
+                        <DropdownMenuRadioItem value="" className="text-[10px] uppercase tracking-widest">
+                            Todas
+                        </DropdownMenuRadioItem>
+                        {categories.map((cat) => (
+                            <DropdownMenuRadioItem
+                                key={cat.id}
+                                value={String(cat.id)}
+                                className="text-[10px] uppercase tracking-widest"
+                            >
+                                {cat.name}
+                            </DropdownMenuRadioItem>
+                        ))}
+                        {categories.length === 0 && (
+                            <DropdownMenuRadioItem value="" disabled className="text-[10px] uppercase tracking-widest text-muted-foreground/40">
+                                Sin categorías
+                            </DropdownMenuRadioItem>
+                        )}
+                    </DropdownMenuRadioGroup>
+                </DropdownMenuContent>
+            </DropdownMenu>
+        </div>
     )
 }

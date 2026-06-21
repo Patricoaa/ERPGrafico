@@ -10,10 +10,10 @@ export const metadata: Metadata = {
 }
 
 interface PageProps {
-    searchParams: Promise<{ modal?: string; search?: string; product_type?: string }>
+    searchParams: Promise<{ modal?: string; search?: string; product_type?: string; category?: string; has_variants?: string; availability?: string }>
 }
 
-const FILTER_PARAMS = new Set(['search', 'product_type', 'can_be_sold', 'can_be_purchased', 'is_active'])
+const FILTER_PARAMS = new Set(['search', 'product_type', 'category', 'has_variants', 'availability', 'is_active'])
 
 export default async function ProductsPage({ searchParams }: PageProps) {
     const params = await searchParams

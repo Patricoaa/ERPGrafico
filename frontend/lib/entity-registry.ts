@@ -149,7 +149,7 @@ export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
     shortTemplate: 'PRD-{id}',
     listUrl: '/inventory/products',
     detailUrlPattern: '/inventory/products/{id}',
-    viewPolicy: { availableViews: ['card'], defaultView: 'card', cardComponent: 'entity', gridLayout: 'single-column' },
+    viewPolicy: { availableViews: ['list', 'card'], defaultView: 'list', cardComponent: 'entity', gridLayout: 'single-column' },
   },
   'inventory.subscription': {
     label: 'inventory.subscription',
