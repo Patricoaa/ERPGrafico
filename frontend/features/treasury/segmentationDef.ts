@@ -6,6 +6,7 @@ export const treasuryAccountSegDef: SegmentationDefinition = {
       key: 'account_type',
       label: 'Tipo',
       type: 'tabs',
+      variant: 'dropdown',
       serverParam: 'account_type',
       options: [
         { label: 'Caja Física (Efectivo)', value: 'CASH' },
