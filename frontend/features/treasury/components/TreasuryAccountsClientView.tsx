@@ -295,26 +295,35 @@ export const TreasuryAccountsClientView: React.FC<TreasuryAccountsClientViewProp
                                                 </span>
                                             }
                                             center={
-                                                <div className="flex flex-col items-center gap-0.5 text-xs">
-                                                    {name ? (
-                                                        <span className="flex items-center gap-1.5 font-medium text-foreground/80 whitespace-nowrap">
-                                                            <DataCell.Code className="text-xs bg-transparent p-0">{acc.account_code}</DataCell.Code>
-                                                            <span className="text-muted-foreground/20">·</span>
-                                                            <span className="truncate max-w-[120px]">{name}</span>
-                                                        </span>
-                                                    ) : (
-                                                        <span className="text-muted-foreground/40 italic">No vinculada</span>
-                                                    )}
+                                                <div className="flex items-start gap-6 text-xs">
+                                                    <div className="flex flex-col gap-0.5 items-center">
+                                                        <span className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/50">Cta. Contable</span>
+                                                        {name ? (
+                                                            <span className="flex items-center gap-1.5 font-medium text-foreground/80 whitespace-nowrap">
+                                                                <DataCell.Code className="text-xs bg-transparent p-0">{acc.account_code}</DataCell.Code>
+                                                                <span className="text-muted-foreground/20">·</span>
+                                                                <span className="truncate max-w-[120px]">{name}</span>
+                                                            </span>
+                                                        ) : (
+                                                            <span className="text-muted-foreground/40 italic">No vinculada</span>
+                                                        )}
+                                                    </div>
                                                     {hasBank && (
-                                                        <span className="flex items-center gap-1 text-muted-foreground/60">
-                                                            <Landmark className="h-3 w-3" />
-                                                            {acc.bank_name}
-                                                        </span>
+                                                        <div className="flex flex-col gap-0.5 items-center">
+                                                            <span className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/50">Entidad Externa</span>
+                                                            <span className="flex items-center gap-1 text-foreground/80 font-medium whitespace-nowrap">
+                                                                <Landmark className="h-3 w-3 text-muted-foreground/50" />
+                                                                {acc.bank_name}
+                                                            </span>
+                                                        </div>
                                                     )}
                                                 </div>
                                             }
                                             trailing={
-                                                <DataCell.Currency value={acc.current_balance} currency={acc.currency} className="font-bold" />
+                                                <div className="flex flex-col gap-0.5 items-end">
+                                                    <span className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/50">Saldo</span>
+                                                    <DataCell.Currency value={acc.current_balance} currency={acc.currency} className="font-bold" />
+                                                </div>
                                             }
                                         />
                                         <EntityCard.Body actions={treasuryAccountActions.render(acc, actionsCtx)} />
