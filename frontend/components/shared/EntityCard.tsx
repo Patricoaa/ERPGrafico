@@ -220,61 +220,87 @@ function EntityCardBadge({ label, dot = false, variant = "secondary", className,
 
 // ─── Skeleton ─────────────────────────────────────────────────────────────────
 
-function EntityCardSkeleton({ className, variant = "full" }: { className?: string; variant?: "full" | "compact" }) {
+interface EntityCardSkeletonProps {
+    className?: string
+    variant?: "full" | "compact"
+    showHeader?: boolean
+    showBody?: boolean
+    showFooter?: boolean
+}
+
+function EntityCardSkeleton({
+    className,
+    variant = "full",
+    showHeader = true,
+    showBody = true,
+    showFooter = false,
+}: EntityCardSkeletonProps) {
     if (variant === "compact") {
         return (
             <EntityCardRoot variant="compact" className={cn("animate-in fade-in duration-500", className)}>
-                <div className="flex flex-col gap-2 p-1">
-                    <div className="flex items-center gap-3">
-                        <Skeleton className="h-8 w-8 rounded-sm shrink-0" />
-                        <div className="flex flex-col gap-1.5 flex-1">
-                            <Skeleton className="h-4 w-3/4" />
-                            <Skeleton className="h-3 w-1/2 opacity-60" />
+                {showHeader && (
+                    <div className="flex flex-col gap-2 p-1">
+                        <div className="flex items-center gap-3">
+                            <Skeleton className="h-8 w-8 rounded-sm shrink-0" />
+                            <div className="flex flex-col gap-1.5 flex-1">
+                                <Skeleton className="h-4 w-3/4" />
+                                <Skeleton className="h-3 w-1/2 opacity-60" />
+                            </div>
                         </div>
                     </div>
-                </div>
+                )}
             </EntityCardRoot>
         )
     }
 
     return (
         <EntityCardRoot className={cn("animate-in fade-in duration-500", className)}>
-            <EntityCardHeader
-                title={
-                    <div className="flex items-center gap-3 min-w-0">
-                        <Skeleton className="h-8 w-8 rounded-md shrink-0" />
-                        <Skeleton className="h-5 w-48 shrink-0" />
-                    </div>
-                }
-                subtitle={
-                    <div className="flex items-center gap-2.5">
-                        <Skeleton className="h-4 w-20 rounded-sm" />
-                        <Skeleton className="h-4 w-24" />
-                    </div>
-                }
-                trailing={
-                    <div className="flex items-center gap-4">
-                        <div className="hidden sm:flex px-4">
-                            <Skeleton className="h-6 w-24 rounded-full" />
+            {showHeader && (
+                <EntityCardHeader
+                    title={
+                        <div className="flex items-center gap-3 min-w-0">
+                            <Skeleton className="h-8 w-8 rounded-md shrink-0" />
+                            <Skeleton className="h-5 w-48 shrink-0" />
                         </div>
-                        <div className="flex flex-col items-end gap-1">
-                            <Skeleton className="h-2 w-10" />
-                            <Skeleton className="h-5 w-20" />
+                    }
+                    subtitle={
+                        <div className="flex items-center gap-2.5">
+                            <Skeleton className="h-4 w-20 rounded-sm" />
+                            <Skeleton className="h-4 w-24" />
                         </div>
-                        <Skeleton className="h-5 w-5 rounded-full" />
+                    }
+                    trailing={
+                        <div className="flex items-center gap-4">
+                            <div className="hidden sm:flex px-4">
+                                <Skeleton className="h-6 w-24 rounded-full" />
+                            </div>
+                            <div className="flex flex-col items-end gap-1">
+                                <Skeleton className="h-2 w-10" />
+                                <Skeleton className="h-5 w-20" />
+                            </div>
+                            <Skeleton className="h-5 w-5 rounded-full" />
+                        </div>
+                    }
+                />
+            )}
+            {showBody && (
+                <EntityCardBody className="flex items-start justify-between gap-4 pt-2 border-t border-border/30 mt-1">
+                    <div className="flex flex-wrap gap-x-4 gap-y-2 flex-1">
+                        <Skeleton className="h-3 w-32" />
+                        <Skeleton className="h-3 w-40" />
                     </div>
-                }
-            />
-            <EntityCardBody className="flex items-start justify-between gap-4 pt-2 border-t border-border/30 mt-1">
-                <div className="flex flex-wrap gap-x-4 gap-y-2 flex-1">
-                    <Skeleton className="h-3 w-32" />
-                    <Skeleton className="h-3 w-40" />
-                </div>
-                <div className="flex flex-col items-end gap-1">
-                    <Skeleton className="h-2 w-10" />
-                    <Skeleton className="h-4 w-16" />
-                </div>
-            </EntityCardBody>
+                    <div className="flex flex-col items-end gap-1">
+                        <Skeleton className="h-2 w-10" />
+                        <Skeleton className="h-4 w-16" />
+                    </div>
+                </EntityCardBody>
+            )}
+            {showFooter && (
+                <EntityCardFooter className="pt-2">
+                    <Skeleton className="h-8 w-24 rounded-md" />
+                    <Skeleton className="h-8 w-20 rounded-md" />
+                </EntityCardFooter>
+            )}
         </EntityCardRoot>
     )
 }
@@ -293,6 +319,7 @@ export const EntityCard = Object.assign(EntityCardRoot, {
 export type {
     EntityCardRootProps,
     EntityCardHeaderProps,
+    EntityCardSkeletonProps,
     EntityCardBodyProps,
     EntityCardFieldProps,
     EntityCardFooterProps,
