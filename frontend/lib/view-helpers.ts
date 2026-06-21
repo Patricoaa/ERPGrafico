@@ -101,7 +101,7 @@ export function createEntityCardView(
   const layout = options.gridLayout ?? policy?.gridLayout ?? 'single-column'
 
   const gridClass = layout === 'multi-column'
-    ? "grid grid-cols-[repeat(auto-fill,minmax(280px,1fr))] gap-3 pt-2"
+    ? "grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3 pt-2"
     : "grid gap-3 pt-2"
 
   const EntityCardView = (table: ReactTable<any>) => {
@@ -172,7 +172,7 @@ export function createCardGroupView<TData>(
 
   const innerGridClass =
     gridLayout === "multi-column"
-      ? "grid grid-cols-[repeat(auto-fill,minmax(280px,1fr))] gap-3"
+      ? "grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3"
       : "grid gap-2"
 
   const GroupedCardView = (table: ReactTable<TData>) => {
@@ -280,7 +280,7 @@ export function createCardLoadingView(
   skeletonProps?: Pick<EntityCardSkeletonProps, 'showHeader' | 'showBody' | 'showFooter'>
 ) {
   const gridClass = layout === 'multi-column'
-    ? "grid grid-cols-[repeat(auto-fill,minmax(280px,1fr))] gap-3 pt-2"
+    ? "grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3 pt-2"
     : "grid gap-3 pt-1"
 
   const CardLoadingView = () =>
