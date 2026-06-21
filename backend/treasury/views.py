@@ -1589,18 +1589,18 @@ class CheckViewSet(viewsets.ModelViewSet):
     """CRUD + transiciones de estado para cheques recibidos."""
     from .serializers import CheckSerializer
     from .models import Check as CheckModel
+    from .filters import CheckFilter
 
     serializer_class = CheckSerializer
-    filterset_fields = ['status', 'direction', 'bank', 'counterparty']
+    filter_backends = [DjangoFilterBackend, drf_filters.SearchFilter]
+    filterset_class = CheckFilter
+    search_fields = ['check_number', 'drawer_name', 'counterparty__name', 'bank__name', 'amount']
 
     def get_queryset(self):
         from .models import Check as CheckModel
         qs = CheckModel.objects.select_related(
             'bank', 'counterparty', 'portfolio_account', 'deposit_account'
         )
-        due_before = self.request.query_params.get('due_before')
-        if due_before:
-            qs = qs.filter(due_date__lte=due_before)
         return qs.order_by('due_date', '-id')
 
     def perform_create(self, serializer):

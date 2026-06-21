@@ -160,6 +160,11 @@ const TerminalBatchDrawer = dynamic(
     { ssr: false, loading: () => skeleton("lote de terminal") }
 )
 
+const CheckDrawer = dynamic(
+    () => import("@/features/treasury").then((m) => m.CheckDrawer),
+    { ssr: false, loading: () => skeleton("cheque") }
+)
+
 const ProfitDistributionDrawer = dynamic(
     () => import("@/features/settings/components/ProfitDistributionDrawer").then((m) => m.ProfitDistributionDrawer),
     { ssr: false, loading: () => skeleton("distribución de resultados") }
@@ -462,6 +467,13 @@ export const ENTITY_DRAWERS: Record<string, (props: EntityDrawerProps) => React.
     ),
 
     // ── Treasury (read-only detail drawers) ──────────────────────────────────
+    "treasury.check": ({ id, open, onOpenChange }) => (
+        <CheckDrawer
+            id={id}
+            open={open}
+            onOpenChange={onOpenChange}
+        />
+    ),
     "treasury.bankstatement": ({ id, open, onOpenChange }) => (
         <BankStatementDrawer
             statementId={id}

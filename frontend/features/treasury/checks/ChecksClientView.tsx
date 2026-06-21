@@ -2,15 +2,22 @@
 
 import React, { useMemo, useCallback } from 'react'
 import { useRouter, usePathname, useSearchParams } from 'next/navigation'
+import { useQueryState, parseAsString } from 'nuqs'
 import type { ColumnDef } from '@tanstack/react-table'
 import { AlertTriangle } from 'lucide-react'
 import {
     DataTableView, DataTableColumnHeader, DataCell,
     StatusBadge, MoneyDisplay, Skeleton, EntityCard,
+    SmartSearchBar, useSmartSearch,
+    SegmentationBar, useSegmentation,
 } from '@/components/shared'
+import { useGlobalModals } from '@/components/providers/GlobalModalProvider'
 import { useChecks, useCheckMutations } from './hooks'
 import { CheckDepositModal } from './CheckDepositModal'
 import { checkActions, type CheckActionsCtx } from './checkActions'
+import { checkSearchDef } from './searchDef'
+import { checkSegDef } from './segmentationDef'
+import { BankFilter } from './BankFilter'
 import type { Check, CheckDirection } from './types'
 
 const ACTIONABLE_FROM: Record<string, string[]> = {
@@ -27,16 +34,27 @@ interface ChecksClientViewProps {
 }
 
 export function ChecksClientView({ bankId, direction }: ChecksClientViewProps = {}) {
-    const queryParams = useMemo(() => {
-        const p: Record<string, string> = {}
-        if (bankId) p.bank = String(bankId)
-        if (direction) p.direction = direction
-        return Object.keys(p).length ? p : undefined
-    }, [bankId, direction])
-
     const router = useRouter()
     const pathname = usePathname()
     const searchParams = useSearchParams()
+
+    const { openEntity } = useGlobalModals()
+
+    const { filters: textFilters, isFiltered: isTextFiltered, clearAll: clearText } = useSmartSearch(checkSearchDef)
+    const { filters: segFilters, isFiltered: isSegFiltered, clearAll: clearSeg } = useSegmentation(checkSegDef)
+    const [bankParam, setBankParam] = useQueryState('bank', parseAsString)
+
+    const effectiveBank = bankParam ?? (bankId ? String(bankId) : undefined)
+
+    const queryParams = useMemo(() => {
+        const p: Record<string, string> = {
+            ...textFilters,
+            ...segFilters,
+        }
+        if (effectiveBank) p.bank = effectiveBank
+        if (direction) p.direction = direction
+        return Object.keys(p).length ? p : undefined
+    }, [effectiveBank, direction, textFilters, segFilters])
 
     const { data: checks = [], isLoading } = useChecks(queryParams)
 
@@ -51,7 +69,7 @@ export function ChecksClientView({ bankId, direction }: ChecksClientViewProps = 
         [selectedId, isDepositOpen, checks],
     )
 
-    const clearAll = useCallback(() => {
+    const clearModalParams = useCallback(() => {
         const params = new URLSearchParams(searchParams.toString())
         const changed = params.has("selected") || params.has("action")
         params.delete("selected")
@@ -61,6 +79,22 @@ export function ChecksClientView({ bankId, direction }: ChecksClientViewProps = 
             router.replace(query ? `${pathname}?${query}` : pathname, { scroll: false })
         }
     }, [router, pathname, searchParams])
+
+    const isFiltered = isTextFiltered || isSegFiltered || !!bankParam
+
+    const handleViewDetail = useCallback(
+        (id: number) => {
+            const check = checks.find((c) => c.id === id)
+            if (check) openEntity('treasury.check', id, check)
+        },
+        [checks, openEntity],
+    )
+
+    const handleReset = useCallback(() => {
+        clearText()
+        clearSeg()
+        setBankParam(null)
+    }, [clearText, clearSeg, setBankParam])
 
     const canDo = (action: string, check: Check) =>
         ACTIONABLE_FROM[action]?.includes(check.status) ?? false
@@ -74,6 +108,7 @@ export function ChecksClientView({ bankId, direction }: ChecksClientViewProps = 
     const actionsCtx: CheckActionsCtx = {
         isIssued,
         canDo,
+        onViewDetail: handleViewDetail,
         onDeposit: (check) => {
             const params = new URLSearchParams(searchParams.toString())
             params.set("selected", String(check.id))
@@ -116,6 +151,20 @@ export function ChecksClientView({ bankId, direction }: ChecksClientViewProps = 
             ),
         },
         {
+            id: 'sale_order',
+            accessorFn: (row) => row.sale_order_display?.number ?? null,
+            header: ({ column }) => <DataTableColumnHeader column={column} title="NV Asociada" className="justify-center" />,
+            cell: ({ row }) => {
+                const so = row.original.sale_order_display
+                if (!so) return null
+                return (
+                    <div className="flex justify-center">
+                        <DataCell.Entity entityLabel="sales.saleorder" number={so.number} />
+                    </div>
+                )
+            },
+        },
+        {
             accessorKey: 'due_date',
             header: ({ column }) => <DataTableColumnHeader column={column} title="Vencimiento" />,
             cell: ({ row }) => (
@@ -151,6 +200,12 @@ export function ChecksClientView({ bankId, direction }: ChecksClientViewProps = 
                             ? { context: 'treasury', title: 'Sin cheques girados', description: 'Los cheques propios emitidos en compras aparecerán aquí.' }
                             : { context: 'treasury', title: 'Sin cheques en cartera', description: 'Los cheques recibidos en ventas o registro de pagos aparecerán aquí.' }
                     }
+                    smartSearch={<SmartSearchBar searchDef={checkSearchDef} placeholder="Buscar por N° cheque, girador o monto..." />}
+                    segmentation={<SegmentationBar def={checkSegDef} />}
+                    customFilters={<BankFilter />}
+                    isFiltered={isFiltered}
+                    showReset={isFiltered}
+                    onReset={handleReset}
                     renderCard={(check: Check) => (
                         <EntityCard>
                             <EntityCard.Header
@@ -185,11 +240,13 @@ export function ChecksClientView({ bankId, direction }: ChecksClientViewProps = 
                 />
             </div>
 
-            <CheckDepositModal
-                check={depositCheck!}
-                open={isDepositOpen}
-                onOpenChange={(open) => { if (!open) clearAll() }}
-            />
+            {depositCheck && (
+                <CheckDepositModal
+                    check={depositCheck}
+                    open={isDepositOpen}
+                    onOpenChange={(open) => { if (!open) clearModalParams() }}
+                />
+            )}
         </div>
     )
 }
