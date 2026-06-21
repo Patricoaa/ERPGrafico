@@ -558,7 +558,25 @@ export function POSClientView() {
                             <motion.div key="shop" initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, scale: 0.98 }} className="flex-1 flex flex-col min-h-0">
                                 <Card className="flex-1 flex flex-col overflow-hidden bg-muted/10 border py-1.5">
                                     <div className="px-2 pt-1.5 pb-1.5 border-b bg-background/50 space-y-2">
-                                        {(!isDesktop) && <CategoryFilter categories={categories} selectedCategoryId={selectedCategoryId} onSelectCategory={setSelectedCategoryId} />}
+                                        <SearchBar
+                                            value={searchTerm}
+                                            onChange={setSearchTerm}
+                                            onEnter={handleSearchEnter}
+                                            rightAction={isDesktop ? (
+                                                <CategoryDropdown
+                                                    categories={categories}
+                                                    selectedCategoryId={selectedCategoryId}
+                                                    onSelectCategory={setSelectedCategoryId}
+                                                />
+                                            ) : undefined}
+                                        />
+                                        {!isDesktop && (
+                                            <CategoryFilter
+                                                categories={categories}
+                                                selectedCategoryId={selectedCategoryId}
+                                                onSelectCategory={setSelectedCategoryId}
+                                            />
+                                        )}
                                     </div>
                                     <div className="flex-1 px-1.5 pt-1.5 pb-0"><ProductGrid products={filteredProducts} categories={categories} limits={stockLimits} isProductDisabled={(p) => isPOSProductDisabled(p as unknown as Product)} onProductClick={(p) => handleProductClick(p as unknown as Product)} onToggleFavorite={toggleFavorite} /></div>
                                 </Card>
