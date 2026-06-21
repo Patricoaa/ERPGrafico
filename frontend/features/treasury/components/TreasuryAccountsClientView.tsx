@@ -21,6 +21,7 @@ import { DataCell, FadeIn, EntityBadge } from '@/components/shared'
 import { useRouter, usePathname, useSearchParams } from "next/navigation"
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 import { useSelectedEntity } from "@/hooks/useSelectedEntity"
+import { Wallet, Landmark, CreditCard, HandCoins, ArrowRightLeft, FileText, type LucideIcon } from "lucide-react"
 
 
 interface TreasuryAccountsClientViewProps {
@@ -110,6 +111,24 @@ export const TreasuryAccountsClientView: React.FC<TreasuryAccountsClientViewProp
         LOAN: "Préstamo Bancario",
         BRIDGE: "Puente",
         CHECK_PORTFOLIO: "Cheques en Cartera",
+    }
+
+    const accountTypeIcons: Record<string, LucideIcon> = {
+        CASH: Wallet,
+        CHECKING: Landmark,
+        CREDIT_CARD: CreditCard,
+        LOAN: HandCoins,
+        BRIDGE: ArrowRightLeft,
+        CHECK_PORTFOLIO: FileText,
+    }
+
+    const accountTypeIconStyles: Record<string, string> = {
+        CASH: "text-success bg-success/10",
+        CHECKING: "text-info bg-info/10",
+        CREDIT_CARD: "text-warning bg-warning/10",
+        LOAN: "text-destructive bg-destructive/10",
+        BRIDGE: "text-primary bg-primary/10",
+        CHECK_PORTFOLIO: "text-muted-foreground bg-muted/50",
     }
 
     const actionsCtx: TreasuryAccountActionsCtx = {
@@ -255,13 +274,31 @@ export const TreasuryAccountsClientView: React.FC<TreasuryAccountsClientViewProp
                                 const providers = acc.terminal_providers ?? []
                                 const hasBank = !!acc.bank
                                 const hasProviders = providers.length > 0
+                                const typeKey = acc.account_type?.toUpperCase()
+                                const Icon = accountTypeIcons[typeKey]
+                                const iconStyle = accountTypeIconStyles[typeKey]
                                 return (
                                     <EntityCard key={acc.id} onClick={() => handleEdit(acc)} actions={treasuryAccountActions.render(acc, actionsCtx)}>
                                         <EntityCard.Header
+                                            icon={Icon}
+                                            iconClassName={iconStyle}
                                             title={acc.name}
+                                            subtitle={
+                                                <span className="flex items-center gap-1.5 flex-wrap">
+                                                    <span>{acc.account_type_display || typeLabels[typeKey] || acc.account_type}</span>
+                                                    {acc.bank_name && (
+                                                        <>
+                                                            <span className="text-muted-foreground/20">·</span>
+                                                            <span>{acc.bank_name}</span>
+                                                        </>
+                                                    )}
+                                                </span>
+                                            }
+                                            trailing={
+                                                <DataCell.Currency value={acc.current_balance} currency={acc.currency} className="font-bold" />
+                                            }
                                         />
                                         <EntityCard.Body>
-                                            <EntityCard.Field label="Tipología" value={acc.account_type_display || typeLabels[acc.account_type?.toUpperCase()] || acc.account_type} />
                                             <EntityCard.Field label="Cuenta Contable" value={
                                                 name ? (
                                                     <div className="flex flex-col gap-0.5">
@@ -296,10 +333,6 @@ export const TreasuryAccountsClientView: React.FC<TreasuryAccountsClientViewProp
                                                 )
                                             } />
                                         </EntityCard.Body>
-                                        <EntityCard.Footer className="justify-between items-center border-t bg-muted/10 py-2 px-4">
-                                            <span className="text-[10px] font-bold text-muted-foreground uppercase">Saldo Actual</span>
-                                            <DataCell.Currency value={acc.current_balance} currency={acc.currency} className="font-bold text-base" />
-                                        </EntityCard.Footer>
                                     </EntityCard>
                                 )
                             }}
