@@ -6,7 +6,7 @@ import type { SegmentationDefinition, SegmentDef } from '@/types/segmentation'
 import type { UseSegmentationReturn } from './types'
 
 function getSegmentParams(segment: SegmentDef): string[] {
-  if (segment.type === 'tabs') return [segment.serverParam]
+  if (segment.type === 'tabs' || segment.type === 'multiselect') return [segment.serverParam]
   if (segment.type === 'period' || segment.type === 'range') {
     const params: string[] = []
     if (segment.serverParamFrom) params.push(segment.serverParamFrom)

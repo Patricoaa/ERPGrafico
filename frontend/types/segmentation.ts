@@ -35,7 +35,15 @@ export type RangeSegmentDef = {
   placeholderTo?: string
 }
 
-export type SegmentDef = TabSegmentDef | DateSegmentDef | PeriodSegmentDef | RangeSegmentDef
+export type MultiSelectSegmentDef = {
+  key: string
+  label: string
+  type: 'multiselect'
+  serverParam: string
+  options: { label: string; value: string }[]
+}
+
+export type SegmentDef = TabSegmentDef | DateSegmentDef | PeriodSegmentDef | RangeSegmentDef | MultiSelectSegmentDef
 
 export type SegmentationDefinition = {
   segments: SegmentDef[]

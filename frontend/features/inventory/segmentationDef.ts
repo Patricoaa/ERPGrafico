@@ -63,6 +63,27 @@ export const productSegDef: SegmentationDefinition = {
       ],
     },
     {
+      key: 'has_variants',
+      label: 'Variantes',
+      type: 'tabs',
+      serverParam: 'has_variants',
+      variant: 'dropdown',
+      options: [
+        { label: 'Con variantes', value: 'true' },
+        { label: 'Sin variantes', value: 'false' },
+      ],
+    },
+    {
+      key: 'availability',
+      label: 'Disponible para',
+      type: 'multiselect',
+      serverParam: 'availability',
+      options: [
+        { label: 'Venta', value: 'sale' },
+        { label: 'Compra', value: 'purchase' },
+      ],
+    },
+    {
       key: 'is_active',
       label: 'Estado',
       type: 'tabs',
@@ -71,28 +92,6 @@ export const productSegDef: SegmentationDefinition = {
       options: [
         { label: 'Activo', value: 'true' },
         { label: 'Archivado', value: 'false' },
-      ],
-    },
-    {
-      key: 'can_be_sold',
-      label: 'Venta',
-      type: 'tabs',
-      serverParam: 'can_be_sold',
-      variant: 'dropdown',
-      options: [
-        { label: 'Sí', value: 'true' },
-        { label: 'No', value: 'false' },
-      ],
-    },
-    {
-      key: 'can_be_purchased',
-      label: 'Compra',
-      type: 'tabs',
-      serverParam: 'can_be_purchased',
-      variant: 'dropdown',
-      options: [
-        { label: 'Sí', value: 'true' },
-        { label: 'No', value: 'false' },
       ],
     },
   ],

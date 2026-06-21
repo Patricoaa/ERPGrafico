@@ -3,7 +3,7 @@
 import React, { useState, useCallback, useMemo } from 'react'
 import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
-import { Calendar as CalendarIcon, X, ChevronDown } from 'lucide-react'
+import { Calendar as CalendarIcon, X, ChevronDown, Check } from 'lucide-react'
 import type { DateRange } from 'react-day-picker'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
@@ -18,7 +18,7 @@ import {
   DropdownMenuRadioGroup,
   DropdownMenuRadioItem,
 } from '@/components/ui/dropdown-menu'
-import type { SegmentationDefinition, TabSegmentDef, DateSegmentDef, PeriodSegmentDef, RangeSegmentDef, SegmentDef } from '@/types/segmentation'
+import type { SegmentationDefinition, TabSegmentDef, DateSegmentDef, PeriodSegmentDef, RangeSegmentDef, MultiSelectSegmentDef, SegmentDef } from '@/types/segmentation'
 import { useSegmentation } from './useSegmentation'
 
 interface SegmentationBarProps {
@@ -91,6 +91,9 @@ function SegmentItem({ segment, filters, apply, remove }: SegmentItemProps) {
       return <DropdownSegment def={segment} filters={filters} apply={apply} remove={remove} />
     }
     return <TabsSegment def={segment} filters={filters} apply={apply} remove={remove} />
+  }
+  if (segment.type === 'multiselect') {
+    return <MultiSelectSegment def={segment} filters={filters} apply={apply} remove={remove} />
   }
   return <DateSegment def={segment} filters={filters} apply={apply} remove={remove} />
 }
@@ -602,6 +605,92 @@ function RangeSegment({ def, filters, apply, remove }: RangeSegmentProps) {
             </div>
           </div>
         </div>
+      </PopoverContent>
+    </Popover>
+  )
+}
+
+/* ─── MultiSelectSegment ─── */
+
+interface MultiSelectSegmentProps {
+  def: MultiSelectSegmentDef
+  filters: Record<string, string>
+  apply: (param: string, value: string) => Promise<void>
+  remove: (param: string) => Promise<void>
+}
+
+function MultiSelectSegment({ def, filters, apply, remove }: MultiSelectSegmentProps) {
+  const [open, setOpen] = useState(false)
+  const rawValue = filters[def.serverParam] ?? ''
+  const selectedValues = rawValue ? rawValue.split(',').filter(Boolean) : []
+
+  const currentLabel = selectedValues.length > 0
+    ? selectedValues.map(v => def.options.find(o => o.value === v)?.label).filter(Boolean).join(', ')
+    : null
+
+  const toggleOption = async (optionValue: string) => {
+    const next = selectedValues.includes(optionValue)
+      ? selectedValues.filter(v => v !== optionValue)
+      : [...selectedValues, optionValue]
+    if (next.length === 0) {
+      await remove(def.serverParam)
+    } else {
+      await apply(def.serverParam, next.join(','))
+    }
+  }
+
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <Button
+          variant="ghost"
+          size="sm"
+          className={cn(
+            'h-7 px-2 text-[10px] uppercase font-bold tracking-widest gap-1 rounded-sm shrink-0',
+            selectedValues.length > 0
+              ? 'bg-accent/50 text-foreground'
+              : 'text-muted-foreground hover:text-foreground',
+          )}
+        >
+          <span className="truncate max-w-[120px]">{currentLabel ?? def.label}</span>
+          <ChevronDown className="h-3 w-3 shrink-0" />
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent align="start" className="w-[200px] p-1" sideOffset={4}>
+        <div className="flex flex-col">
+          {def.options.map((opt) => {
+            const isSelected = selectedValues.includes(opt.value)
+            return (
+              <div
+                key={opt.value}
+                role="option"
+                aria-selected={isSelected}
+                className={cn(
+                  'relative flex cursor-pointer select-none items-center rounded-sm px-2 py-1.5 text-[10px] uppercase font-bold tracking-tight outline-none hover:bg-accent hover:text-accent-foreground transition-colors',
+                  isSelected ? 'bg-primary/5 text-primary' : 'text-muted-foreground',
+                )}
+                onClick={() => toggleOption(opt.value)}
+              >
+                <div className={cn(
+                  'mr-2 flex h-3.5 w-3.5 items-center justify-center rounded-sm border transition-all',
+                  isSelected ? 'bg-primary text-primary-foreground border-primary' : 'bg-background border-border',
+                )}>
+                  {isSelected && <Check className="h-2.5 w-2.5" />}
+                </div>
+                <span className="flex-1">{opt.label}</span>
+              </div>
+            )
+          })}
+        </div>
+        {selectedValues.length > 0 && (
+          <div
+            role="button"
+            className="w-full flex items-center justify-center text-[9px] font-black uppercase tracking-[0.1em] h-7 mt-1 hover:bg-destructive/10 hover:text-destructive transition-colors rounded-sm text-muted-foreground/60 cursor-pointer"
+            onClick={async () => { await remove(def.serverParam); setOpen(false) }}
+          >
+            Limpiar
+          </div>
+        )}
       </PopoverContent>
     </Popover>
   )
