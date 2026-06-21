@@ -702,11 +702,20 @@ class CheckSerializer(serializers.ModelSerializer):
     is_overdue = serializers.BooleanField(read_only=True)
     bank_name = serializers.CharField(source='bank.name', read_only=True)
     counterparty_name = serializers.SerializerMethodField()
+    sale_order_display = serializers.SerializerMethodField()
 
     def get_counterparty_name(self, obj):
         if obj.counterparty:
             return obj.counterparty.name
         return obj.drawer_name or None
+
+    def get_sale_order_display(self, obj):
+        if obj.sale_order:
+            return {
+                'id': obj.sale_order.id,
+                'number': obj.sale_order.number,
+            }
+        return None
 
     class Meta:
         model = Check
@@ -718,7 +727,7 @@ class CheckSerializer(serializers.ModelSerializer):
             'counterparty', 'counterparty_name', 'drawer_name',
             'portfolio_account', 'deposit_account',
             'receipt_movement', 'settlement_movement',
-            'invoice', 'sale_order',
+            'invoice', 'sale_order', 'sale_order_display',
             'notes', 'deposited_at', 'cleared_at', 'bounced_at',
             'created_at', 'created_by',
         ]

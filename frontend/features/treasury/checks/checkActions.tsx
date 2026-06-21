@@ -1,5 +1,5 @@
 import { DataCell, createEntityActions } from '@/components/shared'
-import { ArrowDownToLine, CheckCheck, XCircle, Ban } from 'lucide-react'
+import { ArrowDownToLine, CheckCheck, XCircle, Ban, Eye } from 'lucide-react'
 import type { Check } from './types'
 
 export interface CheckActionsCtx {
@@ -10,6 +10,7 @@ export interface CheckActionsCtx {
     onBounce: (id: number) => void
     onMarkCashed: (id: number) => void
     onVoid: (id: number) => void
+    onViewDetail: (id: number) => void
 }
 
 export const checkActions = createEntityActions<
@@ -17,6 +18,7 @@ export const checkActions = createEntityActions<
     CheckActionsCtx
 >((item, ctx) => (
     <>
+        <DataCell.Action icon={Eye} title="Ver detalle" onClick={() => ctx.onViewDetail(item.id)} />
         {!ctx.isIssued && ctx.canDo('deposit', item) && (
             <DataCell.Action icon={ArrowDownToLine} title="Depositar" onClick={() => ctx.onDeposit(item)} />
         )}
