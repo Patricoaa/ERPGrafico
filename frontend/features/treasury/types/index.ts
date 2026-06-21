@@ -31,7 +31,7 @@ export type TerminalUpdatePayload = Partial<TerminalCreatePayload>
 // Ver `converge_treasury_accounts` y docs/50-audit/bancos/fase-1-operativo.md.
 // CHECK_PORTFOLIO existe a nivel DB (cuenta puente "Cheques en Cartera" auto-gestionada).
 // LOAN = cuenta-pasivo dedicada a la deuda de un crédito bancario (ADR-0041).
-export type TreasuryAccountType = 'CHECKING' | 'CREDIT_CARD' | 'LOAN' | 'CASH' | 'BRIDGE' | 'CHECK_PORTFOLIO'
+export type TreasuryAccountType = 'CHECKING' | 'CREDIT_CARD' | 'LOAN' | 'CASH' | 'BRIDGE' | 'CHECK_PORTFOLIO' | 'ISSUED_CHECKS'
 
 // Treasury Account types
 export interface TreasuryAccount {

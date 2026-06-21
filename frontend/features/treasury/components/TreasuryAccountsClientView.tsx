@@ -111,6 +111,7 @@ export const TreasuryAccountsClientView: React.FC<TreasuryAccountsClientViewProp
         LOAN: "Préstamo Bancario",
         BRIDGE: "Puente",
         CHECK_PORTFOLIO: "Cheques en Cartera",
+        ISSUED_CHECKS: "Cheques Girados por Pagar",
     }
 
     const accountTypeIcons: Record<string, LucideIcon> = {
@@ -120,6 +121,7 @@ export const TreasuryAccountsClientView: React.FC<TreasuryAccountsClientViewProp
         LOAN: HandCoins,
         BRIDGE: ArrowRightLeft,
         CHECK_PORTFOLIO: FileText,
+        ISSUED_CHECKS: FileText,
     }
 
     const accountTypeIconStyles: Record<string, string> = {
@@ -129,6 +131,7 @@ export const TreasuryAccountsClientView: React.FC<TreasuryAccountsClientViewProp
         LOAN: "text-destructive bg-destructive/10",
         BRIDGE: "text-primary bg-primary/10",
         CHECK_PORTFOLIO: "text-muted-foreground bg-muted/50",
+        ISSUED_CHECKS: "text-warning bg-warning/10",
     }
 
     const actionsCtx: TreasuryAccountActionsCtx = {
@@ -302,21 +305,12 @@ export const TreasuryAccountsClientView: React.FC<TreasuryAccountsClientViewProp
                                                             <span className="flex items-center gap-1.5 font-medium text-foreground/80 whitespace-nowrap">
                                                                 <DataCell.Code className="text-xs bg-transparent p-0">{acc.account_code}</DataCell.Code>
                                                                 <span className="text-muted-foreground/20">·</span>
-                                                                <span className="truncate max-w-[120px]">{name}</span>
+                                                                <span className="font-medium text-foreground/80">{name}</span>
                                                             </span>
                                                         ) : (
                                                             <span className="text-muted-foreground/40 italic">No vinculada</span>
                                                         )}
                                                     </div>
-                                                    {hasBank && (
-                                                        <div className="flex flex-col gap-0.5 items-center">
-                                                            <span className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/50">Entidad Externa</span>
-                                                            <span className="flex items-center gap-1 text-foreground/80 font-medium whitespace-nowrap">
-                                                                <Landmark className="h-3 w-3 text-muted-foreground/50" />
-                                                                {acc.bank_name}
-                                                            </span>
-                                                        </div>
-                                                    )}
                                                 </div>
                                             }
                                             trailing={
@@ -326,7 +320,19 @@ export const TreasuryAccountsClientView: React.FC<TreasuryAccountsClientViewProp
                                                 </div>
                                             }
                                         />
-                                        <EntityCard.Body actions={treasuryAccountActions.render(acc, actionsCtx)} />
+                                        <EntityCard.Body actions={treasuryAccountActions.render(acc, actionsCtx)}>
+                                            {hasBank && (
+                                                <EntityCard.Field
+                                                    label="Entidad Externa"
+                                                    icon={Landmark}
+                                                    value={
+                                                        <span className="flex items-center gap-1 text-foreground/80 font-medium">
+                                                            {acc.bank_name}
+                                                        </span>
+                                                    }
+                                                />
+                                            )}
+                                        </EntityCard.Body>
                                     </EntityCard>
                                 )
                             }}
