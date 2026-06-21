@@ -294,45 +294,30 @@ export const TreasuryAccountsClientView: React.FC<TreasuryAccountsClientViewProp
                                                     )}
                                                 </span>
                                             }
+                                            center={
+                                                <div className="flex flex-col items-center gap-0.5 text-xs">
+                                                    {name ? (
+                                                        <span className="flex items-center gap-1.5 font-medium text-foreground/80 whitespace-nowrap">
+                                                            <DataCell.Code className="text-xs bg-transparent p-0">{acc.account_code}</DataCell.Code>
+                                                            <span className="text-muted-foreground/20">·</span>
+                                                            <span className="truncate max-w-[120px]">{name}</span>
+                                                        </span>
+                                                    ) : (
+                                                        <span className="text-muted-foreground/40 italic">No vinculada</span>
+                                                    )}
+                                                    {hasBank && (
+                                                        <span className="flex items-center gap-1 text-muted-foreground/60">
+                                                            <Landmark className="h-3 w-3" />
+                                                            {acc.bank_name}
+                                                        </span>
+                                                    )}
+                                                </div>
+                                            }
                                             trailing={
                                                 <DataCell.Currency value={acc.current_balance} currency={acc.currency} className="font-bold" />
                                             }
                                         />
-                                        <EntityCard.Body actions={treasuryAccountActions.render(acc, actionsCtx)}>
-                                            <EntityCard.Field label="Cuenta Contable" value={
-                                                name ? (
-                                                    <div className="flex flex-col gap-0.5">
-                                                        <DataCell.Code className="text-[10px] bg-transparent p-0">{acc.account_code}</DataCell.Code>
-                                                        <DataCell.Secondary className="truncate max-w-[140px] leading-tight">{name}</DataCell.Secondary>
-                                                    </div>
-                                                ) : <DataCell.Secondary className="italic">No vinculada</DataCell.Secondary>
-                                            } />
-                                            <EntityCard.Field label="Entidad Externa" value={
-                                                !hasBank && !hasProviders ? (
-                                                    <DataCell.Secondary className="italic">Sin entidad externa</DataCell.Secondary>
-                                                ) : (
-                                                    <div className="flex flex-col gap-1 items-start">
-                                                        {hasBank && acc.bank_name && (
-                                                            <EntityBadge
-                                                                label="treasury.bank"
-                                                                data={{ id: acc.bank, name: acc.bank_name }}
-                                                                size="sm"
-                                                                showIcon
-                                                            />
-                                                        )}
-                                                        {providers.map((p) => (
-                                                            <EntityBadge
-                                                                key={p.id}
-                                                                label="treasury.terminalprovider"
-                                                                data={p}
-                                                                size="sm"
-                                                                showIcon
-                                                            />
-                                                        ))}
-                                                    </div>
-                                                )
-                                            } />
-                                        </EntityCard.Body>
+                                        <EntityCard.Body actions={treasuryAccountActions.render(acc, actionsCtx)} />
                                     </EntityCard>
                                 )
                             }}
