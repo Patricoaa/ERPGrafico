@@ -2,21 +2,16 @@
 import { formatCurrency } from "@/lib/money"
 
 import React, { useState, useMemo } from "react"
-import { BaseModal, DataTable } from '@/components/shared'
-import { DataTableColumnHeader } from '@/components/shared'
-import { ColumnDef } from "@tanstack/react-table"
 import { ArrowRightLeft } from "lucide-react"
 
-import { AdjustmentForm } from "@/features/inventory/components/AdjustmentForm"
-
-import { CancelButton, SubmitButton, FormFooter, SmartSearchBar, useSmartSearch } from "@/components/shared"
-import { stockReportSearchDef } from "@/features/inventory/searchDef"
-import { ProductInsightsModal } from "@/features/inventory/components/ProductInsightsModal"
-import { DataCell } from '@/components/shared'
-import { stockReportActions, type StockReportActionsCtx } from './stockReportActions'
-import { PageContainer } from "@/components/shared"
+import { BaseModal, DataCell, DataTableView, EntityCard, PageContainer, DataTableColumnHeader, SmartSearchBar, useSmartSearch, CancelButton, SubmitButton, FormFooter } from '@/components/shared'
+import { ColumnDef } from "@tanstack/react-table"
 import { cn } from "@/lib/utils"
 
+import { AdjustmentForm } from "@/features/inventory/components/AdjustmentForm"
+import { stockReportSearchDef } from "@/features/inventory/searchDef"
+import { ProductInsightsModal } from "@/features/inventory/components/ProductInsightsModal"
+import { stockReportActions, type StockReportActionsCtx } from './stockReportActions'
 import { useStockReport } from "@/features/inventory/hooks/useStockReport"
 
 export function StockReport() {
@@ -162,7 +157,8 @@ export function StockReport() {
     return (
         <PageContainer className="h-full flex flex-col">
             <div className="flex-1 min-h-0">
-                <DataTable
+                <DataTableView
+                    entityLabel="inventory.stockreport"
                     columns={columns}
                     data={filteredReport}
                     isLoading={isLoading}
@@ -175,6 +171,19 @@ export function StockReport() {
                         title: "Sin productos para reportar",
                         description: "Cuando registres productos almacenables, su stock aparecerá aquí.",
                     }}
+                    renderCard={(item: any) => (
+                        <EntityCard key={item.id}>
+                            <EntityCard.Header
+                                title={item.name}
+                                subtitle={item.category_name}
+                            />
+                            <EntityCard.Body>
+                                <EntityCard.Field label="Stock" value={`${item.stock_qty ?? 0} ${item.uom_name ?? ''}`} />
+                                <EntityCard.Field label="Disponible" value={`${item.qty_available ?? 0} ${item.uom_name ?? ''}`} />
+                                <EntityCard.Field label="Valorización" value={<DataCell.Currency value={item.total_value} />} />
+                            </EntityCard.Body>
+                        </EntityCard>
+                    )}
                 />
             </div>
 

@@ -2,7 +2,7 @@
 
 import {useState, useEffect, useMemo} from "react"
 
-import { DataTable, SmartSearchBar, ToolbarCreateButton, SegmentationBar, useSegmentation, useSmartSearch } from '@/components/shared'
+import { DataTableView, SmartSearchBar, ToolbarCreateButton, SegmentationBar, EntityCard, useSegmentation, useSmartSearch } from '@/components/shared'
 import { DataTableColumnHeader } from '@/components/shared'
 import { DataCell } from '@/components/shared'
 import { ColumnDef } from "@tanstack/react-table"
@@ -169,7 +169,8 @@ export function UsersSettingsView({ activeTab }: UsersSettingsViewProps) {
                 <FadeIn key={activeTab} className="flex-1 min-h-0">
                     <TabsContent value="users" className="mt-0 outline-none space-y-4 h-full flex flex-col">
                         <div className="flex-1 min-h-0">
-                            <DataTable
+                            <DataTableView
+                                entityLabel="core.user"
                                 columns={columns}
                                 data={users}
                                 variant="embedded"
@@ -180,6 +181,24 @@ export function UsersSettingsView({ activeTab }: UsersSettingsViewProps) {
                                 onReset={() => { clearText(); clearSeg() }}
                                 isFiltered={isFiltered}
                                 createAction={usersCreateAction}
+                                renderCard={(user: AppUser) => {
+                                    const groups = (user.groups || []).map(g => typeof g === 'string' ? g : g.name)
+                                    const roles = ['ADMIN', 'MANAGER', 'OPERATOR', 'READ_ONLY']
+                                    const systemRole = groups.find(g => roles.includes(g))
+                                    return (
+                                        <EntityCard key={user.id}>
+                                            <EntityCard.Header
+                                                title={user.username}
+                                                subtitle={user.email}
+                                                trailing={<DataCell.Status status={user.is_active ? "active" : "inactive"} />}
+                                            />
+                                            <EntityCard.Body>
+                                                <EntityCard.Field label="Nombre" value={`${user.first_name || ''} ${user.last_name || ''}`.trim() || '—'} />
+                                                {systemRole && <EntityCard.Field label="Rol" value={systemRole} />}
+                                            </EntityCard.Body>
+                                        </EntityCard>
+                                    )
+                                }}
                             />
                         </div>
                         {isUserModalOpen && (

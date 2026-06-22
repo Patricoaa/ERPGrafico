@@ -2,10 +2,9 @@
 
 import { useState, useEffect } from "react"
 import { useGroups } from "../hooks"
-import { ActionConfirmModal, DataTable } from '@/components/shared'
+import { ActionConfirmModal, DataTableView, EntityCard } from '@/components/shared'
 import { DataTableColumnHeader } from '@/components/shared'
 import { ColumnDef } from "@tanstack/react-table"
-import { DataCell } from '@/components/shared'
 import { Users } from "lucide-react"
 import { GroupDrawer } from "@/features/users/components/GroupDrawer"
 import { groupActions, type GroupActionsCtx } from './groupActions'
@@ -52,21 +51,12 @@ export function GroupsClientView({ externalOpen, onExternalOpenChange, createAct
             header: ({ column }) => (
                 <DataTableColumnHeader column={column} title="Nombre del Grupo" />
             ),
-            cell: ({ row }) => (
-                <DataCell.Text>
-                    <span className="flex items-center gap-2">
-                        <Users className="h-4 w-4 text-muted-foreground shrink-0" />
-                        {row.getValue("name")}
-                    </span>
-                </DataCell.Text>
-            ),
         },
         {
             accessorKey: "user_count",
             header: ({ column }) => (
                 <DataTableColumnHeader column={column} title="Miembros" />
             ),
-            cell: ({ row }) => <DataCell.Number value={row.getValue("user_count")} />,
         },
         groupActions.column(groupActionsCtx)
     ]
@@ -74,14 +64,24 @@ export function GroupsClientView({ externalOpen, onExternalOpenChange, createAct
     return (
         <div className="h-full flex flex-col">
             <div className="flex-1 min-h-0">
-                    <DataTable
-                        columns={columns}
-                        data={filterFn(groups)}
-                        isLoading={loading}
-                        variant="embedded"
-                        smartSearch={<SmartSearchBar searchDef={groupSearchDef} placeholder="Buscar grupo..." className="w-full" />}
-                        createAction={createAction}
-                    />
+                <DataTableView
+                    entityLabel="settings.group"
+                    columns={columns}
+                    data={filterFn(groups)}
+                    isLoading={loading}
+                    variant="embedded"
+                    smartSearch={<SmartSearchBar searchDef={groupSearchDef} placeholder="Buscar grupo..." className="w-full" />}
+                    createAction={createAction}
+                    renderCard={(group: Group) => (
+                        <EntityCard key={group.id}>
+                            <EntityCard.Header
+                                icon={Users}
+                                title={group.name}
+                                subtitle={`${group.user_count ?? 0} miembros`}
+                            />
+                        </EntityCard>
+                    )}
+                />
             </div>
 
             <GroupDrawer

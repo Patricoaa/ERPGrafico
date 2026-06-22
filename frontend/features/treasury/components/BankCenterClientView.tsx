@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { Landmark } from "lucide-react"
-import { DataCell } from '@/components/shared'
+import { DataCell, DataTableView, DataTableColumnHeader, EntityCard } from '@/components/shared'
 import { bankActions, type BankActionsCtx } from './bankActions'
 import { ActivitySidebar } from "@/features/audit/components"
 import { useConfirmAction } from "@/hooks/useConfirmAction"
@@ -14,7 +14,7 @@ import { Form, FormField } from "@/components/ui/form"
 import {
     CancelButton, LabeledInput,
     BaseModal, FormFooter, FormSplitLayout, ActionSlideButton, ActionConfirmModal,
-    SmartSearchBar, useClientSearch, useSegmentation, SegmentationBar, EntityCard, EmptyState
+    SmartSearchBar, useClientSearch, SegmentationBar, useSegmentation
 } from "@/components/shared"
 import { bankSearchDef } from "@/features/treasury/searchDef"
 import { bankSegDef } from "@/features/treasury/segmentationDef"
@@ -22,6 +22,7 @@ import { useBanks } from "@/features/treasury/hooks/useMasterData"
 import { useAllBanksOverview } from "@/features/treasury/hooks/useAllBanksOverview"
 import type { Bank } from "@/features/treasury/types"
 import { BankCreationWizard } from "./BankCreationWizard"
+import type { Column } from "@tanstack/react-table"
 
 // --- Schemas ---
 
@@ -44,8 +45,8 @@ interface BankManagementProps {
 export function BankManagement({ externalOpen, onOpenChange, createAction }: BankManagementProps) {
     const { banks, refetch, archiveBank, restoreBank } = useBanks()
     const { overviews } = useAllBanksOverview()
-    const { filterFn: filterBanks } = useClientSearch<Bank>(bankSearchDef)
-    const { filters: segFilters } = useSegmentation(bankSegDef)
+    const { filterFn: filterBanks, isFiltered: isTextFiltered, clearAll: clearText } = useClientSearch<Bank>(bankSearchDef)
+    const { filters: segFilters, isFiltered: isSegFiltered, clearAll: clearSeg } = useSegmentation(bankSegDef)
     const [dialogOpen, setDialogOpen] = useState(false)
     const [wizardOpen, setWizardOpen] = useState(false)
     const [selectedBank, setSelectedBank] = useState<Bank | null>(null)
@@ -79,6 +80,30 @@ export function BankManagement({ externalOpen, onOpenChange, createAction }: Ban
         onRestore: (id) => restoreConfirm.requestConfirm(id),
     }
 
+    const isFiltered = isTextFiltered || isSegFiltered
+
+    const columns = [
+        {
+            accessorKey: "name",
+            header: ({ column }: { column: Column<Bank, unknown> }) => (
+                <DataTableColumnHeader column={column} title="Nombre" />
+            ),
+        },
+        {
+            accessorKey: "code",
+            header: ({ column }: { column: Column<Bank, unknown> }) => (
+                <DataTableColumnHeader column={column} title="Código" />
+            ),
+        },
+        {
+            id: "is_active",
+            header: ({ column }: { column: Column<Bank, unknown> }) => (
+                <DataTableColumnHeader column={column} title="Estado" />
+            ),
+            accessorFn: (row: Bank) => (row.is_active ? "Activo" : "Archivado"),
+        },
+    ]
+
     const filteredBanks = React.useMemo(() => {
         let result = banks
         if (segFilters.is_active === 'true') result = result.filter(b => b.is_active)
@@ -88,67 +113,62 @@ export function BankManagement({ externalOpen, onOpenChange, createAction }: Ban
 
     return (
         <div className="h-full flex flex-col">
-            <div className="flex items-center gap-2 mb-4">
-                <SmartSearchBar searchDef={bankSearchDef} placeholder="Buscar banco..." className="flex-1" />
-                {createAction}
-            </div>
-            <SegmentationBar def={bankSegDef} />
-            <div className="flex-1 min-h-0 overflow-y-auto mt-4">
-                {filteredBanks.length === 0 ? (
-                    <EmptyState
-                        context="treasury"
-                        title={banks.length === 0 ? "Aún no hay bancos" : "Sin resultados"}
-                        description={banks.length === 0 ? "Crea una entidad bancaria para registrar sus cuentas, cheques y préstamos." : "Ningún banco coincide con los filtros aplicados."}
-                    />
-                ) : (
-                    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-                        {filteredBanks.map((bank) => {
-                            const overview = overviews.find(o => o.bank.id === bank.id)
-                            return (
-                                <EntityCard
-                                    key={bank.id}
-                                    onClick={() => router.push(`/treasury/bank-center/${bank.id}/overview`)}
-                                >
-                                    <EntityCard.Header
-                                        icon={Landmark}
-                                        title={bank.name}
-                                        subtitle={
-                                            bank.code || bank.swift_code
-                                                ? [bank.code && `Código: ${bank.code}`, bank.swift_code && `SWIFT: ${bank.swift_code}`]
-                                                    .filter(Boolean).join(' · ')
-                                                : undefined
-                                        }
-                                        trailing={
-                                            <EntityCard.Badge
-                                                label={bank.is_active ? 'Activo' : 'Archivado'}
-                                                variant={bank.is_active ? 'default' : 'secondary'}
-                                            />
-                                        }
+            <DataTableView
+                entityLabel="treasury.bank"
+                columns={columns}
+                data={filteredBanks}
+                variant="embedded"
+                smartSearch={<SmartSearchBar searchDef={bankSearchDef} placeholder="Buscar banco..." className="w-full" />}
+                segmentation={<SegmentationBar def={bankSegDef} />}
+                showReset={isFiltered}
+                onReset={() => { clearText(); clearSeg() }}
+                createAction={createAction}
+                emptyState={{
+                    context: "treasury",
+                    title: banks.length === 0 ? "Aún no hay bancos" : "Sin resultados",
+                    description: banks.length === 0 ? "Crea una entidad bancaria para registrar sus cuentas, cheques y préstamos." : "Ningún banco coincide con los filtros aplicados.",
+                }}
+                renderCard={(bank: Bank) => {
+                    const overview = overviews.find(o => o.bank.id === bank.id)
+                    return (
+                        <EntityCard
+                            key={bank.id}
+                            onClick={() => router.push(`/treasury/bank-center/${bank.id}/overview`)}
+                        >
+                            <EntityCard.Header
+                                icon={Landmark}
+                                title={bank.name}
+                                subtitle={
+                                    bank.code || bank.swift_code
+                                        ? [bank.code && `Código: ${bank.code}`, bank.swift_code && `SWIFT: ${bank.swift_code}`]
+                                            .filter(Boolean).join(' · ')
+                                        : undefined
+                                }
+                                trailing={
+                                    <EntityCard.Badge
+                                        label={bank.is_active ? 'Activo' : 'Archivado'}
+                                        variant={bank.is_active ? 'default' : 'secondary'}
                                     />
-                                    <EntityCard.Body
-                                        actions={
-                                            <div onClick={(e) => e.stopPropagation()}>
-                                                {bankActions.render(bank, bankActionsCtx)}
-                                            </div>
-                                        }
-                                    >
-                                        <EntityCard.Field label="Cuentas" value={overview?.summary.total_accounts ?? 0} />
-                                        <EntityCard.Field label="Tarjetas" value={overview?.summary.card_count ?? 0} />
-                                        <EntityCard.Field label="Cheques" value={overview?.summary.issued_checks ?? 0} />
-                                        <EntityCard.Field label="Préstamos" value={overview?.summary.active_loan_count ?? 0} />
-                                        {overview && overview.summary.card_debt > 0 && (
-                                            <EntityCard.Field label="Deuda TC" value={<DataCell.Currency value={overview.summary.card_debt} />} />
-                                        )}
-                                        {overview && overview.summary.total_loan_debt > 0 && (
-                                            <EntityCard.Field label="Deuda Prést." value={<DataCell.Currency value={overview.summary.total_loan_debt} />} />
-                                        )}
-                                    </EntityCard.Body>
-                                </EntityCard>
-                            )
-                        })}
-                    </div>
-                )}
-            </div>
+                                }
+                            />
+                            <EntityCard.Body>
+                                <EntityCard.Field label="Cuentas" value={overview?.summary.total_accounts ?? 0} />
+                                <EntityCard.Field label="Tarjetas" value={overview?.summary.card_count ?? 0} />
+                                <EntityCard.Field label="Cheques" value={overview?.summary.issued_checks ?? 0} />
+                                <EntityCard.Field label="Préstamos" value={overview?.summary.active_loan_count ?? 0} />
+                                {overview && overview.summary.card_debt > 0 && (
+                                    <EntityCard.Field label="Deuda TC" value={<DataCell.Currency value={overview.summary.card_debt} />} />
+                                )}
+                            </EntityCard.Body>
+                            <EntityCard.Footer>
+                                <div onClick={(e) => e.stopPropagation()} className="flex items-center gap-1">
+                                    {bankActions.render(bank, bankActionsCtx)}
+                                </div>
+                            </EntityCard.Footer>
+                        </EntityCard>
+                    )
+                }}
+            />
 
             <BankCreationWizard
                 open={wizardOpen || (!!externalOpen && !selectedBank)}
