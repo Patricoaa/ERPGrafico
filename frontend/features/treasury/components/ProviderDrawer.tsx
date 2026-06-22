@@ -7,6 +7,7 @@ import * as z from "zod"
 import { Building2, Settings, Printer } from "lucide-react"
 import { useTerminalProviders, type PaymentTerminalProvider } from "@/features/treasury"
 import { AccountSelector } from "@/components/selectors/AccountSelector"
+import { TreasuryAccountSelector } from "@/components/selectors/TreasuryAccountSelector"
 import { AdvancedContactSelector } from "@/components/selectors/AdvancedContactSelector"
 import { ProductSelector } from "@/components/selectors/ProductSelector"
 import { Form, FormField } from "@/components/ui/form"
@@ -26,6 +27,7 @@ const providerSchema = z.object({
     commission_expense_account: z.string().nullable().optional(),
     commission_iva_account: z.string().nullable().optional(),
     commission_product: z.string().nullable().optional(),
+    default_deposit_account: z.string().nullable().optional(),
 })
 
 type ProviderFormValues = z.infer<typeof providerSchema>
@@ -56,6 +58,7 @@ export function ProviderDrawer({ open, onOpenChange, provider, onSuccess, mode: 
             commission_expense_account: null,
             commission_iva_account: null,
             commission_product: null,
+            default_deposit_account: null,
         }
     })
 
@@ -71,6 +74,7 @@ export function ProviderDrawer({ open, onOpenChange, provider, onSuccess, mode: 
                         commission_expense_account: provider.commission_expense_account?.toString() || null,
                         commission_iva_account: provider.commission_iva_account?.toString() || null,
                         commission_product: provider.commission_product?.toString() || null,
+                        default_deposit_account: provider.default_deposit_account?.toString() || null,
                     })
                 } else {
                     form.reset({
@@ -81,6 +85,7 @@ export function ProviderDrawer({ open, onOpenChange, provider, onSuccess, mode: 
                         commission_expense_account: null,
                         commission_iva_account: null,
                         commission_product: null,
+                        default_deposit_account: null,
                     })
                 }
             })
@@ -103,6 +108,7 @@ export function ProviderDrawer({ open, onOpenChange, provider, onSuccess, mode: 
                 commission_expense_account: values.commission_expense_account ? Number(values.commission_expense_account) : undefined as any,
                 commission_iva_account: values.commission_iva_account ? Number(values.commission_iva_account) : undefined as any,
                 commission_product: values.commission_product ? Number(values.commission_product) : undefined as any,
+                default_deposit_account: values.default_deposit_account ? Number(values.default_deposit_account) : null,
                 is_active: true,
             }
 
@@ -255,6 +261,18 @@ export function ProviderDrawer({ open, onOpenChange, provider, onSuccess, mode: 
                                                 value={field.value || null}
                                                 onChange={(v) => field.onChange(v)}
                                                 label="Producto Servicio Comisión"
+                                            />
+                                        )}
+                                    />
+                                    <Controller
+                                        control={form.control}
+                                        name="default_deposit_account"
+                                        render={({ field }) => (
+                                            <TreasuryAccountSelector
+                                                value={field.value || null}
+                                                onChange={(v) => field.onChange(v)}
+                                                accountTypes={['CHECKING', 'CASH']}
+                                                label="Cuenta de Tesorería por Defecto (Depósito)"
                                             />
                                         )}
                                     />

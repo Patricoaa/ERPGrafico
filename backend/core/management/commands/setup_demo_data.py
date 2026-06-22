@@ -1582,6 +1582,7 @@ class Command(BaseCommand):
                 'commission_iva_account': accounts['vat_credit'],
                 'commission_product': p_commission,
                 'bank_treasury_account': tuu_bridge,
+                'default_deposit_account': bco01,
                 'is_active': True,
             }
         )

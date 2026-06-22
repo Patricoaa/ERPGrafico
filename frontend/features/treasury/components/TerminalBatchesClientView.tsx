@@ -220,7 +220,7 @@ function TerminalBatchModal({ open, onOpenChange, onSuccess }: { open: boolean, 
             }
             description="Ingrese los datos de la liquidación diaria informada por el proveedor del terminal de cobro."
          >
-             <SkeletonShell isLoading={true} ariaLabel="Cargando formulario de lote de terminal">
+             <SkeletonShell isLoading={false} ariaLabel="Cargando formulario de lote de terminal">
                  <Suspense fallback={<div />}>
                      <LazyTerminalBatchForm onSuccess={onSuccess} onCancel={() => onOpenChange(false)} />
                  </Suspense>
