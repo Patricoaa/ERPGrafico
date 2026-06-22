@@ -27,7 +27,7 @@ from treasury.models import (
     PaymentTerminalProvider, PaymentTerminalDevice,
     CardPurchaseGroup, CardPurchaseInstallment, CardPendingCharge,
     CreditCardStatement, PaymentAllocation,
-    Check, Checkbook, BankLoan, LoanInstallment,
+    Check, Checkbook, BankLoan, LoanInstallment, CreditLine,
 )
 from billing.models import Invoice, NoteWorkflow
 from tax.models import TaxPeriod, AccountingPeriod, F29Declaration, F29Payment
@@ -136,6 +136,13 @@ class Command(BaseCommand):
             n_banks = Bank.objects.count()
             n_pm = PaymentMethod.objects.count()
             self.stdout.write(f"  ✓ {n_ta} cuentas tesorería, {n_banks} bancos, {n_pm} métodos pago ({time.time()-section_start:.1f}s)")
+
+            section_start = time.time()
+            self.stdout.write(f"\n{'─' * 50}")
+            self.stdout.write('  Credit Lines (Overdraft)...')
+            self._create_credit_lines()
+            n_cl = CreditLine.objects.count()
+            self.stdout.write(f"  ✓ {n_cl} líneas de crédito ({time.time()-section_start:.1f}s)")
 
             section_start = time.time()
             self.stdout.write(f"\n{'─' * 50}")
@@ -1667,6 +1674,27 @@ class Command(BaseCommand):
 
         # Ensure cashier user is linked to sessions correctly (Optional but good for demo)
         self.stdout.write("    ✓ Infrastructure created (Banks, Terminals, Safe, Tills, refined Payment Methods).")
+
+    def _create_credit_lines(self):
+        """Crea líneas de crédito (sobregiro) para cuentas CHECKING del demo."""
+        from datetime import date
+        checking_accounts = TreasuryAccount.objects.filter(
+            account_type=TreasuryAccount.Type.CHECKING,
+        )
+        for ta in checking_accounts:
+            CreditLine.objects.get_or_create(
+                treasury_account=ta,
+                defaults={
+                    'code': f"CL-{ta.code}",
+                    'currency': ta.currency,
+                    'credit_limit': Decimal('20000000'),
+                    'interest_rate': Decimal('1.5'),
+                    'rate_basis': CreditLine.RateBasis.MONTHLY,
+                    'valid_from': date(2026, 1, 1),
+                    'valid_until': date(2028, 12, 31),
+                    'status': CreditLine.Status.ACTIVE,
+                }
+            )
 
     def _create_periods(self):
         """Creates tax and accounting periods for the current year."""
