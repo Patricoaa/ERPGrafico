@@ -321,6 +321,7 @@ Todos los prefijos canónicos del sistema. **No usar prefijos que no estén en e
 | `inventory.product` | `PRD-` | Producto | `Package` |
 | `treasury.treasurymovement` | `TRX-` | Movimiento de Tesorería | `Landmark` |
 | `treasury.bankstatement` | `CAR-` | Cartola Bancaria | `BookOpen` |
+| `treasury.creditline` | `CL-` | Línea de Crédito | `ScrollText` |
 | `treasury.bankloan` | `CRE-` | Crédito Bancario | `Banknote` |
 | `treasury.loaninstallment` | `CUO-` | Cuota de Crédito | `Calendar` |
 | `accounting.account` | `{code}` | Cuenta Contable | `Book` |
@@ -330,12 +331,6 @@ Todos los prefijos canónicos del sistema. **No usar prefijos que no estén en e
 | `hr.payroll` | `LIQ-` | Liquidación de Sueldo | `Receipt` |
 | `core.user` | `USR-` | Usuario | `User` |
 
-### Prefijos legacy reconocidos por `detectEntityLabel()`
-
-| Prefijo legacy | Resuelve a |
-|---|---|
-| `OC-`, `OC_` | `purchasing.purchaseorder` (soporte legacy) |
-| `OV-`, `OV_` | `sales.saleorder` (alias legacy de NV) |
 
 ---
 

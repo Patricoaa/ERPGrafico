@@ -2454,6 +2454,182 @@ class Check(models.Model):
         )
 
 
+class CreditLine(models.Model):
+    """
+    Línea de Crédito rotativa (REVOLVING) otorgada por un banco.
+
+    Una línea de crédito es un acuerdo marco que define el monto aprobado,
+    la tasa de interés, el spread, la vigencia y las condiciones generales.
+    De ella pueden colgar uno o varios préstamos (`BankLoan`) que "drawan"
+    (disponen) del cupo disponible.
+
+    `drawn_amount` se calcula como la suma del `outstanding_balance` de todos
+    los `BankLoan` activos asociados. `available_amount = approved_amount - drawn_amount`.
+
+    Ver ADR-0047 y `docs/50-audit/bancos/fase-6-lineas-credito.md`.
+    """
+
+    class Type(models.TextChoices):
+        REVOLVING = 'REVOLVING', _('Rotativa')
+
+    class Status(models.TextChoices):
+        ACTIVE   = 'ACTIVE',   _('Vigente')
+        EXPIRED  = 'EXPIRED',  _('Vencida')
+        CANCELED = 'CANCELED', _('Cancelada')
+        SUSPENDED = 'SUSPENDED', _('Suspendida')
+
+    # ── Relaciones ───────────────────────────────────────────────────────────
+    bank = models.ForeignKey(
+        'Bank', on_delete=models.PROTECT,
+        related_name='credit_lines',
+        verbose_name=_('Banco'),
+    )
+    code = models.CharField(
+        _('Código'), max_length=60, blank=True,
+        help_text=_('Identificador de la línea en el banco (opcional).'),
+    )
+
+    # ── Configuración ────────────────────────────────────────────────────────
+    credit_line_type = models.CharField(
+        _('Tipo'), max_length=20,
+        choices=Type.choices, default=Type.REVOLVING,
+    )
+    currency = models.CharField(
+        _('Moneda'), max_length=3, default='CLP',
+    )
+    approved_amount = models.DecimalField(
+        _('Monto Aprobado'),
+        max_digits=18, decimal_places=2,
+        validators=[MinValueValidator(Decimal('0.01'))],
+        help_text=_('Monto total de crédito aprobado por el banco.'),
+    )
+
+    # ── Términos financieros ─────────────────────────────────────────────────
+    interest_rate = models.DecimalField(
+        _('Tasa de Interés'),
+        max_digits=8, decimal_places=4, default=Decimal('0'),
+        validators=[MinValueValidator(Decimal('0'))],
+        help_text=_('Tasa de referencia en % (ej. 1.2000 = 1.2%). Ver rate_basis.'),
+    )
+    class RateBasis(models.TextChoices):
+        MONTHLY = 'MONTHLY', _('Mensual')
+        ANNUAL  = 'ANNUAL',  _('Anual')
+
+    rate_basis = models.CharField(
+        _('Base de Tasa'), max_length=10,
+        choices=RateBasis.choices, blank=True,
+        help_text=_('Mensual/Anual para la tasa de referencia.'),
+    )
+    spread = models.DecimalField(
+        _('Spread'),
+        max_digits=8, decimal_places=4, default=Decimal('0'),
+        validators=[MinValueValidator(Decimal('0'))],
+        help_text=_('Spread sobre tasa base (puntos porcentuales).'),
+    )
+    commitment_fee = models.DecimalField(
+        _('Comisión por No Utilizado'),
+        max_digits=8, decimal_places=4, default=Decimal('0'),
+        validators=[MinValueValidator(Decimal('0'))],
+        help_text=_('Comisión anual % sobre el saldo no dispuesto (commitment fee).'),
+    )
+
+    # ── Vigencia ─────────────────────────────────────────────────────────────
+    valid_from = models.DateField(
+        _('Vigencia Desde'),
+    )
+    valid_until = models.DateField(
+        _('Vigencia Hasta'),
+        null=True, blank=True,
+        help_text=_('Fecha de vencimiento de la línea. Si es null, no expira.'),
+    )
+    auto_renewal = models.BooleanField(
+        _('Renovación Automática'), default=False,
+    )
+    renewal_term_months = models.PositiveIntegerField(
+        _('Plazo de Renovación (meses)'),
+        null=True, blank=True,
+        validators=[MinValueValidator(1)],
+        help_text=_('Si la renovación es automática, plazo en meses de la renovación.'),
+    )
+
+    # ── Garantías / Notas ────────────────────────────────────────────────────
+    collateral_notes = models.TextField(
+        _('Garantías'), blank=True,
+        help_text=_('Descripción de garantías asociadas a la línea.'),
+    )
+    notes = models.TextField(_('Notas'), blank=True)
+
+    # ── Estado ───────────────────────────────────────────────────────────────
+    status = models.CharField(
+        _('Estado'), max_length=12,
+        choices=Status.choices, default=Status.ACTIVE,
+    )
+
+    # ── Auditoría ────────────────────────────────────────────────────────────
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL,
+        null=True, blank=True, related_name='credit_lines_created',
+        verbose_name=_('Creado Por'),
+    )
+
+    class Meta:
+        verbose_name = _('Línea de Crédito')
+        verbose_name_plural = _('Líneas de Crédito')
+        ordering = ['-valid_from', '-id']
+        indexes = [
+            models.Index(fields=['status']),
+            models.Index(fields=['bank', 'status']),
+            models.Index(fields=['currency']),
+        ]
+
+    def __str__(self) -> str:
+        return self.display_id
+
+    @property
+    def display_id(self) -> str:
+        code_part = self.code or str(self.id)
+        return f"CL-{code_part}"
+
+    @property
+    def drawn_amount(self) -> Decimal:
+        """
+        Monto total dispuesto = suma del outstanding_balance de todos
+        los BankLoan activos que cuelgan de esta línea.
+        """
+        total = Decimal('0')
+        for loan in self.loans.filter(status=BankLoan.Status.ACTIVE):
+            total += loan.outstanding_balance
+        return total
+
+    @property
+    def available_amount(self) -> Decimal:
+        """Cupo disponible = aprobado - dispuesto."""
+        return max(self.approved_amount - self.drawn_amount, Decimal('0'))
+
+    @property
+    def utilization_rate(self) -> Decimal | None:
+        """Porcentaje de utilización (0-100). None si no hay monto aprobado."""
+        if not self.approved_amount:
+            return None
+        return (self.drawn_amount / self.approved_amount) * Decimal('100')
+
+    def clean(self):
+        errors: dict[str, list[str]] = {}
+        if self.valid_from and self.valid_until and self.valid_until < self.valid_from:
+            errors.setdefault('valid_until', []).append(
+                _('La fecha de vencimiento no puede ser anterior a la fecha de inicio.')
+            )
+        if self.auto_renewal and not self.renewal_term_months:
+            errors.setdefault('renewal_term_months', []).append(
+                _('Si la renovación es automática, debe indicar el plazo en meses.')
+            )
+        if errors:
+            raise ValidationError(errors)
+
+
+
 class BankLoan(models.Model):
     """
     Crédito / préstamo bancario (CLP o UF).
@@ -2571,6 +2747,16 @@ class BankLoan(models.Model):
         help_text=_("Descripción libre de garantías. Modelo dedicado queda fuera del MVP."),
     )
 
+    # Línea de crédito de la que dispone este préstamo (opcional).
+    credit_line = models.ForeignKey(
+        'CreditLine', on_delete=models.PROTECT,
+        related_name='loans',
+        null=True, blank=True,
+        verbose_name=_('Línea de Crédito'),
+        help_text=_('Línea de crédito de la cual se dispone este préstamo. '
+                     'Si se asigna, valida que el principal no exceda el cupo disponible.'),
+    )
+
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     created_by = models.ForeignKey(
@@ -2597,13 +2783,26 @@ class BankLoan(models.Model):
     def display_id(self) -> str:
         return f"CRE-{self.id}"
 
+    @property
+    def outstanding_balance(self) -> Decimal:
+        """
+        Saldo insoluto de capital = outstanding_balance del primer
+        pending/overdue installment. Retorna 0 si el préstamo está pagado.
+        """
+        first_pending = self.installments.filter(
+            status__in=[LoanInstallment.Status.PENDING, LoanInstallment.Status.OVERDUE],
+        ).order_by('number').first()
+        if first_pending:
+            return first_pending.outstanding_balance
+        return Decimal('0')
+
     def clean(self):
         """
         Validaciones:
-        1. `liability_account` debe ser tipo CREDIT_CARD (que en taxonomía
-           vigente representa PASIVO — deuda rotativa, ADR-0031).
+        1. `liability_account` debe ser tipo LOAN (ADR-0041).
         2. `disbursement_account` no puede ser de tipo pasivo ni puente.
         3. `first_due_date` no puede ser anterior a `start_date`.
+        4. Si tiene `credit_line`, el principal no puede exceder el cupo disponible.
         """
         if self.liability_account_id:
             if self.liability_account.account_type != TreasuryAccount.Type.LOAN:
@@ -2632,7 +2831,20 @@ class BankLoan(models.Model):
                 'first_due_date': _("El primer vencimiento no puede ser anterior al inicio.")
             })
 
-
+        # 4. Validar cupo disponible en la línea de crédito
+        if self.credit_line_id and self.principal:
+            credit_line = self.credit_line
+            if credit_line.available_amount < self.principal:
+                raise ValidationError({
+                    'credit_line': _(
+                        "El capital del préstamo (%(principal)s) excede el cupo disponible "
+                        "de la línea de crédito '%(line)s' (%(available)s)."
+                    ) % {
+                        'principal': self.principal,
+                        'line': credit_line.display_id,
+                        'available': credit_line.available_amount,
+                    }
+                })
 class LoanInstallment(models.Model):
     """
     Cuota de un `BankLoan`. Una fila por mes del calendario de amortización.

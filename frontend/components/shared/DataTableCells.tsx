@@ -1,6 +1,5 @@
 
 import { cn, translateStatus, formatPlainDate } from "@/lib/utils"
-import { resolveLegacyEntityType } from "@/lib/entity-registry"
 import { ExternalLink, LucideIcon, MoreVertical } from "lucide-react"
 import Link from "next/link"
 import { ReactNode, HTMLAttributes } from "react"
@@ -32,6 +31,44 @@ interface ValueCellProps<T> extends BaseCellProps {
     value: T | null | undefined
 }
 
+/** Maps snake_case type identifiers to ENTITY_REGISTRY labels. */
+const TYPE_TO_LABEL: Record<string, string> = {
+  sale_order: 'sales.saleorder',
+  purchase_order: 'purchasing.purchaseorder',
+  invoice: 'billing.invoice',
+  sale_delivery: 'sales.saledelivery',
+  sale_return: 'sales.salereturn',
+  purchase_receipt: 'purchasing.purchasereceipt',
+  purchase_return: 'purchasing.purchasereturn',
+  stock_move: 'inventory.stockmove',
+  inventory: 'inventory.stockmove',
+  cash_movement: 'treasury.treasurymovement',
+  bank_statement: 'treasury.bankstatement',
+  bank_loan: 'treasury.bankloan',
+  credit_line: 'treasury.creditline',
+  check: 'treasury.check',
+  credit_card_statement: 'treasury.creditcardstatement',
+  terminal_batch: 'treasury.terminalbatch',
+  treasury_account: 'treasury.treasuryaccount',
+  terminal: 'treasury.terminal',
+  terminal_provider: 'treasury.terminalprovider',
+  terminal_device: 'treasury.terminaldevice',
+  work_order: 'production.workorder',
+  payment: 'treasury.treasurymovement',
+  journal_entry: 'accounting.journalentry',
+  pos_session: 'pos.session',
+  f29_declaration: 'tax.f29declaration',
+  accounting_period: 'tax.accountingperiod',
+  category: 'inventory.category',
+  uom: 'inventory.uom',
+  pricing_rule: 'inventory.pricingrule',
+  partner_transaction: 'contacts.partnertransaction',
+};
+
+function findEntityLabel(type: string): string | undefined {
+  return TYPE_TO_LABEL[type];
+}
+
 // --- Text Cells ---
 
 export const DataCell = {
@@ -61,7 +98,7 @@ export const DataCell = {
     /** Standardized Entity ID with prefix and padding (Uses EntityBadge, matches Status badge typography/size) */
     Entity: ({ entityLabel, type, number, label, data, className, size = "sm", ...props }: { entityLabel?: string, type?: string, number?: string | number | null | undefined, label?: string, data?: any, className?: string, size?: 'sm' | 'md' | 'lg' | 'xl' }) => {
         // Resolve label: prefer entityLabel > label > legacy type mapping (see entity-registry.ts)
-        const resolvedLabel = entityLabel || label || (type ? resolveLegacyEntityType(type) : undefined);
+        const resolvedLabel = entityLabel || label || (type ? findEntityLabel(type) : undefined);
 
         const finalData = data || { id: number, number, display_id: number };
 

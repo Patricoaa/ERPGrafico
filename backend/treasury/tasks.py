@@ -724,3 +724,22 @@ def unified_maturity_alerts(days_ahead: int = 7, notify: bool = True):
         'card_statements': len(open_statements),
         'notified': notified,
     }
+
+
+@shared_task(name='treasury.check_credit_line_expirations')
+def check_credit_line_expirations():
+    """
+    Marca como EXPIRED las líneas de crédito con `valid_until` <= hoy
+    que aún están ACTIVE. Pensado para correr diariamente vía beat.
+    """
+    from .models import CreditLine
+    today = timezone.now().date()
+    expired = CreditLine.objects.filter(
+        status=CreditLine.Status.ACTIVE,
+        valid_until__isnull=False,
+        valid_until__lte=today,
+    )
+    count = expired.update(status=CreditLine.Status.EXPIRED)
+    if count:
+        logger.info("check_credit_line_expirations: %d línea(s) marcada(s) como EXPIRED.", count)
+    return {'expired_count': count}

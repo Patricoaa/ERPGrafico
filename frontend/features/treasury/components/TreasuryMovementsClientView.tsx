@@ -67,17 +67,24 @@ export function TreasuryMovementsClientView({ externalOpen, createAction }: Trea
     const { filters: textFilters, isFiltered: isTextFiltered, clearAll: clearText } = useSmartSearch(treasuryMovementsSearchDef)
     const basePeriod = { serverParamFrom: 'date_from', serverParamTo: 'date_to' }
     const { filters: segFilters, isFiltered: isSegFiltered, clearAll: clearSeg } = useSegmentation(treasuryMovementsSegDef, basePeriod)
-    const isFiltered = isTextFiltered || isSegFiltered
-    const allFilters = { ...textFilters, ...segFilters }
+    const searchParams = useSearchParams()
+    const router = useRouter()
+    const pathname = usePathname()
+
+    const treasuryAccountFromUrl = searchParams.get('treasury_account')
+    const isAccountFiltered = Boolean(treasuryAccountFromUrl)
+    const allFilters = {
+        ...textFilters,
+        ...segFilters,
+        ...(treasuryAccountFromUrl ? { treasury_account: treasuryAccountFromUrl } : {}),
+    }
     const [pageState, setPageState] = useState({ pageIndex: 0, pageSize: 50 })
     const { page, movements, totalCount, isLoading, refetch } = useTreasuryMovements({
         ...(allFilters as TreasuryMovementFilters),
         page: pageState.pageIndex + 1,
         page_size: pageState.pageSize,
     })
-    const searchParams = useSearchParams()
-    const router = useRouter()
-    const pathname = usePathname()
+    const isFiltered = isTextFiltered || isSegFiltered || isAccountFiltered
 
     const [openModal, setOpenModal] = useState(false)
     const [detailsOpen, setDetailsOpen] = useState(false)
@@ -109,6 +116,18 @@ export function TreasuryMovementsClientView({ externalOpen, createAction }: Trea
         params.set('selected', String(id))
         router.push(`${pathname}?${params.toString()}`, { scroll: false })
     }, [searchParams, pathname, router])
+
+    const handleClearAccountFilter = React.useCallback(() => {
+        const params = new URLSearchParams(searchParams.toString())
+        params.delete('treasury_account')
+        router.push(`${pathname}?${params.toString()}`, { scroll: false })
+    }, [searchParams, pathname, router])
+
+    const handleReset = React.useCallback(() => {
+        clearText()
+        clearSeg()
+        handleClearAccountFilter()
+    }, [clearText, clearSeg, handleClearAccountFilter])
 
     const actionsCtx: TreasuryMovementActionsCtx = { onDetail: handleViewDetails }
 
@@ -310,10 +329,25 @@ export function TreasuryMovementsClientView({ externalOpen, createAction }: Trea
                     rowCount={totalCount}
                     pagination={pageState}
                     onPaginationChange={setPageState}
-                    smartSearch={<SmartSearchBar searchDef={treasuryMovementsSearchDef} placeholder="Buscar movimiento..." className="w-full" />}
+                    smartSearch={
+                        <div className="flex items-center gap-2 w-full">
+                            {isAccountFiltered && (
+                                <span className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-info/10 text-info border border-info/20 text-[10px] font-black uppercase tracking-wider font-mono shrink-0">
+                                    Cta. #{treasuryAccountFromUrl}
+                                    <button
+                                        onClick={handleClearAccountFilter}
+                                        className="ml-0.5 hover:text-info/80"
+                                    >
+                                        ×
+                                    </button>
+                                </span>
+                            )}
+                            <SmartSearchBar searchDef={treasuryMovementsSearchDef} placeholder="Buscar movimiento..." className="w-full" />
+                        </div>
+                    }
                     segmentation={<SegmentationBar def={treasuryMovementsSegDef} basePeriod={basePeriod} />}
                     showReset={isFiltered}
-                    onReset={() => { clearText(); clearSeg() }}
+                    onReset={handleReset}
                     createAction={createAction}
                     isFiltered={isFiltered}
                     emptyState={{

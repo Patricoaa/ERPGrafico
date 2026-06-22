@@ -19,12 +19,6 @@ interface GlobalModalActionsContextType {
      */
     openEntity: (label: string, id: number, data?: unknown, segmenter?: React.ReactNode) => void
     closeEntity: () => void
-    /** @deprecated Use `openEntity('production.workorder', id)` */
-    openWorkOrder: (id: number) => void
-    /** @deprecated Use `openEntity('contacts.contact', id, contact)` */
-    openContact: (id: number, contact?: unknown) => void
-    /** @deprecated Use `openEntity('treasury.treasuryaccount', id)` */
-    openTreasuryAccount: (id: number | null) => void
     registerSheet: (id: string, fullWidth: number, priority: number, forceCollapse?: boolean) => void
     unregisterSheet: (id: string) => void
 }
@@ -64,14 +58,6 @@ export function GlobalModalProvider({ children }: { children: ReactNode }) {
         }
         setOpenedEntity({ label, id, data, segmenter })
     }, [])
-
-    // Backward-compatible specific openers — delegate to the generic one.
-    const openWorkOrder = useCallback((id: number) => openEntity('production.workorder', id), [openEntity])
-    const openContact = useCallback((id: number, contact?: unknown) => openEntity('contacts.contact', id, contact), [openEntity])
-    const openTreasuryAccount = useCallback((id: number | null) => {
-        if (id === null) { closeEntity(); return }
-        openEntity('treasury.treasuryaccount', id)
-    }, [openEntity, closeEntity])
 
     const registerSheet = useCallback((id: string, fullWidth: number, priority: number, forced: boolean = false) => {
         setSheetStack(prev => {
@@ -149,12 +135,9 @@ export function GlobalModalProvider({ children }: { children: ReactNode }) {
     const actionsValue = useMemo(() => ({
         openEntity,
         closeEntity,
-        openWorkOrder,
-        openContact,
-        openTreasuryAccount,
         registerSheet,
         unregisterSheet,
-    }), [openEntity, closeEntity, openWorkOrder, openContact, openTreasuryAccount, registerSheet, unregisterSheet])
+    }), [openEntity, closeEntity, registerSheet, unregisterSheet])
 
     const stateValue = useMemo(() => ({
         isSubModalActive: openedEntity !== null,
