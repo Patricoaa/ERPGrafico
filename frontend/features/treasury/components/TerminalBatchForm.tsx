@@ -19,7 +19,7 @@ import { DateRange } from "react-day-picker"
 import { useVatRate } from '@/hooks/useVatRate'
 import { useTerminalProviders, usePaymentMethods, useTerminalMovements, useTerminalBatchMutations } from "@/features/treasury"
 
-import { Drawer, ActionSlideButton, CancelButton, SubmitButton, LabeledContainer, LabeledInput, LabeledCheckboxGroup, FormFooter, FormSection, SkeletonShell } from "@/components/shared"
+import { BaseModal, ActionSlideButton, CancelButton, SubmitButton, LabeledContainer, LabeledInput, LabeledCheckboxGroup, FormFooter, FormSection, SkeletonShell } from "@/components/shared"
 
 const terminalBatchSchema = z.object({
     providerId: z.string().min(1, "Seleccione un proveedor"),
@@ -438,13 +438,12 @@ function SaleSelectionModal({ open, onOpenChange, providerId, dateRange, onConfi
         .reduce((sum, m) => sum + m.amount, 0)
 
     return (
-        <Drawer
+        <BaseModal
             open={open}
             onOpenChange={onOpenChange}
-            side="left"
+            size="lg"
             title="Seleccionar Ventas a Liquidar"
-            subtitle="Seleccione las transacciones que el proveedor incluyó en esta liquidación."
-            defaultSize="50%"
+            description="Seleccione las transacciones que el proveedor incluyó en esta liquidación."
             footer={(
                 <FormFooter
                     actions={
@@ -484,7 +483,7 @@ function SaleSelectionModal({ open, onOpenChange, providerId, dateRange, onConfi
                     maxHeight="300px"
                 />
             </SkeletonShell>
-        </Drawer>
+        </BaseModal>
     )
 }
 
