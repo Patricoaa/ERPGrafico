@@ -30,18 +30,18 @@ export function BankPageHeader({ bankId, breadcrumbs, title = "", description, s
     const subSubActiveValue = segments[3] || 'overview'
 
     const bankSubTabs = [
-        { value: "all", label: "Todos", iconName: "layout-grid", href: "/treasury/centro-bancos" },
+        { value: "all", label: "Todos", iconName: "layout-grid", href: "/treasury/bank-center" },
         ...banks
             .filter(b => b.is_active)
             .map(bank => ({
                 value: `bank-${bank.id}`,
                 label: bank.name,
                 iconName: "landmark" as string,
-                href: `/treasury/centro-bancos/${bank.id}`,
+                href: `/treasury/bank-center/${bank.id}`,
                                 subTabs: SUB_VIEWS.map(sv => {
                                     const baseHref = sv.value === 'cards'
-                                        ? `/treasury/centro-bancos/${bank.id}/cards`
-                                        : `/treasury/centro-bancos/${bank.id}/${sv.value}`
+                                        ? `/treasury/bank-center/${bank.id}/cards`
+                                        : `/treasury/bank-center/${bank.id}/${sv.value}`
                                     return {
                                         value: sv.value,
                                         label: sv.label,
@@ -65,11 +65,11 @@ export function BankPageHeader({ bankId, breadcrumbs, title = "", description, s
         moduleHref: "/treasury",
         tabs: [
             { value: "operaciones", label: "Operaciones", iconName: "banknote", href: "/treasury/operaciones/movements" },
-            { value: "centro-bancos", label: "Centro de Bancos", iconName: "landmark", href: "/treasury/centro-bancos", subTabs: bankSubTabs },
+            { value: "bank-center", label: "Centro de Bancos", iconName: "landmark", href: "/treasury/bank-center", subTabs: bankSubTabs },
             { value: "terminal-cobro", label: "Terminal de Cobro", iconName: "cpu", href: "/treasury/terminal-cobro/providers" },
 
         ],
-        activeValue: "centro-bancos",
+        activeValue: "bank-center",
         subActiveValue: `bank-${bankId}`,
         subSubActiveValue,
         subSubSubActiveValue: subtab || 'unbilled',

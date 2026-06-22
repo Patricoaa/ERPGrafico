@@ -284,10 +284,10 @@ export default function StatementDetailPage({ params }: { params: Promise<{ id: 
         moduleHref: "/treasury",
         tabs: [
             { value: "operaciones", label: "Operaciones", iconName: "banknote", href: "/treasury/operaciones/movements" },
-            { value: "centro-bancos", label: "Centro de Bancos", iconName: "landmark", href: "/treasury/centro-bancos" },
+            { value: "bank-center", label: "Centro de Bancos", iconName: "landmark", href: "/treasury/bank-center" },
             { value: "terminal-cobro", label: "Terminal de Cobro", iconName: "cpu", href: "/treasury/terminal-cobro/providers" },
         ],
-        activeValue: "centro-bancos",
+        activeValue: "bank-center",
         breadcrumbs: [
             { label: statement.display_id }
         ]

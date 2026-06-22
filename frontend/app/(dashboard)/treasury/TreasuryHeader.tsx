@@ -17,9 +17,9 @@ export function TreasuryHeader() {
 
     const segmentToTab: Record<string, string> = {
         operaciones: 'operaciones',
-        'centro-bancos': 'centro-bancos',
+        'bank-center': 'bank-center',
         'terminal-cobro': 'terminal-cobro',
-        reconciliation: 'centro-bancos',
+        reconciliation: 'bank-center',
     }
 
     const activeValue = segmentToTab[currentSegment] || 'operaciones'
@@ -27,7 +27,7 @@ export function TreasuryHeader() {
     const subActiveValue = useMemo(() => {
         if (activeValue === 'operaciones') return segments[2] || 'movements'
         if (activeValue === 'terminal-cobro') return segments[2] || 'providers'
-        if (activeValue === 'centro-bancos') {
+        if (activeValue === 'bank-center') {
             const bankIdSegment = segments[2]
             if (bankIdSegment && !isNaN(Number(bankIdSegment))) return `bank-${bankIdSegment}`
             return 'all'
@@ -36,14 +36,14 @@ export function TreasuryHeader() {
     }, [activeValue, segments])
 
     const bankSubTabs = useMemo(() => {
-        const allTab = { value: 'all', label: 'Todos', iconName: 'layout-grid', href: '/treasury/centro-bancos' }
+        const allTab = { value: 'all', label: 'Todos', iconName: 'layout-grid', href: '/treasury/bank-center' }
         const bankTabs = banks
             .filter(b => b.is_active)
             .map(bank => ({
                 value: `bank-${bank.id}`,
                 label: bank.name,
                 iconName: 'landmark' as string,
-                href: `/treasury/centro-bancos/${bank.id}/overview`,
+                href: `/treasury/bank-center/${bank.id}/overview`,
             }))
         return [allTab, ...bankTabs]
     }, [banks])
@@ -62,10 +62,10 @@ export function TreasuryHeader() {
             ]
         },
         {
-            value: "centro-bancos",
+            value: "bank-center",
             label: "Centro de Bancos",
             iconName: "landmark",
-            href: "/treasury/centro-bancos",
+            href: "/treasury/bank-center",
             subTabs: bankSubTabs,
         },
         {
@@ -96,7 +96,7 @@ export function TreasuryHeader() {
             if (subActiveValue === 'checks') return { title: "Gestión de Cheques", description: "Registre, deposite y gestione cheques recibidos y propios.", iconName: getEntityIconName('treasury.check') }
             return { title: "Movimientos de Tesorería", description: "Registro histórico de ingresos, egresos y traslados de fondos.", iconName: getEntityIconName('treasury.treasurymovement') }
         }
-        if (activeValue === 'centro-bancos') {
+        if (activeValue === 'bank-center') {
             const bankIdSegment = segments[2]
             if (bankIdSegment && !isNaN(Number(bankIdSegment))) {
                 const selectedBank = banks.find(b => b.id === Number(bankIdSegment))
