@@ -311,10 +311,11 @@ class PaymentMethodViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
 class TreasuryAccountFilterSet(FilterSet):
     name = django_filters.CharFilter(field_name='name', lookup_expr='icontains')
     account_type = django_filters.CharFilter(field_name='account_type', lookup_expr='exact')
+    bank_id = django_filters.NumberFilter(field_name='bank__id', lookup_expr='exact')
 
     class Meta:
         model = TreasuryAccount
-        fields = ['name', 'account_type']
+        fields = ['name', 'account_type', 'bank_id']
 
 
 class TreasuryAccountViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
@@ -2284,23 +2285,25 @@ class BankLoanViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
 
 class CreditLineViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
     """
-    CRUD para Líneas de Crédito.
+    CRUD para Líneas de Crédito (sobregiro) asociadas a cuentas corrientes.
 
-    Incluye el detalle con `drawn_amount`, `available_amount` y
-    `utilization_rate` calculados automáticamente desde los `BankLoan`
-    activos asociados.
+    `used_amount` se calcula desde los TreasuryMovements tipo
+    CREDIT_LINE_DRAW/CREDIT_LINE_REPAY.
     """
     from .models import CreditLine as CreditLineModel
-    queryset = CreditLineModel.objects.select_related('bank', 'created_by').all()
-    filterset_fields = ['status', 'credit_line_type', 'currency', 'bank']
-    search_fields = ['code', 'bank__name']
-    ordering_fields = ['approved_amount', 'valid_from', 'valid_until']
+    queryset = CreditLineModel.objects.select_related('treasury_account', 'created_by').all()
+    filterset_fields = ['status', 'currency', 'treasury_account']
+    search_fields = ['code', 'treasury_account__name']
+    ordering_fields = ['credit_limit', 'valid_from', 'valid_until']
 
     def get_queryset(self):
         qs = super().get_queryset()
+        treasury_account_id = self.request.query_params.get('treasury_account_id')
+        if treasury_account_id:
+            qs = qs.filter(treasury_account_id=treasury_account_id)
         bank_id = self.request.query_params.get('bank_id')
         if bank_id:
-            qs = qs.filter(bank_id=bank_id)
+            qs = qs.filter(treasury_account__bank_id=bank_id)
         return qs
 
     def get_serializer_class(self):
@@ -2310,15 +2313,15 @@ class CreditLineViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
 
     @action(detail=True, methods=['get'])
     def overview(self, request, pk=None):
-        """Detalle enriquecido con loans asociados."""
+        """Detalle enriquecido con movimientos CREDIT_LINE_DRAW/REPAY asociados."""
         credit_line = self.get_object()
-        from .serializers import BankLoanSerializer
-        loans = credit_line.loans.select_related(
-            'lender', 'disbursement_account', 'liability_account',
-        ).prefetch_related('installments').all()
+        from .serializers import TreasuryMovementSerializer
+        movements = credit_line.movements.select_related(
+            'from_account', 'to_account', 'credit_line',
+        ).order_by('-date')[:50]
         return Response({
             'credit_line': CreditLineSerializer(credit_line, context={'request': request}).data,
-            'loans': BankLoanSerializer(loans, many=True, context={'request': request}).data,
+            'movements': TreasuryMovementSerializer(movements, many=True, context={'request': request}).data,
         })
 
 

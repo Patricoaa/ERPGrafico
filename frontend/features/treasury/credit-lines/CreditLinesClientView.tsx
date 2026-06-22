@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import type { ColumnDef } from '@tanstack/react-table'
 import { Plus, AlertTriangle } from 'lucide-react'
 import {
@@ -11,6 +11,7 @@ import { Button } from '@/components/ui/button'
 import { useCreditLines, useCreditLineMutations } from './hooks'
 import { CreditLineDrawer } from './CreditLineDrawer'
 import type { CreditLine } from './types'
+import { treasuryApi } from '@/features/treasury'
 
 interface Props {
     bankId?: number
@@ -21,6 +22,13 @@ export function CreditLinesClientView({ bankId }: Props) {
     const { remove } = useCreditLineMutations()
     const [drawerOpen, setDrawerOpen] = useState(false)
     const [editingLine, setEditingLine] = useState<CreditLine | null>(null)
+    const [bankCheckingAccounts, setBankCheckingAccounts] = useState<any[]>([])
+
+    useEffect(() => {
+        if (bankId && !editingLine) {
+            treasuryApi.getAccounts({ account_type: 'CHECKING', bank_id: bankId }).then(setBankCheckingAccounts).catch(() => {})
+        }
+    }, [bankId, editingLine])
 
     if (isLoading) {
         return <Skeleton className="h-full" />
@@ -43,25 +51,25 @@ export function CreditLinesClientView({ bankId }: Props) {
             cell: ({ row }) => <DataCell.Code>{row.original.code || '—'}</DataCell.Code>,
         },
         {
-            accessorKey: 'bank_name',
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Banco" />,
-            cell: ({ row }) => <DataCell.Text>{row.original.bank_name}</DataCell.Text>,
+            accessorKey: 'account_name',
+            header: ({ column }) => <DataTableColumnHeader column={column} title="Cuenta" />,
+            cell: ({ row }) => <DataCell.Text>{row.original.account_name}</DataCell.Text>,
         },
         {
-            accessorKey: 'approved_amount',
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Monto Aprobado" className="justify-end" />,
+            accessorKey: 'credit_limit',
+            header: ({ column }) => <DataTableColumnHeader column={column} title="Límite" className="justify-end" />,
             cell: ({ row }) => (
                 <div className="flex justify-end">
-                    <MoneyDisplay amount={Number(row.original.approved_amount)} />
+                    <MoneyDisplay amount={Number(row.original.credit_limit)} />
                 </div>
             ),
         },
         {
-            accessorKey: 'drawn_amount',
+            accessorKey: 'used_amount',
             header: ({ column }) => <DataTableColumnHeader column={column} title="Utilizado" className="justify-end" />,
             cell: ({ row }) => (
                 <div className="flex justify-end">
-                    <MoneyDisplay amount={Number(row.original.drawn_amount)} />
+                    <MoneyDisplay amount={Number(row.original.used_amount)} />
                 </div>
             ),
         },
@@ -109,11 +117,16 @@ export function CreditLinesClientView({ bankId }: Props) {
         },
     ]
 
+    const handleNewLine = () => {
+        setEditingLine(null)
+        setDrawerOpen(true)
+    }
+
     return (
         <div className="space-y-4">
             <div className="flex justify-between items-center">
                 <h2 className="text-lg font-semibold">Líneas de Crédito</h2>
-                <Button onClick={() => { setEditingLine(null); setDrawerOpen(true) }}>
+                <Button onClick={handleNewLine}>
                     <Plus className="h-4 w-4 mr-2" />
                     Nueva Línea
                 </Button>
@@ -129,7 +142,11 @@ export function CreditLinesClientView({ bankId }: Props) {
                 open={drawerOpen}
                 onOpenChange={setDrawerOpen}
                 creditLine={editingLine}
-                bankId={bankId}
+                treasuryAccountId={
+                    !editingLine && bankCheckingAccounts.length === 1
+                        ? bankCheckingAccounts[0].id
+                        : undefined
+                }
             />
 
         </div>

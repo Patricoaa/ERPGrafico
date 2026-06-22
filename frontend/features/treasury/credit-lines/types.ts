@@ -1,16 +1,14 @@
-export type CreditLineType = 'REVOLVING'
 export type CreditLineStatus = 'ACTIVE' | 'EXPIRED' | 'CANCELED' | 'SUSPENDED'
 export type CreditLineRateBasis = 'MONTHLY' | 'ANNUAL'
 
 export interface CreditLine {
     id: number
-    bank: number
-    bank_name: string
+    treasury_account: number
+    account_name: string
     code: string
-    credit_line_type: CreditLineType
     currency: string
-    approved_amount: string
-    drawn_amount: string
+    credit_limit: string
+    used_amount: string
     available_amount: string
     utilization_rate: number | null
     interest_rate: string
@@ -25,19 +23,16 @@ export interface CreditLine {
     notes: string
     status: CreditLineStatus
     status_display: string
-    loans_count: number
-    active_loans_count: number
     created_at: string
     updated_at: string
     created_by: number | null
 }
 
 export interface CreditLineCreatePayload {
-    bank: number
+    treasury_account: number
     code?: string
-    credit_line_type: CreditLineType
     currency: string
-    approved_amount: string
+    credit_limit: string
     interest_rate?: string
     rate_basis?: CreditLineRateBasis
     spread?: string

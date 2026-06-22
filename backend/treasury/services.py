@@ -8,7 +8,8 @@ from django.contrib.contenttypes.models import ContentType
 from datetime import datetime
 from dateutil.relativedelta import relativedelta
 from decimal import Decimal, ROUND_HALF_UP
-from .models import TreasuryMovement, TreasuryAccount, TerminalBatch, PaymentMethod
+from django.utils.translation import gettext as _
+from .models import TreasuryMovement, TreasuryAccount, TerminalBatch, PaymentMethod, CreditLine
 from .check_service import CheckService
 from accounting.models import JournalEntry, JournalItem, AccountingSettings
 from accounting.services import JournalEntryService
@@ -58,6 +59,32 @@ class TreasuryService:
                  if movement_type in [TreasuryMovement.Type.TRANSFER, TreasuryMovement.Type.OUTBOUND]:
                       pass # Keeping strict logic might block business. Let's rely on frontend warning, or strict.
                       # raise ValidationError(f"Fondos insuficientes en {from_account.name}.")
+
+        # ── Auto-draw desde línea de crédito (CHECKING accounts) ─────────
+        credit_line_draw_amount = Decimal('0')
+        credit_line = None
+        if (from_account
+            and from_account.account_type == TreasuryAccount.Type.CHECKING
+            and movement_type in (TreasuryMovement.Type.OUTBOUND, TreasuryMovement.Type.TRANSFER)
+            and amount > from_account.current_balance):
+            try:
+                cl = from_account.credit_line
+                if cl and cl.status == CreditLine.Status.ACTIVE:
+                    excess = amount - from_account.current_balance
+                    if excess > cl.available_amount:
+                        raise ValidationError(_(
+                            "El pago de $%(amount)s excede la liquidez disponible "
+                            "(saldo $%(balance)s + cupo línea $%(available)s). "
+                            "Cubra el excedente o solicite un aumento de línea."
+                        ) % {
+                            'amount': amount,
+                            'balance': from_account.current_balance,
+                            'available': cl.available_amount,
+                        })
+                    credit_line_draw_amount = excess
+                    credit_line = cl
+            except CreditLine.DoesNotExist:
+                pass
 
         # 1.5 Resolve POS Session
         if not pos_session and pos_session_id:
@@ -142,6 +169,21 @@ class TreasuryService:
                     'journal_entry': movement.journal_entry,
                     'created_by': created_by
                 }
+            )
+        
+        # 7. Create CREDIT_LINE_DRAW movement if excess was financed
+        if credit_line_draw_amount > 0 and credit_line:
+            TreasuryMovement.objects.create(
+                movement_type=TreasuryMovement.Type.CREDIT_LINE_DRAW,
+                payment_method=TreasuryMovement.Method.TRANSFER,
+                amount=credit_line_draw_amount,
+                date=date,
+                created_by=created_by,
+                from_account=from_account,
+                credit_line=credit_line,
+                reference=reference or '',
+                notes=_("Cubierto por línea de crédito (pago #%(id)s).") % {'id': movement.id},
+                is_pending_registration=True,
             )
         
         return movement

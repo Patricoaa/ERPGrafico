@@ -3,7 +3,7 @@ import { creditLinesApi } from './api'
 import { CREDIT_LINES_KEYS } from '@/features/treasury/hooks/queryKeys'
 import type { CreditLineCreatePayload } from './types'
 
-export function useCreditLines(params?: { bank_id?: number; status?: string }) {
+export function useCreditLines(params?: { treasury_account_id?: number; bank_id?: number; status?: string }) {
     return useQuery({
         queryKey: [...CREDIT_LINES_KEYS.lists(), params],
         queryFn: () => creditLinesApi.list(params),

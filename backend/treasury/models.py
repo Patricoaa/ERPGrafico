@@ -85,6 +85,8 @@ class TreasuryMovement(models.Model):
         OUTBOUND = 'OUTBOUND', _('Saliente (Pago/Gasto)')
         TRANSFER = 'TRANSFER', _('Traspaso Interno')
         ADJUSTMENT = 'ADJUSTMENT', _('Ajuste')
+        CREDIT_LINE_DRAW  = 'CREDIT_LINE_DRAW',  _('Disposición Línea de Crédito')
+        CREDIT_LINE_REPAY = 'CREDIT_LINE_REPAY', _('Abono Línea de Crédito')
 
     class Method(models.TextChoices):
         CASH = 'CASH', _('Efectivo')
@@ -115,7 +117,7 @@ class TreasuryMovement(models.Model):
         RETIREMENT = 'RETIREMENT', _('Retiro de Cierre')
         UNKNOWN = 'UNKNOWN', _('Desconocido')
 
-    movement_type = models.CharField(_("Tipo"), max_length=10, choices=Type.choices)
+    movement_type = models.CharField(_("Tipo"), max_length=20, choices=Type.choices)
     payment_method = models.CharField(
         _("Método de Pago"), 
         max_length=20, 
@@ -235,7 +237,15 @@ class TreasuryMovement(models.Model):
         related_name='reconciled_movements',
         verbose_name=_("Reconciliado Por")
     )
-    
+
+    # Credit Line (for CREDIT_LINE_DRAW / CREDIT_LINE_REPAY movements)
+    credit_line = models.ForeignKey(
+        'CreditLine',
+        on_delete=models.PROTECT,
+        null=True, blank=True,
+        related_name='movements',
+        verbose_name=_('Línea de Crédito'),
+    )
 
     
     # POS Session
@@ -935,6 +945,18 @@ class TreasuryAccount(models.Model):
         if self.account:
             return self.account.balance
         return 0
+
+    @property
+    def available_liquidity(self) -> Decimal:
+        """
+        Liquidez disponible: saldo contable + crédito disponible de la línea.
+        Representa la capacidad total de realizar pagos (fondos propios + financiación).
+        """
+        balance = self.current_balance
+        cl = getattr(self, 'credit_line', None)
+        if cl and cl.status == CreditLine.Status.ACTIVE:
+            return balance + cl.available_amount
+        return balance
 
     @property
     def available_credit(self) -> Decimal | None:
@@ -2456,21 +2478,18 @@ class Check(models.Model):
 
 class CreditLine(models.Model):
     """
-    Línea de Crédito rotativa (REVOLVING) otorgada por un banco.
+    Línea de Crédito (sobregiro) asociada a una cuenta corriente bancaria.
 
-    Una línea de crédito es un acuerdo marco que define el monto aprobado,
-    la tasa de interés, el spread, la vigencia y las condiciones generales.
-    De ella pueden colgar uno o varios préstamos (`BankLoan`) que "drawan"
-    (disponen) del cupo disponible.
+    Una línea de crédito es una facilidad financiera que permite disponer de
+    fondos hasta un límite preaprobado cuando el saldo disponible de la cuenta
+    bancaria resulta insuficiente. El saldo de la cuenta representa fondos
+    propios depositados, mientras que la línea representa capacidad de
+    endeudamiento.
 
-    `drawn_amount` se calcula como la suma del `outstanding_balance` de todos
-    los `BankLoan` activos asociados. `available_amount = approved_amount - drawn_amount`.
-
-    Ver ADR-0047 y `docs/50-audit/bancos/fase-6-lineas-credito.md`.
+    `used_amount` se calcula como la suma de movimientos CREDIT_LINE_DRAW
+    menos CREDIT_LINE_REPAY asociados a esta línea.
+    `available_amount = credit_limit - used_amount`.
     """
-
-    class Type(models.TextChoices):
-        REVOLVING = 'REVOLVING', _('Rotativa')
 
     class Status(models.TextChoices):
         ACTIVE   = 'ACTIVE',   _('Vigente')
@@ -2479,10 +2498,11 @@ class CreditLine(models.Model):
         SUSPENDED = 'SUSPENDED', _('Suspendida')
 
     # ── Relaciones ───────────────────────────────────────────────────────────
-    bank = models.ForeignKey(
-        'Bank', on_delete=models.PROTECT,
-        related_name='credit_lines',
-        verbose_name=_('Banco'),
+    treasury_account = models.OneToOneField(
+        'TreasuryAccount', on_delete=models.PROTECT,
+        related_name='credit_line',
+        verbose_name=_('Cuenta Bancaria'),
+        limit_choices_to={'account_type': TreasuryAccount.Type.CHECKING},
     )
     code = models.CharField(
         _('Código'), max_length=60, blank=True,
@@ -2490,18 +2510,14 @@ class CreditLine(models.Model):
     )
 
     # ── Configuración ────────────────────────────────────────────────────────
-    credit_line_type = models.CharField(
-        _('Tipo'), max_length=20,
-        choices=Type.choices, default=Type.REVOLVING,
-    )
     currency = models.CharField(
         _('Moneda'), max_length=3, default='CLP',
     )
-    approved_amount = models.DecimalField(
-        _('Monto Aprobado'),
+    credit_limit = models.DecimalField(
+        _('Límite de Crédito'),
         max_digits=18, decimal_places=2,
         validators=[MinValueValidator(Decimal('0.01'))],
-        help_text=_('Monto total de crédito aprobado por el banco.'),
+        help_text=_('Monto máximo autorizado por el banco para esta línea de crédito.'),
     )
 
     # ── Términos financieros ─────────────────────────────────────────────────
@@ -2580,7 +2596,7 @@ class CreditLine(models.Model):
         ordering = ['-valid_from', '-id']
         indexes = [
             models.Index(fields=['status']),
-            models.Index(fields=['bank', 'status']),
+            models.Index(fields=['treasury_account', 'status']),
             models.Index(fields=['currency']),
         ]
 
@@ -2593,27 +2609,31 @@ class CreditLine(models.Model):
         return f"CL-{code_part}"
 
     @property
-    def drawn_amount(self) -> Decimal:
+    def used_amount(self) -> Decimal:
         """
-        Monto total dispuesto = suma del outstanding_balance de todos
-        los BankLoan activos que cuelgan de esta línea.
+        Monto total dispuesto de la línea = suma de CREDIT_LINE_DRAW
+        menos CREDIT_LINE_REPAY.
         """
-        total = Decimal('0')
-        for loan in self.loans.filter(status=BankLoan.Status.ACTIVE):
-            total += loan.outstanding_balance
-        return total
+        from django.db.models import Sum
+        draws = self.movements.filter(
+            movement_type=TreasuryMovement.Type.CREDIT_LINE_DRAW,
+        ).aggregate(total=Sum('amount'))['total'] or Decimal('0')
+        repays = self.movements.filter(
+            movement_type=TreasuryMovement.Type.CREDIT_LINE_REPAY,
+        ).aggregate(total=Sum('amount'))['total'] or Decimal('0')
+        return draws - repays
 
     @property
     def available_amount(self) -> Decimal:
-        """Cupo disponible = aprobado - dispuesto."""
-        return max(self.approved_amount - self.drawn_amount, Decimal('0'))
+        """Cupo disponible = límite - dispuesto."""
+        return max(self.credit_limit - self.used_amount, Decimal('0'))
 
     @property
     def utilization_rate(self) -> Decimal | None:
-        """Porcentaje de utilización (0-100). None si no hay monto aprobado."""
-        if not self.approved_amount:
+        """Porcentaje de utilización (0-100). None si no hay límite."""
+        if not self.credit_limit:
             return None
-        return (self.drawn_amount / self.approved_amount) * Decimal('100')
+        return (self.used_amount / self.credit_limit) * Decimal('100')
 
     def clean(self):
         errors: dict[str, list[str]] = {}
@@ -2747,16 +2767,6 @@ class BankLoan(models.Model):
         help_text=_("Descripción libre de garantías. Modelo dedicado queda fuera del MVP."),
     )
 
-    # Línea de crédito de la que dispone este préstamo (opcional).
-    credit_line = models.ForeignKey(
-        'CreditLine', on_delete=models.PROTECT,
-        related_name='loans',
-        null=True, blank=True,
-        verbose_name=_('Línea de Crédito'),
-        help_text=_('Línea de crédito de la cual se dispone este préstamo. '
-                     'Si se asigna, valida que el principal no exceda el cupo disponible.'),
-    )
-
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     created_by = models.ForeignKey(
@@ -2802,7 +2812,6 @@ class BankLoan(models.Model):
         1. `liability_account` debe ser tipo LOAN (ADR-0041).
         2. `disbursement_account` no puede ser de tipo pasivo ni puente.
         3. `first_due_date` no puede ser anterior a `start_date`.
-        4. Si tiene `credit_line`, el principal no puede exceder el cupo disponible.
         """
         if self.liability_account_id:
             if self.liability_account.account_type != TreasuryAccount.Type.LOAN:
@@ -2830,21 +2839,6 @@ class BankLoan(models.Model):
             raise ValidationError({
                 'first_due_date': _("El primer vencimiento no puede ser anterior al inicio.")
             })
-
-        # 4. Validar cupo disponible en la línea de crédito
-        if self.credit_line_id and self.principal:
-            credit_line = self.credit_line
-            if credit_line.available_amount < self.principal:
-                raise ValidationError({
-                    'credit_line': _(
-                        "El capital del préstamo (%(principal)s) excede el cupo disponible "
-                        "de la línea de crédito '%(line)s' (%(available)s)."
-                    ) % {
-                        'principal': self.principal,
-                        'line': credit_line.display_id,
-                        'available': credit_line.available_amount,
-                    }
-                })
 class LoanInstallment(models.Model):
     """
     Cuota de un `BankLoan`. Una fila por mes del calendario de amortización.

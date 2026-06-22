@@ -51,6 +51,7 @@ export interface TreasuryAccount {
     /** true for BRIDGE — managed by provider, no manual edit/delete */
     is_system_managed: boolean
     current_balance?: number
+    available_liquidity?: number
     credit_limit?: number | null
     available_credit?: number | null
     bank?: number | null
