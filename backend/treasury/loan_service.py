@@ -236,20 +236,6 @@ class LoanService:
         if loan.status == BankLoan.Status.ACTIVE:
             return loan  # ya desembolsado, idempotente
 
-        # ── Validar cupo disponible en la línea de crédito ─────────────
-        if loan.credit_line_id:
-            available = loan.credit_line.available_amount
-            if available < loan.principal:
-                raise ValidationError(_t(
-                    "El capital del préstamo (%(principal)s) excede el cupo disponible "
-                    "de la línea de crédito '%(line)s' (%(available)s). "
-                    "Desembolse primero un monto menor o solicite un aumento de línea."
-                ) % {
-                    'principal': loan.principal,
-                    'line': loan.credit_line.display_id,
-                    'available': available,
-                })
-
         if not loan.installments.exists():
             LoanService.generate_schedule(loan)
 

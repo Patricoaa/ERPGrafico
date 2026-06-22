@@ -48,6 +48,7 @@ class TreasuryAccountSerializer(serializers.ModelSerializer):
     is_system_managed = serializers.SerializerMethodField()
 
     current_balance = serializers.DecimalField(max_digits=20, decimal_places=0, read_only=True)
+    available_liquidity = serializers.DecimalField(max_digits=20, decimal_places=0, read_only=True)
     credit_limit = serializers.DecimalField(max_digits=18, decimal_places=2, required=False, allow_null=True)
     available_credit = serializers.SerializerMethodField(read_only=True)
     payment_methods = PaymentMethodSerializer(many=True, read_only=True)
@@ -90,7 +91,7 @@ class TreasuryAccountSerializer(serializers.ModelSerializer):
         fields = ['id', 'name', 'code', 'currency', 'account', 'account_name', 'account_code', 'account_type', 'account_type_display',
                   'bank', 'bank_name', 'account_number', 'credit_limit', 'available_credit',
                   'allows_cash', 'allows_card', 'allows_transfer', 'allows_check',
-                  'is_system_managed', 'current_balance', 'payment_methods', 'default_bank_format', 'reconciliation_settings',
+                  'is_system_managed', 'current_balance', 'available_liquidity', 'payment_methods', 'default_bank_format', 'reconciliation_settings',
                   'terminal_providers']
 
 
@@ -807,13 +808,6 @@ class BankLoanSerializer(serializers.ModelSerializer):
         source='created_by.username', read_only=True, allow_null=True,
     )
 
-    credit_line_id = serializers.IntegerField(
-        source='credit_line.id', read_only=True, allow_null=True,
-    )
-    credit_line_display = serializers.CharField(
-        source='credit_line.display_id', read_only=True, allow_null=True,
-    )
-
     # Indicadores agregados útiles para UI.
     outstanding_balance = serializers.SerializerMethodField()
     next_due_date = serializers.SerializerMethodField()
@@ -881,7 +875,6 @@ class BankLoanSerializer(serializers.ModelSerializer):
             'insurance_monthly', 'opening_fee', 'stamp_tax', 'penalty_rate',
             'disbursement_account', 'disbursement_account_name',
             'liability_account', 'liability_account_name',
-            'credit_line', 'credit_line_id', 'credit_line_display',
             'status', 'status_display', 'notes', 'collateral_notes',
             'outstanding_balance', 'next_due_date', 'next_installment_amount',
             'installments_count', 'paid_installments_count',
@@ -917,7 +910,6 @@ class BankLoanWriteSerializer(serializers.ModelSerializer):
             'amortization_system', 'term_months', 'start_date', 'first_due_date',
             'insurance_monthly', 'opening_fee', 'stamp_tax', 'penalty_rate',
             'disbursement_account', 'liability_account',
-            'credit_line',
             'notes', 'collateral_notes',
         ]
         extra_kwargs = {
@@ -976,25 +968,22 @@ class BankLoanWriteSerializer(serializers.ModelSerializer):
 class CreditLineSerializer(serializers.ModelSerializer):
     """Serializer de lectura para CreditLine."""
     status_display = serializers.CharField(source='get_status_display', read_only=True)
-    bank_name = serializers.CharField(source='bank.name', read_only=True)
-    drawn_amount = serializers.DecimalField(max_digits=18, decimal_places=2, read_only=True)
+    account_name = serializers.CharField(source='treasury_account.name', read_only=True)
+    used_amount = serializers.DecimalField(max_digits=18, decimal_places=2, read_only=True)
     available_amount = serializers.DecimalField(max_digits=18, decimal_places=2, read_only=True)
     utilization_rate = serializers.SerializerMethodField()
-    loans_count = serializers.SerializerMethodField()
-    active_loans_count = serializers.SerializerMethodField()
 
     class Meta:
         from .models import CreditLine
         model = CreditLine
         fields = [
-            'id', 'bank', 'bank_name', 'code',
-            'credit_line_type', 'currency',
-            'approved_amount', 'drawn_amount', 'available_amount', 'utilization_rate',
+            'id', 'treasury_account', 'account_name', 'code',
+            'currency',
+            'credit_limit', 'used_amount', 'available_amount', 'utilization_rate',
             'interest_rate', 'rate_basis', 'spread', 'commitment_fee',
             'valid_from', 'valid_until', 'auto_renewal', 'renewal_term_months',
             'collateral_notes', 'notes',
             'status', 'status_display',
-            'loans_count', 'active_loans_count',
             'created_at', 'updated_at', 'created_by',
         ]
         read_only_fields = ['id', 'created_at', 'updated_at', 'created_by']
@@ -1006,12 +995,6 @@ class CreditLineSerializer(serializers.ModelSerializer):
             return None
         return rate.quantize(Decimal('0.01'))
 
-    def get_loans_count(self, obj):
-        return obj.loans.count()
-
-    def get_active_loans_count(self, obj):
-        return obj.loans.filter(status='ACTIVE').count()
-
 
 class CreditLineWriteSerializer(serializers.ModelSerializer):
     """Serializer de escritura para CreditLine (campos planos, sin derivados)."""
@@ -1020,8 +1003,8 @@ class CreditLineWriteSerializer(serializers.ModelSerializer):
         from .models import CreditLine
         model = CreditLine
         fields = [
-            'bank', 'code', 'credit_line_type', 'currency',
-            'approved_amount',
+            'id', 'treasury_account', 'code', 'currency',
+            'credit_limit',
             'interest_rate', 'rate_basis', 'spread', 'commitment_fee',
             'valid_from', 'valid_until', 'auto_renewal', 'renewal_term_months',
             'collateral_notes', 'notes',

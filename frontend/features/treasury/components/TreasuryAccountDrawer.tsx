@@ -6,16 +6,16 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
 import { showApiError } from "@/lib/errors"
 
-import { Landmark, CreditCard, Lock, Printer } from "lucide-react"
+import { Landmark, CreditCard, Lock, Printer, ScrollText, Plus, Pencil, Archive } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { useReactToPrint } from "react-to-print"
 import { PrintableLayout } from "@/features/_shared/transaction-drawer"
 import type { DrawerMode } from "@/features/_shared/drawer/types"
 import { AccountSelector } from "@/components/selectors/AccountSelector"
 import { ActivitySidebar } from "@/features/audit/components"
-import { useTreasuryAccounts, treasuryApi } from "@/features/treasury"
+import { useTreasuryAccounts, treasuryApi, useCreditLines, useCreditLineMutations, CreditLineDrawer } from "@/features/treasury"
 
-import { CancelButton, LabeledInput, LabeledSelect, FormSection, FormFooter, FormSplitLayout, ActionSlideButton, Drawer, Chip, SkeletonShell } from "@/components/shared"
+import { CancelButton, LabeledInput, LabeledSelect, FormSection, FormFooter, FormSplitLayout, ActionSlideButton, Drawer, Chip, SkeletonShell, StatusBadge, MoneyDisplay } from "@/components/shared"
 import { formDrawerWidth } from "@/lib/form-widths"
 import { Form, FormField } from "@/components/ui/form"
 
@@ -46,6 +46,9 @@ export function TreasuryAccountDrawer({ open, onOpenChange, accountId, onSuccess
     const [loading, setLoading] = useState(false)
     const [banks, setBanks] = useState<any[]>([])
     const [entityData, setEntityData] = useState<any>(null)
+    const [creditLineData, setCreditLineData] = useState<any>(null)
+    const [creditLineDrawerOpen, setCreditLineDrawerOpen] = useState(false)
+    const { remove: deleteCreditLine } = useCreditLineMutations()
 
     const form = useForm<TreasuryAccountFormValues>({
         resolver: zodResolver(treasuryAccountSchema),
@@ -80,6 +83,20 @@ export function TreasuryAccountDrawer({ open, onOpenChange, accountId, onSuccess
 
                 setBanks(banksData)
                 setEntityData(accountData)
+
+                // Load credit line if CHECKING account
+                if (accountData?.account_type === 'CHECKING') {
+                    try {
+                        const { data: clData } = await import('@/lib/api').then(m =>
+                            m.default.get('/treasury/credit-lines/', { params: { treasury_account_id: accountData.id } })
+                        )
+                        setCreditLineData(clData[0] || null)
+                    } catch {
+                        setCreditLineData(null)
+                    }
+                } else {
+                    setCreditLineData(null)
+                }
                 if (accountData) {
                     form.reset({
                         name: accountData.name,
@@ -361,6 +378,72 @@ export function TreasuryAccountDrawer({ open, onOpenChange, accountId, onSuccess
                                         </div>
                                     )}
 
+                                    {/* Credit Line Section (solo CHECKING) */}
+                                    {type === "CHECKING" && (
+                                        <div className="space-y-4">
+                                            <FormSection title="Línea de Crédito (Sobregiro)" icon={ScrollText} />
+                                            {creditLineData ? (
+                                                <div className="rounded-lg border p-4 space-y-3">
+                                                    <div className="grid grid-cols-2 gap-3 text-sm">
+                                                        <div>
+                                                            <span className="text-muted-foreground">Límite</span>
+                                                            <p className="font-medium"><MoneyDisplay amount={parseFloat(creditLineData.credit_limit)} /></p>
+                                                        </div>
+                                                        <div>
+                                                            <span className="text-muted-foreground">Utilizado</span>
+                                                            <p className="font-medium"><MoneyDisplay amount={parseFloat(creditLineData.used_amount)} /></p>
+                                                        </div>
+                                                        <div>
+                                                            <span className="text-muted-foreground">Disponible</span>
+                                                            <p className="font-medium text-green-600"><MoneyDisplay amount={parseFloat(creditLineData.available_amount)} /></p>
+                                                        </div>
+                                                        <div>
+                                                            <span className="text-muted-foreground">Estado</span>
+                                                            <StatusBadge status={creditLineData.status} />
+                                                        </div>
+                                                    </div>
+                                                    <div className="flex gap-2 pt-2 border-t">
+                                                        <Button
+                                                            variant="outline"
+                                                            size="sm"
+                                                            onClick={() => setCreditLineDrawerOpen(true)}
+                                                        >
+                                                            <Pencil className="h-3.5 w-3.5 mr-1" />
+                                                            Editar
+                                                        </Button>
+                                                        {creditLineData.status === 'ACTIVE' && (
+                                                            <Button
+                                                                variant="outline"
+                                                                size="sm"
+                                                                onClick={async () => {
+                                                                    if (confirm('¿Archivar esta línea de crédito?')) {
+                                                                        await deleteCreditLine.mutateAsync(creditLineData.id)
+                                                                        setCreditLineData(null)
+                                                                    }
+                                                                }}
+                                                            >
+                                                                <Archive className="h-3.5 w-3.5 mr-1" />
+                                                                Archivar
+                                                            </Button>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            ) : (
+                                                <div className="rounded-lg border border-dashed p-4 text-center text-sm text-muted-foreground">
+                                                    <p className="mb-2">No tiene línea de crédito asociada</p>
+                                                    <Button
+                                                        variant="outline"
+                                                        size="sm"
+                                                        onClick={() => setCreditLineDrawerOpen(true)}
+                                                    >
+                                                        <Plus className="h-3.5 w-3.5 mr-1" />
+                                                        Agregar Línea de Crédito
+                                                    </Button>
+                                                </div>
+                                            )}
+                                        </div>
+                                    )}
+
                                     {/* Section 3: Accounting */}
                                     <div className="space-y-4">
                                         <FormSection title="Integración Contable" icon={Lock} />
@@ -389,6 +472,24 @@ export function TreasuryAccountDrawer({ open, onOpenChange, accountId, onSuccess
                     </SkeletonShell>
                 </FormSplitLayout>
             </Drawer>
+
+            <CreditLineDrawer
+                open={creditLineDrawerOpen}
+                onOpenChange={(o) => {
+                    setCreditLineDrawerOpen(o)
+                    if (!o) {
+                        // Reload credit line data when drawer closes
+                        if (accountId && entityData?.account_type === 'CHECKING') {
+                            import('@/lib/api').then(m =>
+                                m.default.get('/treasury/credit-lines/', { params: { treasury_account_id: accountId } })
+                            ).then(({ data }) => setCreditLineData(data[0] || null))
+                                .catch(() => setCreditLineData(null))
+                        }
+                    }
+                }}
+                treasuryAccountId={type === 'CHECKING' ? accountId ?? undefined : undefined}
+                creditLineId={creditLineData?.id ?? null}
+            />
         </>
     )
 }
