@@ -81,7 +81,7 @@ export default function BankStatementDetailPage({
         },
     }
 
-    const reconciliationBase = `/treasury/centro-bancos/${bankId}/reconciliation`
+    const reconciliationBase = `/treasury/bank-center/${bankId}/reconciliation`
 
     const fetchStatement = async () => {
         try {

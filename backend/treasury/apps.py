@@ -123,8 +123,8 @@ class TreasuryConfig(AppConfig):
                 display_template='EST-{id}',
                 subtitle_template='{card_account.name} · {period_month}/{period_year}',
                 extra_info_template='{status}',
-                list_url='/treasury/centro-bancos',
-                detail_url_pattern='/treasury/centro-bancos?statement={id}',
+                list_url='/treasury/bank-center',
+                detail_url_pattern='/treasury/bank-center?statement={id}',
                 permission='treasury.view_creditcardstatement',
             ))
             UniversalRegistry.register(SearchableEntity(
@@ -138,8 +138,8 @@ class TreasuryConfig(AppConfig):
                 display_template='{group_display_id}',
                 subtitle_template='{partner.name}',
                 extra_info_template='{total_amount}',
-                list_url='/treasury/centro-bancos',
-                detail_url_pattern='/treasury/centro-bancos',
+                list_url='/treasury/bank-center',
+                detail_url_pattern='/treasury/bank-center',
                 permission='treasury.view_cardpurchasegroup',
             ))
             UniversalRegistry.register(SearchableEntity(

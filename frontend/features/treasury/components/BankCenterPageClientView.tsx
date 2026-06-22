@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation"
 import { BankManagement } from "@/features/treasury"
 import { ToolbarCreateButton } from "@/components/shared"
 
-export function CentroBancosClientView() {
+export function BankCenterPageClientView() {
     const router = useRouter()
     const searchParams = useSearchParams()
     const bank = searchParams.get("bank")
@@ -16,7 +16,7 @@ export function CentroBancosClientView() {
     useEffect(() => {
         const bankId = Number(bank)
         if (bankId) {
-            router.replace(`/treasury/centro-bancos/${bankId}`)
+            router.replace(`/treasury/bank-center/${bankId}`)
         }
     }, [bank, router])
 
@@ -44,7 +44,7 @@ export function CentroBancosClientView() {
                 createAction={
                     <ToolbarCreateButton
                         label="Nuevo Banco"
-                        href="/treasury/centro-bancos?modal=new"
+                        href="/treasury/bank-center?modal=new"
                     />
                 }
             />

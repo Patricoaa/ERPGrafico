@@ -53,10 +53,10 @@ export default function WorkbenchPage({ params }: { params: Promise<{ id: string
         moduleHref: "/treasury",
         tabs: [
             { value: "operaciones", label: "Operaciones", iconName: "banknote", href: "/treasury/operaciones/movements" },
-            { value: "centro-bancos", label: "Centro de Bancos", iconName: "landmark", href: "/treasury/centro-bancos" },
+            { value: "bank-center", label: "Centro de Bancos", iconName: "landmark", href: "/treasury/bank-center" },
             { value: "terminal-cobro", label: "Terminal de Cobro", iconName: "cpu", href: "/treasury/terminal-cobro/providers" },
         ],
-        activeValue: "centro-bancos",
+        activeValue: "bank-center",
         breadcrumbs: [
             { label: statement.display_id, href: `/treasury/reconciliation/${statement.id}` },
             { label: "Mesa de Conciliación" }

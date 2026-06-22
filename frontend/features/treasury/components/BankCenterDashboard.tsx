@@ -171,7 +171,7 @@ export function BankCenterDashboard({ bankId, subtab }: { bankId: number; subtab
                 <div className="flex-1 min-h-0">
                     <StatementsList
                         bankId={bankId}
-                        detailBasePath={`/treasury/centro-bancos/${bankId}/reconciliation`}
+                        detailBasePath={`/treasury/bank-center/${bankId}/reconciliation`}
                         accounts={checkingAccounts}
                     />
                 </div>

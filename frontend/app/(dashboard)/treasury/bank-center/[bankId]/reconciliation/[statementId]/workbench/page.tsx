@@ -24,7 +24,7 @@ export default function BankWorkbenchPage({
     const statementIdNum = parseInt(statementId)
     const router = useRouter()
 
-    const reconciliationBase = `/treasury/centro-bancos/${bankId}/reconciliation`
+    const reconciliationBase = `/treasury/bank-center/${bankId}/reconciliation`
     const { data: statement, isLoading, refetch } = useStatementQuery(statementIdNum)
 
     const confirmAction = useConfirmAction(async () => {
