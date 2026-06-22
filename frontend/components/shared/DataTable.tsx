@@ -28,7 +28,7 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { LucideIcon } from "lucide-react"
 import { ScrollArea } from "@/components/ui/scroll-area"
 
-import { BulkActionButtons, BulkActionDock, DataTablePagination, DataTableToolbar, EmptyState, SkeletonShell, type BulkAction, type AnalyticsPanelConfig } from '@/components/shared'
+import { BulkActionButtons, BulkActionDock, DataTablePagination, DataTableToolbar, EmptyState, SkeletonShell, StatCard, type BulkAction, type AnalyticsPanelConfig } from '@/components/shared'
 import { resolveEmptyState, type DataTableEmptyState } from './emptyStateResolver'
 
 export interface DataTableProps<TData, TValue> {
@@ -128,6 +128,17 @@ export interface DataTableProps<TData, TValue> {
     onPaginationChange?: (updater: any) => void
     rowSelection?: RowSelectionState
     renderLoadingView?: () => React.ReactNode
+    kpiCards?: KpiCardDef[]
+}
+
+export interface KpiCardDef {
+    label: string
+    value: React.ReactNode
+    icon?: LucideIcon
+    accent?: "primary" | "info" | "success" | "warning" | "destructive" | "accent" | "muted"
+    subtext?: string
+    variant?: "default" | "compact" | "minimal" | "fill" | "chart" | "metric-chart" | "plain"
+    className?: string
 }
 
 const DEFAULT_COLUMN_VISIBILITY: VisibilityState = {}
@@ -197,6 +208,7 @@ export function DataTable<TData, TValue>({
     onPaginationChange,
     rowSelection,
     renderLoadingView,
+    kpiCards,
     gridTemplate,
     gridGap = "gap-x-3",
     compactMaxHeight = "max-h-[65vh]",
@@ -336,6 +348,14 @@ export function DataTable<TData, TValue>({
         return null
     })()
 
+    const kpiCardsNode = kpiCards && (
+        <div className="grid gap-4 md:grid-cols-4">
+            {kpiCards.map((card, i) => (
+                <StatCard key={i} {...card} loading={isLoading} />
+            ))}
+        </div>
+    )
+
     // ─── Loading state (unified) ────────────────────────────────────────
     if (isLoading) {
         return (
@@ -344,6 +364,8 @@ export function DataTable<TData, TValue>({
                 !isEmbedded && !isMinimal && "w-full space-y-4",
                 isMinimal && "space-y-0"
             )}>
+                {kpiCardsNode}
+
                 {showToolbar && !isMinimal && (
                     <DataTableToolbar
                         table={table}
@@ -662,6 +684,8 @@ export function DataTable<TData, TValue>({
         return (
             <div ref={containerRef} className="relative flex flex-col h-full w-full space-y-1 min-h-0">
                 {/* Toolbar Section (Outside) */}
+                {kpiCardsNode}
+
                 {showToolbar && (
                     <div className={cn(
                         "w-full shrink-0",
@@ -749,6 +773,7 @@ export function DataTable<TData, TValue>({
     // ─── Classic Mode (unchanged) ─────────────────────────────────────────────
     return (
         <div ref={containerRef} className="w-full space-y-4">
+            {kpiCardsNode}
             {showToolbar && (
                 <div className={cn(
                     "w-full",

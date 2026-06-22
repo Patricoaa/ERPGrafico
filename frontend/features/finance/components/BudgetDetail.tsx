@@ -1,11 +1,11 @@
 "use client"
 
-import React from "react"
+import React, { useMemo } from "react"
 import { financeApi } from "../api/financeApi"
 import { Download, ArrowLeft } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { DataTable, PageHeader, EmptyState, MoneyDisplay, SkeletonShell, StatCard, DataCell } from "@/components/shared"
+import { DataTable, PageHeader, EmptyState, MoneyDisplay, SkeletonShell, DataCell } from "@/components/shared"
+import type { KpiCardDef } from "@/components/shared"
 import { useBudgetDetailData } from "../hooks/useBudgets"
 import { toast } from "sonner"
 import Link from "next/link"
@@ -119,6 +119,24 @@ export function BudgetDetail({ budgetId }: BudgetDetailProps) {
     const resolvedBudget = budget ?? SKELETON_BUDGET
     const resolvedExecution = executionData ?? SKELETON_EXECUTION
 
+    const kpiCards = useMemo<KpiCardDef[]>(() => [
+        {
+            label: "Presupuestado",
+            value: <MoneyDisplay amount={resolvedExecution.summary.total_budgeted} />,
+            accent: "muted",
+        },
+        {
+            label: "Ejecutado",
+            value: <MoneyDisplay amount={resolvedExecution.summary.total_actual} />,
+            accent: "muted",
+        },
+        {
+            label: "Desviación",
+            value: <MoneyDisplay amount={resolvedExecution.summary.total_variance} />,
+            accent: "muted",
+        },
+    ], [resolvedExecution])
+
     if (isError) {
         return (
             <EmptyState
@@ -152,38 +170,14 @@ export function BudgetDetail({ budgetId }: BudgetDetailProps) {
                     }
                 />
 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <StatCard
-                        label="Presupuestado"
-                        value={<MoneyDisplay amount={resolvedExecution.summary.total_budgeted} />}
-                        accent="muted"
-                    />
-                    <StatCard
-                        label="Ejecutado"
-                        value={<MoneyDisplay amount={resolvedExecution.summary.total_actual} />}
-                        accent="muted"
-                    />
-                    <StatCard
-                        label="Desviación"
-                        value={<MoneyDisplay amount={resolvedExecution.summary.total_variance} />}
-                        accent="muted"
-                    />
-                </div>
-
-                <Card>
-                    <CardHeader>
-                        <CardTitle>Detalle por Cuenta</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <DataTable
-                            columns={columns}
-                            data={resolvedExecution.items}
-                            variant="embedded"
-                            hidePagination
-                            emptyState={{ title: "Sin datos", description: "No se encontraron cuentas presupuestarias" }}
-                        />
-                    </CardContent>
-                </Card>
+                <DataTable
+                    columns={columns}
+                    data={resolvedExecution.items}
+                    variant="embedded"
+                    hidePagination
+                    kpiCards={kpiCards}
+                    emptyState={{ title: "Sin datos", description: "No se encontraron cuentas presupuestarias" }}
+                />
             </div>
         </SkeletonShell>
     )
