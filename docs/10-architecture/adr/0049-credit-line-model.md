@@ -1,8 +1,9 @@
 ---
 id: 0049
 title: Modelo CreditLine (Línea de Crédito Rotativa)
-status: Accepted
+status: Superseded by 0050
 date: 2026-06-22
+superseded_by: 0050
 author: equipo-core
 ---
 

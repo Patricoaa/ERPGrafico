@@ -276,10 +276,10 @@ Backend: `treasury.Check`. Lifecycle gobernado por `treasury.check_service.Check
 (`deposited_at`/`cleared_at`/`bounced_at`); cambios de estado pasan exclusivamente
 por `CheckService`.
 
-## CreditLine (Línea de Crédito)
+## CreditLine (Línea de Crédito — Sobregiro)
 
-Backend: `treasury.CreditLine`. Línea rotativa que agrupa préstamos y controla
-cupo disponible.
+Backend: `treasury.CreditLine`. Sobregiro asociado a una cuenta corriente
+(`TreasuryAccount` con `account_type=CHECKING`). Independiente de `BankLoan`.
 
 | Status | Intent | Transitions allowed to |
 |--------|--------|------------------------|
@@ -288,10 +288,11 @@ cupo disponible.
 | `SUSPENDED` | `neutral` | `ACTIVE` |
 | `CANCELED` | `neutral` | — (terminal) |
 
-**Propiedades calculadas (no campos DB):**
-- `drawn_amount` = suma `outstanding_balance` de `BankLoan` ACTIVE asociados.
-- `available_amount` = `approved_amount - drawn_amount` (floor 0).
-- `utilization_rate` = `(drawn_amount / approved_amount) * 100`.
+**Propiedades calculadas (no campos DB) — ver ADR-0050:**
+- `used_amount` = `SUM(CREDIT_LINE_DRAW) - SUM(CREDIT_LINE_REPAY)` vía TreasuryMovement.
+- `available_amount` = `max(credit_limit - used_amount, 0)`.
+- `utilization_rate` = `(used_amount / credit_limit) * 100` (None si credit_limit = 0).
+- `TreasuryAccount.available_liquidity` = `balance + credit_line.available_amount`.
 
 ## BankLoan (Crédito Bancario)
 
