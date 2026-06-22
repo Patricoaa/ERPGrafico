@@ -174,7 +174,7 @@ export function StatCard({
       : {
           className: cn(
             baseCardClasses,
-            variant === "default" && accentBorder[accent],
+            variant === "default" && "gap-0 py-3",
             variant === "compact" && accentBg[accent],
             onClick && "cursor-pointer hover:border-primary/20",
             active && activeRing[accent],
@@ -334,11 +334,11 @@ export function StatCard({
   } else {
     inner = (
       <>
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-0">
           <CardTitle className="text-sm font-medium">{label}</CardTitle>
           {renderArrowIcon()}
         </CardHeader>
-        <CardContent>
+        <CardContent className="py-0">
           {renderValue()}
           {renderSubtext()}
           {chart && <div className="mt-2 h-20">{chart}</div>}

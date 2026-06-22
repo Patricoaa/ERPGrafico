@@ -17,7 +17,7 @@ import { useHubPanel } from "@/components/providers/HubPanelProvider"
 import { Button } from "@/components/ui/button"
 import { SkeletonShell, ActionConfirmModal, DataCell, EntityBadge, MoneyDisplay } from "@/components/shared"
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
-import { DataTable } from '@/components/shared'
+import { DataTable, type KpiCardDef } from '@/components/shared'
 import { ColumnDef } from "@tanstack/react-table"
 import { formatMoney } from "@/lib/money"
 
@@ -310,6 +310,7 @@ export function PortfolioTable({
     createAction,
     smartSearch,
     segmentation,
+    kpiCards,
 }: {
     columns: ColumnDef<CreditContact>[],
     data: CreditContact[],
@@ -318,6 +319,7 @@ export function PortfolioTable({
     createAction?: React.ReactNode,
     smartSearch?: React.ReactNode,
     segmentation?: React.ReactNode,
+    kpiCards?: KpiCardDef[],
 }) {
     const columnsWithExpander = useMemo<ColumnDef<CreditContact>[]>(() => [
         {
@@ -364,6 +366,7 @@ export function PortfolioTable({
                     createAction={createAction}
                     smartSearch={smartSearch}
                     segmentation={segmentation}
+                    kpiCards={kpiCards}
                 />
             </div>
         </div>

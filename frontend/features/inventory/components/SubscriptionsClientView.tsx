@@ -26,7 +26,8 @@ import { ArchivingRestrictionsModal } from "@/features/inventory/components/Arch
 import { DataTableView } from '@/components/shared'
 import type { Product } from "@/types/entities"
 import { DataTableColumnHeader } from '@/components/shared'
-import { DataCell, StatCard } from '@/components/shared'
+import { DataCell } from '@/components/shared'
+import type { KpiCardDef } from '@/components/shared'
 import { subscriptionActions, type SubscriptionActionsCtx } from "@/features/inventory/subscriptionActions"
 import { PageHeader, PageHeaderButton, SmartSearchBar, useSmartSearch, SegmentationBar, useSegmentation } from "@/components/shared"
 import { Restriction } from "@/features/inventory/types"
@@ -61,6 +62,39 @@ export function SubscriptionsClientView({ hideHeader = false, externalOpen = fal
     const allFilters = useMemo(() => ({ ...textFilters, ...segFilters }), [textFilters, segFilters])
     const { subscriptions, isLoading: loading, refetch: fetchSubscriptions, pauseSubscription, resumeSubscription } = useSubscriptions(allFilters)
     const { data: stats } = useSubscriptionStats<Stats>()
+    const kpiCards = useMemo<KpiCardDef[] | undefined>(() => {
+        if (!stats) return undefined
+        return [
+            {
+                label: "Suscripciones Activas",
+                value: stats.active_subscriptions,
+                variant: "minimal",
+                accent: "muted",
+                className: "bg-card/50 shadow-card flex-col gap-1 items-center md:items-start p-4 rounded-md",
+            },
+            {
+                label: "Costo Mensual Total",
+                value: <DataCell.Currency value={stats.total_monthly_cost} />,
+                variant: "minimal",
+                accent: "muted",
+                className: "bg-card/50 shadow-card flex-col gap-1 items-center md:items-start p-4 rounded-md",
+            },
+            {
+                label: "Próximas Renovaciones",
+                value: stats.upcoming_renewals_30_days,
+                variant: "minimal",
+                accent: "warning",
+                className: "bg-card/50 shadow-card flex-col gap-1 items-center md:items-start p-4 rounded-md",
+            },
+            {
+                label: "Estado Pausadas",
+                value: stats.paused_subscriptions,
+                variant: "minimal",
+                accent: "muted",
+                className: "bg-card/50 shadow-card flex-col gap-1 items-center md:items-start p-4 rounded-md",
+            },
+        ]
+    }, [stats])
     const { updateProduct, fetchProductById } = useProducts()
 
     // Archive confirmation state (local — not URL-driven, it's a transient flow)
@@ -384,41 +418,9 @@ export function SubscriptionsClientView({ hideHeader = false, externalOpen = fal
             <div className="flex-1 h-full flex flex-col">
 
                 <div className="flex-1 min-h-0 flex flex-col space-y-6">
-                    {/* Industrial Stats Panel */}
-                    {stats && (
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                            <StatCard
-                                label="Suscripciones Activas"
-                                value={stats.active_subscriptions}
-                                variant="minimal"
-                                accent="muted"
-                                className="bg-card/50 shadow-card flex-col gap-1 items-center md:items-start p-4 rounded-md"
-                            />
-                            <StatCard
-                                label="Costo Mensual Total"
-                                value={<DataCell.Currency value={stats.total_monthly_cost} />}
-                                variant="minimal"
-                                accent="muted"
-                                className="bg-card/50 shadow-card flex-col gap-1 items-center md:items-start p-4 rounded-md"
-                            />
-                            <StatCard
-                                label="Próximas Renovaciones"
-                                value={stats.upcoming_renewals_30_days}
-                                variant="minimal"
-                                accent="warning"
-                                className="bg-card/50 shadow-card flex-col gap-1 items-center md:items-start p-4 rounded-md"
-                            />
-                            <StatCard
-                                label="Estado Pausadas"
-                                value={stats.paused_subscriptions}
-                                variant="minimal"
-                                accent="muted"
-                                className="bg-card/50 shadow-card flex-col gap-1 items-center md:items-start p-4 rounded-md"
-                            />
-                        </div>
-                    )}
                     <div className="flex-1 min-h-0">
                         <DataTableView
+                            kpiCards={kpiCards}
                             entityLabel="inventory.subscription"
                             columns={columns}
                             data={subscriptions}

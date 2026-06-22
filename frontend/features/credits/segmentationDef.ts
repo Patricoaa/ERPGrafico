@@ -6,6 +6,7 @@ export const creditContactSegDef: SegmentationDefinition = {
       key: 'risk_level',
       label: 'Riesgo',
       type: 'tabs',
+      variant: 'dropdown',
       serverParam: 'risk_level',
       options: [
         { label: 'Bajo', value: 'LOW' },
@@ -23,6 +24,7 @@ export const creditHistorySegDef: SegmentationDefinition = {
       key: 'origin',
       label: 'Origen',
       type: 'tabs',
+      variant: 'dropdown',
       serverParam: 'origin',
       options: [
         { label: 'Manual', value: 'MANUAL' },
