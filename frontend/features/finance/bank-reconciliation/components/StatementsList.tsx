@@ -7,7 +7,7 @@ import { useStatementsQuery } from "../hooks/useReconciliationQueries"
 import { useSelectedEntity } from "@/hooks/useSelectedEntity"
 import type { BankStatement } from "../types"
 import { StatementImportModal } from "@/features/treasury"
-import { DataTable, StatusBadge, SmartSearchBar, SegmentationBar, useClientSearch, useSegmentation } from '@/components/shared'
+import { DataTableView, StatusBadge, SmartSearchBar, SegmentationBar, useClientSearch, useSegmentation, EntityCard } from '@/components/shared'
 import { DataTableColumnHeader } from '@/components/shared'
 import type { ColumnDef } from "@tanstack/react-table"
 import { DataCell } from '@/components/shared'
@@ -255,7 +255,8 @@ export function StatementsList({ externalOpen = false, createAction, bankId, acc
     return (
         <div className="h-full flex flex-col">
             <div className="flex-1 min-h-0">
-                <DataTable
+                <DataTableView
+                    entityLabel="treasury.bankstatement"
                     columns={columns}
                     data={filteredStatements}
                     variant="embedded"
@@ -266,6 +267,20 @@ export function StatementsList({ externalOpen = false, createAction, bankId, acc
                     segmentation={<SegmentationBar def={statementsSegDef} />}
                     createAction={internalImportButton ?? createAction}
                     defaultPageSize={10}
+                    renderCard={(stmt: BankStatement) => (
+                        <EntityCard key={stmt.id} onClick={() => router.push(statementDetailUrl(stmt.id))}>
+                            <EntityCard.Header
+                                title={stmt.display_id}
+                                subtitle={stmt.treasury_account_name}
+                                trailing={<StatusBadge status={stmt.state} label={stmt.state_display} />}
+                            />
+                            <EntityCard.Body>
+                                <EntityCard.Field label="Apertura" value={<DataCell.Currency value={stmt.opening_balance} />} />
+                                <EntityCard.Field label="Cierre" value={<DataCell.Currency value={stmt.closing_balance} />} />
+                                <EntityCard.Field label="Progreso" value={`${Math.round(parseFloat(String(stmt.reconciliation_progress)))}%`} />
+                            </EntityCard.Body>
+                        </EntityCard>
+                    )}
                 />
             </div>
 

@@ -7,7 +7,7 @@ import { Plus, Trash2, Tag, X } from "lucide-react"
 import { useRouter, usePathname, useSearchParams } from "next/navigation"
 import { toast } from "sonner"
 
-import { BaseModal, DataTable } from '@/components/shared'
+import { BaseModal, DataTableView, EntityCard } from '@/components/shared'
 import { DataTableColumnHeader } from '@/components/shared'
 import { DataCell } from '@/components/shared'
 import { attributeActions, type AttributeActionsCtx } from './attributeActions'
@@ -267,7 +267,8 @@ export function AttributesClientView({ externalOpen, createAction }: AttributesC
     return (
         <div className="h-full flex flex-col">
             <div className="flex-1 min-h-0">
-                <DataTable
+                <DataTableView
+                    entityLabel="inventory.attribute"
                     columns={columns}
                     // Safe: Attribute from useAttributes and ProductAttribute are structurally compatible at runtime
                     data={attributes as unknown as ProductAttribute[]}
@@ -282,6 +283,20 @@ export function AttributesClientView({ externalOpen, createAction }: AttributesC
                         title: "Aún no hay atributos",
                         description: "Crea atributos (color, talla…) para generar variantes de producto.",
                     }}
+                    renderCard={(attr: ProductAttribute) => (
+                        <EntityCard key={attr.id}>
+                            <EntityCard.Header
+                                icon={Tag}
+                                title={attr.name}
+                                subtitle={`${attr.values?.length ?? 0} valores`}
+                            />
+                            <EntityCard.Body>
+                                {attr.values && attr.values.length > 0 && (
+                                    <EntityCard.Field label="Valores" value={attr.values.map(v => v.value).join(', ')} />
+                                )}
+                            </EntityCard.Body>
+                        </EntityCard>
+                    )}
                 />
             </div>
 
