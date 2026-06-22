@@ -4,9 +4,8 @@ import React, { useState, useEffect, useCallback } from "react"
 import { useRouter, usePathname, useSearchParams } from "next/navigation"
 import { useTerminalProviders, useTerminalDevices, type PaymentTerminalProvider, type PaymentTerminalDevice } from "../hooks/useTerminalProviders"
 import { Button } from "@/components/ui/button"
-import { ActionConfirmModal, EntityCard, SmartSearchBar, StatusBadge, useClientSearch, useSmartSearch, SegmentationBar, useSegmentation } from '@/components/shared'
+import { ActionConfirmModal, EntityCard, SmartSearchBar, StatusBadge, useClientSearch, useSmartSearch } from '@/components/shared'
 import { deviceSearchDef, providerSearchDef } from "@/features/treasury/searchDef"
-import { deviceSegDef } from "@/features/treasury/segmentationDef"
 import {
     Building2,
     Smartphone,
@@ -50,10 +49,9 @@ export function PaymentHardwareClientView({
         }
     }, [externalActiveTab])
 
-    const { filters: deviceTextFilters, isFiltered: isDevicesTextFiltered, clearAll: clearDevText } = useSmartSearch(deviceSearchDef)
-    const { filters: deviceSegFilters, isFiltered: isDevicesSegFiltered, clearAll: clearDevSeg } = useSegmentation(deviceSegDef)
-    const isDevicesFiltered = isDevicesTextFiltered || isDevicesSegFiltered
-    const deviceFilters = { ...deviceTextFilters, ...deviceSegFilters }
+    const { filters: deviceTextFilters, isFiltered: isDevicesTextFiltered } = useSmartSearch(deviceSearchDef)
+    const isDevicesFiltered = isDevicesTextFiltered
+    const deviceFilters = { ...deviceTextFilters }
     const { filterFn: filterProviders, isFiltered: isProvidersFiltered } = useClientSearch<PaymentTerminalProvider>(providerSearchDef)
     const { providers, isLoading: isLoadingProviders, refetch: refetchProviders, deleteProvider } = useTerminalProviders()
     const { devices, isLoading: isLoadingDevices, refetch: refetchDevices, deleteDevice } = useTerminalDevices(deviceFilters)
@@ -179,14 +177,6 @@ export function PaymentHardwareClientView({
             header: ({ column }) => <DataTableColumnHeader column={column} title="N° Serie" />,
             cell: ({ row }) => <div className="font-mono text-muted-foreground">{row.getValue("serial_number")}</div>,
         },
-        {
-            accessorKey: "is_active",
-            id: "status",
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Estado" className="justify-center" />,
-            cell: ({ row }) =>
-                <DataCell.Status status={row.original.is_active ? "active" : "inactive"} />,
-            filterFn: (row, id, value) => value.includes(row.getValue(id) ? "ACTIVE" : "INACTIVE")
-        },
         deviceActions.column(deviceActionsCtx)
     ]
 
@@ -255,9 +245,6 @@ export function PaymentHardwareClientView({
                         isLoading={isLoadingDevices}
                         variant="embedded"
                         smartSearch={<SmartSearchBar searchDef={deviceSearchDef} placeholder="Buscar dispositivo..." className="w-full" />}
-                        segmentation={<SegmentationBar def={deviceSegDef} />}
-                        showReset={isDevicesFiltered}
-                        onReset={() => { clearDevText(); clearDevSeg() }}
                         defaultPageSize={20}
                         isFiltered={isDevicesFiltered}
                         emptyState={{
@@ -283,7 +270,6 @@ export function PaymentHardwareClientView({
                                             {device.name}
                                         </div>
                                     }
-                                    trailing={<StatusBadge status={device.is_active ? "active" : "inactive"} size="sm" />}
                                 />
                                 <EntityCard.Body actions={deviceActions.render(device, deviceActionsCtx)}>
                                     <EntityCard.Field

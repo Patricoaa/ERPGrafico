@@ -155,59 +155,60 @@ export function DeviceDrawer({ open, onOpenChange, device, providers: providersP
                         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 px-6 pb-6 pt-6">
                             <fieldset disabled={isView} className="contents">
                                 <FormSection title="Información General" icon={Smartphone} />
-                                <FormField
-                                    control={form.control}
-                                    name="name"
-                                    render={({ field }) => (
-                                        <LabeledInput
-                                            label="Nombre descriptivo"
-                                            required
-                                            {...field}
-                                            placeholder="Ej: Maquinita TUU 01"
-                                        />
-                                    )}
-                                />
+                                <div className="space-y-4">
+                                    <FormField
+                                        control={form.control}
+                                        name="name"
+                                        render={({ field }) => (
+                                            <LabeledInput
+                                                label="Nombre descriptivo"
+                                                required
+                                                {...field}
+                                                placeholder="Ej: Maquinita TUU 01"
+                                            />
+                                        )}
+                                    />
 
-                                <FormField
-                                    control={form.control}
-                                    name="provider"
-                                    render={({ field }) => (
-                                        <LabeledSelect
-                                            label="Proveedor"
-                                            required
-                                            value={field.value || ""}
-                                            onChange={(v) => field.onChange(v)}
-                                            placeholder="Seleccione..."
-                                            options={providers.map(p => ({ value: p.id.toString(), label: p.name }))}
-                                        />
-                                    )}
-                                />
-                                <FormField
-                                    control={form.control}
-                                    name="serial_number"
-                                    render={({ field }) => (
-                                        <LabeledInput
-                                            label="Número de Serie / TID"
-                                            required
-                                            {...field}
-                                            placeholder="Número serie físico"
-                                        />
-                                    )}
-                                />
+                                    <FormField
+                                        control={form.control}
+                                        name="provider"
+                                        render={({ field }) => (
+                                            <LabeledSelect
+                                                label="Proveedor"
+                                                required
+                                                value={field.value || ""}
+                                                onChange={(v) => field.onChange(v)}
+                                                placeholder="Seleccione..."
+                                                options={providers.map(p => ({ value: p.id.toString(), label: p.name }))}
+                                            />
+                                        )}
+                                    />
 
-                                <FormField
-                                    control={form.control}
-                                    name="model"
-                                    render={({ field }) => (
-                                        <LabeledInput
-                                                    label="Modelo (opcional)"
-                                            {...field}
-                                            placeholder="Ej: Pax A920"
-                                        />
-                                    )}
-                                />
+                                    <FormField
+                                        control={form.control}
+                                        name="serial_number"
+                                        render={({ field }) => (
+                                            <LabeledInput
+                                                label="Número de Serie / TID"
+                                                required
+                                                {...field}
+                                                placeholder="Número serie físico"
+                                            />
+                                        )}
+                                    />
 
-                                <div className="space-y-3 pt-2">
+                                    <FormField
+                                        control={form.control}
+                                        name="model"
+                                        render={({ field }) => (
+                                            <LabeledInput
+                                                label="Modelo (opcional)"
+                                                {...field}
+                                                placeholder="Ej: Pax A920"
+                                            />
+                                        )}
+                                    />
+
                                     <Controller
                                         control={form.control}
                                         name="supported_payment_methods"
