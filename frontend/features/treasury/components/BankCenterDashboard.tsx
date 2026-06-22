@@ -17,7 +17,6 @@ import type { BankOverviewData } from '../hooks/useBankOverview'
 import { ChecksClientView } from '../checks/ChecksClientView'
 import { LoansClientView } from '../loans/LoansClientView'
 import { CardChargesView } from '../card-statements/CardChargesView'
-import { CreditLinesClientView } from '../credit-lines/CreditLinesClientView'
 import { StatementsList } from '@/features/finance/bank-reconciliation/components'
 
 function KpiRow({ data }: { data: BankOverviewData }) {
@@ -442,12 +441,6 @@ export function BankCenterDashboard({ bankId, subtab }: { bankId: number; subtab
             {activeTab === 'loans' && (
                 <div className="flex-1 min-h-0">
                     <LoansClientView bankId={bankId} />
-                </div>
-            )}
-
-            {activeTab === 'credit-lines' && (
-                <div className="flex-1 min-h-0">
-                    <CreditLinesClientView bankId={bankId} />
                 </div>
             )}
 
