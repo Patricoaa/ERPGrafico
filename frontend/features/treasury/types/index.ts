@@ -135,6 +135,9 @@ export interface PaymentTerminalProvider {
     /** TreasuryAccount (BRIDGE) where this provider settles funds. Auto-created. */
     bank_treasury_account: number | null
     bank_treasury_account_name?: string | null
+    /** TreasuryAccount (CHECKING/CASH) used as default deposit destination for batches. */
+    default_deposit_account: number | null
+    default_deposit_account_name?: string | null
     /** Product used for commission purchase invoices (Stage 3). */
     commission_product: number | null
     commission_product_name?: string
@@ -354,6 +357,8 @@ export interface PaymentTerminalProviderCreatePayload {
     receivable_account: number
     /** Product used for commission purchase invoices. */
     commission_product: number | null
+    /** TreasuryAccount (CHECKING/CASH) used as default deposit destination for batches. */
+    default_deposit_account?: number | null
     config?: Record<string, unknown>
     is_active?: boolean
 }

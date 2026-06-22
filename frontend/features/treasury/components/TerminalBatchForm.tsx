@@ -81,6 +81,21 @@ export function TerminalBatchForm({ onSuccess, onCancel }: TerminalBatchFormProp
         }
     }, [serverDate, form])
 
+    // Auto-select deposit method when provider has a default_deposit_account
+    useEffect(() => {
+        if (!providerId) return
+        const provider = providers.find(p => p.id.toString() === providerId)
+        if (!provider?.default_deposit_account) return
+        const matchingMethod = methods.find(
+            m => m.treasury_account === provider.default_deposit_account
+                && m.allow_for_sales
+                && m.method_type !== 'CARD_TERMINAL'
+        )
+        if (matchingMethod) {
+            form.setValue("depositMethodId", matchingMethod.id.toString())
+        }
+    }, [providerId, providers, methods, form])
+
     const gross = parseFloat(grossAmount) || 0
     const cNet = parseFloat(commissionNet) || 0
     const cTax = parseFloat(commissionTax) || 0

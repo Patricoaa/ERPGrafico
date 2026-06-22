@@ -1538,6 +1538,12 @@ class PaymentTerminalProvider(models.Model):
         related_name='terminal_providers',
         verbose_name=_("Cuenta Destino Liquidación")
     )
+    default_deposit_account = models.ForeignKey(
+        'TreasuryAccount', on_delete=models.PROTECT,
+        null=True, blank=True,
+        related_name='+',
+        verbose_name=_("Cuenta de Tesorería por Defecto (Depósito)")
+    )
 
     gateway_config = models.JSONField(
         _("Configuración de Gateway"), default=dict, blank=True
@@ -1573,6 +1579,16 @@ class PaymentTerminalProvider(models.Model):
         else:
             cfg.pop(self._API_KEY_FIELD, None)
         self.gateway_config = cfg
+
+    def clean(self):
+        from django.core.exceptions import ValidationError
+        if self.default_deposit_account and self.default_deposit_account.account_type in TreasuryAccount._NON_CASH_EQUIVALENT_TYPES:
+            raise ValidationError({
+                'default_deposit_account': _(
+                    "La cuenta de tesorería por defecto no puede ser de tipo puente (BRIDGE). "
+                    "Seleccione una cuenta bancaria (CHECKING) o de caja (CASH)."
+                )
+            })
 
 
 class PaymentTerminalDevice(models.Model):

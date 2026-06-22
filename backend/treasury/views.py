@@ -1978,7 +1978,9 @@ class TerminalBatchViewSet(viewsets.ModelViewSet):
             terminal_reference = data.get('terminal_reference', '')
             
             provider = PaymentTerminalProvider.objects.get(pk=provider_id)
-            payment_method = PaymentMethod.objects.get(pk=payment_method_id)
+            payment_method = None
+            if payment_method_id:
+                payment_method = PaymentMethod.objects.get(pk=payment_method_id)
             movement_ids = data.get('movement_ids', None)
             
             batch = TerminalBatchService.create_batch(

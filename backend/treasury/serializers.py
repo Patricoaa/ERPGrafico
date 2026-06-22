@@ -615,12 +615,22 @@ class PaymentTerminalProviderSerializer(serializers.ModelSerializer):
     commission_expense_account_name = serializers.CharField(source='commission_expense_account.name', read_only=True)
     commission_iva_account_name = serializers.CharField(source='commission_iva_account.name', read_only=True)
     bank_treasury_account_name = serializers.CharField(source='bank_treasury_account.name', read_only=True)
+    default_deposit_account_name = serializers.CharField(source='default_deposit_account.name', read_only=True)
     provider_type_display = serializers.CharField(source='get_provider_type_display', read_only=True)
 
     class Meta:
         model = PaymentTerminalProvider
         fields = '__all__'
         read_only_fields = ('bank_treasury_account',)
+
+    def validate_default_deposit_account(self, value):
+        if value and value.account_type in ('BRIDGE', 'CHECK_PORTFOLIO', 'ISSUED_CHECKS'):
+            from rest_framework import serializers as rf_serializers
+            raise rf_serializers.ValidationError(
+                "La cuenta de tesorería por defecto no puede ser de tipo puente (BRIDGE). "
+                "Seleccione una cuenta bancaria (CHECKING) o de caja (CASH)."
+            )
+        return value
 
 
 class PaymentTerminalDeviceSerializer(serializers.ModelSerializer):

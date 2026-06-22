@@ -958,7 +958,25 @@ class TerminalBatchService:
         # to a real bank — never a CARD_TERMINAL method, whose treasury account is
         # itself the provider's clearing and would create a self-canceling entry.
         if not payment_method:
-            raise ValidationError("Debe seleccionar un Método de Depósito (Hacia Banco) para registrar la liquidación.")
+            # Try to resolve from provider's default deposit account
+            if provider.default_deposit_account_id:
+                payment_method = PaymentMethod.objects.filter(
+                    treasury_account=provider.default_deposit_account,
+                    method_type__in=[
+                        PaymentMethod.Type.CASH,
+                        PaymentMethod.Type.TRANSFER,
+                        PaymentMethod.Type.CARD,
+                        PaymentMethod.Type.DEBIT_CARD,
+                        PaymentMethod.Type.CREDIT_CARD,
+                    ],
+                    allow_for_sales=True,
+                    is_active=True,
+                ).first()
+            if not payment_method:
+                raise ValidationError(
+                    "Debe seleccionar un Método de Depósito (Hacia Banco) para registrar la liquidación, "
+                    "o configure una Cuenta de Tesorería por Defecto en el proveedor."
+                )
         if payment_method.method_type == PaymentMethod.Type.CARD_TERMINAL:
             raise ValidationError(
                 "El Método de Depósito no puede ser un método CARD_TERMINAL: ese tipo "
