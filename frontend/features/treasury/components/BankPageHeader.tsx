@@ -19,7 +19,6 @@ const SUB_VIEWS = [
     { value: "overview", label: "Resumen", iconName: "layout-dashboard" },
     { value: "checks", label: "Cheques Girados", iconName: "file-check" },
     { value: "loans", label: "Préstamos", iconName: "banknote" },
-    { value: "credit-lines", label: "Líneas de Crédito", iconName: "scroll-text" },
     { value: "cards", label: "Tarjeta de crédito", iconName: "credit-card" },
     { value: "reconciliation", label: "Conciliación", iconName: "arrow-left-right" },
 ]
