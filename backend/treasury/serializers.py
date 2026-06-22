@@ -807,6 +807,13 @@ class BankLoanSerializer(serializers.ModelSerializer):
         source='created_by.username', read_only=True, allow_null=True,
     )
 
+    credit_line_id = serializers.IntegerField(
+        source='credit_line.id', read_only=True, allow_null=True,
+    )
+    credit_line_display = serializers.CharField(
+        source='credit_line.display_id', read_only=True, allow_null=True,
+    )
+
     # Indicadores agregados útiles para UI.
     outstanding_balance = serializers.SerializerMethodField()
     next_due_date = serializers.SerializerMethodField()
@@ -874,6 +881,7 @@ class BankLoanSerializer(serializers.ModelSerializer):
             'insurance_monthly', 'opening_fee', 'stamp_tax', 'penalty_rate',
             'disbursement_account', 'disbursement_account_name',
             'liability_account', 'liability_account_name',
+            'credit_line', 'credit_line_id', 'credit_line_display',
             'status', 'status_display', 'notes', 'collateral_notes',
             'outstanding_balance', 'next_due_date', 'next_installment_amount',
             'installments_count', 'paid_installments_count',
@@ -909,6 +917,7 @@ class BankLoanWriteSerializer(serializers.ModelSerializer):
             'amortization_system', 'term_months', 'start_date', 'first_due_date',
             'insurance_monthly', 'opening_fee', 'stamp_tax', 'penalty_rate',
             'disbursement_account', 'liability_account',
+            'credit_line',
             'notes', 'collateral_notes',
         ]
         extra_kwargs = {
@@ -962,6 +971,62 @@ class BankLoanWriteSerializer(serializers.ModelSerializer):
                 )
             })
         return attrs
+
+
+class CreditLineSerializer(serializers.ModelSerializer):
+    """Serializer de lectura para CreditLine."""
+    status_display = serializers.CharField(source='get_status_display', read_only=True)
+    bank_name = serializers.CharField(source='bank.name', read_only=True)
+    drawn_amount = serializers.DecimalField(max_digits=18, decimal_places=2, read_only=True)
+    available_amount = serializers.DecimalField(max_digits=18, decimal_places=2, read_only=True)
+    utilization_rate = serializers.SerializerMethodField()
+    loans_count = serializers.SerializerMethodField()
+    active_loans_count = serializers.SerializerMethodField()
+
+    class Meta:
+        from .models import CreditLine
+        model = CreditLine
+        fields = [
+            'id', 'bank', 'bank_name', 'code',
+            'credit_line_type', 'currency',
+            'approved_amount', 'drawn_amount', 'available_amount', 'utilization_rate',
+            'interest_rate', 'rate_basis', 'spread', 'commitment_fee',
+            'valid_from', 'valid_until', 'auto_renewal', 'renewal_term_months',
+            'collateral_notes', 'notes',
+            'status', 'status_display',
+            'loans_count', 'active_loans_count',
+            'created_at', 'updated_at', 'created_by',
+        ]
+        read_only_fields = ['id', 'created_at', 'updated_at', 'created_by']
+
+    def get_utilization_rate(self, obj):
+        from decimal import Decimal
+        rate = obj.utilization_rate
+        if rate is None:
+            return None
+        return rate.quantize(Decimal('0.01'))
+
+    def get_loans_count(self, obj):
+        return obj.loans.count()
+
+    def get_active_loans_count(self, obj):
+        return obj.loans.filter(status='ACTIVE').count()
+
+
+class CreditLineWriteSerializer(serializers.ModelSerializer):
+    """Serializer de escritura para CreditLine (campos planos, sin derivados)."""
+
+    class Meta:
+        from .models import CreditLine
+        model = CreditLine
+        fields = [
+            'bank', 'code', 'credit_line_type', 'currency',
+            'approved_amount',
+            'interest_rate', 'rate_basis', 'spread', 'commitment_fee',
+            'valid_from', 'valid_until', 'auto_renewal', 'renewal_term_months',
+            'collateral_notes', 'notes',
+            'status',
+        ]
 
 
 class PayInstallmentActionSerializer(serializers.Serializer):

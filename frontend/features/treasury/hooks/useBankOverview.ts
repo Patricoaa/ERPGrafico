@@ -11,6 +11,21 @@ export interface BankOverviewMaturityItem {
     display_id: string
 }
 
+export interface BankOverviewRecentMovement {
+    id: number
+    display_id: string
+    movement_type: string
+    movement_type_display: string
+    amount: number
+    date: string
+    from_account_id: number | null
+    from_account_name: string | null
+    to_account_id: number | null
+    to_account_name: string | null
+    payment_method: string
+    payment_method_display: string
+}
+
 export interface BankOverviewData {
     bank: { id: number; name: string; code: string | null }
     accounts: Array<{
@@ -20,6 +35,7 @@ export interface BankOverviewData {
         account_type_display: string
         current_balance: number
         currency: string
+        credit_limit: number | null
     }>
     summary: {
         total_accounts: number
@@ -28,8 +44,10 @@ export interface BankOverviewData {
         issued_checks: number
         active_loan_count: number
         total_loan_debt: number
+        card_count?: number
     }
     upcoming_maturities: BankOverviewMaturityItem[]
+    recent_movements: BankOverviewRecentMovement[]
 }
 
 export function useBankOverview(bankId: number | null) {

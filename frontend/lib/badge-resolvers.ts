@@ -91,7 +91,7 @@ export const STATUS_MAP: Record<string, StatusStyle> = {
     ACTIVE:         { label: 'Activo',       intent: 'success' },
     INACTIVE:       { label: 'Inactivo',     intent: 'neutral' },
     PAUSED:         { label: 'Pausado',      intent: 'warning' },
-    EXPIRED:        { label: 'Vencido',      intent: 'neutral' },
+    EXPIRED:        { label: 'Vencido/a', intent: 'warning' },
 
     // ── Semantic universals ───────────────────────────────────────────────
     SUCCESS:        { label: 'Completado',   intent: 'success' },
@@ -130,6 +130,7 @@ export const STATUS_MAP: Record<string, StatusStyle> = {
     CANCELED:      { label: 'Anulada',    intent: 'neutral' },
     REFINANCED:    { label: 'Refinanciado', intent: 'info' },
     DEFAULTED:     { label: 'En Mora',    intent: 'destructive' },
+    SUSPENDED:     { label: 'Suspendida', intent: 'neutral' },
 
     // ── HR ────────────────────────────────────────────────────────────────
     AUSENTISMO:        { label: 'Ausentismo',     intent: 'destructive' },

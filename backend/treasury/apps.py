@@ -20,7 +20,7 @@ class TreasuryConfig(AppConfig):
             from treasury.models import (
                 TreasuryMovement, TreasuryAccount, BankStatement,
                 Check, BankLoan, PaymentMethod, CreditCardStatement,
-                CardPurchaseGroup, LoanInstallment,
+                CardPurchaseGroup, LoanInstallment, CreditLine,
             )
             UniversalRegistry.register(SearchableEntity(
                 model=TreasuryMovement,
@@ -156,6 +156,21 @@ class TreasuryConfig(AppConfig):
                 list_url='/treasury/loans',
                 detail_url_pattern='/treasury/loans?selected={loan}&installment={id}',
                 permission='treasury.view_loaninstallment',
+            ))
+            UniversalRegistry.register(SearchableEntity(
+                model=CreditLine,
+                label='treasury.creditline',
+                title_singular='Línea de Crédito',
+                title_plural='Líneas de Crédito',
+                icon='scroll-text',
+                search_fields=('code', 'bank__name'),
+                short_display_template='CL-{code}',
+                display_template='CL-{code}',
+                subtitle_template='{bank.name} · {approved_amount}',
+                extra_info_template='{status}',
+                list_url='/treasury/bank-center',
+                detail_url_pattern='/treasury/bank-center',
+                permission='treasury.view_creditline',
             ))
         except Exception:
             pass

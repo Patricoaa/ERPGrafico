@@ -6,7 +6,7 @@ import {
   Building2, Smartphone, CreditCard, Calendar, CalendarX2, Repeat,
   Tag, Percent, Ruler, PieChart, HandCoins, ClipboardList, PackageCheck,
   BarChart3,
-  CheckSquare, Banknote, Monitor, Wallet,
+  CheckSquare, Banknote, Monitor, Wallet, ScrollText,
   type LucideIcon 
 } from 'lucide-react';
 
@@ -534,6 +534,17 @@ export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
     detailUrlPattern: '/treasury/loans?selected={id}',
     viewPolicy: { availableViews: ['card'], defaultView: 'card', cardComponent: 'entity' },
   },
+  'treasury.creditline': {
+    label: 'treasury.creditline',
+    title: 'Línea de Crédito',
+    titlePlural: 'Líneas de Crédito',
+    icon: ScrollText,
+    iconName: 'ScrollText',
+    shortTemplate: 'CL-{code}',
+    listUrl: '/treasury/bank-center',
+    detailUrlPattern: '/treasury/bank-center',
+    viewPolicy: { availableViews: ['card'], defaultView: 'card', cardComponent: 'entity' },
+  },
   'treasury.terminal': {
     label: 'treasury.terminal',
     title: 'Terminal',
@@ -770,58 +781,11 @@ export function getViewOptions(label: string) {
   }));
 }
 
-/**
- * Maps snake_case docType keys (used in transaction-modal, serializers) to registry labels.
- * Single source of truth — consumed by DataCell.Entity and any other resolver that needs it.
- * To add a new type, register the entity in ENTITY_REGISTRY first, then add the mapping here.
- */
-export const LEGACY_TYPE_LABEL_MAP: Record<string, string> = {
-  // Core transactional documents
-  'sale_order':      'sales.saleorder',
-  'purchase_order':  'purchasing.purchaseorder',
-  'invoice':         'billing.invoice',
-  'payment':         'treasury.treasurymovement',
-  'journal_entry':   'accounting.journalentry',
-  'work_order':      'production.workorder',
-  // Logistics
-  'sale_delivery':   'sales.saledelivery',
-  'sale_return':     'sales.salereturn',
-  'purchase_receipt': 'purchasing.purchasereceipt',
-  'purchase_return': 'purchasing.purchasereturn',
-  // Stock / inventory movements
-  'stock_move':      'inventory.stockmove',
-  'inventory':       'inventory.stockmove',   // alias used in transaction-modal
-  // Treasury
-  'cash_movement':   'treasury.treasurymovement',
-  'terminal_batch':  'treasury.terminalbatch',
-  'bank_statement':  'treasury.bankstatement',
-  'check':           'treasury.check',
-  'credit_card_statement': 'treasury.creditcardstatement',
-  'pos_session':     'pos.session',
-  // Tax
-  'f29_declaration': 'tax.f29declaration',
-  'accounting_period': 'tax.accountingperiod',
-  // Treasury (additional)
-  'treasury_account':   'treasury.treasuryaccount',
-  'bank_loan':          'treasury.bankloan',
-  'terminal':           'treasury.terminal',
-  'terminal_provider':  'treasury.terminalprovider',
-  'terminal_device':    'treasury.terminaldevice',
-  // Inventory
-  'category':           'inventory.category',
-  'uom':                'inventory.uom',
-  'pricing_rule':       'inventory.pricingrule',
-  // Contacts
-  'partner_transaction':'contacts.partnertransaction',
-};
 
-/** Resolves a legacy snake_case docType to a registry label. Returns undefined if unknown. */
-export function resolveLegacyEntityType(type: string): string | undefined {
-  return LEGACY_TYPE_LABEL_MAP[type];
-}
 
 /**
  * Detects the entity label (registry key) from a string (e.g. task type or title).
+ * Each entry maps a canonical display prefix to its entity registry label.
  * Used for smart navigation and dynamic identity formatting.
  */
 export function detectEntityLabel(text: string): string | null {
@@ -829,8 +793,7 @@ export function detectEntityLabel(text: string): string | null {
   
   if (t.includes('OT_') || t.includes('OT-')) return 'production.workorder';
   if (t.includes('OCS_') || t.includes('OCS-')) return 'purchasing.purchaseorder';
-  if (t.includes('OC_') || t.includes('OC-')) return 'purchasing.purchaseorder'; // Legacy support
-  if (t.includes('OV_') || t.includes('OV-') || t.includes('NV_') || t.includes('NV-')) return 'sales.saleorder';
+  if (t.includes('NV_') || t.includes('NV-')) return 'sales.saleorder';
   if (t.includes('FAC_') || t.includes('FAC-')) return 'billing.invoice';
   if (t.includes('NC_') || t.includes('NC-') || t.includes('ND_') || t.includes('ND-')) return 'billing.invoice';
   if (t.includes('EMP_') || t.includes('EMP-')) return 'hr.employee';
@@ -844,6 +807,7 @@ export function detectEntityLabel(text: string): string | null {
   if (t.includes('CHQ_') || t.includes('CHQ-')) return 'treasury.check';
   if (t.includes('EST_') || t.includes('EST-')) return 'treasury.creditcardstatement';
   if (t.includes('CRE_') || t.includes('CRE-')) return 'treasury.bankloan';
+  if (t.includes('CL_') || t.includes('CL-')) return 'treasury.creditline';
   if (t.includes('CUO_') || t.includes('CUO-')) return 'treasury.loaninstallment';
   if (t.includes('MOV_') || t.includes('MOV-')) return 'inventory.stockmove';
   if (t.includes('AS_') || t.includes('AS-')) return 'accounting.journalentry';

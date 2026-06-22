@@ -11,6 +11,7 @@ from .views import (
     CheckViewSet,
     BankLoanViewSet, LoanInstallmentViewSet,
     CreditCardStatementViewSet,
+    CreditLineViewSet,
 )
 
 router = DefaultRouter()
@@ -33,6 +34,7 @@ router.register(r'dashboard', TreasuryDashboardViewSet, basename='treasury-dashb
 router.register(r'checks', CheckViewSet, basename='check')
 router.register(r'loans', BankLoanViewSet, basename='bankloan')
 router.register(r'loan-installments', LoanInstallmentViewSet, basename='loaninstallment')
+router.register(r'credit-lines', CreditLineViewSet, basename='creditline')
 router.register(r'card-statements', CreditCardStatementViewSet, basename='creditcardstatement')
 
 urlpatterns = [

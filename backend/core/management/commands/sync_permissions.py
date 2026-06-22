@@ -93,6 +93,7 @@ class Command(BaseCommand):
             'view_possession', 'add_possession', 'change_possession',
             'view_posterminal', 'view_paymentmethod',
             'view_treasuryaccount', 'view_treasurymovement', 'add_treasurymovement',
+            'view_creditline',
             
             # Workflow
             'view_task', 'add_task', 'change_task',

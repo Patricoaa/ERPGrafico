@@ -276,6 +276,23 @@ Backend: `treasury.Check`. Lifecycle gobernado por `treasury.check_service.Check
 (`deposited_at`/`cleared_at`/`bounced_at`); cambios de estado pasan exclusivamente
 por `CheckService`.
 
+## CreditLine (Línea de Crédito)
+
+Backend: `treasury.CreditLine`. Línea rotativa que agrupa préstamos y controla
+cupo disponible.
+
+| Status | Intent | Transitions allowed to |
+|--------|--------|------------------------|
+| `ACTIVE` | `success` | `EXPIRED`, `SUSPENDED`, `CANCELED` |
+| `EXPIRED` | `warning` | `ACTIVE` (si se renueva) |
+| `SUSPENDED` | `neutral` | `ACTIVE` |
+| `CANCELED` | `neutral` | — (terminal) |
+
+**Propiedades calculadas (no campos DB):**
+- `drawn_amount` = suma `outstanding_balance` de `BankLoan` ACTIVE asociados.
+- `available_amount` = `approved_amount - drawn_amount` (floor 0).
+- `utilization_rate` = `(drawn_amount / approved_amount) * 100`.
+
 ## BankLoan (Crédito Bancario)
 
 Crédito / préstamo bancario (CLP o UF). Backend: `treasury.BankLoan`.

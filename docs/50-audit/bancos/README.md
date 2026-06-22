@@ -29,6 +29,7 @@ re-derivar el contexto del código.
 | Estado de cuenta y pago de tarjeta de crédito propia | [fase-3-tarjeta-credito.md](fase-3-tarjeta-credito.md) |
 | Completar cheques (propios girados, endoso, folios, alertas, UI) | [fase-4-cheques.md](fase-4-cheques.md) |
 | Vistas/servicios transversales (Centro de Bancos, flujo de caja, alertas) | [fase-5-transversal.md](fase-5-transversal.md) |
+| Líneas de crédito rotativas (CreditLine + subtab) | [fase-6-lineas-credito.md](fase-6-lineas-credito.md) |
 
 ---
 
@@ -44,6 +45,7 @@ re-derivar el contexto del código.
 | **3** | Tarjeta de crédito: estado + pago | L | #3 | ✅ Cerrada (ADR-0034) |
 | **4** | Cheques: propios girados + endoso + extras | L | #4 | ✅ Cerrada (ADR-0035) |
 | **5** | Transversal (Centro de Bancos, flujo, alertas) | L | #5 | ✅ Cerrada (ADR-0036) |
+| **6** | Líneas de Crédito Rotativas | M | #6 | ✅ Cerrada (ADR-0049) |
 
 > El orden de prioridad lo fijó el usuario (operativo primero). Las fases 2–5 son
 > independientes entre sí salvo dependencias explícitas anotadas en cada archivo;

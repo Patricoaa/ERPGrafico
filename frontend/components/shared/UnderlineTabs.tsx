@@ -247,13 +247,3 @@ export function UnderlineTabs({
 
 
 export const UnderlineTabsContent = TabsContent
-
-// ── Deprecated aliases — use UnderlineTabs / TabItem / UnderlineTabsContent instead ──
-/** @deprecated Use UnderlineTabs instead */
-export const FormTabs = UnderlineTabs
-/** @deprecated Use UnderlineTabsProps instead */
-export type FormTabsProps = UnderlineTabsProps
-/** @deprecated Use TabItem instead */
-export type FormTabItem = TabItem
-/** @deprecated Use UnderlineTabsContent instead */
-export const FormTabsContent = UnderlineTabsContent

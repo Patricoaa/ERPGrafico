@@ -10,7 +10,8 @@ from celery.result import AsyncResult
 from .models import (TreasuryMovement, TreasuryAccount, BankStatement, BankStatementLine, 
                      ReconciliationSettings, POSTerminal, TerminalBatch,
                      POSSession, POSSessionAudit, Bank, PaymentMethod,
-                     PaymentTerminalProvider, PaymentTerminalDevice)
+                     PaymentTerminalProvider, PaymentTerminalDevice,
+                     CreditLine)
 from .serializers import (
     TreasuryMovementSerializer, TreasuryAccountSerializer,
     BankStatementSerializer, BankStatementListSerializer,
@@ -22,6 +23,7 @@ from .serializers import (
     BankLoanSerializer, BankLoanWriteSerializer, LoanInstallmentSerializer,
     PayInstallmentActionSerializer, PrepayLoanActionSerializer,
     DisburseLoanActionSerializer,
+    CreditLineSerializer, CreditLineWriteSerializer,
     CreditCardStatementSerializer, CreditCardStatementWriteSerializer,
     PayStatementActionSerializer, ApplyChargesActionSerializer,
 )
@@ -55,8 +57,6 @@ class BankViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
         accounts = TreasuryAccount.objects.filter(bank=bank).order_by('account_type', 'name')
         accounts_data = []
         for acc in accounts:
-            movements = acc.movements_from.all().aggregate(total=Sum('amount'))['total'] or 0
-            movements += acc.movements_to.all().aggregate(total=Sum('amount'))['total'] or 0
             accounts_data.append({
                 'id': acc.id,
                 'name': acc.name,
@@ -64,6 +64,7 @@ class BankViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
                 'account_type_display': acc.get_account_type_display(),
                 'current_balance': float(acc.current_balance),
                 'currency': acc.currency,
+                'credit_limit': float(acc.credit_limit) if acc.credit_limit else None,
             })
 
         # Tarjetas de crédito del banco (cuentas CREDIT_CARD)
@@ -162,6 +163,32 @@ class BankViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
 
         upcoming.sort(key=lambda x: x['due_date'])
 
+        # Movimientos recientes (últimos 5) de las cuentas del banco
+        from .models import TreasuryMovement
+        account_ids = accounts.values_list('id', flat=True)
+        recent_movements_list = TreasuryMovement.objects.filter(
+            Q(from_account_id__in=account_ids) | Q(to_account_id__in=account_ids),
+        ).select_related(
+            'from_account', 'to_account',
+        ).order_by('-date')[:5]
+        recent_movements = [
+            {
+                'id': m.id,
+                'display_id': m.display_id,
+                'movement_type': m.movement_type,
+                'movement_type_display': m.get_movement_type_display(),
+                'amount': float(m.amount),
+                'date': m.date.isoformat(),
+                'from_account_id': m.from_account_id,
+                'from_account_name': m.from_account.name if m.from_account else None,
+                'to_account_id': m.to_account_id,
+                'to_account_name': m.to_account.name if m.to_account else None,
+                'payment_method': m.payment_method,
+                'payment_method_display': m.get_payment_method_display(),
+            }
+            for m in recent_movements_list
+        ]
+
         return Response({
             'bank': BankSerializer(bank).data,
             'accounts': accounts_data,
@@ -175,6 +202,7 @@ class BankViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
                 'total_loan_debt': float(total_loan_debt),
             },
             'upcoming_maturities': upcoming,
+            'recent_movements': recent_movements,
         })
 
     @action(detail=True, methods=['post'])
@@ -2252,6 +2280,46 @@ class BankLoanViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
     def amortization_table(self, request, pk=None):
         loan = self.get_object()
         return Response(self.get_serializer(loan).data)
+
+
+class CreditLineViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
+    """
+    CRUD para Líneas de Crédito.
+
+    Incluye el detalle con `drawn_amount`, `available_amount` y
+    `utilization_rate` calculados automáticamente desde los `BankLoan`
+    activos asociados.
+    """
+    from .models import CreditLine as CreditLineModel
+    queryset = CreditLineModel.objects.select_related('bank', 'created_by').all()
+    filterset_fields = ['status', 'credit_line_type', 'currency', 'bank']
+    search_fields = ['code', 'bank__name']
+    ordering_fields = ['approved_amount', 'valid_from', 'valid_until']
+
+    def get_queryset(self):
+        qs = super().get_queryset()
+        bank_id = self.request.query_params.get('bank_id')
+        if bank_id:
+            qs = qs.filter(bank_id=bank_id)
+        return qs
+
+    def get_serializer_class(self):
+        if self.action in ('create', 'update', 'partial_update'):
+            return CreditLineWriteSerializer
+        return CreditLineSerializer
+
+    @action(detail=True, methods=['get'])
+    def overview(self, request, pk=None):
+        """Detalle enriquecido con loans asociados."""
+        credit_line = self.get_object()
+        from .serializers import BankLoanSerializer
+        loans = credit_line.loans.select_related(
+            'lender', 'disbursement_account', 'liability_account',
+        ).prefetch_related('installments').all()
+        return Response({
+            'credit_line': CreditLineSerializer(credit_line, context={'request': request}).data,
+            'loans': BankLoanSerializer(loans, many=True, context={'request': request}).data,
+        })
 
 
 class LoanInstallmentViewSet(viewsets.ModelViewSet):
