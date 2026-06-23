@@ -79,7 +79,6 @@ export function OrderHeaderDashboard({
                 value={formatCurrency(totalAmount)}
                 icon={TrendingUp}
                 accent="primary"
-                className="bg-card/50 border-border backdrop-blur-sm relative overflow-hidden before:absolute before:inset-0 before:bg-gradient-to-br before:from-primary/5 before:to-transparent before:pointer-events-none"
             />
             <StatCard
                 label="Estado Financiero"
@@ -89,7 +88,6 @@ export function OrderHeaderDashboard({
                     </span>
                 }
                 accent="primary"
-                className="bg-card/50 border-border backdrop-blur-sm"
             >
                 <div className="mt-3 space-y-1">
                     <div className="flex justify-between text-[11px] font-medium text-foreground/80">

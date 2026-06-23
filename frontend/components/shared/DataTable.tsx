@@ -137,7 +137,7 @@ export interface KpiCardDef {
     icon?: LucideIcon
     accent?: "primary" | "info" | "success" | "warning" | "destructive" | "accent" | "muted"
     subtext?: string
-    variant?: "default" | "compact" | "minimal" | "fill" | "chart" | "metric-chart" | "plain"
+    variant?: "default" | "compact" | "minimal" | "fill" | "chart" | "metric-chart"
     className?: string
 }
 

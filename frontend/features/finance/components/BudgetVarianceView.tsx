@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
     CalendarDays,
     FileDown,
@@ -41,11 +41,9 @@ export function BudgetVarianceView() {
     const varianceData: BudgetVarianceNode[] = Array.isArray(data) ? data : []
 
     // Auto-select first budget on load
-    useEffect(() => {
-        if (!selectedBudget && budgets.length > 0) {
-            setSelectedBudget(budgets[0].id.toString())
-        }
-    }, [selectedBudget, budgets])
+    if (!selectedBudget && budgets.length > 0) {
+        setSelectedBudget(budgets[0].id.toString())
+    }
 
     // Calculate top-level summary sums from the tree
     const summary = useMemo(() => {
@@ -150,16 +148,15 @@ export function BudgetVarianceView() {
                          subtext="Projection objetivos periodo"
                          accent="muted"
                      />
-                     <StatCard
-                         label="Margen YTD (Acum.)"
-                         value={<MoneyDisplay amount={summary.ytd_actual} />}
-                         trend={{
-                             direction: summary.ytd_variance >= 0 ? "up" : "down",
-                             value: `${summary.ytd_perc.toFixed(1)}% objetivos YTD`,
-                         }}
-                         accent="primary"
-                         className="bg-primary/5"
-                     />
+                      <StatCard
+                          label="Margen YTD (Acum.)"
+                          value={<MoneyDisplay amount={summary.ytd_actual} />}
+                          trend={{
+                              direction: summary.ytd_variance >= 0 ? "up" : "down",
+                              value: `${summary.ytd_perc.toFixed(1)}% objetivos YTD`,
+                          }}
+                          accent="primary"
+                      />
                      <StatCard
                          label="Desviación Neta YTD"
                          value={<MoneyDisplay amount={summary.ytd_variance} />}

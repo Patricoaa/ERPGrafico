@@ -50,39 +50,31 @@ export function ProductionMetricsCard() {
                     <StatCard
                         label="Activas"
                         value={Object.values(data.ots_by_stage).reduce((a, b) => a + b, 0)}
-                        icon={Activity}
                         subtext="En piso de planta"
                         variant="minimal"
                         accent="muted"
-                        className="p-4 flex-col"
                     />
                     <StatCard
                         label="Atrasadas"
                         value={data.overdue_ots}
-                        icon={AlertCircle}
                         subtext="Requieren atención"
                         variant="minimal"
                         accent="destructive"
-                        className="p-4 flex-col hover:bg-destructive/10 transition-colors"
                         href="/production/orders?view=list"
                     />
                     <StatCard
                         label="Finalizadas (30d)"
                         value={data.throughput_last_30d}
-                        icon={CheckCircle2}
                         subtext="Órdenes completadas"
                         variant="minimal"
                         accent="success"
-                        className="p-4 flex-col"
                     />
                     <StatCard
                         label="Tiempos"
                         value={<>{data.avg_time_by_stage['PRESS'] || 0} <span className="text-sm font-medium">días</span></>}
-                        icon={Clock}
                         subtext="Promedio en Prensa"
                         variant="minimal"
                         accent="info"
-                        className="p-4 flex-col"
                     />
                 </div>
             </CardContent>

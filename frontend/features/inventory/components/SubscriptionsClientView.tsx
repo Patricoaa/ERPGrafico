@@ -70,28 +70,28 @@ export function SubscriptionsClientView({ hideHeader = false, externalOpen = fal
                 value: stats.active_subscriptions,
                 variant: "minimal",
                 accent: "muted",
-                className: "bg-card/50 shadow-card flex-col gap-1 items-center md:items-start p-4 rounded-md",
+                className: "gap-1 items-center md:items-start p-4",
             },
             {
                 label: "Costo Mensual Total",
                 value: <DataCell.Currency value={stats.total_monthly_cost} />,
                 variant: "minimal",
                 accent: "muted",
-                className: "bg-card/50 shadow-card flex-col gap-1 items-center md:items-start p-4 rounded-md",
+                className: "gap-1 items-center md:items-start p-4",
             },
             {
                 label: "Próximas Renovaciones",
                 value: stats.upcoming_renewals_30_days,
                 variant: "minimal",
                 accent: "warning",
-                className: "bg-card/50 shadow-card flex-col gap-1 items-center md:items-start p-4 rounded-md",
+                className: "gap-1 items-center md:items-start p-4",
             },
             {
                 label: "Estado Pausadas",
                 value: stats.paused_subscriptions,
                 variant: "minimal",
                 accent: "muted",
-                className: "bg-card/50 shadow-card flex-col gap-1 items-center md:items-start p-4 rounded-md",
+                className: "gap-1 items-center md:items-start p-4",
             },
         ]
     }, [stats])
@@ -125,13 +125,17 @@ export function SubscriptionsClientView({ hideHeader = false, externalOpen = fal
 
     // Fetch product for edit mode
     const [editingProduct, setEditingProduct] = useState<Product | null>(null)
+    const [prevEditOpen, setPrevEditOpen] = useState(isEditOpen)
+    // Adjust state during render: reset editing product when form closes
+    if (!isEditOpen && isEditOpen !== prevEditOpen) {
+        setPrevEditOpen(isEditOpen)
+        setEditingProduct(null)
+    }
     useEffect(() => {
         if (selectedSubscription && action === "edit") {
             fetchProductById(selectedSubscription.product).then((p) => setEditingProduct(p as Product)).catch(() => {})
-        } else if (!isEditOpen) {
-            setEditingProduct(null)
         }
-    }, [selectedSubscription, action, fetchProductById, isEditOpen])
+    }, [selectedSubscription, action, fetchProductById])
 
     const clearAll = useCallback(() => {
         const params = new URLSearchParams(searchParams.toString())
