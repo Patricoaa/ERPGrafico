@@ -26,7 +26,7 @@ export function StockReport() {
         onHistory: (product) => setInsightsProduct(product),
     }
 
-    const filteredReport = useMemo(() => {
+    const filteredReport = (() => {
         if (!smartFilters || Object.keys(smartFilters).length === 0) return report;
 
         return report.filter((item: any) => {
@@ -48,7 +48,7 @@ export function StockReport() {
 
             return true;
         });
-    }, [report, smartFilters]);
+    })();
 
     const columns = useMemo<ColumnDef<any>[]>(() => [
         {

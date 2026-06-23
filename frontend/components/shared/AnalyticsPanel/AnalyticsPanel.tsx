@@ -2,8 +2,7 @@
 
 import React, { useState } from "react"
 import { LayoutDashboard } from "lucide-react"
-import { Drawer } from "@/components/shared/Drawer"
-import { UnderlineTabs, UnderlineTabsContent } from "@/components/shared/UnderlineTabs"
+import { Drawer, UnderlineTabs, UnderlineTabsContent } from "@/components/shared"
 import { AnalyticsLayout } from "./AnalyticsLayout"
 import { AnalyticsSegmentation } from "./AnalyticsSegmentation"
 import type { AnalyticsPanelProps, AnalyticsTab } from "./types"

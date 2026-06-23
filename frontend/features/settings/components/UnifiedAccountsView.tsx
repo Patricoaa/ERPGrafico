@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useCallback, useEffect, useRef, useState } from "react"
+import React, { useCallback, useEffect, useRef, useState, startTransition } from "react"
 import { useForm, useWatch } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useSearchParams, usePathname, useRouter } from "next/navigation"
@@ -62,7 +62,9 @@ export function UnifiedAccountsView() {
             return
         }
         if (tabParam && tabParam !== activeTab && TABS.some(t => t.value === tabParam)) {
-            setActiveTab(tabParam)
+            startTransition(() => {
+                setActiveTab(tabParam)
+            })
         }
     }, [tabParam]) // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -271,6 +273,7 @@ function ComprasForm() {
         resolver: zodResolver(purchasingSchema),
         defaultValues: {
             default_expense_account: null,
+            default_consumable_account: null,
             default_service_expense_account: null,
             default_subscription_expense_account: null,
         },

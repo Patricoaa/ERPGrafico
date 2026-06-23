@@ -75,13 +75,13 @@ export function EmptyState({
     const config = CONTEXT_CONFIG[context] || CONTEXT_CONFIG.generic
     const entityLabel = CONTEXT_TO_ENTITY_LABEL[context]
     const resolvedIcon = entityLabel ? getEntityIcon(entityLabel) : null
-    const Icon = icon || resolvedIcon || config.icon
+    const iconCmp = icon || resolvedIcon || config.icon
     const displayTitle = title || (entityName ? `No hay ${config.title.toLowerCase()} para ${entityName}` : config.title)
 
     if (variant === 'minimal') {
         return (
             <div className={cn("flex items-center gap-3 py-4 px-2 text-muted-foreground", className)}>
-                <Icon className="h-4 w-4 shrink-0" />
+                {React.createElement(iconCmp, { className: "h-4 w-4 shrink-0" })}
                 <span className="text-[10px] font-heading font-black uppercase tracking-wider">{displayTitle}</span>
                 {action && <div className="ml-auto">{action}</div>}
             </div>
@@ -101,10 +101,10 @@ export function EmptyState({
                 "relative flex items-center justify-center rounded-md border border-border bg-muted shadow-card mb-6",
                 variant === 'full' ? "h-20 w-20" : "h-14 w-14"
             )}>
-                <Icon className={cn(
+                {React.createElement(iconCmp, { className: cn(
                     "text-muted-foreground/40",
                     variant === 'full' ? "h-10 w-10" : "h-6 w-6"
-                )} />
+                ) })}
             </div>
 
             {/* Content Section */}

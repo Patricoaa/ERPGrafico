@@ -109,20 +109,6 @@ export function StatementsClientView({ bankId }: StatementsClientViewProps) {
         return result
     }, [statements, filterFn, segFilters])
 
-    if (isLoading) {
-        return <Skeleton className="h-full" />
-    }
-
-    if (isError) {
-        return (
-            <EmptyState
-                title="Error al cargar estados de cuenta"
-                description="Intente nuevamente más tarde."
-                icon={AlertTriangle}
-            />
-        )
-    }
-
     const clearAll = useCallback(() => {
         const params = new URLSearchParams(searchParams.toString())
         const changed = params.has("selected") || params.has("action")
@@ -145,6 +131,20 @@ export function StatementsClientView({ bankId }: StatementsClientViewProps) {
         () => selectedId ? statements.find(s => s.id === selectedId) ?? null : null,
         [selectedId, statements],
     )
+
+    if (isLoading) {
+        return <Skeleton className="h-full" />
+    }
+
+    if (isError) {
+        return (
+            <EmptyState
+                title="Error al cargar estados de cuenta"
+                description="Intente nuevamente más tarde."
+                icon={AlertTriangle}
+            />
+        )
+    }
 
     const actionsCtx: StatementActionsCtx = {
         onPay: (stmt) => openStatement(stmt.id, "pay"),

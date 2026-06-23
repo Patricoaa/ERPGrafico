@@ -62,17 +62,17 @@ export function AnalyticsSegmentation({
     dateRange,
     onDateRangeChange,
 }: Props) {
-    const hasAny = (cardAccounts && cardAccounts.length > 0 && onCardAccountChange)
-        || (scope && onScopeChange)
-        || (granularity && onGranularityChange)
-
-    if (!hasAny) return null
-
     const activePreset = useMemo(() => {
         if (!onDateRangeChange) return "all"
         const preset = SEGMENTATION_PRESETS.find(p => isDateRangeEqual(p.range(), dateRange))
         return preset?.key ?? "custom"
     }, [dateRange, onDateRangeChange])
+
+    const hasAny = (cardAccounts && cardAccounts.length > 0 && onCardAccountChange)
+        || (scope && onScopeChange)
+        || (granularity && onGranularityChange)
+
+    if (!hasAny) return null
 
     return (
         <div className="flex items-center justify-center gap-5 px-6 py-2 border-t border-border shrink-0 flex-wrap">
