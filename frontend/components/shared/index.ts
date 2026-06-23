@@ -6,6 +6,9 @@
 // not from individual component files.
 // ─────────────────────────────────────────────────────────
 
+// Charts
+export * from './charts';
+
 // Search
 export * from './UniversalSearch';
 

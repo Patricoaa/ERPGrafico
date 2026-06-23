@@ -37,6 +37,7 @@ export interface BarChartConfig {
     showLegend?: boolean
     enableGridY?: boolean
     borderRadius?: number
+    padding?: number
     lineOverlay?: { dataKey: string; label: string; color?: string }
     axisBottomLegend?: string
     axisLeftLegend?: string

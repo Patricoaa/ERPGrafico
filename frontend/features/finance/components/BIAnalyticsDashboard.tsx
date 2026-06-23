@@ -2,12 +2,9 @@
 
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { ResponsiveLine } from '@nivo/line'
-import { ResponsiveBar } from '@nivo/bar'
-import { ResponsivePie } from '@nivo/pie'
 import { useBIAnalytics } from "../hooks/useBIAnalytics";
 import {TrendingUp, Package, DollarSign, ShoppingCart} from 'lucide-react';
-import { EmptyState, MoneyDisplay, SkeletonShell, StatCard, ChartTooltip } from '@/components/shared';
+import { EmptyState, MoneyDisplay, SkeletonShell, StatCard, LineChart, BarChart, PieChart } from '@/components/shared';
 ;
 import { formatCurrency } from "@/lib/money";
 import { DateRange } from "react-day-picker";
@@ -105,52 +102,35 @@ export const BIAnalyticsDashboard: React.FC<BIAnalyticsDashboardProps> = ({ date
                     <CardDescription>Evolución mensual de ventas</CardDescription>
                 </CardHeader>
                 <CardContent className="h-[350px]">
-                    <ResponsiveLine
-                        data={[
-                            {
-                                id: "Ventas Mensuales",
-                                data: (sales.monthly_trend || []).map((d: { month: string; sales: number }) => ({ x: d.month, y: d.sales })),
-                            },
-                        ]}
-                        margin={{ top: 20, right: 20, bottom: 50, left: 60 }}
-                        curve="monotoneX"
-                        enableArea={false}
-                        lineWidth={3}
-                        pointSize={8}
-                        pointBorderWidth={2}
-                        enablePointLabel={false}
-                        colors={{ scheme: "category10" }}
-                        axisBottom={{
-                            tickSize: 0,
-                            tickPadding: 12,
-                        }}
-                        axisLeft={{
-                            tickSize: 0,
-                            tickPadding: 12,
-                            format: (v) => formatCurrency(v),
-                        }}
-                        tooltip={({ point }) => (
-                            <ChartTooltip>
-                                <p className="text-[10px] uppercase text-muted-foreground">
-                                    {String(point.data.x)}
-                                </p>
-                                <p className="font-bold text-xs">
-                                    Ventas: {formatCurrency(Number(point.data.y))}
-                                </p>
-                            </ChartTooltip>
-                        )}
-                        legends={[
-                            {
+                        <LineChart
+                            data={[{ id: "Ventas Mensuales", data: inventory.monthly_trend as { x: string; y: number }[] }]}
+                            margin={{ top: 20, right: 20, bottom: 50, left: 60 }}
+                            enableArea={false}
+                            pointSize={8}
+                            colors={{ scheme: "category10" }}
+                            axisBottom={{
+                                tickSize: 0,
+                                tickPadding: 12,
+                            }}
+                            axisLeft={{
+                                tickSize: 0,
+                                tickPadding: 12,
+                                format: (v: number) => formatCurrency(v),
+                            }}
+                            renderTooltip={({ data: pointData }) => (
+                                <>
+                                    <span className="font-medium">{String(pointData.x)}</span>
+                                    <span className="ml-2 font-bold">{formatCurrency(Number(pointData.y))}</span>
+                                </>
+                            )}
+                            legends={[{
                                 anchor: "bottom",
                                 direction: "row",
                                 translateY: 50,
                                 itemWidth: 130,
-                                itemHeight: 20,
                                 symbolSize: 12,
-                                symbolShape: "circle",
-                            },
-                        ]}
-                    />
+                            }]}
+                        />
                 </CardContent>
             </Card>
 
@@ -163,28 +143,26 @@ export const BIAnalyticsDashboard: React.FC<BIAnalyticsDashboardProps> = ({ date
                         <CardDescription>Por volumen de ventas</CardDescription>
                     </CardHeader>
                     <CardContent className="h-[300px]">
-                        <ResponsiveBar
-                            data={sales.top_customers || []}
+                        <BarChart
+                            data={(inventory.top_customers || []).map((c: { name: string; amount: number }) => ({ name: c.name, amount: c.amount }))}
                             keys={["amount"]}
                             indexBy="name"
                             layout="horizontal"
-                            padding={0.3}
                             colors={{ scheme: "set2" }}
-                            borderRadius={4}
                             axisBottom={{
                                 tickSize: 0,
                                 tickPadding: 12,
-                                format: (v) => formatCurrency(v),
+                                format: (v: number) => formatCurrency(v),
                             }}
                             axisLeft={{
                                 tickSize: 0,
                                 tickPadding: 12,
                             }}
-                            tooltip={({ value, indexValue }) => (
-                                <ChartTooltip>
-                                    <p className="text-[10px] uppercase text-muted-foreground">{indexValue as string}</p>
-                                    <p className="font-bold text-xs">Ventas: {formatCurrency(value)}</p>
-                                </ChartTooltip>
+                            renderTooltip={({ value, indexValue }) => (
+                                <>
+                                    <span className="font-medium">{String(indexValue)}</span>
+                                    <span className="ml-2 font-bold">{formatCurrency(value)}</span>
+                                </>
                             )}
                         />
                     </CardContent>
@@ -197,35 +175,20 @@ export const BIAnalyticsDashboard: React.FC<BIAnalyticsDashboardProps> = ({ date
                         <CardDescription>Por categoría de producto</CardDescription>
                     </CardHeader>
                     <CardContent className="h-[300px]">
-                        <ResponsivePie
+                        <PieChart
                             data={(inventory.stock_distribution || []).map((d: { category: string; value: number }) => ({ id: d.category, value: d.value }))}
-                            margin={{ top: 20, right: 20, bottom: 40, left: 20 }}
-                            padAngle={2}
-                            cornerRadius={4}
-                            activeOuterRadiusOffset={8}
-                            colors={{ scheme: "set3" }}
-                            arcLinkLabel={(d) => d.id as string}
-                            arcLinkLabelsColor={{ theme: "text" }}
-                            arcLinkLabelsThickness={1}
-                            arcLinkLabelsStraightLength={8}
-                            arcLabelsSkipAngle={20}
-                            tooltip={({ datum }) => (
-                                <ChartTooltip>
-                                    <p className="text-[10px] uppercase text-muted-foreground">{datum.id}</p>
-                                    <p className="font-bold text-xs">Valor: {formatCurrency(datum.value)}</p>
-                                </ChartTooltip>
+                            legends={[{
+                                anchor: "bottom",
+                                direction: "row",
+                                translateY: 50,
+                                itemWidth: 100,
+                            }]}
+                            renderTooltip={({ id, value }) => (
+                                <>
+                                    <span className="font-medium">{String(id)}</span>
+                                    <span className="ml-2 font-bold">{formatCurrency(value)}</span>
+                                </>
                             )}
-                            legends={[
-                                {
-                                    anchor: "bottom",
-                                    direction: "row",
-                                    translateY: 50,
-                                    itemWidth: 100,
-                                    itemHeight: 18,
-                                    symbolSize: 10,
-                                    symbolShape: "circle",
-                                },
-                            ]}
                         />
                     </CardContent>
                 </Card>

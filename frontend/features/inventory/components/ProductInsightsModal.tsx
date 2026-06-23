@@ -5,7 +5,7 @@ import { BaseModal, Chip, SkeletonShell, StatusBadge } from '@/components/shared
 
 import {useState} from "react"
 
-import { DataTable, StatCard, ChartTooltip } from "@/components/shared"
+import { DataTable, StatCard } from "@/components/shared"
 import {
     History,
     TrendingUp,
@@ -26,7 +26,7 @@ import { UnderlineTabs, UnderlineTabsContent } from "@/components/shared"
 import { LazyDrawer, type TransactionType } from "@/features/_shared/transaction-drawer"
 import { WorkOrderWizard } from "@/features/production"
 import type { ColumnDef } from "@tanstack/react-table"
-import { ResponsiveLine } from '@nivo/line'
+import { LineChart } from "@/components/shared"
 
 interface ProductInsightsModalProps {
     productId: number | null
@@ -234,7 +234,7 @@ export function ProductInsightsModal({ productId, productName, open, onOpenChang
                             {/* HISTORY TAB */}
                             <UnderlineTabsContent value="history" className="mt-0 space-y-6">
                                 <div className="h-[250px] w-full bg-card rounded-md border p-4">
-                                    <ResponsiveLine
+                                    <LineChart
                                         data={[
                                             {
                                                 id: "Precio Venta",
@@ -245,27 +245,21 @@ export function ProductInsightsModal({ productId, productName, open, onOpenChang
                                                 data: [...data.price_history].reverse().map((d) => ({ x: d.date, y: d.cost_price })),
                                             },
                                         ]}
-                                        curve="monotoneX"
-                                        enableArea
-                                        areaOpacity={0.08}
-                                        lineWidth={2}
-                                        pointSize={4}
-                                        enablePointLabel={false}
                                         colors={["var(--primary)", "var(--destructive)"]}
                                         axisBottom={{
                                             tickSize: 0,
                                             tickPadding: 10,
-                                            format: (v) => format(new Date(v as string), 'MMM d'),
+                                            format: (v: string) => format(new Date(v), 'MMM d'),
                                         }}
                                         axisLeft={{
                                             tickSize: 0,
                                             tickPadding: 10,
                                         }}
-                                        tooltip={({ point }) => (
-                                            <ChartTooltip className="bg-popover">
-                                                <p className="text-[10px] uppercase text-muted-foreground">{String(point.data.xFormatted ?? point.data.x)}</p>
-                                                <p className="font-bold text-xs">{String(point.seriesId)}: {formatCurrency(Number(point.data.yFormatted ?? point.data.y))}</p>
-                                            </ChartTooltip>
+                                        renderTooltip={({ serieId, data: pointData }) => (
+                                            <>
+                                                <span className="font-medium">{String(pointData.xFormatted ?? pointData.x)}</span>
+                                                <span className="ml-2 font-bold">{String(serieId)}: {formatCurrency(Number(pointData.yFormatted ?? pointData.y))}</span>
+                                            </>
                                         )}
                                         legends={[
                                             {

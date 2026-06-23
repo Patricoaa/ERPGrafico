@@ -2,15 +2,11 @@
 
 import React from 'react';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
-import { EmptyState, MoneyDisplay, PageContainer, ChartTooltip } from '@/components/shared'
+import { EmptyState, MoneyDisplay, PageContainer, PieChart, BarChart, LineChart, SkeletonShell, StatCard } from '@/components/shared'
 import { formatMoney } from "@/lib/money"
-import { ResponsivePie } from '@nivo/pie'
-import { ResponsiveLine } from '@nivo/line'
-import { ResponsiveBar } from '@nivo/bar'
 import { useAnalysis } from "../hooks/useAnalysis";
 import { DateRange } from "react-day-picker";
 import { format } from "date-fns";
-import { SkeletonShell, StatCard } from "@/components/shared";
 ;
 
 interface RatiosDashboardProps {
@@ -173,24 +169,8 @@ export const RatiosDashboard: React.FC<RatiosDashboardProps> = ({ date, showComp
                         <CardDescription>Distribución entre Deuda y Patrimonio</CardDescription>
                     </CardHeader>
                     <CardContent className="h-[300px]">
-                        <ResponsivePie
-                            data={structureData.map((d) => ({ id: d.name, value: d.value }))}
-                            margin={{ top: 20, right: 20, bottom: 40, left: 20 }}
-                            padAngle={2}
-                            cornerRadius={4}
-                            activeOuterRadiusOffset={8}
-                            colors={{ scheme: "set2" }}
-                            arcLinkLabel={(d) => `${d.id} (${((d.value / structureData.reduce((s, v) => s + v.value, 0)) * 100).toFixed(0)}%)`}
-                            arcLinkLabelsColor={{ theme: "text" }}
-                            arcLinkLabelsThickness={1}
-                            arcLinkLabelsStraightLength={8}
-                            arcLabelsSkipAngle={20}
-                            tooltip={({ datum }) => (
-                                <ChartTooltip>
-                                    <p className="text-[10px] uppercase text-muted-foreground">{datum.id}</p>
-                                    <p className="font-bold text-xs">Monto: {formatMoney(datum.value)}</p>
-                                </ChartTooltip>
-                            )}
+                        <PieChart
+                            data={structureData}
                             legends={[
                                 {
                                     anchor: "bottom",
@@ -202,6 +182,12 @@ export const RatiosDashboard: React.FC<RatiosDashboardProps> = ({ date, showComp
                                     symbolShape: "circle",
                                 },
                             ]}
+                            renderTooltip={({ id, value }) => (
+                                <>
+                                    <span className="font-medium">{String(id)}</span>
+                                    <span className="ml-2 font-bold">{formatMoney(value)}</span>
+                                </>
+                            )}
                         />
                     </CardContent>
                 </Card>
@@ -213,25 +199,8 @@ export const RatiosDashboard: React.FC<RatiosDashboardProps> = ({ date, showComp
                         <CardDescription>Corrientes vs No Corrientes</CardDescription>
                     </CardHeader>
                     <CardContent className="h-[300px]">
-                        <ResponsivePie
-                            data={assetsDistribution.map((d) => ({ id: d.name, value: d.value }))}
-                            margin={{ top: 20, right: 20, bottom: 40, left: 20 }}
-                            innerRadius={0.6}
-                            padAngle={2}
-                            cornerRadius={4}
-                            activeOuterRadiusOffset={8}
-                            colors={{ scheme: "set3" }}
-                            arcLinkLabel={(d) => `${d.id} (${((d.value / assetsDistribution.reduce((s, v) => s + v.value, 0)) * 100).toFixed(0)}%)`}
-                            arcLinkLabelsColor={{ theme: "text" }}
-                            arcLinkLabelsThickness={1}
-                            arcLinkLabelsStraightLength={8}
-                            arcLabelsSkipAngle={20}
-                            tooltip={({ datum }) => (
-                                <ChartTooltip>
-                                    <p className="text-[10px] uppercase text-muted-foreground">{datum.id}</p>
-                                    <p className="font-bold text-xs">Monto: {formatMoney(datum.value)}</p>
-                                </ChartTooltip>
-                            )}
+                        <PieChart
+                            data={assetsDistribution}
                             legends={[
                                 {
                                     anchor: "bottom",
@@ -243,6 +212,12 @@ export const RatiosDashboard: React.FC<RatiosDashboardProps> = ({ date, showComp
                                     symbolShape: "circle",
                                 },
                             ]}
+                            renderTooltip={({ id, value }) => (
+                                <>
+                                    <span className="font-medium">{String(id)}</span>
+                                    <span className="ml-2 font-bold">{formatMoney(value)}</span>
+                                </>
+                            )}
                         />
                     </CardContent>
                 </Card>
@@ -267,13 +242,10 @@ export const RatiosDashboard: React.FC<RatiosDashboardProps> = ({ date, showComp
                                 <CardDescription>Comparación período actual vs anterior</CardDescription>
                             </CardHeader>
                             <CardContent className="h-[300px]">
-                                <ResponsiveLine
+                                <LineChart
                                     data={lineChartData}
                                     margin={{ top: 20, right: 20, bottom: 50, left: 60 }}
-                                    curve="monotoneX"
-                                    lineWidth={2}
-                                    pointSize={6}
-                                    enablePointLabel={false}
+                                    enableArea={false}
                                     colors={{ scheme: "category10" }}
                                     axisBottom={{
                                         tickSize: 0,
@@ -283,11 +255,11 @@ export const RatiosDashboard: React.FC<RatiosDashboardProps> = ({ date, showComp
                                         tickSize: 0,
                                         tickPadding: 12,
                                     }}
-                                    tooltip={({ point }) => (
-                                        <ChartTooltip>
-                                            <p className="text-[10px] uppercase text-muted-foreground">{String(point.data.x)}</p>
-                                            <p className="text-xs font-bold">{String(point.seriesId)}: {Number(point.data.y).toFixed(2)}</p>
-                                        </ChartTooltip>
+                                    renderTooltip={({ serieId, data: pointData }) => (
+                                        <>
+                                            <span className="font-medium">{String(pointData.x)}</span>
+                                            <span className="ml-2 font-bold">{String(serieId)}: {Number(pointData.y).toFixed(2)}</span>
+                                        </>
                                     )}
                                     legends={[
                                         {
@@ -313,16 +285,15 @@ export const RatiosDashboard: React.FC<RatiosDashboardProps> = ({ date, showComp
                         <CardDescription>Activos y Pasivos Corrientes</CardDescription>
                     </CardHeader>
                     <CardContent className="h-[300px]">
-                        <ResponsiveBar
+                        <BarChart
                             data={[
                                 { name: 'Activos Corrientes', value: d.liquidity.current_assets },
                                 { name: 'Pasivos Corrientes', value: d.liquidity.current_liabilities },
                             ]}
                             keys={["value"]}
                             indexBy="name"
-                            padding={0.3}
                             colors={{ scheme: "set2" }}
-                            borderRadius={4}
+                            enableGridY
                             axisBottom={{
                                 tickSize: 0,
                                 tickPadding: 12,
@@ -330,13 +301,13 @@ export const RatiosDashboard: React.FC<RatiosDashboardProps> = ({ date, showComp
                             axisLeft={{
                                 tickSize: 0,
                                 tickPadding: 12,
-                                format: (v) => formatMoney(v as number),
+                                                format: (v: number) => formatMoney(v),
                             }}
-                            tooltip={({ value, indexValue }) => (
-                                <ChartTooltip>
-                                    <p className="text-[10px] uppercase text-muted-foreground">{indexValue as string}</p>
-                                    <p className="font-bold text-xs">Monto: {formatMoney(value)}</p>
-                                </ChartTooltip>
+                            renderTooltip={({ value, indexValue }) => (
+                                <>
+                                    <span className="font-medium">{String(indexValue)}</span>
+                                    <span className="ml-2 font-bold">{formatMoney(value)}</span>
+                                </>
                             )}
                         />
                     </CardContent>
