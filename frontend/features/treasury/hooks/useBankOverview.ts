@@ -31,11 +31,15 @@ export interface BankOverviewData {
     accounts: Array<{
         id: number
         name: string
+        code: string | null
+        account_number: string | null
+        card_number: string | null
         account_type: string
         account_type_display: string
         current_balance: number
         currency: string
         credit_limit: number | null
+        credit_line_credit_limit: number | null
     }>
     summary: {
         total_accounts: number
@@ -45,6 +49,12 @@ export interface BankOverviewData {
         active_loan_count: number
         total_loan_debt: number
         card_count?: number
+        reconciliation: {
+            latest_statement_id: number
+            latest_statement_date: string
+            latest_statement_status: string
+            unreconciled_lines: number
+        } | null
     }
     upcoming_maturities: BankOverviewMaturityItem[]
     recent_movements: BankOverviewRecentMovement[]

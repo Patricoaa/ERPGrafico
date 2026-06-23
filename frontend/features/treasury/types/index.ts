@@ -57,6 +57,7 @@ export interface TreasuryAccount {
     bank?: number | null
     bank_name?: string
     account_number?: string | null
+    card_number?: string | null
     identifier?: string
     /** POS terminal providers (Transbank, TUU, etc.) whose destination/bridge account is this one. */
     terminal_providers?: Array<{
@@ -303,6 +304,7 @@ export interface TreasuryMovement {
 }
 
 export interface TreasuryMovementFilters {
+    bank?: string | number
     treasury_account?: string | number
     movement_type?: 'INBOUND' | 'OUTBOUND' | 'TRANSFER' | 'ADJUSTMENT'
     date?: string
