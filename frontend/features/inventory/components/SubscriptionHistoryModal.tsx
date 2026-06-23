@@ -177,8 +177,6 @@ export function SubscriptionHistoryModal({ subscriptionId, open, onOpenChange }:
                                                     data={filteredPriceHistory as unknown as { date: string; unit_cost: number }[]}
                                                     keys={["unit_cost"]}
                                                     indexBy="date"
-                                                    colors={{ scheme: "blues" }}
-                                                    enableGridY
                                                     axisBottom={{
                                                         tickSize: 0,
                                                         tickPadding: 10,
@@ -189,12 +187,6 @@ export function SubscriptionHistoryModal({ subscriptionId, open, onOpenChange }:
                                                         tickPadding: 10,
                                                         format: (v: number) => formatCurrency(v),
                                                     }}
-                                                    renderTooltip={({ value, indexValue }) => (
-                                                        <>
-                                                            <p className="font-medium">{format(new Date(indexValue as string), 'PPP', { locale: es })}</p>
-                                                            <p className="font-bold">Costo Unitario: {formatCurrency(value)}</p>
-                                                        </>
-                                                    )}
                                                 />
                                             </div>
                                             {filteredPriceHistory.length === 0 && (

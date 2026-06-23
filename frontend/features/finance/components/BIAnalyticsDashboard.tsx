@@ -105,9 +105,6 @@ export const BIAnalyticsDashboard: React.FC<BIAnalyticsDashboardProps> = ({ date
                         <LineChart
                             data={[{ id: "Ventas Mensuales", data: inventory.monthly_trend as { x: string; y: number }[] }]}
                             margin={{ top: 20, right: 20, bottom: 50, left: 60 }}
-                            enableArea={false}
-                            pointSize={8}
-                            colors={{ scheme: "category10" }}
                             axisBottom={{
                                 tickSize: 0,
                                 tickPadding: 12,
@@ -117,12 +114,6 @@ export const BIAnalyticsDashboard: React.FC<BIAnalyticsDashboardProps> = ({ date
                                 tickPadding: 12,
                                 format: (v: number) => formatCurrency(v),
                             }}
-                            renderTooltip={({ data: pointData }) => (
-                                <>
-                                    <span className="font-medium">{String(pointData.x)}</span>
-                                    <span className="ml-2 font-bold">{formatCurrency(Number(pointData.y))}</span>
-                                </>
-                            )}
                             legends={[{
                                 anchor: "bottom",
                                 direction: "row",
@@ -148,7 +139,6 @@ export const BIAnalyticsDashboard: React.FC<BIAnalyticsDashboardProps> = ({ date
                             keys={["amount"]}
                             indexBy="name"
                             layout="horizontal"
-                            colors={{ scheme: "set2" }}
                             axisBottom={{
                                 tickSize: 0,
                                 tickPadding: 12,
@@ -158,12 +148,6 @@ export const BIAnalyticsDashboard: React.FC<BIAnalyticsDashboardProps> = ({ date
                                 tickSize: 0,
                                 tickPadding: 12,
                             }}
-                            renderTooltip={({ value, indexValue }) => (
-                                <>
-                                    <span className="font-medium">{String(indexValue)}</span>
-                                    <span className="ml-2 font-bold">{formatCurrency(value)}</span>
-                                </>
-                            )}
                         />
                     </CardContent>
                 </Card>
@@ -183,12 +167,7 @@ export const BIAnalyticsDashboard: React.FC<BIAnalyticsDashboardProps> = ({ date
                                 translateY: 50,
                                 itemWidth: 100,
                             }]}
-                            renderTooltip={({ id, value }) => (
-                                <>
-                                    <span className="font-medium">{String(id)}</span>
-                                    <span className="ml-2 font-bold">{formatCurrency(value)}</span>
-                                </>
-                            )}
+
                         />
                     </CardContent>
                 </Card>

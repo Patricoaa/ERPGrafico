@@ -109,15 +109,6 @@ function AccountPieChart({ accounts }: { accounts: BankOverviewData['accounts'] 
             <PieChart
                 data={chartData}
                 margin={{ top: 10, right: 10, bottom: 10, left: 10 }}
-                innerRadius={0.55}
-                activeOuterRadiusOffset={6}
-                arcLabelsSkipAngle={15}
-                arcLabelsTextColor="#fff"
-                arcLabelsRadiusOffset={0.65}
-                arcLabel={(d: any) => `${Math.round(d.arc.angle / 360 * 100)}%`}
-                renderTooltip={({ label, value }) => (
-                    <><span className="font-medium">{label}</span>: <MoneyDisplay amount={value} /></>
-                )}
             />
         </div>
     )

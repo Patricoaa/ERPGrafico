@@ -182,12 +182,6 @@ export const RatiosDashboard: React.FC<RatiosDashboardProps> = ({ date, showComp
                                     symbolShape: "circle",
                                 },
                             ]}
-                            renderTooltip={({ id, value }) => (
-                                <>
-                                    <span className="font-medium">{String(id)}</span>
-                                    <span className="ml-2 font-bold">{formatMoney(value)}</span>
-                                </>
-                            )}
                         />
                     </CardContent>
                 </Card>
@@ -212,12 +206,6 @@ export const RatiosDashboard: React.FC<RatiosDashboardProps> = ({ date, showComp
                                     symbolShape: "circle",
                                 },
                             ]}
-                            renderTooltip={({ id, value }) => (
-                                <>
-                                    <span className="font-medium">{String(id)}</span>
-                                    <span className="ml-2 font-bold">{formatMoney(value)}</span>
-                                </>
-                            )}
                         />
                     </CardContent>
                 </Card>
@@ -245,8 +233,6 @@ export const RatiosDashboard: React.FC<RatiosDashboardProps> = ({ date, showComp
                                 <LineChart
                                     data={lineChartData}
                                     margin={{ top: 20, right: 20, bottom: 50, left: 60 }}
-                                    enableArea={false}
-                                    colors={{ scheme: "category10" }}
                                     axisBottom={{
                                         tickSize: 0,
                                         tickPadding: 12,
@@ -255,12 +241,6 @@ export const RatiosDashboard: React.FC<RatiosDashboardProps> = ({ date, showComp
                                         tickSize: 0,
                                         tickPadding: 12,
                                     }}
-                                    renderTooltip={({ serieId, data: pointData }) => (
-                                        <>
-                                            <span className="font-medium">{String(pointData.x)}</span>
-                                            <span className="ml-2 font-bold">{String(serieId)}: {Number(pointData.y).toFixed(2)}</span>
-                                        </>
-                                    )}
                                     legends={[
                                         {
                                             anchor: "bottom",
@@ -292,8 +272,6 @@ export const RatiosDashboard: React.FC<RatiosDashboardProps> = ({ date, showComp
                             ]}
                             keys={["value"]}
                             indexBy="name"
-                            colors={{ scheme: "set2" }}
-                            enableGridY
                             axisBottom={{
                                 tickSize: 0,
                                 tickPadding: 12,
@@ -303,12 +281,6 @@ export const RatiosDashboard: React.FC<RatiosDashboardProps> = ({ date, showComp
                                 tickPadding: 12,
                                                 format: (v: number) => formatMoney(v),
                             }}
-                            renderTooltip={({ value, indexValue }) => (
-                                <>
-                                    <span className="font-medium">{String(indexValue)}</span>
-                                    <span className="ml-2 font-bold">{formatMoney(value)}</span>
-                                </>
-                            )}
                         />
                     </CardContent>
                 </Card>

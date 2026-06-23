@@ -1,6 +1,4 @@
 "use client"
-import { formatCurrency } from "@/lib/money";
-
 import { BaseModal, Chip, SkeletonShell, StatusBadge } from '@/components/shared'
 
 import {useState} from "react"
@@ -245,7 +243,6 @@ export function ProductInsightsModal({ productId, productName, open, onOpenChang
                                                 data: [...data.price_history].reverse().map((d) => ({ x: d.date, y: d.cost_price })),
                                             },
                                         ]}
-                                        colors={["var(--primary)", "var(--destructive)"]}
                                         axisBottom={{
                                             tickSize: 0,
                                             tickPadding: 10,
@@ -255,12 +252,6 @@ export function ProductInsightsModal({ productId, productName, open, onOpenChang
                                             tickSize: 0,
                                             tickPadding: 10,
                                         }}
-                                        renderTooltip={({ serieId, data: pointData }) => (
-                                            <>
-                                                <span className="font-medium">{String(pointData.xFormatted ?? pointData.x)}</span>
-                                                <span className="ml-2 font-bold">{String(serieId)}: {formatCurrency(Number(pointData.yFormatted ?? pointData.y))}</span>
-                                            </>
-                                        )}
                                         legends={[
                                             {
                                                 anchor: "top",
