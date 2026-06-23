@@ -2,9 +2,8 @@
 
 import React, { useState } from "react"
 import dynamic from "next/dynamic"
-import { TabsContent } from "@/components/ui/tabs"
 import { DateRangeFilter } from "@/components/shared"
-import { DateRange } from "react-day-picker"
+import type { DateRange } from "react-day-picker"
 import { startOfYear, subYears } from "date-fns"
 import { useServerDate } from "@/hooks/useServerDate"
 import { CardSkeleton } from "@/components/shared"
@@ -174,17 +173,12 @@ export function AnalysisDashboard({ activeTab }: AnalysisDashboardProps) {
 
             <div className="max-w-6xl mx-auto w-full pt-4">
                 <FadeIn key={activeTab}>
-                    <TabsContent value="ratios">
-                        {activeTab === "ratios" && (
-                            <RatiosDashboard date={date} showComparison={showComparison} compDate={compDate} />
-                        )}
-                    </TabsContent>
-
-                    <TabsContent value="bi">
-                        {activeTab === "bi" && (
-                            <BIAnalyticsDashboard date={date} />
-                        )}
-                    </TabsContent>
+                    {activeTab === "ratios" && (
+                        <RatiosDashboard date={date} showComparison={showComparison} compDate={compDate} />
+                    )}
+                    {activeTab === "bi" && (
+                        <BIAnalyticsDashboard date={date} />
+                    )}
                 </FadeIn>
             </div>
             
