@@ -266,6 +266,11 @@ class Command(BaseCommand):
             # Check Portfolio / Issued Checks (ADR-0038)
             'Check Portfolio (Asset)': settings.check_portfolio_account,
             'Issued Checks (Liability)': settings.issued_checks_account,
+
+            # HR / Payroll
+            'Remuneraciones por Pagar': settings.account_remuneraciones_por_pagar,
+            'Previred por Pagar': settings.account_previred_por_pagar,
+            'Anticipos Remuneraciones': settings.account_anticipos,
         }
         
         self.stdout.write("\n  📊 Key Account Mappings:")

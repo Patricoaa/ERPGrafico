@@ -403,6 +403,11 @@ class AccountingService:
             # CHEQUES-GIRADOS) idempotentemente.
             'check_portfolio_account': '1.1.01.50',
             'issued_checks_account': '2.1.05.01',
+
+            # HR / Payroll accounts
+            'account_remuneraciones_por_pagar': '2.1.03.01',
+            'account_previred_por_pagar': '2.1.03.02',
+            'account_anticipos': '1.1.02.03',
         }
 
         for field, code in mapping.items():
