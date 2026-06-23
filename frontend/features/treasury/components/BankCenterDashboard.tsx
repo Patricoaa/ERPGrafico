@@ -17,7 +17,7 @@ import { ChecksClientView } from '../checks/ChecksClientView'
 import { LoansClientView } from '../loans/LoansClientView'
 import { CardChargesView } from '../card-statements/CardChargesView'
 import { StatementsList } from '@/features/finance/bank-reconciliation/components'
-import { ResponsivePie } from '@nivo/pie'
+import { PieChart } from '@/components/shared'
 
 function CompactKPIs({ data }: { data: BankOverviewData }) {
     const { accounts, summary, upcoming_maturities } = data
@@ -106,23 +106,17 @@ function AccountPieChart({ accounts }: { accounts: BankOverviewData['accounts'] 
 
     return (
         <div className="h-[200px]">
-            <ResponsivePie
+            <PieChart
                 data={chartData}
                 margin={{ top: 10, right: 10, bottom: 10, left: 10 }}
                 innerRadius={0.55}
-                padAngle={2}
-                cornerRadius={4}
                 activeOuterRadiusOffset={6}
-                colors={{ datum: 'data.color' }}
-                enableArcLinkLabels={false}
                 arcLabelsSkipAngle={15}
                 arcLabelsTextColor="#fff"
                 arcLabelsRadiusOffset={0.65}
-                arcLabel={(d) => `${Math.round(d.arc.angle / 360 * 100)}%`}
-                tooltip={({ datum }) => (
-                    <div className="bg-popover text-popover-foreground text-xs font-bold px-3 py-2 rounded-md shadow-elevated border">
-                        {datum.label}: <MoneyDisplay amount={datum.value} />
-                    </div>
+                arcLabel={(d: any) => `${Math.round(d.arc.angle / 360 * 100)}%`}
+                renderTooltip={({ label, value }) => (
+                    <><span className="font-medium">{label}</span>: <MoneyDisplay amount={value} /></>
                 )}
             />
         </div>

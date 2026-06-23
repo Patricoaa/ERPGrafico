@@ -19,6 +19,7 @@ export interface PieChartProps {
     data: { id?: string | number; name?: string | number; value: number; [key: string]: unknown }[]
     renderTooltip?: (datum: {
         id: string | number
+        label?: string
         value: number
         color: string
     }) => React.ReactNode
@@ -53,7 +54,7 @@ export function PieChart({
             rawData.map((d, i) => ({
                 ...d,
                 id: d.id ?? d.name,
-                color: chartColors[i % chartColors.length],
+                color: d.color ?? chartColors[i % chartColors.length],
             })),
         [rawData, chartColors],
     )
@@ -73,7 +74,7 @@ export function PieChart({
                         renderTooltip(datum)
                     ) : (
                         <>
-                            <span className="font-medium">{String(datum.id)}</span>
+                            <span className="font-medium">{String(datum.label ?? datum.id)}</span>
                             <span className="ml-2 font-bold">
                                 {Number(datum.value).toLocaleString()}
                             </span>
