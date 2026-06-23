@@ -59,11 +59,10 @@ export function EquityStatsDrawer({ open, onOpenChange, partners, summary }: Equ
                     <StatCard
                         label="Patrimonio Neto"
                         value={formatCurrency(summary.total_net_equity || 0)}
-                        icon={Building2}
                         subtext="Valor Libro de la Compañía"
                         variant="minimal"
                         accent="primary"
-                        className="p-5 flex flex-col justify-center ring-1 ring-primary/10"
+                        className="p-5 justify-center"
                     />
                 </div>
 

@@ -8,7 +8,7 @@ import Link from "next/link"
 import React from "react"
 
 type Accent = "primary" | "info" | "success" | "warning" | "destructive" | "accent" | "muted"
-type Variant = "default" | "compact" | "minimal" | "fill" | "chart" | "metric-chart" | "plain"
+type Variant = "default" | "compact" | "minimal" | "fill" | "chart" | "metric-chart"
 type ValueSize = "sm" | "md" | "lg" | "xl"
 
 export interface StatCardChart {
@@ -37,16 +37,6 @@ interface StatCardProps {
   children?: React.ReactNode
   className?: string
 }
-
-const accentBorder = {
-  primary: "border-l-primary",
-  info: "border-l-info",
-  success: "border-l-success",
-  warning: "border-l-warning",
-  destructive: "border-l-destructive",
-  accent: "border-l-accent",
-  muted: "border-l-muted",
-} as const
 
 const accentBg = {
   primary: "bg-primary/5 border-primary/10",
@@ -130,6 +120,14 @@ export function StatCard({
 
   const Container = variant === "minimal" || variant === "fill" ? "div" : Card
 
+  const isInteractive = !!(onClick || href)
+
+  const interactiveClasses = isInteractive
+    ? variant === "minimal" || variant === "fill"
+      ? "cursor-pointer hover:brightness-95 dark:hover:brightness-125 transition-all"
+      : "cursor-pointer hover:border-primary/20"
+    : ""
+
   const containerProps =
     variant === "minimal"
       ? {
@@ -137,6 +135,7 @@ export function StatCard({
             baseCardClasses,
             "p-3 rounded-md",
             accentBg[accent],
+            interactiveClasses,
             active && activeRing[accent],
             className,
           ),
@@ -150,19 +149,7 @@ export function StatCard({
           className: cn(
             baseCardClasses,
             accentBg[accent],
-            active && activeRing[accent],
-            className,
-          ),
-          onClick,
-          role: onClick ? "button" as const : undefined,
-          tabIndex: onClick ? 0 : undefined,
-          onKeyDown: onClick ? (e: React.KeyboardEvent) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onClick() } } : undefined,
-        }
-      : variant === "plain"
-      ? {
-          className: cn(
-            baseCardClasses,
-            onClick && "cursor-pointer hover:border-primary/20",
+            interactiveClasses,
             active && activeRing[accent],
             className,
           ),
@@ -176,7 +163,7 @@ export function StatCard({
             baseCardClasses,
             variant === "default" && "gap-0 py-3",
             variant === "compact" && accentBg[accent],
-            onClick && "cursor-pointer hover:border-primary/20",
+            interactiveClasses,
             active && activeRing[accent],
             className,
           ),

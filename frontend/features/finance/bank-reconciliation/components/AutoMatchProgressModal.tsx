@@ -223,7 +223,6 @@ export function AutoMatchProgressModal({
                             subtext={`de ${progress.total_unreconciled ?? progress.total}`}
                             variant="minimal"
                             accent="muted"
-                            className="text-center"
                         />
                         <StatCard
                             label="Conciliadas"
@@ -231,7 +230,6 @@ export function AutoMatchProgressModal({
                             subtext="matches"
                             variant="minimal"
                             accent="success"
-                            className="text-center"
                         />
                         <StatCard
                             label="Sin Conciliar"
@@ -239,7 +237,6 @@ export function AutoMatchProgressModal({
                             subtext="sin match"
                             variant="minimal"
                             accent="warning"
-                            className="text-center"
                         />
                     </div>
                 )}

@@ -141,7 +141,7 @@ export function PartnerProfileTab({ contactId }: Props) {
                                             subtext="Participación sobre el total patrimonial"
                                             variant="minimal"
                                             accent="muted"
-                                            className="bg-muted/30 p-4 rounded-md border flex flex-col justify-center text-center"
+                                            className="p-4 justify-center text-center"
                                             valueSize="xl"
                                         />
                                         <StatCard
@@ -150,7 +150,7 @@ export function PartnerProfileTab({ contactId }: Props) {
                                             subtext="Neto acumulado de aportes y retiros"
                                             variant="minimal"
                                             accent="primary"
-                                            className="md:col-span-2 bg-primary/5 p-4 rounded-md border border-primary/20 flex flex-col justify-center items-center text-center"
+                                            className="md:col-span-2 p-4 justify-center items-center text-center"
                                         />
                                     </div>
                                 </CardContent>

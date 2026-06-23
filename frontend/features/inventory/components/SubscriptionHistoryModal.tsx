@@ -149,21 +149,18 @@ export function SubscriptionHistoryModal({ subscriptionId, open, onOpenChange }:
                                                         value={<DataCell.Currency value={data.price_history[0]?.unit_cost || 0} className="text-2xl font-black text-left" />}
                                                         variant="compact"
                                                         accent="primary"
-                                                        className="shadow-none"
                                                     />
                                                     <StatCard
                                                         label="OCS Totales"
                                                         value={<>{data.orders.length} <span className="text-xs">documentos</span></>}
                                                         variant="compact"
                                                         accent="warning"
-                                                        className="shadow-none"
                                                     />
                                                     <StatCard
                                                         label="Estado Actual"
                                                         value={<StatusBadge status="SUCCESS" label="ACTIVA" size="md" />}
                                                         variant="compact"
                                                         accent="success"
-                                                        className="shadow-none"
                                                     />
                                                 </div>
 
