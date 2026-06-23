@@ -547,8 +547,8 @@ class AccountingSettings(TimeStampedModel):
         on_delete=models.SET_NULL,
         null=True, blank=True,
         related_name='settings_storable_inventory',
-        verbose_name=_("Cuenta Inventario Almacenables"),
-        help_text=_("Cuenta para productos STORABLE (ej: 1.1.03.01)")
+        verbose_name=_("Inventory Asset - Almacenables (STORABLE)"),
+        help_text=_("Cuenta de activo para productos STORABLE (ej: 1.1.03.01)")
     )
     
     manufacturable_inventory_account = models.ForeignKey(
@@ -556,8 +556,8 @@ class AccountingSettings(TimeStampedModel):
         on_delete=models.SET_NULL,
         null=True, blank=True,
         related_name='settings_manufacturable_inventory',
-        verbose_name=_("Cuenta Inventario Fabricables"),
-        help_text=_("Cuenta para productos MANUFACTURABLE (ej: 1.1.03.01)")
+        verbose_name=_("Inventory Asset - Fabricables (MANUFACTURABLE)"),
+        help_text=_("Cuenta de activo para productos MANUFACTURABLE (ej: 1.1.03.03)")
     )
     
     # Consumable Products Account
@@ -566,8 +566,8 @@ class AccountingSettings(TimeStampedModel):
         on_delete=models.SET_NULL,
         null=True, blank=True,
         related_name='settings_consumable',
-        verbose_name=_("Cuenta de Gastos Consumibles"),
-        help_text=_("Cuenta de gasto usada por defecto para productos consumibles (tintas, papel, etc.)")
+        verbose_name=_("Default Expense - Consumibles (CONSUMABLE)"),
+        help_text=_("Cuenta de gasto usada por defecto para productos consumibles (tintas, papel, etc.) - ej: 5.2.05")
     )
 
     # COGS (Cost of Goods Sold) Accounts
@@ -576,8 +576,8 @@ class AccountingSettings(TimeStampedModel):
         on_delete=models.SET_NULL,
         null=True, blank=True,
         related_name='settings_merchandise_cogs',
-        verbose_name=_("Cuenta Costo de Mercaderías"),
-        help_text=_("Cuenta 5.1.01 - Para productos STORABLE comprados para reventa")
+        verbose_name=_("Default COGS - Mercaderías (STORABLE)"),
+        help_text=_("Cuenta 5.1.01 - Costo de ventas para productos STORABLE comprados para reventa")
     )
 
     manufactured_cogs_account = models.ForeignKey(
@@ -585,8 +585,8 @@ class AccountingSettings(TimeStampedModel):
         on_delete=models.SET_NULL,
         null=True, blank=True,
         related_name='settings_manufactured_cogs',
-        verbose_name=_("Cuenta Costo de Producción"),
-        help_text=_("Cuenta 5.1.02 - Para productos MANUFACTURABLE fabricados internamente")
+        verbose_name=_("Default COGS - Fabricados (MANUFACTURABLE)"),
+        help_text=_("Cuenta 5.1.02 - Costo de ventas para productos MANUFACTURABLE fabricados internamente")
     )
 
     # Service Products Account
@@ -595,8 +595,8 @@ class AccountingSettings(TimeStampedModel):
         on_delete=models.SET_NULL,
         null=True, blank=True,
         related_name='settings_service_expense',
-        verbose_name=_("Cuenta de Gastos por Servicios"),
-        help_text=_("Cuenta de gasto usada por defecto para productos de tipo servicio.")
+        verbose_name=_("Default Expense - Servicios (SERVICE)"),
+        help_text=_("Cuenta de gasto usada por defecto para productos de tipo servicio (ej: 5.1.03).")
     )
 
     default_service_revenue_account = models.ForeignKey(
@@ -604,8 +604,8 @@ class AccountingSettings(TimeStampedModel):
         on_delete=models.SET_NULL,
         null=True, blank=True,
         related_name='settings_service_revenue',
-        verbose_name=_("Cuenta de Ingresos por Servicios"),
-        help_text=_("Cuenta de ingreso usada por defecto para productos de tipo servicio.")
+        verbose_name=_("Default Revenue - Servicios (SERVICE)"),
+        help_text=_("Cuenta de ingreso usada por defecto para productos de tipo servicio (ej: 4.1.02).")
     )
 
     # Subscription Products Accounts
@@ -614,8 +614,8 @@ class AccountingSettings(TimeStampedModel):
         on_delete=models.SET_NULL,
         null=True, blank=True,
         related_name='settings_subscription_expense',
-        verbose_name=_("Cuenta de Gastos por Suscripciones"),
-        help_text=_("Cuenta de gasto usada por defecto para productos de tipo suscripción.")
+        verbose_name=_("Default Expense - Suscripciones (SUBSCRIPTION)"),
+        help_text=_("Cuenta de gasto usada por defecto para productos de tipo suscripción (ej: 5.1.04).")
     )
 
     default_subscription_revenue_account = models.ForeignKey(
@@ -623,8 +623,8 @@ class AccountingSettings(TimeStampedModel):
         on_delete=models.SET_NULL,
         null=True, blank=True,
         related_name='settings_subscription_revenue',
-        verbose_name=_("Cuenta de Ingresos por Suscripciones"),
-        help_text=_("Cuenta de ingreso usada por defecto para productos de tipo suscripción.")
+        verbose_name=_("Default Revenue - Suscripciones (SUBSCRIPTION)"),
+        help_text=_("Cuenta de ingreso usada por defecto para productos de tipo suscripción (ej: 4.1.03).")
     )
 
     # Adjustment Accounts

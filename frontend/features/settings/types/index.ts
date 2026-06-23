@@ -116,7 +116,6 @@ export interface InventorySettings {
     // Adjustment accounts
     adjustment_income_account: string | null
     adjustment_expense_account: string | null
-    initial_inventory_account: string | null
     revaluation_account: string | null
     // COGS accounts
     merchandise_cogs_account: string | null

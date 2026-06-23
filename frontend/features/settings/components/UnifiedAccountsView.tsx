@@ -316,9 +316,10 @@ function ComprasForm() {
                         </CardHeader>
                         <CardContent>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                <AccountField form={form} name="default_expense_account" label="Cuenta Gastos Generales (Insumos/Stock)" accountType="EXPENSE" />
-                                <AccountField form={form} name="default_service_expense_account" label="Gastos por Servicios Externos" accountType="EXPENSE" />
-                                <div className="md:col-span-2"><AccountField form={form} name="default_subscription_expense_account" label="Gastos por Suscripciones Digitales" accountType="EXPENSE" /></div>
+                                <AccountField form={form} name="default_expense_account" label="Gastos Generales / Insumos (STORABLE)" accountType="EXPENSE" />
+                                <AccountField form={form} name="default_consumable_account" label="Gastos Materiales Consumibles (CONSUMABLE)" accountType="EXPENSE" />
+                                <AccountField form={form} name="default_service_expense_account" label="Gastos por Servicios (SERVICE)" accountType="EXPENSE" />
+                                <AccountField form={form} name="default_subscription_expense_account" label="Gastos por Suscripciones (SUBSCRIPTION)" accountType="EXPENSE" />
                             </div>
                         </CardContent>
                     </Card>
