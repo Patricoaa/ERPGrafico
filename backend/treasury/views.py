@@ -57,14 +57,23 @@ class BankViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
         accounts = TreasuryAccount.objects.filter(bank=bank).order_by('account_type', 'name')
         accounts_data = []
         for acc in accounts:
+            try:
+                credit_line_credit_limit = float(acc.credit_line.credit_limit)
+            except TreasuryAccount.credit_line.RelatedObjectDoesNotExist:
+                credit_line_credit_limit = None
+
             accounts_data.append({
                 'id': acc.id,
                 'name': acc.name,
+                'code': acc.code,
+                'account_number': acc.account_number,
+                'card_number': acc.card_number,
                 'account_type': acc.account_type,
                 'account_type_display': acc.get_account_type_display(),
                 'current_balance': float(acc.current_balance),
                 'currency': acc.currency,
                 'credit_limit': float(acc.credit_limit) if acc.credit_limit else None,
+                'credit_line_credit_limit': credit_line_credit_limit,
             })
 
         # Tarjetas de crédito del banco (cuentas CREDIT_CARD)
@@ -163,6 +172,23 @@ class BankViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
 
         upcoming.sort(key=lambda x: x['due_date'])
 
+        # Conciliación: último estado de cuenta y líneas sin reconciliar
+        latest_statement = BankStatement.objects.filter(
+            treasury_account__bank=bank,
+        ).order_by('-statement_date').first()
+        reconciliation_summary = None
+        if latest_statement:
+            unreconciled_lines = BankStatementLine.objects.filter(
+                statement__treasury_account__bank=bank,
+                reconciliation_status=BankStatementLine.ReconciliationStatus.UNRECONCILED,
+            ).count()
+            reconciliation_summary = {
+                'latest_statement_id': latest_statement.id,
+                'latest_statement_date': latest_statement.statement_date.isoformat(),
+                'latest_statement_status': latest_statement.status,
+                'unreconciled_lines': unreconciled_lines,
+            }
+
         # Movimientos recientes (últimos 5) de las cuentas del banco
         from .models import TreasuryMovement
         account_ids = accounts.values_list('id', flat=True)
@@ -200,6 +226,7 @@ class BankViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
                 'issued_checks': float(issued_checks),
                 'active_loan_count': active_loans.count(),
                 'total_loan_debt': float(total_loan_debt),
+                'reconciliation': reconciliation_summary,
             },
             'upcoming_maturities': upcoming,
             'recent_movements': recent_movements,
@@ -474,6 +501,13 @@ class TreasuryMovementViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
     def get_queryset(self):
         qs = self.queryset
         
+        # Handle bank filtering (matches movements from/to any account of the bank)
+        bank_id = self.request.query_params.get('bank')
+        if bank_id:
+            from django.db.models import Q
+            bank_accounts = TreasuryAccount.objects.filter(bank_id=bank_id).values_list('id', flat=True)
+            qs = qs.filter(Q(from_account_id__in=bank_accounts) | Q(to_account_id__in=bank_accounts))
+
         # Handle treasury_account filtering (matches either from or to)
         treasury_account = self.request.query_params.get('treasury_account')
         if treasury_account:

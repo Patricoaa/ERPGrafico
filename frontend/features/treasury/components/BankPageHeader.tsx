@@ -17,6 +17,7 @@ interface BankPageHeaderProps {
 
 const SUB_VIEWS = [
     { value: "overview", label: "Resumen", iconName: "layout-dashboard" },
+    { value: "movements", label: "Movimientos Bancarios", iconName: "receipt" },
     { value: "checks", label: "Cheques Girados", iconName: "file-check" },
     { value: "loans", label: "Préstamos", iconName: "banknote" },
     { value: "cards", label: "Tarjeta de crédito", iconName: "credit-card" },
