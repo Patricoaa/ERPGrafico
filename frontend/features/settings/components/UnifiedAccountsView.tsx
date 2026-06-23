@@ -1,14 +1,16 @@
 "use client"
 
-import React, { useCallback, useEffect, useState } from "react"
+import React, { useCallback, useEffect, useRef, useState } from "react"
 import { useForm, useWatch } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
+import { useSearchParams, usePathname, useRouter } from "next/navigation"
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Form, FormField } from "@/components/ui/form"
 import { Separator } from "@/components/ui/separator"
 import { AccountField, ActionConfirmModal, AutoSaveStatusBadge, LabeledInput, LabeledSelect, PageHeaderButton, SkeletonShell, UnderlineTabs, UnderlineTabsContent } from "@/components/shared"
 import { useAutoSaveForm } from "@/hooks/useAutoSaveForm"
+import { useInitializeForm } from "@/hooks/useInitializeForm"
 import { useUnsavedChangesGuard } from "@/hooks/useUnsavedChangesGuard"
 import { settingsApi } from "@/features/settings/api/settingsApi"
 
@@ -39,14 +41,37 @@ const TABS = [
 ]
 
 export function UnifiedAccountsView() {
-    const [activeTab, setActiveTab] = useState("ventas")
+    const searchParams = useSearchParams()
+    const pathname = usePathname()
+    const router = useRouter()
+    const tabParam = searchParams.get('tab')
+    const [activeTab, setActiveTab] = useState(
+        TABS.some(t => t.value === tabParam) ? tabParam! : "ventas"
+    )
+    const isFirstRender = useRef(true)
+
+    const handleTabChange = useCallback((value: string) => {
+        setActiveTab(value)
+        router.replace(`${pathname}?tab=${value}`, { scroll: false })
+    }, [pathname, router])
+
+    // Sync URL → state on browser back/forward
+    useEffect(() => {
+        if (isFirstRender.current) {
+            isFirstRender.current = false
+            return
+        }
+        if (tabParam && tabParam !== activeTab && TABS.some(t => t.value === tabParam)) {
+            setActiveTab(tabParam)
+        }
+    }, [tabParam]) // eslint-disable-line react-hooks/exhaustive-deps
 
     return (
         <div className="w-full flex-1 min-h-0 flex flex-col">
             <UnderlineTabs
                 items={TABS}
                 value={activeTab}
-                onValueChange={setActiveTab}
+                onValueChange={handleTabChange}
                 variant="underline"
                 orientation="horizontal"
                 contentClassName="overflow-y-auto bg-card"
@@ -94,24 +119,22 @@ const VENTAS_DEFAULTS: SalesAccountsFormValues = {
 
 function VentasForm() {
     const { settings, isLoading, updateSettings } = useSalesSettings()
-    const [initialized, setInitialized] = useState(false)
 
     const form = useForm<SalesAccountsFormValues>({
         resolver: zodResolver(salesAccountsSchema),
         defaultValues: VENTAS_DEFAULTS,
     })
 
-    useEffect(() => {
-        if (settings && !initialized) {
-            form.reset({
-                default_revenue_account: settings.default_revenue_account?.toString() ?? null,
-                default_service_revenue_account: settings.default_service_revenue_account?.toString() ?? null,
-                default_subscription_revenue_account: settings.default_subscription_revenue_account?.toString() ?? null,
-                default_uncollectible_expense_account: settings.default_uncollectible_expense_account?.toString() ?? null,
-            })
-            setInitialized(true)
-        }
-    }, [settings, form, initialized])
+    useInitializeForm({
+        form,
+        data: settings,
+        mapData: (s) => ({
+            default_revenue_account: (s as unknown as Record<string, unknown>).default_revenue_account?.toString() ?? null,
+            default_service_revenue_account: (s as unknown as Record<string, unknown>).default_service_revenue_account?.toString() ?? null,
+            default_subscription_revenue_account: (s as unknown as Record<string, unknown>).default_subscription_revenue_account?.toString() ?? null,
+            default_uncollectible_expense_account: (s as unknown as Record<string, unknown>).default_uncollectible_expense_account?.toString() ?? null,
+        }),
+    })
 
     const onSave = useCallback(async (data: SalesAccountsFormValues) => {
         await updateSettings(data)
@@ -120,7 +143,7 @@ function VentasForm() {
     const { status, invalidReason, lastSavedAt, retry } = useAutoSaveForm({ form, onSave, enabled: true })
     useUnsavedChangesGuard(status)
 
-    if (isLoading && !initialized) return <SkeletonShell isLoading ariaLabel="Cargando configuración de ventas..." />
+    if (isLoading && !settings) return <SkeletonShell isLoading ariaLabel="Cargando configuración de ventas..." />
 
     return (
         <div className="space-y-6">
@@ -172,24 +195,22 @@ const FACTURACION_DEFAULTS: BillingAccountsFormValues = {
 
 function FacturacionForm() {
     const { settings, isLoading, updateSettings } = useBillingSettings()
-    const [initialized, setInitialized] = useState(false)
 
     const form = useForm<BillingAccountsFormValues>({
         resolver: zodResolver(billingAccountsSchema),
         defaultValues: FACTURACION_DEFAULTS,
     })
 
-    useEffect(() => {
-        if (settings && !initialized) {
-            form.reset({
-                default_receivable_account: settings.default_receivable_account?.toString() ?? null,
-                default_payable_account: settings.default_payable_account?.toString() ?? null,
-                default_advance_payment_account: settings.default_advance_payment_account?.toString() ?? null,
-                default_prepayment_account: settings.default_prepayment_account?.toString() ?? null,
-            })
-            setInitialized(true)
-        }
-    }, [settings, form, initialized])
+    useInitializeForm({
+        form,
+        data: settings,
+        mapData: (s) => ({
+            default_receivable_account: (s as unknown as Record<string, unknown>).default_receivable_account?.toString() ?? null,
+            default_payable_account: (s as unknown as Record<string, unknown>).default_payable_account?.toString() ?? null,
+            default_advance_payment_account: (s as unknown as Record<string, unknown>).default_advance_payment_account?.toString() ?? null,
+            default_prepayment_account: (s as unknown as Record<string, unknown>).default_prepayment_account?.toString() ?? null,
+        }),
+    })
 
     const onSave = useCallback(async (data: BillingAccountsFormValues) => {
         await updateSettings(data)
@@ -198,7 +219,7 @@ function FacturacionForm() {
     const { status, invalidReason, lastSavedAt, retry } = useAutoSaveForm({ form, onSave, enabled: true })
     useUnsavedChangesGuard(status)
 
-    if (isLoading && !initialized) return <SkeletonShell isLoading ariaLabel="Cargando configuración de facturación..." />
+    if (isLoading && !settings) return <SkeletonShell isLoading ariaLabel="Cargando configuración de facturación..." />
 
     return (
         <div className="space-y-6">
@@ -245,7 +266,6 @@ import { purchasingSchema, type PurchasingFormValues } from "@/features/settings
 
 function ComprasForm() {
     const { purchasing: settings, isLoading, updateSettings } = useAccountingSettings()
-    const [initialized, setInitialized] = useState(false)
 
     const form = useForm<PurchasingFormValues>({
         resolver: zodResolver(purchasingSchema),
@@ -256,12 +276,19 @@ function ComprasForm() {
         },
     })
 
-    useEffect(() => {
-        if (settings && !initialized) {
-            form.reset(settings)
-            setInitialized(true)
-        }
-    }, [settings, form, initialized])
+    useInitializeForm({
+        form,
+        data: settings,
+        mapData: (s) => {
+            const formatted: Partial<PurchasingFormValues> = {}
+            const keys = Object.keys(purchasingSchema.shape) as (keyof PurchasingFormValues)[]
+            keys.forEach((key) => {
+                const val = (s as unknown as Record<string, unknown>)[key]
+                    ; (formatted as Record<string, unknown>)[key] = val ? val.toString() : null
+            })
+            return formatted as PurchasingFormValues
+        },
+    })
 
     const onSave = useCallback(async (data: PurchasingFormValues) => {
         await updateSettings(data as Record<string, unknown>)
@@ -270,7 +297,7 @@ function ComprasForm() {
     const { status, invalidReason, lastSavedAt, retry } = useAutoSaveForm({ form, onSave, enabled: true })
     useUnsavedChangesGuard(status)
 
-    if (isLoading && !initialized) return <SkeletonShell isLoading ariaLabel="Cargando configuración de compras..." />
+    if (isLoading && !settings) return <SkeletonShell isLoading ariaLabel="Cargando configuración de compras..." />
 
     return (
         <div className="space-y-6">
@@ -315,25 +342,25 @@ const INVENTARIO_DEFAULTS: InventoryAccountsFormValues = {
 
 function InventarioForm() {
     const { settings, isLoading, updateSettings } = useInventorySettings()
-    const [initialized, setInitialized] = useState(false)
 
     const form = useForm<InventoryAccountsFormValues>({
         resolver: zodResolver(inventoryAccountsSchema),
         defaultValues: INVENTARIO_DEFAULTS,
     })
 
-    useEffect(() => {
-        if (settings && !initialized) {
+    useInitializeForm({
+        form,
+        data: settings,
+        mapData: (s) => {
             const formatted: Partial<InventoryAccountsFormValues> = {}
             const keys = Object.keys(inventoryAccountsSchema.shape) as (keyof InventoryAccountsFormValues)[]
             keys.forEach((key) => {
-                const val = (settings as unknown as Record<string, unknown>)[key]
+                const val = (s as unknown as Record<string, unknown>)[key]
                     ; (formatted as Record<string, unknown>)[key] = val ? val.toString() : null
             })
-            form.reset(formatted as InventoryAccountsFormValues)
-            setInitialized(true)
-        }
-    }, [settings, form, initialized])
+            return formatted as InventoryAccountsFormValues
+        },
+    })
 
     const onSave = useCallback(async (data: InventoryAccountsFormValues) => {
         await updateSettings(data)
@@ -342,7 +369,7 @@ function InventarioForm() {
     const { status, invalidReason, lastSavedAt, retry } = useAutoSaveForm({ form, onSave, enabled: true })
     useUnsavedChangesGuard(status)
 
-    if (isLoading && !initialized) return <SkeletonShell isLoading ariaLabel="Cargando configuración de inventario..." />
+    if (isLoading && !settings) return <SkeletonShell isLoading ariaLabel="Cargando configuración de inventario..." />
 
     return (
         <div className="space-y-6">
@@ -446,19 +473,25 @@ const TESORERIA_DEFAULTS: TreasuryFormValues = {
 
 function TesoreriasForm() {
     const { settings, isLoading, updateSettings } = useTreasurySettings()
-    const [initialized, setInitialized] = useState(false)
 
     const form = useForm<TreasuryFormValues>({
         resolver: zodResolver(treasurySchema),
         defaultValues: TESORERIA_DEFAULTS,
     })
 
-    useEffect(() => {
-        if (settings && !initialized) {
-            form.reset(settings)
-            setInitialized(true)
-        }
-    }, [settings, form, initialized])
+    useInitializeForm({
+        form,
+        data: settings,
+        mapData: (s) => {
+            const formatted: Partial<TreasuryFormValues> = {}
+            const keys = Object.keys(treasurySchema.shape) as (keyof TreasuryFormValues)[]
+            keys.forEach((key) => {
+                const val = (s as unknown as Record<string, unknown>)[key]
+                    ; (formatted as Record<string, unknown>)[key] = val ? val.toString() : null
+            })
+            return formatted as TreasuryFormValues
+        },
+    })
 
     const onSave = useCallback(async (data: TreasuryFormValues) => {
         await updateSettings(data)
@@ -467,7 +500,7 @@ function TesoreriasForm() {
     const { status, invalidReason, lastSavedAt, retry } = useAutoSaveForm({ form, onSave, enabled: true })
     useUnsavedChangesGuard(status)
 
-    if (isLoading && !initialized) return <SkeletonShell isLoading ariaLabel="Cargando configuración de tesorería..." />
+    if (isLoading && !settings) return <SkeletonShell isLoading ariaLabel="Cargando configuración de tesorería..." />
 
     return (
         <div className="space-y-6">
@@ -589,19 +622,25 @@ const RRHH_DEFAULTS: HRSettingsFormValues = {
 
 function RRHHForm() {
     const { hr: settings, isLoading, updateSettings } = useAccountingSettings()
-    const [initialized, setInitialized] = useState(false)
 
     const form = useForm<HRSettingsFormValues>({
         resolver: zodResolver(hrSchema),
         defaultValues: RRHH_DEFAULTS,
     })
 
-    useEffect(() => {
-        if (!isLoading && settings && !initialized) {
-            form.reset(settings)
-            setInitialized(true)
-        }
-    }, [settings, isLoading, initialized, form])
+    useInitializeForm({
+        form,
+        data: settings,
+        mapData: (s) => {
+            const formatted: Partial<HRSettingsFormValues> = {}
+            const keys = Object.keys(hrSchema.shape) as (keyof HRSettingsFormValues)[]
+            keys.forEach((key) => {
+                const val = (s as unknown as Record<string, unknown>)[key]
+                    ; (formatted as Record<string, unknown>)[key] = val ? val.toString() : null
+            })
+            return formatted as HRSettingsFormValues
+        },
+    })
 
     const onSave = useCallback(async (data: HRSettingsFormValues) => {
         await updateSettings(data as Record<string, unknown>)
@@ -610,7 +649,7 @@ function RRHHForm() {
     const { status, invalidReason, lastSavedAt, retry } = useAutoSaveForm({ form, onSave, enabled: true })
     useUnsavedChangesGuard(status)
 
-    if (isLoading && !initialized) return <SkeletonShell isLoading ariaLabel="Cargando configuración de RRHH..." />
+    if (isLoading && !settings) return <SkeletonShell isLoading ariaLabel="Cargando configuración de RRHH..." />
 
     return (
         <div className="space-y-6">
@@ -653,25 +692,25 @@ const SOCIOS_DEFAULTS: PartnerAccountsFormValues = {
 
 function SociosForm() {
     const { settings, isLoading, updateSettings } = usePartnerSettings()
-    const [initialized, setInitialized] = useState(false)
 
     const form = useForm<PartnerAccountsFormValues>({
         resolver: zodResolver(partnerAccountsSchema),
         defaultValues: SOCIOS_DEFAULTS,
     })
 
-    useEffect(() => {
-        if (settings && !initialized) {
+    useInitializeForm({
+        form,
+        data: settings,
+        mapData: (s) => {
             const formatted: Partial<PartnerAccountsFormValues> = {}
             const keys = Object.keys(partnerAccountsSchema.shape) as (keyof PartnerAccountsFormValues)[]
             keys.forEach((key) => {
-                const val = (settings as unknown as Record<string, unknown>)[key]
+                const val = (s as unknown as Record<string, unknown>)[key]
                     ; (formatted as Record<string, unknown>)[key] = val ? val.toString() : null
             })
-            form.reset(formatted as PartnerAccountsFormValues)
-            setInitialized(true)
-        }
-    }, [settings, form, initialized])
+            return formatted as PartnerAccountsFormValues
+        },
+    })
 
     const onSave = useCallback(async (data: PartnerAccountsFormValues) => {
         await updateSettings(data)
@@ -680,7 +719,7 @@ function SociosForm() {
     const { status, invalidReason, lastSavedAt, retry } = useAutoSaveForm({ form, onSave, enabled: true })
     useUnsavedChangesGuard(status)
 
-    if (isLoading && !initialized) return <SkeletonShell isLoading ariaLabel="Cargando configuración de socios..." />
+    if (isLoading && !settings) return <SkeletonShell isLoading ariaLabel="Cargando configuración de socios..." />
 
     return (
         <div className="space-y-6">
@@ -759,19 +798,29 @@ function generatePreview(values: StructureFormValues) {
 
 function EstructuraForm() {
     const { structure: settings, isLoading, updateSettings } = useAccountingSettings()
-    const [initialized, setInitialized] = useState(false)
 
     const form = useForm<StructureFormValues>({
         resolver: zodResolver(structureSchema),
         defaultValues: ESTRUCTURA_DEFAULTS,
     })
 
-    useEffect(() => {
-        if (!isLoading && settings && !initialized) {
-            form.reset(settings)
-            setInitialized(true)
-        }
-    }, [settings, isLoading, initialized, form])
+    useInitializeForm({
+        form,
+        data: settings,
+        mapData: (s) => {
+            const raw = s as unknown as Record<string, unknown>
+            const formatted: Partial<StructureFormValues> = {
+                hierarchy_levels: typeof raw.hierarchy_levels === 'number' ? raw.hierarchy_levels : 4,
+                code_separator: raw.code_separator?.toString() ?? ".",
+                asset_prefix: raw.asset_prefix?.toString() ?? "",
+                liability_prefix: raw.liability_prefix?.toString() ?? "",
+                equity_prefix: raw.equity_prefix?.toString() ?? "",
+                income_prefix: raw.income_prefix?.toString() ?? "",
+                expense_prefix: raw.expense_prefix?.toString() ?? "",
+            }
+            return formatted as StructureFormValues
+        },
+    })
 
     const onSave = useCallback(async (data: StructureFormValues) => {
         await updateSettings(data as unknown as Record<string, unknown>)
@@ -807,7 +856,7 @@ function EstructuraForm() {
 
     const formValues = useWatch({ control: form.control }) as StructureFormValues
 
-    if (isLoading && !initialized) return <SkeletonShell isLoading ariaLabel="Cargando estructura contable..." />
+    if (isLoading && !settings) return <SkeletonShell isLoading ariaLabel="Cargando estructura contable..." />
 
     return (
         <div className="space-y-6">
