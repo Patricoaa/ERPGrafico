@@ -49,10 +49,12 @@ const eslintConfig = defineConfig([...nextVitals, ...nextTs, globalIgnores([
           disallow: ["feature-internal", "feature-barrel", "app"],
           message: "components/ui/ is Shadcn base — no app-specific imports.",
         },
-        // shared components cannot touch lib/api
+        // shared components cannot touch lib/api — allow pure utils
         {
           from: ["shared"],
-          disallow: ["lib"],
+          disallow: [
+            ["lib", { except: ["lib/utils/**", "lib/money.ts", "lib/errors.ts", "lib/form-widths.ts"] }],
+          ],
           message: "Shared components must not import @/lib/api. Wrap in a hook.",
         },
       ],
@@ -65,7 +67,9 @@ const eslintConfig = defineConfig([...nextVitals, ...nextTs, globalIgnores([
   files: ["**/*.ts", "**/*.tsx"],
   languageOptions: {
     parserOptions: {
-      projectService: true,
+      projectService: {
+        allowDefaultProject: [".storybook/*.ts"],
+      },
     },
   },
   rules: {

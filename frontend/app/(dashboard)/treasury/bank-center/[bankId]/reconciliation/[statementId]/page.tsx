@@ -11,16 +11,12 @@ import {
     Calendar, Banknote, TrendingUp, TrendingDown,
     Info, AlertCircle, ExternalLink, Activity
 } from "lucide-react"
-import { ActionConfirmModal, SkeletonShell } from '@/components/shared'
-import { BankPageHeader } from "@/features/treasury"
+import { ActionConfirmModal, DataTable, DataTableColumnHeader, DataCell, SkeletonShell } from '@/components/shared'
+import { statementLineUnmatchActions, BankPageHeader, type StatementLineUnmatchActionsCtx } from "@/features/treasury"
 import { format } from "date-fns"
 import { es } from "date-fns/locale"
 import api from "@/lib/api"
-import { DataTable } from '@/components/shared'
-import { DataTableColumnHeader } from '@/components/shared'
 import { ColumnDef } from "@tanstack/react-table"
-import { DataCell } from '@/components/shared'
-import { statementLineUnmatchActions, type StatementLineUnmatchActionsCtx } from '@/features/treasury/components/statementLineUnmatchActions'
 import { Progress } from "@/components/ui/progress"
 import { useConfirmAction } from "@/hooks/useConfirmAction"
 import { toast } from "sonner"

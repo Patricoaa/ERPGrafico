@@ -23,7 +23,7 @@ import { createActionsColumn } from "./DataTableCells"
  * <EntityCard actions={myActions.render(item, ctx)}>...</EntityCard>
  * ```
  */
-export function createEntityActions<T, Ctx = {}>(
+export function createEntityActions<T, Ctx = object>(
     render: (item: T, ctx: Ctx) => ReactNode
 ) {
     return {

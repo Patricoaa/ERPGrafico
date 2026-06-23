@@ -2,7 +2,7 @@
 
 import React from "react"
 import type { AnalyticsColumn, AnalyticsSection as AnalyticsSectionType } from "./types"
-import { StatCard } from "@/components/shared/StatCard"
+import { StatCard } from "@/components/shared"
 import { AnalyticsChart } from "./AnalyticsChart"
 
 function SectionRenderer({ section }: { section: AnalyticsSectionType }) {

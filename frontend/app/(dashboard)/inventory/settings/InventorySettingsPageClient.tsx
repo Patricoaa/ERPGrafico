@@ -11,7 +11,7 @@ import { Form, FormField } from "@/components/ui/form"
 import { AutoSaveStatusBadge, LabeledSelect, SkeletonShell } from "@/components/shared"
 import { useAutoSaveForm } from "@/hooks/useAutoSaveForm"
 import { useUnsavedChangesGuard } from "@/hooks/useUnsavedChangesGuard"
-import { accountingApi } from "@/features/accounting/api/accountingApi"
+import { accountingApi } from "@/features/accounting"
 
 const valuationSchema = z.object({
     inventory_valuation_method: z.string(),

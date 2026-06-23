@@ -4,3 +4,4 @@ export { useAccountingSettings, ACCOUNTING_SETTINGS_QUERY_KEY } from './hooks/us
 export * from './hooks/useAccountMutations'
 export { useJournalEntry, useJournalEntries, type JournalEntry } from './hooks/useJournalEntries'
 export { useAccountingAccounts } from './hooks/useAccounts'
+export { accountingApi } from './api/accountingApi'

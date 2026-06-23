@@ -22,7 +22,7 @@ import { DataTableColumnHeader } from '@/components/shared'
 import { ColumnDef } from "@tanstack/react-table"
 
 import { DataCell } from '@/components/shared'
-import { statementLineUnmatchActions, type StatementLineUnmatchActionsCtx } from '@/features/treasury/components/statementLineUnmatchActions'
+import { statementLineUnmatchActions, type StatementLineUnmatchActionsCtx } from '@/features/treasury'
 import { Progress } from "@/components/ui/progress"
 import { useConfirmAction } from "@/hooks/useConfirmAction"
 

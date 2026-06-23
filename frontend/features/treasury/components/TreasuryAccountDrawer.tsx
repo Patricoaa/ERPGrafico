@@ -395,7 +395,7 @@ export function TreasuryAccountDrawer({ open, onOpenChange, accountId, onSuccess
                                                         </div>
                                                         <div>
                                                             <span className="text-muted-foreground">Disponible</span>
-                                                            <p className="font-medium text-green-600"><MoneyDisplay amount={parseFloat(creditLineData.available_amount)} /></p>
+                                                            <p className="font-medium text-success"><MoneyDisplay amount={parseFloat(creditLineData.available_amount)} /></p>
                                                         </div>
                                                         <div>
                                                             <span className="text-muted-foreground">Estado</span>

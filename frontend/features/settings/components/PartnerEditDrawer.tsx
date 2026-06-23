@@ -2,7 +2,7 @@
 
 import { showApiError } from "@/lib/errors"
 import { useState, useEffect, useRef } from "react"
-import { useForm } from "react-hook-form"
+import { useForm, useWatch } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
 import { toast } from "sonner"
@@ -10,11 +10,12 @@ import { Drawer, CancelButton, LabeledInput, FormFooter, LabeledCheckbox, Action
 import { formDrawerWidth } from "@/lib/form-widths"
 import {Form, FormField} from "@/components/ui/form"
 import { Button } from "@/components/ui/button"
-import {Printer} from "lucide-react"
+import { Printer } from "lucide-react"
 import { useReactToPrint } from "react-to-print"
 import { PrintableLayout } from "@/features/_shared/transaction-drawer"
 import type { DrawerMode } from "@/features/_shared/drawer/types"
 import { partnersApi } from "@/features/contacts/api/partnersApi"
+import type { Contact } from "@/types/entities"
 
 const partnerSetupSchema = z.object({
     is_partner: z.boolean(),
@@ -28,7 +29,7 @@ type SetupValues = z.infer<typeof partnerSetupSchema>
 interface PartnerEditDrawerProps {
     open: boolean
     onOpenChange: (open: boolean) => void
-    contact: any | null
+    contact: (Contact & { is_partner?: boolean; partner_equity_percentage?: number }) | null
     onSuccess: () => void
     mode?: DrawerMode
 }
@@ -40,37 +41,38 @@ export function PartnerEditDrawer({ open, onOpenChange, contact, onSuccess, mode
     const handlePrint = useReactToPrint({ contentRef: printRef })
     const [submitting, setSubmitting] = useState(false)
 
+    const formValues = contact ? {
+        is_partner: contact.is_partner ?? true,
+        partner_equity_percentage: contact.partner_equity_percentage?.toString() || "",
+    } : { is_partner: true, partner_equity_percentage: "" }
+
     const form = useForm<SetupValues>({
         resolver: zodResolver(partnerSetupSchema),
         defaultValues: {
             is_partner: true,
             partner_equity_percentage: "",
-        }
+        },
+        values: formValues,
     })
+
+    const isPartner = useWatch({ control: form.control, name: 'is_partner' })
 
     const lastResetId = useRef<number | undefined>(undefined)
     const wasOpen = useRef(false)
 
     useEffect(() => {
-        if (!open) {
-            wasOpen.current = false
-            return
-        }
-        if (!contact) return
-
-        const currentId = contact.id
-        const isNewOpen = !wasOpen.current
-        const isNewData = currentId !== lastResetId.current
-
-        if (isNewOpen || isNewData) {
-            form.reset({
-                is_partner: contact.is_partner ?? true,
-                partner_equity_percentage: contact.partner_equity_percentage?.toString() || "",
-            })
-            lastResetId.current = currentId
+        if (open) {
             wasOpen.current = true
+        } else {
+            wasOpen.current = false
         }
-    }, [open, contact, form])
+    }, [open])
+
+    useEffect(() => {
+        if (contact) {
+            lastResetId.current = contact.id
+        }
+    }, [contact])
 
     const onSubmit = async (data: SetupValues) => {
         if (!contact) return
@@ -164,7 +166,7 @@ export function PartnerEditDrawer({ open, onOpenChange, contact, onSuccess, mode
                                     hint="Deje en blanco si no aplica."
                                     error={fieldState.error?.message}
                                     {...field}
-                                    disabled={!form.watch('is_partner')}
+                                    disabled={!isPartner}
                                 />
                             )}
                         />
