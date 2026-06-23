@@ -76,8 +76,6 @@ export function EquityStatsDrawer({ open, onOpenChange, partners, summary }: Equ
                     <div className="h-64 bg-background border border-border rounded-md p-4">
                         <PieChart
                             data={pieData}
-                            innerRadius={0.7}
-                            enableArcLabels={false}
                             legends={[
                                 {
                                     anchor: "bottom",
@@ -90,12 +88,6 @@ export function EquityStatsDrawer({ open, onOpenChange, partners, summary }: Equ
                                     symbolShape: "circle",
                                 },
                             ]}
-                            renderTooltip={({ id, value }) => (
-                                <>
-                                    <span className="font-medium">{String(id)}</span>
-                                    <span className="ml-2 font-bold">{formatCurrency(value)}</span>
-                                </>
-                            )}
                         />
                     </div>
                 </div>
@@ -112,7 +104,6 @@ export function EquityStatsDrawer({ open, onOpenChange, partners, summary }: Equ
                             keys={["paid", "pending"]}
                             indexBy="name"
                             groupMode="stacked"
-                            colors={["var(--success)", "var(--warning)"]}
                             axisBottom={{
                                 tickSize: 0,
                                 tickPadding: 10,
@@ -122,18 +113,6 @@ export function EquityStatsDrawer({ open, onOpenChange, partners, summary }: Equ
                                 tickPadding: 10,
                                 format: (v: number) => `$${v / 1000}k`,
                             }}
-                            renderTooltip={({ id, value, indexValue, color }) => (
-                                <>
-                                    <div className="flex items-center gap-2">
-                                        <div className="w-2 h-2 rounded-full" style={{ backgroundColor: color }} />
-                                        <span className="font-medium">{indexValue as string}</span>
-                                    </div>
-                                    <p className="text-xs mt-1">
-                                        <span className="font-medium">{id === "paid" ? "Enterado" : "Pendiente"}: </span>
-                                        <span className="font-bold">{formatCurrency(value)}</span>
-                                    </p>
-                                </>
-                            )}
                             legends={[
                                 {
                                     dataFrom: "keys",
