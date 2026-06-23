@@ -13,13 +13,17 @@ export const ACCOUNTING_SETTINGS_QUERY_KEY = ['accounting-settings']
 export function useAccountingSettings() {
     const queryClient = useQueryClient()
 
-    const { data: rawSettings = {} as Record<string, unknown>, isLoading, refetch } = useQuery({
+    const { data: rawUntyped, isLoading, refetch } = useQuery({
         queryKey: ACCOUNTING_SETTINGS_QUERY_KEY,
         queryFn: () => settingsApi.getCurrentSettings().then(d => d as unknown as Record<string, unknown>),
         staleTime: 10 * 60 * 1000,
     })
 
+    const rawSettings = rawUntyped ?? ({} as Record<string, unknown>)
+    const hasData = rawUntyped !== undefined && Object.keys(rawUntyped).length > 0
+
     const structure = useMemo(() => {
+        if (!hasData) return undefined
         const formatted = {} as StructureFormValues
         const keys = Object.keys(structureSchema.shape) as (keyof StructureFormValues)[]
         keys.forEach((key) => {
@@ -31,9 +35,10 @@ export function useAccountingSettings() {
             }
         })
         return formatted
-    }, [rawSettings])
+    }, [rawSettings, hasData])
 
     const defaults = useMemo(() => {
+        if (!hasData) return undefined
         const formatted = {} as DefaultsFormValues
         const keys = Object.keys(defaultsSchema.shape) as (keyof DefaultsFormValues)[]
         keys.forEach((key) => {
@@ -45,9 +50,10 @@ export function useAccountingSettings() {
             }
         })
         return formatted
-    }, [rawSettings])
+    }, [rawSettings, hasData])
 
     const tax = useMemo(() => {
+        if (!hasData) return undefined
         const formatted = {} as TaxFormValues
         const keys = Object.keys(taxSchema.shape) as (keyof TaxFormValues)[]
         keys.forEach((key) => {
@@ -55,9 +61,10 @@ export function useAccountingSettings() {
             ;(formatted as Record<string, unknown>)[key] = (val ? val.toString() : null)
         })
         return formatted
-    }, [rawSettings])
+    }, [rawSettings, hasData])
 
     const purchasing = useMemo(() => {
+        if (!hasData) return undefined
         const formatted = {} as PurchasingFormValues
         const keys = Object.keys(purchasingSchema.shape) as (keyof PurchasingFormValues)[]
         keys.forEach((key) => {
@@ -65,9 +72,10 @@ export function useAccountingSettings() {
             formatted[key] = (val ? val.toString() : null) as never
         })
         return formatted
-    }, [rawSettings])
+    }, [rawSettings, hasData])
 
     const hr = useMemo(() => {
+        if (!hasData) return undefined
         const formatted = {} as HRSettingsFormValues
         const keys = Object.keys(hrSchema.shape) as (keyof HRSettingsFormValues)[]
         keys.forEach((key) => {
@@ -75,7 +83,7 @@ export function useAccountingSettings() {
             ;(formatted as Record<string, unknown>)[key] = (val ? val.toString() : null)
         })
         return formatted
-    }, [rawSettings])
+    }, [rawSettings, hasData])
 
     const updateMutation = useMutation({
         mutationFn: (payload: Record<string, unknown>) => settingsApi.updateCurrentSettings(payload),
