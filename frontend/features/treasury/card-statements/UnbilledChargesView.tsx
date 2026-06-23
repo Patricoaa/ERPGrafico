@@ -34,7 +34,7 @@ import type { PendingChargeRow, UpcomingInstallment, UnbilledItemRow } from '../
 import { mapToUnbilledItemRows } from './utils'
 import { CardPendingChargeDrawer } from './CardPendingChargeDrawer'
 import { BillChargesModal } from './BillChargesModal'
-import { ResponsivePie } from "@nivo/pie"
+import { PieChart } from "@/components/shared"
 import { useHubPanel } from '@/components/providers'
 import { useSearchParams, usePathname, useRouter } from 'next/navigation'
 import { useEntityRouteActions } from '@/hooks/useEntityRouteActions'
@@ -495,25 +495,8 @@ export function UnbilledChargesView({
                                                             <StatCard label="Distribución de Cargos" variant="chart" className="flex-1" chart={
                                                                 <div className="flex flex-col gap-3">
                                                                     <div className="flex-1 min-h-0" style={{ minHeight: 160 }}>
-                                                                        <ResponsivePie
-                                                                            data={[
-                                                                                ...chargeTypeDistribution.map(d => ({ id: d.display, value: d.amount })),
-                                                                                ...(totalInstCount > 0 ? [{ id: 'Cuotas', value: totalInstAmount }] : []),
-                                                                            ]}
-                                                                            innerRadius={0.6}
-                                                                            padAngle={0}
-                                                                            cornerRadius={0}
-                                                                            borderWidth={2}
-                                                                            borderColor={{ theme: "background" }}
-                                                                            enableArcLinkLabels={false}
-                                                                            enableArcLabels={true}
-                                                                            arcLabel={(d) => `${Math.round((d.value / [...chargeTypeDistribution.map(c => c.amount), ...(totalInstCount > 0 ? [totalInstAmount] : [])].reduce((s, v) => s + v, 0)) * 100)}%`}
-                                                                            arcLabelsRadiusOffset={0.55}
-                                                                            colors={{ scheme: "nivo" }}
-                                                                            theme={{
-                                                                                labels: { text: { fontSize: 10 } },
-                                                                                legends: { text: { fontSize: 10 } },
-                                                                            }}
+                                                                        <PieChart
+                                                                            data={[...chargeTypeDistribution.map((d) => ({ id: d.display, value: d.amount })), ...(totalInstCount > 0 ? [{ id: 'Cuotas', value: totalInstAmount }] : [])]}
                                                                             legends={[{
                                                                                 anchor: "bottom",
                                                                                 direction: "row",

@@ -2,7 +2,7 @@
 
 import { formatCurrency } from "@/lib/money"
 import React from "react"
-import { Drawer, StatCard, ChartTooltip } from "@/components/shared"
+import { Drawer, StatCard } from "@/components/shared"
 
 import {
     TrendingUp,
@@ -10,8 +10,7 @@ import {
     Building2,
     BarChart3
 } from "lucide-react"
-import { ResponsivePie } from "@nivo/pie"
-import { ResponsiveBar } from "@nivo/bar"
+import { PieChart, BarChart } from "@/components/shared"
 
 // Categorical data-viz palette (CMYK process inks). NOT semantic state. See color-system.md §8.
 import { Partner, PartnerSummary } from "@/features/contacts/types/partner"
@@ -75,28 +74,10 @@ export function EquityStatsDrawer({ open, onOpenChange, partners, summary }: Equ
                         <h3 className="text-[11px] font-black uppercase tracking-widest">Participación Patrimonial</h3>
                     </div>
                     <div className="h-64 bg-background border border-border rounded-md p-4">
-                        <ResponsivePie
+                        <PieChart
                             data={pieData}
                             innerRadius={0.7}
-                            padAngle={3}
-                            cornerRadius={4}
-                            activeOuterRadiusOffset={8}
-                            colors={{ scheme: "set2" }}
-                            arcLinkLabel={(d) => d.id as string}
-                            arcLinkLabelsColor={{ theme: "text" }}
-                            arcLinkLabelsThickness={1}
-                            arcLinkLabelsStraightLength={8}
-                            arcLabelsSkipAngle={20}
-                            tooltip={({ datum }) => (
-                                <ChartTooltip className="bg-background/95 backdrop-blur p-3 shadow-floating">
-                                    <p className="text-[10px] uppercase font-black tracking-widest text-muted-foreground mb-1">
-                                        {datum.id}
-                                    </p>
-                                    <p className="text-xs font-mono font-bold">
-                                        {formatCurrency(datum.value)}
-                                    </p>
-                                </ChartTooltip>
-                            )}
+                            enableArcLabels={false}
                             legends={[
                                 {
                                     anchor: "bottom",
@@ -109,6 +90,12 @@ export function EquityStatsDrawer({ open, onOpenChange, partners, summary }: Equ
                                     symbolShape: "circle",
                                 },
                             ]}
+                            renderTooltip={({ id, value }) => (
+                                <>
+                                    <span className="font-medium">{String(id)}</span>
+                                    <span className="ml-2 font-bold">{formatCurrency(value)}</span>
+                                </>
+                            )}
                         />
                     </div>
                 </div>
@@ -120,13 +107,11 @@ export function EquityStatsDrawer({ open, onOpenChange, partners, summary }: Equ
                         <h3 className="text-[11px] font-black uppercase tracking-widest">Capital Enterado vs Pendiente</h3>
                     </div>
                     <div className="h-64 bg-background border border-border rounded-md p-4">
-                        <ResponsiveBar
+                        <BarChart
                             data={barData}
                             keys={["paid", "pending"]}
                             indexBy="name"
                             groupMode="stacked"
-                            padding={0.3}
-                            borderRadius={4}
                             colors={["var(--success)", "var(--warning)"]}
                             axisBottom={{
                                 tickSize: 0,
@@ -135,21 +120,19 @@ export function EquityStatsDrawer({ open, onOpenChange, partners, summary }: Equ
                             axisLeft={{
                                 tickSize: 0,
                                 tickPadding: 10,
-                                format: (v) => `$${Number(v) / 1000}k`,
+                                format: (v: number) => `$${v / 1000}k`,
                             }}
-                            tooltip={({ id, value, indexValue, color }) => (
-                                <ChartTooltip className="bg-background/95 backdrop-blur p-3 shadow-floating">
+                            renderTooltip={({ id, value, indexValue, color }) => (
+                                <>
                                     <div className="flex items-center gap-2">
                                         <div className="w-2 h-2 rounded-full" style={{ backgroundColor: color }} />
-                                        <span className="text-[10px] uppercase font-black tracking-widest text-muted-foreground">
-                                            {indexValue as string}
-                                        </span>
+                                        <span className="font-medium">{indexValue as string}</span>
                                     </div>
                                     <p className="text-xs mt-1">
                                         <span className="font-medium">{id === "paid" ? "Enterado" : "Pendiente"}: </span>
-                                        <span className="font-mono font-bold">{formatCurrency(value)}</span>
+                                        <span className="font-bold">{formatCurrency(value)}</span>
                                     </p>
-                                </ChartTooltip>
+                                </>
                             )}
                             legends={[
                                 {
