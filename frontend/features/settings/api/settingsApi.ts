@@ -120,7 +120,6 @@ export const settingsApi = {
             'stock_output_account',
             'adjustment_income_account',
             'adjustment_expense_account',
-            'initial_inventory_account',
             'revaluation_account',
             'merchandise_cogs_account',
             'manufactured_cogs_account',
