@@ -13,6 +13,7 @@ import { Form, FormField } from "@/components/ui/form"
 import { FileText } from "lucide-react"
 import { getEntityIcon } from "@/lib/entity-registry"
 import { CancelButton, Drawer, FormFooter, LabeledInput, LabeledSelect, SkeletonShell, SubmitButton } from '@/components/shared'
+import { useServerDate } from "@/hooks/useServerDate"
 import { formDrawerWidth } from "@/lib/form-widths"
 
 const MONTHS = [
@@ -59,8 +60,9 @@ export function CreatePayrollDrawer({ open, onOpenChange, onSaved, trigger }: Cr
 
     const isFetchingInitialData = open && isFetchingEmployees
 
-    const currentYear = new Date().getFullYear()
-    const currentMonth = new Date().getMonth() + 1
+    const { year: serverYear, month: serverMonth } = useServerDate()
+    const currentYear = serverYear ?? new Date().getFullYear()
+    const currentMonth = serverMonth ?? new Date().getMonth() + 1
 
     const form = useForm<CreatePayrollValues>({
         resolver: zodResolver(createPayrollSchema),

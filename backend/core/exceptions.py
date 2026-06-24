@@ -1,5 +1,5 @@
-from datetime import datetime
 from typing import Optional, Dict, Any
+from django.utils import timezone
 
 class ERPGraficoError(Exception):
     """Base exception for all ERPGrafico errors."""
@@ -15,7 +15,7 @@ class ERPGraficoError(Exception):
         self.code = code
         self.details = details or {}
         self.status_code = status_code
-        self.timestamp = datetime.utcnow()
+        self.timestamp = timezone.now()
 
 class DomainError(ERPGraficoError):
     """Raised when a business rule is violated."""

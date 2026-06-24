@@ -57,6 +57,7 @@ import {
     useCreateMovementMutation
 } from "../hooks/useReconciliationMutations"
 
+import { useServerDate } from '@/hooks/useServerDate'
 import { MovementWizard, type MovementData } from "@/features/treasury/components/MovementWizard"
 import { AutoMatchProgressModal } from "./AutoMatchProgressModal"
 import { ReconciliationIntelligence } from "./ReconciliationIntelligence"
@@ -149,6 +150,7 @@ function DroppableBankLine({ id, children }: { id: number, children: React.React
 
 export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete }: ReconciliationPanelProps) {
     const { isHubOpen } = useHubPanel()
+    const { serverDate } = useServerDate()
     const [selectedLines, setSelectedLines] = useState<BankStatementLine[]>([])
     const [selectedPayments, setSelectedPayments] = useState<ReconciliationSystemItem[]>([])
 
@@ -347,7 +349,7 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
 
             if (diffAmount !== 0) {
                 const line = unreconciledLines.find(l => l.id === lineId)
-                const defaultDate = line ? new Date(line.transaction_date) : new Date()
+                const defaultDate = line ? new Date(line.transaction_date) : (serverDate ?? new Date())
                 // Adjust for local timezone to avoid off-by-one day issues
                 const localDate = new Date(defaultDate.getTime() + defaultDate.getTimezoneOffset() * 60000)
                 setDiffDialog({ open: true, lineId, paymentId, amount: diffAmount.toString(), accountingDate: localDate })
@@ -396,7 +398,7 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
 
         if (!force && Math.abs(diff) > 1) {
             const line = selectedLines[0]
-            const defaultDate = line ? new Date(line.transaction_date) : new Date()
+            const defaultDate = line ? new Date(line.transaction_date) : (serverDate ?? new Date())
             const localDate = new Date(defaultDate.getTime() + defaultDate.getTimezoneOffset() * 60000)
             setDiffDialog({ open: true, lineId: selectedLines[0].id, paymentId: 0, amount: diff.toString(), isGroup: true, accountingDate: localDate })
             setDiffType(diff < 0 ? "COMMISSION" : "ROUNDING")

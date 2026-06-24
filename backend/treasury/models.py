@@ -820,6 +820,13 @@ class TreasuryAccount(models.Model):
         null=True,
         help_text=_("Número de cuenta bancaria (solo para cuentas corrientes)")
     )
+    card_number = models.CharField(
+        _("Número de Tarjeta"),
+        max_length=50,
+        blank=True,
+        null=True,
+        help_text=_("Número de la tarjeta de crédito (solo para tarjetas de crédito)")
+    )
     credit_limit = models.DecimalField(
         _("Cupo Total"),
         max_digits=18, decimal_places=2, null=True, blank=True,
@@ -918,6 +925,10 @@ class TreasuryAccount(models.Model):
                 raise ValidationError({
                     'bank': _("Las tarjetas requieren un banco asociado")
                 })
+            if not self.card_number:
+                raise ValidationError({
+                    'card_number': _("Las tarjetas de crédito requieren número de tarjeta")
+                })
         
         # Validate CASH accounts
         if self.account_type == self.Type.CASH and self.bank:
@@ -929,6 +940,12 @@ class TreasuryAccount(models.Model):
         if self.account_number and self.account_type not in [self.Type.CHECKING, self.Type.CREDIT_CARD]:
             raise ValidationError({
                 'account_number': _("Solo las cuentas bancarias y tarjetas pueden tener número de cuenta")
+            })
+        
+        # Validate card_number only for CREDIT_CARD
+        if self.card_number and self.account_type != self.Type.CREDIT_CARD:
+            raise ValidationError({
+                'card_number': _("El número de tarjeta solo aplica para tarjetas de crédito")
             })
                 
     def save(self, *args, **kwargs):

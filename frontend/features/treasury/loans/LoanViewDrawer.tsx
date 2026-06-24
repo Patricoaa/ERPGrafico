@@ -8,6 +8,7 @@ import {
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { useLoan } from './hooks'
+import { parseDateOnly } from '@/lib/utils'
 
 interface Props {
     loanId: number | null
@@ -82,8 +83,8 @@ export function LoanViewDrawer({ loanId, open, onOpenChange }: Props) {
 
                         <FormSection title="Fechas" icon={Banknote} />
                         <div className="grid grid-cols-2 gap-4">
-                            <Field label="Fecha de Inicio" value={loan.start_date ? new Date(loan.start_date).toLocaleDateString('es-CL') : '—'} />
-                            <Field label="Primer Vencimiento" value={loan.first_due_date ? new Date(loan.first_due_date).toLocaleDateString('es-CL') : '—'} />
+                            <Field label="Fecha de Inicio" value={loan.start_date ? parseDateOnly(loan.start_date).toLocaleDateString('es-CL') : '—'} />
+                            <Field label="Primer Vencimiento" value={loan.first_due_date ? parseDateOnly(loan.first_due_date).toLocaleDateString('es-CL') : '—'} />
                         </div>
 
                         <FormSection title="Cuentas" icon={Banknote} />

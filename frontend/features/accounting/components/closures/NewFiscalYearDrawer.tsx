@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { Calendar, CheckCircle2, AlertCircle, ShieldAlert } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useServerDate } from '@/hooks/useServerDate';
 import { Drawer, LabeledContainer, CancelButton, SubmitButton, FormFooter } from '@/components/shared';
 import { formDrawerWidth } from '@/lib/form-widths';
 
@@ -23,7 +24,8 @@ export function NewFiscalYearDrawer({
     existingYears,
     hasOpenPeriods = false
 }: NewFiscalYearDrawerProps) {
-    const currentYear = new Date().getFullYear();
+    const { year: serverYear } = useServerDate();
+    const currentYear = serverYear || new Date().getFullYear();
     const nextYearSuggestion = existingYears.length > 0
         ? Math.max(...existingYears) + 1
         : currentYear;

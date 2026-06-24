@@ -284,7 +284,8 @@ export function useDrafts(options: UseDraftsOptions = {}) {
 
     // Fetch drafts when session becomes available (and on mount)
     useEffect(() => {
-        fetchDrafts()
+        const timer = setTimeout(() => fetchDrafts(), 0)
+        return () => clearTimeout(timer)
     }, [currentSession?.id]) // eslint-disable-line react-hooks/exhaustive-deps
 
     return {

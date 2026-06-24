@@ -3,7 +3,7 @@
 import { useRouter } from "next/navigation"
 import { HandCoins, ArrowRight } from "lucide-react"
 import { MoneyDisplay, StatusBadge } from "@/components/shared"
-import { cn } from "@/lib/utils"
+import { cn, parseDateOnly } from "@/lib/utils"
 import type { BankOverviewData } from "../hooks/useBankOverview"
 
 interface Props {
@@ -83,7 +83,7 @@ export function BankOverviewLoanCards({ data, bankId }: Props) {
 
                             {loan.next_due_date && (
                                 <div className="flex items-center justify-between text-[10px] text-muted-foreground mt-1.5 pt-1.5 border-t border-border/40">
-                                    <span>Próx. vencimiento: {new Date(loan.next_due_date).toLocaleDateString("es-CL", { day: "numeric", month: "short", year: "numeric" })}</span>
+                                    <span>Próx. vencimiento: {parseDateOnly(loan.next_due_date).toLocaleDateString("es-CL", { day: "numeric", month: "short", year: "numeric" })}</span>
                                     {loan.next_installment_amount != null && (
                                         <MoneyDisplay amount={loan.next_installment_amount} className="text-[10px] font-semibold" showColor={false} />
                                     )}

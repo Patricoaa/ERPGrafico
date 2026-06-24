@@ -19,6 +19,7 @@ import { PayStatementModal } from './PayStatementModal'
 import { statementActions, type StatementActionsCtx } from './statementActions'
 import type { CreditCardStatement } from './types'
 import { useStatementsAnalyticsData } from './useStatementsAnalyticsData'
+import { parseDateOnly } from '@/lib/utils'
 
 interface StatementsClientViewProps {
     bankId: number
@@ -85,7 +86,7 @@ export function StatementsClientView({ bankId }: StatementsClientViewProps) {
 
     const months = useMemo(() => dateRange === null
         ? 24
-        : Math.max(1, Math.ceil((new Date(dateRange.to).getTime() - new Date(dateRange.from).getTime()) / (30 * 24 * 60 * 60 * 1000))),
+        : Math.max(1, Math.ceil((parseDateOnly(dateRange.to).getTime() - parseDateOnly(dateRange.from).getTime()) / (30 * 24 * 60 * 60 * 1000))),
     [dateRange])
 
     const hubData = useStatementsAnalyticsData(cardAccountId, months, granularity)
@@ -185,7 +186,7 @@ export function StatementsClientView({ bankId }: StatementsClientViewProps) {
             header: ({ column }) => <DataTableColumnHeader column={column} title="Vencimiento" />,
             cell: ({ row }) => (
                 <DataCell.Text>
-                    {new Date(row.original.due_date).toLocaleDateString('es-CL')}
+                    {parseDateOnly(row.original.due_date).toLocaleDateString('es-CL')}
                 </DataCell.Text>
             ),
         },
@@ -316,7 +317,7 @@ export function StatementsClientView({ bankId }: StatementsClientViewProps) {
                                 />
                                 <EntityCard.Field
                                     label="Vencimiento"
-                                    value={new Date(stmt.due_date).toLocaleDateString('es-CL')}
+                                    value={parseDateOnly(stmt.due_date).toLocaleDateString('es-CL')}
                                 />
                             </EntityCard.Body>
                         </EntityCard>

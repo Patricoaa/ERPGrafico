@@ -1,3 +1,4 @@
+import { parseDateOnly } from '@/lib/utils'
 import type {
     PendingChargeRow,
     UpcomingInstallment,
@@ -53,7 +54,7 @@ export function mapToUnbilledItemRows(
     }))
 
     return [...chargeRows, ...installmentRows].sort(
-        (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime(),
+        (a, b) => parseDateOnly(b.date).getTime() - parseDateOnly(a.date).getTime(),
     )
 }
 
@@ -117,6 +118,6 @@ export function mapToStatementChargeRows(
     }))
 
     return [...movementRows, ...installmentRows, ...pendingRows].sort(
-        (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime(),
+        (a, b) => parseDateOnly(b.date).getTime() - parseDateOnly(a.date).getTime(),
     )
 }

@@ -20,6 +20,7 @@ import { getEntityIcon } from "@/lib/entity-registry"
 import { useReactToPrint } from "react-to-print"
 import { PrintableLayout } from "@/features/_shared/transaction-drawer"
 import type { DrawerMode } from "@/features/_shared/drawer/types"
+import { useServerDate } from "@/hooks/useServerDate"
 import { formDrawerWidth } from "@/lib/form-widths"
 
 export const advanceSchema = z.object({
@@ -52,6 +53,7 @@ export function AdvanceDrawer({ open, onOpenChange, advance, employees: employee
     const printRef = useRef<HTMLDivElement>(null)
     const handlePrint = useReactToPrint({ contentRef: printRef })
     const [saving, setSaving] = useState(false)
+    const { dateString } = useServerDate()
 
     const width = formDrawerWidth("medium", !!advance)
 
@@ -60,7 +62,7 @@ export function AdvanceDrawer({ open, onOpenChange, advance, employees: employee
         defaultValues: {
             employee: "",
             amount: "",
-            date: new Date().toISOString().split('T')[0],
+            date: dateString,
             payroll: "",
             notes: "",
         }
@@ -79,7 +81,7 @@ export function AdvanceDrawer({ open, onOpenChange, advance, employees: employee
             form.reset({
                 employee: "",
                 amount: "",
-                date: new Date().toISOString().split('T')[0],
+                date: dateString,
                 payroll: "",
                 notes: "",
             })

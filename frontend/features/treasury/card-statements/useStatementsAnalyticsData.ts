@@ -3,6 +3,7 @@
 import { useMemo } from "react"
 import { useQuery } from "@tanstack/react-query"
 import { treasuryApi } from "../api/treasuryApi"
+import { parseDateOnly } from "@/lib/utils"
 import type { TcHubAnalyticsResponse, PurchaseGroupAnalysisRow } from "./analyticsTypes"
 
 export interface CostDonutItem {
@@ -43,7 +44,7 @@ export function useStatementsAnalyticsData(
         const costs = analytics?.financial_costs ?? []
 
         const sortedPayments = [...payments]
-            .sort((a, b) => new Date(a.due_date).getTime() - new Date(b.due_date).getTime())
+            .sort((a, b) => parseDateOnly(a.due_date).getTime() - parseDateOnly(b.due_date).getTime())
 
         const paymentEvolutionChart = [
             {

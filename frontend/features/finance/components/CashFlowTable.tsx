@@ -9,7 +9,7 @@ import {
     TableHeader,
     TableRow
 } from "@/components/ui/table";
-import { cn } from "@/lib/utils";
+import { cn, parseDateOnly } from "@/lib/utils";
 ;
 import {AlertCircle, CheckCircle2, Info, Calendar} from "lucide-react";
 ;
@@ -217,7 +217,7 @@ export const CashFlowTable: React.FC<CashFlowTableProps> = ({ data, embedded, sh
                                         </TableCell>
                                         <TableCell className="text-xs font-medium">{item.label}</TableCell>
                                         <TableCell className="text-xs">
-                                            {new Date(item.due_date).toLocaleDateString('es-CL')}
+                                            {parseDateOnly(item.due_date).toLocaleDateString('es-CL')}
                                         </TableCell>
                                         <TableCell className="text-right">
                                             <MoneyDisplay amount={item.amount} className={item.direction === 'INBOUND' ? 'text-success' : 'text-destructive'} />

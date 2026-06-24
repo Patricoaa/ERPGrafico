@@ -3,7 +3,7 @@
 import { useRouter } from "next/navigation"
 import { TrendingDown, TrendingUp, ArrowLeftRight, Receipt, ArrowRight } from "lucide-react"
 import { MoneyDisplay, EmptyState } from "@/components/shared"
-import { cn } from "@/lib/utils"
+import { cn, parseDateOnly } from "@/lib/utils"
 import type { BankOverviewData } from "../hooks/useBankOverview"
 
 interface BankRecentActivityProps {
@@ -59,7 +59,7 @@ export function BankRecentActivity({ data, bankId }: BankRecentActivityProps) {
                         >
                             <DotIcon className={cn("h-3.5 w-3.5 shrink-0", dotColor)} />
                             <span className="text-[11px] text-muted-foreground font-mono tabular-nums shrink-0 w-12">
-                                {new Date(mov.date).toLocaleDateString("es-CL", { day: "2-digit", month: "2-digit" })}
+                                {parseDateOnly(mov.date).toLocaleDateString("es-CL", { day: "2-digit", month: "2-digit" })}
                             </span>
                             <div className="flex-1 min-w-0">
                                 <span className="text-xs font-medium truncate block">

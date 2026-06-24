@@ -7,7 +7,6 @@ import { LucideIcon } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 import Link from "next/link"
-import { usePathname, useRouter } from "next/navigation"
 
 import type { NavigationConfig } from "@/components/providers/HeaderProvider"
 
@@ -18,12 +17,6 @@ export interface PageHeaderStatus {
     type?: PageHeaderStatusType
     icon?: LucideIcon
     iconName?: string
-}
-
-export interface SectionTab {
-    value: string
-    label: string
-    href: string
 }
 
 interface PageHeaderProps {
@@ -53,8 +46,6 @@ interface PageHeaderProps {
     children?: React.ReactNode
     /** Navigation config for dropdown tabs in the header bar */
     navigation?: NavigationConfig
-    /** Section tabs rendered as a TabBar below the header navigation */
-    sectionTabs?: SectionTab[]
 }
 
 /**
@@ -63,7 +54,6 @@ interface PageHeaderProps {
  */
 import { useHeader } from "@/components/providers/HeaderProvider"
 import { useEffect } from "react"
-import { TabBar } from '@/components/shared'
 
 export function PageHeader({ 
     title, 
@@ -75,12 +65,9 @@ export function PageHeader({
     status,
     children, 
     className,
-    navigation,
-    sectionTabs 
+    navigation 
 }: PageHeaderProps) {
     const { setHeader, clearHeader } = useHeader()
-    const pathname = usePathname()
-    const router = useRouter()
 
     // Sync header config to global provider
     useEffect(() => {
@@ -112,30 +99,6 @@ export function PageHeader({
         setHeader,
         clearHeader
     ])
-
-    // Section tabs rendered below the header navigation
-    if (sectionTabs) {
-        const activeTab = sectionTabs.find(
-            t => pathname === t.href || pathname.startsWith(t.href + '/')
-        )?.value || sectionTabs[0]?.value
-
-        return (
-            <div className="shrink-0 flex justify-start px-6 py-2 border-b border-border bg-background">
-                <TabBar
-                    items={sectionTabs.map(t => ({ value: t.value, label: t.label }))}
-                    value={activeTab}
-                    onValueChange={(value) => {
-                        const tab = sectionTabs.find(t => t.value === value)
-                        if (tab) router.push(tab.href)
-                    }}
-                    variant="toolbar"
-                    className="w-auto flex-none"
-                >
-                    <div className="hidden" />
-                </TabBar>
-            </div>
-        )
-    }
 
     // This component now renders nothing in-place,
     // as the header is handled by DashboardShell

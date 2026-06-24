@@ -16,7 +16,7 @@ import { DataCell } from "@/components/shared"
 import { partnersApi } from "@/features/contacts/api/partnersApi"
 import { Partner, PartnerTransaction } from "@/features/contacts/types/partner"
 import { toast } from "sonner"
-import {formatPlainDate as formatDate} from "@/lib/utils"
+import {formatPlainDate as formatDate, parseDateOnly} from "@/lib/utils"
 import {
     DropdownMenuItem,
 } from "@/components/ui/dropdown-menu"
@@ -133,7 +133,7 @@ export function PartnerLedgerTab() {
 
     // Calculate Running Balance
     const txsWithBalance = React.useMemo(() => {
-        const sorted = [...transactions].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
+        const sorted = [...transactions].sort((a, b) => parseDateOnly(a.date).getTime() - parseDateOnly(b.date).getTime())
         const { result } = sorted.reduce<{ result: Array<PartnerTransaction & { balance_after: number }>, balance: number }>(
             (acc, tx) => {
                 const amount = parseFloat(tx.amount) || 0

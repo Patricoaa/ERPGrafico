@@ -20,7 +20,13 @@ export interface Group<T> {
 
 function parseSafeDate(value: unknown): Date | null {
   if (value == null || value === "") return null
-  const d = new Date(String(value))
+  const s = String(value)
+  // date-only string → parse parts to avoid UTC midnight shift
+  if (/^\d{4}-\d{2}-\d{2}$/.test(s)) {
+    const [y, m, d] = s.split('-').map(Number)
+    return new Date(y, m - 1, d)
+  }
+  const d = new Date(s)
   return isNaN(d.getTime()) ? null : d
 }
 

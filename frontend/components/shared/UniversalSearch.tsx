@@ -51,9 +51,12 @@ export function UniversalSearch() {
         return () => document.removeEventListener("keydown", handleKeyDown)
     }, [])
 
+    if (open && query !== "") {
+        setQuery("")
+    }
+
     useEffect(() => {
         if (open) {
-            setQuery("")
             requestAnimationFrame(() => {
                 setActiveIndex(0)
                 setSelectedType(null)

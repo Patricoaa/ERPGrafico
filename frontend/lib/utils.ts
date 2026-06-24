@@ -279,6 +279,16 @@ export function formatBytes(bytes: number, decimals = 2) {
 
   return `${parseFloat((bytes / Math.pow(k, i)).toFixed(dm))} ${sizes[i]}`
 }
+/**
+ * Parse a date-only string (`YYYY-MM-DD`) into a local-timezone Date.
+ * Avoids the UTC midnight shift that `new Date("2024-01-15")` produces
+ * in negative UTC offsets (Chile UTC-3/-4).
+ */
+export function parseDateOnly(dateStr: string): Date {
+  const [y, m, d] = dateStr.split('-').map(Number)
+  return new Date(y, m - 1, d)
+}
+
 export function formatPlainDate(value: string | Date | null | undefined): string {
   if (!value) return '-'
 
@@ -301,7 +311,9 @@ export function formatPlainDate(value: string | Date | null | undefined): string
   }
 
   // Fallback for non-standard formats
-  const date = new Date(value)
+  const date = typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value)
+    ? parseDateOnly(value)
+    : new Date(value)
   if (isNaN(date.getTime())) return '-'
   return date.toLocaleDateString('es-CL', { year: 'numeric', month: '2-digit', day: '2-digit' })
 }

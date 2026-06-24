@@ -20,6 +20,8 @@ interface DomainCardProps {
     visibleColumns?: Record<string, boolean>
     /** Whether it is being used in a detail view header */
     isDetailView?: boolean
+    /** Image URL — renders an <img> in the icon slot, taking precedence over icon */
+    imageSrc?: string
     /** Override the auto-derived entity icon */
     icon?: LucideIcon
     /** Override the auto-derived icon container styling */
@@ -41,6 +43,7 @@ export function DomainCard({
     className,
     visibleColumns,
     isDetailView = false,
+    imageSrc,
     icon: iconOverride,
     iconClassName: iconClassNameOverride
 }: DomainCardProps) {
@@ -57,13 +60,15 @@ export function DomainCard({
     const hasPending = total > 0 && pending > 0
 
     // ─── Aesthetics ───────────────────────────────────────────────────────────
-    let iconColor = "text-primary/60"
+    let iconClassName = "bg-muted"
 
     if (label === 'purchasing.purchaseorder' || label === 'inventory.product') {
-        iconColor = "text-info/60"
+        iconClassName = "text-info bg-info/10"
     } else if (label === 'billing.invoice' && ['NOTA_CREDITO', 'NOTA_DEBITO'].includes(data.dte_type)) {
-        iconColor = "text-warning/60"
+        iconClassName = "text-warning bg-warning/10"
     }
+
+    if (iconClassNameOverride) iconClassName = iconClassNameOverride
 
     const handleClick = () => {
         if (isDetailView) return
@@ -82,8 +87,9 @@ export function DomainCard({
             )}
         >
             <EntityCard.Header
-                icon={Icon}
-                iconClassName={iconClassNameOverride ?? iconColor}
+                imageSrc={imageSrc}
+                icon={imageSrc ? undefined : Icon}
+                iconClassName={iconClassName}
                 title={visibleColumns?.partner_name !== false ? partnerName : undefined}
                 subtitle={
                     <span className="flex items-center gap-1.5 flex-wrap">
@@ -127,21 +133,23 @@ export function DomainCard({
                                 <DomainHubStatus label={label} data={data} />
                             </div>
                         )}
-
-                        {!isDetailView && (
-                            isHubOpen && isSelected ? (
-                                <ArrowLeft className="h-5 w-5 text-primary animate-in fade-in slide-in-from-right-1 duration-300" />
-                            ) : (
-                                <ArrowRight className="h-5 w-5 text-muted-foreground/30 group-hover:text-primary group-hover:translate-x-1 transition-all" />
-                            )
-                        )}
                     </div>
                 }
             />
 
+            {!isDetailView && (
+                <span className="absolute right-4 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 pointer-events-none">
+                    {isHubOpen && isSelected ? (
+                        <ArrowLeft className="h-5 w-5 text-muted-foreground" />
+                    ) : (
+                        <ArrowRight className="h-5 w-5 text-muted-foreground" />
+                    )}
+                </span>
+            )}
+
             {/* ROW 2: Product Lines & Totals */}
             {(data.lines || data.items || []).length > 0 && (
-                <EntityCard.Body className="flex items-start justify-between gap-4 pt-2 border-t border-border/30 mt-1">
+                <EntityCard.Body className="flex items-start justify-between gap-4">
                     <div className="flex flex-wrap gap-x-6 gap-y-1 flex-1">
                         {(data.lines || data.items || []).map((line: any, idx: number) => (
                             <span key={idx} className="text-sm text-foreground/70 flex items-center gap-1.5">

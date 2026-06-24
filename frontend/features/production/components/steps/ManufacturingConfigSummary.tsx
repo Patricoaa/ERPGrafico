@@ -8,7 +8,7 @@ import { format } from "date-fns"
 import { toast } from "sonner"
 import { Lock, Pencil, Calendar, User, Package, Settings, X, RotateCcw, Copy } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { cn } from "@/lib/utils"
+import { cn, parseDateOnly } from "@/lib/utils"
 import {
     Tooltip,
     TooltipContent,
@@ -182,8 +182,8 @@ export function ManufacturingConfigSummary({ order, onSaved, onRestartComplete, 
                 contact: order.stage_data?.contact_id
                     ? { id: Number(order.stage_data.contact_id), name: order.stage_data.contact_name ?? "", tax_id: order.stage_data.contact_tax_id ?? "" } as Contact
                     : null,
-                startDate: order.start_date ? new Date(order.start_date) : null,
-                dueDate: order.due_date ? new Date(order.due_date) : null,
+                startDate: order.start_date ? parseDateOnly(order.start_date) : null,
+                dueDate: order.due_date ? parseDateOnly(order.due_date) : null,
                 notes: order.stage_data?.internal_notes ?? "",
             })
         }
@@ -491,13 +491,13 @@ export function ManufacturingConfigSummary({ order, onSaved, onRestartComplete, 
                         <div>
                             <p className="text-xs text-muted-foreground">Fecha Inicio</p>
                             <p className="font-medium">
-                                {order.start_date ? format(new Date(order.start_date), 'dd/MM/yyyy') : "—"}
+                                {order.start_date ? format(parseDateOnly(order.start_date), 'dd/MM/yyyy') : "—"}
                             </p>
                         </div>
                         <div>
                             <p className="text-xs text-muted-foreground">Fecha Entrega</p>
                             <p className="font-medium">
-                                {order.due_date ? format(new Date(order.due_date), 'dd/MM/yyyy') : "—"}
+                                {order.due_date ? format(parseDateOnly(order.due_date), 'dd/MM/yyyy') : "—"}
                             </p>
                         </div>
                         <div>

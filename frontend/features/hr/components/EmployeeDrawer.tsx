@@ -25,6 +25,7 @@ import { Drawer, LabeledInput, LabeledSelect, TabBar, TabBarContent, FormSection
 import { formDrawerWidth } from "@/lib/form-widths"
 import { Button } from "@/components/ui/button"
 import { useReactToPrint } from "react-to-print"
+import { useServerDate } from "@/hooks/useServerDate"
 import { PrintableLayout } from "@/features/_shared/transaction-drawer"
 import type { DrawerMode } from "@/features/_shared/drawer/types"
 
@@ -75,6 +76,7 @@ export function EmployeeDrawer({ open, onOpenChange, employee, onSaved, trigger,
 
     const mode: DrawerMode = modeProp ?? (employee ? 'edit' : 'create')
     const isView = mode === 'view'
+    const { dateString } = useServerDate()
     const handlePrint = useReactToPrint({ contentRef: printRef })
 
     const [activeTab, setActiveTab] = useState("contratacion")
@@ -142,7 +144,7 @@ export function EmployeeDrawer({ open, onOpenChange, employee, onSaved, trigger,
                 contact: "",
                 position: "",
                 department: "",
-                start_date: new Date().toISOString().split("T")[0],
+                start_date: dateString,
                 base_salary: "0",
                 status: "ACTIVE",
                 contract_type: "INDEFINIDO",

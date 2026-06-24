@@ -353,6 +353,32 @@ const { entity, isLoading, clearSelection } = useSelectedEntity<Category>({
 
 Ver contrato completo: [list-modal-edit-pattern.md §2.3](./list-modal-edit-pattern.md#23-hook-useselectedentity).
 
+### `useInitializeForm<TData, TForm>(opts)` 🟢
+
+Initializes a `react-hook-form` instance from server data using the "adjust state during render" pattern (ADR-0051). Replaces the `useEffect` + `initialized` flag boilerplate for settings panels and any form that receives async data.
+
+```ts
+import { useInitializeForm } from "@/hooks/useInitializeForm"
+
+useInitializeForm({
+    form,
+    data: settings,
+    mapData: (s) => ({
+        default_revenue_account: s.default_revenue_account?.toString() ?? null,
+    }),
+})
+```
+
+| Prop | Type | Notes |
+|------|------|-------|
+| `form` | `UseFormReturn<TForm>` | Instance from `useForm()` |
+| `data` | `TData \| undefined` | Server data; falsy = skip (loading state) |
+| `mapData` | `((data: TData) => Partial<TForm>)?` | Optional mapping from API shape to form shape |
+
+**Behavior**: On first render where `data` is truthy, calls `form.reset()` with the (mapped) values. A `useRef` guard prevents re-initialization on subsequent renders. Runs during render — no `useEffect`, no cascading `setState`.
+
+Ver contrato completo: [component-state-sync.md §Variante 2](./component-state-sync.md#4-variante-2-server-data--form-useinitializeform).
+
 ### `useAllowedPaymentMethods(opts)` 🟢
 
 ```ts

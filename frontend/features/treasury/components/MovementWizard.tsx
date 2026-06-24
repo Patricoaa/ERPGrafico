@@ -10,6 +10,7 @@ import { TreasuryAccountSelector } from "@/components/selectors/TreasuryAccountS
 import { AdvancedContactSelector } from "@/components/selectors/AdvancedContactSelector"
 import { treasuryApi } from "../api/treasuryApi"
 import { validateAccountingPeriod } from '@/features/accounting/actions'
+import { useServerDate } from '@/hooks/useServerDate'
 import { toast } from 'sonner'
 
 export interface MovementData {
@@ -73,6 +74,8 @@ export function MovementWizard({
     fixedMoveType,
     variant = 'standard'
 }: MovementWizardProps) {
+    const { dateString } = useServerDate()
+
     // Current Step index for GenericWizard
     const [stepIndex, setStepIndex] = useState(0)
 
@@ -537,7 +540,7 @@ export function MovementWizard({
     const handleFinalComplete = async () => {
         setSubmitting(true)
         try {
-            const today = new Date().toISOString().split('T')[0]
+            const today = dateString || new Date().toISOString().split('T')[0]
             const periodStatus = await validateAccountingPeriod(today)
             if (periodStatus.is_closed) {
                 toast.error("No se puede registrar el movimiento: El periodo contable actual está cerrado.", {

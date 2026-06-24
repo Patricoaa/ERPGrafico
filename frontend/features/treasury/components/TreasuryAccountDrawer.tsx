@@ -26,6 +26,7 @@ const treasuryAccountSchema = z.object({
     account: z.string().nullable().optional(), // Accounting account ID
     bank: z.string().nullable().optional(),
     account_number: z.string().optional(),
+    card_number: z.string().optional(),
     credit_limit: z.string().optional(),
 })
 
@@ -59,6 +60,7 @@ export function TreasuryAccountDrawer({ open, onOpenChange, accountId, onSuccess
             account: null,
             bank: null,
             account_number: "",
+            card_number: "",
             credit_limit: "",
         },
     })
@@ -105,6 +107,7 @@ export function TreasuryAccountDrawer({ open, onOpenChange, accountId, onSuccess
                         account: accountData.account ? accountData.account.toString() : null,
                         bank: accountData.bank ? accountData.bank.toString() : null,
                         account_number: accountData.account_number || "",
+                        card_number: accountData.card_number || "",
                         credit_limit: accountData.credit_limit?.toString() ?? "",
                     })
                 } else {
@@ -115,6 +118,7 @@ export function TreasuryAccountDrawer({ open, onOpenChange, accountId, onSuccess
                         account: null,
                         bank: null,
                         account_number: "",
+                        card_number: "",
                         credit_limit: "",
                     })
                 }
@@ -145,6 +149,7 @@ export function TreasuryAccountDrawer({ open, onOpenChange, accountId, onSuccess
                 account: data.account ? parseInt(data.account) : null,
                 bank: requiresBank(data.account_type) ? (data.bank ? parseInt(data.bank) : null) : null,
                 account_number: requiresBank(data.account_type) ? data.account_number : null,
+                card_number: data.account_type === 'CREDIT_CARD' ? data.card_number : null,
                 credit_limit: data.credit_limit ? Number(data.credit_limit) : null,
                 allows_cash: allowsCash,
                 allows_card: allowsCard,
@@ -323,7 +328,20 @@ export function TreasuryAccountDrawer({ open, onOpenChange, accountId, onSuccess
                                     {/* Credit limit (solo CREDIT_CARD) */}
                                     {type === "CREDIT_CARD" && (
                                         <div className="space-y-4">
-                                            <FormSection title="Límite de Crédito" icon={CreditCard} />
+                                            <FormSection title="Datos de la Tarjeta" icon={CreditCard} />
+                                            <FormField
+                                                control={form.control}
+                                                name="card_number"
+                                                render={({ field, fieldState }) => (
+                                                    <LabeledInput
+                                                        label="Número de Tarjeta"
+                                                        placeholder="1234 5678 9012 3456"
+                                                        disabled={isSystemManaged}
+                                                        error={fieldState.error?.message}
+                                                        {...field}
+                                                    />
+                                                )}
+                                            />
                                             <FormField
                                                 control={form.control}
                                                 name="credit_limit"

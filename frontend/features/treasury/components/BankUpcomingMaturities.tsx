@@ -3,7 +3,7 @@
 import { useRouter } from "next/navigation"
 import { HandCoins, FileCheck, CreditCard, ArrowRight, Calendar } from "lucide-react"
 import { MoneyDisplay, EmptyState } from "@/components/shared"
-import { cn } from "@/lib/utils"
+import { cn, parseDateOnly } from "@/lib/utils"
 import type { BankOverviewData, BankOverviewMaturityItem } from "../hooks/useBankOverview"
 
 interface BankUpcomingMaturitiesProps {
@@ -32,7 +32,7 @@ const TYPE_CONFIG = {
 function formatTimeUntil(dateStr: string): { label: string; isToday: boolean } {
     const today = new Date()
     today.setHours(0, 0, 0, 0)
-    const due = new Date(dateStr)
+    const due = parseDateOnly(dateStr)
     due.setHours(0, 0, 0, 0)
     const diffDays = Math.round((due.getTime() - today.getTime()) / (1000 * 60 * 60 * 24))
 

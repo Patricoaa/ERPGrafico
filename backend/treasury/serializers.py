@@ -89,7 +89,7 @@ class TreasuryAccountSerializer(serializers.ModelSerializer):
     class Meta:
         model = TreasuryAccount
         fields = ['id', 'name', 'code', 'currency', 'account', 'account_name', 'account_code', 'account_type', 'account_type_display',
-                  'bank', 'bank_name', 'account_number', 'credit_limit', 'available_credit',
+                  'bank', 'bank_name', 'account_number', 'card_number', 'credit_limit', 'available_credit',
                   'allows_cash', 'allows_card', 'allows_transfer', 'allows_check',
                   'is_system_managed', 'current_balance', 'available_liquidity', 'payment_methods', 'default_bank_format', 'reconciliation_settings',
                   'terminal_providers']

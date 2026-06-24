@@ -13,6 +13,7 @@ import { LoanPayInstallmentModal } from './LoanPayInstallmentModal'
 import { PrepayLoanModal } from './PrepayLoanModal'
 import { LoanInstallmentReadonlyModal } from './LoanInstallmentReadonlyModal'
 import type { LoanInstallment } from './types'
+import { parseDateOnly } from '@/lib/utils'
 
 interface Props {
     loanId: number | null
@@ -107,7 +108,7 @@ export function LoanDetailModal({ loanId, open, onOpenChange }: Props) {
                         <StatCard
                             label="Próx. Vencimiento"
                             value={loan.next_due_date
-                                ? new Date(loan.next_due_date).toLocaleDateString('es-CL')
+                                ? parseDateOnly(loan.next_due_date).toLocaleDateString('es-CL')
                                 : '—'}
                             icon={Calendar}
                             accent="info"

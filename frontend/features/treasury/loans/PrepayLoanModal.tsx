@@ -6,6 +6,7 @@ import {
     BaseModal, FormFooter, CancelButton, ActionSlideButton, LabeledSelect,
     MoneyDisplay, LabeledInput,
 } from '@/components/shared'
+import { useServerDate } from '@/hooks/useServerDate'
 import { useTreasuryAccounts } from '../hooks/useTreasuryAccounts'
 import { useLoanMutations } from './hooks'
 import type { BankLoan } from './types'
@@ -19,9 +20,10 @@ interface Props {
 export function PrepayLoanModal({ loan, open, onOpenChange }: Props) {
     const { accounts } = useTreasuryAccounts()
     const { prepay, isPrepaying } = useLoanMutations()
+    const { dateString } = useServerDate()
 
     const [paymentAccount, setPaymentAccount] = useState('')
-    const [payDate, setPayDate] = useState(new Date().toISOString().slice(0, 10))
+    const [payDate, setPayDate] = useState(dateString || new Date().toISOString().slice(0, 10))
     const [insuranceAmount, setInsuranceAmount] = useState('0')
     const [taxAmount, setTaxAmount] = useState('0')
     const [penaltyAmount, setPenaltyAmount] = useState('0')

@@ -14,6 +14,7 @@ export function useTreasuryMovements(filters: TreasuryMovementFilters = {}) {
     const { page_size = 50, page = 1, ...rest } = filters
 
     const params: Record<string, string | number | boolean> = { page, page_size }
+    if (rest.bank)             params.bank             = rest.bank
     if (rest.treasury_account) params.treasury_account = rest.treasury_account
     if (rest.movement_type)    params.movement_type    = rest.movement_type
     if (rest.date)             params.date             = rest.date

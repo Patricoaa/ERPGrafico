@@ -3,7 +3,7 @@
 import { useRouter } from "next/navigation"
 import { FileCheck, ArrowRight } from "lucide-react"
 import { MoneyDisplay } from "@/components/shared"
-import { cn } from "@/lib/utils"
+import { cn, parseDateOnly } from "@/lib/utils"
 import type { BankOverviewData } from "../hooks/useBankOverview"
 
 interface Props {
@@ -36,7 +36,7 @@ export function BankOverviewCheckCards({ data, bankId }: Props) {
 
             <div className="space-y-2">
                 {issued_checks_list.map(chk => {
-                    const isOverdue = new Date(chk.due_date) < new Date()
+                    const isOverdue = parseDateOnly(chk.due_date) < new Date()
                     return (
                         <button
                             key={chk.id}
@@ -56,11 +56,11 @@ export function BankOverviewCheckCards({ data, bankId }: Props) {
 
                             <div className="flex items-center gap-3 text-[10px] text-muted-foreground">
                                 <span>
-                                    Emitido: {new Date(chk.issue_date).toLocaleDateString("es-CL", { day: "numeric", month: "short" })}
+                                    Emitido: {parseDateOnly(chk.issue_date).toLocaleDateString("es-CL", { day: "numeric", month: "short" })}
                                 </span>
                                 <span className="text-border/60">·</span>
                                 <span className={cn(isOverdue && "text-warning font-semibold")}>
-                                    Vence: {new Date(chk.due_date).toLocaleDateString("es-CL", { day: "numeric", month: "short" })}
+                                    Vence: {parseDateOnly(chk.due_date).toLocaleDateString("es-CL", { day: "numeric", month: "short" })}
                                 </span>
                             </div>
 
