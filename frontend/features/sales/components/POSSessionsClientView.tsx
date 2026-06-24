@@ -208,6 +208,7 @@ export const POSSessionsClientView = ({ hideHeader = false }: POSSessionsClientV
                             </EntityCard.Footer>
                         </EntityCard>
                     )}
+                    cardSkeleton={{ showFooter: true }}
                 />
             </div>
 

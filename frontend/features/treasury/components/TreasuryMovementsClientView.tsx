@@ -415,6 +415,7 @@ export function TreasuryMovementsClientView({ externalOpen, createAction }: Trea
                             </EntityCard>
                         )
                     }}
+                    cardSkeleton={{ showBody: false }}
                 />
             </div>
 

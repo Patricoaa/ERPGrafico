@@ -299,6 +299,7 @@ export function PaymentHardwareClientView({
                                 </EntityCard.Footer>
                             </EntityCard>
                         )}
+                        cardSkeleton={{ showFooter: true }}
                     />
                 </div>
             )}

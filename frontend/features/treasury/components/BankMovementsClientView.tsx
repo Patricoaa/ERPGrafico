@@ -372,6 +372,7 @@ export function BankMovementsClientView({ bankId }: BankMovementsClientViewProps
                             </EntityCard>
                         )
                     }}
+                    cardSkeleton={{ showBody: false }}
                 />
             </div>
 

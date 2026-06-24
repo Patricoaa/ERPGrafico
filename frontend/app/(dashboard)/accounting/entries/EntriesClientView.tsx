@@ -272,6 +272,7 @@ export default function EntriesPage({ externalOpen, onExternalOpenChange, create
                             </EntityCard>
                         )
                     }}
+                    cardSkeleton={{ showBody: false }}
                 />
 
                 <JournalEntryDrawer

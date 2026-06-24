@@ -79,7 +79,6 @@ export function UnbilledChargesView({
     bankId,
 }: UnbilledChargesViewProps) {
     const [chargeDrawerOpen, setChargeDrawerOpen] = useState(false)
-    const [chargeToEdit, setChargeToEdit] = useState<PendingChargeRow | null>(null)
     const [showBillCharges, setShowBillCharges] = useState(false)
     const queryClient = useQueryClient()
     const { openHub } = useHubPanel()
@@ -153,6 +152,11 @@ export function UnbilledChargesView({
     })
 
     const charges: PendingChargeRow[] = result?.charges ?? []
+    // ── Derive chargeToEdit from URL param (selectedId) ───────────
+    const chargeToEdit = useMemo(
+        () => selectedId ? charges.find(c => String(c.id) === selectedId) ?? null : null,
+        [selectedId, charges],
+    )
     const upcomingInstallments: UpcomingInstallment[] = result?.upcoming_installments ?? []
     const summary: UnbilledSummary | undefined = result?.summary
     const forecast = result?.forecast
@@ -177,30 +181,24 @@ export function UnbilledChargesView({
         return result
     }, [mergedRows, filterFn, segFilters])
 
-    // ── Sync URL params with drawer state ─────────────────────────
-    useEffect(() => {
-        if (selectedId) {
-            const charge = charges.find(c => String(c.id) === selectedId)
-            if (charge) {
-                setChargeToEdit(charge)
-                setChargeDrawerOpen(true)
-            } else {
-                clearActions()
-            }
-        }
-    }, [selectedId, charges, clearActions])
+    // ── Sync URL params with drawer state (adjust during render) ──
+    if (selectedId && chargeToEdit && !chargeDrawerOpen) {
+        setChargeDrawerOpen(true)
+    }
+    if (isNewModal && !chargeDrawerOpen) {
+        setChargeDrawerOpen(true)
+    }
 
+    // Side effect only: clear URL when selectedId points to a missing charge
     useEffect(() => {
-        if (isNewModal) {
-            setChargeToEdit(null)
-            setChargeDrawerOpen(true)
+        if (selectedId && !chargeToEdit) {
+            clearActions()
         }
-    }, [isNewModal])
+    }, [selectedId, chargeToEdit, clearActions])
 
     const handleChargeDrawerOpenChange = (open: boolean) => {
         setChargeDrawerOpen(open)
         if (!open) {
-            setChargeToEdit(null)
             clearActions()
             if (isNewModal) {
                 const params = new URLSearchParams(searchParams.toString())
@@ -581,6 +579,7 @@ export function UnbilledChargesView({
                             </EntityCard.Footer>
                         </EntityCard>
                     )}
+                    cardSkeleton={{ showFooter: true }}
                 />
             </div>
 
