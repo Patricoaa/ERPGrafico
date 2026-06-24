@@ -56,7 +56,7 @@ export function BankMasthead({ data, bankId }: BankMastheadProps) {
             </div>
 
             <div className="relative group/deuda">
-                <div className="flex items-center gap-4 text-sm border-t border-border/40 py-2">
+                <div className="flex items-center gap-4 text-sm border-y border-border/40 py-2">
                     <span className="pointer-events-none"><Metric label="Saldo" value={totalCash} /></span>
                     <span className="pointer-events-none"><Divider /></span>
                     <span className="pointer-events-none"><Metric label="+ Líneas" value={totalCreditLines} /></span>
@@ -74,24 +74,25 @@ export function BankMasthead({ data, bankId }: BankMastheadProps) {
                     </span>
                 </div>
 
-                <div className="hidden group-hover/deuda:block border-b border-border/40 pb-2 pt-1">
-                    <div className="flex items-center gap-3 text-[11px] text-warning">
-                        <span>
-                            Préstamos activos: <strong className="text-warning">{summary.active_loan_count}</strong>
-                            {" · "}
-                            <MoneyDisplay amount={summary.total_loan_debt} className="text-xs" />
-                        </span>
-                        <Dot />
-                        <span>
-                            Cheques girados: <MoneyDisplay amount={summary.issued_checks} className="text-xs" />
-                        </span>
-                        <Dot />
-                        <span>
-                            Deuda TC: <MoneyDisplay amount={summary.card_debt} className="text-xs" />
-                            {" · "}
-                            {summary.card_count ?? 0} tarjeta(s)
-                        </span>
-                    </div>
+                <div className="hidden group-hover/deuda:flex items-center gap-4 text-sm text-warning pt-1">
+                    <span className="flex items-baseline gap-1.5">
+                        <span className="text-[11px] font-medium text-warning/70 uppercase tracking-wider">Préstamos</span>
+                        <span className="text-warning">{summary.active_loan_count}</span>
+                        {" · "}
+                        <MoneyDisplay amount={summary.total_loan_debt} className="text-sm font-heading font-black tracking-tight" />
+                    </span>
+                    <Divider />
+                    <span className="flex items-baseline gap-1.5">
+                        <span className="text-[11px] font-medium text-warning/70 uppercase tracking-wider">Cheques</span>
+                        <MoneyDisplay amount={summary.issued_checks} className="text-sm font-heading font-black tracking-tight" />
+                    </span>
+                    <Divider />
+                    <span className="flex items-baseline gap-1.5">
+                        <span className="text-[11px] font-medium text-warning/70 uppercase tracking-wider">Deuda TC</span>
+                        <MoneyDisplay amount={summary.card_debt} className="text-sm font-heading font-black tracking-tight" />
+                        {" · "}
+                        <span className="text-warning">{summary.card_count ?? 0} tarjeta(s)</span>
+                    </span>
                 </div>
             </div>
         </section>
@@ -111,6 +112,4 @@ function Divider() {
     return <span className="text-border/50 select-none">|</span>
 }
 
-function Dot() {
-    return <span className="text-border/50 select-none">·</span>
-}
+
