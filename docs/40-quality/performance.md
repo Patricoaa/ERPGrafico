@@ -105,3 +105,4 @@ Enforced via `next build` output + Lighthouse CI per PR.
 - [ ] No N+1 (integration test asserts query count).
 - [ ] Bundle size delta reported.
 - [ ] No new sync work >300ms in request path.
+- [ ] Views ≤20 lines per action (enforced by `flake8-function-length` in CI).

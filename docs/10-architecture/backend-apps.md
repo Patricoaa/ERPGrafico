@@ -101,11 +101,74 @@ class SaleOrderViewSet(ModelViewSet):
 - Avoid importing service from another app inside a view; use `workflow/` to orchestrate.
 - Signals for loose coupling; document receiver in [workflow-signals-registry.md](workflow-signals-registry.md).
 
+### Cross-app data contracts
+
+Serializers from different apps must NOT import each other directly at the top level — this creates fragile coupling and circular import chains. When data from one app is needed inside another app's serializer:
+
+| Pattern | When | Example |
+|---------|------|---------|
+| **Lazy import inside method** | Read-only, small field subset | `InvoiceSerializer` imports `TreasuryMovementSerializer` inside `get_serialized_payments()` |
+| **Adapter function** | Computed data from another domain | `accounting/adapters.py` exposes `get_settings_fields()` consumed by `sales/views.py` instead of direct model access |
+| **Interface / protocol class** | Multiple apps consume the same foreign domain data | Create `production/adapters.py` with `BomData` protocol used by `inventory` and `sales` |
+| **Move to workflow/** | Orchestration across ≥3 apps | Create a workflow action that calls each domain's service |
+
+**Adapter pattern (recommended for read access):**
+
+```python
+# backend/accounting/adapters.py
+from dataclasses import dataclass
+
+@dataclass
+class AccountingSettingsData:
+    default_revenue_account_id: int | None
+    default_cost_account_id: int | None
+    check_portfolio_account_id: int | None
+
+def get_accounting_settings() -> AccountingSettingsData:
+    from accounting.models import AccountingSettings
+    obj = AccountingSettings.objects.first()
+    if not obj:
+        return AccountingSettingsData(None, None, None)
+    return AccountingSettingsData(
+        default_revenue_account_id=obj.default_revenue_account_id,
+        default_cost_account_id=obj.default_cost_account_id,
+        check_portfolio_account_id=obj.check_portfolio_account_id,
+    )
+```
+
+**Rule:** A serializer from app A importing a serializer from app B is a code smell. It signals missing adapter layer or missing workflow action. If unavoidable, document the cross-app dependency in a comment and add an ADR if the pattern spreads.
+
 ## Transactions
 
 - Services that mutate ≥2 tables: wrap in `transaction.atomic()`.
-- Reconciliation operations: use `select_for_update()` on target rows.
+- Reconciliation operations: use `select_for_update()` on target rows with explicit ordering to prevent deadlocks.
 - Celery tasks that write: transaction per task, idempotency key stored.
+
+### When NOT to use `transaction.atomic()`
+
+| Scenario | Risk | Alternative |
+|----------|------|-------------|
+| Long-running loops (>1k iterations) with per-row writes | Timeout, connection pool exhaustion | Batch writes, Celery task per batch |
+| Nested `transaction.atomic()` in service → service calls | Unexpected savepoints, deadlocks | Flatten: extract inner logic into a non-transactional function, wrap at the outermost caller only |
+| Read-only queries | Unnecessary overhead | No wrapper needed |
+| Operations calling external APIs (email, PDF, HTTP webhook) | Rollback can't undo external side effect | Move side effect to Celery task after DB commit via `on_commit()` |
+
+### Prefer `select_for_update()` over Nested atomic
+
+When two services both wrap `transaction.atomic()` and one calls the other, the inner atomic creates a savepoint rather than extending the outer transaction. Use `select_for_update()` explicitly on contested rows instead:
+
+```python
+# ✅ Explicit row lock
+with transaction.atomic():
+    order = SaleOrder.objects.select_for_update().get(pk=order_id)
+    movement = TreasuryMovement.objects.select_for_update().get(pk=movement_id)
+    order.status = SaleOrder.Status.PAID
+    order.save()
+    movement.status = TreasuryMovement.Status.RECONCILED
+    movement.save()
+```
+
+**Rule:** Audit existing `@transaction.atomic` decorators. Any service method that calls another service's `@transaction.atomic` method should be slimmed to a single explicit `select_for_update()` block at the outermost caller.
 
 ## Migrations
 
@@ -172,6 +235,91 @@ SaleOrder.history.model._meta.db_table           # history table name
 ### Overall strategy
 
 See [docs/50-audit/observability/strategy.md](../50-audit/observability/strategy.md) for the full architecture decision (business audit log, SIEM, APM, analytics).
+
+## Shared patterns
+
+Reusable patterns that avoid duplication across apps.
+
+### Shared enums (`core/models/enums.py`)
+
+Do NOT repeat `TextChoices` classes across apps. Centralize in `core/models/enums.py`:
+
+```python
+# backend/core/models/enums.py
+class Status(models.TextChoices):
+    DRAFT = 'DRAFT', 'Borrador'
+    CONFIRMED = 'CONFIRMED', 'Confirmado'
+    PAID = 'PAID', 'Pagado'
+    CANCELLED = 'CANCELLED', 'Anulado'
+
+class PaymentMethod(models.TextChoices):
+    CASH = 'CASH', 'Efectivo'
+    CARD = 'CARD', 'Tarjeta'
+    TRANSFER = 'TRANSFER', 'Transferencia'
+    CHECK = 'CHECK', 'Cheque'
+    CREDIT = 'CREDIT', 'Crédito'
+```
+
+Import where needed:
+```python
+from core.models.enums import Status, PaymentMethod
+
+class SaleOrder(models.Model):
+    status = models.CharField(max_length=20, choices=Status.choices)
+```
+
+**Rule:** Any new `TextChoices` that would be shared across ≥2 apps must live in `core/models/enums.py`. App-local enums (used in one app only) stay in that app's `models.py`.
+
+### Reusable mixins (`core/mixins.py`)
+
+Common view-level guards extracted into `core/mixins.py`:
+
+```python
+# backend/core/mixins.py
+class DraftOnlyUpdateMixin:
+    """Blocks PATCH/PUT on non-DRAFT instances."""
+    def perform_update(self, serializer):
+        if self.get_object().status != 'DRAFT':
+            from rest_framework.exceptions import PermissionDenied
+            raise PermissionDenied('Only DRAFT records can be edited.')
+        serializer.save()
+```
+
+Additional mixins to add as patterns emerge:
+- `CompanyScopedMixin` — filters queryset by `request.user.company`
+- `PeriodScopedMixin` — filters by active fiscal period
+- `AuditLogMixin` — logs every state transition to `ActionLog`
+
+### Base ViewSets (`core/views.py`)
+
+Extract repeated ViewSet patterns into base classes:
+
+```python
+# backend/core/views.py
+class SingletonSettingsViewSet(viewsets.GenericViewSet):
+    """Base for settings panels (company-level singleton, no list/delete).
+    
+    Provides `current` action that returns the singleton or 404 on GET,
+    and `partial_update` on PATCH. Subclasses set `serializer_class` only.
+    """
+    lookup_field = None  # singleton — no pk in URL
+
+    def get_object(self):
+        obj, _ = self.queryset.model.objects.get_or_create(pk=1)
+        return obj
+
+    @action(detail=False, methods=['get', 'patch'])
+    def current(self, request):
+        if request.method == 'GET':
+            return Response(self.serializer_class(self.get_object()).data)
+        instance = self.get_object()
+        serializer = self.serializer_class(instance, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(serializer.data)
+```
+
+**Rule:** If the same ViewSet pattern appears in ≥3 apps, extract to `core/views.py`. Current candidates: `AccountingSettingsViewSet`, `SalesSettingsViewSet`, `HRSettingsViewSet`, `WorkflowSettingsViewSet`, `ProductionSettingsViewSet`, `ReconciliationSettingsViewSet`.
 
 ## Per-app quick reference
 

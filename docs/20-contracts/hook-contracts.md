@@ -433,6 +433,7 @@ Este contrato se respalda con barreras automáticas en ESLint y `tsc`. No es opt
 | Regla | Configurada en | Cubre | Severidad |
 |---|---|---|---|
 | `fsd/no-api-in-component` (custom) | [frontend/eslint-rules/fsd-no-api-in-component.mjs](../../frontend/eslint-rules/fsd-no-api-in-component.mjs) | `import … from '@/lib/api'` en `features/*/components/**` (invariante #5) | `warn` (sube a `error` al llegar a 0 violaciones) |
+| `require-staletime` (custom) | [frontend/eslint-rules/](../../frontend/eslint-rules/) | `useQuery({…})` sin `staleTime` (invariante #9 del contrato) | `error` (crear e implementar) |
 | `no-restricted-imports` | [frontend/eslint.config.mjs](../../frontend/eslint.config.mjs) | `useQuery`/`useMutation`/`useSuspenseQuery` directos en `features/*/components/**` (invariante #4) | `error` |
 | `no-restricted-imports` | [frontend/eslint.config.mjs](../../frontend/eslint.config.mjs) | `@/features/*/{components,hooks,api,types}/*` — cross-feature sin barrel | `error` |
 | `boundaries/dependencies` | [frontend/eslint.config.mjs](../../frontend/eslint.config.mjs) | `@/lib/api` en `components/shared/**` y `components/ui/**` | `error` |
