@@ -244,7 +244,7 @@ export function SalesOrdersView({ viewMode, posSessionId, onActionSuccess, hideS
                             ? "Crea una orden de venta o regístrala desde el punto de venta."
                             : "Las notas de crédito y débito asociadas a tus ventas aparecerán aquí.",
                     }}
-                    cardGroupBy={{ dateField: 'date', amountField: 'total' }}
+                    cardGroupBy={{ field: 'date', sort: 'desc', aggregators: [{ key: 'total', label: 'Total', field: 'total', fn: 'sum', format: 'money' }, { key: 'count', label: 'Items', fn: 'count', format: 'integer' }] }}
                 />
             </div>
         </div>

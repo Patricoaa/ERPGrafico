@@ -3,7 +3,7 @@
 import React, { useState, useCallback } from "react"
 import { Table as ReactTable, type Row, type VisibilityState } from "@tanstack/react-table"
 import { DomainCard, EntityCard, EmptyState, MoneyDisplay, resolveEmptyState, type DataTableEmptyState, type EntityCardSkeletonProps } from "@/components/shared"
-import { groupByDate } from "@/lib/group-by-date"
+import { groupByDate, groupItems, type AggregatorDef, type AggregateFormat, type Group } from "@/lib/group-utils"
 
 import { Button } from "@/components/ui/button"
 import {
@@ -137,25 +137,15 @@ export function createEntityCardView(
   return EntityCardView
 }
 
-/**
- * Creates a renderCustomView function for date-grouped card views.
- * Groups cards by date with sticky headers showing date label + total sum.
- * Complements SegmentationBar (which filters data at API level) by organizing
- * already-filtered cards visually on screen.
- *
- * Usage:
- *   renderCustomView={isCustomView ? createCardGroupView({
- *     renderCard: (m) => <EntityCard key={m.id}>...</EntityCard>,
- *     cardGroupBy: { dateField: 'date', amountField: 'amount' },
- *     gridLayout: 'single-column',
- *   }) : undefined}
- */
 export function createCardGroupView<TData>(
   options: {
     renderCard: (data: TData) => React.ReactNode
     cardGroupBy: {
-      dateField: string
-      amountField?: string
+      field: string
+      sort?: 'asc' | 'desc'
+      labelFn?: (key: string, rawKey: unknown, items: TData[]) => { label: string; sublabel?: string }
+      defaultLabel?: string
+      aggregators?: AggregatorDef[]
     }
     gridLayout?: "single-column" | "multi-column"
     emptyState?: DataTableEmptyState
@@ -174,6 +164,8 @@ export function createCardGroupView<TData>(
     gridLayout === "multi-column"
       ? "grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3"
       : "grid gap-2"
+
+  const hasDateField = cardGroupBy.field.toLowerCase().includes("date")
 
   const GroupedCardView = (table: ReactTable<TData>) => {
     const rows = table.getRowModel().rows
@@ -194,7 +186,22 @@ export function createCardGroupView<TData>(
     }
 
     const data = rows.map((r) => r.original)
-    const groups = groupByDate(data, cardGroupBy.dateField, cardGroupBy.amountField)
+
+    let groups: Group<TData>[]
+    if (cardGroupBy.labelFn) {
+      groups = groupItems(data, cardGroupBy.field, {
+        sort: cardGroupBy.sort,
+        defaultLabel: cardGroupBy.defaultLabel,
+        labelFn: cardGroupBy.labelFn as (key: string, rawKey: unknown, items: TData[]) => { label: string; sublabel?: string },
+      }, cardGroupBy.aggregators)
+    } else if (hasDateField) {
+      groups = groupByDate(data, cardGroupBy.field, cardGroupBy.aggregators)
+    } else {
+      groups = groupItems(data, cardGroupBy.field, {
+        sort: cardGroupBy.sort,
+        defaultLabel: cardGroupBy.defaultLabel,
+      }, cardGroupBy.aggregators)
+    }
 
     return React.createElement(
       "div",
@@ -202,19 +209,17 @@ export function createCardGroupView<TData>(
       groups.map((group) =>
         React.createElement(
           "div",
-          { key: group.dateKey || "no-date", className: "mb-4" },
+          { key: group.key || "no-key", className: "mb-4" },
           React.createElement(
             "div",
-            {
-              className:
-                "pb-2 pt-3 mb-3",
-            },
+            { className: "pb-2 pt-3 mb-3" },
             React.createElement(
               "div",
               { className: "flex items-center gap-2" },
-              React.createElement(Calendar, {
-                className: "h-4 w-4 shrink-0 text-muted-foreground/50",
-              }),
+              hasDateField &&
+                React.createElement(Calendar, {
+                  className: "h-4 w-4 shrink-0 text-muted-foreground/50",
+                }),
               React.createElement(
                 "span",
                 { className: "text-xs font-semibold text-foreground truncate" },
@@ -223,28 +228,10 @@ export function createCardGroupView<TData>(
               group.sublabel &&
                 React.createElement(
                   "span",
-                  {
-                    className:
-                      "hidden sm:inline text-xs text-muted-foreground/50 truncate",
-                  },
+                  { className: "hidden sm:inline text-xs text-muted-foreground/50 truncate" },
                   group.sublabel,
                 ),
-              group.total !== 0 &&
-                React.createElement(
-                  React.Fragment,
-                  null,
-                  React.createElement("span", { className: "text-muted-foreground/20" }, "\u00B7"),
-                  React.createElement(
-                    "span",
-                    { className: "text-[10px] font-black uppercase tracking-widest text-muted-foreground/40" },
-                    "Total",
-                  ),
-                  React.createElement(MoneyDisplay, {
-                    amount: group.total,
-                    showColor: false,
-                    className: "text-xs font-bold",
-                  }),
-                ),
+              renderAggregates(group.aggregates, cardGroupBy.aggregators ?? []),
             ),
           ),
           React.createElement(
@@ -264,6 +251,63 @@ export function createCardGroupView<TData>(
   }
   GroupedCardView.displayName = "GroupedCardView"
   return GroupedCardView
+}
+
+function formatAggregateValue(value: number, format?: AggregateFormat): string {
+  switch (format) {
+    case 'integer':
+      return value.toLocaleString('es-CL', { maximumFractionDigits: 0 })
+    case 'number':
+      return value.toLocaleString('es-CL')
+    default:
+      return value.toLocaleString('es-CL')
+  }
+}
+
+function renderAggregates(
+  aggregates: Record<string, number>,
+  defs: AggregatorDef[],
+): React.ReactNode {
+  const children: React.ReactNode[] = []
+
+  defs.forEach((def) => {
+    const value = aggregates[def.key]
+    if (value == null) return
+
+    children.push(
+      React.createElement("span", { key: `sep-${def.key}`, className: "text-muted-foreground/20" }, "\u00B7"),
+    )
+    children.push(
+      React.createElement(
+        "span",
+        { key: `label-${def.key}`, className: "text-[10px] font-black uppercase tracking-widest text-muted-foreground/40" },
+        def.label,
+      ),
+    )
+
+    if (def.format === 'money') {
+      children.push(
+        React.createElement(MoneyDisplay, {
+          key: `val-${def.key}`,
+          amount: value,
+          showColor: false,
+          className: "text-xs font-bold",
+        }),
+      )
+    } else {
+      children.push(
+        React.createElement(
+          "span",
+          { key: `val-${def.key}`, className: "text-xs font-bold tabular-nums" },
+          formatAggregateValue(value, def.format),
+        ),
+      )
+    }
+  })
+
+  if (children.length === 0) return null
+
+  return React.createElement("span", { className: "ml-auto flex items-center gap-2" }, ...children)
 }
 
 /**

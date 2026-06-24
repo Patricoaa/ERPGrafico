@@ -312,7 +312,7 @@ export function BankMovementsClientView({ bankId }: BankMovementsClientViewProps
                         title: "Aún no hay movimientos bancarios",
                         description: "Los movimientos registrados en las cuentas de este banco aparecerán aquí.",
                     }}
-                    cardGroupBy={{ dateField: 'date', amountField: 'amount' }}
+                    cardGroupBy={{ field: 'date', sort: 'desc', aggregators: [{ key: 'total', label: 'Total', field: 'amount', fn: 'sum', format: 'money' }, { key: 'count', label: 'Items', fn: 'count', format: 'integer' }] }}
                     renderCard={(m) => {
                         const type = m.movement_type
                         const isWriteOff = m.payment_method === 'WRITE_OFF'

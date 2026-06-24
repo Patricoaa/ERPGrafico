@@ -5,6 +5,7 @@ import { type Row, type SortingState, type Table as ReactTable } from "@tanstack
 import { useViewMode } from "@/hooks/useViewMode"
 import { ENTITY_REGISTRY } from "@/lib/entity-registry"
 import { createDomainCardView, createEntityCardView, createCardLoadingView, createCardGroupView } from "@/lib/view-helpers"
+import { type AggregatorDef } from "@/lib/group-utils"
 import { DataTable, type DataTableProps } from "./DataTable"
 import { DomainCard } from "./DomainCard"
 
@@ -19,8 +20,11 @@ interface DataTableViewProps<TData, TValue>
   isSelected?: (data: TData) => boolean
   isHubOpen?: boolean
   cardGroupBy?: {
-    dateField: string
-    amountField?: string
+    field: string
+    sort?: 'asc' | 'desc'
+    labelFn?: (key: string, rawKey: unknown, items: TData[]) => { label: string; sublabel?: string }
+    defaultLabel?: string
+    aggregators?: AggregatorDef[]
   }
 }
 
@@ -37,7 +41,7 @@ export function DataTableView<TData, TValue>({
   const policy = ENTITY_REGISTRY[entityLabel]?.viewPolicy
 
   const effectiveInitialSorting: SortingState | undefined = cardGroupBy
-    ? [{ id: cardGroupBy.dateField, desc: true }]
+    ? [{ id: cardGroupBy.field, desc: cardGroupBy.sort !== 'asc' }]
     : undefined
   const { currentView, handleViewChange, viewOptions, isCustomView } = useViewMode(entityLabel)
 
