@@ -1872,6 +1872,74 @@ class Command(BaseCommand):
         )
         self.stdout.write("  ── 1 préstamo, 1 desembolso, 1 cuota pagada")
 
+        # ── Segundo préstamo: Banco de Chile ───────────────────────────
+        if not BankLoan.objects.filter(loan_number="DEMO-LOAN-002").exists():
+            bank_chile = Bank.objects.get(code="CHILE")
+            bco_chile = TreasuryAccount.objects.get(code="BCO-CHILE")
+
+            acc_loan_liability2, _ = Account.objects.get_or_create(
+                code='2.1.04.11',
+                defaults={
+                    'name': 'Préstamo Banco Chile por Pagar',
+                    'account_type': AccountType.LIABILITY,
+                    'parent': parent_liability,
+                    'is_reconcilable': True,
+                    'bs_category': BSCategory.CURRENT_LIABILITY,
+                }
+            )
+            loan_liability_ta2, _ = TreasuryAccount.objects.get_or_create(
+                code="PASIVO-PRESTAMO-002",
+                defaults={
+                    'name': "Préstamo Banco Chile por Pagar (Demo)",
+                    'currency': "CLP",
+                    'account': acc_loan_liability2,
+                    'account_type': TreasuryAccount.Type.LOAN,
+                }
+            )
+
+            loan2 = BankLoan.objects.create(
+                lender=bank_chile,
+                loan_number="DEMO-LOAN-002",
+                currency=BankLoan.Currency.CLP,
+                principal=Decimal('15000000'),
+                interest_rate=Decimal('1.0'),
+                rate_basis=BankLoan.RateBasis.MONTHLY,
+                amortization_system=BankLoan.AmortizationSystem.FRENCH,
+                term_months=6,
+                start_date=timezone.now().date(),
+                first_due_date=timezone.now().date() + timezone.timedelta(days=30),
+                insurance_monthly=Decimal('3000'),
+                opening_fee=Decimal('30000'),
+                stamp_tax=Decimal('5000'),
+                penalty_rate=Decimal('1.5'),
+                disbursement_account=bco_chile,
+                liability_account=loan_liability_ta2,
+                status=BankLoan.Status.DRAFT,
+            )
+            self.stdout.write(
+                f"  ✓ Préstamo {loan2.display_id} creado: "
+                f"${loan2.principal:,.0f} @ {loan2.interest_rate}% / {loan2.term_months} cuotas"
+            )
+
+            settings = AccountingSettings.get_solo()
+            loan2 = LoanService.disburse(
+                loan2,
+                created_by=admin,
+                commission_expense_account=settings.loan_commission_expense_account,
+                stamp_tax_expense_account=settings.loan_stamp_tax_expense_account,
+            )
+            first_inst2 = loan2.installments.filter(number=1).first()
+            n_inst2 = loan2.installments.count()
+            self.stdout.write(f"  ✓ Schedule generado: {n_inst2} cuotas (cuota fija: ${first_inst2.total_amount:,.0f})")
+            net_cash2 = loan2.principal - loan2.opening_fee - loan2.stamp_tax
+            self.stdout.write(
+                f"  ✓ Desembolso → BCO-CHILE: ${net_cash2:,.0f} neto "
+                f"(capital ${loan2.principal:,.0f} - com ${loan2.opening_fee:,.0f} - ITE ${loan2.stamp_tax:,.0f})"
+            )
+
+        else:
+            self.stdout.write("  ✓ Préstamo DEMO-LOAN-002 ya existe, saltando.")
+
     def _create_purchases_demo(self, accounts, partners, inventory, uoms):
         from purchasing.services import PurchasingService, PurchaseOrderService
         from billing.services import BillingService
@@ -1958,9 +2026,23 @@ class Command(BaseCommand):
                 notes="Compra insumos gráficos 3 cuotas",
                 created_by=admin,
             )
+            from treasury.models import CreditCardStatement
+            CreditCardStatement.objects.get_or_create(
+                card_account=card_chile,
+                period_year=today.year,
+                period_month=today.month,
+                defaults={
+                    'cut_off_date': today,
+                    'due_date': today + timezone.timedelta(days=30),
+                    'billed_amount': po2.total,
+                    'minimum_payment': po2.total * Decimal('0.10'),
+                    'credit_limit': card_chile.credit_limit,
+                    'status': CreditCardStatement.Status.OPEN,
+                }
+            )
             self.stdout.write(
                 f"  ✓ OCS-{po2.number}: {po2.supplier.name} → 10kg Cyan + 10kg Negra "
-                f"(${po2.total:,.0f}) — TC Visa Chile (3 cuotas)"
+                f"(${po2.total:,.0f}) — TC Visa Chile (3 cuotas, estado cuenta OPEN)"
             )
 
         # ── PO-03: Check (5 paq cartulina sulfatada) ──────────────────
@@ -1993,10 +2075,9 @@ class Command(BaseCommand):
                 notes="Pago OC Cartulina",
                 created_by=admin,
             )
-            CheckService.mark_cashed(check, date=today + timezone.timedelta(days=2), created_by=admin)
             self.stdout.write(
                 f"  ✓ OCS-{po3.number}: {po3.supplier.name} → 5 {cartulina.name} "
-                f"(${po3.total:,.0f}) — Cheque #{check.check_number} girado y cobrado"
+                f"(${po3.total:,.0f}) — Cheque #{check.check_number} girado (ISSUED)"
             )
 
         self.stdout.write("  ── 3 órdenes de compra, 3 receipts, 3 facturas, 3 pagos")
@@ -2148,11 +2229,9 @@ class Command(BaseCommand):
                 notes="Cheque cliente por venta resmas",
                 created_by=admin,
             )
-            CheckService.deposit(check, bco_estado, date=today + timezone.timedelta(days=1), created_by=admin)
-            CheckService.clear(check)
             self.stdout.write(
                 f"  ✓ NV-{so3.number}: {c_default.name} → 10 {papel.name} "
-                f"(${inv3.total:,.0f}) — Cheque #2001 depositado y cobrado"
+                f"(${inv3.total:,.0f}) — Cheque #2001 recibido (IN_PORTFOLIO)"
             )
 
         self.stdout.write("  ── 3 ventas, 2 OT, 3 deliveries, 3 facturas, 3 cobros")
