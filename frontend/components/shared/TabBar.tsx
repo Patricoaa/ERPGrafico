@@ -57,7 +57,7 @@ export function TabBar({
 
     const triggerStyles = isToolbar
         ? cn(
-            "h-7 px-2.5 text-[10px] uppercase font-bold tracking-widest gap-1.5",
+            "h-7 px-2.5 text-[9px] uppercase font-black tracking-widest gap-1.5",
             "data-[state=active]:bg-accent/50 data-[state=active]:shadow-none rounded-sm",
             "data-[state=inactive]:text-muted-foreground hover:text-foreground hover:bg-accent/30",
             "transition-all duration-150",
@@ -131,8 +131,8 @@ export function TabBar({
                                 )}
                                 <span
                                     className={cn(
-                                        "font-bold uppercase leading-tight",
-                                        dense ? "text-[9px] tracking-wide" : "text-[10px] tracking-widest",
+                                        "font-black uppercase leading-tight",
+                                        dense ? "text-[9px] font-black tracking-wide" : "text-[9px] font-black tracking-widest",
                                         "whitespace-nowrap text-center",
                                         isVertical && "group-data-[state=inactive]:hidden group-hover:!block"
                                     )}
@@ -141,7 +141,7 @@ export function TabBar({
                                 </span>
                                 {item.badge !== undefined && (
                                     <span className={cn(
-                                        "shrink-0 flex px-1 items-center justify-center rounded border border-border bg-muted/50 text-muted-foreground font-bold leading-none",
+                                        "shrink-0 flex px-1 items-center justify-center rounded border border-border bg-muted/50 text-muted-foreground font-black leading-none",
                                         dense ? "h-3 min-w-[0.625rem] text-[7px]" : "h-4 min-w-[1rem] text-[9px]",
                                         isVertical && "rotate-90",
                                         isToolbar && "border-transparent bg-accent/30",

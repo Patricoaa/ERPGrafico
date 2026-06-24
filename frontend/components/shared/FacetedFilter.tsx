@@ -35,7 +35,7 @@ export function FacetedFilter({
     return (
         <Popover>
             <PopoverTrigger asChild>
-                <Button variant="ghost" className="h-9 px-3 rounded-none text-[10px] uppercase font-bold tracking-widest hover:bg-muted/50 transition-all border-0 ring-0 focus-visible:ring-0">
+                <Button variant="ghost" className="h-9 px-3 rounded-none text-[9px] uppercase font-black tracking-widest hover:bg-muted/50 transition-all border-0 ring-0 focus-visible:ring-0">
                     <PlusCircle className="mr-2 h-3.5 w-3.5 opacity-50" />
                     <span>{title}</span>
                     {selectedSet.size > 0 && (
@@ -43,7 +43,7 @@ export function FacetedFilter({
                             <Separator orientation="vertical" className="mx-2 h-4" />
                             <Badge
                                 variant="secondary"
-                                className="rounded-sm px-1 font-bold text-[10px] lg:hidden bg-primary text-primary-foreground"
+                                className="rounded-sm px-1 font-black text-[9px] lg:hidden bg-primary text-primary-foreground"
                             >
                                 {selectedSet.size}
                             </Badge>
@@ -51,7 +51,7 @@ export function FacetedFilter({
                                 {selectedSet.size > 2 ? (
                                     <Badge
                                         variant="secondary"
-                                        className="rounded-sm px-1 font-bold text-[10px] bg-primary text-primary-foreground tracking-tighter"
+                                        className="rounded-sm px-1 font-black text-[9px] bg-primary text-primary-foreground tracking-tighter"
                                     >
                                         {selectedSet.size}
                                     </Badge>
@@ -62,7 +62,7 @@ export function FacetedFilter({
                                             <Badge
                                                 variant="secondary"
                                                 key={option.value}
-                                                className="rounded-sm px-1 font-bold text-[10px] bg-primary/10 text-primary tracking-tighter"
+                                                className="rounded-sm px-1 font-black text-[9px] bg-primary/10 text-primary tracking-tighter"
                                             >
                                                 {option.label}
                                             </Badge>
@@ -81,7 +81,7 @@ export function FacetedFilter({
                             <div
                                 key={option.value}
                                 className={cn(
-                                    "relative flex cursor-pointer select-none items-center rounded-sm px-2 py-1.5 text-[10px] uppercase font-bold tracking-tight outline-none hover:bg-accent hover:text-accent-foreground transition-colors",
+                                    "relative flex cursor-pointer select-none items-center rounded-sm px-2 py-1.5 text-[9px] uppercase font-black tracking-tight outline-none hover:bg-accent hover:text-accent-foreground transition-colors",
                                     isSelected ? "bg-accent/50 text-primary" : "text-muted-foreground"
                                 )}
                                 onClick={() => {
@@ -118,7 +118,7 @@ export function FacetedFilter({
                         <div className="p-1">
                             <Button
                                 variant="ghost"
-                                className="w-full justify-center text-[10px] font-bold uppercase tracking-widest h-8 hover:bg-destructive/10 hover:text-destructive rounded-sm"
+                                className="w-full justify-center text-[9px] font-black uppercase tracking-widest h-8 hover:bg-destructive/10 hover:text-destructive rounded-sm"
                                 onClick={() => onSelect([])}
                             >
                                 Limpiar filtros

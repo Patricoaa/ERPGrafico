@@ -72,7 +72,7 @@ export function DataTableColumnToggle<TData>({ table }: DataTableColumnTogglePro
                         <div
                             key={column.id}
                             className={cn(
-                                "relative flex cursor-pointer select-none items-center rounded-sm px-3 py-1.5 text-[10px] uppercase font-bold tracking-tight outline-none transition-colors",
+                                "relative flex cursor-pointer select-none items-center rounded-sm px-3 py-1.5 text-[9px] uppercase font-black tracking-tight outline-none transition-colors",
                                 column.getIsVisible()
                                     ? "bg-accent/50 text-primary"
                                     : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
