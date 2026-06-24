@@ -62,6 +62,7 @@ export * from './HeaderNavDropdowns';
 export * from './EntityHeader';
 export * from './PageHeader';
 export * from './PageContainer';
+export * from './PageSectionHeader';
 export * from './TabBar';
 export * from './FormFooter';
 export * from './FormSplitLayout';
