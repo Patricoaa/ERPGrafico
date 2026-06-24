@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation"
 import { HandCoins, FileCheck, CreditCard, ArrowRight, Calendar } from "lucide-react"
 import { MoneyDisplay, EmptyState } from "@/components/shared"
+import { useServerDate } from '@/hooks/useServerDate'
 import { cn, parseDateOnly } from "@/lib/utils"
 import type { BankOverviewData, BankOverviewMaturityItem } from "../hooks/useBankOverview"
 
@@ -29,8 +30,8 @@ const TYPE_CONFIG = {
     },
 } as const
 
-function formatTimeUntil(dateStr: string): { label: string; isToday: boolean } {
-    const today = new Date()
+function formatTimeUntil(dateStr: string, todayDate?: Date): { label: string; isToday: boolean } {
+    const today = todayDate ?? new Date()
     today.setHours(0, 0, 0, 0)
     const due = parseDateOnly(dateStr)
     due.setHours(0, 0, 0, 0)
@@ -47,6 +48,7 @@ function formatTimeUntil(dateStr: string): { label: string; isToday: boolean } {
 
 export function BankUpcomingMaturities({ data, bankId }: BankUpcomingMaturitiesProps) {
     const router = useRouter()
+    const { serverDate } = useServerDate()
     const { upcoming_maturities } = data
 
     if (!upcoming_maturities || upcoming_maturities.length === 0) {
@@ -77,7 +79,7 @@ export function BankUpcomingMaturities({ data, bankId }: BankUpcomingMaturitiesP
                     const config = TYPE_CONFIG[item.type as keyof typeof TYPE_CONFIG]
                     if (!config) return null
                     const Icon = config.icon
-                    const { label: timeLabel, isToday } = formatTimeUntil(item.due_date)
+                    const { label: timeLabel, isToday } = formatTimeUntil(item.due_date, serverDate ?? undefined)
 
                     return (
                         <button

@@ -4,6 +4,7 @@ import React, { forwardRef } from "react"
 import { formatCurrency } from "@/lib/money"
 import type { TransactionData, TransactionLine } from "@/types/transactions"
 import { useBranding } from "@/contexts/BrandingProvider"
+import { formatPlainDate, parseDateOnly } from "@/lib/utils"
 
 interface PrintableReceiptProps {
     data: TransactionData & { terminal_name?: string }
@@ -20,7 +21,11 @@ export const PrintableReceipt = forwardRef<HTMLDivElement, PrintableReceiptProps
         const customerName = data?.customer?.name ?? data?.customer?.full_name ?? data?.partner?.name ?? data?.partner?.full_name ?? data?.partner_name ?? data?.customer_name ?? subTitle
         const displayId = data?.display_id ?? data?.number?.toString() ?? data?.transaction_number ?? "—"
         const date = data?.created_at ?? data?.date ?? data?.document_date ?? ""
-        const formattedDate = date ? new Date(date).toLocaleString("es-CL") : ""
+        const formattedDate = date
+            ? (typeof date === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(date)
+                ? formatPlainDate(date)
+                : new Date(date).toLocaleString("es-CL"))
+            : ""
         const terminalName = data?.terminal_name ?? data?.pos_session?.terminal_name ?? data?.session?.terminal_name ?? ""
 
         const totalNet = Number(data?.total_net ?? 0)

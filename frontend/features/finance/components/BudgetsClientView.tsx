@@ -25,6 +25,7 @@ interface BudgetsClientViewProps {
 
 import { useBudgets, type Budget } from "@/features/finance/hooks/useBudgets"
 import { useSelectedEntity } from "@/hooks/useSelectedEntity"
+import { useServerDate } from '@/hooks/useServerDate'
 
 export function BudgetsClientView({ externalOpen, onExternalOpenChange, createAction }: BudgetsClientViewProps) {
     const router = useRouter()
@@ -32,6 +33,7 @@ export function BudgetsClientView({ externalOpen, onExternalOpenChange, createAc
     const searchParams = useSearchParams()
 
     const { budgets, isLoading, refetch, createBudget } = useBudgets()
+    const { serverDate } = useServerDate()
 
     const { entity: selectedFromUrl, clearSelection } = useSelectedEntity<Budget>({
         endpoint: '/accounting/budgets'
@@ -41,8 +43,8 @@ export function BudgetsClientView({ externalOpen, onExternalOpenChange, createAc
     const [isCreateOpen, setIsCreateOpen] = useState(false)
     const [newBudget, setNewBudget] = useState({
         name: "",
-        start_date: `${new Date().getFullYear()}-01-01`,
-        end_date: `${new Date().getFullYear()}-12-31`,
+        start_date: `${(serverDate ?? new Date()).getFullYear()}-01-01`,
+        end_date: `${(serverDate ?? new Date()).getFullYear()}-12-31`,
         description: ""
     })
 
@@ -195,7 +197,7 @@ export function BudgetsClientView({ externalOpen, onExternalOpenChange, createAc
                             type="number"
                             min={2020}
                             max={2100}
-                            defaultValue={new Date().getFullYear()}
+                            defaultValue={(serverDate ?? new Date()).getFullYear()}
                             onChange={e => {
                                 const year = e.target.value
                                 setNewBudget({

@@ -12,7 +12,9 @@ import {
     TooltipProvider,
     TooltipTrigger
 } from "@/components/ui/tooltip";
-import { Info, History, Split, BarChart2 } from "lucide-react";
+import { Info, History, Split, BarChart2 } from "lucide-react"
+import { parseDateOnly } from "@/lib/utils";
+import { useServerDate } from '@/hooks/useServerDate';
 import { financeApi } from "../api/financeApi";
 import { cn } from "@/lib/utils";
 
@@ -96,6 +98,7 @@ const BudgetAccountRow = React.memo(({
 BudgetAccountRow.displayName = 'BudgetAccountRow';
 
 export function BudgetEditor({ open, onOpenChange, budget, onSave }: BudgetEditorProps) {
+    const { serverDate } = useServerDate();
     const [accounts, setAccounts] = useState<BudgetAccount[]>([]);
     // accountId -> month (1-12) -> amount
     const [items, setItems] = useState<Record<number, Record<number, number>>>({});
@@ -195,7 +198,7 @@ export function BudgetEditor({ open, onOpenChange, budget, onSave }: BudgetEdito
     const handleSave = async () => {
         try {
             const payload: Array<Record<string, unknown>> = [];
-            const budgetYear = budget ? new Date(budget.start_date).getFullYear() : new Date().getFullYear();
+            const budgetYear = budget ? parseDateOnly(budget.start_date).getFullYear() : (serverDate ?? new Date()).getFullYear();
 
             Object.entries(items).forEach(([accId, monthlyData]) => {
                 Object.entries(monthlyData).forEach(([month, amount]) => {

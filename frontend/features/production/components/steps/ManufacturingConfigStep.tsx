@@ -6,7 +6,8 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm, type SubmitHandler, type Resolver, type Control } from "react-hook-form";
 import { format } from "date-fns";
 import { toast } from "sonner";
-import { getErrorMessage } from "@/lib/errors";
+import { getErrorMessage } from "@/lib/errors"
+import { toDate } from "@/lib/utils";
 import { Form, FormField } from "@/components/ui/form";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -191,11 +192,11 @@ export function ManufacturingConfigStep({
           quantity: isLinked ? "" : (initialData.stage_data?.quantity?.toString() ?? ""),
           uom_id: isLinked ? "" : (initialData.stage_data?.uom_id?.toString() ?? ""),
           start_date: initialData.start_date ?
-            new Date(initialData.start_date) : new Date(),
+            toDate(initialData.start_date) : new Date(),
           due_date: initialData.estimated_completion_date ?
-            new Date(initialData.estimated_completion_date) :
+            toDate(initialData.estimated_completion_date) :
             (initialData.sale_order_delivery_date ?
-              new Date(initialData.sale_order_delivery_date) : null),
+              toDate(initialData.sale_order_delivery_date) : null),
           internal_notes: initialData.stage_data?.internal_notes ?? "",
         } as WorkOrderFormValues);
 
@@ -229,11 +230,11 @@ export function ManufacturingConfigStep({
         setQuantity(isLinked ? "" : (initialData.stage_data?.quantity?.toString() ?? ""));
         setUomId(isLinked ? "" : (initialData.stage_data?.uom_id?.toString() ?? ""));
         setStartDate(initialData.start_date ?
-          new Date(initialData.start_date) : new Date());
+          toDate(initialData.start_date) : new Date());
         setDueDate(initialData.estimated_completion_date ?
-          new Date(initialData.estimated_completion_date) :
+          toDate(initialData.estimated_completion_date) :
           (initialData.sale_order_delivery_date ?
-            new Date(initialData.sale_order_delivery_date) : null));
+            toDate(initialData.sale_order_delivery_date) : null));
       })
     }
   }, [initialData]);

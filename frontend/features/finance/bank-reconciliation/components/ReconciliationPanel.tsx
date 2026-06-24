@@ -26,7 +26,7 @@ import { format } from "date-fns"
 import { es } from "date-fns/locale"
 import { financeApi } from "../../api/financeApi"
 import { useHubPanel } from "@/components/providers/HubPanelProvider"
-import { cn } from "@/lib/utils"
+import { cn, parseDateOnly } from "@/lib/utils"
 import {
     DndContext,
     DragEndEvent,
@@ -349,8 +349,7 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
 
             if (diffAmount !== 0) {
                 const line = unreconciledLines.find(l => l.id === lineId)
-                const defaultDate = line ? new Date(line.transaction_date) : (serverDate ?? new Date())
-                // Adjust for local timezone to avoid off-by-one day issues
+                const defaultDate = line ? parseDateOnly(line.transaction_date) : (serverDate ?? new Date())
                 const localDate = new Date(defaultDate.getTime() + defaultDate.getTimezoneOffset() * 60000)
                 setDiffDialog({ open: true, lineId, paymentId, amount: diffAmount.toString(), accountingDate: localDate })
                 try {
@@ -398,7 +397,7 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
 
         if (!force && Math.abs(diff) > 1) {
             const line = selectedLines[0]
-            const defaultDate = line ? new Date(line.transaction_date) : (serverDate ?? new Date())
+            const defaultDate = line ? parseDateOnly(line.transaction_date) : (serverDate ?? new Date())
             const localDate = new Date(defaultDate.getTime() + defaultDate.getTimezoneOffset() * 60000)
             setDiffDialog({ open: true, lineId: selectedLines[0].id, paymentId: 0, amount: diff.toString(), isGroup: true, accountingDate: localDate })
             setDiffType(diff < 0 ? "COMMISSION" : "ROUNDING")
@@ -526,7 +525,7 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
             cell: ({ row }) => (
                 <div className="flex flex-col justify-center h-full">
                     <span className="font-mono font-bold text-xs">
-                        {format(new Date(row.original.transaction_date), 'dd MMM yy', { locale: es })}
+                        {format(parseDateOnly(row.original.transaction_date), 'dd MMM yy', { locale: es })}
                     </span>
                     <span className="text-[10px] font-black uppercase text-muted-foreground opacity-50"> {/* intentional: badge density */} L{row.original.line_number}</span>
                 </div>
@@ -621,7 +620,7 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                         {row.original.display_id || row.original.code || 'PEND'}
                     </span>
                     <span className="text-[10px] font-medium text-muted-foreground"> {/* intentional: badge density */}
-                        {format(new Date(row.original.date), 'dd/MM/yy', { locale: es })}
+                        {format(parseDateOnly(row.original.date), 'dd/MM/yy', { locale: es })}
                     </span>
                 </div>
             ),
@@ -959,7 +958,7 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
 
                                                                 <div className="text-right shrink-0">
                                                                     <span className="text-[9px] font-mono font-bold text-muted-foreground/60 uppercase block mb-0.5">
-                                                                        {format(new Date(line.transaction_date), 'dd MMM yyyy', { locale: es })}
+                                                                        {format(parseDateOnly(line.transaction_date), 'dd MMM yyyy', { locale: es })}
                                                                     </span>
                                                                     <span className={cn(
                                                                         "text-sm font-mono font-black tracking-tighter leading-none",

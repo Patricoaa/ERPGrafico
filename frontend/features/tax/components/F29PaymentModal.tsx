@@ -13,7 +13,7 @@ import {
     CreditCard,
     AlertCircle
 } from "lucide-react"
-import { cn } from "@/lib/utils"
+import { cn, parseDateOnly } from "@/lib/utils"
 import { format } from "date-fns"
 import { es } from "date-fns/locale"
 import { PaymentModal } from "@/features/treasury"
@@ -119,7 +119,7 @@ export function F29PaymentModal({
                                                     <div className="font-bold">{formatCurrency(payment.amount)}</div>
                                                     <div className="text-xs text-muted-foreground flex items-center gap-2">
                                                         <Calendar className="h-3 w-3" />
-                                                        {format(new Date(payment.payment_date), "dd MMM yyyy", { locale: es })}
+                                                        {format(parseDateOnly(payment.payment_date), "dd MMM yyyy", { locale: es })}
                                                     </div>
                                                 </div>
                                             </div>

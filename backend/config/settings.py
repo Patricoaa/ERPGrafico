@@ -188,7 +188,7 @@ AUTH_PASSWORD_VALIDATORS = [
 
 LANGUAGE_CODE = 'en-us'
 
-TIME_ZONE = 'UTC'
+TIME_ZONE = 'America/Santiago'
 
 USE_I18N = True
 
@@ -367,7 +367,7 @@ CELERY_RESULT_BACKEND = fix_redis_url(os.environ.get('CELERY_RESULT_BACKEND', RE
 CELERY_ACCEPT_CONTENT = ['json']
 CELERY_TASK_SERIALIZER = 'json'
 CELERY_RESULT_SERIALIZER = 'json'
-CELERY_TIMEZONE = TIME_ZONE
+CELERY_TIMEZONE = 'America/Santiago'
 CELERY_WORKER_CONCURRENCY = int(os.environ.get('CELERY_WORKER_CONCURRENCY', 2))
 if _CACHE_BACKEND == 'locmem':
     CELERY_TASK_ALWAYS_EAGER = True
@@ -515,8 +515,6 @@ import sys
 #    print(f"\n[MIGRATION MODE] Mock date disabled for serialization safety.\n")
 
 #
-# 1. Configurar la zona horaria real
-TIME_ZONE = 'America/Santiago'  # Ajusta según tu ubicación
 USE_TZ = True  # Mantener en True para manejo profesional de zonas horarias
 USE_X_FORWARDED_HOST = True
 USE_X_FORWARDED_PORT = True

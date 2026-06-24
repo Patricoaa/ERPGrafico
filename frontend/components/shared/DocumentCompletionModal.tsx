@@ -8,9 +8,8 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import {FileEdit, Loader2, CheckCircle2} from "lucide-react"
 import { toast } from "sonner"
-import { validateTaxPeriod } from '@/features/tax/actions'
-import { validateAccountingPeriod } from '@/features/accounting/actions'
 import { FolioValidationInput } from "./FolioValidationInput"
+import { usePeriodValidation } from "@/hooks/usePeriodValidation"
 
 import { PeriodValidationDateInput } from "./PeriodValidationDateInput"
 
@@ -37,6 +36,7 @@ export function DocumentCompletionModal({
     isPurchase
 }: DocumentCompletionModalProps) {
     const { dateString } = useServerDate()
+    const { validatePeriodImmediate, isClosed: periodClosed, message: periodMessage } = usePeriodValidation()
     const [reference, setReference] = useState("")
     const [date, setDate] = useState("")
     const [attachment, setAttachment] = useState<File | null>(null)
@@ -49,6 +49,12 @@ export function DocumentCompletionModal({
         }
     }, [dateString])
 
+    useEffect(() => {
+        if (date) {
+            validatePeriodImmediate(date, 'both')
+        }
+    }, [date, validatePeriodImmediate])
+
     const handleSubmit = async () => {
         if (!reference) {
             toast.error("El número de folio es obligatorio para completar el documento")
@@ -60,17 +66,8 @@ export function DocumentCompletionModal({
             return
         }
 
-        // Tax Period Validation
-        const taxCheck = await validateTaxPeriod(date)
-        if (taxCheck.is_closed) {
-            toast.error(`No se puede registrar este documento. El periodo tributario de ${date} ya se encuentra CERRADO.`)
-            return
-        }
-
-        // Accounting Period Validation
-        const accCheck = await validateAccountingPeriod(date)
-        if (accCheck.is_closed) {
-            toast.error(`No se puede registrar este documento. El periodo CONTABLE de ${date} ya se encuentra CERRADO.`)
+        if (periodClosed) {
+            toast.error(periodMessage || `El periodo para la fecha ${date} se encuentra CERRADO.`)
             return
         }
 
@@ -150,7 +147,7 @@ export function DocumentCompletionModal({
                             }
                             setDate(d.toISOString().split('T')[0])
                         }}
-                        validationType="tax"
+                        validationType="both"
                     />
 
                 <div className="space-y-2">

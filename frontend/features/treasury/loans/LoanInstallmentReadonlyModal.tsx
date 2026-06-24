@@ -83,7 +83,7 @@ export function LoanInstallmentReadonlyModal({ installment, loanDisplayId, loanC
                         <div className="grid grid-cols-2 gap-3 text-sm">
                             <div className="flex justify-between">
                                 <span className="text-muted-foreground">Fecha de pago</span>
-                                <span>{new Date(installment.paid_at).toLocaleDateString('es-CL')}</span>
+                                <span>{parseDateOnly(installment.paid_at).toLocaleDateString('es-CL')}</span>
                             </div>
                             {installment.uf_value_used && (
                                 <div className="flex justify-between">

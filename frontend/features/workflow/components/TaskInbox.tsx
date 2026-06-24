@@ -262,8 +262,7 @@ export function TaskInbox() {
 
     const formatShortDate = (dateStr: string) => {
         if (!dateStr) return '-'
-        const val = new Date(dateStr)
-        return formatPlainDate(val)
+        return formatPlainDate(dateStr)
     }
 
     const renderTaskCard = (task: Task) => {

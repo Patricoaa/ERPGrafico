@@ -211,7 +211,7 @@ export function StatementDetailModal({ statementId, open, onOpenChange }: Statem
                                     <div>
                                         <span className="text-muted-foreground">Pagado el:</span>{' '}
                                         <span className="font-medium">
-                                            {new Date(stmt.paid_at).toLocaleDateString('es-CL')}
+                                            {parseDateOnly(stmt.paid_at).toLocaleDateString('es-CL')}
                                         </span>
                                     </div>
                                 )}

@@ -22,12 +22,13 @@ import { ProductSelector } from "@/components/selectors/ProductSelector"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Product, UoM } from "@/types/entities"
 import { cn } from "@/lib/utils"
-import { validateAccountingPeriod } from '@/features/accounting/actions'
 import { useWarehouses } from "../hooks/useWarehouses"
 import { useUoMs } from "../hooks/useUoMs"
 import { useProduct } from "../hooks/useProducts"
 import { useStockAdjustment } from "../hooks/useStockMoves"
 import { usePartners } from "@/features/contacts"
+import { useServerDate } from '@/hooks/useServerDate'
+import { usePeriodValidation } from '@/hooks/usePeriodValidation'
 import { FormSection, TabBar, LabeledInput, LabeledSelect, SkeletonShell, type TabItem } from '@/components/shared'
 
 const adjustmentSchema = z.object({
@@ -77,6 +78,15 @@ export function AdjustmentForm({
     onLoadingChange
 }: AdjustmentFormProps) {
     // Reads reactivos vía hooks.
+    const { dateString } = useServerDate()
+    const { validatePeriodImmediate, isClosed: periodClosed, message: periodMessage } = usePeriodValidation()
+
+    useEffect(() => {
+        if (dateString) {
+            validatePeriodImmediate(dateString, 'accounting')
+        }
+    }, [dateString, validatePeriodImmediate])
+
     const { warehouses, isLoading: isWarehousesLoading } = useWarehouses()
     const { data: partnersData, isLoading: isPartnersLoading } = usePartners()
     const partners = (partnersData ?? []) as { id: number, name: string }[]
@@ -89,8 +99,6 @@ export function AdjustmentForm({
     useEffect(() => {
         onLoadingChange?.(isLoading)
     }, [isLoading, onLoadingChange])
-    const [periodStatus, setPeriodStatus] = useState<{ is_closed: boolean; period_name?: string; date?: string; error?: string } | null>(null)
-
     const form = useForm<z.infer<typeof adjustmentSchema>>({
         resolver: zodResolver(adjustmentSchema),
         defaultValues: {
@@ -120,15 +128,7 @@ export function AdjustmentForm({
     // warehouses + partners se reciben reactivamente de useWarehouses / usePartners
     // (declarados al inicio del componente). Cero fetch imperativo aquí.
 
-    // Check period status for today
-    useEffect(() => {
-        const checkPeriod = async () => {
-            const today = new Date().toISOString().split('T')[0]
-            const status = await validateAccountingPeriod(today)
-            setPeriodStatus(status)
-        }
-        checkPeriod()
-    }, [])
+    // (Period validation done in the usePeriodValidation effect above)
 
     // Producto seleccionado — detalle reactivo vía useProduct.
     const numericProductId = selectedProductId ? Number(selectedProductId) : null
@@ -170,10 +170,8 @@ export function AdjustmentForm({
         setIsLoading(true)
         try {
             // Check period closure
-            const today = new Date().toISOString().split('T')[0]
-            const status = await validateAccountingPeriod(today)
-            if (status.is_closed) {
-                toast.error(`No se puede registrar el ajuste: El periodo ${(status as any).period_name || ''} está cerrado.`, {
+            if (periodClosed) {
+                toast.error(periodMessage || 'El periodo contable está cerrado.', {
                     icon: <ShieldAlert className="h-4 w-4 text-destructive" />
                 })
                 setIsLoading(false)
@@ -255,11 +253,11 @@ export function AdjustmentForm({
             <Form {...form}>
                 <form id="adjustment-form" onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 px-6 pb-6 pt-6">
 
-                    {periodStatus?.is_closed && (
+                    {periodClosed && (
                         <Alert variant="destructive" className="py-2 mb-2">
                             <AlertTitle className="text-xs font-bold mb-1">Periodo Cerrado</AlertTitle>
                             <AlertDescription className="text-xs opacity-90">
-                                El periodo contable actual (<strong>{periodStatus.period_name}</strong>) está cerrado. No podrá guardar este ajuste.
+                                {periodMessage || 'El periodo contable actual está cerrado. No podrá guardar este ajuste.'}
                             </AlertDescription>
                         </Alert>
                     )}

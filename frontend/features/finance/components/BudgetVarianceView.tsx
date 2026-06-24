@@ -1,6 +1,7 @@
 "use client"
 
 import React, { useState, useMemo } from 'react';
+import { useServerDate } from '@/hooks/useServerDate';
 import {
     CalendarDays,
     FileDown,
@@ -23,9 +24,10 @@ const MONTH_NAMES = [
 ];
 
 export function BudgetVarianceView() {
+    const { serverDate } = useServerDate();
     const [selectedBudget, setSelectedBudget] = useState<string>("");
-    const [selectedMonth, setSelectedMonth] = useState<number>(new Date().getMonth() + 1);
-    const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear());
+    const [selectedMonth, setSelectedMonth] = useState<number>((serverDate ?? new Date()).getMonth() + 1);
+    const [selectedYear, setSelectedYear] = useState<number>((serverDate ?? new Date()).getFullYear());
 
     const varianceParams = selectedBudget ? {
         month: selectedMonth,

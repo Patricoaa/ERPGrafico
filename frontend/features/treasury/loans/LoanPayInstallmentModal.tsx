@@ -35,7 +35,7 @@ export function LoanPayInstallmentModal({ installment, loanCurrency, penaltyRate
         installment.status === 'OVERDUE' && parseFloat(penaltyRate || '0') > 0
             ? (() => {
                 const days = Math.max(0, Math.floor(
-                    ((serverDate?.getTime() ?? Date.now()) - new Date(installment.due_date).getTime()) / 86_400_000,
+                    ((serverDate?.getTime() ?? Date.now()) - parseDateOnly(installment.due_date).getTime()) / 86_400_000,
                 ))
                 return days > 0
                     ? (parseFloat(installment.total_amount) * (parseFloat(penaltyRate || '0') / 100) * (days / 30)).toFixed(2)
@@ -62,7 +62,7 @@ export function LoanPayInstallmentModal({ installment, loanCurrency, penaltyRate
     // cuota_total × tasa/100 × días_atraso/30.
     const penaltyRateNum = parseFloat(penaltyRate || '0')
     const daysLate = Math.max(0, Math.floor(
-        (new Date(payDate).getTime() - new Date(installment.due_date).getTime()) / 86_400_000,
+        (parseDateOnly(payDate).getTime() - parseDateOnly(installment.due_date).getTime()) / 86_400_000,
     ))
     const estimatedPenalty = installment.status === 'OVERDUE' && penaltyRateNum > 0 && daysLate > 0
         ? parseFloat(installment.total_amount) * (penaltyRateNum / 100) * (daysLate / 30)
