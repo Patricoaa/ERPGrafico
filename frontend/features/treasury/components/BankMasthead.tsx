@@ -58,7 +58,7 @@ export function BankMasthead({ data, bankId }: BankMastheadProps) {
             </div>
 
             <div className="flex items-center gap-4 text-sm border-y border-border/40 py-2">
-                <Metric label="Saldo" value={totalCash} accent />
+                <Metric label="Saldo" value={totalCash} />
                 <Divider />
                 <Metric label="+ Líneas" value={totalCreditLines} />
                 <Divider />
@@ -120,8 +120,7 @@ export function BankMasthead({ data, bankId }: BankMastheadProps) {
     )
 }
 
-function Metric({ label, value, accent = false }: { label: string; value: number; accent?: boolean }) {
-    if (value === 0 && !accent) return null
+function Metric({ label, value }: { label: string; value: number; accent?: boolean }) {
     return (
         <span className="flex items-baseline gap-1.5">
             <span className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">{label}</span>
