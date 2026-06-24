@@ -147,7 +147,7 @@ export function DomainCard({
 
             {/* ROW 2: Product Lines & Totals */}
             {(data.lines || data.items || []).length > 0 && (
-                <EntityCard.Body className="flex items-start justify-between gap-4">
+                <EntityCard.Body className="flex items-start justify-between gap-4 pt-2 border-t border-border/30 mt-1">
                     <div className="flex flex-wrap gap-x-6 gap-y-1 flex-1">
                         {(data.lines || data.items || []).map((line: any, idx: number) => (
                             <span key={idx} className="text-sm text-foreground/70 flex items-center gap-1.5">
