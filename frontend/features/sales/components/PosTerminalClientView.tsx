@@ -7,12 +7,13 @@ import type { Terminal } from "@/features/treasury"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 
-import { ActionConfirmModal, DataTableView, EntityCard, StatusBadge } from '@/components/shared'
+import { ActionConfirmModal, DataTableView, EntityCard, StatusBadge, SegmentationBar, useSegmentation } from '@/components/shared'
 import { Badge } from "@/components/ui/badge"
 
 import { DataTableColumnHeader } from '@/components/shared'
 import {DataCell} from '@/components/shared'
 import { posTerminalActions, type PosTerminalActionsCtx } from "@/features/sales/posTerminalActions"
+import { terminalPosSegDef } from "@/features/pos"
 import { ColumnDef } from "@tanstack/react-table"
 import { Plus, MapPin, Smartphone, Banknote, CreditCard, Landmark, FileCheck, MoreHorizontal } from "lucide-react"
 
@@ -77,6 +78,7 @@ interface PosTerminalClientViewProps {
 
 export function PosTerminalClientView({ externalOpen, onExternalOpenChange, createAction }: PosTerminalClientViewProps) {
     const { terminals, toggleActive, deleteTerminal, refetch, isLoading } = usePosTerminals()
+    const { filters: segFilters, isFiltered: isSegFiltered, clearAll: clearSeg } = useSegmentation(terminalPosSegDef)
     const searchParams = useSearchParams()
     const pathname = usePathname()
     const router = useRouter()
@@ -116,6 +118,13 @@ export function PosTerminalClientView({ externalOpen, onExternalOpenChange, crea
         deleteConfirm.requestConfirm(terminal)
     }
 
+    const filteredTerminals = useMemo(() => {
+        if (!segFilters.status) return terminals
+        return terminals.filter(t =>
+            segFilters.status === "ACTIVE" ? t.is_active : !t.is_active
+        )
+    }, [terminals, segFilters.status])
+
     const actionsCtx: PosTerminalActionsCtx = {
         onEdit: (terminal) => openSelected(terminal.id),
         onToggleActive: (terminal) => handleToggleActive(terminal),
@@ -140,12 +149,10 @@ export function PosTerminalClientView({ externalOpen, onExternalOpenChange, crea
         },
         {
             accessorKey: "is_active",
-            id: "status",
             header: ({ column }) => <DataTableColumnHeader column={column} title="Estado" className="justify-center" />,
             cell: ({ row }) => (
                 <DataCell.Status status={row.original.is_active ? "active" : "inactive"} />
             ),
-            filterFn: (row, id, value) => value.includes(row.getValue(id) ? "ACTIVE" : "INACTIVE")
         },
         posTerminalActions.column(actionsCtx),
     ]
@@ -156,20 +163,13 @@ export function PosTerminalClientView({ externalOpen, onExternalOpenChange, crea
                 <DataTableView
                     entityLabel="treasury.terminal"
                     columns={columns}
-                    data={terminals}
+                    data={filteredTerminals}
                     isLoading={isLoading}
                     variant="embedded"
                     defaultPageSize={20}
-                    facetedFilters={[
-                        {
-                            column: "status",
-                            title: "Estado",
-                            options: [
-                                { label: "Activas", value: "ACTIVE" },
-                                { label: "Inactivas", value: "INACTIVE" }
-                            ]
-                        }
-                    ]}
+                    segmentation={<SegmentationBar def={terminalPosSegDef} />}
+                    showReset={isSegFiltered}
+                    onReset={clearSeg}
                     createAction={createAction || (
                         <Button onClick={() => {
                             const params = new URLSearchParams(searchParams.toString())

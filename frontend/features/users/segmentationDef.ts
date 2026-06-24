@@ -6,6 +6,7 @@ export const userSegDef: SegmentationDefinition = {
       key: 'role',
       label: 'Rol',
       type: 'tabs',
+      variant: 'dropdown',
       serverParam: 'role',
       options: [
         { label: 'Admin', value: 'ADMIN' },
