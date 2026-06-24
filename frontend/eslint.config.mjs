@@ -39,23 +39,29 @@ const eslintConfig = defineConfig([...nextVitals, ...nextTs, globalIgnores([
       rules: [
         // app/ must not import feature internals — use barrel
         {
-          from: ["app"],
-          disallow: ["feature-internal"],
+          from: { type: "app" },
+          disallow: [{ to: { type: "feature-internal" } }],
           message: "app/ must import from features/[name]/index.ts barrel, not internals.",
         },
         // ui base stays generic — no app-specific imports
         {
-          from: ["ui"],
-          disallow: ["feature-internal", "feature-barrel", "app"],
+          from: { type: "ui" },
+          disallow: [
+            { to: { type: "feature-internal" } },
+            { to: { type: "feature-barrel" } },
+            { to: { type: "app" } },
+          ],
           message: "components/ui/ is Shadcn base — no app-specific imports.",
         },
         // shared components cannot touch lib/api — allow pure utils
         {
-          from: ["shared"],
-          disallow: [
-            ["lib", { except: ["lib/utils/**", "lib/money.ts", "lib/errors.ts", "lib/form-widths.ts"] }],
-          ],
+          from: { type: "shared" },
+          disallow: [{ to: { type: "lib" } }],
           message: "Shared components must not import @/lib/api. Wrap in a hook.",
+        },
+        {
+          from: { type: "shared" },
+          allow: [{ to: { type: "lib", path: ["**/lib/utils/**", "**/lib/money.ts", "**/lib/errors.ts", "**/lib/form-widths.ts"] } }],
         },
       ],
     }],
