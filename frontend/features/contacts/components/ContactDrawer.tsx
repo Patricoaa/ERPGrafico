@@ -686,7 +686,7 @@ function InsightsTable({ data, type, title, icon: Icon, onActionSuccess }: Insig
         {
             accessorKey: "date",
             header: "Fecha",
-            cell: ({ row }) => <DataCell.Date value={(row.original as any).date} />,
+            cell: ({ row }) => <DataCell.Date value={row.original.date as string} />,
         },
         {
             accessorKey: "display_id",
@@ -703,20 +703,19 @@ function InsightsTable({ data, type, title, icon: Icon, onActionSuccess }: Insig
             {
                 accessorKey: "total",
                 header: "Total",
-                cell: ({ row }: { row: { original: any } }) => <DataCell.Currency value={row.original.total} className="text-left font-bold" />,
+                cell: ({ row }: { row: { original: Record<string, unknown> } }) => <DataCell.Currency value={row.original.total as number} className="text-left font-bold" />,
             }
         ] : []),
         {
             id: "status",
             header: "Estados",
             cell: ({ row }) => {
-                const item = row.original as any
                 if (type === 'work_order') {
                     return (
-                        <StatusBadge status={item.status} size="sm" />
+                        <StatusBadge status={row.original.status as string} size="sm" />
                     )
                 }
-                return <DomainHubStatus data={item} label={type === 'purchase' ? 'purchasing.purchaseorder' : 'sales.saleorder'} />
+                return <DomainHubStatus data={row.original} label={type === 'purchase' ? 'purchasing.purchaseorder' : 'sales.saleorder'} />
             }
         },
         contactDocumentActions.column(contactDocumentActionsCtx)
@@ -833,21 +832,21 @@ function CreditLedgerTable({ data, loading, onActionSuccess }: { data: any[], lo
         )
     }
 
-    const columns: ColumnDef<any>[] = [
+    const columns: ColumnDef<Record<string, unknown>>[] = [
         {
             accessorKey: "date",
             header: "Fecha",
-            cell: ({ row }) => <DataCell.Date value={row.original.date} />,
+            cell: ({ row }) => <DataCell.Date value={row.original.date as string} />,
         },
         {
             accessorKey: "number",
             header: "Número",
-            cell: ({ row }) => <DataCell.Entity label="sales.saleorder" data={row.original} />,
+            cell: ({ row }) => <DataCell.Entity label="sales.saleorder" data={row.original as unknown} />,
         },
         {
             accessorKey: "balance",
             header: "Saldo",
-            cell: ({ row }) => <DataCell.Currency value={row.original.balance} className="text-left font-bold text-destructive" />,
+            cell: ({ row }) => <DataCell.Currency value={row.original.balance as number} className="text-left font-bold text-destructive" />,
         },
         {
             id: "status",
@@ -867,7 +866,7 @@ function CreditLedgerTable({ data, loading, onActionSuccess }: { data: any[], lo
                         defaultPageSize={10}
                         currentView="card"
                         renderCustomView={createDomainCardView('sales.saleorder', {
-                            onRowClick: (data: any) => openHub({ orderId: data.id, type: 'sale', onActionSuccess }),
+                            onRowClick: (data: Record<string, unknown>) => openHub({ orderId: data.id as number, type: 'sale', onActionSuccess }),
                         })}
                     />
                 </div>

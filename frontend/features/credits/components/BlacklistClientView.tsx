@@ -137,7 +137,7 @@ function BlacklistContactPanel({ contact, onRefresh }: { contact: CreditContact,
                             {ledger.map((entry) => (
                                 <tr key={entry.id} className="text-[12px] group">
                                     <td className="py-2 pr-4 text-center">
-                                        <DataCell.Code className="font-bold">{formatEntityDisplay('sales.saleorder', entry)}</DataCell.Code>
+                                        <DataCell.Code className="font-bold">{formatEntityDisplay('sales.saleorder', entry as unknown as Record<string, unknown>)}</DataCell.Code>
                                     </td>
                                     <td className="py-2 pr-4 text-center">
                                         <DataCell.Date value={entry.date} className="text-muted-foreground" />

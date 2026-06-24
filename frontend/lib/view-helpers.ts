@@ -1,7 +1,7 @@
 "use client"
 
 import React, { useState, useCallback } from "react"
-import { Table as ReactTable, type Row, type VisibilityState } from "@tanstack/react-table"
+import type { Table as ReactTable, Row, VisibilityState } from "@tanstack/react-table"
 import { DomainCard, EntityCard, EmptyState, MoneyDisplay, resolveEmptyState, SkeletonShell, type DataTableEmptyState, type EntityCardSkeletonProps } from "@/components/shared"
 import { Skeleton } from "@/components/ui/skeleton"
 import { groupByDate, groupItems, type AggregatorDef, type AggregateFormat, type Group } from "@/lib/group-utils"
@@ -35,14 +35,14 @@ const CARD_EMPTY_WRAPPER = "flex h-full min-h-[12rem] items-center justify-cente
 export function createDomainCardView(
   entityLabel: string,
   options: {
-    onRowClick: (data: any) => void
-    isSelected?: (data: any) => boolean
+    onRowClick?: (data: Record<string, unknown>) => void
+    isSelected?: (data: Record<string, unknown>) => boolean
     isHubOpen?: boolean
     emptyState?: DataTableEmptyState
     isFiltered?: boolean
   }
 ) {
-  const DomainCardView = (table: ReactTable<any>) => {
+  const DomainCardView = (table: ReactTable<Record<string, unknown>>) => {
     const rows = table.getRowModel().rows
     if (rows.length === 0) {
       const resolved = resolveEmptyState(options.emptyState, options.isFiltered)
@@ -69,7 +69,7 @@ export function createDomainCardView(
           data: row.original,
           isSelected: options.isSelected?.(row.original) ?? false,
           isHubOpen: options.isHubOpen ?? false,
-          onClick: () => options.onRowClick(row.original),
+          onClick: () => options.onRowClick?.(row.original),
           visibleColumns: table.getState().columnVisibility,
         })
       )
@@ -92,7 +92,7 @@ export function createDomainCardView(
 export function createEntityCardView(
   entityLabel: string,
   options: {
-    renderCard: (data: any, row: any) => React.ReactNode
+    renderCard: (data: Record<string, unknown>, row: Row<Record<string, unknown>>) => React.ReactNode
     gridLayout?: 'single-column' | 'multi-column'
     emptyState?: DataTableEmptyState
     isFiltered?: boolean
@@ -106,7 +106,7 @@ export function createEntityCardView(
     ? "grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3 pt-2"
     : "grid gap-3 pt-2"
 
-  const EntityCardView = (table: ReactTable<any>) => {
+  const EntityCardView = (table: ReactTable<Record<string, unknown>>) => {
     const rows = table.getRowModel().rows
     if (rows.length === 0) {
       const resolved = resolveEmptyState(options.emptyState, options.isFiltered)
@@ -129,7 +129,7 @@ export function createEntityCardView(
       rows.map((row) => {
         const node = options.renderCard(row.original, row)
         if (React.isValidElement(node)) {
-          return React.cloneElement(node, { key: (row.original as any).id ?? row.id } as any)
+          return React.cloneElement(node, { key: (row.original as Record<string, unknown>).id as React.Key ?? row.id })
         }
         return node
       })
@@ -242,7 +242,7 @@ export function createCardGroupView<TData>(
             group.items.map((item) => {
               const node = renderCard(item)
               if (React.isValidElement(node)) {
-                return React.cloneElement(node, { key: (item as any).id } as any)
+                return React.cloneElement(node, { key: (item as Record<string, unknown>).id as React.Key })
               }
               return node
             }),
@@ -443,7 +443,7 @@ export function createExpandableRowView<TData, TDetail = unknown>(
   function ExpandableRowRenderer({ row }: { row: Row<TData> }) {
     const [detail, setDetail] = useState<TDetail | null>(null)
     const [loading, setLoading] = useState(false)
-    const id = (row.original as any).id
+    const id = (row.original as Record<string, unknown>).id as string | number
 
     const handleExpand = useCallback(async () => {
       if (!config.lazyLoad) return

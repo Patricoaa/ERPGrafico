@@ -37,7 +37,7 @@ export interface EntityMetadata {
   listUrl: string;
   detailUrlPattern: string;
   /** Field to use for the main partner name in cards/headers */
-  partnerField?: string | ((data: any) => string);
+  partnerField?: string | ((data: Record<string, unknown>) => string);
   /** Workflow status calculation strategy */
   workflowType?: 'order' | 'invoice' | 'note';
   /** Declarative view mode policy */
@@ -705,30 +705,33 @@ export function getDteLabel(dteType?: string | null): string {
  * Renders a template string using the provided data.
  * Supports dot notation (e.g. {customer.name}) and simple padding (e.g. {id:06d}).
  */
-export function formatEntityDisplay(label: string, data: any): string {
+export function formatEntityDisplay(label: string, data: Record<string, unknown>): string {
   const entity = ENTITY_REGISTRY[label];
-  if (!entity) return String(data?.id || data);
+  if (!entity) return String(data.id ?? '');
   
   let template = entity.shortTemplate;
 
   // Domain-specific override for Billing Invoices (Dynamic Prefixes)
-  if (label === 'billing.invoice' && data?.dte_type) {
-    const prefix = getDtePrefix(data.dte_type);
+  const dteType = data.dte_type
+  if (label === 'billing.invoice' && dteType) {
+    const prefix = getDtePrefix(String(dteType));
     template = `${prefix}-{number}`;
   }
 
-  return template.replace(/{([^}]+)}/g, (match, key) => {
+  return template.replace(/{([^}]+)}/g, (_match, key: string) => {
     const [path, format] = key.split(':');
-    let value = data;
+    let value: unknown = data;
     
-    // Resolve dot notation
     for (const part of path.split('.')) {
-      value = value?.[part];
+      if (value !== null && typeof value === 'object') {
+        value = (value as Record<string, unknown>)[part];
+      } else {
+        value = undefined;
+      }
     }
     
     if (value === undefined || value === null) return '';
     
-    // Simple padding support (matching backend :06d style)
     if (format && format.startsWith('0') && format.endsWith('d')) {
       const length = parseInt(format.slice(1, -1), 10);
       return String(value).padStart(length, '0');
@@ -750,15 +753,15 @@ export function getEntityIconName(label: string): string {
   return ENTITY_REGISTRY[label]?.iconName ?? 'Package';
 }
 
-export function getPartnerName(label: string, data: any): string {
+export function getPartnerName(label: string, data: Record<string, unknown>): string {
   const entity = ENTITY_REGISTRY[label];
-  if (!entity?.partnerField) return data.partner_name || data.name || '---';
+  if (!entity?.partnerField) return String(data.partner_name ?? data.name ?? '---');
   
   if (typeof entity.partnerField === 'function') {
     return entity.partnerField(data);
   }
   
-  return data[entity.partnerField] || '---';
+  return String(data[entity.partnerField] ?? '---');
 }
 
 /**
