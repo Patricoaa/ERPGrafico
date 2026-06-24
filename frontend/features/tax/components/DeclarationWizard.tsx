@@ -232,7 +232,7 @@ export function DeclarationWizard({ isOpen, onOpenChange, periodId, onSuccess, e
                                             onClick={() => !disabled && setPeriod(p => ({ ...p, month: m }))}
                                         >
                                             <div className={cn("text-[11px] font-black tracking-widest uppercase", isSelected ? "text-primary" : "text-muted-foreground/70")}>
-                                                {new Date(2000, m - 1, 1).toLocaleString('es-ES', { month: 'short' })}
+                                                {new Date(2000, m - 1, 1).toLocaleString('es-CL', { month: 'short' })}
                                             </div>
                                         </div>
                                     )

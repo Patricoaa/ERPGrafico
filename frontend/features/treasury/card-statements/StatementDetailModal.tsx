@@ -11,6 +11,7 @@ import { Button } from '@/components/ui/button'
 import { useCardStatement, useStatementCharges, useCardStatementMutations } from './hooks'
 import { PayStatementModal } from './PayStatementModal'
 import { mapToStatementChargeRows } from './utils'
+import { parseDateOnly } from '@/lib/utils'
 import type { StatementChargeRow } from './types'
 
 interface StatementDetailModalProps {
@@ -83,7 +84,7 @@ export function StatementDetailModal({ statementId, open, onOpenChange }: Statem
                         )}
                         {item.source === 'pending' && item.date && (
                             <span className="text-[10px] text-muted-foreground">
-                                {new Date(item.date).toLocaleDateString('es-CL', { year: 'numeric', month: 'long' })}
+                                {parseDateOnly(item.date).toLocaleDateString('es-CL', { year: 'numeric', month: 'long' })}
                             </span>
                         )}
                         {item.source === 'movement' && item.notes && (
@@ -193,13 +194,13 @@ export function StatementDetailModal({ statementId, open, onOpenChange }: Statem
                                 <div>
                                     <span className="text-muted-foreground">Cierre:</span>{' '}
                                     <span className="font-medium">
-                                        {new Date(stmt.cut_off_date).toLocaleDateString('es-CL')}
+                                        {parseDateOnly(stmt.cut_off_date).toLocaleDateString('es-CL')}
                                     </span>
                                 </div>
                                 <div>
                                     <span className="text-muted-foreground">Vencimiento:</span>{' '}
                                     <span className="font-medium">
-                                        {new Date(stmt.due_date).toLocaleDateString('es-CL')}
+                                        {parseDateOnly(stmt.due_date).toLocaleDateString('es-CL')}
                                     </span>
                                 </div>
                                 <div>

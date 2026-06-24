@@ -14,15 +14,6 @@ interface BankPageHeaderProps {
     titleActions?: React.ReactNode
 }
 
-const SUB_VIEWS = [
-    { value: "overview", label: "Resumen", iconName: "layout-dashboard" },
-    { value: "movements", label: "Movimientos Bancarios", iconName: "receipt" },
-    { value: "checks", label: "Cheques Girados", iconName: "file-check" },
-    { value: "loans", label: "Préstamos", iconName: "banknote" },
-    { value: "cards", label: "Tarjeta de crédito", iconName: "credit-card" },
-    { value: "reconciliation", label: "Conciliación", iconName: "arrow-left-right" },
-]
-
 export function BankPageHeader({ bankId, breadcrumbs, title = "", description, status, titleActions }: BankPageHeaderProps) {
     const { banks } = useBanks()
     const pathname = usePathname()
@@ -40,14 +31,6 @@ export function BankPageHeader({ bankId, breadcrumbs, title = "", description, s
                 href: `/treasury/bank-center/${bank.id}/${subSubActiveValue}`,
             })),
     ]
-
-    const sectionTabs = SUB_VIEWS.map(sv => ({
-        value: sv.value,
-        label: sv.label,
-        href: sv.value === 'cards'
-            ? `/treasury/bank-center/${bankId}/cards/unbilled`
-            : `/treasury/bank-center/${bankId}/${sv.value}`,
-    }))
 
     const navigation = {
         moduleName: "Tesorería",
@@ -72,7 +55,6 @@ export function BankPageHeader({ bankId, breadcrumbs, title = "", description, s
             titleActions={titleActions}
             variant="minimal"
             navigation={navigation}
-            sectionTabs={sectionTabs}
         />
     )
 }

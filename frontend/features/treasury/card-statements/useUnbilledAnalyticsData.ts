@@ -2,6 +2,7 @@
 
 import { useMemo } from "react"
 import type { PendingChargeRow, UpcomingInstallment, UnbilledForecast } from "../types"
+import { parseDateOnly } from "@/lib/utils"
 
 // ── Color palettes ──────────────────────────────────────────────
 
@@ -26,18 +27,18 @@ function groupBy<T>(items: T[], keyFn: (item: T) => string): Record<string, T[]>
 }
 
 function formatMonth(dateStr: string): string {
-    const d = new Date(dateStr)
+    const d = parseDateOnly(dateStr)
     const months = ["Ene", "Feb", "Mar", "Abr", "May", "Jun",
         "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"]
     return `${months[d.getMonth()]} ${d.getFullYear()}`
 }
 
 function formatYear(dateStr: string): string {
-    return new Date(dateStr).getFullYear().toString()
+    return parseDateOnly(dateStr).getFullYear().toString()
 }
 
 function formatDay(dateStr: string): string {
-    const d = new Date(dateStr)
+    const d = parseDateOnly(dateStr)
     const dd = String(d.getDate()).padStart(2, "0")
     const mm = String(d.getMonth() + 1).padStart(2, "0")
     return `${dd}/${mm}`
@@ -242,7 +243,7 @@ export function useUnbilledAnalyticsData(
             ? Object.entries(forecast.by_month)
                 .sort(([a], [b]) => a.localeCompare(b))
                 .map(([key, val]) => {
-                    const d = new Date(key + "-02")
+                    const d = parseDateOnly(key + "-02")
                     return {
                         month: d.toLocaleDateString("es-CL", { month: "short", year: "2-digit" }),
                         total: parseFloat(val.total),
@@ -285,7 +286,7 @@ export function useUnbilledAnalyticsData(
             ? Object.entries(forecast.by_month)
                 .sort(([a], [b]) => a.localeCompare(b))
                 .map(([key, val]) => {
-                    const d = new Date(key + "-02")
+                    const d = parseDateOnly(key + "-02")
                     const month = d.toLocaleDateString("es-CL", { month: "short", year: "2-digit" })
                     return {
                         month,
@@ -319,7 +320,7 @@ export function useUnbilledAnalyticsData(
             .sort((a, b) => a.due_date.localeCompare(b.due_date))
             .slice(0, 15)
             .map(i => ({
-                date: new Date(i.due_date).toLocaleDateString("es-CL", { day: "numeric", month: "short" }),
+                date: parseDateOnly(i.due_date).toLocaleDateString("es-CL", { day: "numeric", month: "short" }),
                 label: `${i.partner_name ?? "Proveedor"} · Cuota ${i.number}/${i.total_installments}`,
                 description: `$${Number(i.principal_amount).toLocaleString("es-CL", { maximumFractionDigits: 0 })}`,
                 status: i.due_date === now ? "warning" as const : "neutral" as const,
@@ -330,14 +331,14 @@ export function useUnbilledAnalyticsData(
             .sort((a, b) => parseFloat(b.principal_amount) - parseFloat(a.principal_amount))
             .slice(0, 5)
             .map(i => ({
-                label: `${i.partner_name ?? "Proveedor"} · ${new Date(i.due_date).toLocaleDateString("es-CL", { day: "numeric", month: "short" })}`,
+                label: `${i.partner_name ?? "Proveedor"} · ${parseDateOnly(i.due_date).toLocaleDateString("es-CL", { day: "numeric", month: "short" })}`,
                 value: `$${Number(i.principal_amount).toLocaleString("es-CL", { maximumFractionDigits: 0 })}`,
                 amount: Number(i.principal_amount),
             }))
 
         // ── Trends (period-over-period) ────────────────────────
         function inPeriod(c: PendingChargeRow, periodVal: number, gr: "day" | "month" | "year"): boolean {
-            const d = new Date(c.date)
+            const d = parseDateOnly(c.date)
             if (isNaN(d.getTime())) return false
             if (gr === "year") return d.getFullYear() === periodVal
             if (gr === "day") return Math.floor(d.getTime() / 86_400_000) === periodVal
@@ -345,7 +346,7 @@ export function useUnbilledAnalyticsData(
         }
 
         function inPeriodInst(i: UpcomingInstallment, periodVal: number, gr: "day" | "month" | "year"): boolean {
-            const d = new Date(i.due_date)
+            const d = parseDateOnly(i.due_date)
             if (isNaN(d.getTime())) return false
             if (gr === "year") return d.getFullYear() === periodVal
             if (gr === "day") return Math.floor(d.getTime() / 86_400_000) === periodVal

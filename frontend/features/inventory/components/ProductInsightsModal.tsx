@@ -19,6 +19,7 @@ import { format } from "date-fns"
 import { es } from "date-fns/locale"
 import { DataCell } from '@/components/shared'
 import { formatEntityDisplay } from "@/lib/entity-registry"
+import { parseDateOnly } from "@/lib/utils"
 
 import { TabBar, TabBarContent } from "@/components/shared"
 import { LazyDrawer, type TransactionType } from "@/features/_shared/transaction-drawer"
@@ -245,7 +246,7 @@ export function ProductInsightsModal({ productId, productName, open, onOpenChang
                                         axisBottom={{
                                             tickSize: 0,
                                             tickPadding: 10,
-                                            format: (v: string) => format(new Date(v), 'MMM d'),
+                                            format: (v: string) => format(parseDateOnly(v), 'MMM d'),
                                         }}
                                         axisLeft={{
                                             tickSize: 0,
@@ -370,7 +371,7 @@ function KardexTable({ entries, onOpenWorkOrder, onOpenTransaction }: {
         {
             header: "Fecha",
             cell: ({ row }) => (
-                <span className="text-xs">{format(new Date(row.original.date), "dd/MM/yyyy")}</span>
+                <span className="text-xs">{format(parseDateOnly(row.original.date), "dd/MM/yyyy")}</span>
             ),
         },
         {
@@ -463,7 +464,7 @@ function ProductionUsageTable({ entries, onOpenWorkOrder }: {
         {
             header: "Fecha",
             cell: ({ row }) => (
-                <span className="text-xs">{format(new Date(row.original.date), "dd/MM/yyyy")}</span>
+                <span className="text-xs">{format(parseDateOnly(row.original.date), "dd/MM/yyyy")}</span>
             ),
         },
         {

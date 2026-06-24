@@ -6,9 +6,11 @@ import {
     BaseModal, FormFooter, CancelButton, ActionSlideButton, LabeledSelect,
     MoneyDisplay, LabeledInput,
 } from '@/components/shared'
+import { useServerDate } from '@/hooks/useServerDate'
 import { useTreasuryAccounts } from '../hooks/useTreasuryAccounts'
 import { useLoanMutations } from './hooks'
 import type { BankLoanCurrency, LoanInstallment } from './types'
+import { parseDateOnly } from '@/lib/utils'
 
 interface Props {
     installment: LoanInstallment
@@ -21,9 +23,10 @@ interface Props {
 export function LoanPayInstallmentModal({ installment, loanCurrency, penaltyRate, open, onOpenChange }: Props) {
     const { accounts } = useTreasuryAccounts()
     const { payInstallment, isPaying } = useLoanMutations()
+    const { dateString, serverDate } = useServerDate()
 
     const [paymentAccount, setPaymentAccount] = useState('')
-    const [payDate, setPayDate] = useState(new Date().toISOString().slice(0, 10))
+    const [payDate, setPayDate] = useState(dateString || new Date().toISOString().slice(0, 10))
     const [principalAmount, setPrincipalAmount] = useState(installment.principal_amount)
     const [interestAmount, setInterestAmount] = useState(installment.interest_amount)
     const [insuranceAmount, setInsuranceAmount] = useState(installment.insurance_amount)
@@ -32,7 +35,7 @@ export function LoanPayInstallmentModal({ installment, loanCurrency, penaltyRate
         installment.status === 'OVERDUE' && parseFloat(penaltyRate || '0') > 0
             ? (() => {
                 const days = Math.max(0, Math.floor(
-                    (new Date().getTime() - new Date(installment.due_date).getTime()) / 86_400_000,
+                    ((serverDate?.getTime() ?? Date.now()) - new Date(installment.due_date).getTime()) / 86_400_000,
                 ))
                 return days > 0
                     ? (parseFloat(installment.total_amount) * (parseFloat(penaltyRate || '0') / 100) * (days / 30)).toFixed(2)
@@ -97,7 +100,7 @@ export function LoanPayInstallmentModal({ installment, loanCurrency, penaltyRate
                     <span>Pagar Cuota #{installment.number}</span>
                 </div>
             }
-            subtitle={`${installment.loan_display_id} · Vence ${new Date(installment.due_date).toLocaleDateString('es-CL')}`}
+            subtitle={`${installment.loan_display_id} · Vence ${installment.due_date ? parseDateOnly(installment.due_date).toLocaleDateString('es-CL') : '—'}`}
             footer={
                 <FormFooter
                     actions={

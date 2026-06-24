@@ -64,21 +64,27 @@ interface EntityCardHeaderProps {
     center?: React.ReactNode
     /** Optional icon rendered in a 32×32 rounded container before the title */
     icon?: LucideIcon
+    /** Image URL — renders an <img> in the icon slot, taking precedence over `icon` */
+    imageSrc?: string
     /** Styling for the icon container (e.g. "text-success bg-success/10") */
     iconClassName?: string
     className?: string
 }
 
-function EntityCardHeader({ title, subtitle, trailing, center, icon: Icon, iconClassName, className }: EntityCardHeaderProps) {
+function EntityCardHeader({ title, subtitle, trailing, center, icon: Icon, imageSrc, iconClassName, className }: EntityCardHeaderProps) {
     if (center) {
         return (
             <div className={cn("grid grid-cols-[1fr_auto_1fr] items-start gap-2", className)}>
                 <div className="flex items-start gap-3 min-w-0">
-                    {Icon && (
+                    {imageSrc ? (
+                        <div className={cn("flex h-8 w-8 shrink-0 items-center justify-center rounded-md overflow-hidden", iconClassName ?? "bg-muted")}>
+                            <img src={imageSrc} alt="" className="h-full w-full object-cover" />
+                        </div>
+                    ) : Icon ? (
                         <div className={cn("flex h-8 w-8 shrink-0 items-center justify-center rounded-md", iconClassName ?? "bg-muted")}>
                             <Icon className="h-4 w-4" />
                         </div>
-                    )}
+                    ) : null}
                     <div className="min-w-0 flex-1">
                         <div className="truncate text-sm font-semibold leading-tight tracking-tight">
                             {title}
@@ -103,11 +109,15 @@ function EntityCardHeader({ title, subtitle, trailing, center, icon: Icon, iconC
     return (
         <div className={cn("flex items-start justify-between gap-2", className)}>
             <div className="flex items-start gap-3 min-w-0 flex-1">
-                {Icon && (
+                {imageSrc ? (
+                    <div className={cn("flex h-8 w-8 shrink-0 items-center justify-center rounded-md overflow-hidden", iconClassName ?? "bg-muted")}>
+                        <img src={imageSrc} alt="" className="h-full w-full object-cover" />
+                    </div>
+                ) : Icon ? (
                     <div className={cn("flex h-8 w-8 shrink-0 items-center justify-center rounded-md", iconClassName ?? "bg-muted")}>
                         <Icon className="h-4 w-4" />
                     </div>
-                )}
+                ) : null}
                 <div className="min-w-0 flex-1">
                     <div className="truncate text-sm font-semibold leading-tight tracking-tight">
                         {title}

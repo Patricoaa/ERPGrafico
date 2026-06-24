@@ -12,6 +12,8 @@ import { ColumnDef } from "@tanstack/react-table"
 import type { BulkAction } from "@/components/shared"
 import { ProductDrawer } from "./ProductDrawer"
 import { ChevronDown, Plus, AlertTriangle, Layers, ChevronDown as ChevronDownIcon } from "lucide-react"
+import type { LucideIcon } from "lucide-react"
+import * as LucideIcons from "lucide-react"
 import { toast } from "sonner"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { cn, translateProductType } from "@/lib/utils"
@@ -52,6 +54,11 @@ interface ProductClientViewProps {
 export function ProductClientView({ externalOpen, onExternalOpenChange, createAction, initialProducts }: ProductClientViewProps) {
     const { rate } = useVatRate()
     const { categories: categoryOptions } = useCategories()
+    const categoryIconMap = useMemo(() => {
+        const map = new Map<number, string | undefined>()
+        for (const cat of categoryOptions) map.set(cat.id, cat.icon)
+        return map
+    }, [categoryOptions])
     const { filters: textFilters, isFiltered: isTextFiltered, clearAll: clearText } = useSmartSearch(productSearchDef)
     const { filters: segFilters, isFiltered: isSegFiltered, clearAll: clearSeg } = useSegmentation(productSegDef)
     const [categoryValue, setCategoryValue] = useQueryState('category', parseAsString)
@@ -485,45 +492,54 @@ export function ProductClientView({ externalOpen, onExternalOpenChange, createAc
                     showReset={isFiltered}
                     onReset={() => { clearText(); clearSeg(); setCategoryValue(null) }}
                     initialColumnVisibility={initialColumnVisibility}
-                    renderCard={(product: Product) => (
-                        <EntityCard key={product.id} onClick={() => {
-                            const params = new URLSearchParams(searchParams.toString())
-                            params.set('selected', String(product.id))
-                            router.push(`${pathname}?${params.toString()}`, { scroll: false })
-                        }}>
-                            <EntityCard.Header
-                                title={product.name}
-                                subtitle={<span className="font-mono text-xs">{product.code}</span>}
-                                trailing={
-                                    <StatusBadge
-                                        status={product.is_active ? "active" : "inactive"}
-                                        size="sm"
+                    renderCard={(product: Product) => {
+                        const iconName = categoryIconMap.get(product.category_id)
+                        const fallbackIcon = iconName
+                            ? (LucideIcons as unknown as Record<string, LucideIcon | undefined>)[iconName]
+                            : undefined
+                        const imageUrl = product.image_thumbnail ? resolveMediaUrl(product.image_thumbnail) ?? undefined : undefined
+
+                        return (
+                            <EntityCard key={product.id} onClick={() => {
+                                const params = new URLSearchParams(searchParams.toString())
+                                params.set('selected', String(product.id))
+                                router.push(`${pathname}?${params.toString()}`, { scroll: false })
+                            }}>
+                                <EntityCard.Header
+                                    imageSrc={imageUrl}
+                                    icon={imageUrl ? undefined : (fallbackIcon ?? LucideIcons.Package)}
+                                    iconClassName="bg-muted"
+                                    title={product.name}
+                                    subtitle={
+                                        <div className="flex items-center gap-2">
+                                            <span className="font-mono text-xs">{product.code}</span>
+                                            <StatusBadge
+                                                status={product.is_active ? "active" : "inactive"}
+                                                size="sm"
+                                            />
+                                        </div>
+                                    }
+                                    trailing={
+                                        <div className="flex flex-col items-end">
+                                            <span className="text-[10px] font-medium uppercase tracking-widest text-muted-foreground/60">Total</span>
+                                            {product.is_dynamic_pricing
+                                                ? <Chip size="xs" intent="warning">Dinámico</Chip>
+                                                : <MoneyDisplay amount={product.sale_price_gross || PricingUtils.netToGross(Number(product.sale_price))} className="text-primary font-bold" />
+                                            }
+                                        </div>
+                                    }
+                                />
+                                <EntityCard.Body actions={productActions.render(product, actionsCtx)}>
+                                    <EntityCard.Field label="Tipo" value={translateProductType(product.product_type)} />
+                                    <EntityCard.Field label="Categoría" value={product.category_name} />
+                                    <EntityCard.Field
+                                        label="Código Interno"
+                                        value={product.internal_code || <span className="text-muted-foreground/40">—</span>}
                                     />
-                                }
-                            />
-                            <EntityCard.Body actions={productActions.render(product, actionsCtx)}>
-                                <EntityCard.Field label="Tipo" value={translateProductType(product.product_type)} />
-                                <EntityCard.Field label="Categoría" value={product.category_name} />
-                                <EntityCard.Field
-                                    label="Precio Neto"
-                                    value={
-                                        product.is_dynamic_pricing
-                                            ? <Chip size="xs" intent="warning">Dinámico</Chip>
-                                            : <MoneyDisplay amount={product.sale_price} />
-                                    }
-                                />
-                                <EntityCard.Field
-                                    label="Precio Total"
-                                    value={
-                                        product.is_dynamic_pricing
-                                            ? <Chip size="xs" intent="warning">Dinámico</Chip>
-                                            : <MoneyDisplay amount={product.sale_price_gross || PricingUtils.netToGross(Number(product.sale_price))} className="text-primary" />
-                                    }
-                                    className="font-bold"
-                                />
-                            </EntityCard.Body>
-                        </EntityCard>
-                    )}
+                                </EntityCard.Body>
+                            </EntityCard>
+                        )
+                    }}
                     bulkActions={bulkActions}
                     defaultPageSize={500}
                     createAction={createAction}

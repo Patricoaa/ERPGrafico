@@ -114,5 +114,6 @@ Proposed → (review) → Accepted → (later) → Superseded | Deprecated
 | [0048](0048-cancelled-terminal-no-reset-to-draft.md) | CANCELLED es terminal — no se implementa Reset-to-Draft | Accepted |
 | [0049](0049-credit-line-model.md) | Modelo CreditLine (Línea de Crédito Rotativa) | Superseded by 0050 |
 | [0050](0050-credit-line-overdraft-treasury-account.md) | Refactor CreditLine — sobregiro como overdraft de TreasuryAccount | Accepted |
+| [0051](0051-adjust-state-during-render.md) | Adjust State During Render — canonical pattern for state synchronization | Accepted |
 
 > **Lint:** este índice debe coincidir 1-a-1 con los archivos `NNNN-*.md` presentes en este directorio. Cualquier ADR nuevo o renombramiento exige actualizar también esta tabla.

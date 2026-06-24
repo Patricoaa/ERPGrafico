@@ -86,7 +86,6 @@ export default function PurchasesPageClient({ initialInvoices }: PurchasesPageCl
     const router = useRouter()
     const pathname = usePathname()
     const selectedId = searchParams.get('selected')
-    const [hubEverOpened, setHubEverOpened] = useState(false)
 
     const [viewingTransaction, setViewingTransaction] = useState<{ type: string; id: string } | null>(null)
 
@@ -102,19 +101,25 @@ export default function PurchasesPageClient({ initialInvoices }: PurchasesPageCl
         if (selectedId) openHub({ invoiceId: Number(selectedId), orderId: null, type: 'purchase' })
     }, [selectedId, openHub])
 
-    useEffect(() => {
-        if (isHubOpen && selectedId) setHubEverOpened(true)
-    }, [isHubOpen, selectedId])
+    // Detect hub close → clean URL (adjust-during-render for tracking, effect for side effect)
+    const [prevHubOpen, setPrevHubOpen] = useState(isHubOpen)
+    const [hubClosedWithSelection, setHubClosedWithSelection] = useState(false)
+
+    if (prevHubOpen !== isHubOpen) {
+        setPrevHubOpen(isHubOpen)
+        if (!isHubOpen && selectedId) {
+            setHubClosedWithSelection(true)
+        }
+    }
 
     useEffect(() => {
-        if (hubEverOpened && !isHubOpen && selectedId) {
+        if (hubClosedWithSelection && !isHubOpen && selectedId) {
             const params = new URLSearchParams(searchParams.toString())
             params.delete('selected')
             const query = params.toString()
-            setHubEverOpened(false)
             router.replace(query ? `${pathname}?${query}` : pathname, { scroll: false })
         }
-    }, [isHubOpen, hubEverOpened, selectedId, pathname, searchParams, router])
+    }, [hubClosedWithSelection, isHubOpen, selectedId, pathname, searchParams, router])
 
     const deleteConfirm = useConfirmAction<number>(async (id) => {
         try {
@@ -412,7 +417,7 @@ export default function PurchasesPageClient({ initialInvoices }: PurchasesPageCl
                         },
                     ]}
                     defaultPageSize={20}
-                    cardGroupBy={{ dateField: 'date', amountField: 'total' }}
+                    cardGroupBy={{ field: 'date', sort: 'desc', aggregators: [{ key: 'total', label: 'Total', field: 'total', fn: 'sum', format: 'money' }, { key: 'count', label: 'Items', fn: 'count', format: 'integer' }] }}
                 />
             </div>
 

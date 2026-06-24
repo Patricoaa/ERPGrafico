@@ -15,6 +15,7 @@ import { useLoanMutations } from './hooks'
 import { showApiError } from '@/lib/errors'
 import { AccountSelector } from '@/components/selectors/AccountSelector'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
+import { useServerDate } from '@/hooks/useServerDate'
 import { useTreasurySettings } from '@/features/settings'
 import type { BankLoan } from './types'
 
@@ -42,14 +43,15 @@ export function LoanDisburseDrawer({ open, onOpenChange, loan, onSuccess }: Prop
     // están definidos. Si NO lo están y hay cargos > 0, mostramos los
     // selectores como escape híbrido (Opción C).
     const { settings: treasurySettings } = useTreasurySettings()
+    const { dateString } = useServerDate()
 
     const defaultValues = useMemo<FormValues>(() => ({
-        date: new Date().toISOString().slice(0, 10),
+        date: dateString || new Date().toISOString().slice(0, 10),
         opening_fee: loan?.opening_fee ?? '0',
         stamp_tax: loan?.stamp_tax ?? '0',
         commission_expense_account: '',
         stamp_tax_expense_account: '',
-    }), [loan])
+    }), [loan, dateString])
 
     const form = useForm<FormValues>({
         resolver: zodResolver(schema) as unknown as Resolver<FormValues>,

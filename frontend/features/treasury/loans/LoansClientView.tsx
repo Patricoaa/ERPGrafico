@@ -18,6 +18,7 @@ import { LoanDisburseDrawer } from './LoanDisburseDrawer'
 import { LoanDetailModal } from './LoanDetailModal'
 import { loanActions, type LoanActionsCtx } from './loanActions'
 import type { BankLoan } from './types'
+import { parseDateOnly } from '@/lib/utils'
 
 export function LoansClientView({ bankId: bankIdProp }: { bankId?: number } = {}) {
     const searchParams = useSearchParams()
@@ -159,7 +160,7 @@ export function LoansClientView({ bankId: bankIdProp }: { bankId?: number } = {}
             cell: ({ row }) => (
                 <DataCell.Text>
                     {row.original.next_due_date
-                        ? new Date(row.original.next_due_date).toLocaleDateString('es-CL')
+                        ? parseDateOnly(row.original.next_due_date).toLocaleDateString('es-CL')
                         : '—'}
                 </DataCell.Text>
             ),
@@ -218,7 +219,7 @@ export function LoansClientView({ bankId: bankIdProp }: { bankId?: number } = {}
                                 <EntityCard.Field
                                     label="Próx. Vencimiento"
                                     value={loan.next_due_date
-                                        ? new Date(loan.next_due_date).toLocaleDateString('es-CL')
+                                        ? parseDateOnly(loan.next_due_date).toLocaleDateString('es-CL')
                                         : '—'}
                                 />
                             </EntityCard.Body>

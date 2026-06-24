@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button'
 import { showApiError } from '@/lib/errors'
 import { BaseModal, MoneyDisplay, LabeledInput, LabeledSelect } from '@/components/shared'
 import { toast } from 'sonner'
+import { useServerDate } from '@/hooks/useServerDate'
 import { treasuryApi } from '../api/treasuryApi'
 
 interface AddChargeModalProps {
@@ -34,7 +35,8 @@ export function AddChargeModal({
     const [amount, setAmount] = useState('')
     const [chargeType, setChargeType] = useState('OTHER')
     const [description, setDescription] = useState('')
-    const [date, setDate] = useState(new Date().toISOString().split('T')[0])
+    const { dateString } = useServerDate()
+    const [date, setDate] = useState(dateString || new Date().toISOString().split('T')[0])
     const [loading, setLoading] = useState(false)
 
     const handleSubmit = async (e: React.FormEvent) => {

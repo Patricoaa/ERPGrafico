@@ -14,7 +14,7 @@ import { Drawer, DataTable, SkeletonShell, DataCell } from "@/components/shared"
 import { partnersApi } from "@/features/contacts/api/partnersApi"
 import { PartnerStatement, PartnerTransaction } from "@/features/contacts/types/partner"
 import { toast } from "sonner"
-import {formatPlainDate as formatDate} from "@/lib/utils"
+import {formatPlainDate as formatDate, parseDateOnly} from "@/lib/utils"
 
 import { ColumnDef } from "@tanstack/react-table"
 import { DropdownMenuItem } from "@/components/ui/dropdown-menu"
@@ -154,7 +154,7 @@ export function PartnerLedgerDrawer({
     // We need to calculate balance_after specifically for this partner's chronological list
     const transactionsWithBalance = React.useMemo(() => {
         if (!data?.transactions) return []
-        const sorted = [...data.transactions].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
+        const sorted = [...data.transactions].sort((a, b) => parseDateOnly(a.date).getTime() - parseDateOnly(b.date).getTime())
         let balance = 0
         const withBal = sorted.map(tx => {
             const amount = parseFloat(tx.amount) || 0

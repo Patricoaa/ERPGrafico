@@ -6,7 +6,7 @@ import { useSaleOrderManufacturableLines } from "../../hooks/useSaleOrderManufac
 import { FileText, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { cn } from "@/lib/utils";
+import { cn, parseDateOnly } from "@/lib/utils";
 import { formatCurrency } from "@/lib/money";
 import type { SaleOrderLine } from "@/features/sales/types";
 
@@ -180,7 +180,7 @@ export function SaleOrderProductStep({
                               NV #{order.number}
                             </h3>
                             <span className="text-xs text-muted-foreground">
-                              {new Date(order.date || 0).toLocaleDateString()}
+                              {order.date ? parseDateOnly(order.date).toLocaleDateString('es-CL') : "—"}
                             </span>
                           </div>
 

@@ -898,9 +898,11 @@ GET    /api/core/groups/          list (permission groups)
 
 ## Date/time
 
-- All datetimes: ISO-8601 UTC with `Z` suffix.
+- All datetimes: ISO-8601 UTC (`Z` o `+00:00`). Todo serializer debe usar **un solo formato** — no mezclar `Z` en unos y `+00:00` en otros.
 - Date-only: `YYYY-MM-DD`.
-- Server clock authoritative — frontend uses `useServerDate`.
+- Nunca datetimes naive (sin timezone). `datetime.utcnow()` prohibido — usar `django.utils.timezone.now()`.
+- Server clock authoritative — frontend usa `useServerDate`.
+- Frontend: prohibido `new Date("YYYY-MM-DD")`. Parsear date-only con `new Date(y, m-1, d)` o utility `parseDateOnly`.
 
 ## Versioning
 

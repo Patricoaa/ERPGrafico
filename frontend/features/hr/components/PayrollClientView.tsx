@@ -22,6 +22,7 @@ import {
 import { ToolbarCreateButton, SmartSearchBar, useSmartSearch, SegmentationBar, useSegmentation } from "@/components/shared"
 import { useSelectedEntity } from "@/hooks/useSelectedEntity"
 import { usePayrolls } from "@/features/hr"
+import { useServerDate } from "@/hooks/useServerDate"
 import { payrollSearchDef } from "../searchDef"
 import { payrollSegDef } from "../segmentationDef"
 
@@ -30,6 +31,8 @@ interface PayrollClientViewProps {
 }
 
 export function PayrollClientView({ initialPayrolls }: PayrollClientViewProps) {
+    const { dateString } = useServerDate()
+
     const createAction = (
         <div className="flex items-center gap-2">
             <ToolbarCreateButton label="Generar Liquidaciones" href="/hr/payrolls?modal=new" />
@@ -68,20 +71,18 @@ export function PayrollClientView({ initialPayrolls }: PayrollClientViewProps) {
 
     const [detailSheetOpen, setDetailSheetOpen] = useState(false)
     const [activePayrollId, setActivePayrollId] = useState<number | null>(null)
+    const [prevSelectedFromUrl, setPrevSelectedFromUrl] = useState(selectedFromUrl)
 
-    useEffect(() => {
-        if (selectedFromUrl) {
-            setActivePayrollId(selectedFromUrl.id)
-            setDetailSheetOpen(true)
-        }
-    }, [selectedFromUrl])
+    // Adjust state during render: sync URL-driven entity to local state
+    if (selectedFromUrl && selectedFromUrl !== prevSelectedFromUrl) {
+        setPrevSelectedFromUrl(selectedFromUrl)
+        setActivePayrollId(selectedFromUrl.id)
+        setDetailSheetOpen(true)
+    }
 
     const isNewModalOpen = searchParams.get("modal") === "new"
-    const [dialogOpen, setDialogOpen] = useState(isNewModalOpen)
-
-    useEffect(() => {
-        setDialogOpen(isNewModalOpen)
-    }, [isNewModalOpen])
+    // Derive from URL directly — no useState + useEffect needed
+    const dialogOpen = isNewModalOpen
 
     useEffect(() => {
         const action = searchParams.get("action")
@@ -111,12 +112,11 @@ export function PayrollClientView({ initialPayrolls }: PayrollClientViewProps) {
     }, [searchParams, router, fetchPayrolls])
 
     const handleOpenChange = (open: boolean) => {
-        if (!open && isNewModalOpen) {
+        if (!open) {
             const params = new URLSearchParams(searchParams.toString())
             params.delete("modal")
             router.push(`?${params.toString()}`, { scroll: false })
         }
-        setDialogOpen(open)
     }
 
     const [selectedPayroll, setSelectedPayroll] = useState<Payroll | null>(null)
@@ -143,7 +143,7 @@ export function PayrollClientView({ initialPayrolls }: PayrollClientViewProps) {
                     employee: selectedPayroll.employee,
                     payroll: selectedPayroll.id,
                     amount: data.amount as string,
-                    date: (data.documentDate as string) || new Date().toISOString().split('T')[0],
+                    date: (data.documentDate as string) || dateString,
                     notes: "Anticipo de sueldo",
                     ...data
                 })
