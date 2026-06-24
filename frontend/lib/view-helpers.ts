@@ -64,7 +64,7 @@ export function createDomainCardView(
       { className: "grid gap-3 pt-1" },
       rows.map((row) =>
         React.createElement(DomainCard, {
-          key: row.original.id,
+          key: row.original.id as React.Key,
           label: entityLabel,
           data: row.original,
           isSelected: options.isSelected?.(row.original) ?? false,
