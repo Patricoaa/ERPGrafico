@@ -12,7 +12,6 @@ interface BankPageHeaderProps {
     description?: string
     status?: PageHeaderStatus
     titleActions?: React.ReactNode
-    subtab?: string
 }
 
 const SUB_VIEWS = [
@@ -24,7 +23,7 @@ const SUB_VIEWS = [
     { value: "reconciliation", label: "Conciliación", iconName: "arrow-left-right" },
 ]
 
-export function BankPageHeader({ bankId, breadcrumbs, title = "", description, status, titleActions, subtab }: BankPageHeaderProps) {
+export function BankPageHeader({ bankId, breadcrumbs, title = "", description, status, titleActions }: BankPageHeaderProps) {
     const { banks } = useBanks()
     const pathname = usePathname()
     const segments = pathname.split('/').filter(Boolean)
@@ -38,28 +37,17 @@ export function BankPageHeader({ bankId, breadcrumbs, title = "", description, s
                 value: `bank-${bank.id}`,
                 label: bank.name,
                 iconName: "landmark" as string,
-                href: `/treasury/bank-center/${bank.id}`,
-                                subTabs: SUB_VIEWS.map(sv => {
-                                    const baseHref = sv.value === 'cards'
-                                        ? `/treasury/bank-center/${bank.id}/cards`
-                                        : `/treasury/bank-center/${bank.id}/${sv.value}`
-                                    return {
-                                        value: sv.value,
-                                        label: sv.label,
-                                        iconName: sv.iconName,
-                                        href: sv.value === 'cards'
-                                            ? `${baseHref}/${subtab || 'unbilled'}`
-                                            : baseHref,
-                                        ...(sv.value === 'cards' && {
-                                            subTabs: [
-                                                { value: "unbilled", label: "Cargos No Facturados", iconName: "file-text", href: `${baseHref}/unbilled` },
-                                                { value: "statements", label: "Cargos Facturados", iconName: "file-text", href: `${baseHref}/statements` },
-                                            ],
-                                        }),
-                                    }
-                                }),
+                href: `/treasury/bank-center/${bank.id}/${subSubActiveValue}`,
             })),
     ]
+
+    const sectionTabs = SUB_VIEWS.map(sv => ({
+        value: sv.value,
+        label: sv.label,
+        href: sv.value === 'cards'
+            ? `/treasury/bank-center/${bankId}/cards/unbilled`
+            : `/treasury/bank-center/${bankId}/${sv.value}`,
+    }))
 
     const navigation = {
         moduleName: "Tesorería",
@@ -73,7 +61,6 @@ export function BankPageHeader({ bankId, breadcrumbs, title = "", description, s
         activeValue: "bank-center",
         subActiveValue: `bank-${bankId}`,
         subSubActiveValue,
-        subSubSubActiveValue: subtab || 'unbilled',
         breadcrumbs,
     }
 
@@ -85,6 +72,7 @@ export function BankPageHeader({ bankId, breadcrumbs, title = "", description, s
             titleActions={titleActions}
             variant="minimal"
             navigation={navigation}
+            sectionTabs={sectionTabs}
         />
     )
 }
