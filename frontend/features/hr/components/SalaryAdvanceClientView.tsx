@@ -157,7 +157,7 @@ export function SalaryAdvanceClientView({ initialAdvances }: SalaryAdvanceClient
                         title: "Aún no hay anticipos",
                         description: "Registra anticipos de sueldo para descontarlos en la nómina.",
                     }}
-                    cardGroupBy={{ dateField: 'date', amountField: 'amount' }}
+                    cardGroupBy={{ field: 'date', sort: 'desc', aggregators: [{ key: 'total', label: 'Total', field: 'amount', fn: 'sum', format: 'money' }, { key: 'count', label: 'Items', fn: 'count', format: 'integer' }] }}
                     renderCard={(advance) => (
                         <EntityCard key={advance.id} onClick={() => openSelected(advance.id)}>
                             <EntityCard.Header

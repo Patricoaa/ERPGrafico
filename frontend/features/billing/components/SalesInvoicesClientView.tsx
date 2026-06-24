@@ -184,7 +184,7 @@ export function SalesInvoicesClientView({ initialInvoices }: { initialInvoices?:
                         title: "Aún no hay documentos de venta",
                         description: "Las boletas y facturas que emitas aparecerán aquí.",
                     }}
-                    cardGroupBy={{ dateField: 'date', amountField: 'total' }}
+                    cardGroupBy={{ field: 'date', sort: 'desc', aggregators: [{ key: 'total', label: 'Total', field: 'total', fn: 'sum', format: 'money' }, { key: 'count', label: 'Items', fn: 'count', format: 'integer' }] }}
                 />
             </div>
 
