@@ -315,6 +315,7 @@ export function EmployeeDrawer({ open, onOpenChange, employee, onSaved, trigger,
                                         value={activeTab}
                                         onValueChange={setActiveTab}
                                         orientation="horizontal"
+                                        variant="underline"
                                         className="flex-1"
                                         contentClassName="bg-transparent"
                                     >

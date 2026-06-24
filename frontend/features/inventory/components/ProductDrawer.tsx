@@ -656,6 +656,7 @@ export function ProductDrawer({ sidebar, open, onOpenChange, initialData, onSucc
                                 value={activeTab}
                                 onValueChange={setActiveTab}
                                 orientation="horizontal"
+                                variant="underline"
                                 header={inline ? tabHeader : undefined}
                                 className="flex-1"
                                 contentClassName="bg-transparent"
