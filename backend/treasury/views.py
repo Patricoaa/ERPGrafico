@@ -94,10 +94,11 @@ class BankViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
             bank=bank, direction=Check.Direction.RECEIVED,
             status=Check.Status.IN_PORTFOLIO,
         ).aggregate(total=Sum('amount'))['total'] or 0
-        issued_checks = Check.objects.filter(
+        issued_checks_qs = Check.objects.filter(
             bank=bank, direction=Check.Direction.ISSUED,
             status=Check.Status.ISSUED,
-        ).aggregate(total=Sum('amount'))['total'] or 0
+        )
+        issued_checks = issued_checks_qs.aggregate(total=Sum('amount'))['total'] or 0
 
         # Créditos activos
         from .models import BankLoan, LoanInstallment
@@ -115,6 +116,38 @@ class BankViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
         ).aggregate(
             s=Sum('principal_amount'),
         )['s'] or __import__('decimal').Decimal('0')
+
+        # Préstamos activos (hasta 10 items para el dashboard)
+        active_loans_data = []
+        for loan in active_loans[:10].select_related('lender'):
+            next_inst = loan.installments.filter(
+                status=LoanInstallment.Status.PENDING,
+            ).order_by('due_date').first()
+            active_loans_data.append({
+                'id': loan.id,
+                'display_id': loan.display_id,
+                'loan_number': loan.loan_number,
+                'principal': float(loan.principal),
+                'outstanding_balance': float(loan.outstanding_balance),
+                'next_due_date': next_inst.due_date.isoformat() if next_inst else None,
+                'next_installment_amount': float(next_inst.total_amount) if next_inst else None,
+                'installments_count': loan.installments.count(),
+                'paid_installments_count': loan.installments.filter(status=LoanInstallment.Status.PAID).count(),
+            })
+
+        # Cheques girados (hasta 10 items para el dashboard)
+        issued_checks_list_data = []
+        for chk in issued_checks_qs[:10].select_related('counterparty'):
+            issued_checks_list_data.append({
+                'id': chk.id,
+                'display_id': chk.display_id,
+                'check_number': chk.check_number,
+                'amount': float(chk.amount),
+                'issue_date': chk.issue_date.isoformat(),
+                'due_date': chk.due_date.isoformat(),
+                'counterparty_name': chk.counterparty.name if chk.counterparty else None,
+                'drawer_name': chk.drawer_name,
+            })
 
         # Próximos vencimientos (cuotas, cheques, tarjetas) — horizonte 30 días
         today = timezone.now().date()
@@ -230,6 +263,8 @@ class BankViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
             },
             'upcoming_maturities': upcoming,
             'recent_movements': recent_movements,
+            'active_loans': active_loans_data,
+            'issued_checks_list': issued_checks_list_data,
         })
 
     @action(detail=True, methods=['post'])
