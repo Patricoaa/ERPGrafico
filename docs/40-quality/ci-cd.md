@@ -38,6 +38,7 @@ Every stage is a hard gate. No merge if any stage red.
 - python manage.py makemigrations --dry-run --check
 - ruff check .
 - mypy apps
+- flake8-function-length  # enforces views ≤20 lines per action (GOVERNANCE.md #35)
 - pytest --cov=apps --cov-fail-under=80
 - pip-audit
 ```
