@@ -133,19 +133,17 @@ export function DomainCard({
                                 <DomainHubStatus label={label} data={data} />
                             </div>
                         )}
+
+                        {!isDetailView && (
+                            isHubOpen && isSelected ? (
+                                <ArrowLeft className="h-5 w-5 text-muted-foreground opacity-0 group-hover:opacity-100 group-focus-within:opacity-100" />
+                            ) : (
+                                <ArrowRight className="h-5 w-5 text-muted-foreground opacity-0 group-hover:opacity-100 group-focus-within:opacity-100" />
+                            )
+                        )}
                     </div>
                 }
             />
-
-            {!isDetailView && (
-                <span className="absolute right-4 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 pointer-events-none">
-                    {isHubOpen && isSelected ? (
-                        <ArrowLeft className="h-5 w-5 text-muted-foreground" />
-                    ) : (
-                        <ArrowRight className="h-5 w-5 text-muted-foreground" />
-                    )}
-                </span>
-            )}
 
             {/* ROW 2: Product Lines & Totals */}
             {(data.lines || data.items || []).length > 0 && (
@@ -165,7 +163,7 @@ export function DomainCard({
                     </div>
 
                     {visibleColumns?.total !== false && (
-                        <div className="flex items-start gap-4 shrink-0">
+                        <div className={cn("flex items-start gap-4 shrink-0", !isDetailView && "pr-9")}>
                             {hasPending && visibleColumns?.payment_status !== false && (
                                 <div className="flex flex-col items-end min-w-[80px]">
                                     <span className="text-[9px] text-warning/80 uppercase tracking-widest font-extrabold mb-0.5">

@@ -54,7 +54,13 @@ export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
     shortTemplate: 'NV-{number}',
     listUrl: '/sales/orders',
     detailUrlPattern: '/sales/orders/{id}',
-    partnerField: (data) => (typeof data.customer_name === 'object' ? data.customer_name?.name : data.customer_name) || data.partner_name || '---',
+    partnerField: (data): string => {
+      const customerName = data.customer_name
+      if (customerName && typeof customerName === 'object') {
+        return String((customerName as Record<string, unknown>).name ?? '')
+      }
+      return String(customerName ?? data.partner_name ?? '---')
+    },
     workflowType: 'order',
     viewPolicy: { availableViews: ['list', 'card'], defaultView: 'card', cardComponent: 'domain', gridLayout: 'single-column' },
   },
@@ -102,7 +108,7 @@ export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
     shortTemplate: 'FAC-{number}',
     listUrl: '/billing/sales',
     detailUrlPattern: '/billing/invoices/{id}',
-    partnerField: (data) => data.partner_name || data.customer_name || data.supplier_name || '---',
+    partnerField: (data) => String(data.partner_name ?? data.customer_name ?? data.supplier_name ?? '---'),
     workflowType: 'invoice',
     viewPolicy: { availableViews: ['list', 'card'], defaultView: 'card', cardComponent: 'domain', gridLayout: 'single-column' },
   },
@@ -206,7 +212,7 @@ export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
     shortTemplate: 'CUO-{id}',
     listUrl: '/treasury/loans',
     detailUrlPattern: '/treasury/loans?selected={loan}&installment={id}',
-    partnerField: (data) => data.loan_display_id || '---',
+    partnerField: (data) => String(data.loan_display_id ?? '---'),
     viewPolicy: { availableViews: ['list'], defaultView: 'list' },
   },
   'treasury.cardpurchasegroup': {
@@ -229,7 +235,7 @@ export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
     shortTemplate: 'EST-{id}',
     listUrl: '/treasury/bank-center',
     detailUrlPattern: '/treasury/bank-center?statement={id}',
-    partnerField: (data) => data.card_account_name || '---',
+    partnerField: (data) => String(data.card_account_name ?? '---'),
     viewPolicy: { availableViews: ['card'], defaultView: 'card', cardComponent: 'entity', gridLayout: 'single-column' },
   },
   'treasury.treasurymovement': {
