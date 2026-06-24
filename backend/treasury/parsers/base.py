@@ -9,6 +9,7 @@ from abc import ABC, abstractmethod
 from typing import Dict, List, Any, Optional
 from datetime import date, datetime
 from decimal import Decimal, InvalidOperation
+from django.utils import timezone
 import re
 
 
@@ -114,7 +115,7 @@ class BaseParser(ABC):
                 dt = datetime.strptime(value_str, fmt)
                 # Si el año es 1900, significa que se usó un formato sin año
                 if dt.year == 1900:
-                    dt = dt.replace(year=datetime.now().year)
+                    dt = dt.replace(year=timezone.now().year)
                 return dt.date()
             except (ValueError, TypeError):
                 continue

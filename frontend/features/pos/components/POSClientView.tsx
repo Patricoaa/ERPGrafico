@@ -67,6 +67,7 @@ import { SalesOrdersDrawer } from '@/features/pos/components/SalesOrdersDrawer'
 import { AdvancedContactSelector } from '@/components/selectors/AdvancedContactSelector'
 import { Label } from '@/components/ui/label'
 import { useTouchMode } from '@/hooks/useTouchMode'
+import { useServerDate } from '@/hooks/useServerDate'
 
 // Lazy-loaded components
 const POSVariantSelectorModal = dynamic(
@@ -110,6 +111,7 @@ export function POSClientView() {
 
     const { isTouchMode, toggleTouchMode } = useTouchMode()
     const { isDesktop } = useDeviceContext()
+    const { dateString } = useServerDate()
 
     const { user } = useAuth()
 
@@ -394,7 +396,7 @@ export function POSClientView() {
         if (!selectedCustomerId && defaultCustomerId) setSelectedCustomerId(defaultCustomerId)
         const hasMfg = items.some(line => line.product_type === 'MANUFACTURABLE' && line.requires_advanced_manufacturing)
         const lastStep = 4 + (hasMfg ? 1 : 0)
-        setWizardState({ step: lastStep, isQuickSale: true, dteData: { type: 'BOLETA', number: '', date: new Date().toISOString().split('T')[0], attachment: null, isPending: false }, deliveryData: { type: 'IMMEDIATE', date: null } } as any)
+        setWizardState({ step: lastStep, isQuickSale: true, dteData: { type: 'BOLETA', number: '', date: dateString || new Date().toISOString().split('T')[0], attachment: null, isPending: false }, deliveryData: { type: 'IMMEDIATE', date: null } } as any)
         setTimeout(() => setPosMode('CHECKOUT'), 0)
     }
 

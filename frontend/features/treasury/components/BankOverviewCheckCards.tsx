@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation"
 import { FileCheck, ArrowRight } from "lucide-react"
 import { MoneyDisplay } from "@/components/shared"
+import { useServerDate } from '@/hooks/useServerDate'
 import { cn, parseDateOnly } from "@/lib/utils"
 import type { BankOverviewData } from "../hooks/useBankOverview"
 
@@ -13,6 +14,7 @@ interface Props {
 
 export function BankOverviewCheckCards({ data, bankId }: Props) {
     const router = useRouter()
+    const { serverDate } = useServerDate()
     const { issued_checks_list } = data
 
     if (issued_checks_list.length === 0) return null
@@ -36,7 +38,7 @@ export function BankOverviewCheckCards({ data, bankId }: Props) {
 
             <div className="space-y-2">
                 {issued_checks_list.map(chk => {
-                    const isOverdue = parseDateOnly(chk.due_date) < new Date()
+                    const isOverdue = parseDateOnly(chk.due_date) < (serverDate ?? new Date())
                     return (
                         <button
                             key={chk.id}

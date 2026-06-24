@@ -19,7 +19,7 @@ import {
     Form, FormField
 } from "@/components/ui/form"
 import { Switch } from "@/components/ui/switch"
-import { cn } from "@/lib/utils"
+import { cn, toDateOnlyISO } from "@/lib/utils"
 import { AdvancedContactSelector } from "@/components/selectors/AdvancedContactSelector"
 import { Drawer, LabeledInput, LabeledSelect, TabBar, TabBarContent, FormSection, type TabItem, FormFooter, DatePicker, LabeledContainer, SkeletonShell } from "@/components/shared"
 import { formDrawerWidth } from "@/lib/form-widths"
@@ -402,12 +402,9 @@ export function EmployeeDrawer({ open, onOpenChange, employee, onSaved, trigger,
                                                                                 field.onChange("")
                                                                                 return
                                                                             }
-                                                                            const year = d.getFullYear()
-                                                                            const month = String(d.getMonth() + 1).padStart(2, '0')
-                                                                            const day = String(d.getDate()).padStart(2, '0')
-                                                                            field.onChange(`${year}-${month}-${day}`)
+                                                                            field.onChange(toDateOnlyISO(d))
                                                                         }}
-                                                                        className="w-full border-none bg-transparent hover:bg-transparent shadow-none"
+                                                                        className="h-[1.5rem] p-0 w-full border-none bg-transparent hover:bg-transparent shadow-none"
                                                                     />
                                                                 </LabeledContainer>
                                                             )} />

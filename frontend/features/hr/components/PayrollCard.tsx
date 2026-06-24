@@ -11,7 +11,7 @@ import {
     Loader2, Sparkles, AlertCircle, DollarSign, Clock, CheckCircle2, Plus, History
 } from "lucide-react"
 
-import { cn, formatPlainDate } from "@/lib/utils"
+import { cn, formatPlainDate, parseDateOnly } from "@/lib/utils"
 import type { Payroll, PayrollItem } from "@/types/hr"
 import { ActionConfirmModal, DataCell, MoneyDisplay, StatusBadge } from '@/components/shared'
 import { formatEntityDisplay } from "@/lib/entity-registry"
@@ -135,7 +135,7 @@ export function PayrollCard({
             method: p.notes || "Transferencia",
             isAdvance: false
         }))
-    ].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
+    ].sort((a, b) => parseDateOnly(a.date).getTime() - parseDateOnly(b.date).getTime())
 
     const totalPaid = unifiedPayments.reduce((acc, p) => acc + p.amount, 0)
     const pendingToPay = netSalary - totalPaid
@@ -187,7 +187,7 @@ export function PayrollCard({
                                         {payroll.period_label}
                                     </span>
                                     <span className="text-[11px] text-muted-foreground font-medium uppercase tracking-widest mt-0.5">
-                                        Folio <span className="opacity-30">|</span> <span className="font-bold text-primary/80">{formatEntityDisplay('hr.payroll', payroll)}</span>
+                                        Folio <span className="opacity-30">|</span> <span className="font-bold text-primary/80">{formatEntityDisplay('hr.payroll', payroll as unknown as Record<string, unknown>)}</span>
                                     </span>
                                 </div>
                             </div>

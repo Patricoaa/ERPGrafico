@@ -13,10 +13,11 @@ import { useConfirmAction } from "@/hooks/useConfirmAction"
 import { Product, PricingRule } from "@/types/entities"
 import { ProductInitialData } from "@/types/forms"
 import { usePricingRules } from "../../hooks/usePricingRules"
+import { parseDateOnly } from "@/lib/utils"
 
 function getRuleStatus(rule: PricingRule): 'RULE_ACTIVE' | 'RULE_EXPIRED' | 'RULE_INACTIVE' {
     if (!rule.active) return 'RULE_INACTIVE'
-    if (rule.end_date && new Date(rule.end_date) < new Date()) return 'RULE_EXPIRED'
+    if (rule.end_date && parseDateOnly(rule.end_date) < new Date()) return 'RULE_EXPIRED'
     return 'RULE_ACTIVE'
 }
 

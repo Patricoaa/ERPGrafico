@@ -289,6 +289,14 @@ export function parseDateOnly(dateStr: string): Date {
   return new Date(y, m - 1, d)
 }
 
+export function toDate(value: string | Date): Date {
+  return typeof value === 'string' ? parseDateOnly(value) : value
+}
+
+export function toDateOnlyISO(date: Date): string {
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
+}
+
 export function formatPlainDate(value: string | Date | null | undefined): string {
   if (!value) return '-'
 
@@ -298,8 +306,7 @@ export function formatPlainDate(value: string | Date | null | undefined): string
     // This prevents the browser from applying local timezone offsets
     dateStr = value.split('T')[0]
   } else if (value instanceof Date) {
-    // For Date objects, use ISO format but strip time/tz to remain "plain"
-    dateStr = value.toISOString().split('T')[0]
+    dateStr = toDateOnlyISO(value)
   }
 
   if (dateStr) {

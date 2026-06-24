@@ -1,5 +1,5 @@
 "use client"
-import { formatPlainDate } from "@/lib/utils"
+import { formatPlainDate, toDate } from "@/lib/utils"
 import { getErrorMessage } from "@/lib/errors"
 import { useState, useEffect, useRef } from "react"
 import { useForm, type Resolver } from "react-hook-form"
@@ -157,10 +157,10 @@ export function WorkOrderBasicStep({
                     quantity: initialData.stage_data?.quantity?.toString() || "",
                     uom_id: initialData.stage_data?.uom_id?.toString() || "",
                 }),
-                start_date: initialData.start_date ? new Date(initialData.start_date) : new Date(),
+                start_date: initialData.start_date ? toDate(initialData.start_date) : new Date(),
                 due_date: initialData.estimated_completion_date
-                    ? new Date(initialData.estimated_completion_date)
-                    : (initialData.sale_order_delivery_date ? new Date(initialData.sale_order_delivery_date) : null),
+                    ? toDate(initialData.estimated_completion_date)
+                    : (initialData.sale_order_delivery_date ? toDate(initialData.sale_order_delivery_date) : null),
                 internal_notes: initialData.stage_data?.internal_notes || "",
             } as WorkOrderFormValues)
 

@@ -10,6 +10,7 @@ import { Plus, Pencil, Printer, ExternalLink } from "lucide-react"
 import { getEntityIcon } from "@/lib/entity-registry"
 import Link from "next/link"
 import { format } from "date-fns"
+import { toDate } from "@/lib/utils"
 import {
     Form,
     FormField,
@@ -128,7 +129,7 @@ export function JournalEntryDrawer({
         if (initialData) {
             return {
                 ...initialData,
-                date: new Date(initialData.date),
+                date: toDate(initialData.date),
                 items: initialData.items.map((item: any) => ({
                     ...item,
                     account: item.account.toString(),
@@ -183,7 +184,7 @@ export function JournalEntryDrawer({
             setSourceDocument(null)
         } else {
             form.reset({
-                date: new Date(initialData.date),
+                date: toDate(initialData.date),
                 description: initialData.description,
                 items: initialData.items.map((item) => ({
                     account: item.account?.toString() ?? '',
@@ -225,7 +226,7 @@ export function JournalEntryDrawer({
     useEffect(() => {
         if (isViewMode && viewEntry) {
             form.reset({
-                date: new Date(viewEntry.date),
+                date: toDate(viewEntry.date),
                 description: viewEntry.description ?? viewEntry.label ?? '',
                 items: (viewEntry.items ?? []).map((item: any) => ({
                     account: viewEntryAccountId(item),

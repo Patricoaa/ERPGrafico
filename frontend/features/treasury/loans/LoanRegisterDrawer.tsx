@@ -15,6 +15,7 @@ import {
 import { Textarea } from '@/components/ui/textarea'
 import { Label } from '@/components/ui/label'
 import { Banknote, Calculator } from 'lucide-react'
+import { parseDateOnly, toDateOnlyISO } from '@/lib/utils'
 import { useBanks } from '../hooks/useMasterData'
 import { useTreasuryAccounts } from '../hooks/useTreasuryAccounts'
 import { useLoanMutations } from './hooks'
@@ -536,9 +537,9 @@ export function LoanRegisterDrawer({ open, onOpenChange, bankId }: Props) {
 }
 
 function addMonths(start: string, k: number): string {
-    const date = new Date(start)
-    const year = date.getFullYear() + Math.floor((date.getMonth() + k) / 12)
-    const month = (date.getMonth() + k) % 12
-    const day = Math.min(date.getDate(), new Date(year, month + 1, 0).getDate())
-    return new Date(year, month, day).toISOString().split('T')[0]
+    const d = parseDateOnly(start)
+    const year = d.getFullYear() + Math.floor((d.getMonth() + k) / 12)
+    const month = (d.getMonth() + k) % 12
+    const day = Math.min(d.getDate(), new Date(year, month + 1, 0).getDate())
+    return toDateOnlyISO(new Date(year, month, day))
 }

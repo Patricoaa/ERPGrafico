@@ -1,5 +1,6 @@
 import { useMemo } from "react"
 import type { PurchaseOrderAPI } from "../types"
+import { parseDateOnly } from "@/lib/utils"
 
 // ── Color palettes for charts ─────────────────────────────
 
@@ -64,18 +65,18 @@ function groupBy<T>(items: T[], keyFn: (item: T) => string): Record<string, T[]>
 }
 
 function formatMonth(dateStr: string): string {
-    const d = new Date(dateStr)
+    const d = parseDateOnly(dateStr)
     const months = ["Ene", "Feb", "Mar", "Abr", "May", "Jun",
         "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"]
     return `${months[d.getMonth()]} ${d.getFullYear()}`
 }
 
 function formatYear(dateStr: string): string {
-    return new Date(dateStr).getFullYear().toString()
+    return parseDateOnly(dateStr).getFullYear().toString()
 }
 
 function formatDay(dateStr: string): string {
-    const d = new Date(dateStr)
+    const d = parseDateOnly(dateStr)
     const dd = String(d.getDate()).padStart(2, "0")
     const mm = String(d.getMonth() + 1).padStart(2, "0")
     const yyyy = d.getFullYear()
@@ -329,8 +330,8 @@ export function usePurchasingAnalyticsData(
 
         // ── Period-over-period trends (uses full `orders`, not `filtered`) ──
         function inPeriod(o: PurchaseOrderAPI, periodVal: number, g: "day" | "month" | "year"): boolean {
-            const d = new Date(o.date || "")
-            if (isNaN(d.getTime())) return false
+            if (!o.date) return false
+            const d = parseDateOnly(o.date)
             if (g === "year") return d.getFullYear() === periodVal
             if (g === "day") return Math.floor(d.getTime() / 86_400_000) === periodVal
             return d.getMonth() + d.getFullYear() * 12 === periodVal

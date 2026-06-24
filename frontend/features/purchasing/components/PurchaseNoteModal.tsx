@@ -13,6 +13,7 @@ import {
 import { purchasingApi } from "../api/purchasingApi"
 import { PurchaseOrderAPI, PurchaseNoteLine } from "../types"
 import { PricingUtils } from '@/features/inventory/utils/pricing'
+import { useServerDate } from '@/hooks/useServerDate'
 import {ActionSlideButton, BaseModal, CancelButton, FormFooter, LoadingFallback, SubmitButton} from '@/components/shared'
 
 // Components
@@ -40,6 +41,7 @@ export function PurchaseNoteModal({
     initialType = "NOTA_CREDITO"
 }: PurchaseNoteModalProps) {
     // -- State --
+    const { serverDate } = useServerDate()
     const [step, setStep] = useState(1)
     const [loading, setLoading] = useState(false)
     const [submitting, setSubmitting] = useState(false)
@@ -47,7 +49,7 @@ export function PurchaseNoteModal({
     // Data State
     const [noteType, setNoteType] = useState<"NOTA_CREDITO" | "NOTA_DEBITO">(initialType)
     const [documentNumber, setDocumentNumber] = useState("")
-    const [documentDate, setDocumentDate] = useState<Date | undefined>(new Date())
+    const [documentDate, setDocumentDate] = useState<Date | undefined>(serverDate ?? new Date())
     const [attachment, setAttachment] = useState<File | null>(null)
     const [lines, setLines] = useState<PurchaseNoteLine[]>([])
     const [orderDetails, setOrderDetails] = useState<PurchaseOrderAPI | null>(null)
@@ -116,7 +118,7 @@ export function PurchaseNoteModal({
                 // Reset state
                 setStep(1)
                 setDocumentNumber("")
-                setDocumentDate(new Date())
+                setDocumentDate(serverDate ?? new Date())
                 setAttachment(null)
                 setLines([])
                 setNoteType(initialType)

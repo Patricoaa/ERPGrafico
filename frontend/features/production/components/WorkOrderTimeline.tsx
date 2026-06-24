@@ -2,7 +2,7 @@
 
 import { useMemo } from "react"
 import {Card, CardContent} from "@/components/ui/card"
-import { cn } from "@/lib/utils"
+import { cn, parseDateOnly } from "@/lib/utils"
 import { Clock, User, ChevronRight, Calendar } from "lucide-react"
 
 import { CardSkeleton, Chip, StatusBadge } from '@/components/shared'
@@ -40,15 +40,15 @@ export function WorkOrderTimeline({ orders, onManage, isLoading }: TimelineProps
 
         const todayOrders = active.filter(o => {
             if (!o.due_date) return false
-            return isSameDay(new Date(o.due_date), today)
+            return isSameDay(parseDateOnly(o.due_date), today)
         })
         const tomorrowOrders = active.filter(o => {
             if (!o.due_date) return false
-            return isSameDay(new Date(o.due_date), tomorrow)
+            return isSameDay(parseDateOnly(o.due_date), tomorrow)
         })
         const weekOrders = active.filter(o => {
             if (!o.due_date) return false
-            const d = new Date(o.due_date)
+            const d = parseDateOnly(o.due_date)
             return d > tomorrow && d <= endOfWeek
         })
         const noDueDate = active.filter(o => !o.due_date)
@@ -92,7 +92,7 @@ export function WorkOrderTimeline({ orders, onManage, isLoading }: TimelineProps
                                 >
                                     <CardContent className="p-3 space-y-2">
                                         <div className="flex items-center justify-between">
-                                            <Chip size="xs">{formatEntityDisplay('production.workorder', order)}</Chip>
+                                            <Chip size="xs">{formatEntityDisplay('production.workorder', order as unknown as Record<string, unknown>)}</Chip>
                                             <StatusBadge status={order.status} size="sm" />
                                         </div>
                                         {isWorkOrderOverdue(order) && (

@@ -7,6 +7,7 @@ import * as z from "zod"
 import { DollarSign, Tag, Pencil, Trash2 } from "lucide-react"
 import type { DrawerMode } from "@/features/_shared/drawer/types"
 import { useServerDate } from "@/hooks/useServerDate"
+import { toDateOnlyISO } from "@/lib/utils"
 import { Form, FormField } from "@/components/ui/form"
 import {
     CancelButton, LabeledInput, LabeledSelect, FormSection, FormFooter,
@@ -89,7 +90,7 @@ export function CardPendingChargeDrawer({
             form.reset({
                 amount: "",
                 charge_type: "OTHER",
-                date: serverDate ? serverDate.toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
+                date: serverDate ? toDateOnlyISO(serverDate) : new Date().toISOString().split('T')[0],
                 description: "",
             })
         }

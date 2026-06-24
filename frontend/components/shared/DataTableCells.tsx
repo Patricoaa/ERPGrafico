@@ -1,5 +1,5 @@
 
-import { cn, translateStatus, formatPlainDate } from "@/lib/utils"
+import { cn, translateStatus, formatPlainDate, parseDateOnly } from "@/lib/utils"
 import { ExternalLink, LucideIcon, MoreVertical } from "lucide-react"
 import Link from "next/link"
 import { ReactNode, HTMLAttributes } from "react"
@@ -253,7 +253,9 @@ export const DataCell = {
             <div className={cn("flex justify-center items-center w-full text-[13px] font-medium text-foreground whitespace-nowrap", className)} {...props}>
                 {formatPlainDate(value)}
                 {showTime && (() => {
-                    const date = new Date(value)
+                    const date = typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value)
+                        ? parseDateOnly(value)
+                        : new Date(value)
                     return <span className="text-[11px] text-muted-foreground/60 ml-1.5">{date.toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' })}</span>
                 })()}
             </div>

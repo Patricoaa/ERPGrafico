@@ -12,6 +12,7 @@ import { useInvoice, useInvoices } from "@/features/billing"
 import { toast } from "sonner"
 import { formatCurrency } from "@/lib/money"
 import { useVatRate } from '@/hooks/useVatRate'
+import { useServerDate } from '@/hooks/useServerDate'
 import { PricingUtils } from '@/features/inventory/utils/pricing'
 import { Card } from "@/components/ui/card"
 import { formatEntityDisplay } from "@/lib/entity-registry"
@@ -93,6 +94,7 @@ export function SaleNoteForm({
     onLoadingChange,
 }: SaleNoteFormProps) {
     const { rate } = useVatRate()
+    const { serverDate } = useServerDate()
     const [lines, setLines] = useState<SaleNoteLine[]>([])
     const [attachment, setAttachment] = useState<File | null>(null)
     const [submitting, setSubmitting] = useState(false)
@@ -103,7 +105,7 @@ export function SaleNoteForm({
         defaultValues: {
             noteType: initialType,
             documentNumber: "",
-            documentDate: new Date(),
+            documentDate: serverDate ?? new Date(),
         }
     })
 
@@ -122,7 +124,7 @@ export function SaleNoteForm({
     useEffect(() => {
         requestAnimationFrame(() => {
             form.setValue("documentNumber", "")
-            form.setValue("documentDate", new Date())
+            form.setValue("documentDate", serverDate ?? new Date())
             setAttachment(null)
             // Cuando llega order o invoice de los hooks, recomponemos las líneas
             // con quantity=0 y precio unitario original.

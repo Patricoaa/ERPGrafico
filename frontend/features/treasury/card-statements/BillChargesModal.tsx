@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button'
 import { showApiError } from '@/lib/errors'
 import { BaseModal, MoneyDisplay, LabeledInput, LabeledSelect } from '@/components/shared'
 import { toast } from 'sonner'
+import { useServerDate } from '@/hooks/useServerDate'
 import { treasuryApi } from '../api/treasuryApi'
 import type { PendingChargeRow, UpcomingInstallment } from '../types'
 import { ChevronDown, ChevronRight, ShoppingCart } from 'lucide-react'
@@ -86,13 +87,14 @@ export function BillChargesModal({
     onSuccess,
     onCancel,
 }: BillChargesModalProps) {
-    const [periodYear, setPeriodYear] = useState(new Date().getFullYear())
-    const [periodMonth, setPeriodMonth] = useState(String(new Date().getMonth() + 1))
+    const { serverDate, dateString, year } = useServerDate()
+    const [periodYear, setPeriodYear] = useState(year ?? new Date().getFullYear())
+    const [periodMonth, setPeriodMonth] = useState(String(serverDate ? serverDate.getMonth() + 1 : new Date().getMonth() + 1))
     const [cutOffDate, setCutOffDate] = useState(
-        new Date().toISOString().split('T')[0]
+        dateString || new Date().toISOString().split('T')[0]
     )
     const [dueDate, setDueDate] = useState(() => {
-        const date = new Date()
+        const date = serverDate ? new Date(serverDate) : new Date()
         date.setMonth(date.getMonth() + 1)
         return date.toISOString().split('T')[0]
     })

@@ -11,6 +11,7 @@ import { AdvancedContactSelector } from "@/components/selectors/AdvancedContactS
 import { treasuryApi } from "../api/treasuryApi"
 import { validateAccountingPeriod } from '@/features/accounting/actions'
 import { useServerDate } from '@/hooks/useServerDate'
+import { usePeriodValidation } from '@/hooks/usePeriodValidation'
 import { toast } from 'sonner'
 
 export interface MovementData {
@@ -75,6 +76,13 @@ export function MovementWizard({
     variant = 'standard'
 }: MovementWizardProps) {
     const { dateString } = useServerDate()
+    const { validatePeriod, isClosed: periodClosed, isValidating: periodValidating } = usePeriodValidation()
+
+    useEffect(() => {
+        if (dateString) {
+            validatePeriod(dateString, 'accounting')
+        }
+    }, [dateString, validatePeriod])
 
     // Current Step index for GenericWizard
     const [stepIndex, setStepIndex] = useState(0)

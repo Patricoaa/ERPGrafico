@@ -1,5 +1,6 @@
 "use client"
-import { formatCurrency } from "@/lib/money";
+import { formatCurrency } from "@/lib/money"
+import { parseDateOnly } from "@/lib/utils"
 
 import { BaseModal, Chip, DateRangeFilter, EmptyState, SkeletonShell, StatusBadge } from '@/components/shared'
 
@@ -94,7 +95,7 @@ export function SubscriptionHistoryModal({ subscriptionId, open, onOpenChange }:
             const from = startOfDay(dateRange.from)
             const to = dateRange.to ? endOfDay(dateRange.to) : endOfDay(new Date())
             items = items.filter(item => {
-                const itemDate = new Date(item.date)
+                const itemDate = parseDateOnly(item.date)
                 return isWithinInterval(itemDate, { start: from, end: to })
             })
         }
@@ -176,7 +177,7 @@ export function SubscriptionHistoryModal({ subscriptionId, open, onOpenChange }:
                                                     axisBottom={{
                                                         tickSize: 0,
                                                         tickPadding: 10,
-                                                        format: (v: string) => format(new Date(v), 'MMM d', { locale: es }),
+                                                        format: (v: string) => format(parseDateOnly(v), 'MMM d', { locale: es }),
                                                     }}
                                                     axisLeft={{
                                                         tickSize: 0,
