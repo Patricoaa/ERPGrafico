@@ -56,7 +56,7 @@ export function BankMasthead({ data, bankId }: BankMastheadProps) {
             </div>
 
             <div className="relative group/deuda">
-                <div className="flex items-center gap-4 text-sm border-t border-border/40">
+                <div className="flex items-center gap-4 text-sm border-t border-border/40 py-2">
                     <span className="pointer-events-none"><Metric label="Saldo" value={totalCash} /></span>
                     <span className="pointer-events-none"><Divider /></span>
                     <span className="pointer-events-none"><Metric label="+ Líneas" value={totalCreditLines} /></span>
@@ -74,7 +74,7 @@ export function BankMasthead({ data, bankId }: BankMastheadProps) {
                     </span>
                 </div>
 
-                <div className="hidden group-hover/deuda:block">
+                <div className="hidden group-hover/deuda:block border-b border-border/40 pb-2 pt-1">
                     <div className="flex items-center gap-3 text-[11px] text-warning">
                         <span>
                             Préstamos activos: <strong className="text-warning">{summary.active_loan_count}</strong>
