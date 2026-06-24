@@ -11,7 +11,7 @@ export const contactsApi = {
     getContacts: async (filters?: ContactFilters): Promise<Contact[]> => {
         const params = new URLSearchParams()
         if (filters?.search) params.append('search', filters.search)
-        if (filters?.type) params.append('type', filters.type)
+        if (filters?.role) params.append('role', filters.role)
         if (filters?.tax_id) params.append('tax_id', filters.tax_id)
         if (filters?.is_default_customer !== undefined) params.append('is_default_customer', String(filters.is_default_customer))
         if (filters?.is_default_vendor !== undefined) params.append('is_default_vendor', String(filters.is_default_vendor))
