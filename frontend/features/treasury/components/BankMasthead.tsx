@@ -1,5 +1,6 @@
 "use client"
 
+import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { Landmark, HandCoins, FileCheck, CreditCard, ShieldCheck } from "lucide-react"
 import { MoneyDisplay } from "@/components/shared"
@@ -21,12 +22,16 @@ const quickLinks = [
 export function BankMasthead({ data, bankId }: BankMastheadProps) {
     const router = useRouter()
     const { bank, accounts, summary } = data
+    const [deudaHovered, setDeudaHovered] = useState(false)
 
     const checking = accounts.filter(a => a.account_type === "CHECKING")
     const totalCash = checking.reduce((s, a) => s + a.current_balance, 0)
     const totalCreditLines = checking.reduce((s, a) => s + (a.credit_line_credit_limit ?? 0), 0)
     const totalDebt = summary.card_debt + summary.issued_checks + summary.total_loan_debt
     const netPosition = totalCash + totalCreditLines - totalDebt
+
+    const showDeuda = () => setDeudaHovered(true)
+    const hideDeuda = () => setDeudaHovered(false)
 
     return (
         <section className="py-4 space-y-3">
@@ -55,18 +60,22 @@ export function BankMasthead({ data, bankId }: BankMastheadProps) {
                 </div>
             </div>
 
-            <div className="relative group/deuda">
+            <div>
                 <div className="flex items-center gap-4 text-sm border-y border-border/40 py-2">
-                    <span className="pointer-events-none"><Metric label="Saldo" value={totalCash} /></span>
-                    <span className="pointer-events-none"><Divider /></span>
-                    <span className="pointer-events-none"><Metric label="+ Líneas" value={totalCreditLines} /></span>
-                    <span className="pointer-events-none"><Divider /></span>
-                    <span className="cursor-pointer text-warning">
+                    <Metric label="Saldo" value={totalCash} />
+                    <Divider />
+                    <Metric label="Línea de Crédito" value={totalCreditLines} />
+                    <Divider />
+                    <span
+                        onMouseEnter={showDeuda}
+                        onMouseLeave={hideDeuda}
+                        className="cursor-pointer text-warning"
+                    >
                         <Metric label="Deuda" value={totalDebt} />
                     </span>
-                    <span className="pointer-events-none"><Divider /></span>
+                    <Divider />
                     <span className={cn(
-                        "flex items-baseline gap-1.5 pointer-events-none",
+                        "flex items-baseline gap-1.5",
                         netPosition >= 0 ? "text-success" : "text-destructive"
                     )}>
                         <span className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">Posición</span>
@@ -74,26 +83,32 @@ export function BankMasthead({ data, bankId }: BankMastheadProps) {
                     </span>
                 </div>
 
-                <div className="hidden group-hover/deuda:flex items-center gap-4 text-sm text-warning pt-1">
-                    <span className="flex items-baseline gap-1.5">
-                        <span className="text-[11px] font-medium text-warning/70 uppercase tracking-wider">Préstamos</span>
-                        <span className="text-warning">{summary.active_loan_count}</span>
-                        {" · "}
-                        <MoneyDisplay amount={summary.total_loan_debt} className="text-sm font-heading font-black tracking-tight" />
-                    </span>
-                    <Divider />
-                    <span className="flex items-baseline gap-1.5">
-                        <span className="text-[11px] font-medium text-warning/70 uppercase tracking-wider">Cheques</span>
-                        <MoneyDisplay amount={summary.issued_checks} className="text-sm font-heading font-black tracking-tight" />
-                    </span>
-                    <Divider />
-                    <span className="flex items-baseline gap-1.5">
-                        <span className="text-[11px] font-medium text-warning/70 uppercase tracking-wider">Deuda TC</span>
-                        <MoneyDisplay amount={summary.card_debt} className="text-sm font-heading font-black tracking-tight" />
-                        {" · "}
-                        <span className="text-warning">{summary.card_count ?? 0} tarjeta(s)</span>
-                    </span>
-                </div>
+                {deudaHovered && (
+                    <div
+                        onMouseEnter={showDeuda}
+                        onMouseLeave={hideDeuda}
+                        className="flex items-center gap-4 text-sm text-warning"
+                    >
+                        <span className="flex items-baseline gap-1.5">
+                            <span className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">Préstamos</span>
+                            <span className="text-warning">{summary.active_loan_count}</span>
+                            {" · "}
+                            <MoneyDisplay amount={summary.total_loan_debt} className="text-sm font-heading font-black tracking-tight" />
+                        </span>
+                        <Divider />
+                        <span className="flex items-baseline gap-1.5">
+                            <span className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">Cheques</span>
+                            <MoneyDisplay amount={summary.issued_checks} className="text-sm font-heading font-black tracking-tight" />
+                        </span>
+                        <Divider />
+                        <span className="flex items-baseline gap-1.5">
+                            <span className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">Deuda TC</span>
+                            <MoneyDisplay amount={summary.card_debt} className="text-sm font-heading font-black tracking-tight" />
+                            {" · "}
+                            <span className="text-warning">{summary.card_count ?? 0} tarjeta(s)</span>
+                        </span>
+                    </div>
+                )}
             </div>
         </section>
     )
