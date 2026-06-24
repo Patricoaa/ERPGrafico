@@ -305,6 +305,7 @@ export default function ContactDrawer({ open, onOpenChange, contact, onSuccess, 
                                 value={activeTab}
                                 onValueChange={setActiveTab}
                                 orientation="horizontal"
+                                variant="underline"
                                 className="flex-1"
                                 contentClassName="bg-transparent"
                             >

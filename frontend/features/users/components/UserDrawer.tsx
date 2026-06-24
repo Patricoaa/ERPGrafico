@@ -281,6 +281,7 @@ export function UserDrawer({ initialData, onSuccess, trigger, open: controlledOp
                                         value={activeTab}
                                         onValueChange={setActiveTab}
                                         orientation="horizontal"
+                                        variant="underline"
                                         contentClassName="bg-transparent"
                                         className="flex-1"
                                     >

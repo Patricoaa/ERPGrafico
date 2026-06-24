@@ -102,6 +102,7 @@ export function SalesOrdersDrawer({ open, onOpenChange, posSessionId }: SalesOrd
                     value={viewMode}
                     onValueChange={handleViewModeChange}
                     orientation="horizontal"
+                    variant="underline"
                     items={[
                         { value: 'orders', label: 'Ventas', icon: ShoppingCart },
                         { value: 'notes', label: 'Notas C/D', icon: FileText }
