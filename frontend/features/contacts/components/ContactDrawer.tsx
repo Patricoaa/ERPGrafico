@@ -11,8 +11,6 @@ import {
     FormControl,
     FormField,
     FormItem,
-    FormLabel,
-
 } from "@/components/ui/form"
 import { Button } from "@/components/ui/button"
 import { ActionSlideButton, CancelButton } from "@/components/shared"
@@ -33,13 +31,14 @@ import type { DrawerMode } from "@/features/_shared/drawer/types"
 import { createDomainCardView } from "@/lib/view-helpers"
 import { DataCell, EmptyState, Chip } from '@/components/shared'
 import { contactDocumentActions, type ContactDocumentActionsCtx } from './contactDocumentActions'
-import { Separator } from "@/components/ui/separator"
+
 import { DataTable } from '@/components/shared'
 
 import { ColumnDef } from "@tanstack/react-table"
 
 import { getHubStatuses } from '@/features/orders/utils/status'
 import { LabeledInput, LabeledContainer, LabeledCheckboxGroup, TabBar, TabBarContent, type TabItem, FormFooter, FormSection, FormSplitLayout, SkeletonShell } from "@/components/shared"
+import { cn } from "@/lib/utils"
 import { formatCurrency } from "@/lib/money"
 
 const contactSchema = z.object({
@@ -53,7 +52,6 @@ const contactSchema = z.object({
     is_default_customer: z.boolean(),
     is_default_vendor: z.boolean(),
     payment_terms: z.string().optional(),
-    roles: z.array(z.string()).default([]),
 })
 
 interface ContactDrawerProps {
@@ -92,7 +90,6 @@ export default function ContactDrawer({ open, onOpenChange, contact, onSuccess, 
             payment_terms: (c.payment_terms || "CONTADO") as string,
             is_default_customer: !!c.is_default_customer,
             is_default_vendor: !!c.is_default_vendor,
-            roles: (c as any).roles || [],
         } : {
             name: "",
             tax_id: "",
@@ -102,7 +99,6 @@ export default function ContactDrawer({ open, onOpenChange, contact, onSuccess, 
             city: "",
             is_default_customer: false,
             is_default_vendor: false,
-            roles: [],
         },
     })
 
@@ -125,7 +121,6 @@ export default function ContactDrawer({ open, onOpenChange, contact, onSuccess, 
                 payment_terms: (contactDetails as any).payment_terms || "CONTADO",
                 is_default_customer: !!(contactDetails as any).is_default_customer,
                 is_default_vendor: !!(contactDetails as any).is_default_vendor,
-                roles: (contactDetails as any).roles || [],
             })
         }
     }, [contactDetails, form])
@@ -156,7 +151,6 @@ export default function ContactDrawer({ open, onOpenChange, contact, onSuccess, 
                     payment_terms: (c.payment_terms || "CONTADO") as string,
                     is_default_customer: !!c.is_default_customer,
                     is_default_vendor: !!c.is_default_vendor,
-                    roles: (c as any).roles || [],
                 })
             } else if (!c?.id) {
                 form.reset({
@@ -169,7 +163,6 @@ export default function ContactDrawer({ open, onOpenChange, contact, onSuccess, 
                     payment_terms: "CONTADO",
                     is_default_customer: false,
                     is_default_vendor: false,
-                    roles: [],
                 })
             }
         })
@@ -321,84 +314,86 @@ export default function ContactDrawer({ open, onOpenChange, contact, onSuccess, 
                                 >
                                     <div className="space-y-6">
                                         <div className="space-y-4">
-                                            <FormSection title="Estado y Roles" icon={Scale} />
+                                            <FormSection title="Roles" icon={Scale} />
 
-                                            <LabeledContainer label="Predeterminados">
-                                                <div className="flex items-center gap-8 w-full px-3 py-1">
+                                            <LabeledContainer label="Preferencias Comerciales">
+                                                <div className="py-0.5 space-y-0.5">
                                                     <FormField
                                                         control={form.control}
                                                         name="is_default_customer"
                                                         render={({ field }) => (
-                                                            <FormItem className="flex flex-row items-center space-x-3 space-y-0 group cursor-pointer">
-                                                                <FormControl>
+                                                            <div className="flex flex-col">
+                                                                <div
+                                                                    className="flex items-center gap-2 px-2 py-1.5 rounded cursor-pointer transition-colors hover:bg-muted/10"
+                                                                    onClick={() => field.onChange(!field.value)}
+                                                                >
                                                                     <Checkbox
                                                                         checked={field.value}
                                                                         onCheckedChange={field.onChange}
+                                                                        onClick={(e) => e.stopPropagation()}
                                                                     />
-                                                                </FormControl>
-                                                                <div className="space-y-0.5">
-                                                                    <FormLabel className="text-[11px] font-black uppercase tracking-widest cursor-pointer group-hover:text-primary transition-colors">
+                                                                    <span className={cn(
+                                                                        "text-sm",
+                                                                        field.value ? "text-foreground font-bold" : "text-muted-foreground/70"
+                                                                    )}>
                                                                         Cliente por defecto
-                                                                    </FormLabel>
+                                                                    </span>
                                                                 </div>
-                                                            </FormItem>
+                                                                {defaultCustomer && (defaultCustomer as any).id !== c?.id && (
+                                                                    <span className="text-xs text-muted-foreground pl-9 pb-1">
+                                                                        Actual: <strong>{(defaultCustomer as any).name}</strong>
+                                                                    </span>
+                                                                )}
+                                                            </div>
                                                         )}
                                                     />
-                                                    <Separator orientation="vertical" className="h-8" />
                                                     <FormField
                                                         control={form.control}
                                                         name="is_default_vendor"
                                                         render={({ field }) => (
-                                                            <FormItem className="flex flex-row items-center space-x-3 space-y-0 group cursor-pointer">
-                                                                <FormControl>
+                                                            <div className="flex flex-col">
+                                                                <div
+                                                                    className="flex items-center gap-2 px-2 py-1.5 rounded cursor-pointer transition-colors hover:bg-muted/10"
+                                                                    onClick={() => field.onChange(!field.value)}
+                                                                >
                                                                     <Checkbox
                                                                         checked={field.value}
                                                                         onCheckedChange={field.onChange}
+                                                                        onClick={(e) => e.stopPropagation()}
                                                                     />
-                                                                </FormControl>
-                                                                <div className="space-y-0.5">
-                                                                    <FormLabel className="text-[11px] font-black uppercase tracking-widest cursor-pointer group-hover:text-primary transition-colors">
+                                                                    <span className={cn(
+                                                                        "text-sm",
+                                                                        field.value ? "text-foreground font-bold" : "text-muted-foreground/70"
+                                                                    )}>
                                                                         Proveedor por defecto
-                                                                    </FormLabel>
+                                                                    </span>
                                                                 </div>
-                                                            </FormItem>
+                                                                {defaultVendor && (defaultVendor as any).id !== c?.id && (
+                                                                    <span className="text-xs text-muted-foreground pl-9 pb-1">
+                                                                        Actual: <strong>{(defaultVendor as any).name}</strong>
+                                                                    </span>
+                                                                )}
+                                                            </div>
                                                         )}
                                                     />
                                                 </div>
                                             </LabeledContainer>
 
-                                            <FormField
-                                                control={form.control}
-                                                name="roles"
-                                                render={({ field }) => (
-                                                    <LabeledCheckboxGroup
-                                                        columns={2}
-                                                        label="Roles Manuales Asignados"
-                                                        items={[
-                                                            { value: "CUSTOMER", label: "Cliente", description: "Permite emitir notas de venta y facturas" },
-                                                            { value: "SUPPLIER", label: "Proveedor", description: "Permite emitir órdenes de compra" },
-                                                            { value: "RELATED", label: "Relacionado", description: "Contacto para órdenes de trabajo" },
-                                                            { value: "PARTNER", label: "Socio", description: "Socio aportador de capital" },
-                                                            { value: "CARRIER", label: "Transportista", description: "Empresa de transportes o despacho" },
-                                                        ]}
-                                                        value={field.value || []}
-                                                        onChange={field.onChange}
-                                                    />
-                                                )}
+                                            <LabeledCheckboxGroup
+                                                disabled
+                                                columns={2}
+                                                label="Roles del Contacto"
+                                                items={[
+                                                    { value: "CUSTOMER", label: "Cliente" },
+                                                    { value: "SUPPLIER", label: "Proveedor" },
+                                                    { value: "RELATED", label: "Relacionado" },
+                                                    { value: "PARTNER", label: "Socio" },
+                                                    { value: "EMPLOYEE", label: "Empleado" },
+                                                    { value: "USER", label: "Usuario Sistema" },
+                                                ]}
+                                                value={c?.active_roles?.filter(r => r !== 'NONE') || []}
+                                                onChange={() => {}}
                                             />
-
-                                            {/* System/Dynamic Active Roles (Read-Only) */}
-                                            {c?.active_roles && c.active_roles.some(r => r === 'USER' || r === 'EMPLOYEE') && (
-                                                <div className="flex flex-wrap gap-2 items-center p-3 rounded-md bg-muted/20 border border-muted/50 mt-2">
-                                                    <span className="text-xs text-muted-foreground font-semibold">Roles del sistema (automáticos):</span>
-                                                    {c.active_roles.includes('USER') && (
-                                                        <Chip.Category domain="contact_type" value="USER" size="xs" />
-                                                    )}
-                                                    {c.active_roles.includes('EMPLOYEE') && (
-                                                        <Chip.Category domain="contact_type" value="EMPLOYEE" size="xs" />
-                                                    )}
-                                                </div>
-                                            )}
                                         </div>
 
                                         <div className="space-y-4">
@@ -566,7 +561,7 @@ export default function ContactDrawer({ open, onOpenChange, contact, onSuccess, 
             <ActionConfirmModal
                 open={isConfirmModalOpen}
                 onOpenChange={setIsConfirmModalOpen}
-                title="Cambiar contacto por defecto"
+                title="Cambiar preferencia comercial"
                 variant="warning"
                 onConfirm={() => {
                     if (pendingValues) saveContact(pendingValues)
@@ -576,10 +571,13 @@ export default function ContactDrawer({ open, onOpenChange, contact, onSuccess, 
                 description={
                     <div className="space-y-2">
                         <p>
-                            El contacto <strong>{confirmReplacement.name}</strong> es actualmente el {confirmReplacement.type === 'customer' ? 'cliente' : 'proveedor'} por defecto.
+                            <strong>{confirmReplacement.name}</strong> es actualmente el {confirmReplacement.type === 'customer' ? 'cliente' : 'proveedor'} predeterminado.
                         </p>
                         <p>
-                            Si continúa, el nuevo contacto pasará a ser el predeterminado y el anterior dejará de serlo.
+                            Al guardar, <strong>{c?.name || 'este contacto'}</strong> lo reemplazará como {confirmReplacement.type === 'customer' ? 'cliente' : 'proveedor'} predeterminado.
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                            Esta preferencia controla qué contacto se selecciona automáticamente al crear nuevas {confirmReplacement.type === 'customer' ? 'notas de venta' : 'órdenes de compra'}.
                         </p>
                     </div>
                 }

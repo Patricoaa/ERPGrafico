@@ -9,7 +9,7 @@ def list_contacts(*, params: dict) -> QuerySet:
     """
     Main contact list queryset. Handles:
     - RUT/tax_id normalization for search
-    - type filtering (CUSTOMER / SUPPLIER / BOTH / NONE)
+    - role filtering (CUSTOMER / SUPPLIER / RELATED / PARTNER / EMPLOYEE / USER)
     - partner filtering
     - terminal payment method filtering
     """
@@ -46,27 +46,21 @@ def list_contacts(*, params: dict) -> QuerySet:
     if is_partner_param:
         queryset = queryset.filter(is_partner=is_partner_param.lower() == "true")
 
-    contact_type = params.get("type")
-    if contact_type:
-        contact_type = contact_type.upper()
-        if contact_type == "CUSTOMER":
-            queryset = queryset.filter(
-                models.Q(sale_orders__isnull=False)
-                | models.Q(sale_orders__isnull=True, purchase_orders__isnull=True)
-            ).distinct()
-        elif contact_type == "SUPPLIER":
-            queryset = queryset.filter(
-                models.Q(purchase_orders__isnull=False)
-                | models.Q(sale_orders__isnull=True, purchase_orders__isnull=True)
-            ).distinct()
-        elif contact_type == "BOTH":
-            queryset = queryset.filter(
-                sale_orders__isnull=False, purchase_orders__isnull=False
-            ).distinct()
-        elif contact_type == "NONE":
-            queryset = queryset.filter(
-                sale_orders__isnull=True, purchase_orders__isnull=True
-            )
+    contact_role = params.get("role")
+    if contact_role:
+        contact_role = contact_role.upper()
+        if contact_role == "CUSTOMER":
+            queryset = queryset.filter(sale_orders__isnull=False).distinct()
+        elif contact_role == "SUPPLIER":
+            queryset = queryset.filter(purchase_orders__isnull=False).distinct()
+        elif contact_role == "RELATED":
+            queryset = queryset.filter(related_work_orders__isnull=False).distinct()
+        elif contact_role == "PARTNER":
+            queryset = queryset.filter(is_partner=True)
+        elif contact_role == "EMPLOYEE":
+            queryset = queryset.filter(employees__isnull=False).distinct()
+        elif contact_role == "USER":
+            queryset = queryset.filter(system_user__isnull=False)
 
     if params.get("has_terminal_payment_method") == "true":
         queryset = queryset.filter(terminal_providers__is_active=True).distinct()

@@ -26,7 +26,7 @@ export interface Contact {
 
 export interface ContactFilters {
     search?: string
-    type?: string
+    role?: string
     tax_id?: string
     code?: string
     is_default_customer?: boolean
@@ -47,7 +47,6 @@ export interface ContactPayload {
     credit_enabled?: boolean
     credit_limit?: number | null
     credit_days?: number | null
-    roles?: string[]
 }
 
 export interface InsightsData {

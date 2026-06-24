@@ -3,16 +3,18 @@ import type { SegmentationDefinition } from '@/types/segmentation'
 export const contactSegDef: SegmentationDefinition = {
   segments: [
     {
-      key: 'type',
-      label: 'Tipo',
+      key: 'role',
+      label: 'Rol',
       type: 'tabs',
-      serverParam: 'type',
+      serverParam: 'role',
       variant: 'dropdown',
       options: [
         { label: 'Cliente', value: 'CUSTOMER' },
         { label: 'Proveedor', value: 'SUPPLIER' },
-        { label: 'Ambos', value: 'BOTH' },
-        { label: 'Ninguno', value: 'NONE' },
+        { label: 'Relacionado', value: 'RELATED' },
+        { label: 'Socio', value: 'PARTNER' },
+        { label: 'Empleado', value: 'EMPLOYEE' },
+        { label: 'Usuario Sistema', value: 'USER' },
       ],
     },
   ],

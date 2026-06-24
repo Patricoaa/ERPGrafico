@@ -69,8 +69,8 @@ export function LabeledCheckboxGroup({
           <>
             <div
               className={cn(
-                "flex items-center justify-between px-2 py-1.5 rounded cursor-pointer transition-colors",
-                "hover:bg-muted/10"
+                "flex items-center justify-between px-2 py-1.5 rounded",
+                disabled ? "cursor-default" : "cursor-pointer transition-colors hover:bg-muted/10"
               )}
               onClick={() => !disabled && toggleSelectAll()}
             >
@@ -105,8 +105,8 @@ export function LabeledCheckboxGroup({
                 <div
                   key={String(item.value)}
                   className={cn(
-                    "flex items-center justify-between px-2 py-1.5 rounded cursor-pointer transition-colors",
-                    "hover:bg-muted/10"
+                    "flex items-center justify-between px-2 py-1.5 rounded",
+                    disabled ? "cursor-default" : "cursor-pointer transition-colors hover:bg-muted/10"
                   )}
                   onClick={() => {
                     if (disabled) return
@@ -133,7 +133,7 @@ export function LabeledCheckboxGroup({
                     />
                     <div className="min-w-0">
                       <span className={cn(
-                        "text-sm cursor-pointer block truncate",
+                        "text-sm block truncate",
                         checked ? "text-foreground font-bold" : "text-muted-foreground/70"
                       )}>
                         {item.label}

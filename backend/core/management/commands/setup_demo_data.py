@@ -36,6 +36,27 @@ from production.models import BillOfMaterials, BillOfMaterialsLine, WorkOrder, P
 from core.models import User, CompanySettings, Attachment, GlobalSearchIndex, IdempotencyRecord
 from workflow.models import Task, Notification, TaskAssignmentRule, WorkflowSettings, NotificationRule, Transition, Comment
 
+def compute_rut_dv(rut_body: str) -> str:
+    """
+    Compute the verification digit (DV) for a Chilean RUT.
+    Returns '0'-'9' or 'K'.
+    """
+    clean = rut_body.replace('.', '').replace('-', '').strip()
+    if not clean.isdigit():
+        raise ValueError(f"RUT body must be numeric, got: {rut_body}")
+    total = 0
+    multiplier = 2
+    for digit in reversed(clean):
+        total += int(digit) * multiplier
+        multiplier = 8 if multiplier == 7 else multiplier + 1
+    remainder = total % 11
+    dv = 11 - remainder
+    if dv == 11:
+        return '0'
+    elif dv == 10:
+        return 'K'
+    return str(dv)
+
 class Command(BaseCommand):
     help = 'Seeds database with comprehensive graphic industry data using IFRS CoA'
 
@@ -563,7 +584,7 @@ class Command(BaseCommand):
     def _create_partners(self, accounts):
         # 1. Default customer
         c_default, _ = Contact.objects.get_or_create(
-            tax_id="66000000-0",
+            tax_id="66000000-3",
             defaults={
                 'name': "Cliente Ocasional",
                 'email': "contacto@clienteocasional.cl",
@@ -601,7 +622,7 @@ class Command(BaseCommand):
         acc_div_a = get_or_create_subaccount('2.1.07', "Socio A", "001")
         
         socio_a, _ = Contact.objects.get_or_create(
-            tax_id="11222333-4",
+            tax_id="11222333-9",
             defaults={
                 'name': "Socio Administrador (Socio A)",
                 'email': "socio.a@empresa.cl",
@@ -619,7 +640,7 @@ class Command(BaseCommand):
         acc_div_b = get_or_create_subaccount('2.1.07', "Socio B", "002")
         
         socio_b, _ = Contact.objects.get_or_create(
-            tax_id="22333444-5",
+            tax_id="22333444-K",
             defaults={
                 'name': "Socio Capitalista (Socio B)",
                 'email': "socio.b@empresa.cl",
@@ -631,12 +652,12 @@ class Command(BaseCommand):
             PartnerEquityStake.objects.create(partner=socio_b, percentage=Decimal('50.00'), effective_from=timezone.now().date())
 
         # 3. Regular Customers and Suppliers
-        c1, _ = Contact.objects.get_or_create(tax_id="76111222-3", defaults={'name': "Editorial Amanecer S.A.", 'email': "contacto@amanecer.cl"})
-        c2, _ = Contact.objects.get_or_create(tax_id="77333444-5", defaults={'name': "Publicidad Creativa Ltda", 'email': "ventas@pubcreativa.cl"})
+        c1, _ = Contact.objects.get_or_create(tax_id="76111222-8", defaults={'name': "Editorial Amanecer S.A.", 'email': "contacto@amanecer.cl"})
+        c2, _ = Contact.objects.get_or_create(tax_id="77333444-7", defaults={'name': "Publicidad Creativa Ltda", 'email': "ventas@pubcreativa.cl"})
         
-        s1, _ = Contact.objects.get_or_create(tax_id="88222333-k", defaults={'name': "Distribuidora de Papeles S.A.", 'email': "pedidos@papelessa.cl"})
-        s2, _ = Contact.objects.get_or_create(tax_id="99555666-0", defaults={'name': "Tintas Gráficas SpA", 'email': "tintas@graficas.cl"})
-        s3, _ = Contact.objects.get_or_create(tax_id="76444555-8", defaults={'name': "Servicios Eléctricos Enel", 'email': "factura@enel.cl"})
+        s1, _ = Contact.objects.get_or_create(tax_id="88222333-7", defaults={'name': "Distribuidora de Papeles S.A.", 'email': "pedidos@papelessa.cl"})
+        s2, _ = Contact.objects.get_or_create(tax_id="99555666-9", defaults={'name': "Tintas Gráficas SpA", 'email': "tintas@graficas.cl"})
+        s3, _ = Contact.objects.get_or_create(tax_id="76444555-4", defaults={'name': "Servicios Eléctricos Enel", 'email': "factura@enel.cl"})
 
         return {
             'default_customer': c_default,
@@ -1062,20 +1083,20 @@ class Command(BaseCommand):
         # Ensure functional groups exist
         self._create_groups()
         
-        # User definitions: (username, role, first_name, last_name, email)
+        # User definitions: (username, role, rut_body, first_name, last_name, email)
         user_definitions = [
-            ('admin', Roles.ADMIN, 'Admin', 'Sistema', 'admin@erpgrafico.com'),
-            ('gerente', Roles.MANAGER, 'Gerente', 'General', 'gerente@erpgrafico.com'),
-            ('operador', Roles.OPERATOR, 'Operador', 'Producción', 'operador@erpgrafico.com'),
-            ('bodega', Roles.OPERATOR, 'Encargado', 'Bodega', 'bodega@erpgrafico.com'),
-            ('ventas', Roles.OPERATOR, 'Ejecutivo', 'Ventas', 'ventas@erpgrafico.com'),
-            ('diseno', Roles.OPERATOR, 'Diseñador', 'Gráfico', 'diseno@erpgrafico.com'), 
+            ('admin', Roles.ADMIN, '11111111', 'Admin', 'Sistema', 'admin@erpgrafico.com'),
+            ('gerente', Roles.MANAGER, '22222222', 'Gerente', 'General', 'gerente@erpgrafico.com'),
+            ('operador', Roles.OPERATOR, '33333333', 'Operador', 'Producción', 'operador@erpgrafico.com'),
+            ('bodega', Roles.OPERATOR, '44444444', 'Encargado', 'Bodega', 'bodega@erpgrafico.com'),
+            ('ventas', Roles.OPERATOR, '55555555', 'Ejecutivo', 'Ventas', 'ventas@erpgrafico.com'),
+            ('diseno', Roles.OPERATOR, '66666666', 'Diseñador', 'Gráfico', 'diseno@erpgrafico.com'), 
         ]
 
-        for username, role_name, first, last, email in user_definitions:
+        for username, role_name, rut_body, first, last, email in user_definitions:
             # Create system contact for the user
             contact, _ = Contact.objects.get_or_create(
-                tax_id=f"USER-{username.upper()}",
+                tax_id=f"{rut_body}-{compute_rut_dv(rut_body)}",
                 defaults={
                     'name': f"{first} {last}",
                     'email': email,
@@ -1565,7 +1586,7 @@ class Command(BaseCommand):
         )
 
         tuu_contact, _ = Contact.objects.get_or_create(
-            tax_id="76.354.771-8",
+            tax_id="76.354.771-K",
             defaults={'name': "TUU SpA", 'email': "soporte@tuu.cl"}
         )
 
@@ -2439,7 +2460,7 @@ class Command(BaseCommand):
         self.stdout.write("    ✓ Payroll Concepts created.")
 
         # 4. Demo Employee
-        admin_contact = Contact.objects.filter(tax_id='USER-ADMIN').first()
+        admin_contact = Contact.objects.filter(tax_id='11111111-1').first()
         if admin_contact:
             emp, created = Employee.objects.get_or_create(
                 contact=admin_contact,
