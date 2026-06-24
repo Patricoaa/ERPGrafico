@@ -10,6 +10,15 @@ from django.utils import timezone
 
 from .matching_service import MatchingService
 
+# Rust native extension for batch scoring (graceful fallback)
+try:
+    import erpgrafico_rs as _rs
+    import json as _json
+    _HAS_RUST = True
+except ImportError:
+    _HAS_RUST = False
+
+
 logger = logging.getLogger(__name__)
 
 
@@ -371,54 +380,150 @@ def auto_match_statement_task(self, statement_id: int, confidence_threshold: flo
         matched_count = 0
         matches = []
 
-        for i, line in enumerate(unreconciled_lines):
-            is_inbound = line.credit > line.debit
+        if _HAS_RUST and total_unreconciled * len(all_candidates) > 100:
+            # ── Fast path: Rust batch scoring ────────────────────────────────
+            def _serialize_date(d):
+                if hasattr(d, 'isoformat'):
+                    return d.isoformat()
+                return str(d)
 
-            line_candidates = [
-                p for p in all_candidates
-                if p.id not in already_matched_payment_ids
-                and MatchingService._payment_matches_account_sense(p, account, is_inbound)
-            ]
+            lines_data = []
+            for line in unreconciled_lines:
+                lines_data.append({
+                    'id': line.id,
+                    'credit': float(line.credit),
+                    'debit': float(line.debit),
+                    'transactionDate': _serialize_date(line.transaction_date),
+                    'transactionId': line.transaction_id or None,
+                    'reference': line.reference or None,
+                    'description': line.description or None,
+                    'bankFormat': line.statement.bank_format if line.statement else None,
+                })
 
-            best_suggestion = None
-            best_score: float = 0.0
+            payments_data = []
+            for p in all_candidates:
+                payments_data.append({
+                    'id': p.id,
+                    'amount': float(p.amount),
+                    'date': _serialize_date(p.date),
+                    'transactionNumber': p.transaction_number or None,
+                    'contactName': p.contact.name if hasattr(p, 'contact') and p.contact else None,
+                })
 
-            # Scoring in memory using settings
-            for p in line_candidates:
-                score_data = MatchingService._calculate_match_score(line, p, settings=settings)
-                if score_data['score'] > best_score:
-                    best_score = score_data['score']
-                    best_suggestion = {
-                        'payment': p,
-                        'score': score_data['score']
-                    }
+            settings_data = {
+                'amountWeight': float(settings.amount_weight),
+                'dateWeight': float(settings.date_weight),
+                'referenceWeight': float(settings.reference_weight),
+                'contactWeight': float(settings.contact_weight),
+            }
 
-            if best_suggestion and best_score >= threshold:
-                payment = best_suggestion['payment']
-                try:
-                    MatchingService.create_match_group([line.id], [payment.id], None)
-                    already_matched_payment_ids.add(payment.id)
-                    matched_count += 1
-                    matches.append({
-                        'line_id': line.id,
-                        'payment_id': payment.id,
-                        'score': best_suggestion['score'],
-                    })
-                except Exception:
-                    pass  # skip failed individual matches, continue
-
-            # Report progress every line
-            processed = i + 1
-            percent = int(processed / total_unreconciled * 100)
-            self.update_state(
-                state='PROGRESS',
-                meta={
-                    'processed': processed,
-                    'total': total_unreconciled,
-                    'matched': matched_count,
-                    'percent': percent,
-                }
+            scores_json = _rs.batch_match_scores(
+                _json.dumps(lines_data),
+                _json.dumps(payments_data),
+                _json.dumps(settings_data),
             )
+            all_scores = _json.loads(scores_json)
+
+            scores_by_line: list[dict[int, dict]] = []
+            for _ in range(len(lines_data)):
+                scores_by_line.append({})
+            for entry in all_scores:
+                li = entry['lineIdx']
+                pi = entry['paymentIdx']
+                scores_by_line[li][pi] = entry
+
+            for i, line in enumerate(unreconciled_lines):
+                is_inbound = line.credit > line.debit
+                best_score_val = 0.0
+                best_pi = None
+                best_entry = None
+
+                for pi, p in enumerate(all_candidates):
+                    if p.id in already_matched_payment_ids:
+                        continue
+                    if not MatchingService._payment_matches_account_sense(p, account, is_inbound):
+                        continue
+                    entry = scores_by_line[i].get(pi)
+                    if entry is None:
+                        continue
+                    if entry['score'] > best_score_val:
+                        best_score_val = entry['score']
+                        best_pi = pi
+                        best_entry = entry
+
+                if best_entry is not None and best_score_val >= threshold:
+                    payment = all_candidates[best_pi]
+                    try:
+                        MatchingService.create_match_group([line.id], [payment.id], None)
+                        already_matched_payment_ids.add(payment.id)
+                        matched_count += 1
+                        matches.append({
+                            'line_id': line.id,
+                            'payment_id': payment.id,
+                            'score': best_score_val,
+                        })
+                    except Exception:
+                        pass
+
+                processed = i + 1
+                percent = int(processed / total_unreconciled * 100)
+                self.update_state(
+                    state='PROGRESS',
+                    meta={
+                        'processed': processed,
+                        'total': total_unreconciled,
+                        'matched': matched_count,
+                        'percent': percent,
+                    }
+                )
+        else:
+            # ── Slow path: Python native scoring (fallback) ──────────────────
+            for i, line in enumerate(unreconciled_lines):
+                is_inbound = line.credit > line.debit
+
+                line_candidates = [
+                    p for p in all_candidates
+                    if p.id not in already_matched_payment_ids
+                    and MatchingService._payment_matches_account_sense(p, account, is_inbound)
+                ]
+
+                best_suggestion = None
+                best_score: float = 0.0
+
+                for p in line_candidates:
+                    score_data = MatchingService._calculate_match_score(line, p, settings=settings)
+                    if score_data['score'] > best_score:
+                        best_score = score_data['score']
+                        best_suggestion = {
+                            'payment': p,
+                            'score': score_data['score']
+                        }
+
+                if best_suggestion and best_score >= threshold:
+                    payment = best_suggestion['payment']
+                    try:
+                        MatchingService.create_match_group([line.id], [payment.id], None)
+                        already_matched_payment_ids.add(payment.id)
+                        matched_count += 1
+                        matches.append({
+                            'line_id': line.id,
+                            'payment_id': payment.id,
+                            'score': best_suggestion['score'],
+                        })
+                    except Exception:
+                        pass
+
+                processed = i + 1
+                percent = int(processed / total_unreconciled * 100)
+                self.update_state(
+                    state='PROGRESS',
+                    meta={
+                        'processed': processed,
+                        'total': total_unreconciled,
+                        'matched': matched_count,
+                        'percent': percent,
+                    }
+                )
 
         return {
             'matched_count': matched_count,

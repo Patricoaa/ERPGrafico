@@ -14,6 +14,14 @@ from typing import List, Dict, Any, Optional
 from .models import BankStatementLine, TreasuryMovement, BankStatement, ReconciliationSettings, TerminalBatch
 # from .rule_service import RuleService
 
+# Rust native extension for batch scoring (graceful fallback)
+try:
+    import erpgrafico_rs as _rs
+    import json as _json
+    _HAS_RUST = True
+except ImportError:
+    _HAS_RUST = False
+
 
 class MatchingService:
     """
@@ -787,53 +795,153 @@ class MatchingService:
         if confidence_threshold is None:
             confidence_threshold = settings.confidence_threshold
 
-        # ── 5. Conjuntos de IDs ya matched (para skip inmediato) ─────────────────
+        # ── 5. Scorings ─────────────────────────────────────────────────────────
         already_matched_payment_ids: set[int] = set()
 
         matched_count = 0
         matches: List[Dict[str, Any]] = []
 
-        for line in unreconciled_lines:
-            line_candidates = [
-                p for p in all_candidates
-                if p.id not in already_matched_payment_ids
-                and MatchingService._payment_matches_account_sense(p, account, line.credit > line.debit)
-            ]
+        if _HAS_RUST and len(unreconciled_lines) * len(all_candidates) > 100:
+            # ── Fast path: Rust batch scoring ────────────────────────────────
+            # Serialize once, score all L×P pairs in native code
+            import datetime
 
-            best_suggestion: Optional[Dict[str, Any]] = None
-            best_score: float = 0.0
+            def _serialize_date(d):
+                if isinstance(d, datetime.date):
+                    return d.isoformat()
+                return str(d)
 
-            for p in line_candidates:
-                score_data = MatchingService._calculate_match_score(line, p, settings)
-                if score_data['score'] > best_score:
-                    best_score = score_data['score']
-                    best_suggestion = {
-                        'payment': p,
-                        'score': score_data['score'],
-                    }
-
-            if not best_suggestion or best_score < confidence_threshold:
-                continue
-
-            payment = best_suggestion['payment']
-
-            try:
-                MatchingService.create_match_group(
-                    [line.id],
-                    [payment.id],
-                    None,
-                )
-
-                already_matched_payment_ids.add(payment.id)
-                matched_count += 1
-                matches.append({
-                    'line_id': line.id,
-                    'line_number': line.line_number,
-                    'payment_id': payment.id,
-                    'score': best_score,
+            lines_data = []
+            for li, line in enumerate(unreconciled_lines):
+                lines_data.append({
+                    'id': line.id,
+                    'credit': float(line.credit),
+                    'debit': float(line.debit),
+                    'transactionDate': _serialize_date(line.transaction_date),
+                    'transactionId': line.transaction_id or None,
+                    'reference': line.reference or None,
+                    'description': line.description or None,
+                    'bankFormat': line.statement.bank_format if line.statement else None,
                 })
-            except Exception:
-                continue
+
+            payments_data = []
+            for p in all_candidates:
+                payments_data.append({
+                    'id': p.id,
+                    'amount': float(p.amount),
+                    'date': _serialize_date(p.date),
+                    'transactionNumber': p.transaction_number or None,
+                    'contactName': p.contact.name if hasattr(p, 'contact') and p.contact else None,
+                })
+                payment_sense[p.id] = is_inbound
+
+            settings_data = {
+                'amountWeight': float(settings.amount_weight),
+                'dateWeight': float(settings.date_weight),
+                'referenceWeight': float(settings.reference_weight),
+                'contactWeight': float(settings.contact_weight),
+            }
+
+            # 1 batch call → all scores
+            scores_json = _rs.batch_match_scores(
+                _json.dumps(lines_data),
+                _json.dumps(payments_data),
+                _json.dumps(settings_data),
+            )
+            all_scores = _json.loads(scores_json)
+            # all_scores is flat [line0pay0, line0pay1, ..., line1pay0, ...]
+            # Build lookup: scores_by_line[line_idx][payment_idx] = score_data
+            scores_by_line: List[Dict[int, Dict]] = []
+            for li in range(len(lines_data)):
+                scores_by_line.append({})
+            for entry in all_scores:
+                li = entry['lineIdx']
+                pi = entry['paymentIdx']
+                scores_by_line[li][pi] = entry
+
+            # Iterate lines, dedup payments, create matches
+            for li, line in enumerate(unreconciled_lines):
+                is_inbound = line.credit > line.debit
+                best_score_val = 0.0
+                best_pi = None
+                best_entry = None
+
+                for pi, p in enumerate(all_candidates):
+                    if p.id in already_matched_payment_ids:
+                        continue
+                    if not MatchingService._payment_matches_account_sense(p, account, is_inbound):
+                        continue
+                    entry = scores_by_line[li].get(pi)
+                    if entry is None:
+                        continue
+                    if entry['score'] > best_score_val:
+                        best_score_val = entry['score']
+                        best_pi = pi
+                        best_entry = entry
+
+                if best_entry is None or best_score_val < confidence_threshold:
+                    continue
+
+                payment = all_candidates[best_pi]
+                try:
+                    MatchingService.create_match_group(
+                        [line.id],
+                        [payment.id],
+                        None,
+                    )
+                    already_matched_payment_ids.add(payment.id)
+                    matched_count += 1
+                    matches.append({
+                        'line_id': line.id,
+                        'line_number': line.line_number,
+                        'payment_id': payment.id,
+                        'score': best_score_val,
+                    })
+                except Exception:
+                    continue
+        else:
+            # ── Slow path: Python native scoring (fallback) ──────────────────
+            for line in unreconciled_lines:
+                line_candidates = [
+                    p for p in all_candidates
+                    if p.id not in already_matched_payment_ids
+                    and MatchingService._payment_matches_account_sense(p, account, line.credit > line.debit)
+                ]
+
+                best_suggestion: Optional[Dict[str, Any]] = None
+                best_score: float = 0.0
+
+                for p in line_candidates:
+                    score_data = MatchingService._calculate_match_score(line, p, settings)
+                    if score_data['score'] > best_score:
+                        best_score = score_data['score']
+                        best_suggestion = {
+                            'payment': p,
+                            'score': score_data['score'],
+                        }
+
+                if not best_suggestion or best_score < confidence_threshold:
+                    continue
+
+                payment = best_suggestion['payment']
+
+                try:
+                    MatchingService.create_match_group(
+                        [line.id],
+                        [payment.id],
+                        None,
+                    )
+
+                    already_matched_payment_ids.add(payment.id)
+                    matched_count += 1
+                    matches.append({
+                        'line_id': line.id,
+                        'line_number': line.line_number,
+                        'payment_id': payment.id,
+                        'score': best_score,
+                    })
+                except Exception:
+                    continue
 
         if matched_count > 0:
             from core.cache import invalidate_report_cache

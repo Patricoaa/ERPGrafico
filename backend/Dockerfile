@@ -1,3 +1,23 @@
+# ── Stage: Rust builder (PyO3 native extension) ──────
+FROM rust:1.85-slim-bookworm AS rust-builder
+
+WORKDIR /build
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    python3-dev \
+    python3-pip \
+    && rm -rf /var/lib/apt/lists/*
+
+# Cache layer: Cargo dependency metadata
+COPY rust_ext/Cargo.toml rust_ext/Cargo.lock* ./rust_ext/
+COPY rust_ext/pyproject.toml ./rust_ext/
+RUN mkdir -p rust_ext/src && touch rust_ext/src/lib.rs && \
+    pip install maturin --no-cache-dir --break-system-packages && cd rust_ext && cargo fetch
+
+# Build layer: actual source + compilation
+COPY rust_ext/src ./rust_ext/src
+RUN cd rust_ext && maturin build --release --out /build/wheels
+
 # ── Target: production ───────────────────────────────────
 FROM python:3.12-slim AS production
 
@@ -41,6 +61,10 @@ RUN apt-get update \
 COPY requirements.txt .
 RUN pip install --upgrade pip
 RUN pip install -r requirements.txt
+
+# Instalar extensión nativa Rust (PyO3)
+COPY --from=rust-builder /build/wheels/*.whl /tmp/
+RUN pip install /tmp/*.whl --no-cache-dir && rm /tmp/*.whl
 
 # Crear usuario no root
 RUN groupadd -g 1000 django && \
@@ -101,6 +125,10 @@ RUN apt-get update \
 COPY requirements.txt .
 RUN pip install --upgrade pip
 RUN pip install -r requirements.txt
+
+# Instalar extensión nativa Rust (PyO3)
+COPY --from=rust-builder /build/wheels/*.whl /tmp/
+RUN pip install /tmp/*.whl --no-cache-dir && rm /tmp/*.whl
 
 # Crear usuario no root en stage de desarrollo
 RUN groupadd -g 1000 django && \
