@@ -3,7 +3,7 @@
 import { ShoppingCart, FileText } from "lucide-react"
 import { getEntityIcon } from "@/lib/entity-registry"
 import { SalesOrdersView } from "@/features/sales"
-import { UnderlineTabs } from "@/components/shared"
+import { TabBar } from "@/components/shared"
 import { useState, useEffect, Suspense, useCallback } from "react"
 import { Drawer, SkeletonShell } from "@/components/shared"
 import { cn } from "@/lib/utils"
@@ -98,20 +98,18 @@ export function SalesOrdersDrawer({ open, onOpenChange, posSessionId }: SalesOrd
             showOverlay
             defaultSize="90%"
             headerActions={
-                <UnderlineTabs
+                <TabBar
                     value={viewMode}
                     onValueChange={handleViewModeChange}
                     orientation="horizontal"
-                    variant="underline"
                     items={[
                         { value: 'orders', label: 'Ventas', icon: ShoppingCart },
                         { value: 'notes', label: 'Notas C/D', icon: FileText }
                     ]}
                     className="w-auto animate-in fade-in duration-300"
-                    headerClassName="border-b-0 px-0 h-auto"
                 >
                     <div className="hidden" />
-                </UnderlineTabs>
+                </TabBar>
             }
         >
             <div className="px-6 pb-4 pt-2 flex-1 flex flex-col min-h-0">

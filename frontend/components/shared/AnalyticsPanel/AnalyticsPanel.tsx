@@ -2,7 +2,7 @@
 
 import React, { useState } from "react"
 import { LayoutDashboard } from "lucide-react"
-import { Drawer, UnderlineTabs, UnderlineTabsContent } from "@/components/shared"
+import { Drawer, TabBar, TabBarContent } from "@/components/shared"
 import { AnalyticsLayout } from "./AnalyticsLayout"
 import { AnalyticsSegmentation } from "./AnalyticsSegmentation"
 import type { AnalyticsPanelProps, AnalyticsTab } from "./types"
@@ -38,7 +38,7 @@ export function AnalyticsPanel({
             side="bottom"
             defaultSize="70vh"
         >
-            <UnderlineTabs
+            <TabBar
                 items={tabs.map((t) => ({
                     value: t.value,
                     label: t.label,
@@ -48,9 +48,7 @@ export function AnalyticsPanel({
                 value={currentTab}
                 onValueChange={handleTabChange}
                 orientation="horizontal"
-                variant="underline"
                 className="flex-1 flex flex-col overflow-hidden"
-                headerClassName="justify-center"
                 contentClassName="flex flex-col"
             >
                 {tabs.map((tab) => (
@@ -60,7 +58,7 @@ export function AnalyticsPanel({
                         isActive={tab.value === currentTab}
                     />
                 ))}
-            </UnderlineTabs>
+            </TabBar>
             <AnalyticsSegmentation
                 cardAccounts={cardAccounts}
                 cardAccountId={cardAccountId}
@@ -80,7 +78,7 @@ function AnalyticsTabContent({ tab, isActive }: { tab: AnalyticsTab; isActive: b
     if (!isActive && typeof window !== "undefined") return null
 
     return (
-        <UnderlineTabsContent
+        <TabBarContent
             key={tab.value}
             value={tab.value}
             className="flex-1 flex flex-col"
@@ -95,6 +93,6 @@ function AnalyticsTabContent({ tab, isActive }: { tab: AnalyticsTab; isActive: b
                     <AnalyticsLayout columns={tab.columns} />
                 ) : null}
             </div>
-        </UnderlineTabsContent>
+        </TabBarContent>
     )
 }

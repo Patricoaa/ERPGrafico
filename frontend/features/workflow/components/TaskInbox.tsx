@@ -4,7 +4,7 @@ import { useState, useEffect } from "react"
 import { getTasks, Task } from '@/features/workflow/api/workflowApi'
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { UnderlineTabs, UnderlineTabsContent, type TabItem } from "@/components/shared"
+import { TabBar, TabBarContent, type TabItem } from "@/components/shared"
 import {CheckCircle2, ListTodo, ChevronDown, ChevronRight, User, ExternalLink, Package, FileText, Wallet, TrendingUp} from "lucide-react"
 import { toast } from "sonner"
 import { useGlobalModalActions } from "@/components/providers/GlobalModalProvider"
@@ -451,17 +451,16 @@ export function TaskInbox() {
 
     return (
         <div className="space-y-4 p-4 h-full overflow-auto">
-            <UnderlineTabs
+            <TabBar
                 items={tabItems}
                 value={activeTab}
                 onValueChange={setActiveTab}
                 orientation="horizontal"
-                variant="underline"
                 dense
                 className="w-full"
                 contentClassName="mt-4 bg-transparent"
             >
-                <UnderlineTabsContent value="approvals">
+                <TabBarContent value="approvals">
                      {loading ? (
                          <SkeletonShell isLoading={true} ariaLabel="Cargando tareas de aprobación">
                              <div className="flex flex-col gap-2">
@@ -502,9 +501,9 @@ export function TaskInbox() {
                             )}
                         </>
                     )}
-                 </UnderlineTabsContent>
+                 </TabBarContent>
 
-                  <UnderlineTabsContent value="tasks">
+                  <TabBarContent value="tasks">
                      {loading ? (
                          <SkeletonShell isLoading={true} ariaLabel="Cargando tareas operativas">
                              <div className="flex flex-col gap-2">
@@ -523,8 +522,8 @@ export function TaskInbox() {
                              {operationalTasks.map(task => renderTaskCard(task))}
                          </div>
                      )}
-                 </UnderlineTabsContent>
-             </UnderlineTabs>
+                 </TabBarContent>
+             </TabBar>
          </div>
     )
 }

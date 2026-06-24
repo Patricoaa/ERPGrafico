@@ -14,7 +14,7 @@ import { Button } from "@/components/ui/button"
 import { Form, FormField } from "@/components/ui/form"
 import { Plus, User, ShieldCheck, Printer } from "lucide-react"
 import { ActivitySidebar } from "@/features/audit/components"
-import { Drawer, CancelButton, ActionSlideButton, LabeledInput, LabeledCheckboxGroup, FormSection, UnderlineTabs, UnderlineTabsContent, type TabItem, FormSplitLayout, FormFooter, LabeledSelect, LabeledSwitch, SkeletonShell } from "@/components/shared"
+import { Drawer, CancelButton, ActionSlideButton, LabeledInput, LabeledCheckboxGroup, FormSection, TabBar, TabBarContent, type TabItem, FormSplitLayout, FormFooter, LabeledSelect, LabeledSwitch, SkeletonShell } from "@/components/shared"
 import { AdvancedContactSelector } from "@/components/selectors/AdvancedContactSelector"
 import { AppGroup } from "@/types/entities"
 import { useReactToPrint } from "react-to-print"
@@ -276,17 +276,16 @@ export function UserDrawer({ initialData, onSuccess, trigger, open: controlledOp
                         <form id="user-form" onSubmit={form.handleSubmit(onSubmit)} className="flex-1 w-full h-full flex flex-col overflow-visible min-h-0">
                             <fieldset disabled={isView} className="contents">
                                 <FormSplitLayout sidebar={initialData?.id ? <ActivitySidebar entityId={initialData.id.toString()} entityType="user" /> : undefined} showSidebar={!!initialData?.id} className="min-w-0 h-full overflow-hidden p-0">
-                                    <UnderlineTabs
+                                    <TabBar
                                         items={tabItems}
                                         value={activeTab}
                                         onValueChange={setActiveTab}
                                         orientation="horizontal"
-                                        variant="underline"
                                         contentClassName="bg-transparent"
                                         className="flex-1"
                                     >
                                         <fieldset disabled={loading} className="flex-1 min-w-0 flex flex-col h-full min-h-0">
-                                            <UnderlineTabsContent value="general" className="mt-0 pt-6 px-6 pb-8 data-[state=active]:flex data-[state=active]:flex-1 data-[state=active]:flex-col data-[state=active]:min-h-0 overflow-y-auto scrollbar-thin">
+                                            <TabBarContent value="general" className="mt-0 pt-6 px-6 pb-8 data-[state=active]:flex data-[state=active]:flex-1 data-[state=active]:flex-col data-[state=active]:min-h-0 overflow-y-auto scrollbar-thin">
                                                 <div className="space-y-8">
                                                     <div className="space-y-4">
                                                         <FormSection title="Vinculación y Cuenta" icon={User} />
@@ -365,8 +364,8 @@ export function UserDrawer({ initialData, onSuccess, trigger, open: controlledOp
                                                         </div>
                                                     </div>
                                                 </div>
-                                            </UnderlineTabsContent>
-                                            <UnderlineTabsContent value="permissions" className="mt-0 pt-6 px-6 pb-8 data-[state=active]:flex data-[state=active]:flex-1 data-[state=active]:flex-col data-[state=active]:min-h-0 overflow-hidden">
+                                            </TabBarContent>
+                                            <TabBarContent value="permissions" className="mt-0 pt-6 px-6 pb-8 data-[state=active]:flex data-[state=active]:flex-1 data-[state=active]:flex-col data-[state=active]:min-h-0 overflow-hidden">
                                                 <div className="flex flex-col flex-1 min-h-0 gap-8">
                                                     <div className="shrink-0">
                                                         <FormField
@@ -401,9 +400,9 @@ export function UserDrawer({ initialData, onSuccess, trigger, open: controlledOp
                                                         />
                                                     </div>
                                                 </div>
-                                            </UnderlineTabsContent>
+                                            </TabBarContent>
                                         </fieldset>
-                                    </UnderlineTabs>
+                                    </TabBar>
                                 </FormSplitLayout>
                             </fieldset>
                         </form>

@@ -8,7 +8,7 @@ import { useSearchParams, usePathname, useRouter } from "next/navigation"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Form, FormField } from "@/components/ui/form"
 import { Separator } from "@/components/ui/separator"
-import { AccountField, ActionConfirmModal, AutoSaveStatusBadge, LabeledInput, LabeledSelect, PageHeaderButton, SkeletonShell, UnderlineTabs, UnderlineTabsContent } from "@/components/shared"
+import { AccountField, ActionConfirmModal, AutoSaveStatusBadge, LabeledInput, LabeledSelect, PageHeaderButton, SkeletonShell, TabBar, TabBarContent } from "@/components/shared"
 import { useAutoSaveForm } from "@/hooks/useAutoSaveForm"
 import { useInitializeForm } from "@/hooks/useInitializeForm"
 import { useUnsavedChangesGuard } from "@/hooks/useUnsavedChangesGuard"
@@ -70,42 +70,41 @@ export function UnifiedAccountsView() {
 
     return (
         <div className="w-full flex-1 min-h-0 flex flex-col">
-            <UnderlineTabs
+            <TabBar
                 items={TABS}
                 value={activeTab}
                 onValueChange={handleTabChange}
-                variant="underline"
                 orientation="horizontal"
                 contentClassName="overflow-y-auto bg-card"
             >
-                <UnderlineTabsContent value="estructura">
+                <TabBarContent value="estructura">
                     {activeTab === "estructura" && <EstructuraForm />}
-                </UnderlineTabsContent>
-                <UnderlineTabsContent value="ventas">
+                </TabBarContent>
+                <TabBarContent value="ventas">
                     {activeTab === "ventas" && <VentasForm />}
-                </UnderlineTabsContent>
-                <UnderlineTabsContent value="facturacion">
+                </TabBarContent>
+                <TabBarContent value="facturacion">
                     {activeTab === "facturacion" && <FacturacionForm />}
-                </UnderlineTabsContent>
-                <UnderlineTabsContent value="compras">
+                </TabBarContent>
+                <TabBarContent value="compras">
                     {activeTab === "compras" && <ComprasForm />}
-                </UnderlineTabsContent>
-                <UnderlineTabsContent value="inventario">
+                </TabBarContent>
+                <TabBarContent value="inventario">
                     {activeTab === "inventario" && <InventarioForm />}
-                </UnderlineTabsContent>
-                <UnderlineTabsContent value="tesoreria">
+                </TabBarContent>
+                <TabBarContent value="tesoreria">
                     {activeTab === "tesoreria" && <TesoreriasForm />}
-                </UnderlineTabsContent>
-                <UnderlineTabsContent value="rrhh">
+                </TabBarContent>
+                <TabBarContent value="rrhh">
                     {activeTab === "rrhh" && <RRHHForm />}
-                </UnderlineTabsContent>
-                <UnderlineTabsContent value="socios">
+                </TabBarContent>
+                <TabBarContent value="socios">
                     {activeTab === "socios" && <SociosForm />}
-                </UnderlineTabsContent>
-                <UnderlineTabsContent value="impuestos">
+                </TabBarContent>
+                <TabBarContent value="impuestos">
                     {activeTab === "impuestos" && <ImpuestosForm />}
-                </UnderlineTabsContent>
-            </UnderlineTabs>
+                </TabBarContent>
+            </TabBar>
         </div>
     )
 }
