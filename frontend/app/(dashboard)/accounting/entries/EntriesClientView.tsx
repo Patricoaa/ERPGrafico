@@ -9,9 +9,11 @@ import { toast } from "sonner"
 import { JournalEntryDrawer } from "@/features/accounting"
 import api from "@/lib/api"
 
-import { DataTableView, DataTableColumnHeader } from '@/components/shared'
+import { DataTableView, DataTableColumnHeader, EntityCard } from '@/components/shared'
 import { DataCell, Chip } from '@/components/shared'
+import { FileEdit, RotateCcw, FileText } from "lucide-react"
 import { journalEntryActions, type JournalEntryActionsCtx } from './journalEntryActions'
+import { resolveStatus } from '@/lib/badge-resolvers'
 
 import { useRouter, usePathname, useSearchParams } from "next/navigation"
 import { useJournalEntries, type JournalEntry } from "@/features/accounting"
@@ -230,6 +232,45 @@ export default function EntriesPage({ externalOpen, onExternalOpenChange, create
                         context: "finance",
                         title: "Aún no hay asientos contables",
                         description: "Los asientos se registran al confirmar operaciones o puedes crear uno manualmente.",
+                    }}
+                    cardGroupBy={{
+                        field: 'date',
+                        sort: 'desc',
+                        aggregators: [
+                            { key: 'count', label: 'Asientos', fn: 'count', format: 'integer' },
+                        ],
+                    }}
+                    onRowClick={(m) => openDetail(m.id)}
+                    renderCard={(m) => {
+                        const Icon = m.is_manual ? FileEdit : m.reversal_of ? RotateCcw : FileText
+                        const iconStyle = m.is_manual
+                            ? "text-info bg-info/10"
+                            : m.reversal_of
+                                ? "text-warning bg-warning/10"
+                                : "text-success bg-success/10"
+                        const total = m.items?.reduce((sum: number, item) => sum + (Number(item.debit) || 0), 0) || 0
+                        const originLabel = m.is_manual ? 'Manual' : m.reversal_of ? 'Reversión' : 'Automático'
+                        const statusLabel = resolveStatus(m.status).label
+                        return (
+                            <EntityCard key={m.id} onClick={() => openDetail(m.id)}>
+                                <EntityCard.Header
+                                    icon={Icon}
+                                    iconClassName={iconStyle}
+                                    title={m.display_id}
+                                    subtitle={
+                                        <span className="text-xs text-muted-foreground/70">
+                                            {statusLabel} · {originLabel}
+                                        </span>
+                                    }
+                                    center={
+                                        <span className="text-xs text-muted-foreground line-clamp-2 text-center max-w-[400px]">
+                                            {m.description}
+                                        </span>
+                                    }
+                                    trailing={<DataCell.Currency value={total} />}
+                                />
+                            </EntityCard>
+                        )
                     }}
                 />
 
