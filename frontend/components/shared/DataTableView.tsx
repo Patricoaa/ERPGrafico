@@ -4,7 +4,7 @@ import React, { useMemo } from "react"
 import { type Row, type SortingState, type Table as ReactTable } from "@tanstack/react-table"
 import { useViewMode } from "@/hooks/useViewMode"
 import { ENTITY_REGISTRY } from "@/lib/entity-registry"
-import { createDomainCardView, createEntityCardView, createCardLoadingView, createCardGroupView } from "@/lib/view-helpers"
+import { createDomainCardView, createEntityCardView, createCardLoadingView, createCardGroupView, createCardGroupLoadingView } from "@/lib/view-helpers"
 import { type AggregatorDef } from "@/lib/group-utils"
 import { DataTable, type DataTableProps } from "./DataTable"
 import { DomainCard } from "./DomainCard"
@@ -104,10 +104,16 @@ export function DataTableView<TData, TValue>({
     if (externalLoadingView) return externalLoadingView
     if (!isCustomView) return undefined
     if (policy?.cardComponent === "domain" || policy?.cardComponent === "entity" || externalRenderCustomView) {
+      if (cardGroupBy) {
+        return createCardGroupLoadingView({
+          gridLayout: policy?.gridLayout,
+          skeletonProps: cardSkeleton,
+        })
+      }
       return createCardLoadingView(policy?.gridLayout ?? "single-column", undefined, cardSkeleton)
     }
     return undefined
-  }, [externalLoadingView, externalRenderCustomView, isCustomView, policy, cardSkeleton])
+  }, [externalLoadingView, externalRenderCustomView, isCustomView, policy, cardSkeleton, cardGroupBy])
 
   return (
     <DataTable
