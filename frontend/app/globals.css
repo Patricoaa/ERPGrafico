@@ -809,6 +809,10 @@ table [data-notched-field] {
     scrollbar-width: none;
   }
 
+  .custom-scrollbar {
+    scrollbar-gutter: stable;
+  }
+
   /*
    * GRAPHIC INDUSTRY — Registration Marks
    * Adds corner crop/registration marks to any container.
