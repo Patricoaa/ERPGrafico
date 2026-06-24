@@ -31,8 +31,8 @@ export async function serverFetch<T>(
 
     if (opts?.params) {
         const qs = Object.entries(opts.params)
-            .filter(([_, v]) => v !== undefined)
-            .map(([k, v]) => `${encodeURIComponent(k)}=${encodeURIComponent(v!)}`)
+            .filter(([, v]) => v !== undefined)
+            .map(([k, v]) => `${encodeURIComponent(k)}=${encodeURIComponent(v as string)}`)
             .join('&')
         if (qs) url += `?${qs}`
     }

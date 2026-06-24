@@ -3,7 +3,6 @@
 import { Inbox } from "lucide-react"
 import { CollapsibleSheet, PanelHeader } from "@/components/shared"
 import { TaskInbox } from "@/features/workflow/components/TaskInbox"
-import { useHubPanel } from "@/components/providers/HubPanelProvider"
 
 interface TaskInboxSidebarProps {
     isOpen: boolean
@@ -11,8 +10,6 @@ interface TaskInboxSidebarProps {
 }
 
 export function TaskInboxSidebar({ isOpen, onClose }: TaskInboxSidebarProps) {
-    const { isHubEffectivelyOpen } = useHubPanel()
-
     return (
         <CollapsibleSheet
             sheetId="task-inbox-sidebar"

@@ -6,12 +6,12 @@ import { GROUP_KEYS } from './queryKeys'
 export function useGroupSearch(search: string = "", enabled: boolean = true) {
     const query = useQuery({
         queryKey: GROUP_KEYS.list(search),
-        queryFn: async ({ signal }) => {
+        queryFn: async () => {
             const params = new URLSearchParams()
             if (search) params.append("search", search)
             params.append("limit", "50")
 
-            const data = await usersApi.getGroups({ params, signal } as any)
+            const data = await usersApi.getGroups({ params } as any)
             return data as AppGroup[]
         },
         enabled,
@@ -27,9 +27,9 @@ export function useGroupSearch(search: string = "", enabled: boolean = true) {
 
 export function useSingleGroup(id: string | number | null) {
     const query = useQuery({
-        queryKey: GROUP_KEYS.detail(id!),
-        queryFn: async ({ signal }) => {
-            const data = await usersApi.getGroup(id!)
+        queryKey: GROUP_KEYS.detail(id as string | number),
+        queryFn: async () => {
+            const data = await usersApi.getGroup(id as string | number)
             return data as AppGroup
         },
         enabled: !!id,

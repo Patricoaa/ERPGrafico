@@ -1,7 +1,7 @@
 "use client"
 
 import React, { useState, useMemo } from 'react'
-import { Banknote, ArrowRight, Coins, AlertTriangle, Calculator } from 'lucide-react'
+import { Banknote, ArrowRight, Coins, Calculator } from 'lucide-react'
 import {
     BaseModal, FormFooter, CancelButton, ActionSlideButton, LabeledSelect,
     MoneyDisplay, LabeledInput,
@@ -46,11 +46,6 @@ export function PrepayLoanModal({ loan, open, onOpenChange }: Props) {
 
     const totalInterest = useMemo(() =>
         pendingInstallments.reduce((sum, inst) => sum + parseFloat(inst.interest_amount), 0),
-        [pendingInstallments],
-    )
-
-    const totalInsurance = useMemo(() =>
-        pendingInstallments.reduce((sum, inst) => sum + parseFloat(inst.insurance_amount), 0),
         [pendingInstallments],
     )
 

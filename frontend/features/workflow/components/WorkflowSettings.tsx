@@ -243,7 +243,6 @@ interface AssignmentRuleRowProps {
 }
 
 const AssignmentRuleRow = React.memo(function AssignmentRuleRow({ taskType, rule }: AssignmentRuleRowProps) {
-    const queryClient = useQueryClient()
     const ruleRef = useRef(rule)
     ruleRef.current = rule
 
@@ -493,7 +492,6 @@ interface NotificationRuleRowProps {
 }
 
 const NotificationRuleRow = React.memo(function NotificationRuleRow({ type, rule, recurrentSettings }: NotificationRuleRowProps) {
-    const queryClient = useQueryClient()
     const ruleRef = useRef(rule)
     ruleRef.current = rule
 

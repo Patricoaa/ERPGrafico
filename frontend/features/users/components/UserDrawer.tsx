@@ -48,7 +48,7 @@ export function UserDrawer({ initialData, onSuccess, trigger, open: controlledOp
     const [internalOpen, setInternalOpen] = useState(false)
     const isControlled = controlledOpen !== undefined
     const open = isControlled ? controlledOpen : internalOpen
-    const setOpen = isControlled ? setControlledOpen! : setInternalOpen
+    const setOpen = isControlled ? (setControlledOpen as (v: boolean) => void) : setInternalOpen
     const [loading, setLoading] = useState(false)
     const [isFetchingDeps, setIsFetchingDeps] = useState(false)
     const [availableRoles, setAvailableRoles] = useState<[string, string][]>([])
