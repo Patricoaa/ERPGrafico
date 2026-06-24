@@ -308,7 +308,7 @@ function renderAggregates(
 
   if (children.length === 0) return null
 
-  return React.createElement("span", { className: "ml-auto flex items-center gap-2" }, ...children)
+  return React.createElement("span", { className: "ml-auto flex items-center gap-2 pr-4.5" }, ...children)
 }
 
 /**
