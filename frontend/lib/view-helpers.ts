@@ -95,6 +95,7 @@ export function createEntityCardView(
     gridLayout?: 'single-column' | 'multi-column'
     emptyState?: DataTableEmptyState
     isFiltered?: boolean
+    skeleton?: Pick<EntityCardSkeletonProps, 'showHeader' | 'showBody' | 'showFooter'>
   }
 ) {
   const policy = ENTITY_REGISTRY[entityLabel]?.viewPolicy

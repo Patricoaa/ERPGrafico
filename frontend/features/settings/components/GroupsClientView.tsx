@@ -81,6 +81,7 @@ export function GroupsClientView({ externalOpen, onExternalOpenChange, createAct
                             />
                         </EntityCard>
                     )}
+                    cardSkeleton={{ showBody: false }}
                 />
             </div>
 

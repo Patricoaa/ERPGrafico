@@ -156,9 +156,6 @@ export function BankManagement({ externalOpen, onOpenChange, createAction }: Ban
                                 <EntityCard.Field label="Tarjetas" value={overview?.summary.card_count ?? 0} />
                                 <EntityCard.Field label="Cheques" value={overview?.summary.issued_checks ?? 0} />
                                 <EntityCard.Field label="Préstamos" value={overview?.summary.active_loan_count ?? 0} />
-                                {overview && overview.summary.card_debt > 0 && (
-                                    <EntityCard.Field label="Deuda TC" value={<DataCell.Currency value={overview.summary.card_debt} />} />
-                                )}
                             </EntityCard.Body>
                             <EntityCard.Footer>
                                 <div onClick={(e) => e.stopPropagation()} className="flex items-center gap-1">
@@ -167,8 +164,9 @@ export function BankManagement({ externalOpen, onOpenChange, createAction }: Ban
                             </EntityCard.Footer>
                         </EntityCard>
                     )
-                }}
-            />
+                    }}
+                    cardSkeleton={{ showFooter: true }}
+                />
 
             <BankCreationWizard
                 open={wizardOpen || (!!externalOpen && !selectedBank)}

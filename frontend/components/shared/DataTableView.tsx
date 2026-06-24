@@ -26,6 +26,7 @@ interface DataTableViewProps<TData, TValue>
     defaultLabel?: string
     aggregators?: AggregatorDef[]
   }
+  cardSkeleton?: Pick<import("./EntityCard").EntityCardSkeletonProps, 'showHeader' | 'showBody' | 'showFooter'>
 }
 
 export function DataTableView<TData, TValue>({
@@ -36,6 +37,7 @@ export function DataTableView<TData, TValue>({
   isSelected,
   isHubOpen,
   cardGroupBy,
+  cardSkeleton,
   ...dataTableProps
 }: DataTableViewProps<TData, TValue>) {
   const policy = ENTITY_REGISTRY[entityLabel]?.viewPolicy
@@ -102,10 +104,10 @@ export function DataTableView<TData, TValue>({
     if (externalLoadingView) return externalLoadingView
     if (!isCustomView) return undefined
     if (policy?.cardComponent === "domain" || policy?.cardComponent === "entity" || externalRenderCustomView) {
-      return createCardLoadingView(policy?.gridLayout ?? "single-column")
+      return createCardLoadingView(policy?.gridLayout ?? "single-column", undefined, cardSkeleton)
     }
     return undefined
-  }, [externalLoadingView, externalRenderCustomView, isCustomView, policy])
+  }, [externalLoadingView, externalRenderCustomView, isCustomView, policy, cardSkeleton])
 
   return (
     <DataTable

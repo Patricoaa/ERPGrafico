@@ -253,6 +253,7 @@ export function PosTerminalClientView({ externalOpen, onExternalOpenChange, crea
                             </EntityCard>
                         )
                     }}
+                    cardSkeleton={{ showFooter: true }}
                 />
             </div>
 

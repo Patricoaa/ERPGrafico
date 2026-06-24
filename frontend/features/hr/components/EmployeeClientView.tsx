@@ -183,6 +183,7 @@ export function EmployeeClientView({ initialEmployees }: EmployeeClientViewProps
                             </EntityCard.Footer>
                         </EntityCard>
                     )}
+                    cardSkeleton={{ showFooter: true }}
                 />
             </div>
             <EmployeeDrawer
