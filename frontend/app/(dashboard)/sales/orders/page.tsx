@@ -1,3 +1,4 @@
+import { PageSectionHeader } from "@/components/shared"
 import { serverFetch } from "@/lib/server-fetch"
 import type { SaleOrder } from "@/features/sales"
 import SalesOrdersPageClient from "./SalesOrdersPageClient"
@@ -26,5 +27,9 @@ export default async function SalesOrdersPage({ searchParams }: PageProps) {
         }
     }
 
-    return <SalesOrdersPageClient initialOrders={initialOrders} />
+    return (
+        <>
+            <PageSectionHeader title="Órdenes de Venta" description="Gestión de pedidos y cotizaciones de clientes" />
+            <SalesOrdersPageClient initialOrders={initialOrders} />
+        </>)
 }

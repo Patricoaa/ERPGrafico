@@ -1,3 +1,4 @@
+import { PageSectionHeader } from "@/components/shared"
 import { serverFetch } from "@/lib/server-fetch"
 import type { Employee } from "@/types/hr"
 import EmployeesPageClient from "./EmployeesPageClient"
@@ -24,5 +25,9 @@ export default async function EmployeesPage({ searchParams }: PageProps) {
         }
     }
 
-    return <EmployeesPageClient initialEmployees={initialEmployees} />
+    return (
+        <>
+            <PageSectionHeader title="Empleados" description="Gestión de colaboradores y datos laborales" />
+            <EmployeesPageClient initialEmployees={initialEmployees} />
+        </>)
 }

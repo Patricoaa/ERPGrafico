@@ -1,6 +1,7 @@
 "use client"
 
 import React, { use } from "react"
+import { PageSectionHeader } from "@/components/shared"
 import { PayrollDetailContent } from "@/features/hr"
 
 interface Props {
@@ -13,6 +14,7 @@ export default function PayrollDetailPage({ params }: Props) {
 
     return (
         <div className="flex-1 space-y-6">
+            <PageSectionHeader title="Detalle de Remuneración" description="Visualización completa de la liquidación" />
             <PayrollDetailContent payrollId={payrollId} />
         </div>
     )

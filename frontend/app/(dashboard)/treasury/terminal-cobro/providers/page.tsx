@@ -1,5 +1,5 @@
 import type { Metadata } from "next"
-import { ToolbarCreateButton } from '@/components/shared'
+import { PageSectionHeader, ToolbarCreateButton } from '@/components/shared'
 import { PaymentHardwareClientView } from "@/features/treasury"
 
 export const metadata: Metadata = {
@@ -17,10 +17,12 @@ export default async function TerminalCobroProvidersPage({ searchParams }: PageP
     )
 
     return (
-        <PaymentHardwareClientView
-            activeTab="providers"
-            externalProviderOpen={modal === 'provider'}
-            createAction={createAction}
-        />
-    )
+        <>
+            <PageSectionHeader title="Proveedores" description="Administración de proveedores de servicios de pago" />
+            <PaymentHardwareClientView
+                activeTab="providers"
+                externalProviderOpen={modal === 'provider'}
+                createAction={createAction}
+            />
+        </>)
 }

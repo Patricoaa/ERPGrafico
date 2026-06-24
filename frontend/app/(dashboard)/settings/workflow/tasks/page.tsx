@@ -1,5 +1,10 @@
+import { PageSectionHeader } from "@/components/shared"
 import { WorkflowSettings } from "@/features/workflow"
 
 export default async function WorkflowSettingsTasksPage() {
-    return <WorkflowSettings activeTab="tasks" />
+    return (
+        <>
+            <PageSectionHeader title="Tareas Automáticas" description="Configuración de procesos programados y automatizaciones" />
+            <WorkflowSettings activeTab="tasks" />
+        </>)
 }

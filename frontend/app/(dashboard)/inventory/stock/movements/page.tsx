@@ -1,3 +1,4 @@
+import { PageSectionHeader } from "@/components/shared"
 import { MovementClientView } from "@/features/inventory"
 import { ToolbarCreateButton } from "@/components/shared"
 
@@ -10,9 +11,11 @@ export default async function StockMovementsPage({ searchParams }: PageProps) {
     const createAction = <ToolbarCreateButton label="Nuevo Ajuste" href="/inventory/stock/movements?modal=adjustment" />
 
     return (
-        <MovementClientView
-            externalOpen={modal === 'adjustment'}
-            createAction={createAction}
-        />
-    )
+        <>
+            <PageSectionHeader title="Movimientos de Stock" description="Ajustes, traspasos y movimientos de inventario" />
+            <MovementClientView
+                externalOpen={modal === 'adjustment'}
+                createAction={createAction}
+            />
+        </>)
 }

@@ -1,3 +1,4 @@
+import { PageSectionHeader } from "@/components/shared"
 import { serverFetch } from "@/lib/server-fetch"
 import type { SalaryAdvance } from "@/types/hr"
 import AdvancesPageClient from "./AdvancesPageClient"
@@ -24,5 +25,9 @@ export default async function AdvancesPage({ searchParams }: PageProps) {
         }
     }
 
-    return <AdvancesPageClient initialAdvances={initialAdvances} />
+    return (
+        <>
+            <PageSectionHeader title="Anticipos" description="Gestión de adelantos de remuneraciones" />
+            <AdvancesPageClient initialAdvances={initialAdvances} />
+        </>)
 }

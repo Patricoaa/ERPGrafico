@@ -1,4 +1,5 @@
 import type { Metadata } from "next"
+import { PageSectionHeader } from "@/components/shared"
 import { ChecksClientView } from "@/features/treasury"
 
 export const metadata: Metadata = {
@@ -6,5 +7,9 @@ export const metadata: Metadata = {
 }
 
 export default async function OperacionesChecksPage() {
-    return <ChecksClientView direction="RECEIVED" />
+    return (
+        <>
+            <PageSectionHeader title="Cheques Recibidos" description="Gestión de cheques de clientes y terceros" />
+            <ChecksClientView direction="RECEIVED" />
+        </>)
 }

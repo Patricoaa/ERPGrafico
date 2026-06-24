@@ -1,4 +1,5 @@
 import type { Metadata } from "next"
+import { PageSectionHeader } from "@/components/shared"
 import DashboardPageClient from "./DashboardPageClient"
 
 export const metadata: Metadata = {
@@ -6,5 +7,9 @@ export const metadata: Metadata = {
 }
 
 export default function DashboardPage() {
-    return <DashboardPageClient />
+    return (
+        <>
+            <PageSectionHeader title="Dashboard" description="Panel de indicadores y resumen general" />
+            <DashboardPageClient />
+        </>)
 }

@@ -1,4 +1,5 @@
 import type { Metadata } from "next"
+import { PageSectionHeader } from "@/components/shared"
 import { BankCenterPageClientView } from "@/features/treasury"
 
 export const metadata: Metadata = {
@@ -7,5 +8,9 @@ export const metadata: Metadata = {
 }
 
 export default function BankCenterPage() {
-    return <BankCenterPageClientView />
+    return (
+        <>
+            <PageSectionHeader title="Centro de Bancos" description="Vista consolidada de bancos y productos financieros" />
+            <BankCenterPageClientView />
+        </>)
 }

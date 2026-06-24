@@ -1,3 +1,4 @@
+import { PageSectionHeader } from "@/components/shared"
 import { serverFetch } from "@/lib/server-fetch"
 import type { Contact } from "@/features/contacts"
 import ContactsPageClient from "./ContactsPageClient"
@@ -26,5 +27,9 @@ export default async function ContactsPage({ searchParams }: PageProps) {
         }
     }
 
-    return <ContactsPageClient initialContacts={initialContacts} />
+    return (
+        <>
+            <PageSectionHeader title="Contactos" description="Gestión de clientes, proveedores y terceros" />
+            <ContactsPageClient initialContacts={initialContacts} />
+        </>)
 }

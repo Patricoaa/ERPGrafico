@@ -1,3 +1,4 @@
+import { PageSectionHeader } from "@/components/shared"
 import { serverFetch } from "@/lib/server-fetch"
 import type { Payroll } from "@/types/hr"
 import PayrollsPageClient from "./PayrollsPageClient"
@@ -24,5 +25,9 @@ export default async function PayrollsPage({ searchParams }: PageProps) {
         }
     }
 
-    return <PayrollsPageClient initialPayrolls={initialPayrolls} />
+    return (
+        <>
+            <PageSectionHeader title="Remuneraciones" description="Gestión de liquidaciones de sueldo y remuneraciones" />
+            <PayrollsPageClient initialPayrolls={initialPayrolls} />
+        </>)
 }

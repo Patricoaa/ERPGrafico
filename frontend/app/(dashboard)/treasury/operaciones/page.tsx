@@ -1,5 +1,5 @@
 import type { Metadata } from "next"
-import { ToolbarCreateButton } from '@/components/shared'
+import { PageSectionHeader, ToolbarCreateButton } from '@/components/shared'
 import { TreasuryMovementsClientView } from "@/features/treasury"
 
 export const metadata: Metadata = {
@@ -21,5 +21,9 @@ export default async function OperacionesPage({ searchParams }: PageProps) {
         />
     )
 
-    return <TreasuryMovementsClientView externalOpen={modalOpen} createAction={createAction} />
+    return (
+        <>
+            <PageSectionHeader title="Operaciones de Tesorería" description="Movimientos, cheques y cuentas de tesorería" />
+            <TreasuryMovementsClientView externalOpen={modalOpen} createAction={createAction} />
+        </>)
 }
