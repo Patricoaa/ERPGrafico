@@ -16,7 +16,7 @@ import { SaleOrderDrawer } from "@/features/sales/components/SaleOrderDrawer"
 
 import { useSaleOrderSearch } from "@/features/orders/hooks/useSaleOrderSearch"
 import { EmptyState } from '@/components/shared'
-import { SaleOrder } from "@/types/entities"
+import { type SaleOrder } from "@/types/entities"
 
 interface AdvancedSaleOrderSelectorProps {
     value?: string | number | null

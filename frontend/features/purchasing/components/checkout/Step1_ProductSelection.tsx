@@ -16,8 +16,8 @@ import { useVatRate } from '@/hooks/useVatRate'
 import { purchasingApi } from "../../api/purchasingApi"
 import { toast } from "sonner"
 
-import { CheckoutLine } from "../../types"
-import { ProductMinimal, UoM } from "@/types/entities"
+import { type CheckoutLine } from "../../types"
+import { type ProductMinimal, type UoM } from "@/types/entities"
 import { formatCurrency } from "@/lib/money"
 import { DataCell, MoneyDisplay, FormLineItemsTable } from '@/components/shared'
 

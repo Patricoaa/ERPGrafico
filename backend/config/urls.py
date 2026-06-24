@@ -14,37 +14,37 @@ Including another URLconf
     1. Import the include() function: from django.urls import include, path
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
-from django.contrib import admin
-from django.urls import path, include
-from rest_framework_simplejwt.views import (
-    TokenObtainPairView,
-    # TokenRefreshView, # Removed to use custom view
-)
 
 from django.conf import settings
 from django.conf.urls.static import static
-from core.views import CurrentUserView, CustomTokenRefreshView, CustomTokenObtainPairView, logout_view
+from django.contrib import admin
+from django.urls import include, path
+
+from core.views import (
+    CurrentUserView,
+    CustomTokenObtainPairView,
+    CustomTokenRefreshView,
+    logout_view,
+)
 
 urlpatterns = [
-    path('admin/', admin.site.urls),
-    path('api/accounting/', include('accounting.urls')),
-    path('api/contacts/', include('contacts.urls')),
-    path('api/sales/', include('sales.urls')),
-    path('api/inventory/', include('inventory.urls')),
-    path('api/purchasing/', include('purchasing.urls')),
-    path('api/production/', include('production.urls')),
-    path('api/treasury/', include('treasury.urls')),
-    path('api/finances/', include('finances.urls')),
-    path('api/core/', include('core.urls')),
-    path('api/billing/', include('billing.urls')),
-    path('api/workflow/', include('workflow.urls')),
-    path('api/tax/', include('tax.urls')),
-    path('api/hr/', include('hr.urls')),
-    
+    path("admin/", admin.site.urls),
+    path("api/accounting/", include("accounting.urls")),
+    path("api/contacts/", include("contacts.urls")),
+    path("api/sales/", include("sales.urls")),
+    path("api/inventory/", include("inventory.urls")),
+    path("api/purchasing/", include("purchasing.urls")),
+    path("api/production/", include("production.urls")),
+    path("api/treasury/", include("treasury.urls")),
+    path("api/finances/", include("finances.urls")),
+    path("api/core/", include("core.urls")),
+    path("api/billing/", include("billing.urls")),
+    path("api/workflow/", include("workflow.urls")),
+    path("api/tax/", include("tax.urls")),
+    path("api/hr/", include("hr.urls")),
     # Auth endpoints
-    path('api/auth/user/', CurrentUserView.as_view(), name='current-user'),
-    path('api/token/', CustomTokenObtainPairView.as_view(), name='token_obtain_pair'),
-    path('api/token/refresh/', CustomTokenRefreshView.as_view(), name='token_refresh'),
-    path('api/logout/', logout_view, name='logout'),
+    path("api/auth/user/", CurrentUserView.as_view(), name="current-user"),
+    path("api/token/", CustomTokenObtainPairView.as_view(), name="token_obtain_pair"),
+    path("api/token/refresh/", CustomTokenRefreshView.as_view(), name="token_refresh"),
+    path("api/logout/", logout_view, name="logout"),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
-

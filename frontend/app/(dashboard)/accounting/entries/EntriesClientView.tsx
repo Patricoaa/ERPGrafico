@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState, useRef, useMemo } from "react"
 import {
-    ColumnDef,
+    type ColumnDef,
 } from "@tanstack/react-table"
 
 import { toast } from "sonner"

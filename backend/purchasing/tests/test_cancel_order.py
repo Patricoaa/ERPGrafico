@@ -1,34 +1,36 @@
 """
 Tests para PurchasingService.cancel_purchase_order.
 """
-import pytest
+
 from decimal import Decimal
-from django.core.exceptions import ValidationError
+
+import pytest
 from django.contrib.auth import get_user_model
 
+from contacts.models import Contact
 from purchasing.models import PurchaseOrder
 from purchasing.services import PurchasingService
-from contacts.models import Contact
 
 User = get_user_model()
 
 
 @pytest.fixture
 def env(db):
-    user = User.objects.create_user(username='cancelpo', password='x')
+    user = User.objects.create_user(username="cancelpo", password="x")
     supplier = Contact.objects.create(
-        name='Proveedor OC', tax_id='44444444-4',
+        name="Proveedor OC",
+        tax_id="44444444-4",
     )
-    return {'user': user, 'supplier': supplier}
+    return {"user": user, "supplier": supplier}
 
 
 def _orden(env, **overrides):
     kwargs = dict(
-        number='TEST-PO-002',
-        supplier=env['supplier'],
-        total=Decimal('200000'),
-        total_net=Decimal('168067'),
-        total_tax=Decimal('31933'),
+        number="TEST-PO-002",
+        supplier=env["supplier"],
+        total=Decimal("200000"),
+        total_net=Decimal("168067"),
+        total_tax=Decimal("31933"),
     )
     kwargs.update(overrides)
     return PurchaseOrder.objects.create(**kwargs)

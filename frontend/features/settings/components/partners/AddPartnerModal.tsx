@@ -8,7 +8,7 @@ import { BaseModal, CancelButton, SubmitButton } from '@/components/shared'
 
 import { DataTable, LabeledInput, LabeledContainer, PeriodValidationDateInput, DataCell } from "@/components/shared"
 import { partnersApi } from "@/features/contacts/api/partnersApi"
-import { Partner } from "@/features/contacts/types/partner"
+import { type Partner } from "@/features/contacts/types/partner"
 import { toast } from "sonner"
 import {UserPlus, TrendingDown} from "lucide-react"
 import { AdvancedContactSelector } from "@/components/selectors/AdvancedContactSelector"

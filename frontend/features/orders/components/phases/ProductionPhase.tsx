@@ -11,7 +11,7 @@ import { useAnnulWorkOrder } from "../../hooks/useOrdersMutations"
 import { ActionConfirmModal } from '@/components/shared'
 import { saleOrderActions } from '@/features/sales/actions'
 import { purchaseOrderActions } from '@/features/purchasing/actions'
-import { Order, OrderLine, PhaseDocument, WorkOrder } from "../../types"
+import { type Order, type OrderLine, type PhaseDocument, type WorkOrder } from "../../types"
 
 interface ProductionPhaseProps {
     order: Order | null

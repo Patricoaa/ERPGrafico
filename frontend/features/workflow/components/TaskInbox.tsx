@@ -1,7 +1,7 @@
 "use client"
 import { formatPlainDate } from "@/lib/utils";
 import { useState, useEffect } from "react"
-import { getTasks, Task } from '@/features/workflow/api/workflowApi'
+import { getTasks, type Task } from '@/features/workflow/api/workflowApi'
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { TabBar, TabBarContent, type TabItem } from "@/components/shared"

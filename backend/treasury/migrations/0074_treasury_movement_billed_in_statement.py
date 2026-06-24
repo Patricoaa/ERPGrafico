@@ -5,30 +5,56 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('treasury', '0073_treasurymovement_is_billed'),
+        ("treasury", "0073_treasurymovement_is_billed"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='historicaltreasurymovement',
-            name='billed_in_statement',
-            field=models.ForeignKey(blank=True, db_constraint=False, help_text='FK al CreditCardStatement en el que se facturó este cargo. Permite listar todos los movimientos que componen un statement.', null=True, on_delete=django.db.models.deletion.DO_NOTHING, related_name='+', to='treasury.creditcardstatement', verbose_name='Facturado en Statement'),
+            model_name="historicaltreasurymovement",
+            name="billed_in_statement",
+            field=models.ForeignKey(
+                blank=True,
+                db_constraint=False,
+                help_text="FK al CreditCardStatement en el que se facturó este cargo. Permite listar todos los movimientos que componen un statement.",
+                null=True,
+                on_delete=django.db.models.deletion.DO_NOTHING,
+                related_name="+",
+                to="treasury.creditcardstatement",
+                verbose_name="Facturado en Statement",
+            ),
         ),
         migrations.AddField(
-            model_name='historicaltreasurymovement',
-            name='is_billed',
-            field=models.BooleanField(db_index=True, default=False, help_text="True si este cargo ya fue incluido en un CreditCardStatement. Movimientos no facturados aparecen en la vista de 'Cargos Pendientes'.", verbose_name='Facturado'),
+            model_name="historicaltreasurymovement",
+            name="is_billed",
+            field=models.BooleanField(
+                db_index=True,
+                default=False,
+                help_text="True si este cargo ya fue incluido en un CreditCardStatement. Movimientos no facturados aparecen en la vista de 'Cargos Pendientes'.",
+                verbose_name="Facturado",
+            ),
         ),
         migrations.AddField(
-            model_name='treasurymovement',
-            name='billed_in_statement',
-            field=models.ForeignKey(blank=True, help_text='FK al CreditCardStatement en el que se facturó este cargo. Permite listar todos los movimientos que componen un statement.', null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='billed_charges', to='treasury.creditcardstatement', verbose_name='Facturado en Statement'),
+            model_name="treasurymovement",
+            name="billed_in_statement",
+            field=models.ForeignKey(
+                blank=True,
+                help_text="FK al CreditCardStatement en el que se facturó este cargo. Permite listar todos los movimientos que componen un statement.",
+                null=True,
+                on_delete=django.db.models.deletion.SET_NULL,
+                related_name="billed_charges",
+                to="treasury.creditcardstatement",
+                verbose_name="Facturado en Statement",
+            ),
         ),
         migrations.AlterField(
-            model_name='treasurymovement',
-            name='is_billed',
-            field=models.BooleanField(db_index=True, default=False, help_text="True si este cargo ya fue incluido en un CreditCardStatement. Movimientos no facturados aparecen en la vista de 'Cargos Pendientes'.", verbose_name='Facturado'),
+            model_name="treasurymovement",
+            name="is_billed",
+            field=models.BooleanField(
+                db_index=True,
+                default=False,
+                help_text="True si este cargo ya fue incluido en un CreditCardStatement. Movimientos no facturados aparecen en la vista de 'Cargos Pendientes'.",
+                verbose_name="Facturado",
+            ),
         ),
     ]

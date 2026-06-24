@@ -4,20 +4,27 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('accounting', '0018_historicaljournalentry_is_manual_and_more'),
+        ("accounting", "0018_historicaljournalentry_is_manual_and_more"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='historicaljournalentry',
-            name='is_manual',
-            field=models.BooleanField(default=False, help_text='True si fue creado desde el formulario contable. False si fue generado automáticamente (facturación, despacho, etc.)', verbose_name='Es Manual'),
+            model_name="historicaljournalentry",
+            name="is_manual",
+            field=models.BooleanField(
+                default=False,
+                help_text="True si fue creado desde el formulario contable. False si fue generado automáticamente (facturación, despacho, etc.)",
+                verbose_name="Es Manual",
+            ),
         ),
         migrations.AlterField(
-            model_name='journalentry',
-            name='is_manual',
-            field=models.BooleanField(default=False, help_text='True si fue creado desde el formulario contable. False si fue generado automáticamente (facturación, despacho, etc.)', verbose_name='Es Manual'),
+            model_name="journalentry",
+            name="is_manual",
+            field=models.BooleanField(
+                default=False,
+                help_text="True si fue creado desde el formulario contable. False si fue generado automáticamente (facturación, despacho, etc.)",
+                verbose_name="Es Manual",
+            ),
         ),
     ]

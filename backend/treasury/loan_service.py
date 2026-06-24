@@ -16,10 +16,11 @@ Convenciones:
 
 Ver `docs/50-audit/bancos/fase-2-creditos-bancarios.md` (F2.4–F2.8).
 """
+
 from __future__ import annotations
 
 from datetime import date
-from decimal import Decimal, ROUND_HALF_UP, ROUND_HALF_EVEN
+from decimal import ROUND_HALF_EVEN, ROUND_HALF_UP, Decimal
 from typing import TYPE_CHECKING
 
 from django.core.exceptions import ValidationError
@@ -30,12 +31,13 @@ from django.utils.translation import gettext_lazy as _t
 from .models import BankLoan, LoanInstallment, TreasuryMovement
 
 if TYPE_CHECKING:
-    from accounting.models import Account
     from django.contrib.auth.models import AbstractUser
+
+    from accounting.models import Account
     from treasury.models import TreasuryAccount
 
 
-_TWO = Decimal('0.01')
+_TWO = Decimal("0.01")
 
 
 def _q(x: Decimal) -> Decimal:
@@ -50,7 +52,7 @@ def _peso(x: Decimal) -> Decimal:
     Django al persistir, de modo que la línea de cuadre (banco) sume EXACTAMENTE
     los débitos ya redondeados y el asiento cuadre en pesos enteros (cross-DB).
     """
-    return Decimal(x).quantize(Decimal('1'), rounding=ROUND_HALF_EVEN)
+    return Decimal(x).quantize(Decimal("1"), rounding=ROUND_HALF_EVEN)
 
 
 class LoanService:
@@ -79,17 +81,17 @@ class LoanService:
 
         # Tasa mensual efectiva (la cuota se calcula mes a mes).
         if loan.rate_basis == BankLoan.RateBasis.MONTHLY:
-            i = (loan.interest_rate / Decimal('100'))
+            i = loan.interest_rate / Decimal("100")
         else:  # ANNUAL
-            i = (loan.interest_rate / Decimal('100')) / Decimal('12')
+            i = (loan.interest_rate / Decimal("100")) / Decimal("12")
 
         # Validar i > 0 para evitar división por cero en fórmula francesa.
         if i <= 0:
-            i = Decimal('0')
+            i = Decimal("0")
 
         n = loan.term_months
         P = loan.principal
-        insurance = loan.insurance_monthly or Decimal('0')
+        insurance = loan.insurance_monthly or Decimal("0")
 
         rows: list[LoanInstallment] = []
         if loan.amortization_system == BankLoan.AmortizationSystem.FRENCH:
@@ -99,7 +101,7 @@ class LoanService:
 
         # Bulk create — más rápido que N saves y mantiene orden por `number`.
         LoanInstallment.objects.bulk_create(rows)
-        return list(loan.installments.order_by('number'))
+        return list(loan.installments.order_by("number"))
 
     @staticmethod
     def _french_schedule(loan, P, i, n, insurance):
@@ -115,23 +117,27 @@ class LoanService:
                 # Ajuste de redondeo en la última cuota.
                 if k == n:
                     principal = balance
-                interest = Decimal('0.00')
-                balance = (balance - principal)
-                rows.append(LoanInstallment(
-                    loan=loan, number=k, due_date=due,
-                    principal_amount=_q(principal),
-                    interest_amount=_q(interest),
-                    insurance_amount=_q(insurance),
-                    total_amount=_q(principal + interest + insurance),
-                    outstanding_balance=_q(balance),
-                    status=LoanInstallment.Status.PENDING,
-                ))
+                interest = Decimal("0.00")
+                balance = balance - principal
+                rows.append(
+                    LoanInstallment(
+                        loan=loan,
+                        number=k,
+                        due_date=due,
+                        principal_amount=_q(principal),
+                        interest_amount=_q(interest),
+                        insurance_amount=_q(insurance),
+                        total_amount=_q(principal + interest + insurance),
+                        outstanding_balance=_q(balance),
+                        status=LoanInstallment.Status.PENDING,
+                    )
+                )
             return rows
 
         # Cuota constante francesa.
         one_plus_i = Decimal(1) + i
         # C = P · i · (1+i)^n / ((1+i)^n - 1)
-        factor_n = one_plus_i ** n
+        factor_n = one_plus_i**n
         C = (P * i * factor_n) / (factor_n - Decimal(1))
         C = _q(C)
 
@@ -148,19 +154,23 @@ class LoanService:
                 if principal < 0:
                     # Tasa demasiado alta vs. seguro — el interés se come la cuota.
                     # Forzamos principal=0 (no es realista, pero no rompe).
-                    principal = Decimal('0.00')
+                    principal = Decimal("0.00")
                     C = _q(interest + insurance)
             balance = _q(balance - principal)
             due = _add_months(loan.first_due_date, k - 1)
-            rows.append(LoanInstallment(
-                loan=loan, number=k, due_date=due,
-                principal_amount=principal,
-                interest_amount=interest,
-                insurance_amount=_q(insurance),
-                total_amount=C,
-                outstanding_balance=balance,
-                status=LoanInstallment.Status.PENDING,
-            ))
+            rows.append(
+                LoanInstallment(
+                    loan=loan,
+                    number=k,
+                    due_date=due,
+                    principal_amount=principal,
+                    interest_amount=interest,
+                    insurance_amount=_q(insurance),
+                    total_amount=C,
+                    outstanding_balance=balance,
+                    status=LoanInstallment.Status.PENDING,
+                )
+            )
         return rows
 
     @staticmethod
@@ -179,15 +189,19 @@ class LoanService:
             balance = _q(balance - principal)
             due = _add_months(loan.first_due_date, k - 1)
             total = _q(principal + interest + insurance)
-            rows.append(LoanInstallment(
-                loan=loan, number=k, due_date=due,
-                principal_amount=principal,
-                interest_amount=interest,
-                insurance_amount=_q(insurance),
-                total_amount=total,
-                outstanding_balance=balance,
-                status=LoanInstallment.Status.PENDING,
-            ))
+            rows.append(
+                LoanInstallment(
+                    loan=loan,
+                    number=k,
+                    due_date=due,
+                    principal_amount=principal,
+                    interest_amount=interest,
+                    insurance_amount=_q(insurance),
+                    total_amount=total,
+                    outstanding_balance=balance,
+                    status=LoanInstallment.Status.PENDING,
+                )
+            )
         return rows
 
     # ── Desembolso (F2.5) ──────────────────────────────────────────────────
@@ -243,18 +257,12 @@ class LoanService:
 
         # Cargos de apertura: si llega override, gana. Si no, el del contrato.
         # El contrato NO se muta (preservamos el valor originalmente pactado).
-        opening_fee_contract = loan.opening_fee or Decimal('0')
-        stamp_tax_contract = loan.stamp_tax or Decimal('0')
+        opening_fee_contract = loan.opening_fee or Decimal("0")
+        stamp_tax_contract = loan.stamp_tax or Decimal("0")
         opening_fee = (
-            opening_fee_override
-            if opening_fee_override is not None
-            else opening_fee_contract
+            opening_fee_override if opening_fee_override is not None else opening_fee_contract
         )
-        stamp_tax = (
-            stamp_tax_override
-            if stamp_tax_override is not None
-            else stamp_tax_contract
-        )
+        stamp_tax = stamp_tax_override if stamp_tax_override is not None else stamp_tax_contract
         # No aceptamos cargos negativos: el operador ajusta a 0 si quiere
         # "anular" un cargo del contrato.
         if opening_fee < 0:
@@ -265,41 +273,48 @@ class LoanService:
         fee_lines: list = []
         if opening_fee > 0 or stamp_tax > 0:
             from accounting.models import AccountingSettings
+
             settings_obj = AccountingSettings.get_solo()
             # Override per-desembolso gana sobre el setting; si no, el setting.
             commission_acc = (
                 commission_expense_account
                 if commission_expense_account is not None
-                else getattr(settings_obj, 'loan_commission_expense_account', None)
+                else getattr(settings_obj, "loan_commission_expense_account", None)
             )
             stamp_acc = (
                 stamp_tax_expense_account
                 if stamp_tax_expense_account is not None
-                else getattr(settings_obj, 'loan_stamp_tax_expense_account', None)
+                else getattr(settings_obj, "loan_stamp_tax_expense_account", None)
             )
             if opening_fee > 0:
                 if not commission_acc:
-                    raise ValidationError(_t(
-                        "Configure la 'Cuenta de Gasto por Comisiones de Préstamo' en "
-                        "Configuración > Contabilidad para registrar la comisión de apertura, "
-                        "o envíela en el payload del desembolso."
-                    ))
+                    raise ValidationError(
+                        _t(
+                            "Configure la 'Cuenta de Gasto por Comisiones de Préstamo' en "
+                            "Configuración > Contabilidad para registrar la comisión de apertura, "
+                            "o envíela en el payload del desembolso."
+                        )
+                    )
                 fee_lines.append((commission_acc, opening_fee))
             if stamp_tax > 0:
                 if not stamp_acc:
-                    raise ValidationError(_t(
-                        "Configure la 'Cuenta de Gasto por Impuesto de Timbres' en "
-                        "Configuración > Contabilidad para registrar el ITE del desembolso, "
-                        "o envíela en el payload del desembolso."
-                    ))
+                    raise ValidationError(
+                        _t(
+                            "Configure la 'Cuenta de Gasto por Impuesto de Timbres' en "
+                            "Configuración > Contabilidad para registrar el ITE del desembolso, "
+                            "o envíela en el payload del desembolso."
+                        )
+                    )
                 fee_lines.append((stamp_acc, stamp_tax))
 
         net_cash = _q(loan.principal - opening_fee - stamp_tax)
         if net_cash <= 0:
-            raise ValidationError(_t(
-                "La comisión de apertura y el impuesto de timbres no pueden igualar "
-                "o superar el capital del crédito."
-            ))
+            raise ValidationError(
+                _t(
+                    "La comisión de apertura y el impuesto de timbres no pueden igualar "
+                    "o superar el capital del crédito."
+                )
+            )
 
         # Notas: documentamos el contrato original + override (si difiere)
         # para que la auditoría contable vea el ajuste en el movimiento.
@@ -313,7 +328,9 @@ class LoanService:
             notes_adjustments.append(
                 f"ITE ajustado: contrato {stamp_tax_contract} → materializado {stamp_tax}"
             )
-        notes_final = notes_base + ((" · " + " · ".join(notes_adjustments)) if notes_adjustments else "")
+        notes_final = notes_base + (
+            (" · " + " · ".join(notes_adjustments)) if notes_adjustments else ""
+        )
 
         # INBOUND al banco por el efectivo NETO, SIN auto-asiento: el flujo
         # estándar de Treasury no conoce la liability_account del préstamo y, al
@@ -346,7 +363,7 @@ class LoanService:
         )
 
         loan.status = BankLoan.Status.ACTIVE
-        loan.save(update_fields=['status', 'updated_at'])
+        loan.save(update_fields=["status", "updated_at"])
         return loan
 
     # ── Pago de cuota (F2.6 / F2.7) ────────────────────────────────────────
@@ -395,7 +412,7 @@ class LoanService:
         if loan.status != BankLoan.Status.ACTIVE:
             raise ValidationError(
                 _t("El crédito debe estar ACTIVE para pagar cuotas (estado actual: %(s)s).")
-                % {'s': loan.get_status_display()}
+                % {"s": loan.get_status_display()}
             )
         if installment.status == LoanInstallment.Status.PAID:
             raise ValidationError(_t("Esta cuota ya está pagada."))
@@ -405,22 +422,33 @@ class LoanService:
         # Resolver cuentas de gasto desde settings si no se pasan como parámetro.
         if not interest_expense_account or not insurance_expense_account:
             from accounting.models import AccountingSettings
+
             settings_obj = AccountingSettings.get_solo()
             if settings_obj:
                 if not interest_expense_account:
-                    interest_expense_account = getattr(settings_obj, 'interest_expense_account', None)
+                    interest_expense_account = getattr(
+                        settings_obj, "interest_expense_account", None
+                    )
                 if not insurance_expense_account:
-                    insurance_expense_account = getattr(settings_obj, 'insurance_expense_account', None)
+                    insurance_expense_account = getattr(
+                        settings_obj, "insurance_expense_account", None
+                    )
 
         pay_date = date or timezone.now().date()
         # Si la cuota estaba marcada OVERDUE, mantenemos la fecha de
         # vencimiento original en el asiento; solo cambia paid_at.
 
         # Usar montos del payload o defaults de la cuota
-        principal_native = principal_amount if principal_amount is not None else installment.principal_amount
-        interest_native = interest_amount if interest_amount is not None else installment.interest_amount
-        insurance_native = insurance_amount if insurance_amount is not None else installment.insurance_amount
-        tax_native = tax_amount or Decimal('0')
+        principal_native = (
+            principal_amount if principal_amount is not None else installment.principal_amount
+        )
+        interest_native = (
+            interest_amount if interest_amount is not None else installment.interest_amount
+        )
+        insurance_native = (
+            insurance_amount if insurance_amount is not None else installment.insurance_amount
+        )
+        tax_native = tax_amount or Decimal("0")
 
         principal_clp = principal_native
         interest_clp = interest_native
@@ -428,7 +456,7 @@ class LoanService:
         tax_clp = tax_native
 
         # Mora (interés penal): usar monto provisto o calcular automáticamente
-        penalty_clp = Decimal('0')
+        penalty_clp = Decimal("0")
         penalty_expense_account = None
         if penalty_amount is not None and penalty_amount > 0:
             penalty_clp = penalty_amount
@@ -437,23 +465,31 @@ class LoanService:
             if days_late > 0:
                 penalty_clp = _q(
                     installment.total_amount
-                    * (loan.penalty_rate / Decimal('100'))
-                    * Decimal(days_late) / Decimal('30')
+                    * (loan.penalty_rate / Decimal("100"))
+                    * Decimal(days_late)
+                    / Decimal("30")
                 )
 
         if penalty_clp > 0:
             from accounting.models import AccountingSettings
+
             settings_obj = AccountingSettings.get_solo()
             penalty_expense_account = (
-                getattr(settings_obj, 'loan_penalty_expense_account', None) if settings_obj else None
+                getattr(settings_obj, "loan_penalty_expense_account", None)
+                if settings_obj
+                else None
             )
             if not penalty_expense_account:
-                raise ValidationError(_t(
-                    "Configure la 'Cuenta de Gasto por Mora' en Configuración > "
-                    "Contabilidad para cobrar el interés penal de la cuota vencida."
-                ))
+                raise ValidationError(
+                    _t(
+                        "Configure la 'Cuenta de Gasto por Mora' en Configuración > "
+                        "Contabilidad para cobrar el interés penal de la cuota vencida."
+                    )
+                )
 
-        total_with_penalty = _q(principal_clp + interest_clp + insurance_clp + tax_clp + penalty_clp)
+        total_with_penalty = _q(
+            principal_clp + interest_clp + insurance_clp + tax_clp + penalty_clp
+        )
 
         # Crear movimiento OUTBOUND por el total + mora (CLP) sin auto-asiento
         # (`is_pending_registration=True`): construimos el JE manualmente con el
@@ -499,14 +535,21 @@ class LoanService:
             # Actualizar outstanding_balance de la cuota pagada
             installment.outstanding_balance = _q(installment.outstanding_balance + balance_diff)
             # Cascadear a cuotas siguientes no pagadas ni anuladas
-            subsequent = loan.installments.filter(
-                number__gt=installment.number,
-            ).exclude(
-                status__in=[LoanInstallment.Status.PAID, LoanInstallment.Status.CANCELED],
-            ).order_by('number').select_for_update()
+            subsequent = (
+                loan.installments.filter(
+                    number__gt=installment.number,
+                )
+                .exclude(
+                    status__in=[LoanInstallment.Status.PAID, LoanInstallment.Status.CANCELED],
+                )
+                .order_by("number")
+                .select_for_update()
+            )
             for inst in subsequent:
                 inst.outstanding_balance = _q(inst.outstanding_balance + balance_diff)
-                LoanInstallment.objects.filter(pk=inst.pk).update(outstanding_balance=inst.outstanding_balance)
+                LoanInstallment.objects.filter(pk=inst.pk).update(
+                    outstanding_balance=inst.outstanding_balance
+                )
 
         # Actualizar montos reales pagados en la cuota
         installment.principal_amount = principal_native
@@ -524,7 +567,7 @@ class LoanService:
         ).exists()
         if not remaining:
             loan.status = BankLoan.Status.PAID
-            loan.save(update_fields=['status', 'updated_at'])
+            loan.save(update_fields=["status", "updated_at"])
 
         return installment
 
@@ -565,7 +608,7 @@ class LoanService:
         if loan.status != BankLoan.Status.ACTIVE:
             raise ValidationError(
                 _t("Solo se puede prepagar un crédito ACTIVE (estado: %(s)s).")
-                % {'s': loan.get_status_display()}
+                % {"s": loan.get_status_display()}
             )
 
         pending = loan.installments.filter(
@@ -577,7 +620,7 @@ class LoanService:
         )
         if not pending.exists():
             loan.status = BankLoan.Status.PAID
-            loan.save(update_fields=['status', 'updated_at'])
+            loan.save(update_fields=["status", "updated_at"])
             return loan
 
         pay_date = date or timezone.now().date()
@@ -586,24 +629,25 @@ class LoanService:
         # (Los installments PAID ya tienen su principal_amount actualizado al
         # valor real si hubo override; el resto suma cero correctamente).
         from django.db.models import Sum
+
         paid_principal = loan.installments.filter(
             status=LoanInstallment.Status.PAID,
-        ).aggregate(s=Sum('principal_amount'))['s'] or Decimal('0')
+        ).aggregate(s=Sum("principal_amount"))["s"] or Decimal("0")
         outstanding = _q(loan.principal - paid_principal)
         # Interés acumulado del mes en curso sobre el saldo pendiente.
         # Para prepago, asumimos que el interés es proporcional al mes
         # en curso (1/30 por día). Esto es un cálculo conservador — los
         # bancos pueden usar otras convenciones; se documenta en F2.8.
-        from datetime import timedelta
         days_elapsed = (pay_date - _first_of_month(pay_date)).days + 1
         accrued_interest = _q(
-            sum((i.interest_amount for i in pending), Decimal('0'))
-            * Decimal(days_elapsed) / Decimal('30')
+            sum((i.interest_amount for i in pending), Decimal("0"))
+            * Decimal(days_elapsed)
+            / Decimal("30")
         )
 
         # Usar montos del payload o defaults
-        insurance_native = insurance_amount if insurance_amount is not None else Decimal('0')
-        tax_native = tax_amount or Decimal('0')
+        insurance_native = insurance_amount if insurance_amount is not None else Decimal("0")
+        tax_native = tax_amount or Decimal("0")
 
         principal_clp = outstanding
         interest_clp = accrued_interest
@@ -612,7 +656,7 @@ class LoanService:
         total_clp = _q(principal_clp + interest_clp + insurance_clp + tax_clp)
 
         # Mora: usar monto provisto o calcular automáticamente
-        penalty_clp = Decimal('0')
+        penalty_clp = Decimal("0")
         if penalty_amount is not None and penalty_amount > 0:
             penalty_clp = penalty_amount
             total_clp = _q(total_clp + penalty_clp)
@@ -652,15 +696,17 @@ class LoanService:
         # Cancelar cuotas pendientes.
         pending.update(status=LoanInstallment.Status.CANCELED)
         loan.status = BankLoan.Status.PAID
-        loan.save(update_fields=['status', 'updated_at'])
+        loan.save(update_fields=["status", "updated_at"])
         return loan
 
 
 # ── Helpers privados ───────────────────────────────────────────────────────
 
+
 def _add_months(start, k):
     """Suma `k` meses a `start`, ajustando al último día si el mes no tiene ese día."""
     import calendar
+
     year = start.year + (start.month - 1 + k) // 12
     month = (start.month - 1 + k) % 12 + 1
     day = min(start.day, calendar.monthrange(year, month)[1])
@@ -671,7 +717,9 @@ def _first_of_month(d):
     return d.replace(day=1)
 
 
-def _build_disbursement_entry(*, movement, bank_account, liability_account, principal, net_cash=None, fee_lines=None):
+def _build_disbursement_entry(
+    *, movement, bank_account, liability_account, principal, net_cash=None, fee_lines=None
+):
     """
     Construye el asiento del desembolso de un crédito (comisión/ITE neteados):
 
@@ -688,6 +736,7 @@ def _build_disbursement_entry(*, movement, bank_account, liability_account, prin
     lo vinculamos al movimiento.
     """
     from django.contrib.contenttypes.models import ContentType
+
     from accounting.models import JournalEntry, JournalItem
     from accounting.services import JournalEntryService
 
@@ -697,9 +746,7 @@ def _build_disbursement_entry(*, movement, bank_account, liability_account, prin
 
     entry = JournalEntry.objects.create(
         date=movement.date,
-        description=(
-            f"Desembolso crédito {movement.reference or ''} - {movement.notes[:120]}"
-        ),
+        description=(f"Desembolso crédito {movement.reference or ''} - {movement.notes[:120]}"),
         reference=movement.reference or f"MOV-{movement.id}",
         status=JournalEntry.Status.DRAFT,
         source_content_type=ContentType.objects.get_for_model(movement),
@@ -707,26 +754,32 @@ def _build_disbursement_entry(*, movement, bank_account, liability_account, prin
     )
     # Haber: pasivo del préstamo por el capital completo.
     JournalItem.objects.create(
-        entry=entry, account=liability_account,
-        debit=Decimal('0'), credit=principal,
+        entry=entry,
+        account=liability_account,
+        debit=Decimal("0"),
+        credit=principal,
     )
     # Debe: gastos de apertura (comisión, ITE).
-    fee_debit_whole = Decimal('0')
+    fee_debit_whole = Decimal("0")
     for fee_account, fee_amount in fee_lines:
         JournalItem.objects.create(
-            entry=entry, account=fee_account,
-            debit=fee_amount, credit=Decimal('0'),
+            entry=entry,
+            account=fee_account,
+            debit=fee_amount,
+            credit=Decimal("0"),
         )
         fee_debit_whole += _peso(fee_amount)
     # Debe: banco por el residuo (capital − gastos, ambos a peso entero) para que
     # el asiento cuadre exactamente en pesos enteros, sin descuadres de redondeo.
     JournalItem.objects.create(
-        entry=entry, account=bank_account,
-        debit=_peso(principal) - fee_debit_whole, credit=Decimal('0'),
+        entry=entry,
+        account=bank_account,
+        debit=_peso(principal) - fee_debit_whole,
+        credit=Decimal("0"),
     )
     JournalEntryService.post_entry(entry)
     movement.journal_entry = entry
-    movement.save(update_fields=['journal_entry'])
+    movement.save(update_fields=["journal_entry"])
 
 
 def _build_installment_entry(
@@ -740,9 +793,9 @@ def _build_installment_entry(
     insurance_clp,
     total_clp,
     from_account,
-    penalty_clp=Decimal('0'),
+    penalty_clp=Decimal("0"),
     penalty_expense_account=None,
-    tax_clp=Decimal('0'),
+    tax_clp=Decimal("0"),
 ):
     """
     Construye el asiento contable con el reparto explícito:
@@ -766,15 +819,14 @@ def _build_installment_entry(
     vinculamos manualmente.
     """
     from django.contrib.contenttypes.models import ContentType
+
     from accounting.models import JournalEntry, JournalItem
     from accounting.services import JournalEntryService
 
     # Construir DRAFT con la descripción y el source (el movimiento).
     entry = JournalEntry.objects.create(
         date=movement.date,
-        description=(
-            f"Pago cuota crédito {movement.reference or ''} - {movement.notes[:120]}"
-        ),
+        description=(f"Pago cuota crédito {movement.reference or ''} - {movement.notes[:120]}"),
         reference=movement.reference or f"MOV-{movement.id}",
         status=JournalEntry.Status.DRAFT,
         source_content_type=ContentType.objects.get_for_model(movement),
@@ -794,42 +846,52 @@ def _build_installment_entry(
 
     # Acumulamos el total de débitos redondeado a peso entero (como los lee el
     # libro mayor), para que la línea de cuadre (banco) cuadre exactamente.
-    debit_total_whole = Decimal('0')
+    debit_total_whole = Decimal("0")
 
     # 1) Debe: pasivo (amortización de capital — más interés/seguro si no hay cuentas + impuestos)
     JournalItem.objects.create(
-        entry=entry, account=liability_account,
-        debit=liability_debit, credit=Decimal('0'),
+        entry=entry,
+        account=liability_account,
+        debit=liability_debit,
+        credit=Decimal("0"),
     )
     debit_total_whole += _peso(liability_debit)
     # 2) Debe: gasto interés
     if interest_clp and interest_expense_account:
         JournalItem.objects.create(
-            entry=entry, account=interest_expense_account,
-            debit=interest_clp, credit=Decimal('0'),
+            entry=entry,
+            account=interest_expense_account,
+            debit=interest_clp,
+            credit=Decimal("0"),
         )
         debit_total_whole += _peso(interest_clp)
     # 3) Debe: gasto seguro
     if insurance_clp and insurance_expense_account:
         JournalItem.objects.create(
-            entry=entry, account=insurance_expense_account,
-            debit=insurance_clp, credit=Decimal('0'),
+            entry=entry,
+            account=insurance_expense_account,
+            debit=insurance_clp,
+            credit=Decimal("0"),
         )
         debit_total_whole += _peso(insurance_clp)
     # 3.5) Debe: gasto por mora (interés penal de cuota vencida)
     if penalty_clp and penalty_expense_account:
         JournalItem.objects.create(
-            entry=entry, account=penalty_expense_account,
-            debit=penalty_clp, credit=Decimal('0'),
+            entry=entry,
+            account=penalty_expense_account,
+            debit=penalty_clp,
+            credit=Decimal("0"),
         )
         debit_total_whole += _peso(penalty_clp)
     # 4) Haber: tesorería por la suma EXACTA de los débitos ya redondeados a
     # peso entero (evita descuadres de 1 peso cuando hay centavos, p. ej. mora).
     JournalItem.objects.create(
-        entry=entry, account=from_account.account,
-        debit=Decimal('0'), credit=debit_total_whole,
+        entry=entry,
+        account=from_account.account,
+        debit=Decimal("0"),
+        credit=debit_total_whole,
     )
 
     JournalEntryService.post_entry(entry)
     movement.journal_entry = entry
-    movement.save(update_fields=['journal_entry'])
+    movement.save(update_fields=["journal_entry"])

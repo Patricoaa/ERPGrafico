@@ -1,4 +1,4 @@
-import { Order, WorkOrder } from "../../orders/types"
+import { type Order, type WorkOrder } from "../../orders/types"
 export interface Contact {
     id: number
     code: string | null

@@ -1,5 +1,4 @@
-from django.db.models import Q, QuerySet, Sum, FilteredRelation, Count
-
+from django.db.models import Count, Q, QuerySet, Sum
 
 from .models import Account, AccountType, JournalEntry
 
@@ -11,20 +10,20 @@ def balance_affecting_statuses():
 def list_accounts(*, params: dict) -> QuerySet:
     """Base account list with optimized totals annotation."""
     queryset = Account.objects.all()
-    
+
     # Annotate with posted totals to avoid N+1 queries during serialization
     queryset = queryset.annotate(
         annotated_debit_total=Sum(
-            'journal_items__debit',
-            filter=Q(journal_items__entry__status__in=balance_affecting_statuses())
+            "journal_items__debit",
+            filter=Q(journal_items__entry__status__in=balance_affecting_statuses()),
         ),
         annotated_credit_total=Sum(
-            'journal_items__credit',
-            filter=Q(journal_items__entry__status__in=balance_affecting_statuses())
+            "journal_items__credit",
+            filter=Q(journal_items__entry__status__in=balance_affecting_statuses()),
         ),
-        annotated_children_count=Count('children'),
+        annotated_children_count=Count("children"),
         annotated_posted_items_count=Count(
-            'journal_items',
+            "journal_items",
             filter=Q(journal_items__entry__status__in=balance_affecting_statuses()),
             distinct=True,
         ),
@@ -66,7 +65,9 @@ def get_account_ledger(*, account: Account, start_date: str | None, end_date: st
     Computes the libro mayor for an account.
     Returns opening_balance, period_debit, period_credit, closing_balance, movements list.
     """
-    base_items = account.journal_items.filter(entry__status__in=balance_affecting_statuses()).select_related("entry")
+    base_items = account.journal_items.filter(
+        entry__status__in=balance_affecting_statuses()
+    ).select_related("entry")
 
     opening_balance = 0
     if start_date:

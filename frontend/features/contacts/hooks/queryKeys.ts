@@ -1,4 +1,4 @@
-import { ContactFilters } from '../types'
+import { type ContactFilters } from '../types'
 
 export const CONTACTS_KEYS = {
     all: ['contacts'] as const,

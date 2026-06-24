@@ -1,35 +1,52 @@
 from django.core.management.base import BaseCommand
 from django.db import transaction
-from accounting.models import Account, AccountingSettings, JournalEntry, JournalItem, Budget, BudgetItem
-from inventory.models import ProductCategory, Product, Warehouse, StockMove, UoMCategory, UoM, PricingRule
-from contacts.models import Contact
-from sales.models import SaleOrder, SaleLine, SaleDelivery, SaleDeliveryLine
-from purchasing.models import PurchaseOrder, PurchaseLine, PurchaseReceipt, PurchaseReceiptLine
-from treasury.models import TreasuryAccount, Payment
+
+from accounting.models import (
+    Account,
+    AccountingSettings,
+    Budget,
+    BudgetItem,
+    JournalEntry,
+    JournalItem,
+)
 from billing.models import Invoice
-from production.models import BillOfMaterials, BillOfMaterialsLine, WorkOrder, ProductionConsumption
+from contacts.models import Contact
+from inventory.models import (
+    PricingRule,
+    Product,
+    ProductCategory,
+    StockMove,
+    UoM,
+    UoMCategory,
+    Warehouse,
+)
+from production.models import BillOfMaterials, BillOfMaterialsLine, ProductionConsumption, WorkOrder
+from purchasing.models import PurchaseLine, PurchaseOrder, PurchaseReceipt, PurchaseReceiptLine
+from sales.models import SaleDelivery, SaleDeliveryLine, SaleLine, SaleOrder
 from tax.models import AccountingPeriod
+from treasury.models import Payment, TreasuryAccount
+
 
 class Command(BaseCommand):
-    help = 'Completely purges all data from the database'
+    help = "Completely purges all data from the database"
 
     def add_arguments(self, parser):
         parser.add_argument(
-            '--no-input',
-            action='store_true',
-            help='Do not ask for confirmation',
+            "--no-input",
+            action="store_true",
+            help="Do not ask for confirmation",
         )
 
     @transaction.atomic
     def handle(self, *args, **options):
-        if not options['no_input']:
+        if not options["no_input"]:
             confirm = input("This will DELETE ALL business and master data. Are you sure? (y/N): ")
-            if confirm.lower() != 'y':
+            if confirm.lower() != "y":
                 self.stdout.write("Operation cancelled.")
                 return
 
-        self.stdout.write(self.style.WARNING('Purging all data...'))
-        
+        self.stdout.write(self.style.WARNING("Purging all data..."))
+
         models_to_purge = [
             (ProductionConsumption, "ProductionConsumption"),
             (WorkOrder, "WorkOrder"),
@@ -67,4 +84,4 @@ class Command(BaseCommand):
             self.stdout.write(f"  Deleting {name}...")
             model.objects.all().delete()
 
-        self.stdout.write(self.style.SUCCESS('Database is now completely empty!'))
+        self.stdout.write(self.style.SUCCESS("Database is now completely empty!"))

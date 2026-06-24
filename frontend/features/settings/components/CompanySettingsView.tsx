@@ -18,11 +18,11 @@ import { useAutoSaveForm } from "@/hooks/useAutoSaveForm"
 import { useUnsavedChangesGuard } from "@/hooks/useUnsavedChangesGuard"
 
 import { resolveMediaUrl } from "@/lib/api"
-import { CompanySettings } from "@/features/settings/types"
+import { type CompanySettings } from "@/features/settings/types"
 import { contactsApi } from "@/features/contacts/api/contactsApi"
 
 import {companySchema, type CompanyFormValues } from "./CompanySettingsView.schema"
-import { Contact } from "@/features/contacts/types"
+import { type Contact } from "@/features/contacts/types"
 
 export function CompanySettingsView({ activeTab }: { activeTab: string }) {
     const { settings, isLoading, updateSettings } = useCompanySettings()

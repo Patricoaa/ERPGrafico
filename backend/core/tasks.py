@@ -1,6 +1,7 @@
 """Tareas Celery transversales del proyecto."""
-import os
+
 import logging
+import os
 from datetime import timedelta
 
 from celery import shared_task
@@ -9,27 +10,28 @@ from django.utils import timezone
 logger = logging.getLogger(__name__)
 
 
-@shared_task(name='core.tasks.ping_healthcheck')
+@shared_task(name="core.tasks.ping_healthcheck")
 def ping_healthcheck():
     """
     Envía un ping de vida a Healthchecks.io (o compatible).
     No-op si HEALTHCHECK_PING_URL no está definido.
     Ver docs/50-audit/observability/strategy.md.
     """
-    url = os.environ.get('HEALTHCHECK_PING_URL', '').strip()
+    url = os.environ.get("HEALTHCHECK_PING_URL", "").strip()
     if not url:
-        return 'disabled'
+        return "disabled"
 
     import requests
+
     try:
         requests.get(url, timeout=5)
-        return 'ok'
+        return "ok"
     except requests.RequestException as exc:
-        logger.warning('Healthcheck ping failed: %s', exc)
-        return f'error: {exc}'
+        logger.warning("Healthcheck ping failed: %s", exc)
+        return f"error: {exc}"
 
 
-@shared_task(name='core.tasks.purge_idempotency_records')
+@shared_task(name="core.tasks.purge_idempotency_records")
 def purge_idempotency_records(retention_hours: int = 24) -> int:
     """
     Borra registros de IdempotencyRecord más viejos que `retention_hours`.
@@ -44,5 +46,7 @@ def purge_idempotency_records(retention_hours: int = 24) -> int:
     cutoff = timezone.now() - timedelta(hours=retention_hours)
     deleted, _ = IdempotencyRecord.objects.filter(created_at__lt=cutoff).delete()
     if deleted:
-        logger.info('purge_idempotency_records: borrados %d registros (>%dh)', deleted, retention_hours)
+        logger.info(
+            "purge_idempotency_records: borrados %d registros (>%dh)", deleted, retention_hours
+        )
     return deleted

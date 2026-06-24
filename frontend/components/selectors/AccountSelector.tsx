@@ -14,7 +14,7 @@ import {
 import { BaseModal, DataTable, EmptyState, StatusBadge } from '@/components/shared'
 import { Input } from "@/components/ui/input"
 import { useAccountSearch, useSingleAccount } from "@/features/accounting/hooks/useAccountSearch"
-import { Account } from "@/types/entities"
+import { type Account } from "@/types/entities"
 import type { ColumnDef } from "@tanstack/react-table"
 
 interface AccountSelectorProps {

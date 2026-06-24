@@ -7,7 +7,7 @@ import { Book, ArrowUpRight, ArrowDownRight, Scale, Calculator } from "lucide-re
 import { getEntityIcon } from "@/lib/entity-registry"
 import { ActionConfirmModal, DataCell, DataTable, DataTableColumnHeader, DateRangeFilter, Drawer, IconButton, MoneyDisplay, SkeletonShell } from '@/components/shared'
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
-import { ColumnDef } from "@tanstack/react-table"
+import { type ColumnDef } from "@tanstack/react-table"
 import { Card, CardContent } from "@/components/ui/card"
 
 import { JournalEntryDrawer } from "@/features/accounting/components/JournalEntryDrawer"

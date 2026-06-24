@@ -2,7 +2,7 @@ import { showApiError } from "@/lib/errors"
 import { useQueryClient, useMutation, useQuery } from '@tanstack/react-query'
 import { contactsApi } from '../api/contactsApi'
 import { toast } from 'sonner'
-import { ContactFilters, ContactPayload, Contact } from '../types'
+import { type ContactFilters, type ContactPayload, type Contact } from '../types'
 import { SALES_KEYS } from '@/features/sales/hooks/useSalesOrders'
 import { PURCHASING_KEYS } from '@/features/purchasing/hooks/usePurchasing'
 

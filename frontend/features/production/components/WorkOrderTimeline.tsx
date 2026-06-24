@@ -6,7 +6,7 @@ import { cn, parseDateOnly } from "@/lib/utils"
 import { Clock, User, ChevronRight, Calendar } from "lucide-react"
 
 import { CardSkeleton, Chip, StatusBadge } from '@/components/shared'
-import { WorkOrder } from "../types"
+import { type WorkOrder } from "../types"
 import { formatEntityDisplay } from "@/lib/entity-registry"
 import { isWorkOrderOverdue } from "../utils"
 

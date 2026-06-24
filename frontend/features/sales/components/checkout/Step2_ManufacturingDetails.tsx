@@ -7,7 +7,7 @@ import { DataTable } from "@/components/shared"
 import { AlertCircle, Edit, CheckCircle2, Settings2 } from "lucide-react"
 import { AdvancedManufacturingDrawer } from "../forms/AdvancedManufacturingDrawer"
 
-import { SaleOrderLine } from "../../types"
+import { type SaleOrderLine } from "../../types"
 
 type ManufacturableLine = SaleOrderLine & { originalIndex: number }
 

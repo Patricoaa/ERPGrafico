@@ -1,22 +1,22 @@
 "use client"
 
-import { UoM, Product } from "@/types/entities"
+import { type UoM, type Product } from "@/types/entities"
 import {ActionConfirmModal, FormLineItemsTable, FormSection, LabeledContainer, LabeledSeparator, LabeledSwitch} from '@/components/shared'
 import { FormField } from "@/components/ui/form"
 
 import { Button } from "@/components/ui/button"
 import {TableRow, TableBody, TableCell} from "@/components/ui/table"
 import {Package, Layers, Clock, Settings2, Info, Monitor, Printer, Scissors, Trash2} from "lucide-react"
-import { UseFormReturn } from "react-hook-form"
-import { ProductFormValues } from "./schema"
-import { ProductInitialData } from "@/types/forms"
+import { type UseFormReturn } from "react-hook-form"
+import { type ProductFormValues } from "./schema"
+import { type ProductInitialData } from "@/types/forms"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { cn } from "@/lib/utils"
 import { Switch } from "@/components/ui/switch"
 
 import { useBOMs } from "@/features/production/hooks/useBOMs"
 import { BOMDrawer } from "@/features/production/components/BOMDrawer"
-import { BOM } from "@/features/production/types"
+import { type BOM } from "@/features/production/types"
 import { useState } from "react"
 import { Badge } from "@/components/ui/badge"
 import { Edit } from "lucide-react"

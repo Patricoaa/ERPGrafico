@@ -1,5 +1,6 @@
 import pytest
 from django.core.exceptions import ValidationError
+
 from production.models import WorkOrder
 from production.services import WorkOrderService
 
@@ -35,8 +36,7 @@ def test_valid_forward_transition(work_order_factory):
 def test_valid_skip_optional_stage(work_order_factory):
     """MATERIAL_ASSIGNMENT → PRESS is valid (skipping optional outsourcing+prepress)."""
     wo = work_order_factory(
-        current_stage=Stage.MATERIAL_ASSIGNMENT,
-        stage_data={'phases': {'press': True}}
+        current_stage=Stage.MATERIAL_ASSIGNMENT, stage_data={"phases": {"press": True}}
     )
     WorkOrderService.transition_to(wo, Stage.PRESS)
     wo.refresh_from_db()

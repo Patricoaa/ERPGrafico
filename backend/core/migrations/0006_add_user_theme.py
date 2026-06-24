@@ -4,20 +4,29 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('core', '0005_populate_search_index'),
+        ("core", "0005_populate_search_index"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='historicaluser',
-            name='theme',
-            field=models.CharField(choices=[('light', 'Claro'), ('dark', 'Oscuro'), ('system', 'Sistema')], default='system', help_text='Preferencia de tema visual para el usuario', max_length=10),
+            model_name="historicaluser",
+            name="theme",
+            field=models.CharField(
+                choices=[("light", "Claro"), ("dark", "Oscuro"), ("system", "Sistema")],
+                default="system",
+                help_text="Preferencia de tema visual para el usuario",
+                max_length=10,
+            ),
         ),
         migrations.AddField(
-            model_name='user',
-            name='theme',
-            field=models.CharField(choices=[('light', 'Claro'), ('dark', 'Oscuro'), ('system', 'Sistema')], default='system', help_text='Preferencia de tema visual para el usuario', max_length=10),
+            model_name="user",
+            name="theme",
+            field=models.CharField(
+                choices=[("light", "Claro"), ("dark", "Oscuro"), ("system", "Sistema")],
+                default="system",
+                help_text="Preferencia de tema visual para el usuario",
+                max_length=10,
+            ),
         ),
     ]

@@ -6,7 +6,7 @@ import { EntityCard, SmartSearchBar, useSmartSearch, SegmentationBar, useSegment
 import { treasuryAccountSearchDef } from "../searchDef"
 import { treasuryAccountSegDef } from "../segmentationDef"
 import {
-    ColumnDef
+    type ColumnDef
 } from "@tanstack/react-table"
 import { DataTableView } from '@/components/shared'
 import { DataTableColumnHeader } from '@/components/shared'

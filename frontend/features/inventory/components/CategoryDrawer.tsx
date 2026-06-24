@@ -1,7 +1,7 @@
 "use client"
 
 import React, { useState, useEffect, useRef } from "react"
-import { ProductCategory } from "@/types/entities"
+import { type ProductCategory } from "@/types/entities"
 import { cn } from "@/lib/utils"
 import { showApiError } from "@/lib/errors"
 import { useForm } from "react-hook-form"

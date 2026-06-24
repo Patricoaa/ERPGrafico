@@ -5,16 +5,19 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('accounting', '0009_accountingsettings_auto_post_reconciliation_adjustments'),
-        ('treasury', '0023_bankstatement_file_hash_and_more'),
+        ("accounting", "0009_accountingsettings_auto_post_reconciliation_adjustments"),
+        ("treasury", "0023_bankstatement_file_hash_and_more"),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
     ]
 
     operations = [
         migrations.AddConstraint(
-            model_name='bankstatementline',
-            constraint=models.UniqueConstraint(condition=models.Q(('transaction_id', ''), _negated=True), fields=('statement', 'transaction_id'), name='uniq_stmt_txnid'),
+            model_name="bankstatementline",
+            constraint=models.UniqueConstraint(
+                condition=models.Q(("transaction_id", ""), _negated=True),
+                fields=("statement", "transaction_id"),
+                name="uniq_stmt_txnid",
+            ),
         ),
     ]

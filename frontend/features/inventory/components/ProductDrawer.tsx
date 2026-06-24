@@ -1,9 +1,9 @@
 "use client"
 
-import {UoM, Product} from "@/types/entities"
+import {type UoM, type Product} from "@/types/entities"
 
 import { useState, useEffect, useMemo } from "react"
-import { useForm, FieldErrors, UseFormReturn } from "react-hook-form"
+import { useForm, type FieldErrors, type UseFormReturn } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { toast } from "sonner"
 import { resolveMediaUrl } from "../api/inventoryApi"

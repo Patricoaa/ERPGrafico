@@ -14,7 +14,7 @@ import {
 import { Button } from "@/components/ui/button"
 import { AccountSelector } from "@/components/selectors/AccountSelector"
 import { useAccountMutations } from "@/features/accounting"
-import { AccountPayload } from "@/features/accounting/types"
+import { type AccountPayload } from "@/features/accounting/types"
 import { Drawer, LabeledInput, LabeledSelect, FormFooter, CancelButton, FormSplitLayout, ActionSlideButton } from "@/components/shared"
 import { ActivitySidebar } from "@/features/audit/components"
 import { formDrawerWidth } from "@/lib/form-widths"

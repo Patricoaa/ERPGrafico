@@ -7,8 +7,8 @@ import { Chip } from "@/components/shared"
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 import { PricingUtils } from '@/features/inventory/utils/pricing'
 
-import { SaleOrderLine } from "../../types"
-import { Contact } from "@/types/entities"
+import { type SaleOrderLine } from "../../types"
+import { type Contact } from "@/types/entities"
 
 interface OrderSummaryCardProps {
     orderLines: SaleOrderLine[]

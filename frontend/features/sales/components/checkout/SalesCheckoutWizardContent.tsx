@@ -32,9 +32,9 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { useServerDate } from "@/hooks/useServerDate"
 
 import { PINPadModal } from "@/features/pos/components/PINPadModal"
-import {SaleOrder, SaleOrderLine, CheckoutDTEData, CheckoutPaymentData, CheckoutDeliveryData, CheckoutResponse, CreditApprovalTask} from "../../types"
-import { Contact } from "@/features/contacts/types"
-import { ManualTerminalNotice, ManualTerminalReason } from "@/features/treasury"
+import {type SaleOrder, type SaleOrderLine, type CheckoutDTEData, type CheckoutPaymentData, type CheckoutDeliveryData, type CheckoutResponse, type CreditApprovalTask} from "../../types"
+import { type Contact } from "@/features/contacts/types"
+import { ManualTerminalNotice, type ManualTerminalReason } from "@/features/treasury"
 
 export interface CheckoutWizardState {
     step: number

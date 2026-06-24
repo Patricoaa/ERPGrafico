@@ -5,16 +5,24 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('purchasing', '0007_purchaseorder_payment_method_ref'),
-        ('treasury', '0080_add_interest_charge_type'),
+        ("purchasing", "0007_purchaseorder_payment_method_ref"),
+        ("treasury", "0080_add_interest_charge_type"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='historicalpurchaseorder',
-            name='payment_method_ref',
-            field=models.ForeignKey(blank=True, db_constraint=False, help_text='FK a treasury.PaymentMethod. Reemplaza el campo legacy payment_method.', null=True, on_delete=django.db.models.deletion.DO_NOTHING, related_name='+', to='treasury.paymentmethod', verbose_name='Método de Pago (Ref)'),
+            model_name="historicalpurchaseorder",
+            name="payment_method_ref",
+            field=models.ForeignKey(
+                blank=True,
+                db_constraint=False,
+                help_text="FK a treasury.PaymentMethod. Reemplaza el campo legacy payment_method.",
+                null=True,
+                on_delete=django.db.models.deletion.DO_NOTHING,
+                related_name="+",
+                to="treasury.paymentmethod",
+                verbose_name="Método de Pago (Ref)",
+            ),
         ),
     ]

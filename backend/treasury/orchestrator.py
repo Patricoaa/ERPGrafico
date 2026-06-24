@@ -7,6 +7,7 @@ Responsable de:
 - Crear TreasuryMovement con cuentas correctas.
 - Detectar CHECK y derivar a CheckService.receive() / CheckService.issue().
 """
+
 from __future__ import annotations
 
 from decimal import Decimal
@@ -17,9 +18,10 @@ from django.core.exceptions import ValidationError
 from .models import TreasuryMovement
 
 if TYPE_CHECKING:
-    from .models import PaymentMethod, POSSession, Check
     from billing.models import Invoice
     from sales.models import SaleOrder
+
+    from .models import Check, PaymentMethod, POSSession
 
 
 # Mapa de conversión desde PaymentMethod.Type → TreasuryMovement.Method (legacy enum).
@@ -103,7 +105,7 @@ class PaymentOrchestrator:
                 )
 
         # ── CHECK: derivar a CheckService ────────────────────────────────
-        if pm_method_type == 'CHECK':
+        if pm_method_type == "CHECK":
             return PaymentOrchestrator._handle_check(
                 settlement=settlement,
                 amount=amount,
@@ -180,7 +182,7 @@ class PaymentOrchestrator:
     ) -> "Check":
         """
         Maneja pagos con método CHECK: crea Check + TreasuryMovement via CheckService.
-        
+
         Cuando el método es hardcodeado (sin PaymentMethod DB), settlement es None
         y el banco se resuelve exclusivamente de check_bank_id.
         """
@@ -195,6 +197,7 @@ class PaymentOrchestrator:
 
         # Fechas por defecto
         from django.utils import timezone
+
         today = timezone.now().date()
         issue_date = check_issue_date or today
         due_date = check_due_date or today
@@ -207,13 +210,13 @@ class PaymentOrchestrator:
         # Extraer counterparty_id del partner
         counterparty_id = None
         if partner is not None:
-            counterparty_id = partner.id if hasattr(partner, 'id') else partner
+            counterparty_id = partner.id if hasattr(partner, "id") else partner
 
         if movement_type == TreasuryMovement.Type.INBOUND:
             # Venta: cliente paga con cheque → receive
             check = CheckService.receive(
                 bank_id=bank_id,
-                check_number=check_number or '',
+                check_number=check_number or "",
                 amount=amount,
                 issue_date=issue_date,
                 due_date=due_date,

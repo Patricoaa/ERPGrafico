@@ -1,5 +1,5 @@
 import api from "@/lib/api"
-import { Partner, PartnerSummary, PartnerStatement, PartnerTransactionPayload, ProfitDistribution } from "../types/partner"
+import { type Partner, type PartnerSummary, type PartnerStatement, type PartnerTransactionPayload, type ProfitDistribution } from "../types/partner"
 
 export const partnersApi = {
     /**

@@ -1,4 +1,4 @@
-import { Metadata } from "next"
+import { type Metadata } from "next"
 import { PageSectionHeader, ToolbarCreateButton, FadeIn } from "@/components/shared"
 import { StatementsList } from "@/features/finance"
 

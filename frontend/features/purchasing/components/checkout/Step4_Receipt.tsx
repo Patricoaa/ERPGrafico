@@ -12,8 +12,8 @@ import {
     TableHeader,
     TableRow,
 } from "@/components/ui/table"
-import { ReceiptData, CheckoutLine, PartialReceiptLine } from "../../types"
-import { Warehouse, UoM } from "@/types/entities"
+import { type ReceiptData, type CheckoutLine, type PartialReceiptLine } from "../../types"
+import { type Warehouse, type UoM } from "@/types/entities"
 import { Package, Receipt, FileText, FileCheck } from "lucide-react"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 

@@ -10,11 +10,11 @@ import {
     ArrowDownCircle,
     Banknote
 } from "lucide-react"
-import { LabeledInput, LabeledSelect, LabeledContainer, PeriodValidationDateInput, Chip, GenericWizard, WizardStep } from "@/components/shared"
+import { LabeledInput, LabeledSelect, LabeledContainer, PeriodValidationDateInput, Chip, GenericWizard, type WizardStep } from "@/components/shared"
 import { partnersApi } from "@/features/contacts/api/partnersApi"
-import { Partner } from "@/features/contacts/types/partner"
-import { TreasuryAccount } from "@/features/treasury/types"
-import { Product } from "@/features/inventory/types"
+import { type Partner } from "@/features/contacts/types/partner"
+import { type TreasuryAccount } from "@/features/treasury/types"
+import { type Product } from "@/features/inventory/types"
 import { settingsApi } from "../../hooks"
 import { ProductSelector } from "@/components/selectors/ProductSelector"
 

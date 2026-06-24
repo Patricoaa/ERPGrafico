@@ -15,6 +15,7 @@ Este servicio:
 - ``can_destroy(bank)``: chequea dependencias ``PROTECT`` para devolver un
   mensaje legible antes de intentar el hard delete (fallback administrativo).
 """
+
 from __future__ import annotations
 
 from dataclasses import dataclass

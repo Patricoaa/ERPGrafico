@@ -5,7 +5,7 @@ import { useState, useEffect, forwardRef, useImperativeHandle, Suspense } from "
 import { cn } from "@/lib/utils"
 import { ActionConfirmModal, Chip } from '@/components/shared'
 import { ActionButton } from "./ActionButton"
-import {ActionCategory as CategoryType} from "@/types/actions"
+import {type ActionCategory as CategoryType} from "@/types/actions"
 import { getActionBadgeCount } from '@/lib/action-utils'
 import dynamic from "next/dynamic"
 import { toast } from "sonner"
@@ -34,7 +34,7 @@ import {
 import { useCancelOrderFlow } from "../hooks/useCancelOrderFlow"
 
 import { useHubPanel } from "@/components/providers/HubPanelProvider"
-import { Order, OrderLine } from "../types"
+import { type Order, type OrderLine } from "../types"
 
 interface ActionCategoryProps {
     category: CategoryType

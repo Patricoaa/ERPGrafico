@@ -4,7 +4,7 @@ import React, { useState } from "react"
 import { useRouter, useSearchParams, usePathname } from "next/navigation"
 import { EmployeeDrawer } from "@/features/hr"
 import type { Employee } from "@/types/hr"
-import { ColumnDef } from "@tanstack/react-table"
+import { type ColumnDef } from "@tanstack/react-table"
 import { DataTableView, EntityCard, StatusBadge } from '@/components/shared'
 import { DataTableColumnHeader } from '@/components/shared'
 import { DataCell } from '@/components/shared'

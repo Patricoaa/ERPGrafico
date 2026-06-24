@@ -4,16 +4,17 @@ Tests del entity bus — signal genérica + ALLOWLIST + PARENT_BROADCASTS.
 Contrato : docs/20-contracts/realtime-channels.md §"Entity Bus"
 ADR      : docs/10-architecture/adr/0026-entity-bus-realtime-invalidation.md
 """
+
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
-from core import entity_bus
 from contacts.models import Contact
-from sales.models import SaleOrder, SaleLine
-
+from core import entity_bus
+from sales.models import SaleLine, SaleOrder
 
 # ─── Fixtures ──────────────────────────────────────────────────────────────────
+
 
 @pytest.fixture
 def captured_layer(monkeypatch):
@@ -56,13 +57,11 @@ def broadcast_spy(monkeypatch):
 
 def _group_send_args(layer):
     """[(group, payload_dict), ...] from the mocked layer."""
-    return [
-        (call.args[0], call.args[1]["payload"])
-        for call in layer.group_send.call_args_list
-    ]
+    return [(call.args[0], call.args[1]["payload"]) for call in layer.group_send.call_args_list]
 
 
 # ─── _broadcast — direct unit tests ────────────────────────────────────────────
+
 
 def test_broadcast_emits_to_three_groups_when_actor_is_known(captured_layer, actor_42):
     entity_bus._broadcast(app="sales", model="saleorder", instance_id=7, op="updated")
@@ -106,13 +105,12 @@ def test_broadcast_noops_when_channel_layer_is_unconfigured(monkeypatch):
 
 # ─── Signal handlers — ALLOWLIST (SaleOrder broadcasts own topic) ─────────────
 
+
 @pytest.mark.django_db
 def test_saleorder_create_broadcasts_created(broadcast_spy, customer):
     order = SaleOrder.objects.create(customer=customer, number="NV-RT-001")
 
-    assert {
-        "app": "sales", "model": "saleorder", "id": order.id, "op": "created"
-    } in broadcast_spy
+    assert {"app": "sales", "model": "saleorder", "id": order.id, "op": "created"} in broadcast_spy
 
 
 @pytest.mark.django_db
@@ -123,9 +121,7 @@ def test_saleorder_update_broadcasts_updated(broadcast_spy, customer):
     order.number = "NV-RT-002-rev"
     order.save()
 
-    assert {
-        "app": "sales", "model": "saleorder", "id": order.id, "op": "updated"
-    } in broadcast_spy
+    assert {"app": "sales", "model": "saleorder", "id": order.id, "op": "updated"} in broadcast_spy
 
 
 @pytest.mark.django_db
@@ -136,12 +132,11 @@ def test_saleorder_delete_broadcasts_deleted(broadcast_spy, customer):
 
     order.delete()
 
-    assert {
-        "app": "sales", "model": "saleorder", "id": order_id, "op": "deleted"
-    } in broadcast_spy
+    assert {"app": "sales", "model": "saleorder", "id": order_id, "op": "deleted"} in broadcast_spy
 
 
 # ─── PARENT_BROADCASTS — SaleLine fans out as parent "updated" ────────────────
+
 
 @pytest.mark.django_db
 def test_saleline_create_broadcasts_parent_updated_and_no_own_topic(broadcast_spy, customer):
@@ -149,12 +144,14 @@ def test_saleline_create_broadcasts_parent_updated_and_no_own_topic(broadcast_sp
     broadcast_spy.clear()
 
     SaleLine.objects.create(
-        order=order, description="widget", quantity=1, unit_price=1000, subtotal=1000,
+        order=order,
+        description="widget",
+        quantity=1,
+        unit_price=1000,
+        subtotal=1000,
     )
 
-    assert {
-        "app": "sales", "model": "saleorder", "id": order.id, "op": "updated"
-    } in broadcast_spy
+    assert {"app": "sales", "model": "saleorder", "id": order.id, "op": "updated"} in broadcast_spy
     # Critical: no event for the child topic itself.
     assert all(c["model"] != "saleline" for c in broadcast_spy)
 
@@ -163,35 +160,40 @@ def test_saleline_create_broadcasts_parent_updated_and_no_own_topic(broadcast_sp
 def test_saleline_update_broadcasts_parent_updated(broadcast_spy, customer):
     order = SaleOrder.objects.create(customer=customer, number="NV-RT-005")
     line = SaleLine.objects.create(
-        order=order, description="widget", quantity=1, unit_price=1000, subtotal=1000,
+        order=order,
+        description="widget",
+        quantity=1,
+        unit_price=1000,
+        subtotal=1000,
     )
     broadcast_spy.clear()
 
     line.quantity = 2
     line.save()
 
-    assert {
-        "app": "sales", "model": "saleorder", "id": order.id, "op": "updated"
-    } in broadcast_spy
+    assert {"app": "sales", "model": "saleorder", "id": order.id, "op": "updated"} in broadcast_spy
 
 
 @pytest.mark.django_db
 def test_saleline_delete_broadcasts_parent_updated(broadcast_spy, customer):
     order = SaleOrder.objects.create(customer=customer, number="NV-RT-006")
     line = SaleLine.objects.create(
-        order=order, description="widget", quantity=1, unit_price=1000, subtotal=1000,
+        order=order,
+        description="widget",
+        quantity=1,
+        unit_price=1000,
+        subtotal=1000,
     )
     broadcast_spy.clear()
 
     line.delete()
 
-    assert {
-        "app": "sales", "model": "saleorder", "id": order.id, "op": "updated"
-    } in broadcast_spy
+    assert {"app": "sales", "model": "saleorder", "id": order.id, "op": "updated"} in broadcast_spy
     assert all(c["model"] != "saleline" for c in broadcast_spy)
 
 
 # ─── Allowlist gating — unlisted models never broadcast ───────────────────────
+
 
 @pytest.mark.django_db
 def test_unlisted_model_does_not_broadcast(broadcast_spy):
@@ -201,6 +203,7 @@ def test_unlisted_model_does_not_broadcast(broadcast_spy):
 
 
 # ─── PARENT_BROADCASTS configuration sanity ───────────────────────────────────
+
 
 def test_parent_broadcasts_targets_exist_in_allowlist():
     """Each child's parent target must itself be in ALLOWLIST — otherwise the

@@ -7,7 +7,7 @@ import {TrendingUp, Package, DollarSign, ShoppingCart} from 'lucide-react';
 import { EmptyState, MoneyDisplay, SkeletonShell, StatCard, LineChart, BarChart, PieChart } from '@/components/shared';
 ;
 import { formatCurrency } from "@/lib/money";
-import { DateRange } from "react-day-picker";
+import { type DateRange } from "react-day-picker";
 import { format } from "date-fns";
 
 import { PageContainer } from "@/components/shared"

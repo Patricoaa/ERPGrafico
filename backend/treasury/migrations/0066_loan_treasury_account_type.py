@@ -4,20 +4,45 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('treasury', '0065_remove_check_endorsed_state_and_fields'),
+        ("treasury", "0065_remove_check_endorsed_state_and_fields"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='historicaltreasuryaccount',
-            name='account_type',
-            field=models.CharField(choices=[('CHECKING', 'Cuenta Bancaria (Corriente/Vista)'), ('CREDIT_CARD', 'Tarjeta de Crédito (Cta. Propia)'), ('LOAN', 'Préstamo Bancario (Pasivo)'), ('CASH', 'Caja Física (Efectivo)'), ('BRIDGE', 'Puente'), ('CHECK_PORTFOLIO', 'Cheques en Cartera'), ('ISSUED_CHECKS', 'Cheques Girados por Pagar')], default='CASH', max_length=20, verbose_name='Tipo'),
+            model_name="historicaltreasuryaccount",
+            name="account_type",
+            field=models.CharField(
+                choices=[
+                    ("CHECKING", "Cuenta Bancaria (Corriente/Vista)"),
+                    ("CREDIT_CARD", "Tarjeta de Crédito (Cta. Propia)"),
+                    ("LOAN", "Préstamo Bancario (Pasivo)"),
+                    ("CASH", "Caja Física (Efectivo)"),
+                    ("BRIDGE", "Puente"),
+                    ("CHECK_PORTFOLIO", "Cheques en Cartera"),
+                    ("ISSUED_CHECKS", "Cheques Girados por Pagar"),
+                ],
+                default="CASH",
+                max_length=20,
+                verbose_name="Tipo",
+            ),
         ),
         migrations.AlterField(
-            model_name='treasuryaccount',
-            name='account_type',
-            field=models.CharField(choices=[('CHECKING', 'Cuenta Bancaria (Corriente/Vista)'), ('CREDIT_CARD', 'Tarjeta de Crédito (Cta. Propia)'), ('LOAN', 'Préstamo Bancario (Pasivo)'), ('CASH', 'Caja Física (Efectivo)'), ('BRIDGE', 'Puente'), ('CHECK_PORTFOLIO', 'Cheques en Cartera'), ('ISSUED_CHECKS', 'Cheques Girados por Pagar')], default='CASH', max_length=20, verbose_name='Tipo'),
+            model_name="treasuryaccount",
+            name="account_type",
+            field=models.CharField(
+                choices=[
+                    ("CHECKING", "Cuenta Bancaria (Corriente/Vista)"),
+                    ("CREDIT_CARD", "Tarjeta de Crédito (Cta. Propia)"),
+                    ("LOAN", "Préstamo Bancario (Pasivo)"),
+                    ("CASH", "Caja Física (Efectivo)"),
+                    ("BRIDGE", "Puente"),
+                    ("CHECK_PORTFOLIO", "Cheques en Cartera"),
+                    ("ISSUED_CHECKS", "Cheques Girados por Pagar"),
+                ],
+                default="CASH",
+                max_length=20,
+                verbose_name="Tipo",
+            ),
         ),
     ]

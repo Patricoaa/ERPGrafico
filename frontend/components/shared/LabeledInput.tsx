@@ -1,6 +1,6 @@
 "use client"
 
-import { forwardRef, InputHTMLAttributes, TextareaHTMLAttributes } from "react"
+import { forwardRef, type InputHTMLAttributes, type TextareaHTMLAttributes } from "react"
 import { cn } from "@/lib/utils"
 
 // ─────────────────────────────────────────────────────────────

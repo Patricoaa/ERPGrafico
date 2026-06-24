@@ -2,19 +2,19 @@
 
 import React, { useEffect, useCallback } from "react"
 import { DataTable, BulkActionDock, ActionDock, Chip, DataCell, Drawer, AutoSaveStatusBadge, SkeletonShell } from '@/components/shared'
-import { ColumnDef } from "@tanstack/react-table"
+import { type ColumnDef } from "@tanstack/react-table"
 import { useForm, Controller } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
 
 import { SlidersHorizontal, AlertCircle, Tag } from "lucide-react"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { useAccountMappings, MappingType } from "@/features/finance/hooks/useAccountMappings"
+import { useAccountMappings, type MappingType } from "@/features/finance/hooks/useAccountMappings"
 import {
     IS_CATEGORIES,
     CF_CATEGORIES,
     BS_CATEGORIES,
-    Account
+    type Account
 } from "@/features/accounting/types"
 import { Checkbox } from "@/components/ui/checkbox"
 import { cn } from "@/lib/utils"

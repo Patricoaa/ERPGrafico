@@ -14,7 +14,7 @@ import { DataTableColumnHeader } from '@/components/shared'
 import {DataCell} from '@/components/shared'
 import { posTerminalActions, type PosTerminalActionsCtx } from "@/features/sales/posTerminalActions"
 import { terminalPosSegDef } from "@/features/pos"
-import { ColumnDef } from "@tanstack/react-table"
+import { type ColumnDef } from "@tanstack/react-table"
 import { Plus, MapPin, Smartphone, Banknote, CreditCard, Landmark, FileCheck, MoreHorizontal } from "lucide-react"
 
 import { useConfirmAction } from "@/hooks/useConfirmAction"

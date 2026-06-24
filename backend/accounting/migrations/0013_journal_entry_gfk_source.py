@@ -5,31 +5,42 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('accounting', '0012_historicalaccount_created_at_and_more'),
-        ('contenttypes', '0002_remove_content_type_name'),
+        ("accounting", "0012_historicalaccount_created_at_and_more"),
+        ("contenttypes", "0002_remove_content_type_name"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='historicaljournalentry',
-            name='source_content_type',
-            field=models.ForeignKey(blank=True, db_constraint=False, null=True, on_delete=django.db.models.deletion.DO_NOTHING, related_name='+', to='contenttypes.contenttype'),
+            model_name="historicaljournalentry",
+            name="source_content_type",
+            field=models.ForeignKey(
+                blank=True,
+                db_constraint=False,
+                null=True,
+                on_delete=django.db.models.deletion.DO_NOTHING,
+                related_name="+",
+                to="contenttypes.contenttype",
+            ),
         ),
         migrations.AddField(
-            model_name='historicaljournalentry',
-            name='source_object_id',
+            model_name="historicaljournalentry",
+            name="source_object_id",
             field=models.PositiveIntegerField(blank=True, null=True),
         ),
         migrations.AddField(
-            model_name='journalentry',
-            name='source_content_type',
-            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, to='contenttypes.contenttype'),
+            model_name="journalentry",
+            name="source_content_type",
+            field=models.ForeignKey(
+                blank=True,
+                null=True,
+                on_delete=django.db.models.deletion.SET_NULL,
+                to="contenttypes.contenttype",
+            ),
         ),
         migrations.AddField(
-            model_name='journalentry',
-            name='source_object_id',
+            model_name="journalentry",
+            name="source_object_id",
             field=models.PositiveIntegerField(blank=True, null=True),
         ),
     ]

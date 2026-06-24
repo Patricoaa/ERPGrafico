@@ -10,7 +10,7 @@ import {
     CheckCircle2,
 } from "lucide-react"
 import { CardActions, CardSkeleton, Chip, Skeleton, StatusBadge } from "@/components/shared"
-import { WorkOrder } from "../types"
+import { type WorkOrder } from "../types"
 import { formatEntityDisplay } from "@/lib/entity-registry"
 import { STAGES_ORDERED } from "../constants/stages"
 import { isWorkOrderOverdue } from "../utils"

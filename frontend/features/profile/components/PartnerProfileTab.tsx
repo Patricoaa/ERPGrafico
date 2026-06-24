@@ -16,8 +16,8 @@ import {
     Building2,
     Eye
 } from "lucide-react"
-import { ColumnDef } from "@tanstack/react-table"
-import { PartnerTransaction } from "@/features/contacts/types/partner"
+import { type ColumnDef } from "@tanstack/react-table"
+import { type PartnerTransaction } from "@/features/contacts/types/partner"
 import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "@/components/ui/accordion"
 
 import { cn } from "@/lib/utils"

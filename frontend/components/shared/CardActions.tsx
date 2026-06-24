@@ -1,6 +1,6 @@
 "use client"
 
-import { ReactNode, HTMLAttributes } from "react"
+import { type ReactNode, type HTMLAttributes } from "react"
 import { cn } from "@/lib/utils"
 import { DataCell, type ActionMenuItem } from "./DataTableCells"
 import type { RowActionKey } from "@/lib/row-actions"

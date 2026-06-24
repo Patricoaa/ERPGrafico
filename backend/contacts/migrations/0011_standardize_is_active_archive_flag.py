@@ -4,20 +4,29 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('contacts', '0010_contact_roles_historicalcontact_roles'),
+        ("contacts", "0010_contact_roles_historicalcontact_roles"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='contact',
-            name='is_active',
-            field=models.BooleanField(db_index=True, default=True, help_text='Desactivar para archivar el contacto; los documentos históricos lo siguen referenciando.', verbose_name='Activo'),
+            model_name="contact",
+            name="is_active",
+            field=models.BooleanField(
+                db_index=True,
+                default=True,
+                help_text="Desactivar para archivar el contacto; los documentos históricos lo siguen referenciando.",
+                verbose_name="Activo",
+            ),
         ),
         migrations.AddField(
-            model_name='historicalcontact',
-            name='is_active',
-            field=models.BooleanField(db_index=True, default=True, help_text='Desactivar para archivar el contacto; los documentos históricos lo siguen referenciando.', verbose_name='Activo'),
+            model_name="historicalcontact",
+            name="is_active",
+            field=models.BooleanField(
+                db_index=True,
+                default=True,
+                help_text="Desactivar para archivar el contacto; los documentos históricos lo siguen referenciando.",
+                verbose_name="Activo",
+            ),
         ),
     ]

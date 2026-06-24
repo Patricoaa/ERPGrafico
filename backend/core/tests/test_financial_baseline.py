@@ -25,6 +25,7 @@ Ver: docs/50-audit/Arquitectura Django/50-testing-strategy.md
      docs/50-audit/Arquitectura Django/20-task-list.md (T-56)
      core/tests/SNAPSHOTS.md (operación)
 """
+
 from __future__ import annotations
 
 import json
@@ -35,20 +36,19 @@ from pathlib import Path
 
 from django.test import TestCase
 
+from contacts.selectors import (
+    customer_aging_report,
+    supplier_aging_report,
+)
 from core.tests.fixtures.financial_baseline import (
     END_DATE,
     START_DATE,
     YEAR,
     build_baseline_dataset,
 )
-from contacts.selectors import (
-    customer_aging_report,
-    supplier_aging_report,
-)
 
-
-SNAPSHOT_DIR = Path(__file__).parent / 'snapshots'
-UPDATE_SNAPSHOTS = os.environ.get('UPDATE_SNAPSHOTS', '').strip() in {'1', 'true', 'TRUE'}
+SNAPSHOT_DIR = Path(__file__).parent / "snapshots"
+UPDATE_SNAPSHOTS = os.environ.get("UPDATE_SNAPSHOTS", "").strip() in {"1", "true", "TRUE"}
 
 
 def _json_default(obj):
@@ -58,7 +58,7 @@ def _json_default(obj):
         return str(obj)
     if isinstance(obj, date):
         return obj.isoformat()
-    raise TypeError(f'Type {type(obj)} not serialisable')
+    raise TypeError(f"Type {type(obj)} not serialisable")
 
 
 def _normalise(payload):
@@ -76,7 +76,7 @@ def _normalise(payload):
     """
     if isinstance(payload, dict):
         return {
-            k: ('<id>' if k in {'id', 'entry_id', 'contact_id'} else _normalise(v))
+            k: ("<id>" if k in {"id", "entry_id", "contact_id"} else _normalise(v))
             for k, v in payload.items()
         }
     if isinstance(payload, list):
@@ -104,7 +104,7 @@ class _SnapshotMixin:
 
     def assertSnapshot(self, name: str, actual):  # noqa: N802
         SNAPSHOT_DIR.mkdir(exist_ok=True)
-        path = SNAPSHOT_DIR / f'{name}.json'
+        path = SNAPSHOT_DIR / f"{name}.json"
 
         normalised = _normalise(actual)
         serialised = json.dumps(
@@ -116,24 +116,24 @@ class _SnapshotMixin:
         )
 
         if UPDATE_SNAPSHOTS:
-            path.write_text(serialised + '\n', encoding='utf-8')
+            path.write_text(serialised + "\n", encoding="utf-8")
             return  # Generation mode — never asserts, never skips.
 
         if not path.exists():
             self.fail(
-                f'Snapshot {name!r} no encontrado en {path}.\n'
-                f'  Ejecuta primero: UPDATE_SNAPSHOTS=1 ./manage.py test '
-                f'core.tests.test_financial_baseline'
+                f"Snapshot {name!r} no encontrado en {path}.\n"
+                f"  Ejecuta primero: UPDATE_SNAPSHOTS=1 ./manage.py test "
+                f"core.tests.test_financial_baseline"
             )
 
-        expected = path.read_text(encoding='utf-8').rstrip('\n')
+        expected = path.read_text(encoding="utf-8").rstrip("\n")
         if serialised != expected:
             self.fail(
-                f'Snapshot mismatch para {name!r}.\n'
-                f'  Esperado ({len(expected)} chars) en {path}\n'
-                f'  Obtenido ({len(serialised)} chars).\n'
-                f'  Si el cambio es intencional, regenera con '
-                f'UPDATE_SNAPSHOTS=1 y revisa el diff JSON en el PR.'
+                f"Snapshot mismatch para {name!r}.\n"
+                f"  Esperado ({len(expected)} chars) en {path}\n"
+                f"  Obtenido ({len(serialised)} chars).\n"
+                f"  Si el cambio es intencional, regenera con "
+                f"UPDATE_SNAPSHOTS=1 y revisa el diff JSON en el PR."
             )
 
 
@@ -163,32 +163,36 @@ class FinancialBaselineTests(_SnapshotMixin, TestCase):
 
     def test_balance_sheet(self):
         from finances.services import FinanceService
+
         report = FinanceService.get_balance_sheet(end_date=END_DATE)
-        self.assertSnapshot('balance_sheet', report)
+        self.assertSnapshot("balance_sheet", report)
 
     def test_income_statement(self):
         from finances.services import FinanceService
+
         report = FinanceService.get_income_statement(
             start_date=START_DATE,
             end_date=END_DATE,
         )
-        self.assertSnapshot('income_statement', report)
+        self.assertSnapshot("income_statement", report)
 
     def test_cash_flow(self):
         from finances.services import FinanceService
+
         report = FinanceService.get_cash_flow(
             start_date=START_DATE,
             end_date=END_DATE,
         )
-        self.assertSnapshot('cash_flow', report)
+        self.assertSnapshot("cash_flow", report)
 
     def test_trial_balance(self):
         from finances.services import FinanceService
+
         report = FinanceService.get_trial_balance(
             start_date=START_DATE,
             end_date=END_DATE,
         )
-        self.assertSnapshot('trial_balance', report)
+        self.assertSnapshot("trial_balance", report)
 
     # ----- Mayor (Libro Mayor) por cuenta hoja con movimientos -----
 
@@ -203,10 +207,9 @@ class FinancialBaselineTests(_SnapshotMixin, TestCase):
 
         # Solo cuentas hoja con journal items (evita generar 100 snapshots vacíos)
         leaf_accounts_with_movement = (
-            Account.objects
-            .filter(children__isnull=True, journal_items__isnull=False)
+            Account.objects.filter(children__isnull=True, journal_items__isnull=False)
             .distinct()
-            .order_by('code')
+            .order_by("code")
         )
 
         for account in leaf_accounts_with_movement:
@@ -216,18 +219,19 @@ class FinancialBaselineTests(_SnapshotMixin, TestCase):
                 end_date=END_DATE.isoformat(),
             )
             # Code de la cuenta como nombre de snapshot, sanitizado
-            safe_code = account.code.replace('.', '_')
-            self.assertSnapshot(f'ledger_{safe_code}', report)
+            safe_code = account.code.replace(".", "_")
+            self.assertSnapshot(f"ledger_{safe_code}", report)
 
     # ----- Análisis financiero (ratios) -----
 
     def test_financial_analysis_ratios(self):
         from finances.services import FinanceService
+
         report = FinanceService.get_financial_analysis(
             start_date=START_DATE,
             end_date=END_DATE,
         )
-        self.assertSnapshot('financial_analysis', report)
+        self.assertSnapshot("financial_analysis", report)
 
 
 class FinancialBaselineQuarterlyTests(_SnapshotMixin, TestCase):
@@ -242,42 +246,48 @@ class FinancialBaselineQuarterlyTests(_SnapshotMixin, TestCase):
 
     def test_balance_sheet_q1(self):
         from finances.services import FinanceService
+
         report = FinanceService.get_balance_sheet(end_date=date(YEAR, 3, 31))
-        self.assertSnapshot('balance_sheet_q1', report)
+        self.assertSnapshot("balance_sheet_q1", report)
 
     def test_balance_sheet_q2(self):
         from finances.services import FinanceService
+
         report = FinanceService.get_balance_sheet(end_date=date(YEAR, 6, 30))
-        self.assertSnapshot('balance_sheet_q2', report)
+        self.assertSnapshot("balance_sheet_q2", report)
 
     def test_balance_sheet_q3(self):
         from finances.services import FinanceService
+
         report = FinanceService.get_balance_sheet(end_date=date(YEAR, 9, 30))
-        self.assertSnapshot('balance_sheet_q3', report)
+        self.assertSnapshot("balance_sheet_q3", report)
 
     def test_income_statement_h1(self):
         from finances.services import FinanceService
+
         report = FinanceService.get_income_statement(
             start_date=date(YEAR, 1, 1),
             end_date=date(YEAR, 6, 30),
         )
-        self.assertSnapshot('income_statement_h1', report)
+        self.assertSnapshot("income_statement_h1", report)
 
     def test_income_statement_h2(self):
         from finances.services import FinanceService
+
         report = FinanceService.get_income_statement(
             start_date=date(YEAR, 7, 1),
             end_date=date(YEAR, 12, 31),
         )
-        self.assertSnapshot('income_statement_h2', report)
+        self.assertSnapshot("income_statement_h2", report)
 
     def test_cash_flow_q4(self):
         from finances.services import FinanceService
+
         report = FinanceService.get_cash_flow(
             start_date=date(YEAR, 10, 1),
             end_date=date(YEAR, 12, 31),
         )
-        self.assertSnapshot('cash_flow_q4', report)
+        self.assertSnapshot("cash_flow_q4", report)
 
 
 class FinancialBaselineAgingTests(_SnapshotMixin, TestCase):
@@ -313,19 +323,30 @@ class FinancialBaselineAgingTests(_SnapshotMixin, TestCase):
         report = customer_aging_report(cutoff_date=END_DATE, limit=20)
         self.assertIsInstance(report, list)
         # Hay 5 clientes en el dataset; los que tienen CONFIRMED tienen saldo
-        self.assertGreater(len(report), 0, 'Se esperan clientes con saldo pendiente')
+        self.assertGreater(len(report), 0, "Se esperan clientes con saldo pendiente")
         # Cada entrada tiene la estructura correcta
         if report:
             first = report[0]
-            for key in ('name', 'tax_id', 'credit_days', 'current',
-                        'overdue_30', 'overdue_60', 'overdue_90',
-                        'overdue_90plus', 'total'):
-                self.assertIn(key, first, f'Falta clave {key!r} en customer_aging')
+            for key in (
+                "name",
+                "tax_id",
+                "credit_days",
+                "current",
+                "overdue_30",
+                "overdue_60",
+                "overdue_90",
+                "overdue_90plus",
+                "total",
+            ):
+                self.assertIn(key, first, f"Falta clave {key!r} en customer_aging")
             # Ordenado descendente por total
-            totals = [r['total'] for r in report]
-            self.assertEqual(totals, sorted(totals, reverse=True),
-                             'customer_aging debe estar ordenado por total desc')
-        self.assertSnapshot('customer_aging', report)
+            totals = [r["total"] for r in report]
+            self.assertEqual(
+                totals,
+                sorted(totals, reverse=True),
+                "customer_aging debe estar ordenado por total desc",
+            )
+        self.assertSnapshot("customer_aging", report)
 
     def test_supplier_aging(self):
         """
@@ -337,14 +358,25 @@ class FinancialBaselineAgingTests(_SnapshotMixin, TestCase):
         """
         report = supplier_aging_report(cutoff_date=END_DATE, limit=20)
         self.assertIsInstance(report, list)
-        self.assertGreater(len(report), 0, 'Se esperan proveedores con saldo pendiente')
+        self.assertGreater(len(report), 0, "Se esperan proveedores con saldo pendiente")
         if report:
             first = report[0]
-            for key in ('name', 'tax_id', 'credit_days', 'current',
-                        'overdue_30', 'overdue_60', 'overdue_90',
-                        'overdue_90plus', 'total'):
-                self.assertIn(key, first, f'Falta clave {key!r} en supplier_aging')
-            totals = [r['total'] for r in report]
-            self.assertEqual(totals, sorted(totals, reverse=True),
-                             'supplier_aging debe estar ordenado por total desc')
-        self.assertSnapshot('supplier_aging', report)
+            for key in (
+                "name",
+                "tax_id",
+                "credit_days",
+                "current",
+                "overdue_30",
+                "overdue_60",
+                "overdue_90",
+                "overdue_90plus",
+                "total",
+            ):
+                self.assertIn(key, first, f"Falta clave {key!r} en supplier_aging")
+            totals = [r["total"] for r in report]
+            self.assertEqual(
+                totals,
+                sorted(totals, reverse=True),
+                "supplier_aging debe estar ordenado por total desc",
+            )
+        self.assertSnapshot("supplier_aging", report)

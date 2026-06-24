@@ -4,7 +4,7 @@ import { useState, useEffect } from "react"
 import { useGroups } from "../hooks"
 import { ActionConfirmModal, DataTableView, EntityCard } from '@/components/shared'
 import { DataTableColumnHeader } from '@/components/shared'
-import { ColumnDef } from "@tanstack/react-table"
+import { type ColumnDef } from "@tanstack/react-table"
 import { Users } from "lucide-react"
 import { GroupDrawer } from "@/features/users/components/GroupDrawer"
 import { groupActions, type GroupActionsCtx } from './groupActions'

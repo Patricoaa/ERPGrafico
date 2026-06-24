@@ -9,7 +9,7 @@ import { PaymentModal } from "@/features/treasury"
 import type { SalaryAdvance, Employee, Payroll } from "@/types/hr"
 import { DataTableView, DataTableColumnHeader } from '@/components/shared'
 import { DataCell, EntityCard } from '@/components/shared'
-import { ColumnDef } from "@tanstack/react-table"
+import { type ColumnDef } from "@tanstack/react-table"
 
 import { ToolbarCreateButton, SegmentationBar, useSegmentation, SmartSearchBar, useClientSearch } from "@/components/shared"
 import { useSalaryAdvances, salaryAdvanceActions, type SalaryAdvanceActionsCtx } from "@/features/hr"

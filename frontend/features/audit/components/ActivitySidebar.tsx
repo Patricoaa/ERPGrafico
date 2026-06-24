@@ -3,7 +3,7 @@
 import React from "react"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Loader2, Plus, Edit, Trash2, User, Clock, ArrowRight, ChevronDown } from "lucide-react"
-import { HistoricalRecord } from "@/types/audit"
+import { type HistoricalRecord } from "@/types/audit"
 import { formatDistanceToNow } from "date-fns"
 import { es } from "date-fns/locale"
 import { cn } from "@/lib/utils"

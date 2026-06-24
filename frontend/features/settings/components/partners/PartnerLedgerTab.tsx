@@ -14,7 +14,7 @@ import { TableRow, TableCell } from "@/components/ui/table"
 
 import { DataCell } from "@/components/shared"
 import { partnersApi } from "@/features/contacts/api/partnersApi"
-import { Partner, PartnerTransaction } from "@/features/contacts/types/partner"
+import { type Partner, type PartnerTransaction } from "@/features/contacts/types/partner"
 import { toast } from "sonner"
 import {formatPlainDate as formatDate, parseDateOnly} from "@/lib/utils"
 import {
@@ -23,7 +23,7 @@ import {
 import { PartnerContributionWizard } from "@/features/settings/components/partners/PartnerContributionWizard"
 import { PartnerWithdrawalWizard } from "@/features/settings/components/partners/PartnerWithdrawalWizard"
 import { DataTable, SegmentationBar, useSegmentation } from '@/components/shared'
-import { ColumnDef } from "@tanstack/react-table"
+import { type ColumnDef } from "@tanstack/react-table"
 
 const TRANSACTION_TYPE_OPTIONS = [
     { value: "SUBSCRIPTION", label: "Suscripción de Capital" },

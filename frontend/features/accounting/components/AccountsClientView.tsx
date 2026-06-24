@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef } from "react"
 import {
-    ColumnDef
+    type ColumnDef
 } from "@tanstack/react-table"
 import { ActionConfirmModal, DataTable, StatusBadge } from '@/components/shared'
 import { DataTableColumnHeader } from '@/components/shared'
@@ -11,7 +11,7 @@ import { IconButton } from "@/components/shared"
 import { AccountDrawer } from "@/features/finance/components/AccountDrawer"
 import { LedgerDrawer } from "@/features/accounting/components/LedgerDrawer"
 import { useAccounts } from "@/features/accounting/hooks/useAccounts"
-import { Account } from "@/features/accounting/types"
+import { type Account } from "@/features/accounting/types"
 import { DataCell } from '@/components/shared'
 import { accountActions, type AccountActionsCtx } from './accountActions'
 

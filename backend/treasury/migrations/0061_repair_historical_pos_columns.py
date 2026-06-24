@@ -12,7 +12,7 @@ from django.db import migrations
 
 
 def repair_historical_columns(apps, schema_editor):
-    if schema_editor.connection.vendor != 'postgresql':
+    if schema_editor.connection.vendor != "postgresql":
         return
     schema_editor.execute(
         'ALTER TABLE "treasury_historicalposterminal" '
@@ -25,9 +25,8 @@ def repair_historical_columns(apps, schema_editor):
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('treasury', '0060_pos_terminal_allows_check_pos_session_total_check_sales'),
+        ("treasury", "0060_pos_terminal_allows_check_pos_session_total_check_sales"),
     ]
 
     operations = [

@@ -26,35 +26,40 @@ def list_products(*, user, params: dict) -> QuerySet:
     """
     from production.models import BillOfMaterials, BillOfMaterialsLine
 
-    queryset = Product.objects.select_related(
-        "category",
-        "uom",
-        "sale_uom",
-        "purchase_uom",
-        "receiving_warehouse",
-        "preferred_supplier",
-        "subscription_supplier",
-    ).prefetch_related(
-        "attribute_values",
-        "attribute_values__attribute",
-        "allowed_sale_uoms",
-        "attachments",
-        Prefetch("variants", queryset=Product.objects.filter(is_active=True).select_related("uom").prefetch_related("attribute_values", "attribute_values__attribute"))
-    ).annotate(
-        annotated_current_stock=Sum("stock_moves__quantity"),
-        variants_count=Count("variants"),
+    queryset = (
+        Product.objects.select_related(
+            "category",
+            "uom",
+            "sale_uom",
+            "purchase_uom",
+            "receiving_warehouse",
+            "preferred_supplier",
+            "subscription_supplier",
+        )
+        .prefetch_related(
+            "attribute_values",
+            "attribute_values__attribute",
+            "allowed_sale_uoms",
+            "attachments",
+            Prefetch(
+                "variants",
+                queryset=Product.objects.filter(is_active=True)
+                .select_related("uom")
+                .prefetch_related("attribute_values", "attribute_values__attribute"),
+            ),
+        )
+        .annotate(
+            annotated_current_stock=Sum("stock_moves__quantity"),
+            variants_count=Count("variants"),
+        )
     )
 
     if user and user.is_authenticated:
         queryset = queryset.annotate(
-            is_favorite=Exists(
-                ProductFavorite.objects.filter(user=user, product=OuterRef("id"))
-            )
+            is_favorite=Exists(ProductFavorite.objects.filter(user=user, product=OuterRef("id")))
         )
     else:
-        queryset = queryset.annotate(
-            is_favorite=Value(False, output_field=BooleanField())
-        )
+        queryset = queryset.annotate(is_favorite=Value(False, output_field=BooleanField()))
 
     active_param = params.get("is_active")
     if active_param == "all":
@@ -91,8 +96,7 @@ def list_products(*, user, params: dict) -> QuerySet:
 
     # Sorting
     if params.get("sort") == "popular":
-        from django.db.models import Q
-        from sales.models import SaleOrder, SaleLine
+        from sales.models import SaleLine, SaleOrder
 
         sales_subquery = (
             SaleLine.objects.filter(
@@ -108,9 +112,7 @@ def list_products(*, user, params: dict) -> QuerySet:
             .values("count")
         )
         queryset = queryset.annotate(
-            sales_count=Coalesce(
-                Subquery(sales_subquery), Value(0), output_field=IntegerField()
-            )
+            sales_count=Coalesce(Subquery(sales_subquery), Value(0), output_field=IntegerField())
         ).order_by("-is_favorite", "-sales_count", "name")
     else:
         queryset = queryset.order_by("-is_favorite", "-id")
@@ -123,35 +125,40 @@ def get_product_base_queryset(*, user) -> QuerySet:
     Fully annotated queryset with no active filter.
     Used for detail/update/delete so archived products are accessible.
     """
-    queryset = Product.objects.select_related(
-        "category",
-        "uom",
-        "sale_uom",
-        "purchase_uom",
-        "receiving_warehouse",
-        "preferred_supplier",
-        "subscription_supplier",
-    ).prefetch_related(
-        "attribute_values",
-        "attribute_values__attribute",
-        "allowed_sale_uoms",
-        "attachments",
-        Prefetch("variants", queryset=Product.objects.filter(is_active=True).select_related("uom").prefetch_related("attribute_values", "attribute_values__attribute"))
-    ).annotate(
-        annotated_current_stock=Sum("stock_moves__quantity"),
-        variants_count=Count("variants"),
+    queryset = (
+        Product.objects.select_related(
+            "category",
+            "uom",
+            "sale_uom",
+            "purchase_uom",
+            "receiving_warehouse",
+            "preferred_supplier",
+            "subscription_supplier",
+        )
+        .prefetch_related(
+            "attribute_values",
+            "attribute_values__attribute",
+            "allowed_sale_uoms",
+            "attachments",
+            Prefetch(
+                "variants",
+                queryset=Product.objects.filter(is_active=True)
+                .select_related("uom")
+                .prefetch_related("attribute_values", "attribute_values__attribute"),
+            ),
+        )
+        .annotate(
+            annotated_current_stock=Sum("stock_moves__quantity"),
+            variants_count=Count("variants"),
+        )
     )
 
     if user and user.is_authenticated:
         queryset = queryset.annotate(
-            is_favorite=Exists(
-                ProductFavorite.objects.filter(user=user, product=OuterRef("id"))
-            )
+            is_favorite=Exists(ProductFavorite.objects.filter(user=user, product=OuterRef("id")))
         )
     else:
-        queryset = queryset.annotate(
-            is_favorite=Value(False, output_field=BooleanField())
-        )
+        queryset = queryset.annotate(is_favorite=Value(False, output_field=BooleanField()))
 
     return queryset
 
@@ -162,6 +169,7 @@ def get_stock_report_data() -> list[dict]:
     Called by stock_report action; result is Redis-cached upstream.
     """
     from decimal import Decimal
+
     from django.db.models import Q
 
     products = Product.objects.filter(

@@ -2,7 +2,7 @@
 
 import { QueryClientProvider } from '@tanstack/react-query'
 import { queryClient } from '@/lib/react-query'
-import { ReactNode, Suspense } from 'react'
+import { type ReactNode, Suspense } from 'react'
 import { BrandingProvider } from '@/contexts/BrandingProvider'
 import { SkeletonShell } from '@/components/shared'
 import { NuqsAdapter } from 'nuqs/adapters/next/app'

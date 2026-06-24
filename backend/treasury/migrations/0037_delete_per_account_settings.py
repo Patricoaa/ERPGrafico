@@ -4,13 +4,12 @@ from django.db import migrations
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('treasury', '0036_alter_historicalreconciliationsettings_options_and_more'),
+        ("treasury", "0036_alter_historicalreconciliationsettings_options_and_more"),
     ]
 
     def delete_per_account_settings(apps, schema_editor):
-        ReconciliationSettings = apps.get_model('treasury', 'ReconciliationSettings')
+        ReconciliationSettings = apps.get_model("treasury", "ReconciliationSettings")
         # Borrar todas las configuraciones que tengan una cuenta específica asignada
         ReconciliationSettings.objects.filter(treasury_account__isnull=False).delete()
 

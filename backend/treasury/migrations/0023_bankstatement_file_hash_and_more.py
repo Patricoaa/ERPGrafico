@@ -4,20 +4,33 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('treasury', '0022_add_matching_compound_indexes'),
+        ("treasury", "0022_add_matching_compound_indexes"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='bankstatement',
-            name='file_hash',
-            field=models.CharField(blank=True, help_text='Hash SHA-256 para evitar duplicidad de archivos', max_length=64, null=True, unique=True, verbose_name='Hash del Archivo'),
+            model_name="bankstatement",
+            name="file_hash",
+            field=models.CharField(
+                blank=True,
+                help_text="Hash SHA-256 para evitar duplicidad de archivos",
+                max_length=64,
+                null=True,
+                unique=True,
+                verbose_name="Hash del Archivo",
+            ),
         ),
         migrations.AddField(
-            model_name='historicalbankstatement',
-            name='file_hash',
-            field=models.CharField(blank=True, db_index=True, help_text='Hash SHA-256 para evitar duplicidad de archivos', max_length=64, null=True, verbose_name='Hash del Archivo'),
+            model_name="historicalbankstatement",
+            name="file_hash",
+            field=models.CharField(
+                blank=True,
+                db_index=True,
+                help_text="Hash SHA-256 para evitar duplicidad de archivos",
+                max_length=64,
+                null=True,
+                verbose_name="Hash del Archivo",
+            ),
         ),
     ]

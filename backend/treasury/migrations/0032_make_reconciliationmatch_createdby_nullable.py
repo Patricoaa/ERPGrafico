@@ -6,16 +6,22 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('treasury', '0031_remove_bankstatementline_matched_payment'),
+        ("treasury", "0031_remove_bankstatementline_matched_payment"),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='reconciliationmatch',
-            name='created_by',
-            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='created_matches', to=settings.AUTH_USER_MODEL, verbose_name='Creado Por'),
+            model_name="reconciliationmatch",
+            name="created_by",
+            field=models.ForeignKey(
+                blank=True,
+                null=True,
+                on_delete=django.db.models.deletion.SET_NULL,
+                related_name="created_matches",
+                to=settings.AUTH_USER_MODEL,
+                verbose_name="Creado Por",
+            ),
         ),
     ]

@@ -4,7 +4,7 @@ import React, { useState } from "react"
 import { BaseModal } from "./BaseModal"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
-import { AlertTriangle, AlertCircle, Info, Loader2, LucideIcon, CheckCircle2 } from "lucide-react"
+import { AlertTriangle, AlertCircle, Info, Loader2, type LucideIcon, CheckCircle2 } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 export type ActionVariant = "default" | "destructive" | "warning" | "info" | "success"

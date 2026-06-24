@@ -6,7 +6,7 @@ import Link from "next/link"
 import { toast } from "sonner"
 import { CreatePayrollDrawer, PayrollDetailDrawer, deletePayroll, paySalary, payPrevired, createAdvance } from '@/features/hr'
 import type { Payroll } from "@/types/hr"
-import { ColumnDef } from "@tanstack/react-table"
+import { type ColumnDef } from "@tanstack/react-table"
 import { DataTableView, DataTableColumnHeader } from '@/components/shared'
 import { DataCell } from '@/components/shared'
 import { FileText } from "lucide-react"

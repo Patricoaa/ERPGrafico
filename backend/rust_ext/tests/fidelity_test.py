@@ -2,9 +2,10 @@
 Fidelity test: Compare Rust erpgrafico_rs output against equivalent Python logic.
 This ensures the Rust port produces identical results to the original Python code.
 """
+
 import json
-import sys
 import os
+import sys
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
@@ -62,9 +63,28 @@ def py_normalize_description(text, bank_format=None):
     ]
 
     _STOP_WORDS = {
-        "DE", "LA", "EL", "LOS", "LAS", "DEL", "AL", "CON", "POR",
-        "SPA", "LTDA", "SA", "SRL", "EIRL", "S.A.", "LTDA.",
-        "CL", "RUT", "RUN", "TEF", "TRF", "TRANS",
+        "DE",
+        "LA",
+        "EL",
+        "LOS",
+        "LAS",
+        "DEL",
+        "AL",
+        "CON",
+        "POR",
+        "SPA",
+        "LTDA",
+        "SA",
+        "SRL",
+        "EIRL",
+        "S.A.",
+        "LTDA.",
+        "CL",
+        "RUT",
+        "RUN",
+        "TEF",
+        "TRF",
+        "TRANS",
     }
 
     normalized = text.strip().upper()
@@ -87,7 +107,12 @@ def py_normalize_description(text, bank_format=None):
 
 def py_calculate_match_score(line, payment, settings):
     """Pure Python version of _calculate_match_score"""
-    total_weight = settings["amountWeight"] + settings["dateWeight"] + settings["referenceWeight"] + settings["contactWeight"]
+    total_weight = (
+        settings["amountWeight"]
+        + settings["dateWeight"]
+        + settings["referenceWeight"]
+        + settings["contactWeight"]
+    )
     if total_weight == 0:
         total_weight = 100
 
@@ -108,6 +133,7 @@ def py_calculate_match_score(line, payment, settings):
     # 2. Date Match
     date_score = 0
     from datetime import datetime
+
     line_dt = datetime.strptime(line["transactionDate"][:10], "%Y-%m-%d").date()
     pay_dt = datetime.strptime(payment["date"][:10], "%Y-%m-%d").date()
     date_diff = abs((line_dt - pay_dt).days)
@@ -156,6 +182,7 @@ def py_calculate_match_score(line, payment, settings):
         # Use rapidfuzz if available, else substring
         try:
             from rapidfuzz import fuzz as _fuzz
+
             ratio = _fuzz.partial_ratio(contact_name, normalized_description)
             if ratio >= 70:
                 contact_score = ratio
@@ -167,10 +194,10 @@ def py_calculate_match_score(line, payment, settings):
 
     # Final Weighted Score
     final_score = (
-        (amount_score * settings["amountWeight"]) +
-        (date_score * settings["dateWeight"]) +
-        (ref_score * settings["referenceWeight"]) +
-        (contact_score * settings["contactWeight"])
+        (amount_score * settings["amountWeight"])
+        + (date_score * settings["dateWeight"])
+        + (ref_score * settings["referenceWeight"])
+        + (contact_score * settings["contactWeight"])
     ) / total_weight
 
     return {
@@ -185,57 +212,154 @@ def py_calculate_match_score(line, payment, settings):
 TEST_CASES = [
     {
         "name": "exact_match_all_dimensions",
-        "line": {"id": 1, "credit": 1000.0, "debit": 0.0, "transactionDate": "2024-01-15",
-                 "transactionId": "REF001", "reference": "REF001",
-                 "description": "TEF/COMERCIAL ANDES SPA", "bankFormat": "BANCO_CHILE_CSV"},
-        "payment": {"id": 1, "amount": 1000.0, "date": "2024-01-15",
-                    "transactionNumber": "REF001", "contactName": "COMERCIAL ANDES"},
-        "settings": {"amountWeight": 35.0, "dateWeight": 25.0, "referenceWeight": 25.0, "contactWeight": 15.0},
+        "line": {
+            "id": 1,
+            "credit": 1000.0,
+            "debit": 0.0,
+            "transactionDate": "2024-01-15",
+            "transactionId": "REF001",
+            "reference": "REF001",
+            "description": "TEF/COMERCIAL ANDES SPA",
+            "bankFormat": "BANCO_CHILE_CSV",
+        },
+        "payment": {
+            "id": 1,
+            "amount": 1000.0,
+            "date": "2024-01-15",
+            "transactionNumber": "REF001",
+            "contactName": "COMERCIAL ANDES",
+        },
+        "settings": {
+            "amountWeight": 35.0,
+            "dateWeight": 25.0,
+            "referenceWeight": 25.0,
+            "contactWeight": 15.0,
+        },
     },
     {
         "name": "partial_match_similar_amount",
-        "line": {"id": 2, "credit": 1050.0, "debit": 0.0, "transactionDate": "2024-01-15",
-                 "transactionId": None, "reference": None,
-                 "description": "PAGO SUMINISTROS ELECTRICOS SA", "bankFormat": "BANCO_CHILE_CSV"},
-        "payment": {"id": 2, "amount": 1000.0, "date": "2024-01-14",
-                    "transactionNumber": None, "contactName": "SUMINISTROS ELECTRICOS"},
-        "settings": {"amountWeight": 35.0, "dateWeight": 25.0, "referenceWeight": 25.0, "contactWeight": 15.0},
+        "line": {
+            "id": 2,
+            "credit": 1050.0,
+            "debit": 0.0,
+            "transactionDate": "2024-01-15",
+            "transactionId": None,
+            "reference": None,
+            "description": "PAGO SUMINISTROS ELECTRICOS SA",
+            "bankFormat": "BANCO_CHILE_CSV",
+        },
+        "payment": {
+            "id": 2,
+            "amount": 1000.0,
+            "date": "2024-01-14",
+            "transactionNumber": None,
+            "contactName": "SUMINISTROS ELECTRICOS",
+        },
+        "settings": {
+            "amountWeight": 35.0,
+            "dateWeight": 25.0,
+            "referenceWeight": 25.0,
+            "contactWeight": 15.0,
+        },
     },
     {
         "name": "no_match_different_data",
-        "line": {"id": 3, "credit": 50000.0, "debit": 0.0, "transactionDate": "2024-06-01",
-                 "transactionId": "TXN001", "reference": None,
-                 "description": "HONORARIOS PROFESIONALES", "bankFormat": None},
-        "payment": {"id": 3, "amount": 1500.0, "date": "2024-03-15",
-                    "transactionNumber": "TXN999", "contactName": None},
-        "settings": {"amountWeight": 35.0, "dateWeight": 25.0, "referenceWeight": 25.0, "contactWeight": 15.0},
+        "line": {
+            "id": 3,
+            "credit": 50000.0,
+            "debit": 0.0,
+            "transactionDate": "2024-06-01",
+            "transactionId": "TXN001",
+            "reference": None,
+            "description": "HONORARIOS PROFESIONALES",
+            "bankFormat": None,
+        },
+        "payment": {
+            "id": 3,
+            "amount": 1500.0,
+            "date": "2024-03-15",
+            "transactionNumber": "TXN999",
+            "contactName": None,
+        },
+        "settings": {
+            "amountWeight": 35.0,
+            "dateWeight": 25.0,
+            "referenceWeight": 25.0,
+            "contactWeight": 15.0,
+        },
     },
     {
         "name": "batch_multiple_lines_payments",
         "lines": [
-            {"id": 10, "credit": 250000.0, "debit": 0.0, "transactionDate": "2024-02-01",
-             "transactionId": "FAC001", "reference": None,
-             "description": "ABONO CLIENTE ABC LTDA", "bankFormat": "SANTANDER_CSV"},
-            {"id": 11, "credit": 0.0, "debit": 180000.0, "transactionDate": "2024-02-03",
-             "transactionId": "CHQ-100", "reference": "CHQ-100",
-             "description": "PAGO PROVEEDOR XYZ SA", "bankFormat": "SANTANDER_CSV"},
+            {
+                "id": 10,
+                "credit": 250000.0,
+                "debit": 0.0,
+                "transactionDate": "2024-02-01",
+                "transactionId": "FAC001",
+                "reference": None,
+                "description": "ABONO CLIENTE ABC LTDA",
+                "bankFormat": "SANTANDER_CSV",
+            },
+            {
+                "id": 11,
+                "credit": 0.0,
+                "debit": 180000.0,
+                "transactionDate": "2024-02-03",
+                "transactionId": "CHQ-100",
+                "reference": "CHQ-100",
+                "description": "PAGO PROVEEDOR XYZ SA",
+                "bankFormat": "SANTANDER_CSV",
+            },
         ],
         "payments": [
-            {"id": 10, "amount": 250000.0, "date": "2024-02-01",
-             "transactionNumber": "FAC001", "contactName": "CLIENTE ABC"},
-            {"id": 11, "amount": 180000.0, "date": "2024-02-03",
-             "transactionNumber": "CHQ-100", "contactName": "XYZ SA"},
+            {
+                "id": 10,
+                "amount": 250000.0,
+                "date": "2024-02-01",
+                "transactionNumber": "FAC001",
+                "contactName": "CLIENTE ABC",
+            },
+            {
+                "id": 11,
+                "amount": 180000.0,
+                "date": "2024-02-03",
+                "transactionNumber": "CHQ-100",
+                "contactName": "XYZ SA",
+            },
         ],
-        "settings": {"amountWeight": 30.0, "dateWeight": 20.0, "referenceWeight": 30.0, "contactWeight": 20.0},
+        "settings": {
+            "amountWeight": 30.0,
+            "dateWeight": 20.0,
+            "referenceWeight": 30.0,
+            "contactWeight": 20.0,
+        },
     },
     {
         "name": "overdue_date_far_range",
-        "line": {"id": 4, "credit": 5000.0, "debit": 0.0, "transactionDate": "2024-01-01",
-                 "transactionId": None, "reference": None,
-                 "description": "TRANSFERENCIA ELECTRONICA MENSUAL", "bankFormat": "BCI_CSV"},
-        "payment": {"id": 4, "amount": 5000.0, "date": "2024-06-15",
-                    "transactionNumber": None, "contactName": None},
-        "settings": {"amountWeight": 40.0, "dateWeight": 30.0, "referenceWeight": 15.0, "contactWeight": 15.0},
+        "line": {
+            "id": 4,
+            "credit": 5000.0,
+            "debit": 0.0,
+            "transactionDate": "2024-01-01",
+            "transactionId": None,
+            "reference": None,
+            "description": "TRANSFERENCIA ELECTRONICA MENSUAL",
+            "bankFormat": "BCI_CSV",
+        },
+        "payment": {
+            "id": 4,
+            "amount": 5000.0,
+            "date": "2024-06-15",
+            "transactionNumber": None,
+            "contactName": None,
+        },
+        "settings": {
+            "amountWeight": 40.0,
+            "dateWeight": 30.0,
+            "referenceWeight": 15.0,
+            "contactWeight": 15.0,
+        },
     },
 ]
 
@@ -259,7 +383,9 @@ def run_tests():
             payments_json = json.dumps(payments)
             settings_json = json.dumps(settings)
 
-            rs_result = json.loads(erpgrafico_rs.batch_match_scores(lines_json, payments_json, settings_json))
+            rs_result = json.loads(
+                erpgrafico_rs.batch_match_scores(lines_json, payments_json, settings_json)
+            )
 
             idx = 0
             for li, line in enumerate(lines):
@@ -277,8 +403,12 @@ def run_tests():
                     else:
                         failed += 1
                         print(f"  [{status}] {name} L{li}P{pi}")
-                        print(f"    RS:   score={rs_out['score']:.2f} diff={rs_out['difference']:.2f} reasons={rs_out['reasons']}")
-                        print(f"    PY:   score={py_out['score']:.2f} diff={py_out['difference']:.2f} reasons={py_out['reasons']}")
+                        print(
+                            f"    RS:   score={rs_out['score']:.2f} diff={rs_out['difference']:.2f} reasons={rs_out['reasons']}"
+                        )
+                        print(
+                            f"    PY:   score={py_out['score']:.2f} diff={py_out['difference']:.2f} reasons={py_out['reasons']}"
+                        )
                     idx += 1
         else:
             # Single test
@@ -305,14 +435,19 @@ def run_tests():
 
             print(f"  [{status}] {name}")
             if status == "FAIL":
-                print(f"    RS:   score={rs_result['score']:.2f} diff={rs_result['difference']:.2f} reasons={rs_result['reasons']}")
-                print(f"    PY:   score={py_out['score']:.2f} diff={py_out['difference']:.2f} reasons={py_out['reasons']}")
+                print(
+                    f"    RS:   score={rs_result['score']:.2f} diff={rs_result['difference']:.2f} reasons={rs_result['reasons']}"
+                )
+                print(
+                    f"    PY:   score={py_out['score']:.2f} diff={py_out['difference']:.2f} reasons={py_out['reasons']}"
+                )
 
     print(f"\nResults: {passed} passed, {failed} failed")
     return failed == 0
 
 
 # ── Normalizer test ────────────────────────────────────────────────────────
+
 
 def test_normalizer():
     import erpgrafico_rs
@@ -331,7 +466,9 @@ def test_normalizer():
         py_result = py_normalize_description(text, fmt)
         status = "PASS" if rs_result == py_result == expected else "FAIL"
         if status == "FAIL":
-            print(f"  [{status}] normalize({text!r}, {fmt!r}): RS={rs_result!r} PY={py_result!r} expected={expected!r}")
+            print(
+                f"  [{status}] normalize({text!r}, {fmt!r}): RS={rs_result!r} PY={py_result!r} expected={expected!r}"
+            )
 
     print("  Normalizer fidelity check done")
 

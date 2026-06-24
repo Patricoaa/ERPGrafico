@@ -5,25 +5,48 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('accounting', '0020_accountingsettings_check_portfolio_account'),
+        ("accounting", "0020_accountingsettings_check_portfolio_account"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='accountingsettings',
-            name='interest_expense_account',
-            field=models.ForeignKey(blank=True, help_text='Cuenta de gasto para intereses pagados de préstamos bancarios y tarjetas de crédito.', null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='settings_interest_expense', to='accounting.account', verbose_name='Cuenta de Gasto por Intereses'),
+            model_name="accountingsettings",
+            name="interest_expense_account",
+            field=models.ForeignKey(
+                blank=True,
+                help_text="Cuenta de gasto para intereses pagados de préstamos bancarios y tarjetas de crédito.",
+                null=True,
+                on_delete=django.db.models.deletion.SET_NULL,
+                related_name="settings_interest_expense",
+                to="accounting.account",
+                verbose_name="Cuenta de Gasto por Intereses",
+            ),
         ),
         migrations.AddField(
-            model_name='accountingsettings',
-            name='insurance_expense_account',
-            field=models.ForeignKey(blank=True, help_text='Cuenta de gasto para seguros de desgravamen/cesantía en préstamos bancarios.', null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='settings_insurance_expense', to='accounting.account', verbose_name='Cuenta de Gasto por Seguros'),
+            model_name="accountingsettings",
+            name="insurance_expense_account",
+            field=models.ForeignKey(
+                blank=True,
+                help_text="Cuenta de gasto para seguros de desgravamen/cesantía en préstamos bancarios.",
+                null=True,
+                on_delete=django.db.models.deletion.SET_NULL,
+                related_name="settings_insurance_expense",
+                to="accounting.account",
+                verbose_name="Cuenta de Gasto por Seguros",
+            ),
         ),
         migrations.AddField(
-            model_name='accountingsettings',
-            name='interest_payable_account',
-            field=models.ForeignKey(blank=True, help_text='Cuenta de pasivo para intereses devengados no pagados (préstamos).', null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='settings_interest_payable', to='accounting.account', verbose_name='Cuenta Intereses por Pagar'),
+            model_name="accountingsettings",
+            name="interest_payable_account",
+            field=models.ForeignKey(
+                blank=True,
+                help_text="Cuenta de pasivo para intereses devengados no pagados (préstamos).",
+                null=True,
+                on_delete=django.db.models.deletion.SET_NULL,
+                related_name="settings_interest_payable",
+                to="accounting.account",
+                verbose_name="Cuenta Intereses por Pagar",
+            ),
         ),
     ]

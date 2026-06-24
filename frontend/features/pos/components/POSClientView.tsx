@@ -60,8 +60,8 @@ import { POSLayoutSkeleton } from './skeletons/POSLayoutSkeleton'
 import { SalesCheckoutWizardContent } from '@/features/sales/components/checkout/SalesCheckoutWizardContent'
 
 // Shared components
-import { SessionControl, SessionControlHandle } from '@/features/pos/components/SessionControl'
-import { ScannerFeedback, ScannerFeedbackHandle } from '@/features/pos/components/ScannerFeedback'
+import { SessionControl, type SessionControlHandle } from '@/features/pos/components/SessionControl'
+import { ScannerFeedback, type ScannerFeedbackHandle } from '@/features/pos/components/ScannerFeedback'
 import { PricingUtils } from '@/features/inventory/utils/pricing'
 import { SalesOrdersDrawer } from '@/features/pos/components/SalesOrdersDrawer'
 import { AdvancedContactSelector } from '@/components/selectors/AdvancedContactSelector'

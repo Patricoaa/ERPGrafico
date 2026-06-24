@@ -1,7 +1,7 @@
 "use client"
 
 import React from "react"
-import { Employee } from "@/types/hr"
+import { type Employee } from "@/types/hr"
 import { PayrollDetailDrawer } from "@/features/hr"
 
 interface EmployeePayrollPreviewProps {

@@ -4,20 +4,27 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('contacts', '0009_fts_gin_index'),
+        ("contacts", "0009_fts_gin_index"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='contact',
-            name='roles',
-            field=models.JSONField(blank=True, default=list, help_text='Roles manuales asignados al contacto (Cliente, Proveedor, etc.)'),
+            model_name="contact",
+            name="roles",
+            field=models.JSONField(
+                blank=True,
+                default=list,
+                help_text="Roles manuales asignados al contacto (Cliente, Proveedor, etc.)",
+            ),
         ),
         migrations.AddField(
-            model_name='historicalcontact',
-            name='roles',
-            field=models.JSONField(blank=True, default=list, help_text='Roles manuales asignados al contacto (Cliente, Proveedor, etc.)'),
+            model_name="historicalcontact",
+            name="roles",
+            field=models.JSONField(
+                blank=True,
+                default=list,
+                help_text="Roles manuales asignados al contacto (Cliente, Proveedor, etc.)",
+            ),
         ),
     ]

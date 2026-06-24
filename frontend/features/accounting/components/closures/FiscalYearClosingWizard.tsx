@@ -2,7 +2,7 @@
 
 import { formatCurrency } from "@/lib/money"
 import React, { useState, useEffect, Suspense, lazy, useMemo } from 'react';
-import {SkeletonShell, LabeledContainer, CancelButton, SubmitButton, BaseModal, GenericWizard, WizardStep} from '@/components/shared';
+import {SkeletonShell, LabeledContainer, CancelButton, SubmitButton, BaseModal, GenericWizard, type WizardStep} from '@/components/shared';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
@@ -15,7 +15,7 @@ import {
     PieChart,
     Wallet
 } from 'lucide-react';
-import { FiscalYearPreviewResult } from '../../types';
+import { type FiscalYearPreviewResult } from '../../types';
 import { cn } from '@/lib/utils';
 
 // Lazy load TrialBalanceReport

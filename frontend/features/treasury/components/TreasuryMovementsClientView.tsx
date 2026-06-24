@@ -3,7 +3,7 @@
 import React, { useState, useEffect, lazy, Suspense } from "react"
 import { DataTableView, EntityCard, StatusBadge, SegmentationBar, useSegmentation, SmartSearchBar, useSmartSearch } from '@/components/shared'
 import { DataTableColumnHeader } from '@/components/shared'
-import { ColumnDef } from "@tanstack/react-table"
+import { type ColumnDef } from "@tanstack/react-table"
 import { ArrowDown, ArrowDownToLine, ArrowUpFromLine, ArrowLeftRight, Scale, Ban, ArrowRight } from "lucide-react"
 
 import { DataCell } from '@/components/shared'

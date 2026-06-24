@@ -2,7 +2,7 @@
 
 import React, { createContext, useContext, useState, useCallback, useMemo } from "react"
 
-import { LucideIcon } from "lucide-react"
+import { type LucideIcon } from "lucide-react"
  
 export interface SubTabConfig {
     value: string

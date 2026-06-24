@@ -4,7 +4,7 @@ import { showApiError } from "@/lib/errors"
 import { useState, useEffect, useRef } from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
-import { WarehouseInitialData } from "@/types/forms"
+import { type WarehouseInitialData } from "@/types/forms"
 import * as z from "zod"
 import { Drawer, CancelButton, LabeledInput, FormFooter, FormSplitLayout } from "@/components/shared"
 import {

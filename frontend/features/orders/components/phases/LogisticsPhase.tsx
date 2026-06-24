@@ -11,7 +11,7 @@ import { useAnnulLogistics } from "../../hooks/useOrdersMutations"
 import { ActionConfirmModal } from '@/components/shared'
 import { saleOrderActions } from '@/features/sales/actions'
 import { purchaseOrderActions } from '@/features/purchasing/actions'
-import { Order, OrderLine, PhaseDocument } from "../../types"
+import { type Order, type OrderLine, type PhaseDocument } from "../../types"
 
 interface LogisticsPhaseProps {
     activeDoc: Order

@@ -2,13 +2,13 @@
 
 import { showApiError } from "@/lib/errors"
 import React, { useState, useEffect, useMemo } from "react"
-import { LabeledInput, PeriodValidationDateInput, GenericWizard, WizardStep, DataCell } from "@/components/shared"
+import { LabeledInput, PeriodValidationDateInput, GenericWizard, type WizardStep, DataCell } from "@/components/shared"
 import { Input } from "@/components/ui/input"
 import { partnersApi } from "@/features/contacts/api/partnersApi"
 import { toast } from "sonner"
 
 import { ArrowRightLeft } from "lucide-react"
-import { Partner } from "@/features/contacts/types/partner"
+import { type Partner } from "@/features/contacts/types/partner"
 
 interface MobilizeEarningsWizardProps {
     open: boolean

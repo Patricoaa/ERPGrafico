@@ -7,7 +7,7 @@ import { useRouter, usePathname, useSearchParams } from "next/navigation"
 import { ActionConfirmModal, DataTableView, StatusBadge } from '@/components/shared'
 import { DataTableColumnHeader } from '@/components/shared'
 
-import { ColumnDef } from "@tanstack/react-table"
+import { type ColumnDef } from "@tanstack/react-table"
 
 import type { BulkAction } from "@/components/shared"
 import { ProductDrawer } from "./ProductDrawer"
@@ -28,7 +28,7 @@ import { DataCell, MoneyDisplay } from '@/components/shared'
 import { EntityCard } from "@/components/shared"
 import { useProducts } from "@/features/inventory/hooks/useProducts"
 import { useCategories } from "@/features/inventory/hooks/useCategories"
-import { Product, Restriction, ProductFilters } from "@/features/inventory/types"
+import { type Product, type Restriction, type ProductFilters } from "@/features/inventory/types"
 import { productActions, type ProductActionsCtx } from "@/features/inventory/productActions"
 import { useSelectedEntity } from "@/hooks/useSelectedEntity"
 import { Chip, SmartSearchBar, useSmartSearch, SegmentationBar, useSegmentation } from "@/components/shared"

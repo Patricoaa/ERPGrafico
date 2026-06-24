@@ -10,7 +10,7 @@ import {
 } from "@/components/ui/popover"
 
 import { ScrollArea } from "@/components/ui/scroll-area"
-import { getNotifications, getUnreadNotificationCount, markAllNotificationsRead, markNotificationRead, Notification } from '@/features/workflow/api/workflowApi'
+import { getNotifications, getUnreadNotificationCount, markAllNotificationsRead, markNotificationRead, type Notification } from '@/features/workflow/api/workflowApi'
 import { cn, formatPlainDate } from "@/lib/utils"
 import Link from "next/link"
 import { useRouter } from "next/navigation"

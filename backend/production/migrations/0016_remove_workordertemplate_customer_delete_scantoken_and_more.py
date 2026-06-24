@@ -4,20 +4,19 @@ from django.db import migrations
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('production', '0015_alter_workordermaterial_unique_together'),
+        ("production", "0015_alter_workordermaterial_unique_together"),
     ]
 
     operations = [
         migrations.RemoveField(
-            model_name='workordertemplate',
-            name='customer',
+            model_name="workordertemplate",
+            name="customer",
         ),
         migrations.DeleteModel(
-            name='ScanToken',
+            name="ScanToken",
         ),
         migrations.DeleteModel(
-            name='WorkOrderTemplate',
+            name="WorkOrderTemplate",
         ),
     ]

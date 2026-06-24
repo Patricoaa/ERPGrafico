@@ -9,7 +9,7 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { Card } from "@/components/ui/card"
 import {Banknote, Receipt, Hash, Calendar, FileUp} from "lucide-react"
 import { cn } from "@/lib/utils"
-import { PaymentMethodCardSelector, PaymentData } from "@/features/treasury/components/PaymentMethodCardSelector"
+import { PaymentMethodCardSelector, type PaymentData } from "@/features/treasury/components/PaymentMethodCardSelector"
 import { useServerDate } from "@/hooks/useServerDate"
 import { usePOSSession } from "@/features/treasury/hooks/usePOSSession"
 

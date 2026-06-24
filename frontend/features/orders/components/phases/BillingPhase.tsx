@@ -12,8 +12,8 @@ import { useAnnulInvoice, useCancelInvoice } from "../../hooks/useOrdersMutation
 import { ActionConfirmModal } from '@/components/shared'
 import { saleOrderActions } from '@/features/sales/actions'
 import { purchaseOrderActions } from '@/features/purchasing/actions'
-import { Order, PhaseDocument } from "../../types"
-import { LucideIcon } from "lucide-react"
+import { type Order, type PhaseDocument } from "../../types"
+import { type LucideIcon } from "lucide-react"
 
 interface BillingPhaseProps {
     isNoteMode: boolean

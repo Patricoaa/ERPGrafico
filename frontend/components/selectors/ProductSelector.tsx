@@ -22,7 +22,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge"
 import { useProductSearch, useSingleProduct } from "@/features/inventory/hooks/useProductSearch"
 
-import { Product } from "@/types/entities"
+import { type Product } from "@/types/entities"
 import { BaseModal, CardSkeleton, EmptyState, LabeledContainer, MoneyDisplay } from '@/components/shared'
 
 interface ProductSelectorProps {

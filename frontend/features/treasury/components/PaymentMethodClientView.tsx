@@ -24,7 +24,7 @@ import {
 import { paymentMethodSearchDef } from "@/features/treasury/searchDef"
 import { paymentMethodSegDef } from "@/features/treasury/segmentationDef"
 import { TreasuryAccountSelector } from "@/components/selectors/TreasuryAccountSelector"
-import { Column } from "@tanstack/react-table"
+import { type Column } from "@tanstack/react-table"
 import { usePaymentMethods } from "@/features/treasury/hooks/useMasterData"
 import type { PaymentMethod } from "@/features/treasury/types"
 import { EntityCard } from "@/components/shared"

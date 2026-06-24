@@ -4,66 +4,65 @@ from django.db import migrations
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('contacts', '0011_standardize_is_active_archive_flag'),
+        ("contacts", "0011_standardize_is_active_archive_flag"),
     ]
 
     operations = [
         migrations.RemoveField(
-            model_name='contact',
-            name='account_payable',
+            model_name="contact",
+            name="account_payable",
         ),
         migrations.RemoveField(
-            model_name='contact',
-            name='account_receivable',
+            model_name="contact",
+            name="account_receivable",
         ),
         migrations.RemoveField(
-            model_name='contact',
-            name='partner_contribution_account',
+            model_name="contact",
+            name="partner_contribution_account",
         ),
         migrations.RemoveField(
-            model_name='contact',
-            name='partner_dividends_payable_account',
+            model_name="contact",
+            name="partner_dividends_payable_account",
         ),
         migrations.RemoveField(
-            model_name='contact',
-            name='partner_earnings_account',
+            model_name="contact",
+            name="partner_earnings_account",
         ),
         migrations.RemoveField(
-            model_name='contact',
-            name='partner_provisional_withdrawal_account',
+            model_name="contact",
+            name="partner_provisional_withdrawal_account",
         ),
         migrations.RemoveField(
-            model_name='contact',
-            name='partner_receivable_account',
+            model_name="contact",
+            name="partner_receivable_account",
         ),
         migrations.RemoveField(
-            model_name='historicalcontact',
-            name='account_payable',
+            model_name="historicalcontact",
+            name="account_payable",
         ),
         migrations.RemoveField(
-            model_name='historicalcontact',
-            name='account_receivable',
+            model_name="historicalcontact",
+            name="account_receivable",
         ),
         migrations.RemoveField(
-            model_name='historicalcontact',
-            name='partner_contribution_account',
+            model_name="historicalcontact",
+            name="partner_contribution_account",
         ),
         migrations.RemoveField(
-            model_name='historicalcontact',
-            name='partner_dividends_payable_account',
+            model_name="historicalcontact",
+            name="partner_dividends_payable_account",
         ),
         migrations.RemoveField(
-            model_name='historicalcontact',
-            name='partner_earnings_account',
+            model_name="historicalcontact",
+            name="partner_earnings_account",
         ),
         migrations.RemoveField(
-            model_name='historicalcontact',
-            name='partner_provisional_withdrawal_account',
+            model_name="historicalcontact",
+            name="partner_provisional_withdrawal_account",
         ),
         migrations.RemoveField(
-            model_name='historicalcontact',
-            name='partner_receivable_account',
+            model_name="historicalcontact",
+            name="partner_receivable_account",
         ),
     ]

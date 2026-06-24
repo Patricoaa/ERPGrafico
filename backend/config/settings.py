@@ -11,26 +11,35 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 """
 
 import os
-import dj_database_url
 from pathlib import Path
+
+import dj_database_url
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+
 # --- SYSTEM VERSIONING ---
 def get_version():
     try:
-        with open(BASE_DIR / 'VERSION', 'r') as f:
+        with open(BASE_DIR / "VERSION", "r") as f:
             return f.read().strip()
-    except:
+    except Exception:
         return "0.0.0-unknown"
+
 
 def get_git_hash():
     try:
         import subprocess
-        return subprocess.check_output(['git', 'rev-parse', '--short', 'HEAD'], cwd=BASE_DIR).decode('ascii').strip()
-    except:
+
+        return (
+            subprocess.check_output(["git", "rev-parse", "--short", "HEAD"], cwd=BASE_DIR)
+            .decode("ascii")
+            .strip()
+        )
+    except Exception:
         return "unknown"
+
 
 APP_VERSION = get_version()
 GIT_HASH = get_git_hash()
@@ -41,68 +50,78 @@ GIT_HASH = get_git_hash()
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-z_@n0q5=yw43a$i1x61*cq*t4k=6@3g4##a-%!k88yk391g52g')
+SECRET_KEY = os.environ.get(
+    "SECRET_KEY", "django-insecure-z_@n0q5=yw43a$i1x61*cq*t4k=6@3g4##a-%!k88yk391g52g"
+)
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = os.environ.get('DEBUG', '1') == '1'
+DEBUG = os.environ.get("DEBUG", "1") == "1"
 
-ALLOWED_HOSTS = [host.strip() for host in os.environ.get('ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',') if host.strip()]
-CSRF_TRUSTED_ORIGINS = [origin.strip() for origin in os.environ.get('CSRF_TRUSTED_ORIGINS', 'http://localhost:3000,http://127.0.0.1:3000').split(',') if origin.strip()]
+ALLOWED_HOSTS = [
+    host.strip()
+    for host in os.environ.get("ALLOWED_HOSTS", "localhost,127.0.0.1").split(",")
+    if host.strip()
+]
+CSRF_TRUSTED_ORIGINS = [
+    origin.strip()
+    for origin in os.environ.get(
+        "CSRF_TRUSTED_ORIGINS", "http://localhost:3000,http://127.0.0.1:3000"
+    ).split(",")
+    if origin.strip()
+]
 
 
 # Application definition
 
 INSTALLED_APPS = [
-    'daphne',
-    'django.contrib.admin',
-
-    'django.contrib.auth',
-    'django.contrib.contenttypes',
-    'django.contrib.sessions',
-    'django.contrib.messages',
-    'django.contrib.staticfiles',
-    'django.contrib.postgres',
-    'rest_framework',
-    'rest_framework_simplejwt',
-    'corsheaders',
-    'allauth',
-    'allauth.account',
-    'allauth.socialaccount',
-    'django_filters',
-    'django_celery_beat',
-    'imagekit',
-    
+    "daphne",
+    "django.contrib.admin",
+    "django.contrib.auth",
+    "django.contrib.contenttypes",
+    "django.contrib.sessions",
+    "django.contrib.messages",
+    "django.contrib.staticfiles",
+    "django.contrib.postgres",
+    "rest_framework",
+    "rest_framework_simplejwt",
+    "corsheaders",
+    "allauth",
+    "allauth.account",
+    "allauth.socialaccount",
+    "django_filters",
+    "django_celery_beat",
+    "imagekit",
     # Local apps
-    'core',
-    'accounting',
-    'contacts',
-    'sales',
-    'inventory',
-    'purchasing',
-    'production',
-    'treasury',
-    'finances',
-    'billing',
-    'workflow',
-    'tax',
-    'hr',
-    'simple_history',
+    "core",
+    "accounting",
+    "contacts",
+    "sales",
+    "inventory",
+    "purchasing",
+    "production",
+    "treasury",
+    "finances",
+    "billing",
+    "workflow",
+    "tax",
+    "hr",
+    "simple_history",
 ]
 
 MIDDLEWARE = [
-    'django.middleware.security.SecurityMiddleware',
-    'whitenoise.middleware.WhiteNoiseMiddleware',
-    'django.contrib.sessions.middleware.SessionMiddleware',
-    'corsheaders.middleware.CorsMiddleware',
-    'django.middleware.common.CommonMiddleware',
-    'django.middleware.csrf.CsrfViewMiddleware',
-    'django.contrib.auth.middleware.AuthenticationMiddleware',
-    'django.contrib.messages.middleware.MessageMiddleware',
-    'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    'allauth.account.middleware.AccountMiddleware',
-    'simple_history.middleware.HistoryRequestMiddleware',
-    'core.middleware.CurrentUserMiddleware',
-    'core.middleware.AuditMiddleware',
+    "django.middleware.security.SecurityMiddleware",
+    "whitenoise.middleware.WhiteNoiseMiddleware",
+    "django.contrib.sessions.middleware.SessionMiddleware",
+    "corsheaders.middleware.CorsMiddleware",
+    "django.middleware.common.CommonMiddleware",
+    "django.middleware.csrf.CsrfViewMiddleware",
+    "django.contrib.auth.middleware.AuthenticationMiddleware",
+    "django.contrib.messages.middleware.MessageMiddleware",
+    "django.middleware.clickjacking.XFrameOptionsMiddleware",
+    "allauth.account.middleware.AccountMiddleware",
+    "simple_history.middleware.HistoryRequestMiddleware",
+    "core.middleware.CurrentUserMiddleware",
+    "core.middleware.AuditMiddleware",
 ]
 
 CORS_ALLOW_ALL_ORIGINS = True
@@ -115,51 +134,49 @@ CORS_ALLOWED_ORIGIN_REGEXES = [
 ]
 
 # Dominios de producción propios (Docker / servidor propio)
-_CORS_EXTRA = os.environ.get('CORS_ALLOWED_ORIGINS', '')
-CORS_ALLOWED_ORIGINS = [o.strip() for o in _CORS_EXTRA.split(',') if o.strip()]
+_CORS_EXTRA = os.environ.get("CORS_ALLOWED_ORIGINS", "")
+CORS_ALLOWED_ORIGINS = [o.strip() for o in _CORS_EXTRA.split(",") if o.strip()]
 
 CORS_ALLOW_CREDENTIALS = True
 
-ROOT_URLCONF = 'config.urls'
+ROOT_URLCONF = "config.urls"
 
 TEMPLATES = [
     {
-        'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
-        'APP_DIRS': True,
-        'OPTIONS': {
-            'context_processors': [
-                'django.template.context_processors.request',
-                'django.contrib.auth.context_processors.auth',
-                'django.contrib.messages.context_processors.messages',
+        "BACKEND": "django.template.backends.django.DjangoTemplates",
+        "DIRS": [],
+        "APP_DIRS": True,
+        "OPTIONS": {
+            "context_processors": [
+                "django.template.context_processors.request",
+                "django.contrib.auth.context_processors.auth",
+                "django.contrib.messages.context_processors.messages",
             ],
         },
     },
 ]
 
-WSGI_APPLICATION = 'config.wsgi.application'
-ASGI_APPLICATION = 'config.asgi.application'
-
+WSGI_APPLICATION = "config.wsgi.application"
+ASGI_APPLICATION = "config.asgi.application"
 
 
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
-DATABASE_URL = os.environ.get('DATABASE_URL')
+DATABASE_URL = os.environ.get("DATABASE_URL")
 
-if not DATABASE_URL and os.environ.get('DB_HOST'):
+if not DATABASE_URL and os.environ.get("DB_HOST"):
     # Build Postgres URL from individual environment variables
-    DB_NAME = os.environ.get('POSTGRES_DB', 'erpgrafico')
-    DB_USER = os.environ.get('POSTGRES_USER', 'postgres')
-    DB_PASSWORD = os.environ.get('POSTGRES_PASSWORD', 'postgres')
-    DB_HOST = os.environ.get('DB_HOST', 'db')
-    DB_PORT = os.environ.get('DB_PORT', '5432')
+    DB_NAME = os.environ.get("POSTGRES_DB", "erpgrafico")
+    DB_USER = os.environ.get("POSTGRES_USER", "postgres")
+    DB_PASSWORD = os.environ.get("POSTGRES_PASSWORD", "postgres")
+    DB_HOST = os.environ.get("DB_HOST", "db")
+    DB_PORT = os.environ.get("DB_PORT", "5432")
     DATABASE_URL = f"postgres://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
 
 DATABASES = {
-    'default': dj_database_url.config(
-        default=DATABASE_URL or f'sqlite:///{BASE_DIR / "db.sqlite3"}',
-        conn_max_age=600
+    "default": dj_database_url.config(
+        default=DATABASE_URL or f"sqlite:///{BASE_DIR / 'db.sqlite3'}", conn_max_age=600
     )
 }
 
@@ -169,16 +186,16 @@ DATABASES = {
 
 AUTH_PASSWORD_VALIDATORS = [
     {
-        'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
+        "NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator",
     },
     {
-        'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',
+        "NAME": "django.contrib.auth.password_validation.MinimumLengthValidator",
     },
     {
-        'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator',
+        "NAME": "django.contrib.auth.password_validation.CommonPasswordValidator",
     },
     {
-        'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
+        "NAME": "django.contrib.auth.password_validation.NumericPasswordValidator",
     },
 ]
 
@@ -186,97 +203,96 @@ AUTH_PASSWORD_VALIDATORS = [
 # Internationalization
 # https://docs.djangoproject.com/en/5.2/topics/i18n/
 
-LANGUAGE_CODE = 'en-us'
+LANGUAGE_CODE = "en-us"
 
-TIME_ZONE = 'America/Santiago'
+TIME_ZONE = "America/Santiago"
 
 USE_I18N = True
 
 USE_TZ = True
 
-AUTH_USER_MODEL = 'core.User'
+AUTH_USER_MODEL = "core.User"
 
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
 
-STATIC_URL = 'static/'
-STATIC_ROOT = BASE_DIR / 'staticfiles'
-STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+STATIC_URL = "static/"
+STATIC_ROOT = BASE_DIR / "staticfiles"
+STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 
 # Media files (Product Images, etc.)
 import os
-USE_S3 = os.getenv('USE_S3', 'False') == 'True'
+
+USE_S3 = os.getenv("USE_S3", "False") == "True"
 
 if USE_S3:
-    AWS_ACCESS_KEY_ID = os.getenv('AWS_ACCESS_KEY_ID', 'minioadmin')
-    AWS_SECRET_ACCESS_KEY = os.getenv('AWS_SECRET_ACCESS_KEY', 'minioadmin')
-    AWS_STORAGE_BUCKET_NAME = os.getenv('AWS_STORAGE_BUCKET_NAME', 'erpgrafico-media-private')
-    AWS_S3_ENDPOINT_URL = os.getenv('AWS_S3_ENDPOINT_URL', 'http://minio:9000')
-    AWS_S3_REGION_NAME = os.getenv('AWS_S3_REGION_NAME', 'us-east-1')
-    AWS_S3_SIGNATURE_VERSION = 's3v4'
+    AWS_ACCESS_KEY_ID = os.getenv("AWS_ACCESS_KEY_ID", "minioadmin")
+    AWS_SECRET_ACCESS_KEY = os.getenv("AWS_SECRET_ACCESS_KEY", "minioadmin")
+    AWS_STORAGE_BUCKET_NAME = os.getenv("AWS_STORAGE_BUCKET_NAME", "erpgrafico-media-private")
+    AWS_S3_ENDPOINT_URL = os.getenv("AWS_S3_ENDPOINT_URL", "http://minio:9000")
+    AWS_S3_REGION_NAME = os.getenv("AWS_S3_REGION_NAME", "us-east-1")
+    AWS_S3_SIGNATURE_VERSION = "s3v4"
     AWS_S3_ADDRESSING_STYLE = "path"
     AWS_S3_FILE_OVERWRITE = False
-    
-    AWS_S3_CUSTOM_DOMAIN = os.getenv('AWS_S3_CUSTOM_DOMAIN', 'localhost:9000/erpgrafico-media')
+
+    AWS_S3_CUSTOM_DOMAIN = os.getenv("AWS_S3_CUSTOM_DOMAIN", "localhost:9000/erpgrafico-media")
 
     STORAGES = {
         "default": {"BACKEND": "storages.backends.s3boto3.S3Boto3Storage"},
-        "staticfiles": {"BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage"}
+        "staticfiles": {"BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage"},
     }
 else:
-    MEDIA_URL = 'media/'
-    MEDIA_ROOT = BASE_DIR / 'media'
+    MEDIA_URL = "media/"
+    MEDIA_ROOT = BASE_DIR / "media"
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
-DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 REST_FRAMEWORK = {
-    'DEFAULT_AUTHENTICATION_CLASSES': (
-        'rest_framework_simplejwt.authentication.JWTAuthentication',
+    "DEFAULT_AUTHENTICATION_CLASSES": (
+        "rest_framework_simplejwt.authentication.JWTAuthentication",
     ),
-    'DEFAULT_PERMISSION_CLASSES': (
-        'core.api.permissions.StandardizedModelPermissions',
+    "DEFAULT_PERMISSION_CLASSES": ("core.api.permissions.StandardizedModelPermissions",),
+    "DEFAULT_FILTER_BACKENDS": ("django_filters.rest_framework.DjangoFilterBackend",),
+    "EXCEPTION_HANDLER": "core.api.exceptions.erpgrafico_exception_handler",
+    "DEFAULT_THROTTLE_CLASSES": (
+        "rest_framework.throttling.AnonRateThrottle",
+        "rest_framework.throttling.UserRateThrottle",
     ),
-    'DEFAULT_FILTER_BACKENDS': (
-        'django_filters.rest_framework.DjangoFilterBackend',
-    ),
-    'EXCEPTION_HANDLER': 'core.api.exceptions.erpgrafico_exception_handler',
-    'DEFAULT_THROTTLE_CLASSES': (
-        'rest_framework.throttling.AnonRateThrottle',
-        'rest_framework.throttling.UserRateThrottle',
-    ),
-    'DEFAULT_THROTTLE_RATES': {
-        'anon': '30/minute',
-        'user': '300/minute',
-        'heavy_report': '10/minute',
-        'search': '60/minute',
+    "DEFAULT_THROTTLE_RATES": {
+        "anon": "30/minute",
+        "user": "300/minute",
+        "heavy_report": "10/minute",
+        "search": "60/minute",
     },
 }
 
 from datetime import timedelta
+
 SIMPLE_JWT = {
-    'ACCESS_TOKEN_LIFETIME': timedelta(days=1), # Long lifetime for dev convenience
-    'REFRESH_TOKEN_LIFETIME': timedelta(days=7),
+    "ACCESS_TOKEN_LIFETIME": timedelta(days=1),  # Long lifetime for dev convenience
+    "REFRESH_TOKEN_LIFETIME": timedelta(days=7),
 }
 
 # ── Email ────────────────────────────────────────────────────────────────────
-EMAIL_BACKEND = os.environ.get('EMAIL_BACKEND', 'django.core.mail.backends.smtp.EmailBackend')
-EMAIL_HOST = os.environ.get('EMAIL_HOST', 'localhost')
-EMAIL_PORT = int(os.environ.get('EMAIL_PORT', '1025'))
-EMAIL_USE_TLS = os.environ.get('EMAIL_USE_TLS', 'False') == 'True'
-EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER', '')
-EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD', '')
-DEFAULT_FROM_EMAIL = os.environ.get('DEFAULT_FROM_EMAIL', 'noreply@erpgrafico.local')
+EMAIL_BACKEND = os.environ.get("EMAIL_BACKEND", "django.core.mail.backends.smtp.EmailBackend")
+EMAIL_HOST = os.environ.get("EMAIL_HOST", "localhost")
+EMAIL_PORT = int(os.environ.get("EMAIL_PORT", "1025"))
+EMAIL_USE_TLS = os.environ.get("EMAIL_USE_TLS", "False") == "True"
+EMAIL_HOST_USER = os.environ.get("EMAIL_HOST_USER", "")
+EMAIL_HOST_PASSWORD = os.environ.get("EMAIL_HOST_PASSWORD", "")
+DEFAULT_FROM_EMAIL = os.environ.get("DEFAULT_FROM_EMAIL", "noreply@erpgrafico.local")
 
 # ── Redis ────────────────────────────────────────────────────────────────────
 # Central Redis URL. DB selection:
 #   DB 0 — Celery Broker
 #   DB 1 — Celery Results
 #   DB 2 — Django Cache (general cache, singletons, throttle counters)
-REDIS_URL = os.environ.get('REDIS_URL', 'redis://redis:6379').rstrip('/')
+REDIS_URL = os.environ.get("REDIS_URL", "redis://redis:6379").rstrip("/")
+
 
 def fix_redis_url(url, db_index):
     """
@@ -285,91 +301,94 @@ def fix_redis_url(url, db_index):
     """
     if not url:
         return None
-        
+
     # Remove trailing slash
-    url = url.rstrip('/')
-    
+    url = url.rstrip("/")
+
     # UPSTASH / CLOUD REDIS FIX: Many cloud providers only support DB 0.
-    # If the URL contains upstash.io or we are in a cloud-dev environment, 
+    # If the URL contains upstash.io or we are in a cloud-dev environment,
     # we force DB 0 regardless of what was requested.
-    if 'upstash.io' in url or os.environ.get('FORCE_REDIS_DB0', '0') == '1':
+    if "upstash.io" in url or os.environ.get("FORCE_REDIS_DB0", "0") == "1":
         db_index = 0
-    
+
     # Inject DB index if not present (simple check for /0 to /15)
     import re
-    if not re.search(r'/\d+$', url.split('?')[0]):
+
+    if not re.search(r"/\d+$", url.split("?")[0]):
         # No DB index at the end of the path part
-        if '?' in url:
-            parts = url.split('?', 1)
+        if "?" in url:
+            parts = url.split("?", 1)
             url = f"{parts[0]}/{db_index}?{parts[1]}"
         else:
             url = f"{url}/{db_index}"
-            
+
     # Inject ssl_cert_reqs=none if rediss:// and param missing
-    if url.startswith('rediss://') and 'ssl_cert_reqs' not in url:
-        sep = '&' if '?' in url else '?'
+    if url.startswith("rediss://") and "ssl_cert_reqs" not in url:
+        sep = "&" if "?" in url else "?"
         url = f"{url}{sep}ssl_cert_reqs=none"
-        
+
     return url
+
 
 # Django Cache Framework — backed by Redis DB 2 (or 0 in cloud)
 # Falls back to LocMemCache if Redis is unreachable (useful for local dev without Docker)
-_CACHE_BACKEND = os.environ.get('CACHE_BACKEND', 'redis')
-if _CACHE_BACKEND == 'locmem':
+_CACHE_BACKEND = os.environ.get("CACHE_BACKEND", "redis")
+if _CACHE_BACKEND == "locmem":
     CACHES = {
-        'default': {
-            'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
-            'KEY_PREFIX': 'erp',
-            'TIMEOUT': 300,
+        "default": {
+            "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
+            "KEY_PREFIX": "erp",
+            "TIMEOUT": 300,
         }
     }
 else:
     CACHES = {
-        'default': {
-            'BACKEND': 'django.core.cache.backends.redis.RedisCache',
-            'LOCATION': fix_redis_url(REDIS_URL, 2),
-            'KEY_PREFIX': 'erp',
-            'TIMEOUT': 300,  # 5 min default TTL
+        "default": {
+            "BACKEND": "django.core.cache.backends.redis.RedisCache",
+            "LOCATION": fix_redis_url(REDIS_URL, 2),
+            "KEY_PREFIX": "erp",
+            "TIMEOUT": 300,  # 5 min default TTL
         }
     }
 
 # Channels Channel Layer — same escape hatch as CACHE_BACKEND: set
 # CHANNEL_BACKEND=locmem for local dev/tests without Redis (entity bus
 # broadcasts go to an in-memory layer instead of failing on connect).
-_CHANNEL_BACKEND = os.environ.get('CHANNEL_BACKEND', 'redis')
-if _CHANNEL_BACKEND == 'locmem':
+_CHANNEL_BACKEND = os.environ.get("CHANNEL_BACKEND", "redis")
+if _CHANNEL_BACKEND == "locmem":
     CHANNEL_LAYERS = {
-        'default': {
-            'BACKEND': 'channels.layers.InMemoryChannelLayer',
+        "default": {
+            "BACKEND": "channels.layers.InMemoryChannelLayer",
         },
     }
 else:
     CHANNEL_LAYERS = {
-        'default': {
-            'BACKEND': 'channels_redis.core.RedisChannelLayer',
-            'CONFIG': {
-                "hosts": [{
-                    "address": fix_redis_url(REDIS_URL, 3), # DB 3 for Channels
-                    "socket_connect_timeout": 5,
-                    "socket_timeout": 10,
-                    "socket_keepalive": True,
-                    "retry_on_timeout": True,
-                }],
+        "default": {
+            "BACKEND": "channels_redis.core.RedisChannelLayer",
+            "CONFIG": {
+                "hosts": [
+                    {
+                        "address": fix_redis_url(REDIS_URL, 3),  # DB 3 for Channels
+                        "socket_connect_timeout": 5,
+                        "socket_timeout": 10,
+                        "socket_keepalive": True,
+                        "retry_on_timeout": True,
+                    }
+                ],
             },
         },
     }
 
 
-
 # Celery Configuration
-CELERY_BROKER_URL = fix_redis_url(os.environ.get('CELERY_BROKER_URL', REDIS_URL), 0)
-CELERY_RESULT_BACKEND = fix_redis_url(os.environ.get('CELERY_RESULT_BACKEND', REDIS_URL), 1)
-CELERY_ACCEPT_CONTENT = ['json']
-CELERY_TASK_SERIALIZER = 'json'
-CELERY_RESULT_SERIALIZER = 'json'
-CELERY_TIMEZONE = 'America/Santiago'
-CELERY_WORKER_CONCURRENCY = int(os.environ.get('CELERY_WORKER_CONCURRENCY', 2))
-if _CACHE_BACKEND == 'locmem':
+CELERY_BROKER_URL = fix_redis_url(os.environ.get("CELERY_BROKER_URL", REDIS_URL), 0)
+CELERY_RESULT_BACKEND = fix_redis_url(os.environ.get("CELERY_RESULT_BACKEND", REDIS_URL), 1)
+CELERY_ACCEPT_CONTENT = ["json"]
+CELERY_TASK_SERIALIZER = "json"
+CELERY_RESULT_SERIALIZER = "json"
+CELERY_TIMEZONE = "America/Santiago"
+CELERY_WORKER_CONCURRENCY = int(os.environ.get("CELERY_WORKER_CONCURRENCY", 2))
+if _CACHE_BACKEND == "locmem":
     CELERY_TASK_ALWAYS_EAGER = True
     CELERY_TASK_EAGER_PROPAGATES = False
 
@@ -378,7 +397,7 @@ if _CACHE_BACKEND == 'locmem':
 # CELERY_BEAT_SCHEDULE below (code-first, version-controlled approach).
 # If you ever need UI-editable schedules, switch to:
 #   CELERY_BEAT_SCHEDULER = 'django_celery_beat.schedulers:DatabaseScheduler'
-CELERY_BEAT_SCHEDULER = 'celery.beat.PersistentScheduler'
+CELERY_BEAT_SCHEDULER = "celery.beat.PersistentScheduler"
 
 from celery.schedules import crontab
 
@@ -392,99 +411,92 @@ CELERY_BEAT_SCHEDULE = {
     # ── Purchasing ──────────────────────────────────────────────────────────
     # Generates draft/confirmed purchase orders for active subscriptions due
     # within the next 7 days. Auto-confirms fixed-amount subs.
-    'generate_subscription_orders_daily': {
-        'task': 'purchasing.tasks.generate_subscription_orders',
-        'schedule': crontab(hour=7, minute=0),   # Daily at 07:00 AM
+    "generate_subscription_orders_daily": {
+        "task": "purchasing.tasks.generate_subscription_orders",
+        "schedule": crontab(hour=7, minute=0),  # Daily at 07:00 AM
     },
-
     # ── HR ──────────────────────────────────────────────────────────────────
     # Creates an empty DRAFT payroll for every active employee on the 1st of
     # each month, so salary advances can always be linked to a document.
-    'create_monthly_draft_payrolls': {
-        'task': 'hr.tasks.create_monthly_draft_payrolls',
-        'schedule': crontab(hour=7, minute=30, day_of_month=1),  # 1st of month, 07:30 AM
+    "create_monthly_draft_payrolls": {
+        "task": "hr.tasks.create_monthly_draft_payrolls",
+        "schedule": crontab(hour=7, minute=30, day_of_month=1),  # 1st of month, 07:30 AM
     },
-
     # ── Workflow ─────────────────────────────────────────────────────────────
     # Checks WorkflowSettings each day and creates the F29 creation, F29
     # payment, and period-close tasks when the configured day-of-month matches.
-    'daily_workflow_checks': {
-        'task': 'workflow.tasks.daily_workflow_checks',
-        'schedule': crontab(hour=6, minute=0),   # Daily at 06:00 AM
+    "daily_workflow_checks": {
+        "task": "workflow.tasks.daily_workflow_checks",
+        "schedule": crontab(hour=6, minute=0),  # Daily at 06:00 AM
     },
-
     # ── Contacts / Credit ────────────────────────────────────────────────────
     # Evaluates overdue credit risk for all contacts, updates their risk level,
     # and applies/removes automatic credit blocks based on AccountingSettings.
-    'evaluate_credit_portfolio_daily': {
-        'task': 'contacts.tasks.evaluate_credit_portfolio',
-        'schedule': crontab(hour=4, minute=0),   # Daily at 04:00 AM
+    "evaluate_credit_portfolio_daily": {
+        "task": "contacts.tasks.evaluate_credit_portfolio",
+        "schedule": crontab(hour=4, minute=0),  # Daily at 04:00 AM
     },
-
     # ── Sales / POS ──────────────────────────────────────────────────────────
     # Purges POS draft carts that have not been updated in more than 1 day.
     # Runs in the early morning to clean up overnight abandoned drafts.
-    'cleanup_old_draft_carts_daily': {
-        'task': 'sales.tasks.cleanup_old_draft_carts',
-        'schedule': crontab(hour=3, minute=0),   # Daily at 03:00 AM
+    "cleanup_old_draft_carts_daily": {
+        "task": "sales.tasks.cleanup_old_draft_carts",
+        "schedule": crontab(hour=3, minute=0),  # Daily at 03:00 AM
     },
-
     # ── Production ───────────────────────────────────────────────────────────
     # Notifica una vez al día a los responsables de OTs atrasadas (due_date < today)
-    'notify_overdue_work_orders_hourly': {
-        'task': 'production.tasks.notify_overdue_work_orders',
-        'schedule': crontab(minute=15),          # Hourly at XX:15
+    "notify_overdue_work_orders_hourly": {
+        "task": "production.tasks.notify_overdue_work_orders",
+        "schedule": crontab(minute=15),  # Hourly at XX:15
     },
-
     # ── Observability ────────────────────────────────────────────────────────
     # Sends a liveness ping to Healthchecks.io (or compatible). No-op if
     # HEALTHCHECK_PING_URL is unset. Ver docs/50-audit/observability/.
-    'observability_healthcheck_ping': {
-        'task': 'core.tasks.ping_healthcheck',
-        'schedule': crontab(minute='*/5'),       # Every 5 minutes
+    "observability_healthcheck_ping": {
+        "task": "core.tasks.ping_healthcheck",
+        "schedule": crontab(minute="*/5"),  # Every 5 minutes
     },
-
     # ── Treasury / Loans (Fase 2 — F2.10) ──────────────────────────────────
     # Marca OVERDUE las cuotas vencidas y notifica las próximas a vencer.
-    'mark_overdue_loan_installments_daily': {
-        'task': 'treasury.tasks.mark_overdue_loan_installments',
-        'schedule': crontab(hour=8, minute=0),   # Diario a las 08:00
+    "mark_overdue_loan_installments_daily": {
+        "task": "treasury.tasks.mark_overdue_loan_installments",
+        "schedule": crontab(hour=8, minute=0),  # Diario a las 08:00
     },
-
     # ── Treasury / Tarjeta de crédito propia (Fase 3 — F3.7, ADR-0037) ───
     # Marca OVERDUE los estados de cuenta vencidos y notifica los próximos
     # a vencer (cierra el gap A: estado OVERDUE persistido).
-    'mark_overdue_credit_card_statements_daily': {
-        'task': 'treasury.tasks.mark_overdue_credit_card_statements',
-        'schedule': crontab(hour=8, minute=5),   # Diario a las 08:05
+    "mark_overdue_credit_card_statements_daily": {
+        "task": "treasury.tasks.mark_overdue_credit_card_statements",
+        "schedule": crontab(hour=8, minute=5),  # Diario a las 08:05
     },
-
     # ── Treasury / Loans (Fase 2 — F2.9, opt-in) ───────────────────────────
     # Devenga el interés del mes para créditos ACTIVE. No-op si no hay
     # cuentas de gasto/pasivo configuradas en AccountingSettings (F5.1).
-    'accrue_monthly_loan_interest': {
-        'task': 'treasury.tasks.accrue_monthly_loan_interest',
-        'schedule': crontab(hour=7, minute=0, day_of_month=1),  # Día 1 de cada mes
+    "accrue_monthly_loan_interest": {
+        "task": "treasury.tasks.accrue_monthly_loan_interest",
+        "schedule": crontab(hour=7, minute=0, day_of_month=1),  # Día 1 de cada mes
     },
 }
 
 # ── Observability: Sentry (errores y trazas) ────────────────────────────────
 # Opt-in: si SENTRY_DSN no está definido, Sentry no se inicializa y no se envía
 # telemetría. Estrategia completa en docs/50-audit/observability/strategy.md.
-SENTRY_DSN = os.environ.get('SENTRY_DSN', '').strip()
+SENTRY_DSN = os.environ.get("SENTRY_DSN", "").strip()
 if SENTRY_DSN:
     import sentry_sdk
-    from sentry_sdk.integrations.django import DjangoIntegration
     from sentry_sdk.integrations.celery import CeleryIntegration
+    from sentry_sdk.integrations.django import DjangoIntegration
     from sentry_sdk.integrations.redis import RedisIntegration
 
     sentry_sdk.init(
         dsn=SENTRY_DSN,
-        environment=os.environ.get('SENTRY_ENVIRONMENT', 'production' if not DEBUG else 'development'),
-        release=os.environ.get('GIT_HASH', 'unknown'),
+        environment=os.environ.get(
+            "SENTRY_ENVIRONMENT", "production" if not DEBUG else "development"
+        ),
+        release=os.environ.get("GIT_HASH", "unknown"),
         integrations=[DjangoIntegration(), CeleryIntegration(), RedisIntegration()],
         # Performance: bajo por defecto para no exceder el free tier
-        traces_sample_rate=float(os.environ.get('SENTRY_TRACES_SAMPLE_RATE', '0.05')),
+        traces_sample_rate=float(os.environ.get("SENTRY_TRACES_SAMPLE_RATE", "0.05")),
         # Privacidad: no enviar PII por defecto (emails, IPs, headers de auth)
         send_default_pii=False,
     )
@@ -494,24 +506,20 @@ if SENTRY_DSN:
 # Esto engañará a todo el sistema (IVA, periodos, cierres).
 
 
-import datetime
-from django.utils import timezone
-
 # FECHA DE PRUEBA: Cambia esto a la fecha que quieras simular
 # Ejemplo: 15 de Abril de 2026
-#MOCK_DATE = datetime.datetime(2026, 11, 15, tzinfo=datetime.timezone.utc)
+# MOCK_DATE = datetime.datetime(2026, 11, 15, tzinfo=datetime.timezone.utc)
 
 # Activa el "Viaje en el tiempo" de forma segura para migraciones
 # Usamos una función con nombre en lugar de lambda para que sea serializable
-#def get_mocked_now():
+# def get_mocked_now():
 #    return MOCK_DATE
 
 # No aplicar el mock durante la generación de migraciones para evitar problemas de serialización
-import sys
-#if 'makemigrations' not in sys.argv and 'migrate' not in sys.argv:
+# if 'makemigrations' not in sys.argv and 'migrate' not in sys.argv:
 #    timezone.now = get_mocked_now
 #    print(f"\n[TESTING MODE] System clock fixed to {MOCK_DATE}\n")
-#else:
+# else:
 #    print(f"\n[MIGRATION MODE] Mock date disabled for serialization safety.\n")
 
 #

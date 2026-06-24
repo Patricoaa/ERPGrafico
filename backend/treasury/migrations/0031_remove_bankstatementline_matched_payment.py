@@ -4,18 +4,17 @@ from django.db import migrations
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('treasury', '0030_migrate_legacy_matches'),
+        ("treasury", "0030_migrate_legacy_matches"),
     ]
 
     operations = [
         migrations.RemoveField(
-            model_name='bankstatementline',
-            name='matched_payment',
+            model_name="bankstatementline",
+            name="matched_payment",
         ),
         migrations.RemoveField(
-            model_name='historicalbankstatementline',
-            name='matched_payment',
+            model_name="historicalbankstatementline",
+            name="matched_payment",
         ),
     ]

@@ -1,8 +1,11 @@
 from django.db.models.signals import post_save
 from django.dispatch import receiver
-from sales.models import SaleOrder, SaleLine
-from .services import WorkOrderService
+
 from inventory.models import Product
+from sales.models import SaleOrder
+
+from .services import WorkOrderService
+
 
 @receiver(post_save, sender=SaleOrder)
 def auto_create_work_orders(sender, instance, created, **kwargs):

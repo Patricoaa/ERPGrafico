@@ -4,26 +4,25 @@ from django.db import migrations
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('inventory', '0011_standardize_is_active_archive_flag'),
+        ("inventory", "0011_standardize_is_active_archive_flag"),
     ]
 
     operations = [
         migrations.RemoveField(
-            model_name='historicalproduct',
-            name='expense_account',
+            model_name="historicalproduct",
+            name="expense_account",
         ),
         migrations.RemoveField(
-            model_name='historicalproduct',
-            name='income_account',
+            model_name="historicalproduct",
+            name="income_account",
         ),
         migrations.RemoveField(
-            model_name='product',
-            name='expense_account',
+            model_name="product",
+            name="expense_account",
         ),
         migrations.RemoveField(
-            model_name='product',
-            name='income_account',
+            model_name="product",
+            name="income_account",
         ),
     ]

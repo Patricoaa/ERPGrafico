@@ -2,7 +2,7 @@
 
 import { useRouter, useSearchParams, usePathname } from "next/navigation"
 import React, { useState, useEffect, lazy, Suspense } from "react"
-import { ColumnDef } from "@tanstack/react-table"
+import { type ColumnDef } from "@tanstack/react-table"
 import { Building2, User as UserIcon, Banknote } from "lucide-react"
 
 import { formatRUT } from "@/lib/utils/format"

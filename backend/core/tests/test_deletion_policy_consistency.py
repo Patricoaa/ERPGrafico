@@ -14,6 +14,7 @@ Mechanisms per the contract's authoritative table:
 
 If you add a model to the deletion-policy table, add it here in the same PR.
 """
+
 import importlib
 
 import pytest
@@ -21,41 +22,41 @@ from django.apps import apps
 
 # ── Cancelacion models → (module_path, service_class, method_name) ──
 CANCEL_SERVICE_MAP = {
-    'SaleOrder':         ('sales.services', 'SalesService', 'cancel_sale_order'),
-    'PurchaseOrder':     ('purchasing.services', 'PurchaseOrderService', 'cancel_purchase_order'),
-    'PurchaseReceipt':   ('purchasing.services', 'PurchasingService', 'cancel_receipt'),
-    'Invoice':           ('billing.services', 'BillingService', 'cancel_invoice'),
-    'TreasuryMovement':  ('treasury.services', 'TreasuryService', 'cancel_movement'),
+    "SaleOrder": ("sales.services", "SalesService", "cancel_sale_order"),
+    "PurchaseOrder": ("purchasing.services", "PurchaseOrderService", "cancel_purchase_order"),
+    "PurchaseReceipt": ("purchasing.services", "PurchasingService", "cancel_receipt"),
+    "Invoice": ("billing.services", "BillingService", "cancel_invoice"),
+    "TreasuryMovement": ("treasury.services", "TreasuryService", "cancel_movement"),
 }
 
 
 # ── Deletion policy table: model_key → (app_label, model_name, pattern) ──
 # Mirror of the authoritative table in docs/20-contracts/deletion-policy.md.
 DELETION_POLICY = {
-    'Account':           ('accounting', 'account', 'archivo'),
-    'JournalEntry':      ('accounting', 'journalentry', 'anulacion'),
-    'Invoice':           ('billing', 'invoice', 'anulacion'),
-    'Contact':           ('contacts', 'contact', 'archivo'),
-    'User':              ('core', 'user', 'archivo'),
-    'Employee':          ('hr', 'employee', 'archivo'),
-    'Product':           ('inventory', 'product', 'archivo'),
-    'ProductCategory':   ('inventory', 'productcategory', 'archivo'),
-    'UoM':               ('inventory', 'uom', 'archivo'),
-    'UoMCategory':       ('inventory', 'uomcategory', 'archivo'),
-    'Warehouse':         ('inventory', 'warehouse', 'archivo'),
-    'StockMove':         ('inventory', 'stockmove', 'anulacion'),
-    'WorkOrder':         ('production', 'workorder', 'anulacion'),
-    'PurchaseOrder':     ('purchasing', 'purchaseorder', 'anulacion'),
-    'PurchaseReceipt':   ('purchasing', 'purchasereceipt', 'cancelacion'),
-    'SaleOrder':         ('sales', 'saleorder', 'cancelacion'),
-    'SaleDelivery':      ('sales', 'saledelivery', 'anulacion'),
-    'DraftCart':         ('sales', 'draftcart', 'hard_delete'),
-    'TaxPeriod':         ('tax', 'taxperiod', 'archivo'),
-    'Bank':              ('treasury', 'bank', 'archivo'),
-    'TreasuryAccount':   ('treasury', 'treasuryaccount', 'archivo'),
-    'PaymentMethod':     ('treasury', 'paymentmethod', 'archivo'),
-    'TreasuryMovement':  ('treasury', 'treasurymovement', 'cancelacion'),
-    'BankStatementLine': ('treasury', 'bankstatementline', 'anulacion'),
+    "Account": ("accounting", "account", "archivo"),
+    "JournalEntry": ("accounting", "journalentry", "anulacion"),
+    "Invoice": ("billing", "invoice", "anulacion"),
+    "Contact": ("contacts", "contact", "archivo"),
+    "User": ("core", "user", "archivo"),
+    "Employee": ("hr", "employee", "archivo"),
+    "Product": ("inventory", "product", "archivo"),
+    "ProductCategory": ("inventory", "productcategory", "archivo"),
+    "UoM": ("inventory", "uom", "archivo"),
+    "UoMCategory": ("inventory", "uomcategory", "archivo"),
+    "Warehouse": ("inventory", "warehouse", "archivo"),
+    "StockMove": ("inventory", "stockmove", "anulacion"),
+    "WorkOrder": ("production", "workorder", "anulacion"),
+    "PurchaseOrder": ("purchasing", "purchaseorder", "anulacion"),
+    "PurchaseReceipt": ("purchasing", "purchasereceipt", "cancelacion"),
+    "SaleOrder": ("sales", "saleorder", "cancelacion"),
+    "SaleDelivery": ("sales", "saledelivery", "anulacion"),
+    "DraftCart": ("sales", "draftcart", "hard_delete"),
+    "TaxPeriod": ("tax", "taxperiod", "archivo"),
+    "Bank": ("treasury", "bank", "archivo"),
+    "TreasuryAccount": ("treasury", "treasuryaccount", "archivo"),
+    "PaymentMethod": ("treasury", "paymentmethod", "archivo"),
+    "TreasuryMovement": ("treasury", "treasurymovement", "cancelacion"),
+    "BankStatementLine": ("treasury", "bankstatementline", "anulacion"),
 }
 
 # Anulación entities whose mechanism is NOT an own `status` field, per the
@@ -64,9 +65,9 @@ DELETION_POLICY = {
 STATUS_EXEMPT = {
     # "Reverso vía contramovimiento": the annulment is a counter StockMove,
     # the original move is never mutated.
-    'StockMove': None,
+    "StockMove": None,
     # "No se borra; se marca unmatched o discarded" via reconciliation_status.
-    'BankStatementLine': 'reconciliation_status',
+    "BankStatementLine": "reconciliation_status",
 }
 
 # Archivo entities whose lifecycle is governed by an existing `status` enum
@@ -74,8 +75,8 @@ STATUS_EXEMPT = {
 # of truth. Key → field that implements the mechanism. Documented in
 # deletion-policy.md.
 ARCHIVO_EXEMPT = {
-    'Employee': 'status',    # ACTIVE / INACTIVE
-    'TaxPeriod': 'status',   # OPEN / UNDER_REVIEW / CLOSED — no es archivable
+    "Employee": "status",  # ACTIVE / INACTIVE
+    "TaxPeriod": "status",  # OPEN / UNDER_REVIEW / CLOSED — no es archivable
 }
 
 # Archivo entities that do NOT yet comply with the contract's
@@ -83,7 +84,7 @@ ARCHIVO_EXEMPT = {
 # silently; remove an entry here the day the model gains `is_active`.
 ARCHIVO_KNOWN_GAPS = {}
 
-CANCELLED_KEYWORDS = {'CANCELLED', 'CANCELED', 'ANNULLED', 'ANULLED'}
+CANCELLED_KEYWORDS = {"CANCELLED", "CANCELED", "ANNULLED", "ANULLED"}
 
 
 def _get_field(model, name):
@@ -95,15 +96,15 @@ def _get_field(model, name):
 
 def _has_cancelled_status(model) -> bool:
     """Model has a `status` field whose choices include a CANCELLED value."""
-    field = _get_field(model, 'status')
+    field = _get_field(model, "status")
     if field is None or not field.choices:
         return False
     return any(str(value).upper() in CANCELLED_KEYWORDS for value, _ in field.choices)
 
 
 def _has_is_active_field(model) -> bool:
-    field = _get_field(model, 'is_active')
-    return field is not None and field.get_internal_type() == 'BooleanField'
+    field = _get_field(model, "is_active")
+    return field is not None and field.get_internal_type() == "BooleanField"
 
 
 @pytest.mark.django_db
@@ -120,7 +121,7 @@ class TestDeletionPolicyConsistency:
         """
         failures = []
         for entity_key, (app, model_name, pattern) in DELETION_POLICY.items():
-            if pattern not in ('anulacion', 'cancelacion'):
+            if pattern not in ("anulacion", "cancelacion"):
                 continue
             try:
                 model = apps.get_model(app, model_name)
@@ -138,7 +139,7 @@ class TestDeletionPolicyConsistency:
                 continue
 
             if not _has_cancelled_status(model):
-                field = _get_field(model, 'status')
+                field = _get_field(model, "status")
                 detail = (
                     f"status choices {[c[0] for c in field.choices]}"
                     if field is not None and field.choices
@@ -149,9 +150,7 @@ class TestDeletionPolicyConsistency:
                     f"CANCELLED, found {detail}"
                 )
 
-        assert not failures, (
-            "Anulacion/Cancelacion pattern violations:\n" + "\n".join(failures)
-        )
+        assert not failures, "Anulacion/Cancelacion pattern violations:\n" + "\n".join(failures)
 
     def test_archivo_models_have_is_active(self):
         """
@@ -161,7 +160,7 @@ class TestDeletionPolicyConsistency:
         """
         failures = []
         for entity_key, (app, model_name, pattern) in DELETION_POLICY.items():
-            if pattern != 'archivo':
+            if pattern != "archivo":
                 continue
             try:
                 model = apps.get_model(app, model_name)
@@ -182,17 +181,12 @@ class TestDeletionPolicyConsistency:
             if entity_key in ARCHIVO_KNOWN_GAPS:
                 if has_flag:
                     failures.append(
-                        f"{entity_key}: now has is_active — remove it from "
-                        f"ARCHIVO_KNOWN_GAPS"
+                        f"{entity_key}: now has is_active — remove it from ARCHIVO_KNOWN_GAPS"
                     )
             elif not has_flag:
-                failures.append(
-                    f"{entity_key}: archivo pattern but no is_active BooleanField"
-                )
+                failures.append(f"{entity_key}: archivo pattern but no is_active BooleanField")
 
-        assert not failures, (
-            "Archivo pattern violations:\n" + "\n".join(failures)
-        )
+        assert not failures, "Archivo pattern violations:\n" + "\n".join(failures)
 
     def test_hard_delete_models_no_status_or_is_active(self):
         """
@@ -201,16 +195,14 @@ class TestDeletionPolicyConsistency:
         """
         failures = []
         for entity_key, (app, model_name, pattern) in DELETION_POLICY.items():
-            if pattern != 'hard_delete':
+            if pattern != "hard_delete":
                 continue
             try:
                 apps.get_model(app, model_name)
             except LookupError:
                 failures.append(f"{entity_key}: model {app}.{model_name} not found")
 
-        assert not failures, (
-            "Hard delete pattern violations:\n" + "\n".join(failures)
-        )
+        assert not failures, "Hard delete pattern violations:\n" + "\n".join(failures)
 
     def test_all_deletion_policy_models_exist(self):
         """
@@ -223,9 +215,7 @@ class TestDeletionPolicyConsistency:
             except LookupError:
                 failures.append(f"{entity_key}: {app}.{model_name} does not exist")
 
-        assert not failures, (
-            "Missing models:\n" + "\n".join(failures)
-        )
+        assert not failures, "Missing models:\n" + "\n".join(failures)
 
     def test_cancelacion_models_have_cancel_service(self):
         """
@@ -234,12 +224,10 @@ class TestDeletionPolicyConsistency:
         """
         failures = []
         for entity_key, (app, model_name, pattern) in DELETION_POLICY.items():
-            if pattern != 'cancelacion':
+            if pattern != "cancelacion":
                 continue
             if entity_key not in CANCEL_SERVICE_MAP:
-                failures.append(
-                    f"{entity_key}: cancelacion pattern but not in CANCEL_SERVICE_MAP"
-                )
+                failures.append(f"{entity_key}: cancelacion pattern but not in CANCEL_SERVICE_MAP")
                 continue
 
             module_path, class_name, method_name = CANCEL_SERVICE_MAP[entity_key]
@@ -251,9 +239,7 @@ class TestDeletionPolicyConsistency:
 
             svc_class = getattr(module, class_name, None)
             if svc_class is None:
-                failures.append(
-                    f"{entity_key}: class {class_name} not found in {module_path}"
-                )
+                failures.append(f"{entity_key}: class {class_name} not found in {module_path}")
                 continue
 
             cancel_method = getattr(svc_class, method_name, None)
@@ -262,6 +248,4 @@ class TestDeletionPolicyConsistency:
                     f"{entity_key}: method {class_name}.{method_name} not found or not callable"
                 )
 
-        assert not failures, (
-            "Cancelacion service violations:\n" + "\n".join(failures)
-        )
+        assert not failures, "Cancelacion service violations:\n" + "\n".join(failures)

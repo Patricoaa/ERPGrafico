@@ -4,15 +4,26 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('treasury', '0079_treasury_account_credit_limit'),
+        ("treasury", "0079_treasury_account_credit_limit"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='cardpendingcharge',
-            name='charge_type',
-            field=models.CharField(choices=[('COMMISSION', 'Comisión'), ('TAX', 'Impuesto'), ('FEE', 'Cargo'), ('INSURANCE', 'Seguro'), ('INTEREST', 'Interés'), ('OTHER', 'Otro')], default='OTHER', max_length=20, verbose_name='Tipo de Cargo'),
+            model_name="cardpendingcharge",
+            name="charge_type",
+            field=models.CharField(
+                choices=[
+                    ("COMMISSION", "Comisión"),
+                    ("TAX", "Impuesto"),
+                    ("FEE", "Cargo"),
+                    ("INSURANCE", "Seguro"),
+                    ("INTEREST", "Interés"),
+                    ("OTHER", "Otro"),
+                ],
+                default="OTHER",
+                max_length=20,
+                verbose_name="Tipo de Cargo",
+            ),
         ),
     ]

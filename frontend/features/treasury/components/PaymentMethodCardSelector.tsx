@@ -4,7 +4,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Banknote, CreditCard, Building2, ClipboardList, Wallet } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Checkbox } from "@/components/ui/checkbox"
-import { useAllowedPaymentMethods, PaymentMethod } from "@/hooks/useAllowedPaymentMethods"
+import { useAllowedPaymentMethods, type PaymentMethod } from "@/hooks/useAllowedPaymentMethods"
 import { useBanks } from '../hooks/useMasterData'
 import { useState, useMemo, useEffect } from "react"
 import { Button } from "@/components/ui/button"

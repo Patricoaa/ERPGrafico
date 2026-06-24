@@ -1,16 +1,19 @@
-from django.db.models.signals import post_save, pre_save, pre_delete, post_delete
+from django.db.models.signals import post_delete, post_save, pre_delete, pre_save
 from django.dispatch import receiver
 
 
-@receiver(pre_save, sender='treasury.PaymentTerminalProvider')
+@receiver(pre_save, sender="treasury.PaymentTerminalProvider")
 def _capture_provider_previous_bridge(sender, instance, **kwargs):
     """Captura bank_treasury_account anterior para detectar cambio en post_save."""
     if instance.pk:
         try:
             from treasury.models import PaymentTerminalProvider
-            prev = PaymentTerminalProvider.objects.filter(pk=instance.pk).values_list(
-                'bank_treasury_account_id', flat=True
-            ).first()
+
+            prev = (
+                PaymentTerminalProvider.objects.filter(pk=instance.pk)
+                .values_list("bank_treasury_account_id", flat=True)
+                .first()
+            )
             instance._prev_bridge_id = prev
         except Exception:
             instance._prev_bridge_id = None
@@ -18,18 +21,19 @@ def _capture_provider_previous_bridge(sender, instance, **kwargs):
         instance._prev_bridge_id = None
 
 
-@receiver(pre_save, sender='treasury.PaymentTerminalProvider')
+@receiver(pre_save, sender="treasury.PaymentTerminalProvider")
 def _ensure_provider_bridge_account(sender, instance, **kwargs):
     """Auto-crea TreasuryAccount BRIDGE si el proveedor nuevo no tiene una asignada."""
     if instance.pk or instance.bank_treasury_account_id:
         return  # Solo para nuevos providers
     from treasury.services import ProviderAccountService
+
     instance.bank_treasury_account = ProviderAccountService.ensure_bridge_account(
         provider_name=instance.name,
     )
 
 
-@receiver(post_save, sender='treasury.PaymentTerminalProvider')
+@receiver(post_save, sender="treasury.PaymentTerminalProvider")
 def sync_settlement_on_provider_bridge_change(sender, instance, **kwargs):
     """
     Cuando cambia PaymentTerminalProvider.bank_treasury_account,
@@ -38,7 +42,7 @@ def sync_settlement_on_provider_bridge_change(sender, instance, **kwargs):
 
     Esto mantiene el invariante: settlement_account del método = cuenta puente del proveedor.
     """
-    prev_bridge_id = getattr(instance, '_prev_bridge_id', None)
+    prev_bridge_id = getattr(instance, "_prev_bridge_id", None)
     new_bridge = instance.bank_treasury_account
 
     if new_bridge is None:
@@ -47,6 +51,7 @@ def sync_settlement_on_provider_bridge_change(sender, instance, **kwargs):
         return  # Sin cambio
 
     from treasury.models import PaymentMethod
+
     affected = PaymentMethod.objects.filter(
         method_type=PaymentMethod.Type.CARD_TERMINAL,
         linked_terminal_device__provider=instance,
@@ -55,7 +60,7 @@ def sync_settlement_on_provider_bridge_change(sender, instance, **kwargs):
     affected.update(settlement_account=new_bridge)
 
 
-@receiver(post_save, sender='treasury.POSTerminal')
+@receiver(post_save, sender="treasury.POSTerminal")
 def sync_card_terminal_payment_method(sender, instance, **kwargs):
     """
     Auto-crea un PaymentMethod de tipo CARD_TERMINAL cuando una caja POS
@@ -78,10 +83,9 @@ def sync_card_terminal_payment_method(sender, instance, **kwargs):
 
     # Hacer select_related para evitar N+1 queries
     from treasury.models import PaymentTerminalDevice
-    device = (
-        PaymentTerminalDevice.objects
-        .select_related('provider__bank_treasury_account')
-        .get(pk=instance.payment_terminal_device_id)
+
+    device = PaymentTerminalDevice.objects.select_related("provider__bank_treasury_account").get(
+        pk=instance.payment_terminal_device_id
     )
 
     # Usar la cuenta puente del proveedor ("Cuenta Destino Liquidación").
@@ -97,23 +101,23 @@ def sync_card_terminal_payment_method(sender, instance, **kwargs):
         method_type=PaymentMethod.Type.CARD_TERMINAL,
         linked_terminal_device=device,
         defaults={
-            'name': f'Tarjeta — {device.name}',
-            'treasury_account': treasury_account,
-            'allow_for_sales': True,
-            'allow_for_purchases': False,
-            'is_active': True,
+            "name": f"Tarjeta — {device.name}",
+            "treasury_account": treasury_account,
+            "allow_for_sales": True,
+            "allow_for_purchases": False,
+            "is_active": True,
         },
     )
 
     if not created and not method.is_active:
         method.is_active = True
-        method.save(update_fields=['is_active'])
+        method.save(update_fields=["is_active"])
 
     # Asegurar que el método está en allowed_payment_methods de la caja
     instance.allowed_payment_methods.add(method)
 
 
-@receiver(pre_delete, sender='treasury.PaymentTerminalProvider')
+@receiver(pre_delete, sender="treasury.PaymentTerminalProvider")
 def cleanup_terminal_provider_assets(sender, instance, **kwargs):
     """
     Antes de eliminar el proveedor:
@@ -121,46 +125,48 @@ def cleanup_terminal_provider_assets(sender, instance, **kwargs):
     2. Guardar ID de la cuenta de tesorería para intentar borrarla en post_delete.
     """
     from treasury.models import PaymentMethod
+
     # Eliminar métodos de pago CARD_TERMINAL vinculados a dispositivos de este proveedor
     PaymentMethod.objects.filter(
-        method_type=PaymentMethod.Type.CARD_TERMINAL,
-        linked_terminal_device__provider=instance
+        method_type=PaymentMethod.Type.CARD_TERMINAL, linked_terminal_device__provider=instance
     ).delete()
-    
+
     # Guardar ID de la cuenta puente para el post_delete
     instance._cleanup_account_id = instance.bank_treasury_account_id
 
 
-@receiver(post_delete, sender='treasury.PaymentTerminalProvider')
+@receiver(post_delete, sender="treasury.PaymentTerminalProvider")
 def cleanup_orphaned_treasury_account(sender, instance, **kwargs):
     """
     Después de eliminar el proveedor, intentar borrar la cuenta de tesorería
     si quedó huérfana y no tiene actividad.
     """
-    account_id = getattr(instance, '_cleanup_account_id', None)
+    account_id = getattr(instance, "_cleanup_account_id", None)
     if not account_id:
         return
 
     from django.db.models import Q
-    from treasury.models import TreasuryAccount, PaymentTerminalProvider, TreasuryMovement
-    
+
+    from treasury.models import PaymentTerminalProvider, TreasuryAccount, TreasuryMovement
+
     # 1. Verificar si otras entidades la usan
     is_shared = PaymentTerminalProvider.objects.filter(bank_treasury_account_id=account_id).exists()
     if is_shared:
         return
-        
+
     try:
         account = TreasuryAccount.objects.get(pk=account_id)
-        
+
         # 2. Verificar actividad (movimientos o asientos contables)
         has_movements = TreasuryMovement.objects.filter(
             Q(from_account=account) | Q(to_account=account)
         ).exists()
-        
+
         # También chequear JournalItems por si se usó en asientos manuales
         from accounting.models import JournalItem
+
         has_gl_activity = JournalItem.objects.filter(account=account.account).exists()
-        
+
         if not has_movements and not has_gl_activity:
             account.delete()
     except TreasuryAccount.DoesNotExist:
@@ -169,17 +175,20 @@ def cleanup_orphaned_treasury_account(sender, instance, **kwargs):
         # No queremos que el cleanup falle y rompa la experiencia del usuario si algo sale mal
         pass
 
-@receiver(post_save, sender='treasury.TreasuryMovement')
-@receiver(post_delete, sender='treasury.TreasuryMovement')
+
+@receiver(post_save, sender="treasury.TreasuryMovement")
+@receiver(post_delete, sender="treasury.TreasuryMovement")
 def handle_treasury_movement_cache_invalidation(sender, instance, **kwargs):
     from core.cache import invalidate_report_cache
-    invalidate_report_cache('treasury')
-    invalidate_report_cache('contacts')
+
+    invalidate_report_cache("treasury")
+    invalidate_report_cache("contacts")
 
 
 # ─── AccountingSettings → cuenta puente Cheques en Cartera ─────────────────
 
-@receiver(pre_save, sender='accounting.AccountingSettings')
+
+@receiver(pre_save, sender="accounting.AccountingSettings")
 def _capture_settings_previous_check_portfolio(sender, instance, **kwargs):
     """
     Captura el valor previo de check_portfolio_account_id para que el
@@ -188,9 +197,12 @@ def _capture_settings_previous_check_portfolio(sender, instance, **kwargs):
     if instance.pk:
         try:
             from accounting.models import AccountingSettings
-            prev = AccountingSettings.objects.filter(pk=instance.pk).values_list(
-                'check_portfolio_account_id', flat=True
-            ).first()
+
+            prev = (
+                AccountingSettings.objects.filter(pk=instance.pk)
+                .values_list("check_portfolio_account_id", flat=True)
+                .first()
+            )
             instance._prev_check_portfolio_id = prev
         except Exception:
             instance._prev_check_portfolio_id = None
@@ -198,7 +210,7 @@ def _capture_settings_previous_check_portfolio(sender, instance, **kwargs):
         instance._prev_check_portfolio_id = None
 
 
-@receiver(post_save, sender='accounting.AccountingSettings')
+@receiver(post_save, sender="accounting.AccountingSettings")
 def ensure_check_portfolio_treasury_account(sender, instance, **kwargs):
     """
     Cuando se asigna o cambia AccountingSettings.check_portfolio_account,
@@ -211,9 +223,10 @@ def ensure_check_portfolio_treasury_account(sender, instance, **kwargs):
     if not new_account_id:
         return  # Nada que asegurar
 
-    prev_id = getattr(instance, '_prev_check_portfolio_id', None)
+    prev_id = getattr(instance, "_prev_check_portfolio_id", None)
     if prev_id == new_account_id:
         return  # Sin cambio respecto al estado previo
 
     from treasury.check_service import CheckService
+
     CheckService.ensure_portfolio_account(account=instance.check_portfolio_account)

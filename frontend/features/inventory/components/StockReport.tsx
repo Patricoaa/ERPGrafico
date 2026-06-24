@@ -5,7 +5,7 @@ import React, { useState, useMemo } from "react"
 import { ArrowRightLeft } from "lucide-react"
 
 import { BaseModal, DataCell, DataTableView, EntityCard, PageContainer, DataTableColumnHeader, SmartSearchBar, useSmartSearch, CancelButton, SubmitButton, FormFooter } from '@/components/shared'
-import { ColumnDef } from "@tanstack/react-table"
+import { type ColumnDef } from "@tanstack/react-table"
 import { cn } from "@/lib/utils"
 
 import { AdjustmentForm } from "@/features/inventory/components/AdjustmentForm"

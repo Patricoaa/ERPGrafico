@@ -4,20 +4,29 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('accounting', '0024_accountingsettings_card_minimum_payment_block_and_more'),
+        ("accounting", "0024_accountingsettings_card_minimum_payment_block_and_more"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='account',
-            name='is_active',
-            field=models.BooleanField(db_index=True, default=True, help_text='Desactivar para archivar la cuenta; los mayores históricos siguen visibles.', verbose_name='Activo'),
+            model_name="account",
+            name="is_active",
+            field=models.BooleanField(
+                db_index=True,
+                default=True,
+                help_text="Desactivar para archivar la cuenta; los mayores históricos siguen visibles.",
+                verbose_name="Activo",
+            ),
         ),
         migrations.AddField(
-            model_name='historicalaccount',
-            name='is_active',
-            field=models.BooleanField(db_index=True, default=True, help_text='Desactivar para archivar la cuenta; los mayores históricos siguen visibles.', verbose_name='Activo'),
+            model_name="historicalaccount",
+            name="is_active",
+            field=models.BooleanField(
+                db_index=True,
+                default=True,
+                help_text="Desactivar para archivar la cuenta; los mayores históricos siguen visibles.",
+                verbose_name="Activo",
+            ),
         ),
     ]

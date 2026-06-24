@@ -3,8 +3,8 @@
 import { FormField } from "@/components/ui/form"
 import { LabeledInput, LabeledContainer, FormSection, LabeledSwitch, NotchedButton } from "@/components/shared"
 import { ShoppingCart, Truck, Barcode, Fingerprint, Layers } from "lucide-react"
-import { UseFormReturn } from "react-hook-form"
-import { ProductFormValues } from "./schema"
+import { type UseFormReturn } from "react-hook-form"
+import { type ProductFormValues } from "./schema"
 import { cn } from "@/lib/utils"
 import { BarcodeModal } from "@/features/inventory/components/BarcodeModal"
 

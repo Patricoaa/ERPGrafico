@@ -12,13 +12,13 @@ histórica se preservan (django-simple-history es append-only). El campo
 status sigue aceptando cualquier string en lecturas, solo cambia la
 validación a nivel de modelo para el modelo principal Check.
 """
+
 from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('treasury', '0064_data_migrate_endorsed_checks_to_portfolio'),
+        ("treasury", "0064_data_migrate_endorsed_checks_to_portfolio"),
     ]
 
     operations = [
@@ -26,37 +26,37 @@ class Migration(migrations.Migration):
         #    y de la tabla histórica (la fila de 'ENDORSSED' con typo se va
         #    también, ya nunca fue correcta).
         migrations.AlterField(
-            model_name='check',
-            name='status',
+            model_name="check",
+            name="status",
             field=models.CharField(
                 choices=[
-                    ('IN_PORTFOLIO', 'En Cartera'),
-                    ('DEPOSITED', 'Depositado (En Tránsito)'),
-                    ('CLEARED', 'Cobrado / Liquidado'),
-                    ('BOUNCED', 'Protestado / Rechazado'),
-                    ('VOIDED', 'Anulado'),
-                    ('ISSUED', 'Girado (Pendiente de Cobro)'),
+                    ("IN_PORTFOLIO", "En Cartera"),
+                    ("DEPOSITED", "Depositado (En Tránsito)"),
+                    ("CLEARED", "Cobrado / Liquidado"),
+                    ("BOUNCED", "Protestado / Rechazado"),
+                    ("VOIDED", "Anulado"),
+                    ("ISSUED", "Girado (Pendiente de Cobro)"),
                 ],
-                default='IN_PORTFOLIO',
+                default="IN_PORTFOLIO",
                 max_length=15,
-                verbose_name='Estado',
+                verbose_name="Estado",
             ),
         ),
         migrations.AlterField(
-            model_name='historicalcheck',
-            name='status',
+            model_name="historicalcheck",
+            name="status",
             field=models.CharField(
                 choices=[
-                    ('IN_PORTFOLIO', 'En Cartera'),
-                    ('DEPOSITED', 'Depositado (En Tránsito)'),
-                    ('CLEARED', 'Cobrado / Liquidado'),
-                    ('BOUNCED', 'Protestado / Rechazado'),
-                    ('VOIDED', 'Anulado'),
-                    ('ISSUED', 'Girado (Pendiente de Cobro)'),
+                    ("IN_PORTFOLIO", "En Cartera"),
+                    ("DEPOSITED", "Depositado (En Tránsito)"),
+                    ("CLEARED", "Cobrado / Liquidado"),
+                    ("BOUNCED", "Protestado / Rechazado"),
+                    ("VOIDED", "Anulado"),
+                    ("ISSUED", "Girado (Pendiente de Cobro)"),
                 ],
-                default='IN_PORTFOLIO',
+                default="IN_PORTFOLIO",
                 max_length=15,
-                verbose_name='Estado',
+                verbose_name="Estado",
             ),
         ),
         # 2. Quitar las FK/OneToOne del endoso del modelo principal y de
@@ -65,19 +65,19 @@ class Migration(migrations.Migration):
         #    porque pertenecen al flujo de cheques propios (ADR-0035
         #    sección "Cheques propios girados", no afectada por ADR-0039).
         migrations.RemoveField(
-            model_name='check',
-            name='endorsed_to',
+            model_name="check",
+            name="endorsed_to",
         ),
         migrations.RemoveField(
-            model_name='check',
-            name='endorsement_movement',
+            model_name="check",
+            name="endorsement_movement",
         ),
         migrations.RemoveField(
-            model_name='historicalcheck',
-            name='endorsed_to',
+            model_name="historicalcheck",
+            name="endorsed_to",
         ),
         migrations.RemoveField(
-            model_name='historicalcheck',
-            name='endorsement_movement',
+            model_name="historicalcheck",
+            name="endorsement_movement",
         ),
     ]

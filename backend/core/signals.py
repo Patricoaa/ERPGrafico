@@ -1,7 +1,10 @@
 from django.db.models.signals import post_save
 from django.dispatch import receiver
+
 from contacts.models import Contact
+
 from .models import CompanySettings
+
 
 @receiver(post_save, sender=Contact)
 def sync_contact_to_company_settings(sender, instance, **kwargs):
@@ -27,20 +30,22 @@ def sync_contact_to_company_settings(sender, instance, **kwargs):
         if settings.address != instance.address:
             settings.address = instance.address
             updated = True
-            
+
         if updated:
-            # We use save() but carefully. 
-            # The CompanySettings.save() will trigger another Contact.save(), 
+            # We use save() but carefully.
+            # The CompanySettings.save() will trigger another Contact.save(),
             # but since we check values here, it should terminate.
             settings.save()
 
-from django.db.models.signals import post_migrate
+
 from django.core.cache import cache
+from django.db.models.signals import post_migrate
+
 
 @receiver(post_migrate)
 def clear_schema_cache_on_migrate(sender, **kwargs):
     """
-    Regla P-06: Limpia todas las cachés de schemas (schema:*) luego de una migración, 
+    Regla P-06: Limpia todas las cachés de schemas (schema:*) luego de una migración,
     ya que los modelos, metadatos y permisos pueden haber cambiado drásticamente.
     """
     # Si se usa un caché compatible con wildcard (como Redis):

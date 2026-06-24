@@ -2,7 +2,7 @@
 
 import { BaseModal } from '@/components/shared'
 import { ShoppingCart } from "lucide-react"
-import { SalesCheckoutWizardContent, SalesCheckoutWizardContentProps } from "./checkout/SalesCheckoutWizardContent"
+import { SalesCheckoutWizardContent, type SalesCheckoutWizardContentProps } from "./checkout/SalesCheckoutWizardContent"
 
 interface SalesCheckoutWizardProps extends Omit<SalesCheckoutWizardContentProps, "onCancel" | "isInline"> {
     open: boolean

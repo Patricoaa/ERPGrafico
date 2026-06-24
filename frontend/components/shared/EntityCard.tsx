@@ -2,8 +2,8 @@ import * as React from "react"
 import { cn } from "@/lib/utils"
 import { Badge } from "@/components/ui/badge"
 import { type VariantProps } from "class-variance-authority"
-import { badgeVariants } from "@/components/ui/badge"
-import { LucideIcon } from "lucide-react"
+import { type badgeVariants } from "@/components/ui/badge"
+import { type LucideIcon } from "lucide-react"
 import { Skeleton } from "@/components/ui/skeleton"
 
 // ─── Base props ───────────────────────────────────────────────────────────────

@@ -27,15 +27,16 @@ Patrón:
 
 Ver `docs/50-audit/bancos/fase-3-tarjeta-credito.md` (F3.3, F3.4).
 """
+
 from __future__ import annotations
 
-from decimal import Decimal, ROUND_HALF_UP
-from typing import TYPE_CHECKING
 from datetime import date as _date
+from decimal import Decimal
+from typing import TYPE_CHECKING
 
 from django.core.exceptions import ValidationError
-from django.db import transaction
 from django.db import models as dj_models
+from django.db import transaction
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _t
 
@@ -48,8 +49,9 @@ from .models import (
 )
 
 if TYPE_CHECKING:
-    from accounting.models import Account
     from django.contrib.auth.models import AbstractUser
+
+    from accounting.models import Account
 
 
 class CardService:
@@ -66,10 +68,10 @@ class CardService:
         period_month: int,
         cut_off_date: _date,
         due_date: _date,
-        billed_amount: Decimal = Decimal('0'),
-        minimum_payment: Decimal = Decimal('0'),
+        billed_amount: Decimal = Decimal("0"),
+        minimum_payment: Decimal = Decimal("0"),
         credit_limit: Decimal | None = None,
-        notes: str = '',
+        notes: str = "",
         created_by: "AbstractUser | None" = None,
     ) -> CreditCardStatement:
         """
@@ -84,18 +86,14 @@ class CardService:
         if period_month < 1 or period_month > 12:
             raise ValidationError(_t("El mes debe estar entre 1 y 12."))
         if due_date < cut_off_date:
-            raise ValidationError(
-                _t("La fecha de vencimiento no puede ser anterior al cierre.")
-            )
+            raise ValidationError(_t("La fecha de vencimiento no puede ser anterior al cierre."))
 
         if CreditCardStatement.objects.filter(
             card_account=card_account,
             period_year=period_year,
             period_month=period_month,
         ).exists():
-            raise ValidationError(
-                _t("Ya existe un estado de cuenta para esta tarjeta y período.")
-            )
+            raise ValidationError(_t("Ya existe un estado de cuenta para esta tarjeta y período."))
 
         return CreditCardStatement.objects.create(
             card_account=card_account,
@@ -144,11 +142,11 @@ class CardService:
         if statement.status != CreditCardStatement.Status.OPEN:
             raise ValidationError(
                 _t("Solo se pueden aplicar cargos a un statement OPEN (estado: %(s)s).")
-                % {'s': statement.get_status_display()}
+                % {"s": statement.get_status_display()}
             )
 
-        interest = statement.interest_charged or Decimal('0')
-        fees = statement.fees_charged or Decimal('0')
+        interest = statement.interest_charged or Decimal("0")
+        fees = statement.fees_charged or Decimal("0")
         total = interest + fees
         if total <= 0:
             # Nada que aplicar. La resolución de cuentas no es necesaria.
@@ -160,28 +158,33 @@ class CardService:
         # levantamos `ValidationError` para forzar la configuración en
         # `AccountingSettings` antes de imputar cargos.
         from accounting.models import AccountingSettings
+
         settings_obj = AccountingSettings.get_solo()
 
         if interest and not interest_expense_account:
             interest_expense_account = (
-                getattr(settings_obj, 'interest_expense_account', None) if settings_obj else None
+                getattr(settings_obj, "interest_expense_account", None) if settings_obj else None
             )
             if interest_expense_account is None:
                 raise ValidationError(
-                    _t("No hay cuenta de gasto por intereses configurada. "
-                       "Configure `AccountingSettings.interest_expense_account` "
-                       "o pase `interest_expense_account` explícitamente.")
+                    _t(
+                        "No hay cuenta de gasto por intereses configurada. "
+                        "Configure `AccountingSettings.interest_expense_account` "
+                        "o pase `interest_expense_account` explícitamente."
+                    )
                 )
 
         if fees and not fees_expense_account:
             fees_expense_account = (
-                getattr(settings_obj, 'bank_commission_account', None) if settings_obj else None
+                getattr(settings_obj, "bank_commission_account", None) if settings_obj else None
             )
             if fees_expense_account is None:
                 raise ValidationError(
-                    _t("No hay cuenta de gasto por comisiones configurada. "
-                       "Configure `AccountingSettings.bank_commission_account` "
-                       "o pase `fees_expense_account` explícitamente.")
+                    _t(
+                        "No hay cuenta de gasto por comisiones configurada. "
+                        "Configure `AccountingSettings.bank_commission_account` "
+                        "o pase `fees_expense_account` explícitamente."
+                    )
                 )
 
         # Idempotencia por FK directo (Gap 1.4, ADR-0037): si el
@@ -225,6 +228,7 @@ class CardService:
 
         # 2) Construir el JE custom con el desglose.
         from django.contrib.contenttypes.models import ContentType
+
         from accounting.models import JournalEntry, JournalItem
         from accounting.services import JournalEntryService
 
@@ -242,8 +246,10 @@ class CardService:
 
         # El Haber siempre es el pasivo (sube la deuda) por el total.
         JournalItem.objects.create(
-            entry=entry, account=liability_acc,
-            debit=Decimal('0'), credit=total,
+            entry=entry,
+            account=liability_acc,
+            debit=Decimal("0"),
+            credit=total,
         )
 
         # El Debe: las cuentas de gasto YA están validadas arriba
@@ -252,19 +258,23 @@ class CardService:
         # workaround.
         if interest:
             JournalItem.objects.create(
-                entry=entry, account=interest_expense_account,
-                debit=interest, credit=Decimal('0'),
+                entry=entry,
+                account=interest_expense_account,
+                debit=interest,
+                credit=Decimal("0"),
             )
         if fees:
             JournalItem.objects.create(
-                entry=entry, account=fees_expense_account,
-                debit=fees, credit=Decimal('0'),
+                entry=entry,
+                account=fees_expense_account,
+                debit=fees,
+                credit=Decimal("0"),
             )
 
         JournalEntryService.post_entry(entry)
 
         movement.journal_entry = entry
-        movement.save(update_fields=['journal_entry'])
+        movement.save(update_fields=["journal_entry"])
 
         # Vincular el FK directo (Gap 1.4). Permite recálculo
         # posterior y búsqueda robusta por `reapply_charges` /
@@ -272,9 +282,9 @@ class CardService:
         statement.charges_movement = movement
         statement.notes = (
             f"[CHARGES] Movimiento {movement.display_id} aplicado el "
-            f"{apply_date.isoformat()}.\n" + (statement.notes or '')
+            f"{apply_date.isoformat()}.\n" + (statement.notes or "")
         ).strip()
-        statement.save(update_fields=['charges_movement', 'notes', 'updated_at'])
+        statement.save(update_fields=["charges_movement", "notes", "updated_at"])
         return statement
 
     # ── Reaplicar cargos (Gap 1.4) ──────────────────────────────────────
@@ -309,24 +319,23 @@ class CardService:
             CreditCardStatement.Status.OVERDUE,
         ):
             raise ValidationError(
-                _t("Solo se pueden reaplicar cargos a un statement OPEN u OVERDUE "
-                   "(estado: %(s)s).")
-                % {'s': statement.get_status_display()}
+                _t("Solo se pueden reaplicar cargos a un statement OPEN u OVERDUE (estado: %(s)s).")
+                % {"s": statement.get_status_display()}
             )
 
         old_movement = statement.charges_movement
         if old_movement is not None:
             from accounting.services import JournalEntryService
+
             if old_movement.journal_entry and old_movement.journal_entry.status in (
-                'POSTED', 'CLOSED',
+                "POSTED",
+                "CLOSED",
             ):
                 # `reverse_entry` valida que no esté ya revertido.
                 try:
                     JournalEntryService.reverse_entry(
                         old_movement.journal_entry,
-                        description=(
-                            f"REVERSO cargos {statement.display_id} (reaplicación)"
-                        ),
+                        description=(f"REVERSO cargos {statement.display_id} (reaplicación)"),
                     )
                 except ValidationError:
                     # Si ya estaba revertido, no es error: limpiamos igual.
@@ -335,10 +344,10 @@ class CardService:
             # la FK PROTECT en TreasuryMovement.journal_entry; al
             # borrar el movimiento, primero desligamos el JE).
             old_movement.journal_entry = None
-            old_movement.save(update_fields=['journal_entry'])
+            old_movement.save(update_fields=["journal_entry"])
             old_movement.delete()
             statement.charges_movement = None
-            statement.save(update_fields=['charges_movement'])
+            statement.save(update_fields=["charges_movement"])
 
         return CardService.apply_charges(
             statement,
@@ -386,7 +395,6 @@ class CardService:
           (la validación de CASH ya existe en TreasuryService, pero la
           hacemos explícita aquí para no depender de ella).
         """
-        from accounting.models import AccountingSettings
         from .services import TreasuryService
 
         if statement.status == CreditCardStatement.Status.PAID:
@@ -397,9 +405,11 @@ class CardService:
             CreditCardStatement.Status.PARTIALLY_PAID,
         ):
             raise ValidationError(
-                _t("Solo se puede pagar un statement OPEN, OVERDUE o "
-                   "PARTIALLY_PAID (estado: %(s)s).")
-                % {'s': statement.get_status_display()}
+                _t(
+                    "Solo se puede pagar un statement OPEN, OVERDUE o "
+                    "PARTIALLY_PAID (estado: %(s)s)."
+                )
+                % {"s": statement.get_status_display()}
             )
 
         # Validación de tipo de cuenta de pago.
@@ -409,14 +419,16 @@ class CardService:
         )
         if payment_account.account_type not in valid_types:
             raise ValidationError(
-                _t("La cuenta de pago debe ser una cuenta bancaria (CHECKING) o caja (CASH). "
-                   "Tipo recibido: %(t)s.")
-                % {'t': payment_account.get_account_type_display()}
+                _t(
+                    "La cuenta de pago debe ser una cuenta bancaria (CHECKING) o caja (CASH). "
+                    "Tipo recibido: %(t)s."
+                )
+                % {"t": payment_account.get_account_type_display()}
             )
 
         total = statement.total_to_pay
-        already_paid = statement.amount_paid or Decimal('0')
-        outstanding = max(total - already_paid, Decimal('0'))
+        already_paid = statement.amount_paid or Decimal("0")
+        outstanding = max(total - already_paid, Decimal("0"))
 
         # Resolver el monto a pagar.
         pay_date = date or timezone.now().date()
@@ -436,15 +448,19 @@ class CardService:
             statement.amount_paid = already_paid
             statement.status = CreditCardStatement.Status.PAID
             statement.paid_at = timezone.now()
-            statement.save(update_fields=[
-                'amount_paid', 'status', 'paid_at', 'updated_at',
-            ])
+            statement.save(
+                update_fields=[
+                    "amount_paid",
+                    "status",
+                    "paid_at",
+                    "updated_at",
+                ]
+            )
             return statement
 
         if amount <= 0:
             raise ValidationError(
-                _t("El monto a pagar debe ser mayor a cero (recibido: %(a)s).")
-                % {'a': str(amount)}
+                _t("El monto a pagar debe ser mayor a cero (recibido: %(a)s).") % {"a": str(amount)}
             )
         if amount > outstanding:
             # Truncar al saldo (no error). El operador puede pasar
@@ -458,9 +474,9 @@ class CardService:
             raise ValidationError(
                 _t("Saldo insuficiente en %(acc)s. Disponible: $%(avail)s, a pagar: $%(amt)s.")
                 % {
-                    'acc': payment_account.name,
-                    'avail': f"{payment_account.current_balance:,.0f}",
-                    'amt': f"{amount:,.0f}",
+                    "acc": payment_account.name,
+                    "avail": f"{payment_account.current_balance:,.0f}",
+                    "amt": f"{amount:,.0f}",
                 }
             )
 
@@ -484,26 +500,32 @@ class CardService:
         # (Onda 3, ADR-0044). Esto permite listar todos los pagos
         # parciales del statement via `statement.payment_movements.all()`.
         movement.from_card_statement = statement
-        movement.save(update_fields=['from_card_statement'])
+        movement.save(update_fields=["from_card_statement"])
         # FK al ÚLTIMO pago (no OneToOne, Onda 3). El listado
         # completo está disponible vía `statement.payment_movements.all()`.
         statement.payment_movement = movement
         statement.payment_account = payment_account
-        statement.amount_paid = (already_paid or Decimal('0')) + amount
+        statement.amount_paid = (already_paid or Decimal("0")) + amount
 
         # Transición de status: PARTIALLY_PAID si queda saldo, PAID
         # si outstanding == 0.
         new_outstanding = total - statement.amount_paid
-        if new_outstanding <= Decimal('0'):
+        if new_outstanding <= Decimal("0"):
             statement.status = CreditCardStatement.Status.PAID
             statement.paid_at = timezone.now()
         else:
             statement.status = CreditCardStatement.Status.PARTIALLY_PAID
 
-        statement.save(update_fields=[
-            'payment_movement', 'payment_account', 'amount_paid',
-            'paid_at', 'status', 'updated_at',
-        ])
+        statement.save(
+            update_fields=[
+                "payment_movement",
+                "payment_account",
+                "amount_paid",
+                "paid_at",
+                "status",
+                "updated_at",
+            ]
+        )
         return statement
 
     # ── Cancelación (utility) ─────────────────────────────────────────────
@@ -513,7 +535,7 @@ class CardService:
     def cancel_statement(
         statement: CreditCardStatement,
         *,
-        notes: str = '',
+        notes: str = "",
     ) -> CreditCardStatement:
         """
         Anula un statement OPEN. Si ya se aplicaron cargos y/o pagos,
@@ -526,7 +548,7 @@ class CardService:
         statement.status = CreditCardStatement.Status.CANCELED
         if notes:
             statement.notes = (statement.notes + "\n" + notes).strip() if statement.notes else notes
-        statement.save(update_fields=['status', 'notes', 'updated_at'])
+        statement.save(update_fields=["status", "notes", "updated_at"])
         return statement
 
     # ── Reversa transaccional completa (Gap 1.6) ──────────────────────────
@@ -536,7 +558,7 @@ class CardService:
     def reverse_statement(
         statement: CreditCardStatement,
         *,
-        notes: str = '',
+        notes: str = "",
     ) -> CreditCardStatement:
         """
         Reversa contablemente todos los movimientos vinculados al
@@ -561,8 +583,8 @@ class CardService:
         Raises `ValidationError` si el cargo/pago está reconciliado
         contra el banco (no se puede reversar sin des-reconciliar).
         """
-        from accounting.services import JournalEntryService
         from accounting.models import JournalEntry as JournalEntryModel
+        from accounting.services import JournalEntryService
 
         if statement.status == CreditCardStatement.Status.CANCELED:
             return statement  # idempotente
@@ -579,15 +601,19 @@ class CardService:
         if old_charges_mv is not None:
             if old_charges_mv.is_reconciled:
                 raise ValidationError(
-                    _t("El movimiento de cargos está conciliado. Des-reconcílielo antes de reversar.")
+                    _t(
+                        "El movimiento de cargos está conciliado. Des-reconcílielo antes de reversar."
+                    )
                 )
-            if old_charges_mv.journal_entry and old_charges_mv.journal_entry.status in reversible_statuses:
+            if (
+                old_charges_mv.journal_entry
+                and old_charges_mv.journal_entry.status in reversible_statuses
+            ):
                 try:
                     JournalEntryService.reverse_entry(
                         old_charges_mv.journal_entry,
                         description=(
-                            f"REVERSO cargos {statement.display_id} "
-                            f"(anulación de statement)"
+                            f"REVERSO cargos {statement.display_id} (anulación de statement)"
                         ),
                     )
                     reversal_lines.append(f"Cargos {old_charges_mv.display_id} reversados")
@@ -595,7 +621,7 @@ class CardService:
                     # Si ya estaba revertido, no es error: limpiamos igual.
                     pass
             old_charges_mv.journal_entry = None
-            old_charges_mv.save(update_fields=['journal_entry'])
+            old_charges_mv.save(update_fields=["journal_entry"])
             old_charges_mv.delete()
             statement.charges_movement = None
 
@@ -606,35 +632,40 @@ class CardService:
         for old_payment_mv in old_payment_mvs:
             if old_payment_mv.is_reconciled:
                 raise ValidationError(
-                    _t("El movimiento de pago %(id)s está conciliado. "
-                       "Des-reconcílielo antes de reversar.")
-                    % {'id': old_payment_mv.display_id}
+                    _t(
+                        "El movimiento de pago %(id)s está conciliado. "
+                        "Des-reconcílielo antes de reversar."
+                    )
+                    % {"id": old_payment_mv.display_id}
                 )
-            if old_payment_mv.journal_entry and old_payment_mv.journal_entry.status in reversible_statuses:
+            if (
+                old_payment_mv.journal_entry
+                and old_payment_mv.journal_entry.status in reversible_statuses
+            ):
                 try:
                     JournalEntryService.reverse_entry(
                         old_payment_mv.journal_entry,
                         description=(
-                            f"REVERSO pago {statement.display_id} "
-                            f"(anulación de statement)"
+                            f"REVERSO pago {statement.display_id} (anulación de statement)"
                         ),
                     )
                     reversal_lines.append(f"Pago {old_payment_mv.display_id} reversado")
                 except ValidationError:
                     pass
             old_payment_mv.journal_entry = None
-            old_payment_mv.save(update_fields=['journal_entry'])
+            old_payment_mv.save(update_fields=["journal_entry"])
             old_payment_mv.delete()
         if old_payment_mvs:
             statement.payment_movement = None
             statement.payment_account = None
             statement.paid_at = None
-            statement.amount_paid = Decimal('0')
+            statement.amount_paid = Decimal("0")
 
         # 2.5) Des-facturar cuotas del cronograma y cargos (ADR-0046), y
         # reversar el asiento de cargos diferidos si existe. Así las cuotas
         # y los cargos vuelven a "pendiente" y se pueden re-facturar.
         from django.contrib.contenttypes.models import ContentType as _CT
+
         ct_stmt = _CT.objects.get_for_model(CreditCardStatement)
         billing_entries = JournalEntryModel.objects.filter(
             source_content_type=ct_stmt,
@@ -647,8 +678,7 @@ class CardService:
                 JournalEntryService.reverse_entry(
                     je,
                     description=(
-                        f"REVERSO facturación {statement.display_id} "
-                        f"(anulación de statement)"
+                        f"REVERSO facturación {statement.display_id} (anulación de statement)"
                     ),
                 )
                 reversal_lines.append(f"Facturación {statement.display_id} reversada")
@@ -656,10 +686,12 @@ class CardService:
                 pass
         # Volver a "no facturado": cargos pendientes + cuotas del cronograma.
         CardPendingCharge.objects.filter(billed_in_statement=statement).update(
-            is_billed=False, billed_in_statement=None,
+            is_billed=False,
+            billed_in_statement=None,
         )
         CardPurchaseInstallment.objects.filter(billed_in_statement=statement).update(
-            is_billed=False, billed_in_statement=None,
+            is_billed=False,
+            billed_in_statement=None,
         )
 
         # 3) Marcar CANCELED.
@@ -670,13 +702,21 @@ class CardService:
             log_lines.append(notes)
         statement.notes = (
             (statement.notes + "\n" + "\n".join(log_lines))
-            if statement.notes else "\n".join(log_lines)
+            if statement.notes
+            else "\n".join(log_lines)
         )
-        statement.save(update_fields=[
-            'status', 'notes',
-            'charges_movement', 'payment_movement', 'payment_account',
-            'paid_at', 'amount_paid', 'updated_at',
-        ])
+        statement.save(
+            update_fields=[
+                "status",
+                "notes",
+                "charges_movement",
+                "payment_movement",
+                "payment_account",
+                "paid_at",
+                "amount_paid",
+                "updated_at",
+            ]
+        )
         return statement
 
     # ── Recalcular billed_amount desde movimientos (Gap 1.2) ─────────────
@@ -706,7 +746,6 @@ class CardService:
 
         Retorna el monto calculado.
         """
-        from calendar import monthrange
 
         period_start = _date(statement.period_year, statement.period_month, 1)
         # `cut_off_date` puede ser anterior o posterior al fin del mes —
@@ -716,7 +755,7 @@ class CardService:
         if period_end < period_start:
             raise ValidationError(
                 _t("cut_off_date (%(co)s) no puede ser anterior al inicio del período (%(ps)s).")
-                % {'co': period_end.isoformat(), 'ps': period_start.isoformat()}
+                % {"co": period_end.isoformat(), "ps": period_start.isoformat()}
             )
 
         # OUTBOUND de cargos directos del período (gasto ad-hoc con la
@@ -725,54 +764,40 @@ class CardService:
         # porque ese pasivo se factura cuota a cuota vía el cronograma, no
         # por su monto total en el período. Las cuotas legacy
         # (`installment_number` set) sí se cuentan.
-        outbound_sum = (
-            TreasuryMovement.objects
-            .filter(
-                from_account=statement.card_account,
-                movement_type=TreasuryMovement.Type.OUTBOUND,
-                date__gte=period_start,
-                date__lte=period_end,
-            )
-            .exclude(
-                card_purchase_group__isnull=False,
-                installment_number__isnull=True,
-            )
-            .aggregate(total=dj_models.Sum('amount'))['total']
-            or Decimal('0')
-        )
+        outbound_sum = TreasuryMovement.objects.filter(
+            from_account=statement.card_account,
+            movement_type=TreasuryMovement.Type.OUTBOUND,
+            date__gte=period_start,
+            date__lte=period_end,
+        ).exclude(
+            card_purchase_group__isnull=False,
+            installment_number__isnull=True,
+        ).aggregate(total=dj_models.Sum("amount"))["total"] or Decimal("0")
 
         # Cuotas del cronograma (ADR-0046) facturadas en ESTE statement.
-        schedule_sum = (
-            CardPurchaseInstallment.objects
-            .filter(billed_in_statement=statement)
-            .aggregate(total=dj_models.Sum('principal_amount'))['total']
-            or Decimal('0')
-        )
+        schedule_sum = CardPurchaseInstallment.objects.filter(
+            billed_in_statement=statement
+        ).aggregate(total=dj_models.Sum("principal_amount"))["total"] or Decimal("0")
 
         # E3: NO se suman los `ADJUSTMENT` de interés/comisiones de
         # `apply_charges`. Esos cargos financieros se reflejan en
         # `interest_charged` / `fees_charged` y `total_to_pay` los agrega
         # aparte; incluirlos en `billed_amount` los contaría dos veces
         # (inflando el total a pagar).
-        new_amount = (
-            (outbound_sum or Decimal('0'))
-            + (schedule_sum or Decimal('0'))
-        )
+        new_amount = (outbound_sum or Decimal("0")) + (schedule_sum or Decimal("0"))
         if not commit:
             return new_amount
 
         if statement.billed_amount != new_amount:
-            old_amount = statement.billed_amount or Decimal('0')
+            old_amount = statement.billed_amount or Decimal("0")
             statement.billed_amount = new_amount
             note = (
                 f"[RECALC] billed_amount {old_amount} → {new_amount} "
                 f"el {timezone.now().date().isoformat()} "
                 f"(OUTBOUND={outbound_sum}, SCHEDULE={schedule_sum})"
             )
-            statement.notes = (
-                (statement.notes + "\n" + note) if statement.notes else note
-            )
-            statement.save(update_fields=['billed_amount', 'notes', 'updated_at'])
+            statement.notes = (statement.notes + "\n" + note) if statement.notes else note
+            statement.save(update_fields=["billed_amount", "notes", "updated_at"])
         return new_amount
 
     # ── Cargos no facturados (Onda 4) ────────────────────────────────────
@@ -797,7 +822,7 @@ class CardService:
         if cut_off_date:
             qs = qs.filter(date__lte=cut_off_date)
 
-        return qs.order_by('-date', '-id')
+        return qs.order_by("-date", "-id")
 
     @staticmethod
     def get_unbilled_installments(
@@ -811,10 +836,10 @@ class CardService:
         qs = CardPurchaseInstallment.objects.filter(
             card_purchase_group__card_account=card_account,
             is_billed=False,
-        ).select_related('card_purchase_group', 'card_purchase_group__partner')
+        ).select_related("card_purchase_group", "card_purchase_group__partner")
         if cut_off_date:
             qs = qs.filter(due_date__lte=cut_off_date)
-        return qs.order_by('due_date', 'number', 'id')
+        return qs.order_by("due_date", "number", "id")
 
     @staticmethod
     def get_unbilled_summary(
@@ -831,22 +856,18 @@ class CardService:
         from django.db import models as dj_models
 
         pending = CardService.get_pending_charges(card_account, cut_off_date=cut_off_date)
-        charges = (
-            pending.aggregate(total=dj_models.Sum('amount'))['total']
-            or Decimal('0')
-        )
+        charges = pending.aggregate(total=dj_models.Sum("amount"))["total"] or Decimal("0")
         sched_qs = CardService.get_unbilled_installments(card_account, cut_off_date=cut_off_date)
-        installments = (
-            sched_qs.aggregate(total=dj_models.Sum('principal_amount'))['total']
-            or Decimal('0')
-        )
+        installments = sched_qs.aggregate(total=dj_models.Sum("principal_amount"))[
+            "total"
+        ] or Decimal("0")
         count = pending.count() + sched_qs.count()
 
         return {
-            'total': charges + installments,
-            'count': count,
-            'charges': charges,
-            'installments': installments,
+            "total": charges + installments,
+            "count": count,
+            "charges": charges,
+            "installments": installments,
         }
 
     # ── Forecast / Forward-looking analytics ─────────────────
@@ -867,15 +888,13 @@ class CardService:
           - credit_limit, total_used, available_credit
         """
         from datetime import date as _date_type
-        from collections import defaultdict
 
         today = _date_type.today()
 
         # ── Próxima fecha de cierre estimada ───────────────────────
         last_stmt = (
-            CreditCardStatement.objects
-            .filter(card_account=card_account)
-            .order_by('-period_year', '-period_month')
+            CreditCardStatement.objects.filter(card_account=card_account)
+            .order_by("-period_year", "-period_month")
             .first()
         )
         if last_stmt:
@@ -892,62 +911,62 @@ class CardService:
 
         days_to_next = (next_cutoff - today).days
 
-        pending_until_cutoff = CardService.get_pending_charges(card_account, cut_off_date=next_cutoff)
-        sched_until_cutoff = CardService.get_unbilled_installments(card_account, cut_off_date=next_cutoff)
+        pending_until_cutoff = CardService.get_pending_charges(
+            card_account, cut_off_date=next_cutoff
+        )
+        sched_until_cutoff = CardService.get_unbilled_installments(
+            card_account, cut_off_date=next_cutoff
+        )
         pending = CardService.get_pending_charges(card_account, cut_off_date=cut_off_date)
         sched_all = CardService.get_unbilled_installments(card_account, cut_off_date=cut_off_date)
 
-        pending_total_until = (
-            pending_until_cutoff.aggregate(total=dj_models.Sum('amount'))['total']
-            or Decimal('0')
-        )
-        sched_total_until = (
-            sched_until_cutoff.aggregate(total=dj_models.Sum('principal_amount'))['total']
-            or Decimal('0')
-        )
+        pending_total_until = pending_until_cutoff.aggregate(total=dj_models.Sum("amount"))[
+            "total"
+        ] or Decimal("0")
+        sched_total_until = sched_until_cutoff.aggregate(total=dj_models.Sum("principal_amount"))[
+            "total"
+        ] or Decimal("0")
         next_stmt_total = pending_total_until + sched_total_until
 
         by_month: dict[str, dict] = {}
         for inst in sched_all:
-            key = inst.due_date.strftime('%Y-%m')
-            bucket = by_month.setdefault(key, {'total': Decimal('0'), 'count': 0})
-            bucket['total'] += inst.principal_amount
-            bucket['count'] += 1
+            key = inst.due_date.strftime("%Y-%m")
+            bucket = by_month.setdefault(key, {"total": Decimal("0"), "count": 0})
+            bucket["total"] += inst.principal_amount
+            bucket["count"] += 1
 
         by_month_serializable = {}
         for k, v in by_month.items():
             by_month_serializable[k] = {
-                'total': str(v['total']),
-                'count': v['count'],
+                "total": str(v["total"]),
+                "count": v["count"],
             }
 
         credit_limit = card_account.credit_limit
         available = card_account.available_credit
 
-        pending_total = (
-            pending.aggregate(total=dj_models.Sum('amount'))['total']
-            or Decimal('0')
-        )
-        sched_total = (
-            sched_all.aggregate(total=dj_models.Sum('principal_amount'))['total']
-            or Decimal('0')
-        )
+        pending_total = pending.aggregate(total=dj_models.Sum("amount"))["total"] or Decimal("0")
+        sched_total = sched_all.aggregate(total=dj_models.Sum("principal_amount"))[
+            "total"
+        ] or Decimal("0")
         total_unbilled = pending_total + sched_total
-        current_debt = abs(card_account.current_balance) if card_account.current_balance else Decimal('0')
+        current_debt = (
+            abs(card_account.current_balance) if card_account.current_balance else Decimal("0")
+        )
         total_used = current_debt + total_unbilled
 
         return {
-            'next_statement_date': next_cutoff.isoformat(),
-            'days_to_next_statement': max(days_to_next, 0),
-            'next_statement_total': str(next_stmt_total),
-            'pending_until_next_statement': str(pending_total_until),
-            'installments_until_next_statement': str(sched_total_until),
-            'by_month': by_month_serializable,
-            'credit_limit': str(credit_limit) if credit_limit else None,
-            'total_used': str(total_used),
-            'current_debt': str(current_debt),
-            'total_unbilled': str(total_unbilled),
-            'available_credit': str(available) if available is not None else None,
+            "next_statement_date": next_cutoff.isoformat(),
+            "days_to_next_statement": max(days_to_next, 0),
+            "next_statement_total": str(next_stmt_total),
+            "pending_until_next_statement": str(pending_total_until),
+            "installments_until_next_statement": str(sched_total_until),
+            "by_month": by_month_serializable,
+            "credit_limit": str(credit_limit) if credit_limit else None,
+            "total_used": str(total_used),
+            "current_debt": str(current_debt),
+            "total_unbilled": str(total_unbilled),
+            "available_credit": str(available) if available is not None else None,
         }
 
     @staticmethod
@@ -956,8 +975,8 @@ class CardService:
         *,
         card_account: TreasuryAccount,
         amount: Decimal,
-        charge_type: str = 'OTHER',
-        description: str = '',
+        charge_type: str = "OTHER",
+        description: str = "",
         date: _date | None = None,
         created_by: "AbstractUser | None" = None,
     ):
@@ -1000,9 +1019,9 @@ class CardService:
         period_month: int,
         cut_off_date: _date,
         due_date: _date,
-        minimum_payment: Decimal = Decimal('0'),
+        minimum_payment: Decimal = Decimal("0"),
         credit_limit: Decimal | None = None,
-        notes: str = '',
+        notes: str = "",
         created_by: "AbstractUser | None" = None,
     ) -> CreditCardStatement:
         """
@@ -1027,20 +1046,18 @@ class CardService:
                 card_purchase_group__card_account=card_account,
                 is_billed=False,
                 due_date__lte=cut_off_date,
-            ).select_related('card_purchase_group', 'card_purchase_group__partner')
+            ).select_related("card_purchase_group", "card_purchase_group__partner")
         )
-        schedule_total = sum((r.principal_amount for r in schedule_rows), Decimal('0'))
+        schedule_total = sum((r.principal_amount for r in schedule_rows), Decimal("0"))
 
         # 2) Cargos pendientes (CardPendingCharge — diferidos, sin asiento).
         pending = CardService.get_pending_charges(card_account, cut_off_date=cut_off_date)
         pending_rows = list(pending)
-        pending_total = sum((p.amount for p in pending_rows), Decimal('0'))
+        pending_total = sum((p.amount for p in pending_rows), Decimal("0"))
 
         total = schedule_total + pending_total
         if total <= 0:
-            raise ValidationError(
-                _t("No hay cargos no facturados para facturar en este período.")
-            )
+            raise ValidationError(_t("No hay cargos no facturados para facturar en este período."))
 
         # ── Desglose por grupo de compra (cronograma + pendientes) ──
         groups_data: dict = {}
@@ -1050,61 +1067,80 @@ class CardService:
             if group is None:
                 standalone_charges.append(charge)
                 return
-            bucket = groups_data.setdefault(group.id, {'group': group, 'charges': []})
-            bucket['charges'].append(charge)
+            bucket = groups_data.setdefault(group.id, {"group": group, "charges": []})
+            bucket["charges"].append(charge)
 
         for r in schedule_rows:
             g = r.card_purchase_group
-            _add_charge(g, {
-                'id': r.id,
-                'amount': str(r.principal_amount),
-                'installment_number': r.number,
-                'is_installment_interest': False,
-                'movement_type': TreasuryMovement.Type.OUTBOUND,
-                'reference': f"CP-{g.uuid}-i{r.number}",
-                'date': str(r.due_date),
-            })
+            _add_charge(
+                g,
+                {
+                    "id": r.id,
+                    "amount": str(r.principal_amount),
+                    "installment_number": r.number,
+                    "is_installment_interest": False,
+                    "movement_type": TreasuryMovement.Type.OUTBOUND,
+                    "reference": f"CP-{g.uuid}-i{r.number}",
+                    "date": str(r.due_date),
+                },
+            )
         for p in pending_rows:
-            _add_charge(None, {
-                'id': p.id,
-                'amount': str(p.amount),
-                'installment_number': None,
-                'is_installment_interest': False,
-                'movement_type': 'ADJUSTMENT',
-                'reference': f"PEND-{p.id}",
-                'date': str(p.date),
-            })
+            _add_charge(
+                None,
+                {
+                    "id": p.id,
+                    "amount": str(p.amount),
+                    "installment_number": None,
+                    "is_installment_interest": False,
+                    "movement_type": "ADJUSTMENT",
+                    "reference": f"PEND-{p.id}",
+                    "date": str(p.date),
+                },
+            )
 
         purchase_group_breakdown = []
         for _gid, gd in groups_data.items():
-            group = gd['group']
-            charges = sorted(gd['charges'], key=lambda c: (c['installment_number'] or 0, c['id']))
-            subtotal = sum((Decimal(c['amount']) for c in charges), Decimal('0'))
-            purchase_group_breakdown.append({
-                'id': group.id,
-                'uuid': str(group.uuid),
-                'total_amount': str(group.total_amount),
-                'installments': group.installments,
-                'monthly_rate': str(group.monthly_rate),
-                'principal_per_installment': str(group.principal_per_installment),
-                'first_installment_date': str(group.first_installment_date) if group.first_installment_date else None,
-                'partner_name': group.partner.name if group.partner else None,
-                'partner_id': group.partner_id,
-                'client_reference': group.client_reference,
-                'subtotal': str(subtotal),
-                'charges': charges,
-            })
+            group = gd["group"]
+            charges = sorted(gd["charges"], key=lambda c: (c["installment_number"] or 0, c["id"]))
+            subtotal = sum((Decimal(c["amount"]) for c in charges), Decimal("0"))
+            purchase_group_breakdown.append(
+                {
+                    "id": group.id,
+                    "uuid": str(group.uuid),
+                    "total_amount": str(group.total_amount),
+                    "installments": group.installments,
+                    "monthly_rate": str(group.monthly_rate),
+                    "principal_per_installment": str(group.principal_per_installment),
+                    "first_installment_date": str(group.first_installment_date)
+                    if group.first_installment_date
+                    else None,
+                    "partner_name": group.partner.name if group.partner else None,
+                    "partner_id": group.partner_id,
+                    "client_reference": group.client_reference,
+                    "subtotal": str(subtotal),
+                    "charges": charges,
+                }
+            )
         if standalone_charges:
-            standalone_subtotal = sum((Decimal(c['amount']) for c in standalone_charges), Decimal('0'))
-            purchase_group_breakdown.append({
-                'id': None, 'uuid': None, 'total_amount': None,
-                'installments': None, 'monthly_rate': None,
-                'principal_per_installment': None, 'first_installment_date': None,
-                'partner_name': None, 'partner_id': None,
-                'client_reference': 'Sin compra asociada',
-                'subtotal': str(standalone_subtotal),
-                'charges': standalone_charges,
-            })
+            standalone_subtotal = sum(
+                (Decimal(c["amount"]) for c in standalone_charges), Decimal("0")
+            )
+            purchase_group_breakdown.append(
+                {
+                    "id": None,
+                    "uuid": None,
+                    "total_amount": None,
+                    "installments": None,
+                    "monthly_rate": None,
+                    "principal_per_installment": None,
+                    "first_installment_date": None,
+                    "partner_name": None,
+                    "partner_id": None,
+                    "client_reference": "Sin compra asociada",
+                    "subtotal": str(standalone_subtotal),
+                    "charges": standalone_charges,
+                }
+            )
 
         # Crear el statement.
         statement = CardService.open_statement(
@@ -1149,13 +1185,14 @@ class CardService:
 
         Solo se contabilizan los objetos con `journal_entry IS NULL`.
         """
-        from accounting.models import JournalEntry, JournalItem, AccountingSettings
-        from accounting.services import JournalEntryService
         from django.contrib.contenttypes.models import ContentType
+
+        from accounting.models import AccountingSettings, JournalEntry, JournalItem
+        from accounting.services import JournalEntryService
 
         p_rows = pending_rows or []
         deferred = [p for p in p_rows if p.journal_entry_id is None]
-        total = sum((d.amount for d in deferred), Decimal('0'))
+        total = sum((d.amount for d in deferred), Decimal("0"))
         if total <= 0:
             return
 
@@ -1163,10 +1200,7 @@ class CardService:
         liability_account = statement.card_account.account
         expense_account = None
         if settings:
-            expense_account = (
-                settings.bank_commission_account
-                or settings.interest_expense_account
-            )
+            expense_account = settings.bank_commission_account or settings.interest_expense_account
         if not liability_account or not expense_account or expense_account == liability_account:
             # Sin cuenta de gasto válida no posteamos: evita un asiento que
             # se auto-cancela (D=pasivo / H=pasivo) y deja el cargo sin
@@ -1185,10 +1219,16 @@ class CardService:
             source_object_id=statement.id,
         )
         JournalItem.objects.create(
-            entry=entry, account=liability_account, debit=Decimal('0'), credit=total,
+            entry=entry,
+            account=liability_account,
+            debit=Decimal("0"),
+            credit=total,
         )
         JournalItem.objects.create(
-            entry=entry, account=expense_account, debit=total, credit=Decimal('0'),
+            entry=entry,
+            account=expense_account,
+            debit=total,
+            credit=Decimal("0"),
         )
         JournalEntryService.post_entry(entry)
 
@@ -1196,4 +1236,4 @@ class CardService:
         # idempotencia ante una segunda facturación accidental).
         for d in deferred:
             d.journal_entry = entry
-            d.save(update_fields=['journal_entry'])
+            d.save(update_fields=["journal_entry"])

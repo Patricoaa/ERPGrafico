@@ -11,10 +11,10 @@ CASH/CHECKING/CREDIT_CARD y exige tenders). La cuenta de pasivo no necesita
 tenders (la deuda no se "paga con ella", se amortiza desde una cuenta
 corriente). ADR-0041.
 """
+
 from __future__ import annotations
 
 import logging
-from decimal import Decimal
 from typing import TYPE_CHECKING
 
 from django.core.exceptions import ValidationError
@@ -25,6 +25,7 @@ from .models import TreasuryAccount
 
 if TYPE_CHECKING:  # pragma: no cover
     from accounting.models import Account
+
     from .models import Bank
 
 
@@ -63,8 +64,7 @@ def get_or_create_loan_treasury_account(
         )
 
     existing = (
-        TreasuryAccount.objects
-        .select_for_update()
+        TreasuryAccount.objects.select_for_update()
         .filter(
             bank=bank,
             account=accounting_account,
@@ -79,8 +79,7 @@ def get_or_create_loan_treasury_account(
     # de tipo distinto (p. ej. CREDIT_CARD), el clean() del modelo la rechaza.
     # Lo chequeamos acá para devolver un error legible, en vez de un 500.
     cross_use = (
-        TreasuryAccount.objects
-        .filter(account=accounting_account)
+        TreasuryAccount.objects.filter(account=accounting_account)
         .exclude(account_type=TreasuryAccount.Type.LOAN)
         .exists()
     )
@@ -104,6 +103,8 @@ def get_or_create_loan_treasury_account(
     )
     logger.info(
         "Auto-creada TreasuryAccount LOAN: %s (bank=%s, account=%s)",
-        ta.name, bank.id, accounting_account.code,
+        ta.name,
+        bank.id,
+        accounting_account.code,
     )
     return ta

@@ -3,17 +3,17 @@
 import { formatCurrency } from "@/lib/money"
 import { showApiError } from "@/lib/errors"
 import React, {useState, useMemo} from "react"
-import { UseFormReturn } from "react-hook-form"
-import { ProductFormValues } from "./schema"
+import { type UseFormReturn } from "react-hook-form"
+import { type ProductFormValues } from "./schema"
 import { Button } from "@/components/ui/button"
 import { Layers, Wand2, X, Archive } from "lucide-react"
 import { Checkbox } from "@/components/ui/checkbox"
 import { toast } from "sonner"
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@/components/ui/table"
 import { cn } from "@/lib/utils"
-import { Product, ProductAttributeValue } from "@/types/entities"
-import { ProductInitialData } from "@/types/forms"
-import { ActionConfirmModal, Chip, DataCell, MultiSelectOption, MultiSelectTagInput } from '@/components/shared'
+import { type Product, type ProductAttributeValue } from "@/types/entities"
+import { type ProductInitialData } from "@/types/forms"
+import { ActionConfirmModal, Chip, DataCell, type MultiSelectOption, MultiSelectTagInput } from '@/components/shared'
 
 import { VariantQuickEditForm } from "./VariantQuickEditForm"
 import { BulkVariantEditFormV2 } from "./BulkVariantEditFormV2"

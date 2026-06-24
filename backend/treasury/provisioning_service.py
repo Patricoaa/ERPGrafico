@@ -12,6 +12,7 @@ Separa las dos capas del dominio bancario para reducir la fricción de configura
 El asistente de alta (frontend) recolecta el tipo + los tenders y delega aquí.
 Patrón de referencia: ``core/management/commands/setup_demo_data.py`` (cuenta → métodos).
 """
+
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
@@ -129,9 +130,7 @@ class TreasuryProvisioningService:
     # ── Private helpers ──────────────────────────────────────────────────────
 
     @classmethod
-    def _create_method(
-        cls, account: TreasuryAccount, tender: str, usage: str
-    ) -> PaymentMethod:
+    def _create_method(cls, account: TreasuryAccount, tender: str, usage: str) -> PaymentMethod:
         allow_sales, allow_purchases = cls._usage_flags(tender, usage)
         method = PaymentMethod(
             name=f"{cls._METHOD_LABELS.get(tender, tender)} — {account.name}",

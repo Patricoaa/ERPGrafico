@@ -19,7 +19,7 @@ import { formatEntityDisplay } from "@/lib/entity-registry"
 
 import { BaseModal, CancelButton, DocumentAttachmentDropzone, EmptyState, FormFooter, FormSection, LabeledContainer, LabeledInput, LabeledSelect, PeriodValidationDateInput, SkeletonShell, SubmitButton } from '@/components/shared'
 
-import { SaleOrderLine, SaleNoteLine } from "../types"
+import { type SaleOrderLine, type SaleNoteLine } from "../types"
 
 const saleNoteSchema = z.object({
     noteType: z.enum(["NOTA_CREDITO", "NOTA_DEBITO"]),

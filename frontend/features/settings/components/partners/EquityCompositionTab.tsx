@@ -16,7 +16,7 @@ import {
 
 
 import { partnersApi } from "@/features/contacts/api/partnersApi"
-import { Partner, PartnerSummary } from "@/features/contacts/types/partner"
+import { type Partner, type PartnerSummary } from "@/features/contacts/types/partner"
 import { toast } from "sonner"
 import { cn } from "@/lib/utils"
 import {
@@ -39,7 +39,7 @@ import { InitialCapitalModal } from "@/features/settings/components/InitialCapit
 import { MobilizeEarningsWizard } from "@/features/settings/components/partners/MobilizeEarningsWizard"
 import { PartnerLedgerDrawer } from "@/features/settings/components/partners/PartnerLedgerDrawer"
 import { EquityStatsDrawer } from "@/features/settings/components/partners/EquityStatsDrawer"
-import { ColumnDef } from "@tanstack/react-table"
+import { type ColumnDef } from "@tanstack/react-table"
 
 export function EquityCompositionTab({
     initialAddPartnerOpen = false,

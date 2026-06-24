@@ -1,6 +1,6 @@
 "use client"
 import React from "react"
-import { LucideIcon, Inbox, SearchX, Receipt, Package, Users, Database, Monitor, Layers, Landmark } from "lucide-react"
+import { type LucideIcon, Inbox, SearchX, Receipt, Package, Users, Database, Monitor, Layers, Landmark } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { getEntityIcon } from "@/lib/entity-registry"
 
