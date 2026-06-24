@@ -7,7 +7,9 @@ import { FileText, AlertTriangle, Plus } from 'lucide-react'
 import {
     DataTableView, DataTableColumnHeader, DataCell,
     StatusBadge, MoneyDisplay, Skeleton, EmptyState, EntityCard,
+    SegmentationBar,
 } from '@/components/shared'
+import { loanStatusSegDef } from './segmentationDef'
 import { Button } from '@/components/ui/button'
 import { useLoans } from './hooks'
 import { LoanRegisterDrawer } from './LoanRegisterDrawer'
@@ -26,6 +28,15 @@ export function LoansClientView({ bankId: bankIdProp }: { bankId?: number } = {}
         bankId ? { lender: String(bankId) } : undefined,
     )
 
+    const loanStatusParam = searchParams.get("loan_status")
+    const filteredLoans = useMemo(() => {
+        const statusFilter = loanStatusParam ?? "active"
+        if (statusFilter === "completed") {
+            return loans.filter(l => l.status === "PAID" || l.status === "DEFAULTED")
+        }
+        return loans.filter(l => l.status === "ACTIVE")
+    }, [loans, loanStatusParam])
+
     const selectedId = searchParams.get("selected") ? Number(searchParams.get("selected")) : null
     const action = searchParams.get("action")
     const isCreateOpen = searchParams.get("modal") === "new"
@@ -35,8 +46,8 @@ export function LoansClientView({ bankId: bankIdProp }: { bankId?: number } = {}
     const isAmortizationOpen = !!selectedId && action === "amortization"
 
     const selectedLoan = useMemo(
-        () => selectedId ? loans.find(l => l.id === selectedId) ?? null : null,
-        [selectedId, loans],
+        () => selectedId ? filteredLoans.find(l => l.id === selectedId) ?? null : null,
+        [selectedId, filteredLoans],
     )
 
     const clearAll = useCallback(() => {
@@ -167,9 +178,10 @@ export function LoansClientView({ bankId: bankIdProp }: { bankId?: number } = {}
                 <DataTableView
                     entityLabel="treasury.bankloan"
                     columns={columns}
-                    data={loans}
+                    data={filteredLoans}
                     variant="embedded"
                     createAction={registerAction}
+                    segmentation={<SegmentationBar def={loanStatusSegDef} />}
                     emptyState={{
                         context: 'treasury',
                         icon: FileText,

@@ -1,27 +1,16 @@
 "use client"
 
 import { useState } from "react"
-import { useRouter } from "next/navigation"
-import { Landmark, HandCoins, FileCheck, CreditCard, ShieldCheck } from "lucide-react"
 import { MoneyDisplay } from "@/components/shared"
 import { cn } from "@/lib/utils"
 import type { BankOverviewData } from "../hooks/useBankOverview"
 
 interface BankMastheadProps {
     data: BankOverviewData
-    bankId: number
 }
 
-const quickLinks = [
-    { key: "loans", icon: HandCoins, label: "Préstamos", href: (id: number) => `/treasury/bank-center/${id}/loans` },
-    { key: "checks", icon: FileCheck, label: "Cheques", href: (id: number) => `/treasury/bank-center/${id}/checks` },
-    { key: "cards", icon: CreditCard, label: "Tarjetas", href: (id: number) => `/treasury/bank-center/${id}/cards` },
-    { key: "reconciliation", icon: ShieldCheck, label: "Conciliación", href: (id: number) => `/treasury/bank-center/${id}/reconciliation` },
-]
-
-export function BankMasthead({ data, bankId }: BankMastheadProps) {
-    const router = useRouter()
-    const { bank, accounts, summary } = data
+export function BankMasthead({ data }: BankMastheadProps) {
+    const { accounts, summary } = data
     const [deudaHovered, setDeudaHovered] = useState(false)
 
     const checking = accounts.filter(a => a.account_type === "CHECKING")
@@ -35,31 +24,6 @@ export function BankMasthead({ data, bankId }: BankMastheadProps) {
 
     return (
         <section className="py-4 space-y-3">
-            <div className="flex items-center justify-between">
-                <hgroup>
-                    <h1 className="text-xl font-heading font-black tracking-tight text-foreground">
-                        {bank.name}
-                    </h1>
-                    {bank.code && (
-                        <p className="text-xs font-mono text-muted-foreground leading-none -mt-0.5">
-                            {bank.code}
-                        </p>
-                    )}
-                </hgroup>
-                <div className="flex items-center gap-4">
-                    {quickLinks.map(link => (
-                        <button
-                            key={link.key}
-                            onClick={() => router.push(link.href(bankId))}
-                            className="group flex items-center gap-1 text-[11px] font-medium text-muted-foreground hover:text-foreground transition-colors"
-                        >
-                            <link.icon className="h-3 w-3" />
-                            {link.label}
-                        </button>
-                    ))}
-                </div>
-            </div>
-
             <div>
                 <div className="flex items-center gap-4 text-sm border-y border-border/40 py-2">
                     <Metric label="Saldo" value={totalCash} />
