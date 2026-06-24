@@ -2,7 +2,8 @@
 
 import React, { useState, useCallback } from "react"
 import { Table as ReactTable, type Row, type VisibilityState } from "@tanstack/react-table"
-import { DomainCard, EntityCard, EmptyState, MoneyDisplay, resolveEmptyState, type DataTableEmptyState, type EntityCardSkeletonProps } from "@/components/shared"
+import { DomainCard, EntityCard, EmptyState, MoneyDisplay, resolveEmptyState, SkeletonShell, type DataTableEmptyState, type EntityCardSkeletonProps } from "@/components/shared"
+import { Skeleton } from "@/components/ui/skeleton"
 import { groupByDate, groupItems, type AggregatorDef, type AggregateFormat, type Group } from "@/lib/group-utils"
 
 import { Button } from "@/components/ui/button"
@@ -342,6 +343,78 @@ export function createCardLoadingView(
     )
   CardLoadingView.displayName = "CardLoadingView"
   return CardLoadingView
+}
+
+/**
+ * Creates a renderLoadingView for grouped card views (createCardGroupView).
+ * Wraps in SkeletonShell and renders group headers + EntityCard.Skeleton cards
+ * to match the grouped layout and avoid layout shift.
+ *
+ * Usage:
+ *   renderLoadingView={createCardGroupLoadingView({ gridLayout: 'multi-column' })}
+ */
+export function createCardGroupLoadingView(
+  options?: {
+    groupCount?: number
+    itemsPerGroup?: number
+    gridLayout?: 'single-column' | 'multi-column'
+    skeletonProps?: Pick<EntityCardSkeletonProps, 'showHeader' | 'showBody' | 'showFooter'>
+  }
+) {
+  const {
+    groupCount = 3,
+    itemsPerGroup = 2,
+    gridLayout = 'single-column',
+    skeletonProps,
+  } = options ?? {}
+
+  const innerGridClass = gridLayout === "multi-column"
+    ? "grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3"
+    : "grid gap-2"
+
+  const CardGroupLoadingView = () =>
+    React.createElement(
+      SkeletonShell,
+      { isLoading: true, ariaLabel: "Cargando..." },
+      Array.from({ length: groupCount }).map((_, i) =>
+        React.createElement(
+          "div",
+          { key: `skel-group-${i}`, className: "mb-4" },
+          React.createElement(
+            "div",
+            { className: "pb-2 pt-3 mb-3" },
+            React.createElement(
+              "div",
+              { className: "flex items-center gap-2" },
+              React.createElement(Calendar, { className: "h-4 w-4 shrink-0 text-muted-foreground/50" }),
+              React.createElement(
+                "span",
+                { className: "text-xs font-semibold text-foreground truncate" },
+                React.createElement(Skeleton, { className: "h-4 w-24 inline-block" }),
+              ),
+              React.createElement(
+                "span",
+                { className: "hidden sm:inline text-xs text-muted-foreground/50 truncate" },
+                React.createElement(Skeleton, { className: "h-3 w-16 inline-block" }),
+              ),
+            ),
+          ),
+          React.createElement(
+            "div",
+            { className: innerGridClass },
+            Array.from({ length: itemsPerGroup }).map((_, j) =>
+              React.createElement(EntityCard.Skeleton, {
+                key: `skel-card-${i}-${j}`,
+                variant: gridLayout === 'multi-column' ? 'compact' : undefined,
+                ...skeletonProps,
+              })
+            ),
+          ),
+        )
+      ),
+    )
+  CardGroupLoadingView.displayName = "CardGroupLoadingView"
+  return CardGroupLoadingView
 }
 
 /**
