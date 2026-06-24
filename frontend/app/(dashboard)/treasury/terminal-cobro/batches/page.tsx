@@ -1,5 +1,5 @@
 import type { Metadata } from "next"
-import { ToolbarCreateButton } from '@/components/shared'
+import { PageSectionHeader, ToolbarCreateButton } from '@/components/shared'
 import { TerminalBatchesClientView } from "@/features/treasury"
 
 export const metadata: Metadata = {
@@ -17,11 +17,13 @@ export default async function TerminalCobroBatchesPage({ searchParams }: PagePro
     )
 
     return (
-        <TerminalBatchesClientView
-            showTitle={false}
-            externalOpenBatch={modal === 'batch'}
-            externalOpenInvoice={modal === 'invoice'}
-            createAction={createAction}
-        />
-    )
+        <>
+            <PageSectionHeader title="Liquidaciones" description="Gestión de liquidaciones y cierres de lote" />
+            <TerminalBatchesClientView
+                showTitle={false}
+                externalOpenBatch={modal === 'batch'}
+                externalOpenInvoice={modal === 'invoice'}
+                createAction={createAction}
+            />
+        </>)
 }

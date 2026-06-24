@@ -1,5 +1,5 @@
 import type { Metadata } from "next"
-import { PageHeader, ToolbarCreateButton } from '@/components/shared'
+import { PageHeader, PageSectionHeader, ToolbarCreateButton } from '@/components/shared'
 import { PartnersSettingsView } from "@/features/settings"
 import Link from "next/link"
 import { BarChart3 } from "lucide-react"
@@ -48,6 +48,8 @@ export default async function PartnersCompositionPage({ searchParams }: PageProp
                     </Button>
                 </Link>
             </PageHeader>
+
+            <PageSectionHeader title="Composición Societaria" description="Gestión de capital suscrito y pagado por los socios" />
 
             <PartnersSettingsView
                 activeTab="composition"

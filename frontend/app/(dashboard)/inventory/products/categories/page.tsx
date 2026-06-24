@@ -1,3 +1,4 @@
+import { PageSectionHeader } from "@/components/shared"
 import { CategoryClientView } from "@/features/inventory"
 import { ToolbarCreateButton } from "@/components/shared"
 
@@ -10,9 +11,11 @@ export default async function ProductsCategoriesPage({ searchParams }: PageProps
     const createAction = <ToolbarCreateButton label="Nueva Categoría" href="/inventory/products/categories?modal=new" />
 
     return (
-        <CategoryClientView
-            externalOpen={modal === 'new'}
-            createAction={createAction}
-        />
-    )
+        <>
+            <PageSectionHeader title="Categorías de Productos" description="Clasificación y agrupación de productos" />
+            <CategoryClientView
+                externalOpen={modal === 'new'}
+                createAction={createAction}
+            />
+        </>)
 }

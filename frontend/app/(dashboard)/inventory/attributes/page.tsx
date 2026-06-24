@@ -1,3 +1,4 @@
+import { PageSectionHeader } from "@/components/shared"
 import { AttributesClientView } from "@/features/inventory"
 import { ToolbarCreateButton } from '@/components/shared'
 
@@ -11,6 +12,7 @@ export default async function AttributesPage({ searchParams }: PageProps) {
 
     return (
         <div className="h-full flex flex-col">
+            <PageSectionHeader title="Atributos de Producto" description="Variantes, tallas, colores y otros atributos" />
             <AttributesClientView
                 externalOpen={isModalOpen}
                 createAction={

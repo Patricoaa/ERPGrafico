@@ -1,3 +1,4 @@
+import { PageSectionHeader } from "@/components/shared"
 import { serverFetch } from "@/lib/server-fetch"
 import type { Invoice } from "@/features/billing"
 import PurchasesPageClient from "./PurchasesPageClient"
@@ -27,5 +28,9 @@ export default async function PurchasesPage({ searchParams }: PageProps) {
         }
     }
 
-    return <PurchasesPageClient initialInvoices={initialInvoices} />
+    return (
+        <>
+            <PageSectionHeader title="Facturas de Compra" description="Documentos tributarios electrónicos de compra" />
+            <PurchasesPageClient initialInvoices={initialInvoices} />
+        </>)
 }

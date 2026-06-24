@@ -1,10 +1,15 @@
 import type { Metadata } from "next"
+import { PageSectionHeader } from "@/components/shared"
 import ReturnsPageClient from "./ReturnsPageClient"
 
 export const metadata: Metadata = {
-    title: "Notas de Venta | ERPGrafico",
+    title: "Devoluciones | ERPGrafico",
 }
 
 export default function SalesReturnsPage() {
-    return <ReturnsPageClient />
+    return (
+        <>
+            <PageSectionHeader title="Devoluciones" description="Gestión de devoluciones de ventas" />
+            <ReturnsPageClient />
+        </>)
 }

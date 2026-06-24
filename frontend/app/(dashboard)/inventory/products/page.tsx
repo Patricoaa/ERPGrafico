@@ -1,6 +1,6 @@
 import type { Metadata } from "next"
 import { ProductClientView } from "@/features/inventory"
-import { ToolbarCreateButton } from "@/components/shared"
+import { PageSectionHeader, ToolbarCreateButton } from "@/components/shared"
 import { serverFetch } from "@/lib/server-fetch"
 import type { Product } from "@/features/inventory"
 
@@ -39,10 +39,12 @@ export default async function ProductsPage({ searchParams }: PageProps) {
     const createAction = <ToolbarCreateButton label="Nuevo Producto" href="/inventory/products?modal=new" />
 
     return (
-        <ProductClientView
-            initialProducts={initialProducts}
-            externalOpen={modal === 'new'}
-            createAction={createAction}
-        />
-    )
+        <>
+            <PageSectionHeader title="Productos" description="Gestión de catálogo, categorías y reglas de precios" />
+            <ProductClientView
+                initialProducts={initialProducts}
+                externalOpen={modal === 'new'}
+                createAction={createAction}
+            />
+        </>)
 }

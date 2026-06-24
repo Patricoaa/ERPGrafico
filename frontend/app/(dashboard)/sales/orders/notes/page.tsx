@@ -1,4 +1,5 @@
 import type { Metadata } from "next"
+import { PageSectionHeader } from "@/components/shared"
 import NotesPageClient from "./NotesPageClient"
 
 export const metadata: Metadata = {
@@ -6,5 +7,9 @@ export const metadata: Metadata = {
 }
 
 export default function SalesOrdersNotesPage() {
-    return <NotesPageClient />
+    return (
+        <>
+            <PageSectionHeader title="Notas de Venta" description="Notas de crédito y débito asociadas a ventas" />
+            <NotesPageClient />
+        </>)
 }

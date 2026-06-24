@@ -1,4 +1,4 @@
-import { ToolbarCreateButton } from "@/components/shared"
+import { PageSectionHeader, ToolbarCreateButton } from "@/components/shared"
 import { TaxDeclarationsClientView } from "@/features/tax"
 
 interface PageProps {
@@ -16,6 +16,8 @@ export default async function TaxPage({ searchParams }: PageProps) {
     )
 
     return (
-        <TaxDeclarationsClientView externalOpen={modal === 'new'} createAction={createAction} />
-    )
+        <>
+            <PageSectionHeader title="Declaraciones Tributarias" description="Declaraciones de impuestos y formularios" />
+            <TaxDeclarationsClientView externalOpen={modal === 'new'} createAction={createAction} />
+        </>)
 }

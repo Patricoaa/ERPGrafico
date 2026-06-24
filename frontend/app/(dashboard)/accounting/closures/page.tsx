@@ -1,3 +1,4 @@
+import { PageSectionHeader } from "@/components/shared"
 import { AccountingClosuresClientView } from "@/features/accounting"
 
 interface PageProps {
@@ -8,6 +9,8 @@ export default async function ClosuresPage({ searchParams }: PageProps) {
     const { modal } = await searchParams
 
     return (
-        <AccountingClosuresClientView externalOpen={modal === 'fy'} />
-    )
+        <>
+            <PageSectionHeader title="Cierres Contables" description="Cierres de período y ejercicio fiscal" />
+            <AccountingClosuresClientView externalOpen={modal === 'fy'} />
+        </>)
 }

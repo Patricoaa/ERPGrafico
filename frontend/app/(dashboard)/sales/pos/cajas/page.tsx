@@ -1,4 +1,4 @@
-import { ToolbarCreateButton } from '@/components/shared'
+import { PageSectionHeader, ToolbarCreateButton } from '@/components/shared'
 import { SalesPosLayout } from "@/features/sales"
 
 interface PageProps {
@@ -10,10 +10,12 @@ export default async function PosCajasPage({ searchParams }: PageProps) {
     const createAction = <ToolbarCreateButton label="Nueva Caja" href="/sales/pos/cajas?modal=new-terminal" />
 
     return (
-        <SalesPosLayout
-            activeTab="cajas"
-            modal={modal}
-            createAction={createAction}
-        />
-    )
+        <>
+            <PageSectionHeader title="Puntos de Venta" description="Terminales POS y cajas registradoras" />
+            <SalesPosLayout
+                activeTab="cajas"
+                modal={modal}
+                createAction={createAction}
+            />
+        </>)
 }

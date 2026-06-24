@@ -1,3 +1,4 @@
+import { PageSectionHeader } from "@/components/shared"
 import { serverFetch } from "@/lib/server-fetch"
 import AuditPageClient from "./AuditPageClient"
 
@@ -22,5 +23,9 @@ export default async function AuditHubPage() {
         // Client-side fetch handles fallback
     }
 
-    return <AuditPageClient initialLogs={initialLogs} />
+    return (
+        <>
+            <PageSectionHeader title="Auditoría" description="Registro de actividades y cambios en el sistema" />
+            <AuditPageClient initialLogs={initialLogs} />
+        </>)
 }

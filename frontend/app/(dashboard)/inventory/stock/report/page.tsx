@@ -1,4 +1,5 @@
 import { Metadata } from "next"
+import { PageSectionHeader } from "@/components/shared"
 import { StockReport } from "@/features/inventory"
 
 export const metadata: Metadata = {
@@ -7,5 +8,9 @@ export const metadata: Metadata = {
 }
 
 export default async function StockReportPage() {
-    return <StockReport />
+    return (
+        <>
+            <PageSectionHeader title="Reporte de Stock" description="Informe detallado de existencias por almacén" />
+            <StockReport />
+        </>)
 }
