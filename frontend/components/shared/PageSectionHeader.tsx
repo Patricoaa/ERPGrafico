@@ -28,7 +28,7 @@ export function PageSectionHeader({ title, description, tabs, subTabs }: PageSec
     if (!title && !description && !hasTabs && !hasSubTabs) return null
 
     return (
-        <div className="border-b border-border">
+        <div>
             <div className="flex items-center justify-between gap-4 py-3">
                 {(title || description) && (
                     <div className="flex flex-col min-w-0">
