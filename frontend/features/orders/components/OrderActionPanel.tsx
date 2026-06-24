@@ -123,7 +123,7 @@ export function OrderActionPanel({
                         ) : (
                             <div className="flex items-center gap-2">
                                 <span className="font-mono">
-                                    {formatEntityDisplay(orderType === 'purchase' ? 'purchasing.purchaseorder' : 'sales.saleorder', order)}
+                                    {formatEntityDisplay(orderType === 'purchase' ? 'purchasing.purchaseorder' : 'sales.saleorder', (order ?? {}) as Record<string, unknown>)}
                                 </span>
                                 <StatusBadge status={order?.status || ""} />
                             </div>

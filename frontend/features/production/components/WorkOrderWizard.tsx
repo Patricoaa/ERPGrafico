@@ -451,7 +451,7 @@ export function WorkOrderWizard({ mode, open, onOpenChange, onSuccess }: WorkOrd
         }
         subtitle={
           order
-            ? `${formatEntityDisplay('production.workorder', order)} · ${order.sale_customer_name || 'Manual'} · ${formatPlainDate(order.created_at)}`
+            ? `${formatEntityDisplay('production.workorder', order as unknown as Record<string, unknown>)} · ${order.sale_customer_name || 'Manual'} · ${formatPlainDate(order.created_at)}`
             : 'Planificación de Producción • Nueva OT'
         }
         description={STAGES[viewingStepIndex]?.label}

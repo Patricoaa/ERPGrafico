@@ -125,7 +125,7 @@ export function AdvancedWorkOrderSelector({
                             return (
                                 <div className="flex items-center gap-1.5 min-w-0 flex-1">
                                     <OrderIcon className="h-3.5 w-3.5 shrink-0 text-primary" />
-                                    <span className="font-semibold text-sm text-primary shrink-0">{formatEntityDisplay('production.workorder', selectedOrder)}</span>
+                                    <span className="font-semibold text-sm text-primary shrink-0">{formatEntityDisplay('production.workorder', selectedOrder as unknown as Record<string, unknown>)}</span>
                                     <span className="text-sm text-muted-foreground truncate">{selectedOrder.product_name}</span>
                                 </div>
                             );
@@ -185,7 +185,7 @@ export function AdvancedWorkOrderSelector({
                                             </div>
                                             <div className="flex flex-col overflow-hidden flex-1">
                                                 <div className="flex items-center justify-between">
-                                                    <span className="truncate font-bold text-xs">{formatEntityDisplay('production.workorder', order)}</span>
+                                                    <span className="truncate font-bold text-xs">{formatEntityDisplay('production.workorder', order as unknown as Record<string, unknown>)}</span>
                                                     <span className="text-[9px] font-mono text-muted-foreground">
                                                         {format(new Date(order.created_at), "dd/MM/yyyy")}
                                                     </span>

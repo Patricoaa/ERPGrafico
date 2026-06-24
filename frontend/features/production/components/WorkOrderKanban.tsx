@@ -51,7 +51,7 @@ function KanbanCard({ order, onManage, onDuplicate, onAnnul, onDelete }: { order
         >
             <CardContent className="p-3 space-y-3">
                 <div className="flex items-center justify-between mb-3">
-                    <Chip size="xs">{formatEntityDisplay('production.workorder', order)}</Chip>
+                    <Chip size="xs">{formatEntityDisplay('production.workorder', order as unknown as Record<string, unknown>)}</Chip>
                     <StatusBadge status={order.status} size="sm" />
                 </div>
                 <div className="flex gap-2 items-center flex-wrap">
