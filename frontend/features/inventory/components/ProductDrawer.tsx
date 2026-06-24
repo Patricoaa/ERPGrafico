@@ -2,7 +2,7 @@
 
 import {UoM, Product} from "@/types/entities"
 
-import { useState, useEffect, useMemo, useRef } from "react"
+import { useState, useEffect, useMemo } from "react"
 import { useForm, FieldErrors, UseFormReturn } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { toast } from "sonner"
@@ -11,24 +11,21 @@ import { useProducts } from "../hooks/useProducts"
 import { useUoMs } from "../hooks/useUoMs"
 import { useWarehouses } from "../hooks/useWarehouses"
 import { useProductPricingRules } from "../hooks/usePricingRules"
-import {ShoppingCart, Package, Truck, Layers, Factory, DollarSign, Printer} from "lucide-react"
-import { getEntityIcon } from "@/lib/entity-registry"
+import {ShoppingCart, Package, Truck, Layers, Factory, DollarSign} from "lucide-react"
 import { showApiError } from "@/lib/errors"
 import { Form } from "@/components/ui/form"
 
-import {ActionConfirmModal, Drawer, FormFooter, FormSplitLayout, TabBar, TabBarContent, SkeletonShell, type TabItem} from '@/components/shared'
+import {ActionConfirmModal, Drawer, FormSplitLayout, TabBar, TabBarContent, SkeletonShell, type TabItem} from '@/components/shared'
 import { ActivitySidebar } from "@/features/audit/components"
 // Removed Badge import for governance compliance
 
 // Import dialogs
-import { Button } from "@/components/ui/button"
 import { PricingRuleDrawer } from "@/features/sales/components/PricingRuleDrawer"
 import { CancelButton, ActionSlideButton } from "@/components/shared"
 
 import { formDrawerWidth } from "@/lib/form-widths"
-import { useReactToPrint } from "react-to-print"
 import { PrintableLayout } from "@/features/_shared/transaction-drawer"
-import type { DrawerMode } from "@/features/_shared/drawer/types"
+import { useDrawerMode, useDrawerIdentity, usePrintableDrawer, DrawerPrintButton, drawerFooter, type DrawerMode } from "@/features/_shared/drawer"
 
 // Product subcomponents and schema
 import { ProductBasicInfo } from "./product/ProductBasicInfo"
@@ -59,10 +56,8 @@ export function ProductDrawer({ sidebar, open, onOpenChange, initialData, onSucc
     const { warehouses, isLoading: isLoadingWarehouses } = useWarehouses()
     const { rules: pricingRules, isLoading: isLoadingPricingRules, refetch: refetchPricingRules } = useProductPricingRules(initialData?.id ?? null)
 
-    const mode: DrawerMode = modeProp ?? (initialData ? 'edit' : 'create')
-    const isView = mode === 'view'
-    const printRef = useRef<HTMLDivElement>(null)
-    const handlePrint = useReactToPrint({ contentRef: printRef })
+    const { mode, isView } = useDrawerMode({ mode: modeProp, initialData })
+    const { printRef, handlePrint } = usePrintableDrawer()
 
     const [loading, setLoading] = useState(false)
     const [imagePreview, setImagePreview] = useState<string | null>(null)
@@ -601,11 +596,7 @@ export function ProductDrawer({ sidebar, open, onOpenChange, initialData, onSucc
         },
     ]
 
-    const drawerTitle = isView
-        ? `Ficha de Producto${initialData?.id ? ` #${initialData.id}` : ""}`
-        : mode === 'create'
-            ? "Nuevo Producto"
-            : "Editar Producto"
+    const drawerIdentity = useDrawerIdentity('inventory.product', mode, initialData)
 
     const tabHeader = (
         <div className="flex flex-col p-6 pb-2">
@@ -613,7 +604,7 @@ export function ProductDrawer({ sidebar, open, onOpenChange, initialData, onSucc
                 <Package className="h-6 w-6 text-primary" />
                 <div className="flex flex-col">
                     <span className="text-xs font-medium text-muted-foreground uppercase tracking-widest mb-0.5">
-                        {drawerTitle}
+                        {drawerIdentity.title}
                     </span>
                     <span className="truncate max-w-[300px]">
                         {initialData ? form.watch("name") : "Maestro de Producto"}
@@ -623,18 +614,12 @@ export function ProductDrawer({ sidebar, open, onOpenChange, initialData, onSucc
         </div>
     )
 
-    const footerSlot = isView ? undefined : (
-        <FormFooter
-            actions={
-                <>
-                    <CancelButton onClick={() => onOpenChange(false)} disabled={form.formState.isSubmitting} />
-                    <ActionSlideButton type="submit" form="product-form" loading={form.formState.isSubmitting}>
-                        {mode === 'create' ? "Crear Producto" : "Guardar Cambios"}
-                    </ActionSlideButton>
-                </>
-            }
-        />
-    )
+    const footerSlot = drawerFooter(isView, <>
+        <CancelButton onClick={() => onOpenChange(false)} disabled={form.formState.isSubmitting} />
+        <ActionSlideButton type="submit" form="product-form" loading={form.formState.isSubmitting}>
+            {mode === 'create' ? "Crear Producto" : "Guardar Cambios"}
+        </ActionSlideButton>
+    </>)
 
     const formContent = (
         <>
@@ -805,9 +790,9 @@ export function ProductDrawer({ sidebar, open, onOpenChange, initialData, onSucc
                 }}
                 defaultSize={width}
                 className="h-[90vh]"
-                icon={getEntityIcon('inventory.product')}
-                title={<span>{drawerTitle}</span>}
-                headerActions={(mode === 'view' || mode === 'edit') && initialData?.id && <Button variant="ghost" size="icon" onClick={() => handlePrint()}><Printer className="h-4 w-4" /></Button>}
+                icon={drawerIdentity.icon}
+                title={drawerIdentity.title}
+                headerActions={<DrawerPrintButton show={(mode === 'view' || mode === 'edit') && !!initialData?.id} onPrint={handlePrint} />}
                 subtitle={initialData ? form.watch("name") : "Maestro de Producto"}
                 mode={mode}
                 footer={footerSlot}
