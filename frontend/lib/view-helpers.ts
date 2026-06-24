@@ -448,7 +448,8 @@ export function createExpandableRowView<TData, TDetail = unknown>(
     const handleExpand = useCallback(async () => {
       if (!config.lazyLoad) return
       if (cache.has(id)) {
-        setDetail(cache.get(id)!)
+        const cached = cache.get(id)
+        if (cached !== undefined) setDetail(cached)
         return
       }
       setLoading(true)

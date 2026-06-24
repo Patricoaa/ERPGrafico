@@ -23,7 +23,7 @@ interface Props {
 export function LoanPayInstallmentModal({ installment, loanCurrency, penaltyRate, open, onOpenChange }: Props) {
     const { accounts } = useTreasuryAccounts()
     const { payInstallment, isPaying } = useLoanMutations()
-    const { dateString, serverDate } = useServerDate()
+    const { dateString } = useServerDate()
 
     const [paymentAccount, setPaymentAccount] = useState('')
     const [payDate, setPayDate] = useState(dateString || new Date().toISOString().slice(0, 10))
@@ -31,18 +31,7 @@ export function LoanPayInstallmentModal({ installment, loanCurrency, penaltyRate
     const [interestAmount, setInterestAmount] = useState(installment.interest_amount)
     const [insuranceAmount, setInsuranceAmount] = useState(installment.insurance_amount)
     const [taxAmount, setTaxAmount] = useState('0')
-    const [penaltyAmount, setPenaltyAmount] = useState(
-        installment.status === 'OVERDUE' && parseFloat(penaltyRate || '0') > 0
-            ? (() => {
-                const days = Math.max(0, Math.floor(
-                    ((serverDate?.getTime() ?? Date.now()) - parseDateOnly(installment.due_date).getTime()) / 86_400_000,
-                ))
-                return days > 0
-                    ? (parseFloat(installment.total_amount) * (parseFloat(penaltyRate || '0') / 100) * (days / 30)).toFixed(2)
-                    : '0'
-            })()
-            : '0'
-    )
+    const [penaltyAmount, setPenaltyAmount] = useState('0')
 
     const disbursementAccounts = (accounts ?? []).filter(
         (a) => a.account_type === 'CHECKING' || a.account_type === 'CASH',

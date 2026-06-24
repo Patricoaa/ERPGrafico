@@ -6,7 +6,7 @@ import {
   Building2, Smartphone, CreditCard, Calendar, CalendarX2, Repeat,
   Tag, Percent, Ruler, PieChart, HandCoins, ClipboardList, PackageCheck,
   BarChart3,
-  CheckSquare, Banknote, Monitor, Wallet, ScrollText,
+  ScrollText,
   type LucideIcon 
 } from 'lucide-react';
 
