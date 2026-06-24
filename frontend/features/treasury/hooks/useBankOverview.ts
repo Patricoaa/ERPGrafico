@@ -26,6 +26,29 @@ export interface BankOverviewRecentMovement {
     payment_method_display: string
 }
 
+export interface BankOverviewLoanItem {
+    id: number
+    display_id: string
+    loan_number: string
+    principal: number
+    outstanding_balance: number
+    next_due_date: string | null
+    next_installment_amount: number | null
+    installments_count: number
+    paid_installments_count: number
+}
+
+export interface BankOverviewCheckItem {
+    id: number
+    display_id: string
+    check_number: string
+    amount: number
+    issue_date: string
+    due_date: string
+    counterparty_name: string | null
+    drawer_name: string
+}
+
 export interface BankOverviewData {
     bank: { id: number; name: string; code: string | null }
     accounts: Array<{
@@ -58,6 +81,8 @@ export interface BankOverviewData {
     }
     upcoming_maturities: BankOverviewMaturityItem[]
     recent_movements: BankOverviewRecentMovement[]
+    active_loans: BankOverviewLoanItem[]
+    issued_checks_list: BankOverviewCheckItem[]
 }
 
 export function useBankOverview(bankId: number | null) {

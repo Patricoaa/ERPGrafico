@@ -5,9 +5,12 @@ import { AlertTriangle } from "lucide-react"
 import { Skeleton, EmptyState } from "@/components/shared"
 import { useBankOverview, type BankOverviewData } from "../hooks/useBankOverview"
 import { BankMasthead } from "./BankMasthead"
-import { BankAccountsSection } from "./BankAccountsSection"
 import { BankUpcomingMaturities } from "./BankUpcomingMaturities"
 import { BankRecentActivity } from "./BankRecentActivity"
+import { BankOverviewCheckingCards } from "./BankOverviewCheckingCards"
+import { BankOverviewLoanCards } from "./BankOverviewLoanCards"
+import { BankOverviewCheckCards } from "./BankOverviewCheckCards"
+import { BankOverviewCreditCards } from "./BankOverviewCreditCards"
 import { ChecksClientView } from "../checks/ChecksClientView"
 import { LoansClientView } from "../loans/LoansClientView"
 import { CardChargesView } from "../card-statements/CardChargesView"
@@ -45,7 +48,16 @@ export function BankCenterDashboard({ bankId, subtab }: { bankId: number; subtab
                     <div>
                         <BankMasthead data={overviewData} bankId={bankId} />
                         <div className="border-b border-border/40" />
-                        <BankAccountsSection data={overviewData} bankId={bankId} />
+                        <section className="py-4">
+                            <div className="grid grid-cols-1 lg:grid-cols-[1fr_380px] gap-5">
+                                <div className="space-y-6">
+                                    <BankOverviewCheckingCards data={overviewData} bankId={bankId} />
+                                    <BankOverviewLoanCards data={overviewData} bankId={bankId} />
+                                    <BankOverviewCheckCards data={overviewData} bankId={bankId} />
+                                </div>
+                                <BankOverviewCreditCards data={overviewData} bankId={bankId} />
+                            </div>
+                        </section>
                         <div className="border-b border-border/40" />
                         <BankUpcomingMaturities data={overviewData} bankId={bankId} />
                         <div className="border-b border-border/40" />
@@ -98,7 +110,11 @@ function OverviewSkeleton() {
             <div className="border-b border-border/40" />
             <div className="py-4">
                 <div className="grid grid-cols-1 lg:grid-cols-[1fr_380px] gap-5">
-                    <Skeleton className="h-40" />
+                    <div className="space-y-4">
+                        <Skeleton className="h-28" />
+                        <Skeleton className="h-28" />
+                        <Skeleton className="h-28" />
+                    </div>
                     <Skeleton className="h-48" />
                 </div>
             </div>
