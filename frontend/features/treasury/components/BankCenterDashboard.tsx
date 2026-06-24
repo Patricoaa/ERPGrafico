@@ -2,14 +2,16 @@
 
 import { usePathname } from "next/navigation"
 import { AlertTriangle } from "lucide-react"
-import { Skeleton, EmptyState } from "@/components/shared"
+import { Skeleton, EmptyState, PageSectionHeader } from "@/components/shared"
+import { useMemo } from "react"
 import { useBankOverview, type BankOverviewData } from "../hooks/useBankOverview"
+import { getSubViewTabs } from "../constants"
 import { BankMasthead } from "./BankMasthead"
 import { BankUpcomingMaturities } from "./BankUpcomingMaturities"
 import { BankRecentActivity } from "./BankRecentActivity"
 import { BankOverviewCheckingCards } from "./BankOverviewCheckingCards"
 import { BankOverviewLoanCards } from "./BankOverviewLoanCards"
-import { BankOverviewCheckCards } from "./BankOverviewCheckCards"
+
 import { BankOverviewCreditCards } from "./BankOverviewCreditCards"
 import { ChecksClientView } from "../checks/ChecksClientView"
 import { LoansClientView } from "../loans/LoansClientView"
@@ -25,17 +27,24 @@ export function BankCenterDashboard({ bankId, subtab }: { bankId: number; subtab
     const { data, isLoading, isError } = queryResult as { data: BankOverviewData | undefined; isLoading: boolean; isError: boolean }
 
     const overviewData = (data && !isError ? data : null) as BankOverviewData | null
+    const bankName = overviewData?.bank?.name ?? "Cargando..."
     const checkingAccounts = overviewData
         ? overviewData.accounts.filter((a: { account_type: string }) => a.account_type === "CHECKING").map((a: { id: number; name: string }) => ({ id: a.id, name: a.name }))
         : []
 
-    if (activeTab === "overview" && isLoading) {
-        return <OverviewSkeleton />
-    }
+    const cardSubTabs = useMemo(() => {
+        if (activeTab !== "cards") return undefined
+        return [
+            { value: "unbilled", label: "Cargos No Facturados", href: `/treasury/bank-center/${bankId}/cards/unbilled` },
+            { value: "statements", label: "Cargos Facturados", href: `/treasury/bank-center/${bankId}/cards/statements` },
+        ]
+    }, [activeTab, bankId])
 
     return (
         <div className="h-full flex flex-col overflow-y-auto custom-scrollbar">
-            {activeTab === "overview" && (
+            <PageSectionHeader title={bankName} tabs={getSubViewTabs(bankId)} subTabs={cardSubTabs} />
+            {activeTab === "overview" && isLoading && <OverviewSkeleton />}
+            {activeTab === "overview" && !isLoading && (
                 isError ? (
                     <div className="flex-1 flex items-center justify-center">
                         <EmptyState
@@ -46,16 +55,17 @@ export function BankCenterDashboard({ bankId, subtab }: { bankId: number; subtab
                     </div>
                 ) : overviewData ? (
                     <div>
-                        <BankMasthead data={overviewData} bankId={bankId} />
+                        <BankMasthead data={overviewData} />
                         <div className="border-b border-border/40" />
                         <section className="py-4">
-                            <div className="grid grid-cols-1 lg:grid-cols-[1fr_380px] gap-5">
-                                <div className="space-y-6">
+                            <div className="flex flex-col lg:flex-row gap-5">
+                                <div className="flex-1 grid grid-cols-1 lg:grid-cols-2 gap-5">
                                     <BankOverviewCheckingCards data={overviewData} bankId={bankId} />
                                     <BankOverviewLoanCards data={overviewData} bankId={bankId} />
-                                    <BankOverviewCheckCards data={overviewData} bankId={bankId} />
                                 </div>
-                                <BankOverviewCreditCards data={overviewData} bankId={bankId} />
+                                <div className="w-full lg:w-[380px] shrink-0">
+                                    <BankOverviewCreditCards data={overviewData} bankId={bankId} />
+                                </div>
                             </div>
                         </section>
                         <div className="border-b border-border/40" />
@@ -109,13 +119,14 @@ function OverviewSkeleton() {
             </div>
             <div className="border-b border-border/40" />
             <div className="py-4">
-                <div className="grid grid-cols-1 lg:grid-cols-[1fr_380px] gap-5">
-                    <div className="space-y-4">
-                        <Skeleton className="h-28" />
+                <div className="flex flex-col lg:flex-row gap-5">
+                    <div className="flex-1 grid grid-cols-1 lg:grid-cols-2 gap-5">
                         <Skeleton className="h-28" />
                         <Skeleton className="h-28" />
                     </div>
-                    <Skeleton className="h-48" />
+                    <div className="w-full lg:w-[380px] shrink-0">
+                        <Skeleton className="h-48" />
+                    </div>
                 </div>
             </div>
             <div className="border-b border-border/40" />
