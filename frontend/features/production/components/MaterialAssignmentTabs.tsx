@@ -1,5 +1,5 @@
 import * as React from "react"
-import { UnderlineTabs, UnderlineTabsContent, type TabItem } from "@/components/shared"
+import { TabBar, TabBarContent, type TabItem } from "@/components/shared"
 import { Package, Briefcase } from "lucide-react"
 
 interface MaterialAssignmentTabsProps {
@@ -45,22 +45,20 @@ export function MaterialAssignmentTabs({
 
     return (
         <div className="w-full">
-            <UnderlineTabs 
+            <TabBar 
                 items={tabItems} 
                 value={activeTab}
                 onValueChange={setActiveTab}
                 orientation="horizontal"
-                variant="underline"
-                headerClassName="px-0"
             >
-                <UnderlineTabsContent value="stock" className="space-y-4 pt-6 animate-in fade-in-50 duration-300">
+                <TabBarContent value="stock" className="space-y-4 pt-6 animate-in fade-in-50 duration-300">
                     {stockContent}
-                </UnderlineTabsContent>
+                </TabBarContent>
 
-                <UnderlineTabsContent value="outsourced" className="space-y-4 pt-6 animate-in fade-in-50 duration-300">
+                <TabBarContent value="outsourced" className="space-y-4 pt-6 animate-in fade-in-50 duration-300">
                     {outsourcedContent}
-                </UnderlineTabsContent>
-            </UnderlineTabs>
+                </TabBarContent>
+            </TabBar>
         </div>
     )
 }

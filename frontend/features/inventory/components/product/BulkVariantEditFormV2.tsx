@@ -8,7 +8,7 @@ import { z } from "zod"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { Form, FormField } from "@/components/ui/form"
 import { Button } from "@/components/ui/button"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { TabBar, TabBarContent } from "@/components/shared"
 import { LabeledInput, LabeledSelect, SkeletonShell } from "@/components/shared"
 import { Factory, AlertCircle, Copy, PlusCircle, DollarSign, Users } from "lucide-react"
 import { Chip } from "@/components/shared"
@@ -206,35 +206,28 @@ export function BulkVariantEditFormV2({
     )}
     <SkeletonShell isLoading={isUoMsLoading} ariaLabel="Cargando edición masiva">
     <div className="flex flex-col h-full bg-card rounded-md border shadow-card overflow-hidden animate-in fade-in slide-in-from-right-4 duration-300">
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="flex flex-col h-full">
-
-        {/* Tab navigation */}
-        <div className="px-5 pt-4 pb-1 bg-muted/5">
+      <div className="px-5 pt-4 pb-1 bg-muted/5">
           <div className="flex items-center gap-2 mb-3">
             <Users className="h-3.5 w-3.5 text-primary" />
             <span className="text-[11px] font-black uppercase tracking-widest text-primary">
               {selectedVariants.length} variantes seleccionadas
             </span>
           </div>
-          <TabsList className="w-full h-9 grid grid-cols-2 bg-muted/40 rounded-md">
-            <TabsTrigger value="precios" className="text-xs font-bold flex items-center gap-1.5">
-              <DollarSign className="h-3.5 w-3.5" />
-              Precios
-            </TabsTrigger>
-            <TabsTrigger value="ldm" className="text-xs font-bold flex items-center gap-1.5">
-              <Factory className="h-3.5 w-3.5" />
-              LDM
-              {variantsWithBOM > 0 && (
-                <span className="ml-1 bg-primary/20 text-primary text-[9px] font-black px-1.5 py-0.5 rounded-md">
-                  {variantsWithBOM}/{selectedVariants.length}
-                </span>
-              )}
-            </TabsTrigger>
-          </TabsList>
         </div>
+        <TabBar
+          value={activeTab}
+          onValueChange={setActiveTab}
+          items={[
+            { value: 'precios', label: 'Precios', icon: DollarSign as any },
+            { value: 'ldm', label: 'LDM', icon: Factory as any, badge: variantsWithBOM > 0 ? `${variantsWithBOM}/${selectedVariants.length}` : undefined },
+          ]}
+          className="flex-1"
+          contentClassName="flex flex-col p-0"
+        >
+          <div className="flex-1 overflow-y-auto p-6 scrollbar-thin">
 
         {/* ── Tab: Precios ─────────────────────────────────── */}
-        <TabsContent value="precios" className="flex-1 overflow-y-auto p-6 scrollbar-thin mt-0">
+        <TabBarContent value="precios" className="mt-0">
           <Form {...form}>
             <div className="space-y-5">
 
@@ -336,10 +329,10 @@ export function BulkVariantEditFormV2({
 
             </div>
           </Form>
-        </TabsContent>
+        </TabBarContent>
 
         {/* ── Tab: LDM ─────────────────────────────────────── */}
-        <TabsContent value="ldm" className="flex-1 overflow-y-auto p-6 scrollbar-thin mt-0">
+        <TabBarContent value="ldm" className="mt-0">
           <div className="space-y-5">
 
             {/* Header */}
@@ -420,8 +413,9 @@ export function BulkVariantEditFormV2({
             )}
 
           </div>
-        </TabsContent>
-      </Tabs>
+        </TabBarContent>
+          </div>
+        </TabBar>
 
       {/* BOM create modal — anchored to first selected variant */}
       <BOMDrawer

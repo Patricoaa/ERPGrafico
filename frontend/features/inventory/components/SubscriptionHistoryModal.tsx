@@ -17,7 +17,7 @@ import { format, isWithinInterval, startOfDay, endOfDay } from "date-fns"
 import { es } from "date-fns/locale"
 import { DataCell } from '@/components/shared'
 
-import { UnderlineTabs, UnderlineTabsContent } from "@/components/shared"
+import { TabBar, TabBarContent } from "@/components/shared"
 import type { ColumnDef } from "@tanstack/react-table"
 import { BarChart } from "@/components/shared"
 import { useHubPanel } from "@/components/providers/HubPanelProvider"
@@ -126,11 +126,10 @@ export function SubscriptionHistoryModal({ subscriptionId, open, onOpenChange }:
                                     <p className="text-muted-foreground">Error al cargar datos.</p>
                                 </div>
                             ) : (
-                                <UnderlineTabs
+                                <TabBar
                                     value={activeTab}
                                     onValueChange={setActiveTab}
                                     orientation="horizontal"
-                                    variant="underline"
                                     items={[
                                         { value: "historial", label: "Historial de Costos", icon: History },
                                         { value: "orders", label: "Órdenes de Compra (OCS)", icon: FileText },
@@ -141,7 +140,7 @@ export function SubscriptionHistoryModal({ subscriptionId, open, onOpenChange }:
                                     <div className="flex-1 overflow-auto p-6 scrollbar-thin">
 
                                         {/* HISTORIAL TAB */}
-                                        <UnderlineTabsContent value="historial" className="mt-0 space-y-6">
+                                        <TabBarContent value="historial" className="mt-0 space-y-6">
                                             <div className="space-y-4">
                                                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                                                     <StatCard
@@ -194,10 +193,10 @@ export function SubscriptionHistoryModal({ subscriptionId, open, onOpenChange }:
                                                     description="No hay datos para el periodo seleccionado."
                                                 />
                                             )}
-                                        </UnderlineTabsContent>
+                                        </TabBarContent>
 
                                         {/* ORDERS TAB */}
-                                        <UnderlineTabsContent value="orders" className="mt-0">
+                                        <TabBarContent value="orders" className="mt-0">
                                             <div className="rounded-md border shadow-card overflow-hidden bg-card">
                                                 <OrderTable
                                                     orders={data.orders}
@@ -208,10 +207,10 @@ export function SubscriptionHistoryModal({ subscriptionId, open, onOpenChange }:
                                                     })}
                                                 />
                                             </div>
-                                        </UnderlineTabsContent>
+                                        </TabBarContent>
 
                                         {/* NOTES TAB */}
-                                        <UnderlineTabsContent value="notes" className="mt-0">
+                                        <TabBarContent value="notes" className="mt-0">
                                             <div className="rounded-md border shadow-card overflow-hidden bg-card">
                                                 <NoteTable
                                                     notes={data.notes}
@@ -222,9 +221,9 @@ export function SubscriptionHistoryModal({ subscriptionId, open, onOpenChange }:
                                                     })}
                                                 />
                                             </div>
-                                        </UnderlineTabsContent>
+                                        </TabBarContent>
                                     </div>
-                                </UnderlineTabs>
+                                </TabBar>
                             )}
                         </SkeletonShell>
                     )}

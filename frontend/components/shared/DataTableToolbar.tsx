@@ -11,7 +11,7 @@ import {
     DropdownMenuContent,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { TabBar } from "@/components/shared"
 import { AnalyticsPanel, type AnalyticsTab, type Granularity } from "./AnalyticsPanel"
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 import { DataTableFacetedFilter } from "./DataTableFacetedFilter"
@@ -275,22 +275,14 @@ export function DataTableToolbar<TData>(props: DataTableToolbarProps<TData>) {
 
                         {/* Selector de vistas (oculto si hay 0 o 1 vista) */}
                         {viewOptions && viewOptions.length > 1 && (
-                            <div className="flex items-center gap-1.5 shrink-0 bg-background rounded-sm px-1 h-9">
-                                <Tabs value={currentView} onValueChange={(v) => onViewChange?.(v)}>
-                                    <TabsList className="h-7 p-0 gap-0 bg-transparent border-border/60">
-                                        {viewOptions.map((option) => (
-                                            <TabsTrigger
-                                                key={option.value}
-                                                value={option.value}
-                                                className="h-7 px-2 text-[10px] uppercase font-bold tracking-widest gap-1 data-[state=active]:bg-accent/50 data-[state=active]:shadow-none rounded-sm"
-                                            >
-                                                <option.icon className="h-3.5 w-3.5" />
-                                                {option.label}
-                                            </TabsTrigger>
-                                        ))}
-                                    </TabsList>
-                                </Tabs>
-                            </div>
+                            <TabBar
+                                value={currentView ?? ''}
+                                onValueChange={(v) => onViewChange?.(v)}
+                                items={viewOptions.map(o => ({ value: o.value, label: o.label, icon: o.icon as any }))}
+                                className="w-auto shrink-0"
+                            >
+                                <div className="hidden" />
+                            </TabBar>
                         )}
                     </div>
                 </div>

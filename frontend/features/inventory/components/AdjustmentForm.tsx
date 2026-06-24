@@ -28,7 +28,7 @@ import { useUoMs } from "../hooks/useUoMs"
 import { useProduct } from "../hooks/useProducts"
 import { useStockAdjustment } from "../hooks/useStockMoves"
 import { usePartners } from "@/features/contacts"
-import { FormSection, UnderlineTabs, LabeledInput, LabeledSelect, SkeletonShell, type TabItem } from '@/components/shared'
+import { FormSection, TabBar, LabeledInput, LabeledSelect, SkeletonShell, type TabItem } from '@/components/shared'
 
 const adjustmentSchema = z.object({
     product_id: z.string().min(1, "Seleccione un producto"),
@@ -264,19 +264,17 @@ export function AdjustmentForm({
                         </Alert>
                     )}
 
-                    <UnderlineTabs
+                    <TabBar
                         items={tabItems}
                         value={moveType}
                         onValueChange={(val) => form.setValue("type", val as "IN" | "OUT")}
                         orientation="horizontal"
-                        variant="underline"
                         listClassName={cn(
                             moveType === 'IN'
-                                ? "[&_[data-state=active]]:text-success [&_[data-state=active]]:border-success"
-                                : "[&_[data-state=active]]:text-destructive [&_[data-state=active]]:border-destructive"
+                                ? "[&_[data-state=active]]:bg-success/15 [&_[data-state=active]]:text-success [&_[data-state=active]]:border-success/30"
+                                : "[&_[data-state=active]]:bg-destructive/15 [&_[data-state=active]]:text-destructive [&_[data-state=active]]:border-destructive/30"
                         )}
                         className="flex-1 flex flex-col min-h-0"
-                        headerClassName="bg-transparent"
                         contentClassName="flex-1 flex flex-col overflow-hidden bg-background"
                     >
                         <div className="flex-1 overflow-y-auto space-y-8 pt-6 px-8 pb-8 scrollbar-thin">
@@ -538,7 +536,7 @@ export function AdjustmentForm({
                             </div>
 
                         </div>
-                    </UnderlineTabs>
+                    </TabBar>
                 </form>
             </Form>
         </SkeletonShell>
