@@ -810,7 +810,7 @@ table [data-notched-field] {
   }
 
   .custom-scrollbar {
-    scrollbar-gutter: stable;
+    padding-right: 5px;
   }
 
   /*
