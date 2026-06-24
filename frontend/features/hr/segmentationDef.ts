@@ -21,6 +21,7 @@ export const absenceSegDef: SegmentationDefinition = {
       key: 'absence_type',
       label: 'Tipo',
       type: 'tabs',
+      variant: 'dropdown',
       serverParam: 'absence_type',
       options: [
         { label: 'Ausentismo', value: 'AUSENTISMO' },

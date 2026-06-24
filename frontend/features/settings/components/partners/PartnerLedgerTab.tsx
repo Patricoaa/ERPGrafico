@@ -1,7 +1,7 @@
 "use client"
 import { formatCurrency } from "@/lib/money"
 
-import React, { useEffect, useState } from "react"
+import React, { useEffect, useState, useMemo } from "react"
 import {
     ArrowDownLeft,
     ArrowUpRight,
@@ -22,7 +22,7 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { PartnerContributionWizard } from "@/features/settings/components/partners/PartnerContributionWizard"
 import { PartnerWithdrawalWizard } from "@/features/settings/components/partners/PartnerWithdrawalWizard"
-import { DataTable } from '@/components/shared'
+import { DataTable, SegmentationBar, useSegmentation } from '@/components/shared'
 import { ColumnDef } from "@tanstack/react-table"
 
 const TRANSACTION_TYPE_OPTIONS = [
@@ -106,6 +106,29 @@ export function PartnerLedgerTab() {
         return 'neutral'
     }
 
+    const partnerSegDef = useMemo(() => ({
+        segments: [
+            {
+                key: 'partner',
+                label: 'Socio',
+                type: 'tabs' as const,
+                variant: 'dropdown' as const,
+                serverParam: 'partner',
+                options: partners.map(p => ({ label: p.name, value: p.name })),
+            },
+            {
+                key: 'transaction_type',
+                label: 'Tipo',
+                type: 'tabs' as const,
+                variant: 'dropdown' as const,
+                serverParam: 'transaction_type',
+                options: TRANSACTION_TYPE_OPTIONS.map(o => ({ label: o.label, value: o.value })),
+            },
+        ],
+    }), [partners])
+
+    const { filters: segFilters, isFiltered: isSegFiltered, clearAll: clearSeg } = useSegmentation(partnerSegDef)
+
     type TransactionWithBalance = PartnerTransaction & { balance_after: number }
 
     // Calculate Running Balance
@@ -123,6 +146,19 @@ export function PartnerLedgerTab() {
         )
         return result.reverse() // Display newest first
     }, [transactions])
+
+    const filteredTxsWithBalance = useMemo(() => {
+        let result = txsWithBalance
+        if (segFilters.partner) {
+            result = result.filter(tx =>
+                tx.partner_name === segFilters.partner || tx.partner?.toString() === segFilters.partner
+            )
+        }
+        if (segFilters.transaction_type) {
+            result = result.filter(tx => tx.transaction_type === segFilters.transaction_type)
+        }
+        return result
+    }, [txsWithBalance, segFilters])
 
     const columns: ColumnDef<TransactionWithBalance>[] = [
         {
@@ -203,22 +239,13 @@ export function PartnerLedgerTab() {
             <div className="flex-1 min-h-0">
                 <DataTable
                 columns={columns}
-                data={txsWithBalance}
+                data={filteredTxsWithBalance}
                 isLoading={loading}
                 variant="embedded"
                 hiddenColumns={["transaction_type"]}
-                facetedFilters={[
-                    {
-                        column: "partner_name",
-                        title: "Socio",
-                        options: partners.map(p => ({ label: p.name, value: p.name }))
-                    },
-                    {
-                        column: "transaction_type",
-                        title: "Tipo",
-                        options: TRANSACTION_TYPE_OPTIONS
-                    }
-                ]}
+                segmentation={<SegmentationBar def={partnerSegDef} />}
+                showReset={isSegFiltered}
+                onReset={clearSeg}
                 toolbarAction={
                     <>
                         <DropdownMenuItem
