@@ -3,7 +3,7 @@
 import { lazy, Suspense } from "react"
 import { useSelectedEntity } from "@/hooks/useSelectedEntity"
 import { useRouter } from "next/navigation"
-import { SaleOrder, SalesOrdersView } from "@/features/sales"
+import { type SaleOrder, SalesOrdersView } from "@/features/sales"
 
 const DeliveryDrawer = lazy(() =>
     import("@/features/sales").then(m => ({ default: m.DeliveryDrawer }))

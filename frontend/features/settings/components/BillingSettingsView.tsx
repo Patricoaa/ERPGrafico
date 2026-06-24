@@ -1,7 +1,7 @@
 "use client"
 
 import React from "react"
-import { useForm, UseFormReturn } from "react-hook-form"
+import { useForm, type UseFormReturn } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useBillingSettings } from "@/features/settings"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"

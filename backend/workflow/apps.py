@@ -2,18 +2,21 @@ from django.apps import AppConfig
 
 
 class WorkflowConfig(AppConfig):
-    default_auto_field = 'django.db.models.BigAutoField'
-    name = 'workflow'
+    default_auto_field = "django.db.models.BigAutoField"
+    name = "workflow"
 
     def ready(self):
         # Register signals
-        import workflow.signals
 
         try:
             from core.permissions import PermissionRegistry
-            PermissionRegistry.register('workflow', [
-                ('view_dashboard_workflow', 'Can view workflow dashboard'),
-            ])
+
+            PermissionRegistry.register(
+                "workflow",
+                [
+                    ("view_dashboard_workflow", "Can view workflow dashboard"),
+                ],
+            )
         except ImportError:
             pass
 

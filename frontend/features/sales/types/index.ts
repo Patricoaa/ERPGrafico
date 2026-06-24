@@ -1,4 +1,4 @@
-import { Invoice } from "@/features/billing/types"
+import { type Invoice } from "@/features/billing/types"
 
 export type SaleOrderStatus = 'DRAFT' | 'OPEN' | 'CANCELLED' | 'COMPLETED' | 'PAID' | 'PARTIAL'
 export type DeliveryStatus = 'PENDING' | 'PARTIAL' | 'DELIVERED'

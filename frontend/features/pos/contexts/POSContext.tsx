@@ -3,7 +3,7 @@
 // POS Context
 // Centralized state management for the POS system
 
-import { createContext, useContext, useState, useCallback, ReactNode, useEffect, useMemo } from 'react'
+import { createContext, useContext, useState, useCallback, type ReactNode, useEffect, useMemo } from 'react'
 import type { Product, CartItem, Category, UoM, POSSession, BOMCache, ComponentCache, BOM, WizardState, Customer } from '@/types/pos'
 import * as CartUtils from '@/features/pos/utils/cart-utils'
 import api from '@/lib/api'

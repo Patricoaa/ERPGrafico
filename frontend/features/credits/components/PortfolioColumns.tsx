@@ -1,10 +1,10 @@
 "use client"
 
-import { ColumnDef } from "@tanstack/react-table"
+import { type ColumnDef } from "@tanstack/react-table"
 import { DataTableColumnHeader } from '@/components/shared'
 import { DataCell } from '@/components/shared'
 import { EntityBadge } from "@/components/shared"
-import { CreditContact, CreditHistoryEntry } from "@/features/credits/api/creditsApi"
+import { type CreditContact, type CreditHistoryEntry } from "@/features/credits/api/creditsApi"
 import { cn } from "@/lib/utils"
 import { AlertCircle } from "lucide-react"
 

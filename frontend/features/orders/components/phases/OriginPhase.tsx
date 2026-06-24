@@ -7,7 +7,7 @@ import { toast } from "sonner"
 import { useCancelOrderFlow } from "../../hooks/useCancelOrderFlow"
 import { useRouter } from "next/navigation"
 import { ActionConfirmModal } from '@/components/shared'
-import { Order, OrderLine, PhaseDocument } from "../../types"
+import { type Order, type OrderLine, type PhaseDocument } from "../../types"
 
 interface OriginPhaseProps {
     isNoteMode: boolean

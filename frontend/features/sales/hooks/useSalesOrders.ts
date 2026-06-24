@@ -2,7 +2,7 @@ import {showApiError} from "@/lib/errors"
 import { useQueryClient, useMutation, useQuery } from '@tanstack/react-query'
 import { salesApi } from '../api/salesApi'
 import { toast } from 'sonner'
-import { SaleOrderFilters, SaleOrderPayload, SaleOrder } from '../types'
+import { type SaleOrderFilters, type SaleOrderPayload, type SaleOrder } from '../types'
 import { useRealtime } from '@/features/realtime'
 
 import { SALES_KEYS } from './queryKeys'

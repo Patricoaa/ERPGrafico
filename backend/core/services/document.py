@@ -8,7 +8,7 @@ def lock_document(instance):
     (select_for_update; no-op en SQLite) y refresca la instancia in place
     para decidir sobre el estado real, no el del momento de la request.
     """
-    type(instance).objects.select_for_update().only('pk').get(pk=instance.pk)
+    type(instance).objects.select_for_update().only("pk").get(pk=instance.pk)
     instance.refresh_from_db()
     return instance
 
@@ -17,12 +17,12 @@ class DocumentService(ABC):
     """Servicio polimórfico para procesar cualquier documento transaccional."""
 
     @abstractmethod
-    def confirm(self, document, *, user, **kwargs) -> 'JournalEntry':
+    def confirm(self, document, *, user, **kwargs) -> "JournalEntry":
         """Confirma el documento (DRAFT → CONFIRMED). Genera asiento."""
         ...
 
     @abstractmethod
-    def cancel(self, document, *, user, reason: str = '', **kwargs) -> None:
+    def cancel(self, document, *, user, reason: str = "", **kwargs) -> None:
         """Anula el documento. Genera asiento de reverso si aplica."""
         ...
 
@@ -39,6 +39,7 @@ class DocumentRegistry:
         def decorator(service_cls):
             cls._services[model_label.lower()] = service_cls
             return service_cls
+
         return decorator
 
     @classmethod

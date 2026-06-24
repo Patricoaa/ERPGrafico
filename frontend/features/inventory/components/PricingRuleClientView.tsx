@@ -6,7 +6,7 @@ import React, { useMemo } from "react"
 import { useRouter, usePathname, useSearchParams } from "next/navigation"
 import { ActionConfirmModal, DataTableColumnHeader, DataTableView, EntityCard, StatusBadge } from '@/components/shared'
 import { DataCell } from '@/components/shared'
-import { ColumnDef } from "@tanstack/react-table"
+import { type ColumnDef } from "@tanstack/react-table"
 // useDeletePricingRule consumido vía usePricingRules.
 import { PricingRuleDrawer } from "@/features/sales/components/PricingRuleDrawer"
 import { pricingRuleActions, type PricingRuleActionsCtx } from "@/features/inventory/pricingRuleActions"

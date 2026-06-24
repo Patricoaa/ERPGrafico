@@ -11,7 +11,7 @@ import {
     FileBadge,
 } from "lucide-react"
 import { purchasingApi } from "../api/purchasingApi"
-import { PurchaseOrderAPI, PurchaseNoteLine } from "../types"
+import { type PurchaseOrderAPI, type PurchaseNoteLine } from "../types"
 import { PricingUtils } from '@/features/inventory/utils/pricing'
 import { useServerDate } from '@/hooks/useServerDate'
 import {ActionSlideButton, BaseModal, CancelButton, FormFooter, LoadingFallback, SubmitButton} from '@/components/shared'
@@ -19,7 +19,7 @@ import {ActionSlideButton, BaseModal, CancelButton, FormFooter, LoadingFallback,
 // Components
 import { PurchaseNoteSummarySidebar } from "./notes/PurchaseNoteSummarySidebar"
 import { Step1_GeneralInfo, Step2_LineItems, Step3_Review, Step4_Payment } from "./notes/PurchaseNoteWizardSteps"
-import { PaymentData } from "@/features/treasury/components/PaymentMethodCardSelector"
+import { type PaymentData } from "@/features/treasury/components/PaymentMethodCardSelector"
 
 interface PurchaseNoteModalProps {
     open: boolean

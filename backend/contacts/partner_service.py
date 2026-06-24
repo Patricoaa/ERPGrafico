@@ -8,23 +8,25 @@ Handles:
 - Equity stake snapshot management
 - Balance calculations and validations
 """
-from django.db import transaction
-from django.core.exceptions import ValidationError
-from django.utils import timezone
-from django.contrib.contenttypes.models import ContentType
-from decimal import Decimal
-from .partner_models import PartnerTransaction
 
-from contacts.models import Contact
-from contacts.partner_models import (
-    PartnerTransaction,
-    PartnerEquityStake,
-)
+from decimal import Decimal
+
+from django.contrib.contenttypes.models import ContentType
+from django.core.exceptions import ValidationError
+from django.db import transaction
+from django.utils import timezone
+
 from accounting.models import (
     AccountingSettings,
     JournalEntry,
     JournalItem,
 )
+from contacts.models import Contact
+from contacts.partner_models import (
+    PartnerEquityStake,
+    PartnerTransaction,
+)
+
 
 
 class PartnerService:
@@ -43,17 +45,17 @@ class PartnerService:
         partner: Contact,
         amount: Decimal,
         date,
-        description: str = '',
+        description: str = "",
         treasury_account_id=None,
         created_by=None,
     ) -> PartnerTransaction:
         """
         Records a capital contribution (cash) from a partner.
-        
+
         Accounting:
             Dr: Caja/Banco (Asset)
             Cr: Aportes de Capital → Socio X (Equity)
-        
+
         Returns the created PartnerTransaction.
         """
         PartnerService._validate_partner(partner)
@@ -68,6 +70,7 @@ class PartnerService:
         cash_account = None
         if treasury_account_id:
             from treasury.models import TreasuryAccount
+
             treasury_account = TreasuryAccount.objects.get(id=treasury_account_id)
             cash_account = treasury_account.account
         else:
@@ -75,18 +78,19 @@ class PartnerService:
 
         # Check pending capital (Asset balance)
         pending_capital = partner.partner_pending_capital
-        
+
         # Smart Routing for Contribution
-        amount_to_receivable = min(amount, pending_capital) if pending_capital > 0 else Decimal('0')
+        amount_to_receivable = min(amount, pending_capital) if pending_capital > 0 else Decimal("0")
         amount_to_equity_surplus = amount - amount_to_receivable
 
         # 1. Journal Entry
         entry = JournalEntry.objects.create(
-            description=f"Aporte de Capital: {partner.name}" + (f" - {description}" if description else ""),
+            description=f"Aporte de Capital: {partner.name}"
+            + (f" - {description}" if description else ""),
             date=date,
             status=JournalEntry.Status.POSTED,
         )
-        
+
         # Dr: Cash
         JournalItem.objects.create(
             entry=entry,
@@ -95,7 +99,7 @@ class PartnerService:
             debit=amount,
             credit=0,
         )
-        
+
         # Cr: Receivable (Smart Routing)
         if amount_to_receivable > 0:
             JournalItem.objects.create(
@@ -106,18 +110,22 @@ class PartnerService:
                 debit=0,
                 credit=amount_to_receivable,
             )
-            
+
         # Cr: Equity (Excess or direct contribution)
         if amount_to_equity_surplus > 0:
             contribution_account = settings.partner_capital_contribution_account
             if not contribution_account:
-                 raise ValidationError(f"La cuenta de Aportes de Capital no está configurada globalmente.")
-            
+                raise ValidationError(
+                    "La cuenta de Aportes de Capital no está configurada globalmente."
+                )
+
             JournalItem.objects.create(
                 entry=entry,
                 account=contribution_account,
                 partner=partner,
-                label=f"Aporte Capital Excedente {partner.name}" if amount_to_receivable > 0 else f"Aporte Capital {partner.name}",
+                label=f"Aporte Capital Excedente {partner.name}"
+                if amount_to_receivable > 0
+                else f"Aporte Capital {partner.name}",
                 debit=0,
                 credit=amount_to_equity_surplus,
             )
@@ -127,9 +135,10 @@ class PartnerService:
         movement = None
         if treasury_account:
             from treasury.models import TreasuryMovement
+
             movement = TreasuryMovement.objects.create(
-                movement_type='INBOUND',
-                payment_method='TRANSFER',
+                movement_type="INBOUND",
+                payment_method="TRANSFER",
                 amount=amount,
                 to_account=treasury_account,
                 contact=partner,
@@ -156,7 +165,7 @@ class PartnerService:
         # Link source document back to entry
         entry.source_content_type = ContentType.objects.get_for_model(PartnerTransaction)
         entry.source_object_id = ptx.id
-        entry.save(update_fields=['source_content_type', 'source_object_id'])
+        entry.save(update_fields=["source_content_type", "source_object_id"])
 
         return ptx
 
@@ -174,7 +183,7 @@ class PartnerService:
         partner: Contact,
         amount: Decimal,
         date,
-        description: str = '',
+        description: str = "",
         treasury_account_id=None,
         created_by=None,
     ) -> PartnerTransaction:
@@ -189,7 +198,7 @@ class PartnerService:
             description=description or "Retiro Provisorio",
             treasury_account_id=treasury_account_id,
             created_by=created_by,
-            is_withdrawal=True
+            is_withdrawal=True,
         )
 
     @staticmethod
@@ -198,15 +207,15 @@ class PartnerService:
         partner: Contact,
         amount: Decimal,
         date,
-        description: str = '',
+        description: str = "",
         treasury_account_id=None,
         created_by=None,
-        is_withdrawal: bool = False
+        is_withdrawal: bool = False,
     ) -> PartnerTransaction:
         """
         Records an individual dividend payment.
-        
-        If amount exceeds the current dividend balance, the excess is treated 
+
+        If amount exceeds the current dividend balance, the excess is treated
         as a provisional withdrawal (advance).
         """
         PartnerService._validate_partner(partner)
@@ -214,17 +223,17 @@ class PartnerService:
         settings = PartnerService._get_settings()
 
         dividend_balance = partner.partner_dividends_payable_balance
-        
+
         # Resolve accounts
         withdrawal_account = settings.partner_provisional_withdrawal_account
         dividends_payable_account = settings.partner_dividends_payable_account
-        
+
         if amount > dividend_balance and not withdrawal_account:
             raise ValidationError(
                 f"El monto excede el saldo de dividendos (${dividend_balance:,.0f}) y el socio "
                 "no tiene cuenta de retiros provisorios para el excedente."
             )
-            
+
         if not dividends_payable_account:
             raise ValidationError("La cuenta de Dividendos por Pagar no está configurada.")
 
@@ -232,6 +241,7 @@ class PartnerService:
         cash_account = None
         if treasury_account_id:
             from treasury.models import TreasuryAccount
+
             treasury_account = TreasuryAccount.objects.get(id=treasury_account_id)
             cash_account = treasury_account.account
         else:
@@ -254,7 +264,7 @@ class PartnerService:
             date=date,
             status=JournalEntry.Status.POSTED,
         )
-        
+
         # Debits
         if amount_to_dividends > 0:
             JournalItem.objects.create(
@@ -274,7 +284,7 @@ class PartnerService:
                 debit=amount_to_provisional,
                 credit=0,
             )
-            
+
         # Credit (Bank/Cash)
         JournalItem.objects.create(
             entry=entry,
@@ -289,9 +299,10 @@ class PartnerService:
         movement = None
         if treasury_account:
             from treasury.models import TreasuryMovement
+
             movement = TreasuryMovement.objects.create(
-                movement_type='OUTBOUND',
-                payment_method='TRANSFER',
+                movement_type="OUTBOUND",
+                payment_method="TRANSFER",
                 amount=amount,
                 from_account=treasury_account,
                 contact=partner,
@@ -316,7 +327,7 @@ class PartnerService:
                 treasury_movement=movement,
                 created_by=created_by,
             )
-            
+
         if amount_to_provisional > 0:
             ptx_prov = PartnerTransaction.objects.create(
                 partner=partner,
@@ -335,7 +346,7 @@ class PartnerService:
         if primary_ptx:
             entry.source_content_type = ContentType.objects.get_for_model(PartnerTransaction)
             entry.source_object_id = primary_ptx.id
-            entry.save(update_fields=['source_content_type', 'source_object_id'])
+            entry.save(update_fields=["source_content_type", "source_object_id"])
 
         return primary_ptx
 
@@ -349,13 +360,13 @@ class PartnerService:
         partner: Contact,
         amount: Decimal,
         date,
-        description: str = '',
+        description: str = "",
         created_by=None,
     ) -> PartnerTransaction:
         """
         Records a formal capital subscription (commitment).
         This does NOT mean the capital has been paid in yet.
-        
+
         Accounting:
             Dr: Cuenta Particular del Socio (receivable from partner, equity)
             Cr: Capital Social (Equity)
@@ -393,7 +404,9 @@ class PartnerService:
         # Cr: Partner Specific Capital Account (Equity)
         contribution_account = settings.partner_capital_contribution_account
         if not contribution_account:
-            raise ValidationError(f"La cuenta de Aportes de Capital no está configurada globalmente.")
+            raise ValidationError(
+                "La cuenta de Aportes de Capital no está configurada globalmente."
+            )
 
         JournalItem.objects.create(
             entry=entry,
@@ -426,7 +439,7 @@ class PartnerService:
         # Link source document back to entry
         entry.source_content_type = ContentType.objects.get_for_model(PartnerTransaction)
         entry.source_object_id = ptx.id
-        entry.save(update_fields=['source_content_type', 'source_object_id'])
+        entry.save(update_fields=["source_content_type", "source_object_id"])
 
         return ptx
 
@@ -436,12 +449,12 @@ class PartnerService:
         partner: Contact,
         amount: Decimal,
         date,
-        description: str = '',
+        description: str = "",
         created_by=None,
     ) -> PartnerTransaction:
         """
         Records a formal capital reduction.
-        
+
         Accounting (reverse of subscription):
             Dr: Capital Social (Equity)
             Cr: Cuenta Particular del Socio (Equity)
@@ -472,11 +485,13 @@ class PartnerService:
             date=date,
             status=JournalEntry.Status.POSTED,
         )
-        
+
         # Dr: Partner Specific Capital Account (Equity)
         contribution_account = settings.partner_capital_contribution_account
         if not contribution_account:
-            raise ValidationError(f"La cuenta de Aportes de Capital no está configurada globalmente.")
+            raise ValidationError(
+                "La cuenta de Aportes de Capital no está configurada globalmente."
+            )
 
         JournalItem.objects.create(
             entry=entry,
@@ -516,7 +531,7 @@ class PartnerService:
         # Link source document back to entry
         entry.source_content_type = ContentType.objects.get_for_model(PartnerTransaction)
         entry.source_object_id = ptx.id
-        entry.save(update_fields=['source_content_type', 'source_object_id'])
+        entry.save(update_fields=["source_content_type", "source_object_id"])
 
         return ptx
 
@@ -531,7 +546,7 @@ class PartnerService:
         buyer: Contact,
         amount: Decimal,
         date,
-        description: str = '',
+        description: str = "",
         created_by=None,
     ) -> tuple:
         """
@@ -617,7 +632,7 @@ class PartnerService:
         # Link source document back to entry
         entry.source_content_type = ContentType.objects.get_for_model(PartnerTransaction)
         entry.source_object_id = seller_tx.id
-        entry.save(update_fields=['source_content_type', 'source_object_id'])
+        entry.save(update_fields=["source_content_type", "source_object_id"])
 
         return seller_tx, buyer_tx
 
@@ -630,10 +645,10 @@ class PartnerService:
     def initial_setup(partners_data: list, created_by=None) -> dict:
         """
         Bulk partner setup with initial capital subscription.
-        
+
         Args:
             partners_data: List of {'contact_id': int, 'amount': Decimal}
-        
+
         Returns:
             dict with total_capital, journal_entry, partners_updated count
         """
@@ -646,14 +661,14 @@ class PartnerService:
             raise ValidationError("La cuenta de Aportes por Cobrar Socios no está configurada.")
 
         contacts_with_amounts = []
-        total_capital = Decimal('0')
+        total_capital = Decimal("0")
 
         for item in partners_data:
-            contact_id = item.get('contact_id')
-            amount = Decimal(str(item.get('amount', '0')))
+            contact_id = item.get("contact_id")
+            amount = Decimal(str(item.get("amount", "0")))
             if amount <= 0:
                 raise ValidationError(f"El monto para el contacto {contact_id} debe ser > 0.")
-            
+
             contact = Contact.objects.get(id=contact_id)
             contacts_with_amounts.append((contact, amount))
             total_capital += amount
@@ -675,7 +690,6 @@ class PartnerService:
 
         # Individual partner transactions + debit items
         for contact, amount in contacts_with_amounts:
-
             PartnerTransaction.objects.create(
                 partner=contact,
                 transaction_type=PartnerTransaction.Type.EQUITY_SUBSCRIPTION,
@@ -712,7 +726,7 @@ class PartnerService:
         if first_ptx:
             entry.source_content_type = ContentType.objects.get_for_model(PartnerTransaction)
             entry.source_object_id = first_ptx.id
-            entry.save(update_fields=['source_content_type', 'source_object_id'])
+            entry.save(update_fields=["source_content_type", "source_object_id"])
 
         # Recalculate percentages
         PartnerService._recalculate_and_snapshot_stakes(
@@ -722,9 +736,9 @@ class PartnerService:
         )
 
         return {
-            'total_capital': total_capital,
-            'journal_entry': entry,
-            'partners_updated': len(contacts_with_amounts),
+            "total_capital": total_capital,
+            "journal_entry": entry,
+            "partners_updated": len(contacts_with_amounts),
         }
 
     # ──────────────────────────────────────────────────────────────
@@ -738,7 +752,7 @@ class PartnerService:
         amount_dividend: Decimal,
         amount_reinvest: Decimal,
         date,
-        description: str = '',
+        description: str = "",
         created_by=None,
     ) -> list:
         """
@@ -748,7 +762,7 @@ class PartnerService:
         total_amount = amount_dividend + amount_reinvest
         if total_amount <= 0:
             raise ValidationError("El monto total a movilizar debe ser mayor a cero.")
-            
+
         current_retained = partner.partner_earnings_balance
         if total_amount > current_retained:
             raise ValidationError(
@@ -757,27 +771,32 @@ class PartnerService:
             )
 
         settings = PartnerService._get_settings()
-        
+
         # Accounts
         retained_account = settings.partner_retained_earnings_account
         if not retained_account:
-            raise ValidationError("La cuenta de Utilidades Retenidas no está configurada globalmente.")
-                
+            raise ValidationError(
+                "La cuenta de Utilidades Retenidas no está configurada globalmente."
+            )
+
         dividends_payable_account = settings.partner_dividends_payable_account
         if amount_dividend > 0 and not dividends_payable_account:
             raise ValidationError("La cuenta de Dividendos por Pagar no está configurada.")
-            
+
         contribution_account = settings.partner_capital_contribution_account
         if amount_reinvest > 0 and not contribution_account:
-            raise ValidationError("La cuenta de Aportes de Capital no está configurada globalmente.")
+            raise ValidationError(
+                "La cuenta de Aportes de Capital no está configurada globalmente."
+            )
 
         # 1. Journal Entry
         entry = JournalEntry.objects.create(
-            description=f"Movilización de Utilidades Retenidas: {partner.name}" + (f" - {description}" if description else ""),
+            description=f"Movilización de Utilidades Retenidas: {partner.name}"
+            + (f" - {description}" if description else ""),
             date=date,
             status=JournalEntry.Status.POSTED,
         )
-        
+
         # Dr: Retained Earnings (Equity decrease)
         JournalItem.objects.create(
             entry=entry,
@@ -787,7 +806,7 @@ class PartnerService:
             debit=total_amount,
             credit=0,
         )
-        
+
         # Cr: Dividends Payable (Liability increase)
         if amount_dividend > 0:
             JournalItem.objects.create(
@@ -798,7 +817,7 @@ class PartnerService:
                 debit=0,
                 credit=amount_dividend,
             )
-            
+
         # Cr: Capital Contribution (Equity increase)
         if amount_reinvest > 0:
             JournalItem.objects.create(
@@ -809,11 +828,11 @@ class PartnerService:
                 debit=0,
                 credit=amount_reinvest,
             )
-            
+
         entry.check_balance()
 
         ptx_list = []
-        
+
         # 2. Partner Transactions
         # Outbound from Retained
         ptx_out = PartnerTransaction.objects.create(
@@ -826,7 +845,7 @@ class PartnerService:
             created_by=created_by,
         )
         ptx_list.append(ptx_out)
-        
+
         # Inbound to Dividend
         if amount_dividend > 0:
             ptx_div = PartnerTransaction.objects.create(
@@ -839,7 +858,7 @@ class PartnerService:
                 created_by=created_by,
             )
             ptx_list.append(ptx_div)
-            
+
         # Inbound to Reinvestment
         if amount_reinvest > 0:
             ptx_reinv = PartnerTransaction.objects.create(
@@ -852,7 +871,7 @@ class PartnerService:
                 created_by=created_by,
             )
             ptx_list.append(ptx_reinv)
-            
+
             # Recalculate if equity changes
             PartnerService._recalculate_and_snapshot_stakes(
                 date=date,
@@ -864,7 +883,7 @@ class PartnerService:
         if ptx_list:
             entry.source_content_type = ContentType.objects.get_for_model(PartnerTransaction)
             entry.source_object_id = ptx_list[0].id
-            entry.save(update_fields=['source_content_type', 'source_object_id'])
+            entry.save(update_fields=["source_content_type", "source_object_id"])
 
         return ptx_list
 
@@ -884,22 +903,26 @@ class PartnerService:
         Uses PartnerEquityStake temporal records.
         """
         from django.db.models import Q
-        stake = PartnerEquityStake.objects.filter(
-            partner=partner,
-            effective_from__lte=target_date,
-        ).filter(
-            Q(effective_until__isnull=True) | Q(effective_until__gte=target_date)
-        ).order_by('-effective_from').first()
-        
+
+        stake = (
+            PartnerEquityStake.objects.filter(
+                partner=partner,
+                effective_from__lte=target_date,
+            )
+            .filter(Q(effective_until__isnull=True) | Q(effective_until__gte=target_date))
+            .order_by("-effective_from")
+            .first()
+        )
+
         if stake:
             return stake.percentage
-        return partner.partner_equity_percentage or Decimal('0')
+        return partner.partner_equity_percentage or Decimal("0")
 
     @staticmethod
     def get_global_summary() -> dict:
         """Calculates global metrics for the partner dashboard using aggregated contact properties."""
         partners = Contact.objects.filter(is_partner=True)
-        
+
         # Subscribed Capital Sum
         total_subscribed = sum([p.partner_total_contributions for p in partners])
         # Paid-in Capital Sum
@@ -914,14 +937,14 @@ class PartnerService:
         total_net_equity = sum([p.partner_net_equity for p in partners])
 
         return {
-            'total_capital': total_subscribed,
-            'total_paid_in': total_paid_in,
-            'total_pending': total_pending,
-            'total_provisional_withdrawals': total_prov_withdrawals,
-            'total_earnings': total_earnings,
-            'total_net_equity': total_net_equity,
-            'partner_count': partners.count(),
-            'last_updated': timezone.now().isoformat(),
+            "total_capital": total_subscribed,
+            "total_paid_in": total_paid_in,
+            "total_pending": total_pending,
+            "total_provisional_withdrawals": total_prov_withdrawals,
+            "total_earnings": total_earnings,
+            "total_net_equity": total_net_equity,
+            "partner_count": partners.count(),
+            "last_updated": timezone.now().isoformat(),
         }
 
     # ──────────────────────────────────────────────────────────────
@@ -934,7 +957,7 @@ class PartnerService:
         Recalculates the equity percentages for ALL partners based on
         their transaction history, then creates new PartnerEquityStake records
         closing old ones.
-        
+
         Also updates Contact.partner_equity_percentage as a denormalized cache.
         """
         from django.db.models import Sum
@@ -942,23 +965,23 @@ class PartnerService:
         # 1. Calculate total subscribed capital
         subs = PartnerTransaction.objects.filter(
             transaction_type=PartnerTransaction.Type.EQUITY_SUBSCRIPTION
-        ).aggregate(total=Sum('amount'))['total'] or Decimal('0')
-        
+        ).aggregate(total=Sum("amount"))["total"] or Decimal("0")
+
         reds = PartnerTransaction.objects.filter(
             transaction_type=PartnerTransaction.Type.EQUITY_REDUCTION
-        ).aggregate(total=Sum('amount'))['total'] or Decimal('0')
+        ).aggregate(total=Sum("amount"))["total"] or Decimal("0")
 
         trans_in = PartnerTransaction.objects.filter(
             transaction_type=PartnerTransaction.Type.EQUITY_TRANSFER_IN
-        ).aggregate(total=Sum('amount'))['total'] or Decimal('0')
+        ).aggregate(total=Sum("amount"))["total"] or Decimal("0")
 
         trans_out = PartnerTransaction.objects.filter(
             transaction_type=PartnerTransaction.Type.EQUITY_TRANSFER_OUT
-        ).aggregate(total=Sum('amount'))['total'] or Decimal('0')
+        ).aggregate(total=Sum("amount"))["total"] or Decimal("0")
 
         reinvest = PartnerTransaction.objects.filter(
             transaction_type=PartnerTransaction.Type.REINVESTMENT
-        ).aggregate(total=Sum('amount'))['total'] or Decimal('0')
+        ).aggregate(total=Sum("amount"))["total"] or Decimal("0")
 
         total_subscribed = subs - reds + trans_in - trans_out + reinvest
 
@@ -966,10 +989,10 @@ class PartnerService:
 
         for p in partners:
             if total_subscribed <= 0:
-                new_pct = Decimal('0')
+                new_pct = Decimal("0")
             else:
                 p_total = p.partner_total_contributions
-                new_pct = (p_total / total_subscribed * 100).quantize(Decimal('0.01'))
+                new_pct = (p_total / total_subscribed * 100).quantize(Decimal("0.01"))
 
             # Close existing active stake if percentage changed
             active_stake = PartnerEquityStake.objects.filter(
@@ -978,7 +1001,7 @@ class PartnerService:
 
             if active_stake and active_stake.percentage != new_pct:
                 active_stake.effective_until = date
-                active_stake.save(update_fields=['effective_until'])
+                active_stake.save(update_fields=["effective_until"])
                 active_stake = None
 
             # Create new stake if needed
@@ -994,7 +1017,7 @@ class PartnerService:
 
             # Update denormalized cache
             p.partner_equity_percentage = new_pct
-            p.save(update_fields=['partner_equity_percentage'])
+            p.save(update_fields=["partner_equity_percentage"])
 
         return total_subscribed
 

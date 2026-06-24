@@ -6,14 +6,14 @@ import { useRouter, useSearchParams, usePathname } from "next/navigation"
 import { ActionConfirmModal, DataTableView } from '@/components/shared'
 import { DataCell } from '@/components/shared'
 import { DataTableColumnHeader } from '@/components/shared'
-import { ColumnDef } from "@tanstack/react-table"
+import { type ColumnDef } from "@tanstack/react-table"
 import {IconButton, SmartSearchBar, useSmartSearch, SegmentationBar, useSegmentation} from "@/components/shared"
 import { invoiceSearchDef } from "@/features/billing/searchDef"
 import { invoiceSegDef } from "@/features/billing/segmentationDef"
 import { ArrowRight, ArrowLeft } from "lucide-react"
 import { treasuryApi } from "@/features/treasury/api/treasuryApi"
 import { useInvoices } from "@/features/billing/hooks/useInvoices"
-import { Invoice, InvoiceFilters } from "@/features/billing/types"
+import { type Invoice, type InvoiceFilters } from "@/features/billing/types"
 import { toast } from "sonner"
 import { SaleNoteModal } from "@/features/sales"
 import { PaymentModal } from "@/features/treasury/components/PaymentModal"

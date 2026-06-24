@@ -1,5 +1,5 @@
-import { Contact, ProductType } from "@/types/entities"
-import { LucideIcon } from 'lucide-react'
+import { type Contact, type ProductType } from "@/types/entities"
+import { type LucideIcon } from 'lucide-react'
 
 export interface WorkOrderSummary {
     id: number | string

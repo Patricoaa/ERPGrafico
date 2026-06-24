@@ -23,7 +23,7 @@ GENERIC_CSV = {
         "balance": 4,
         "reference": 5,
     },
-    "balance_info": {}
+    "balance_info": {},
 }
 
 # Banco de Chile
@@ -41,11 +41,11 @@ BANCO_CHILE_CSV = {
         "date": "Fecha",
         "description": "Descripción",
         "debit": "Cargo",
-        "credit": "Abono", 
+        "credit": "Abono",
         "balance": "Saldo",
         "reference": "Referencia",
     },
-    "balance_info": {}
+    "balance_info": {},
 }
 
 # Scotiabank
@@ -65,7 +65,7 @@ SCOTIABANK_CSV = {
         "credit": "Crédito",
         "balance": "Saldo",
     },
-    "balance_info": {}
+    "balance_info": {},
 }
 
 # Banco Estado
@@ -89,14 +89,14 @@ BANCO_ESTADO_CSV = {
     "balance_info": {
         "opening_balance_row": 2,
         "closing_balance_row": -3,  # Tercer fila desde el final
-        "statement_date_row": 1
-    }
+        "statement_date_row": 1,
+    },
 }
 
 # Mapeo de formatos
 FORMAT_MAP = {
-    'GENERIC_CSV': GENERIC_CSV,
-    'GENERIC_EXCEL': {
+    "GENERIC_CSV": GENERIC_CSV,
+    "GENERIC_EXCEL": {
         "name": "Excel Genérico (Configurable)",
         "delimiter": ";",
         "decimal_separator": ".",
@@ -106,10 +106,10 @@ FORMAT_MAP = {
         "encoding": "utf-8",
         "has_header": True,
         "columns": {},
-        "balance_info": {}
+        "balance_info": {},
     },
-    'BANCO_CHILE_CSV': BANCO_CHILE_CSV,
-    'SANTANDER_XLS': {
+    "BANCO_CHILE_CSV": BANCO_CHILE_CSV,
+    "SANTANDER_XLS": {
         "name": "Santander - Excel",
         "delimiter": ";",  # Irrelevante para Excel pero requerido por schema
         "decimal_separator": ",",
@@ -119,31 +119,33 @@ FORMAT_MAP = {
         "encoding": "utf-8",
         "has_header": True,
         "columns": {},
-        "balance_info": {}
+        "balance_info": {},
     },
-    'SCOTIABANK_CSV': SCOTIABANK_CSV,
-    'BANCO_ESTADO_CSV': BANCO_ESTADO_CSV,
+    "SCOTIABANK_CSV": SCOTIABANK_CSV,
+    "BANCO_ESTADO_CSV": BANCO_ESTADO_CSV,
 }
 
 
 def get_parser_config(format_name: str) -> dict:
     """
     Obtiene la configuración para un formato específico.
-    
+
     Args:
         format_name: Nombre del formato (ej: 'BANCO_CHILE_CSV')
-    
+
     Returns:
         Diccionario de configuración
-    
+
     Raises:
         ValueError: Si el formato no existe
     """
     if format_name not in FORMAT_MAP:
-        raise ValueError(f"Formato '{format_name}' no encontrado. Formatos disponibles: {list(FORMAT_MAP.keys())}")
-    
+        raise ValueError(
+            f"Formato '{format_name}' no encontrado. Formatos disponibles: {list(FORMAT_MAP.keys())}"
+        )
+
     config = FORMAT_MAP[format_name].copy()
-    config['format_id'] = format_name
+    config["format_id"] = format_name
     return config
 
 
@@ -151,12 +153,12 @@ def get_available_formats() -> dict:
     """
     Retorna todos los formatos disponibles con sus nombres descriptivos.
     Por el momento, solo expone los formatos GENERIC.
-    
+
     Returns:
         Dict {format_id: format_name}
     """
     return {
-        format_id: config['name']
+        format_id: config["name"]
         for format_id, config in FORMAT_MAP.items()
-        if format_id.startswith('GENERIC_')
+        if format_id.startswith("GENERIC_")
     }

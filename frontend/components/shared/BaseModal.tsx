@@ -12,8 +12,8 @@ import {
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { cn } from "@/lib/utils"
 import { type VariantProps } from "class-variance-authority"
-import { dialogContentVariants } from "@/components/ui/dialog"
-import * as DialogPrimitive from "@radix-ui/react-dialog"
+import { type dialogContentVariants } from "@/components/ui/dialog"
+import type * as DialogPrimitive from "@radix-ui/react-dialog"
 
 import { PanelHeader, type PanelBaseProps } from "./PanelHeader"
 

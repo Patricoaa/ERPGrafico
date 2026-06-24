@@ -1,7 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '@/lib/api';
 import { toast } from 'sonner';
-import { FiscalYear, FiscalYearPreviewResult } from '../types';
+import { type FiscalYear, type FiscalYearPreviewResult } from '../types';
 import { showApiError } from '@/lib/errors';
 import { ACCOUNTING_PERIODS_QUERY_KEY } from './queryKeys';
 import { FISCAL_YEARS_QUERY_KEY } from './queryKeys';

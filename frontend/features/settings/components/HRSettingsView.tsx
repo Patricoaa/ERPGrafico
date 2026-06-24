@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
-import * as z from "zod"
+import type * as z from "zod"
 import { toast } from "sonner"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Form, FormField } from "@/components/ui/form"
@@ -35,7 +35,7 @@ import { FormulaBuilder } from "@/features/hr/components/FormulaBuilder"
 import { useConfirmAction } from "@/hooks/useConfirmAction"
 
 import { DataTable } from '@/components/shared'
-import { ColumnDef } from "@tanstack/react-table"
+import { type ColumnDef } from "@tanstack/react-table"
 ;
 import { payrollConceptActions, type PayrollConceptActionsCtx } from './payrollConceptActions'
 

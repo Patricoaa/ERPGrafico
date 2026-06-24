@@ -3,14 +3,14 @@
 import { showApiError } from "@/lib/errors"
 import React, { useState, useEffect, useMemo } from "react"
 import { useTreasuryAccounts } from "../../hooks"
-import { LabeledSelect, GenericWizard, WizardStep, DataCell } from "@/components/shared"
+import { LabeledSelect, GenericWizard, type WizardStep, DataCell } from "@/components/shared"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { partnersApi } from "@/features/contacts/api/partnersApi"
 import { toast } from "sonner"
 
 import { Wallet, CheckCircle2, Banknote } from "lucide-react"
-import { ProfitDistribution, ProfitDistributionLine } from "@/features/contacts/types/partner"
+import { type ProfitDistribution, type ProfitDistributionLine } from "@/features/contacts/types/partner"
 
 interface MassPaymentWizardProps {
     open: boolean

@@ -4,18 +4,17 @@ from django.db import migrations
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('inventory', '0001_initial'),
+        ("inventory", "0001_initial"),
     ]
 
     operations = [
         migrations.RemoveField(
-            model_name='historicalproduct',
-            name='mfg_default_delivery_days',
+            model_name="historicalproduct",
+            name="mfg_default_delivery_days",
         ),
         migrations.RemoveField(
-            model_name='product',
-            name='mfg_default_delivery_days',
+            model_name="product",
+            name="mfg_default_delivery_days",
         ),
     ]

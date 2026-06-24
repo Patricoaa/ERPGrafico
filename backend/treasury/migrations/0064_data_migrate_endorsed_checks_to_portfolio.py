@@ -10,20 +10,20 @@ siguiente migración (0065) los elimina del schema.
 
 Idempotente: re-corrida no hace nada si no quedan ENDORSED.
 """
+
 from django.db import migrations
 
 
 def migrate_endorsed_to_portfolio(apps, schema_editor):
-    Check = apps.get_model('treasury', 'Check')
+    Check = apps.get_model("treasury", "Check")
     Check.objects.filter(
-        status__in=['ENDORSSED', 'ENDORSED'],
-    ).update(status='IN_PORTFOLIO')
+        status__in=["ENDORSSED", "ENDORSED"],
+    ).update(status="IN_PORTFOLIO")
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('treasury', '0063_remove_posterminal_allows_check'),
+        ("treasury", "0063_remove_posterminal_allows_check"),
     ]
 
     operations = [

@@ -11,12 +11,12 @@ import { BOMDrawer } from "./BOMDrawer"
 import { ActionConfirmModal, Chip, LabeledSelect, StatusBadge } from '@/components/shared'
 import { cn } from "@/lib/utils"
 import { DataTable } from '@/components/shared'
-import { ColumnDef } from "@tanstack/react-table"
+import { type ColumnDef } from "@tanstack/react-table"
 import { DataTableColumnHeader } from '@/components/shared'
 import { DataCell } from '@/components/shared'
 import { bomManagerActions, type BOMManagerActionsCtx } from './bomManagerActions'
 
-import { BOM, ProductMinimal } from "../types"
+import { type BOM, type ProductMinimal } from "../types"
 
 interface BOMManagerProps {
     product: ProductMinimal | null

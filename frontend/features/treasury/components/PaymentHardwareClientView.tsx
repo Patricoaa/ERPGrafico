@@ -18,7 +18,7 @@ import { useSelectedEntity } from "@/hooks/useSelectedEntity"
 import { DataTableView } from '@/components/shared'
 import { DataTableColumnHeader } from '@/components/shared'
 import { DataCell } from '@/components/shared'
-import { ColumnDef } from "@tanstack/react-table"
+import { type ColumnDef } from "@tanstack/react-table"
 import { providerActions, type ProviderActionsCtx } from './providerActions'
 import { deviceActions, type DeviceActionsCtx } from './deviceActions'
 

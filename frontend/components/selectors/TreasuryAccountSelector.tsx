@@ -11,7 +11,7 @@ import {
     PopoverContent,
     PopoverTrigger,
 } from "@/components/ui/popover"
-import { useTreasuryAccounts, PaymentContext } from "@/hooks/useTreasuryAccounts"
+import { useTreasuryAccounts, type PaymentContext } from "@/hooks/useTreasuryAccounts"
 import { EmptyState, MoneyDisplay } from '@/components/shared'
 import { Input } from "@/components/ui/input"
 import type { TreasuryAccountType } from "@/features/treasury/types"

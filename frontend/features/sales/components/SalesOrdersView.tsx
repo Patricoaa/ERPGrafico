@@ -4,7 +4,7 @@ import React from "react"
 import { useRouter, useSearchParams, usePathname } from "next/navigation"
 import { DataTableView } from '@/components/shared'
 import { DataTableColumnHeader } from '@/components/shared'
-import { ColumnDef } from "@tanstack/react-table"
+import { type ColumnDef } from "@tanstack/react-table"
 import { ArrowRight, ArrowLeft } from "lucide-react"
 
 import { useHubPanel } from "@/components/providers/HubPanelProvider"

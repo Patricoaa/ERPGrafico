@@ -5,8 +5,8 @@ import {
     getContactCreditLedger,
     writeOffDebt,
     writeOffSaleOrder,
-    CreditContact,
-    CreditLedgerEntry,
+    type CreditContact,
+    type CreditLedgerEntry,
 } from '@/features/credits/api/creditsApi'
 import { toast } from "sonner"
 import { cn } from "@/lib/utils"
@@ -18,7 +18,7 @@ import { Button } from "@/components/ui/button"
 import { SkeletonShell, ActionConfirmModal, DataCell, EntityBadge, MoneyDisplay } from "@/components/shared"
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 import { DataTable, type KpiCardDef } from '@/components/shared'
-import { ColumnDef } from "@tanstack/react-table"
+import { type ColumnDef } from "@tanstack/react-table"
 import { formatMoney } from "@/lib/money"
 
 const agingLabel: Record<string, string> = {

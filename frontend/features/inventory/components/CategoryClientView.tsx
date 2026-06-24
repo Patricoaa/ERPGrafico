@@ -5,7 +5,7 @@ import { useState, useMemo, useCallback, useEffect } from "react"
 import { useRouter, usePathname, useSearchParams } from "next/navigation"
 import { ActionConfirmModal, DataTableColumnHeader, DataTableView, EntityCard } from '@/components/shared'
 import { DataCell, SmartSearchBar, useClientSearch } from '@/components/shared'
-import { ColumnDef } from "@tanstack/react-table"
+import { type ColumnDef } from "@tanstack/react-table"
 import { CategoryDrawer } from "./CategoryDrawer"
 import { categoryActions, type CategoryActionsCtx } from "@/features/inventory/categoryActions"
 

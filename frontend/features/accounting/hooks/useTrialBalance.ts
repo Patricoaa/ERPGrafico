@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import api from '@/lib/api';
-import { TrialBalanceReport } from '../types';
+import { type TrialBalanceReport } from '../types';
 
 import { TRIAL_BALANCE_KEYS } from './queryKeys'
 

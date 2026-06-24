@@ -10,8 +10,8 @@ import { toast } from "sonner"
 import { formatCurrency } from "@/lib/money"
 import { useConfirmAction } from "@/hooks/useConfirmAction"
 
-import { Product, PricingRule } from "@/types/entities"
-import { ProductInitialData } from "@/types/forms"
+import { type Product, type PricingRule } from "@/types/entities"
+import { type ProductInitialData } from "@/types/forms"
 import { usePricingRules } from "../../hooks/usePricingRules"
 import { parseDateOnly } from "@/lib/utils"
 

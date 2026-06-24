@@ -1,8 +1,8 @@
 "use client"
 
 import { useState } from "react"
-import {useForm, SubmitHandler} from "react-hook-form"
-import { Product } from "@/types/entities"
+import {useForm, type SubmitHandler} from "react-hook-form"
+import { type Product } from "@/types/entities"
 import { z } from "zod"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { Form, FormField } from "@/components/ui/form"

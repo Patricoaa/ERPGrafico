@@ -6,9 +6,9 @@ import { CheckCircle2, ChevronDown } from "lucide-react"
 import { useHubPanel } from "@/components/providers/HubPanelProvider"
 import { useState, useEffect, useId } from "react"
 import { Card } from "@/components/ui/card"
-import { Order, PhaseDocument } from "../../types"
-import { Action } from "@/types/actions"
-import { LucideIcon } from "lucide-react"
+import { type Order, type PhaseDocument } from "../../types"
+import { type Action } from "@/types/actions"
+import { type LucideIcon } from "lucide-react"
 
 interface PhaseCardProps {
     title: string

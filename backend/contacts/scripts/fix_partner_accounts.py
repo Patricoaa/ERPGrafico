@@ -1,12 +1,14 @@
 import os
+
 import django
 
 # Setup Django environment
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'config.settings')
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "config.settings")
 django.setup()
 
+from accounting.models import Account, AccountingSettings
 from contacts.models import Contact
-from accounting.models import AccountingSettings, Account
+
 
 def fix_partner_accounts():
     settings = AccountingSettings.get_solo()
@@ -28,13 +30,16 @@ def fix_partner_accounts():
             new_account = Account.objects.create(
                 name=f"C.P. {partner.name}",
                 parent=parent_account,
-                account_type=parent_account.account_type
+                account_type=parent_account.account_type,
             )
             partner.partner_account = new_account
             partner.save()
-            print(f"Created account '{new_account.name}' (Code: {new_account.code}) for partner '{partner.name}'.")
+            print(
+                f"Created account '{new_account.name}' (Code: {new_account.code}) for partner '{partner.name}'."
+            )
         except Exception as e:
             print(f"Error creating account for partner '{partner.name}': {str(e)}")
+
 
 if __name__ == "__main__":
     fix_partner_accounts()

@@ -13,7 +13,7 @@ import {
 import { useDebounce } from "@/hooks/useDebounce"
 import { EmptyState } from '@/components/shared'
 import { useGroupSearch } from "@/features/users/hooks/useGroupSearch"
-import { AppGroup as Group } from "@/types/entities"
+import { type AppGroup as Group } from "@/types/entities"
 
 interface GroupSelectorProps {
     value?: string | null // Group name

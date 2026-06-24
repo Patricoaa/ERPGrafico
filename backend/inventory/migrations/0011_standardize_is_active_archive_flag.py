@@ -7,83 +7,112 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('inventory', '0010_alter_productuomprice_id'),
+        ("inventory", "0010_alter_productuomprice_id"),
     ]
 
     operations = [
         # ── Renames que preservan datos ──
         migrations.RenameField(
-            model_name='product',
-            old_name='active',
-            new_name='is_active',
+            model_name="product",
+            old_name="active",
+            new_name="is_active",
         ),
         migrations.RenameField(
-            model_name='uom',
-            old_name='active',
-            new_name='is_active',
+            model_name="uom",
+            old_name="active",
+            new_name="is_active",
         ),
         migrations.RenameField(
-            model_name='historicalproduct',
-            old_name='active',
-            new_name='is_active',
+            model_name="historicalproduct",
+            old_name="active",
+            new_name="is_active",
         ),
         migrations.RenameField(
-            model_name='historicaluom',
-            old_name='active',
-            new_name='is_active',
+            model_name="historicaluom",
+            old_name="active",
+            new_name="is_active",
         ),
         # ── Alineación de definición (db_index, verbose_name, help_text) ──
         migrations.AlterField(
-            model_name='product',
-            name='is_active',
-            field=models.BooleanField(db_index=True, default=True, help_text='Desactivar para archivar el producto en lugar de eliminarlo.', verbose_name='Activo'),
+            model_name="product",
+            name="is_active",
+            field=models.BooleanField(
+                db_index=True,
+                default=True,
+                help_text="Desactivar para archivar el producto en lugar de eliminarlo.",
+                verbose_name="Activo",
+            ),
         ),
         migrations.AlterField(
-            model_name='historicalproduct',
-            name='is_active',
-            field=models.BooleanField(db_index=True, default=True, help_text='Desactivar para archivar el producto en lugar de eliminarlo.', verbose_name='Activo'),
+            model_name="historicalproduct",
+            name="is_active",
+            field=models.BooleanField(
+                db_index=True,
+                default=True,
+                help_text="Desactivar para archivar el producto en lugar de eliminarlo.",
+                verbose_name="Activo",
+            ),
         ),
         migrations.AlterField(
-            model_name='uom',
-            name='is_active',
+            model_name="uom",
+            name="is_active",
             field=models.BooleanField(db_index=True, default=True),
         ),
         migrations.AlterField(
-            model_name='historicaluom',
-            name='is_active',
+            model_name="historicaluom",
+            name="is_active",
             field=models.BooleanField(db_index=True, default=True),
         ),
         # ── Flags nuevos ──
         migrations.AddField(
-            model_name='historicalproductcategory',
-            name='is_active',
-            field=models.BooleanField(db_index=True, default=True, help_text='Desactivar para archivar la categoría; los productos históricos la siguen referenciando.', verbose_name='Activo'),
+            model_name="historicalproductcategory",
+            name="is_active",
+            field=models.BooleanField(
+                db_index=True,
+                default=True,
+                help_text="Desactivar para archivar la categoría; los productos históricos la siguen referenciando.",
+                verbose_name="Activo",
+            ),
         ),
         migrations.AddField(
-            model_name='historicaluomcategory',
-            name='is_active',
-            field=models.BooleanField(db_index=True, default=True, verbose_name='Activo'),
+            model_name="historicaluomcategory",
+            name="is_active",
+            field=models.BooleanField(db_index=True, default=True, verbose_name="Activo"),
         ),
         migrations.AddField(
-            model_name='historicalwarehouse',
-            name='is_active',
-            field=models.BooleanField(db_index=True, default=True, help_text='Desactivar para archivar la bodega; los movimientos históricos la siguen referenciando.', verbose_name='Activo'),
+            model_name="historicalwarehouse",
+            name="is_active",
+            field=models.BooleanField(
+                db_index=True,
+                default=True,
+                help_text="Desactivar para archivar la bodega; los movimientos históricos la siguen referenciando.",
+                verbose_name="Activo",
+            ),
         ),
         migrations.AddField(
-            model_name='productcategory',
-            name='is_active',
-            field=models.BooleanField(db_index=True, default=True, help_text='Desactivar para archivar la categoría; los productos históricos la siguen referenciando.', verbose_name='Activo'),
+            model_name="productcategory",
+            name="is_active",
+            field=models.BooleanField(
+                db_index=True,
+                default=True,
+                help_text="Desactivar para archivar la categoría; los productos históricos la siguen referenciando.",
+                verbose_name="Activo",
+            ),
         ),
         migrations.AddField(
-            model_name='uomcategory',
-            name='is_active',
-            field=models.BooleanField(db_index=True, default=True, verbose_name='Activo'),
+            model_name="uomcategory",
+            name="is_active",
+            field=models.BooleanField(db_index=True, default=True, verbose_name="Activo"),
         ),
         migrations.AddField(
-            model_name='warehouse',
-            name='is_active',
-            field=models.BooleanField(db_index=True, default=True, help_text='Desactivar para archivar la bodega; los movimientos históricos la siguen referenciando.', verbose_name='Activo'),
+            model_name="warehouse",
+            name="is_active",
+            field=models.BooleanField(
+                db_index=True,
+                default=True,
+                help_text="Desactivar para archivar la bodega; los movimientos históricos la siguen referenciando.",
+                verbose_name="Activo",
+            ),
         ),
     ]

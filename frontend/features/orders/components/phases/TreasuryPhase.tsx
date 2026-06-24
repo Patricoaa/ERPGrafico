@@ -13,10 +13,10 @@ import { useCancelPayment, useAnnulPayment } from "../../hooks/useOrdersMutation
 import { ActionConfirmModal, BaseModal, CancelButton, LabeledInput } from '@/components/shared'
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
-import { PaymentMethodCardSelector, PaymentData } from "@/features/treasury/components/PaymentMethodCardSelector"
+import { PaymentMethodCardSelector, type PaymentData } from "@/features/treasury/components/PaymentMethodCardSelector"
 import { saleOrderActions } from '@/features/sales/actions'
 import { purchaseOrderActions } from '@/features/purchasing/actions'
-import { Order, PhaseDocument, Payment } from "../../types"
+import { type Order, type PhaseDocument, type Payment } from "../../types"
 
 interface TreasuryPhaseProps {
     isNoteMode: boolean

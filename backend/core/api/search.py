@@ -13,9 +13,10 @@ class DistinctSearchFilter(drf_filters.SearchFilter):
     Extends DRF's SearchFilter with .distinct() to prevent duplicate
     rows when search_fields span relationships (e.g. lines__product__name).
     """
+
     def filter_queryset(self, request, queryset, view):
         queryset = super().filter_queryset(request, queryset, view)
-        search = request.query_params.get(self.search_param, '')
+        search = request.query_params.get(self.search_param, "")
         if search:
             queryset = queryset.distinct()
         return queryset

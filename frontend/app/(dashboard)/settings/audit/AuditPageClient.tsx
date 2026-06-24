@@ -21,7 +21,7 @@ import { Skeleton, Chip } from "@/components/shared";
 import api from "@/lib/api";
 import { DataCell } from '@/components/shared';
 import { DataTableColumnHeader } from '@/components/shared';
-import { ColumnDef } from "@tanstack/react-table";
+import { type ColumnDef } from "@tanstack/react-table";
 
 interface GlobalAuditLog {
     date: string;

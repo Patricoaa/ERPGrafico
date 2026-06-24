@@ -1,8 +1,8 @@
 
 import { cn, translateStatus, formatPlainDate, parseDateOnly } from "@/lib/utils"
-import { ExternalLink, LucideIcon, MoreVertical } from "lucide-react"
+import { ExternalLink, type LucideIcon, MoreVertical } from "lucide-react"
 import Link from "next/link"
-import { ReactNode, HTMLAttributes } from "react"
+import { type ReactNode, type HTMLAttributes } from "react"
 import type { ColumnDef } from "@tanstack/react-table"
 
 import { MoneyDisplay, StatusBadge, EntityBadge, Chip as ChipComponent } from "@/components/shared"

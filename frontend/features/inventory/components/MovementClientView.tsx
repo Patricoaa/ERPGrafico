@@ -6,7 +6,7 @@ import { BaseModal, Chip, DataTableView } from '@/components/shared'
 import { DataTableColumnHeader } from '@/components/shared'
 import { DataCell, EntityCard, CardActions } from '@/components/shared'
 import { stockMoveActions, type StockMoveActionsCtx } from "@/features/inventory/stockMoveActions"
-import { ColumnDef } from "@tanstack/react-table"
+import { type ColumnDef } from "@tanstack/react-table"
 
 import {Eye, ArrowRightLeft} from "lucide-react"
 

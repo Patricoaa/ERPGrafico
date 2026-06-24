@@ -11,8 +11,8 @@ import { PurchaseOrderSummaryCard } from "./checkout/PurchaseOrderSummaryCard"
 import { PurchaseProcessSummarySidebar } from "./checkout/PurchaseProcessSummarySidebar"
 import { toast } from "sonner"
 import { purchasingApi } from "../api/purchasingApi"
-import { PurchaseOrderAPI, CheckoutLine, DTEData, ReceiptData } from "../types"
-import { PaymentData } from "@/features/treasury/components/PaymentMethodCardSelector"
+import { type PurchaseOrderAPI, type CheckoutLine, type DTEData, type ReceiptData } from "../types"
+import { type PaymentData } from "@/features/treasury/components/PaymentMethodCardSelector"
 
 import { PricingUtils } from '@/features/inventory/utils/pricing'
 import { Step0_Supplier } from "./checkout/Step0_Supplier"

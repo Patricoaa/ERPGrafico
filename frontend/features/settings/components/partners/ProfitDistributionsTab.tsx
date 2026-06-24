@@ -4,12 +4,12 @@ import { formatCurrency } from "@/lib/money"
 import React, { useEffect, useState, useMemo, useRef, useCallback } from "react"
 import { useRouter, usePathname, useSearchParams } from "next/navigation"
 
-import { ColumnDef } from "@tanstack/react-table"
+import { type ColumnDef } from "@tanstack/react-table"
 import {ActionConfirmModal, Chip, DataCell, DataTable, StatusBadge} from '@/components/shared'
 import { profitDistributionActions, type ProfitDistributionActionsCtx } from './profitDistributionActions'
 
 import { partnersApi } from "@/features/contacts/api/partnersApi"
-import {ProfitDistribution} from "@/features/contacts/types/partner"
+import {type ProfitDistribution} from "@/features/contacts/types/partner"
 import { formatPlainDate, cn } from "@/lib/utils"
 import {
     Calendar,

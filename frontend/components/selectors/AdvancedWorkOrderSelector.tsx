@@ -15,7 +15,7 @@ import { format } from "date-fns"
 import { WorkOrderWizard } from "@/features/production"
 import { useWorkOrderSearch } from "@/features/production/hooks/useWorkOrderSearch"
 import { EmptyState } from '@/components/shared'
-import { WorkOrder } from "@/types/entities"
+import { type WorkOrder } from "@/types/entities"
 // Removed LabeledContainer import as it's now internal
 
 interface AdvancedWorkOrderSelectorProps {

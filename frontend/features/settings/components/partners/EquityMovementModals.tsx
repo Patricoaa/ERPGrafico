@@ -8,8 +8,8 @@ import { ActionConfirmModal, BaseModal, CancelButton, LabeledInput, LabeledSelec
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { partnersApi } from "@/features/contacts/api/partnersApi"
 import { settingsApi } from "../../hooks"
-import { Partner } from "@/features/contacts/types/partner"
-import { TreasuryAccount } from "@/features/treasury/types"
+import { type Partner } from "@/features/contacts/types/partner"
+import { type TreasuryAccount } from "@/features/treasury/types"
 import { toast } from "sonner"
 
 import {

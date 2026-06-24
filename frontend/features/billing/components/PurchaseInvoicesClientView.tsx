@@ -3,7 +3,7 @@
 import { showApiError, getErrorMessage } from "@/lib/errors"
 import React, { useState, useRef } from "react"
 import { useRouter, useSearchParams, usePathname } from "next/navigation"
-import { ColumnDef } from "@tanstack/react-table"
+import { type ColumnDef } from "@tanstack/react-table"
 import {ActionConfirmModal, DocumentCompletionModal, SmartSearchBar, useSmartSearch, SegmentationBar, useSegmentation} from '@/components/shared'
 import { purchaseInvoiceSearchDef } from '../searchDef'
 import { purchaseInvoiceSegDef } from "@/features/billing/segmentationDef"
@@ -23,7 +23,7 @@ import { DataTableColumnHeader } from '@/components/shared'
 import { useConfirmAction } from "@/hooks/useConfirmAction"
 
 import { usePurchaseInvoices } from "@/features/billing/hooks/usePurchaseInvoices"
-import { Invoice, InvoiceFilters } from "@/features/billing/types"
+import { type Invoice, type InvoiceFilters } from "@/features/billing/types"
 import { getDtePrefix } from "@/lib/entity-registry"
 
 export function PurchaseInvoicesClientView() {

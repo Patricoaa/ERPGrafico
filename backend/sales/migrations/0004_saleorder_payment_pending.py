@@ -4,20 +4,43 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('sales', '0003_initial'),
+        ("sales", "0003_initial"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='historicalsaleorder',
-            name='status',
-            field=models.CharField(choices=[('DRAFT', 'Borrador'), ('CONFIRMED', 'Confirmado'), ('PAYMENT_PENDING', 'Cobro en Terminal'), ('INVOICED', 'Facturado'), ('PAID', 'Pagado'), ('CANCELLED', 'Anulado')], default='DRAFT', max_length=20, verbose_name='Estado'),
+            model_name="historicalsaleorder",
+            name="status",
+            field=models.CharField(
+                choices=[
+                    ("DRAFT", "Borrador"),
+                    ("CONFIRMED", "Confirmado"),
+                    ("PAYMENT_PENDING", "Cobro en Terminal"),
+                    ("INVOICED", "Facturado"),
+                    ("PAID", "Pagado"),
+                    ("CANCELLED", "Anulado"),
+                ],
+                default="DRAFT",
+                max_length=20,
+                verbose_name="Estado",
+            ),
         ),
         migrations.AlterField(
-            model_name='saleorder',
-            name='status',
-            field=models.CharField(choices=[('DRAFT', 'Borrador'), ('CONFIRMED', 'Confirmado'), ('PAYMENT_PENDING', 'Cobro en Terminal'), ('INVOICED', 'Facturado'), ('PAID', 'Pagado'), ('CANCELLED', 'Anulado')], default='DRAFT', max_length=20, verbose_name='Estado'),
+            model_name="saleorder",
+            name="status",
+            field=models.CharField(
+                choices=[
+                    ("DRAFT", "Borrador"),
+                    ("CONFIRMED", "Confirmado"),
+                    ("PAYMENT_PENDING", "Cobro en Terminal"),
+                    ("INVOICED", "Facturado"),
+                    ("PAID", "Pagado"),
+                    ("CANCELLED", "Anulado"),
+                ],
+                default="DRAFT",
+                max_length=20,
+                verbose_name="Estado",
+            ),
         ),
     ]

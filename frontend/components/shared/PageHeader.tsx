@@ -3,7 +3,7 @@
 import React from "react"
 import { Button } from "@/components/ui/button"
 import { ActionFoldButton, DynamicIcon } from '@/components/shared'
-import { LucideIcon } from "lucide-react"
+import { type LucideIcon } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 import Link from "next/link"

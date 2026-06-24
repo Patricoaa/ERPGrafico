@@ -2,6 +2,7 @@
 POSService — business logic for POS session lifecycle (open / close).
 Extracted from POSSessionViewSet to keep views thin.
 """
+
 from decimal import Decimal
 
 from django.core.exceptions import ValidationError
@@ -19,7 +20,6 @@ from .services import TreasuryService
 
 
 class POSService:
-
     # ------------------------------------------------------------------ #
     # Open session                                                         #
     # ------------------------------------------------------------------ #
@@ -179,6 +179,7 @@ class POSService:
 
         # Clean up draft carts
         from sales.draft_cart_service import DraftCartService
+
         DraftCartService.cleanup_on_session_close(session.id)
 
         session.status = "CLOSED"
@@ -303,7 +304,6 @@ def _create_difference_movement(
             from_account, to_account = None, pos_treasury
             movement_type = TreasuryMovement.Type.INBOUND
 
-    surplus_label = "Sobrante" if difference > 0 else "Faltante"
     return TreasuryService.create_movement(
         movement_type=movement_type,
         amount=abs(difference),

@@ -18,7 +18,7 @@ import { purchaseOrderActions } from '@/features/purchasing/actions'
 import { saleOrderActions } from '@/features/sales/actions'
 import { ordersApi } from '../hooks/useOrdersMutations'
 import type { UserPermissions } from '@/types/actions'
-import { Order } from '../types'
+import { type Order } from '../types'
 
 interface OrderActionPanelProps {
     open: boolean

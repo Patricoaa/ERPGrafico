@@ -5,6 +5,7 @@ Utility de cifrado simétrico para secretos almacenados en JSONField
 La clave se deriva de settings.SECRET_KEY. En producción se puede sobreescribir
 definiendo TUU_ENCRYPTION_KEY como una clave Fernet válida en el entorno.
 """
+
 from __future__ import annotations
 
 import base64

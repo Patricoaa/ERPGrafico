@@ -15,39 +15,35 @@ préstamos cambian; las tarjetas de crédito reales se quedan en `CREDIT_CARD`.
 Idempotente: re-corrida no hace nada (filtra por el tipo de origen).
 Reverso: vuelve a `CREDIT_CARD` (mismo criterio inverso).
 """
+
 from django.db import migrations
 
 
 def credit_card_to_loan(apps, schema_editor):
-    TreasuryAccount = apps.get_model('treasury', 'TreasuryAccount')
-    BankLoan = apps.get_model('treasury', 'BankLoan')
+    TreasuryAccount = apps.get_model("treasury", "TreasuryAccount")
+    BankLoan = apps.get_model("treasury", "BankLoan")
 
-    liability_ids = (
-        BankLoan.objects.values_list('liability_account_id', flat=True).distinct()
-    )
+    liability_ids = BankLoan.objects.values_list("liability_account_id", flat=True).distinct()
     TreasuryAccount.objects.filter(
         id__in=list(liability_ids),
-        account_type='CREDIT_CARD',
-    ).update(account_type='LOAN')
+        account_type="CREDIT_CARD",
+    ).update(account_type="LOAN")
 
 
 def loan_to_credit_card(apps, schema_editor):
-    TreasuryAccount = apps.get_model('treasury', 'TreasuryAccount')
-    BankLoan = apps.get_model('treasury', 'BankLoan')
+    TreasuryAccount = apps.get_model("treasury", "TreasuryAccount")
+    BankLoan = apps.get_model("treasury", "BankLoan")
 
-    liability_ids = (
-        BankLoan.objects.values_list('liability_account_id', flat=True).distinct()
-    )
+    liability_ids = BankLoan.objects.values_list("liability_account_id", flat=True).distinct()
     TreasuryAccount.objects.filter(
         id__in=list(liability_ids),
-        account_type='LOAN',
-    ).update(account_type='CREDIT_CARD')
+        account_type="LOAN",
+    ).update(account_type="CREDIT_CARD")
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('treasury', '0066_loan_treasury_account_type'),
+        ("treasury", "0066_loan_treasury_account_type"),
     ]
 
     operations = [

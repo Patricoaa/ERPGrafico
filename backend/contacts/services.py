@@ -1,6 +1,7 @@
 import logging
-from django.db import transaction
+
 from django.core.exceptions import ValidationError
+from django.db import transaction
 from django.utils.translation import gettext_lazy as _
 
 from contacts.models import Contact
@@ -27,11 +28,12 @@ class ContactPartnerService:
 
         if user:
             from core.services import ActionLoggingService
+
             ActionLoggingService.log_action(
                 user=user,
                 action_type="CONTACT_PROMOTED",
                 description=f"Promovido a socio: {contact.name}",
-                metadata={'contact_id': contact.id}
+                metadata={"contact_id": contact.id},
             )
 
         return contact
@@ -50,20 +52,26 @@ class ContactPartnerService:
         # Guard 1: Verificar si el socio tiene acciones o aportes
         if contact.partner_total_contributions > 0:
             raise ValidationError(
-                _("No se puede degradar. El socio tiene capital suscrito. "
-                  "Realice un retiro de capital total o transferencia de acciones primero.")
+                _(
+                    "No se puede degradar. El socio tiene capital suscrito. "
+                    "Realice un retiro de capital total o transferencia de acciones primero."
+                )
             )
 
         # Guard 2: Verificar si tiene retiros provisorios no liquidados
         if contact.partner_provisional_withdrawals_balance > 0:
             raise ValidationError(
-                _("No se puede degradar. El socio tiene retiros provisorios pendientes de liquidar.")
+                _(
+                    "No se puede degradar. El socio tiene retiros provisorios pendientes de liquidar."
+                )
             )
 
         # Guard 3: Verificar si tiene utilidades retenidas o dividendos por pagar
         if contact.partner_earnings_balance > 0 or contact.partner_dividends_payable_balance > 0:
             raise ValidationError(
-                _("No se puede degradar. El socio tiene utilidades retenidas o dividendos por pagar.")
+                _(
+                    "No se puede degradar. El socio tiene utilidades retenidas o dividendos por pagar."
+                )
             )
 
         contact.is_partner = False
@@ -71,11 +79,12 @@ class ContactPartnerService:
 
         if user:
             from core.services import ActionLoggingService
+
             ActionLoggingService.log_action(
                 user=user,
                 action_type="CONTACT_DEMOTED",
                 description="Degradado de socio a contacto normal.",
-                metadata={'contact_id': contact.id}
+                metadata={"contact_id": contact.id},
             )
 
         return contact

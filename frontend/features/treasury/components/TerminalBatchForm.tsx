@@ -14,7 +14,7 @@ import { cn } from "@/lib/utils"
 import { Calculator, Search, ChevronDown, Check, MousePointerClick, Landmark } from "lucide-react"
 import { DateRangeFilter } from "@/components/shared"
 import { toast } from "sonner"
-import { DateRange } from "react-day-picker"
+import { type DateRange } from "react-day-picker"
 
 import { useVatRate } from '@/hooks/useVatRate'
 import { useTerminalProviders, usePaymentMethods, useTerminalMovements, useTerminalBatchMutations } from "@/features/treasury"

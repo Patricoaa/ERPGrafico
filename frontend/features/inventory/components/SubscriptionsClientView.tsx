@@ -5,7 +5,7 @@ import { showApiError } from "@/lib/errors"
 import { useState, useMemo, useCallback, useEffect } from "react"
 import { useRouter, usePathname, useSearchParams } from "next/navigation"
 import {
-    ColumnDef
+    type ColumnDef
 } from "@tanstack/react-table"
 import { Checkbox } from "@/components/ui/checkbox"
 import type { BulkAction } from "@/components/shared"
@@ -30,7 +30,7 @@ import { DataCell } from '@/components/shared'
 import type { KpiCardDef } from '@/components/shared'
 import { subscriptionActions, type SubscriptionActionsCtx } from "@/features/inventory/subscriptionActions"
 import { PageHeader, PageHeaderButton, SmartSearchBar, useSmartSearch, SegmentationBar, useSegmentation } from "@/components/shared"
-import { Restriction } from "@/features/inventory/types"
+import { type Restriction } from "@/features/inventory/types"
 import { PageContainer } from "@/components/shared"
 import { cn } from "@/lib/utils"
 import { useSubscriptions, useSubscriptionStats, type Subscription } from "@/features/inventory/hooks/useSubscriptions"

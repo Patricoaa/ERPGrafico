@@ -4,7 +4,7 @@ import { showApiError, getErrorMessage } from "@/lib/errors"
 import { useState, useEffect } from "react"
 import { useSearchParams, useRouter, usePathname } from "next/navigation"
 import { useHubPanel } from "@/components/providers/HubPanelProvider"
-import { ColumnDef } from "@tanstack/react-table"
+import { type ColumnDef } from "@tanstack/react-table"
 import { Button } from "@/components/ui/button"
 import { ActionConfirmModal, Chip, DocumentCompletionModal, MoneyDisplay } from '@/components/shared'
 import { FileBadge, History, FileEdit, MoreVertical } from "lucide-react"

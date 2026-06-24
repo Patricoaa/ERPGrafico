@@ -1,10 +1,11 @@
 import os
+
 import django
 
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'core.settings')
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "core.settings")
 django.setup()
 
-from inventory.models import Product, BillOfMaterialsLines, UoM
+from inventory.models import Product
 
 p = Product.objects.get(id=643)
 bom = p.boms.first()
@@ -19,14 +20,14 @@ if bom:
         print(f"Line Qty: {line.quantity} {line.uom.name}")
         print(f"Component Stock: {component.qty_available} {component.uom.name}")
         print(f"UoM Context: Line UoM ID {line.uom_id}, Comp UoM ID {component.uom_id}")
-        
+
         # Check ratios
         try:
             line_uom = line.uom
             comp_uom = component.uom
             print(f"Line UoM Ratio: {line_uom.ratio}, Category: {line_uom.category_id}")
             print(f"Comp UoM Ratio: {comp_uom.ratio}, Category: {comp_uom.category_id}")
-            
+
             if line_uom.category_id == comp_uom.category_id:
                 available_in_line_uom = (component.qty_available * comp_uom.ratio) / line_uom.ratio
                 print(f"Available in Line UoM: {available_in_line_uom}")

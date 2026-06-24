@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button"
 import { BaseModal, CancelButton, FormFooter, LabeledInput } from '@/components/shared'
 import { toast } from "sonner"
 import { DataTableView, DataTableColumnHeader } from '@/components/shared'
-import { ColumnDef } from "@tanstack/react-table"
+import { type ColumnDef } from "@tanstack/react-table"
 
 import { BudgetEditor } from "@/features/finance/components/BudgetEditor"
 import { DataCell } from '@/components/shared'

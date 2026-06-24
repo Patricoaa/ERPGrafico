@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
 import api from '@/lib/api'
-import { HistoricalRecord } from '@/types/audit'
+import { type HistoricalRecord } from '@/types/audit'
 
 const ENDPOINT_MAP: Record<string, string> = {
     product: '/inventory/products',

@@ -2,7 +2,7 @@
 
 import React, { useEffect, useRef, useState } from "react"
 import { useForm } from "react-hook-form"
-import { PricingRuleInitialData } from "@/types/forms"
+import { type PricingRuleInitialData } from "@/types/forms"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
 import {

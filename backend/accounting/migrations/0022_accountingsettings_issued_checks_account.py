@@ -5,15 +5,22 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('accounting', '0021_accountingsettings_financial_expense_accounts'),
+        ("accounting", "0021_accountingsettings_financial_expense_accounts"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='accountingsettings',
-            name='issued_checks_account',
-            field=models.ForeignKey(blank=True, help_text='Cuenta de pasivo donde se registran los cheques propios emitidos hasta su cobro efectivo.', null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='settings_issued_checks', to='accounting.account', verbose_name='Cuenta Cheques Girados por Pagar'),
+            model_name="accountingsettings",
+            name="issued_checks_account",
+            field=models.ForeignKey(
+                blank=True,
+                help_text="Cuenta de pasivo donde se registran los cheques propios emitidos hasta su cobro efectivo.",
+                null=True,
+                on_delete=django.db.models.deletion.SET_NULL,
+                related_name="settings_issued_checks",
+                to="accounting.account",
+                verbose_name="Cuenta Cheques Girados por Pagar",
+            ),
         ),
     ]

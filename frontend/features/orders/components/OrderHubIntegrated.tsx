@@ -8,7 +8,7 @@ import { LogisticsPhase } from "./phases/LogisticsPhase"
 import { BillingPhase } from "./phases/BillingPhase"
 import { TreasuryPhase } from "./phases/TreasuryPhase"
 import { getHubStatuses } from '@/features/orders/utils/status'
-import { Order, Payment } from "../types"
+import { type Order, type Payment } from "../types"
 import type { LucideIcon } from "lucide-react"
 
 interface OrderHubData {

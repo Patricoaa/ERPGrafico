@@ -2,7 +2,7 @@
 
 import { useCallback, useMemo } from "react"
 import { CreditCard, Target, ShieldAlert, Activity } from "lucide-react"
-import { CreditContact, CreditHistoryEntry } from '@/features/credits/api/creditsApi'
+import { type CreditContact, type CreditHistoryEntry } from '@/features/credits/api/creditsApi'
 import CreditAssignmentModal from "./CreditAssignmentModal"
 import { DataTable } from '@/components/shared'
 import { PortfolioTable } from "./PortfolioTable"

@@ -7,12 +7,12 @@ import { FiscalYearCard } from './FiscalYearCard';
 import { FiscalYearClosingWizard } from './FiscalYearClosingWizard';
 import { NewFiscalYearDrawer } from './NewFiscalYearDrawer';
 ;
-import { AccountingPeriod, FiscalYearPreviewResult, FiscalYear } from '../../types';
+import { type AccountingPeriod, type FiscalYearPreviewResult, type FiscalYear } from '../../types';
 
 import { useSearchParams, useRouter, usePathname } from 'next/navigation';
 import { useSelectedEntity } from '@/hooks/useSelectedEntity';
 import { DataTableView, EmptyState, StatusBadge } from '@/components/shared';
-import { ColumnDef } from '@tanstack/react-table';
+import { type ColumnDef } from '@tanstack/react-table';
 import { DataTableColumnHeader } from '@/components/shared';
 import { DataCell } from '@/components/shared';
 import { fiscalYearActions, type FiscalYearActionsCtx, type FiscalYearRow } from './fiscalYearActions';

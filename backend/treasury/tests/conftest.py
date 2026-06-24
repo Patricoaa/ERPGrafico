@@ -8,6 +8,7 @@ setup de la base de datos de test, para que el signal ``post_migrate``
 Es un no-op cuando Redis SÍ es alcanzable (CI/docker): en ese caso se respeta
 la configuración del proyecto y no se altera ningún comportamiento.
 """
+
 import socket
 import urllib.parse
 
@@ -56,6 +57,7 @@ import pytest  # noqa: E402
 def clear_singleton_cache():
     """Limpia la cache de singletons antes y después de cada test."""
     from django.core.cache import cache
+
     cache.clear()
     yield
     cache.clear()

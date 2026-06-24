@@ -3,7 +3,7 @@
 
 import React, { useEffect, useCallback, useState } from "react"
 
-import { useForm, UseFormReturn, Path } from "react-hook-form"
+import { useForm, type UseFormReturn, type Path } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useSalesSettings } from "@/features/settings"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -16,7 +16,7 @@ import {
 import { UserSelector } from "@/components/selectors/UserSelector"
 import { GroupSelector } from "@/components/selectors/GroupSelector"
 import {AutoSaveStatusBadge, FadeIn, LabeledInput, LabeledSwitch, SkeletonShell} from "@/components/shared"
-import { SalesSettingsUpdatePayload } from "@/features/settings/types"
+import { type SalesSettingsUpdatePayload } from "@/features/settings/types"
 import { cn } from "@/lib/utils"
 import { useAutoSaveForm } from "@/hooks/useAutoSaveForm"
 import { useUnsavedChangesGuard } from "@/hooks/useUnsavedChangesGuard"

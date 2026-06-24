@@ -3,6 +3,7 @@ allocation_service.py — S5.2 (Gap B13, F13)
 
 Handles creation, replacement and validation of PaymentAllocation records.
 """
+
 from __future__ import annotations
 
 from decimal import Decimal
@@ -76,7 +77,7 @@ class AllocationService:
                     purchase_order_id=row.get("purchase_order"),
                     bank_statement_line_id=row.get("bank_statement_line"),
                 )
-                alloc.full_clean()   # triggers clean() → XOR validation
+                alloc.full_clean()  # triggers clean() → XOR validation
                 alloc.save()
                 created.append(alloc)
 
@@ -86,8 +87,7 @@ class AllocationService:
     def get_allocations(movement_id: int):
         """Return queryset of allocations for a movement, with related objects."""
         return (
-            PaymentAllocation.objects
-            .filter(treasury_movement_id=movement_id)
+            PaymentAllocation.objects.filter(treasury_movement_id=movement_id)
             .select_related(
                 "invoice",
                 "sale_order",
@@ -119,12 +119,10 @@ class AllocationService:
             raise ValidationError(_("Movimiento no encontrado."))
 
         from django.db.models import Sum
-        total_allocated = (
-            PaymentAllocation.objects
-            .filter(treasury_movement_id=movement_id)
-            .aggregate(total=Sum("amount"))["total"]
-            or Decimal("0")
-        )
+
+        total_allocated = PaymentAllocation.objects.filter(
+            treasury_movement_id=movement_id
+        ).aggregate(total=Sum("amount"))["total"] or Decimal("0")
 
         remaining = movement.amount - total_allocated
         return {
@@ -142,9 +140,7 @@ class AllocationService:
         target_keys = {"invoice", "sale_order", "purchase_order", "bank_statement_line"}
         for i, row in enumerate(allocations):
             if "amount" not in row:
-                raise ValidationError(
-                    _("Fila %(i)d: falta el campo 'amount'.") % {"i": i + 1}
-                )
+                raise ValidationError(_("Fila %(i)d: falta el campo 'amount'.") % {"i": i + 1})
             try:
                 val = Decimal(str(row["amount"]))
             except Exception:
@@ -152,9 +148,7 @@ class AllocationService:
                     _("Fila %(i)d: 'amount' debe ser un número válido.") % {"i": i + 1}
                 )
             if val <= 0:
-                raise ValidationError(
-                    _("Fila %(i)d: el monto debe ser positivo.") % {"i": i + 1}
-                )
+                raise ValidationError(_("Fila %(i)d: el monto debe ser positivo.") % {"i": i + 1})
             defined = sum(1 for k in target_keys if row.get(k) is not None)
             if defined == 0:
                 raise ValidationError(
@@ -169,8 +163,11 @@ class AllocationService:
     def _assert_sum_equals_movement(movement: TreasuryMovement, total: Decimal) -> None:
         if total != movement.amount:
             raise ValidationError(
-                _("La suma de las distribuciones (%(total)s) no coincide con el monto "
-                  "del movimiento (%(amount)s).") % {
+                _(
+                    "La suma de las distribuciones (%(total)s) no coincide con el monto "
+                    "del movimiento (%(amount)s)."
+                )
+                % {
                     "total": total,
                     "amount": movement.amount,
                 }

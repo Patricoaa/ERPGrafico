@@ -1,42 +1,49 @@
 """
 Tests para PurchasingService.cancel_receipt.
 """
-import pytest
-from django.core.exceptions import ValidationError
-from django.contrib.auth import get_user_model
 
-from purchasing.models import PurchaseOrder, PurchaseReceipt
-from purchasing.services import PurchasingService
+import pytest
+from django.contrib.auth import get_user_model
+from django.core.exceptions import ValidationError
+
 from contacts.models import Contact
 from inventory.models import Warehouse
+from purchasing.models import PurchaseOrder, PurchaseReceipt
+from purchasing.services import PurchasingService
 
 User = get_user_model()
 
 
 @pytest.fixture
 def env(db):
-    user = User.objects.create_user(username='cancelrec', password='x')
+    user = User.objects.create_user(username="cancelrec", password="x")
     supplier = Contact.objects.create(
-        name='Proveedor Test', tax_id='33333333-3',
+        name="Proveedor Test",
+        tax_id="33333333-3",
     )
     warehouse = Warehouse.objects.create(
-        name='Bodega Principal', code='BOD-01',
+        name="Bodega Principal",
+        code="BOD-01",
     )
     po = PurchaseOrder.objects.create(
-        number='TEST-PO-001',
+        number="TEST-PO-001",
         supplier=supplier,
         warehouse=warehouse,
-        total=0, total_net=0, total_tax=0,
+        total=0,
+        total_net=0,
+        total_tax=0,
     )
-    return {'user': user, 'supplier': supplier, 'warehouse': warehouse, 'po': po}
+    return {"user": user, "supplier": supplier, "warehouse": warehouse, "po": po}
 
 
 def _receipt(env, **overrides):
     kwargs = dict(
-        purchase_order=env['po'],
-        warehouse=env['warehouse'],
-        receipt_date='2026-06-10',
-        total=0, total_net=0, total_tax=0,
+        purchase_order=env["po"],
+        warehouse=env["warehouse"],
+        receipt_date="2026-06-10",
+        total=0,
+        total_net=0,
+        total_tax=0,
     )
     kwargs.update(overrides)
     return PurchaseReceipt.objects.create(**kwargs)
@@ -68,5 +75,5 @@ def test_cancel_cancelled_receipt_idempotente(env):
 def test_cancel_confirmed_receipt_raises_error(env):
     receipt = _receipt(env, status=PurchaseReceipt.Status.CONFIRMED)
 
-    with pytest.raises(ValidationError, match='Borrador'):
+    with pytest.raises(ValidationError, match="Borrador"):
         PurchasingService.cancel_receipt(receipt)

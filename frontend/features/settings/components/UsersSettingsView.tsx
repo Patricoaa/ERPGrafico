@@ -5,7 +5,7 @@ import {useState, useEffect, useMemo} from "react"
 import { DataTableView, SmartSearchBar, ToolbarCreateButton, SegmentationBar, EntityCard, useSegmentation, useSmartSearch } from '@/components/shared'
 import { DataTableColumnHeader } from '@/components/shared'
 import { DataCell } from '@/components/shared'
-import { ColumnDef } from "@tanstack/react-table"
+import { type ColumnDef } from "@tanstack/react-table"
 import { FadeIn, Chip } from "@/components/shared"
 import { userActions, type UserActionsCtx } from './userActions'
 

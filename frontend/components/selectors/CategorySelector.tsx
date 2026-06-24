@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/popover"
 import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from "@/components/ui/tooltip"
 import { EmptyState, LabeledContainer } from "@/components/shared"
-import { ProductCategory } from "@/types/entities"
+import { type ProductCategory } from "@/types/entities"
 import { useCategories } from "@/features/inventory/hooks/useCategories"
 import { CategoryDrawer } from "@/features/inventory/components/CategoryDrawer"
 

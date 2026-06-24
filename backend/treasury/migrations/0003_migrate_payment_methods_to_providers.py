@@ -3,18 +3,16 @@
 from django.db import migrations
 
 
-
-
 def migrate_payment_methods(apps, schema_editor):
-    PaymentMethod = apps.get_model('treasury', 'PaymentMethod')
-    PaymentTerminalProvider = apps.get_model('treasury', 'PaymentTerminalProvider')
-    TerminalBatch = apps.get_model('treasury', 'TerminalBatch')
-    TreasuryMovement = apps.get_model('treasury', 'TreasuryMovement')
+    PaymentMethod = apps.get_model("treasury", "PaymentMethod")
+    PaymentTerminalProvider = apps.get_model("treasury", "PaymentTerminalProvider")
+    TerminalBatch = apps.get_model("treasury", "TerminalBatch")
+    TreasuryMovement = apps.get_model("treasury", "TreasuryMovement")
 
     for pm in PaymentMethod.objects.filter(is_terminal=True):
         if not pm.supplier:
             continue
-            
+
         # Create Provider
         provider, created = PaymentTerminalProvider.objects.get_or_create(
             name=f"Proveedor {pm.supplier.name} ({pm.name})",
@@ -23,30 +21,33 @@ def migrate_payment_methods(apps, schema_editor):
             commission_expense_account=pm.commission_expense_account,
             bank_treasury_account=pm.treasury_account,
             defaults={
-                'commission_product': pm.commission_product,
-                'provider_type': 'MANUAL',  # Default since generic
-                'is_active': pm.is_active,
-            }
+                "commission_product": pm.commission_product,
+                "provider_type": "MANUAL",  # Default since generic
+                "is_active": pm.is_active,
+            },
         )
-        
+
         # Update flags
         pm.processes_via_terminal = True
-        pm.save(update_fields=['processes_via_terminal'])
-        
+        pm.save(update_fields=["processes_via_terminal"])
+
         # Link existing batches
         TerminalBatch.objects.filter(payment_method=pm).update(provider=provider)
-        
+
         # Terminal batches already have a payment_method linkage, we also link movements if needed.
         # Movements that have this payment_method and are related to a terminal batch:
-        TreasuryMovement.objects.filter(payment_method=pm, terminal_batch__isnull=False).update(terminal_provider=provider)
+        TreasuryMovement.objects.filter(payment_method=pm, terminal_batch__isnull=False).update(
+            terminal_provider=provider
+        )
+
 
 def reverse_migrate(apps, schema_editor):
     pass
 
-class Migration(migrations.Migration):
 
+class Migration(migrations.Migration):
     dependencies = [
-        ('treasury', '0002_paymentterminaldevice_and_more'),
+        ("treasury", "0002_paymentterminaldevice_and_more"),
     ]
 
     operations = [

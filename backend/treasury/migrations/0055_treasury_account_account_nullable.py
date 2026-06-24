@@ -5,16 +5,23 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('accounting', '0021_accountingsettings_financial_expense_accounts'),
-        ('treasury', '0054_checkbook_model'),
+        ("accounting", "0021_accountingsettings_financial_expense_accounts"),
+        ("treasury", "0054_checkbook_model"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='treasuryaccount',
-            name='account',
-            field=models.ForeignKey(blank=True, limit_choices_to={'account_type__in': ['ASSET', 'LIABILITY']}, null=True, on_delete=django.db.models.deletion.PROTECT, related_name='treasury_accounts', to='accounting.account', verbose_name='Cuenta Contable'),
+            model_name="treasuryaccount",
+            name="account",
+            field=models.ForeignKey(
+                blank=True,
+                limit_choices_to={"account_type__in": ["ASSET", "LIABILITY"]},
+                null=True,
+                on_delete=django.db.models.deletion.PROTECT,
+                related_name="treasury_accounts",
+                to="accounting.account",
+                verbose_name="Cuenta Contable",
+            ),
         ),
     ]

@@ -7,111 +7,368 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     initial = True
 
     dependencies = [
-        ('auth', '0012_alter_user_first_name_max_length'),
-        ('contenttypes', '0002_remove_content_type_name'),
+        ("auth", "0012_alter_user_first_name_max_length"),
+        ("contenttypes", "0002_remove_content_type_name"),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
     ]
 
     operations = [
         migrations.CreateModel(
-            name='WorkflowSettings',
+            name="WorkflowSettings",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('f29_creation_day', models.PositiveIntegerField(default=12, help_text='Día del mes para generar la tarea de creación del F29', validators=[django.core.validators.MinValueValidator(1), django.core.validators.MaxValueValidator(28)], verbose_name='Día Creación F29')),
-                ('f29_payment_day', models.PositiveIntegerField(default=20, help_text='Día del mes para generar la tarea de pago del F29', validators=[django.core.validators.MinValueValidator(1), django.core.validators.MaxValueValidator(28)], verbose_name='Día Pago F29')),
-                ('period_close_day', models.PositiveIntegerField(default=5, help_text='Día del mes para generar la tarea de cierre de periodo contable', validators=[django.core.validators.MinValueValidator(1), django.core.validators.MaxValueValidator(28)], verbose_name='Día Cierre Periodo')),
-                ('low_margin_threshold_percent', models.DecimalField(decimal_places=2, default=10.0, help_text='Si el margen de un producto baja de este porcentaje, se envía una notificación (0 para desactivar).', max_digits=5, validators=[django.core.validators.MinValueValidator(0)], verbose_name='Umbral de Margen Bajo (%)')),
-                ('updated_at', models.DateTimeField(auto_now=True)),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True, primary_key=True, serialize=False, verbose_name="ID"
+                    ),
+                ),
+                (
+                    "f29_creation_day",
+                    models.PositiveIntegerField(
+                        default=12,
+                        help_text="Día del mes para generar la tarea de creación del F29",
+                        validators=[
+                            django.core.validators.MinValueValidator(1),
+                            django.core.validators.MaxValueValidator(28),
+                        ],
+                        verbose_name="Día Creación F29",
+                    ),
+                ),
+                (
+                    "f29_payment_day",
+                    models.PositiveIntegerField(
+                        default=20,
+                        help_text="Día del mes para generar la tarea de pago del F29",
+                        validators=[
+                            django.core.validators.MinValueValidator(1),
+                            django.core.validators.MaxValueValidator(28),
+                        ],
+                        verbose_name="Día Pago F29",
+                    ),
+                ),
+                (
+                    "period_close_day",
+                    models.PositiveIntegerField(
+                        default=5,
+                        help_text="Día del mes para generar la tarea de cierre de periodo contable",
+                        validators=[
+                            django.core.validators.MinValueValidator(1),
+                            django.core.validators.MaxValueValidator(28),
+                        ],
+                        verbose_name="Día Cierre Periodo",
+                    ),
+                ),
+                (
+                    "low_margin_threshold_percent",
+                    models.DecimalField(
+                        decimal_places=2,
+                        default=10.0,
+                        help_text="Si el margen de un producto baja de este porcentaje, se envía una notificación (0 para desactivar).",
+                        max_digits=5,
+                        validators=[django.core.validators.MinValueValidator(0)],
+                        verbose_name="Umbral de Margen Bajo (%)",
+                    ),
+                ),
+                ("updated_at", models.DateTimeField(auto_now=True)),
             ],
             options={
-                'verbose_name': 'Configuración de Flujo',
-                'verbose_name_plural': 'Configuración de Flujos',
+                "verbose_name": "Configuración de Flujo",
+                "verbose_name_plural": "Configuración de Flujos",
             },
         ),
         migrations.CreateModel(
-            name='Notification',
+            name="Notification",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('title', models.CharField(max_length=255, verbose_name='Título')),
-                ('message', models.TextField(verbose_name='Mensaje')),
-                ('type', models.CharField(choices=[('INFO', 'Información'), ('SUCCESS', 'Éxito'), ('WARNING', 'Advertencia'), ('ERROR', 'Error')], default='INFO', max_length=20)),
-                ('read', models.BooleanField(default=False, verbose_name='Leída')),
-                ('link', models.CharField(blank=True, help_text='URL relativa para redirigir al usuario', max_length=500, verbose_name='Enlace')),
-                ('object_id', models.PositiveIntegerField(blank=True, null=True)),
-                ('created_at', models.DateTimeField(auto_now_add=True)),
-                ('content_type', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, to='contenttypes.contenttype')),
-                ('user', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='notifications', to=settings.AUTH_USER_MODEL)),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True, primary_key=True, serialize=False, verbose_name="ID"
+                    ),
+                ),
+                ("title", models.CharField(max_length=255, verbose_name="Título")),
+                ("message", models.TextField(verbose_name="Mensaje")),
+                (
+                    "type",
+                    models.CharField(
+                        choices=[
+                            ("INFO", "Información"),
+                            ("SUCCESS", "Éxito"),
+                            ("WARNING", "Advertencia"),
+                            ("ERROR", "Error"),
+                        ],
+                        default="INFO",
+                        max_length=20,
+                    ),
+                ),
+                ("read", models.BooleanField(default=False, verbose_name="Leída")),
+                (
+                    "link",
+                    models.CharField(
+                        blank=True,
+                        help_text="URL relativa para redirigir al usuario",
+                        max_length=500,
+                        verbose_name="Enlace",
+                    ),
+                ),
+                ("object_id", models.PositiveIntegerField(blank=True, null=True)),
+                ("created_at", models.DateTimeField(auto_now_add=True)),
+                (
+                    "content_type",
+                    models.ForeignKey(
+                        blank=True,
+                        null=True,
+                        on_delete=django.db.models.deletion.CASCADE,
+                        to="contenttypes.contenttype",
+                    ),
+                ),
+                (
+                    "user",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="notifications",
+                        to=settings.AUTH_USER_MODEL,
+                    ),
+                ),
             ],
             options={
-                'verbose_name': 'Notificación',
-                'verbose_name_plural': 'Notificaciones',
-                'ordering': ['-created_at'],
+                "verbose_name": "Notificación",
+                "verbose_name_plural": "Notificaciones",
+                "ordering": ["-created_at"],
             },
         ),
         migrations.CreateModel(
-            name='NotificationRule',
+            name="NotificationRule",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('notification_type', models.CharField(help_text='Identificador único (ej: POS_CREDIT_APPROVAL, SUBSCRIPTION_OC_CREATED)', max_length=100, unique=True, verbose_name='Tipo de Notificación')),
-                ('description', models.CharField(blank=True, max_length=255, verbose_name='Descripción')),
-                ('notify_creator', models.BooleanField(default=True, help_text='Si está marcado, se notificará al usuario que inició la acción (ej: quien pidió el crédito).', verbose_name='Notificar al Creador')),
-                ('created_at', models.DateTimeField(auto_now_add=True)),
-                ('updated_at', models.DateTimeField(auto_now=True)),
-                ('assigned_group', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='notification_rules', to='auth.group', verbose_name='Grupo Extra a Notificar')),
-                ('assigned_user', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='notification_rules', to=settings.AUTH_USER_MODEL, verbose_name='Usuario Extra a Notificar')),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True, primary_key=True, serialize=False, verbose_name="ID"
+                    ),
+                ),
+                (
+                    "notification_type",
+                    models.CharField(
+                        help_text="Identificador único (ej: POS_CREDIT_APPROVAL, SUBSCRIPTION_OC_CREATED)",
+                        max_length=100,
+                        unique=True,
+                        verbose_name="Tipo de Notificación",
+                    ),
+                ),
+                (
+                    "description",
+                    models.CharField(blank=True, max_length=255, verbose_name="Descripción"),
+                ),
+                (
+                    "notify_creator",
+                    models.BooleanField(
+                        default=True,
+                        help_text="Si está marcado, se notificará al usuario que inició la acción (ej: quien pidió el crédito).",
+                        verbose_name="Notificar al Creador",
+                    ),
+                ),
+                ("created_at", models.DateTimeField(auto_now_add=True)),
+                ("updated_at", models.DateTimeField(auto_now=True)),
+                (
+                    "assigned_group",
+                    models.ForeignKey(
+                        blank=True,
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        related_name="notification_rules",
+                        to="auth.group",
+                        verbose_name="Grupo Extra a Notificar",
+                    ),
+                ),
+                (
+                    "assigned_user",
+                    models.ForeignKey(
+                        blank=True,
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        related_name="notification_rules",
+                        to=settings.AUTH_USER_MODEL,
+                        verbose_name="Usuario Extra a Notificar",
+                    ),
+                ),
             ],
             options={
-                'verbose_name': 'Regla de Notificación',
-                'verbose_name_plural': 'Reglas de Notificación',
+                "verbose_name": "Regla de Notificación",
+                "verbose_name_plural": "Reglas de Notificación",
             },
         ),
         migrations.CreateModel(
-            name='Task',
+            name="Task",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('title', models.CharField(max_length=255, verbose_name='Título')),
-                ('description', models.TextField(blank=True, verbose_name='Descripción')),
-                ('task_type', models.CharField(db_index=True, max_length=100, verbose_name='Tipo')),
-                ('status', models.CharField(choices=[('PENDING', 'Pendiente'), ('IN_PROGRESS', 'En Proceso'), ('COMPLETED', 'Completada'), ('REJECTED', 'Rechazada'), ('CANCELLED', 'Cancelada')], db_index=True, default='PENDING', max_length=20, verbose_name='Estado')),
-                ('priority', models.CharField(choices=[('LOW', 'Baja'), ('MEDIUM', 'Media'), ('HIGH', 'Alta'), ('CRITICAL', 'Crítica')], default='MEDIUM', max_length=20, verbose_name='Prioridad')),
-                ('category', models.CharField(choices=[('APPROVAL', 'Aprobación de Flujo'), ('TASK', 'Tarea Operativa')], db_index=True, default='APPROVAL', help_text='APPROVAL: Aprobación de flujo | TASK: Tarea operativa', max_length=20, verbose_name='Categoría')),
-                ('object_id', models.PositiveIntegerField(blank=True, null=True)),
-                ('data', models.JSONField(blank=True, default=dict)),
-                ('notes', models.TextField(blank=True, verbose_name='Notas')),
-                ('due_date', models.DateTimeField(blank=True, null=True, verbose_name='Fecha Vencimiento')),
-                ('completed_at', models.DateTimeField(blank=True, null=True)),
-                ('created_at', models.DateTimeField(auto_now_add=True)),
-                ('updated_at', models.DateTimeField(auto_now=True)),
-                ('assigned_group', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='assigned_tasks', to='auth.group', verbose_name='Grupo Asignado')),
-                ('assigned_to', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='assigned_tasks', to=settings.AUTH_USER_MODEL)),
-                ('completed_by', models.ForeignKey(blank=True, help_text='Usuario que completó/aprobó esta tarea', null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='completed_tasks', to=settings.AUTH_USER_MODEL, verbose_name='Completada por')),
-                ('content_type', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, to='contenttypes.contenttype')),
-                ('created_by', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='created_tasks', to=settings.AUTH_USER_MODEL)),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True, primary_key=True, serialize=False, verbose_name="ID"
+                    ),
+                ),
+                ("title", models.CharField(max_length=255, verbose_name="Título")),
+                ("description", models.TextField(blank=True, verbose_name="Descripción")),
+                ("task_type", models.CharField(db_index=True, max_length=100, verbose_name="Tipo")),
+                (
+                    "status",
+                    models.CharField(
+                        choices=[
+                            ("PENDING", "Pendiente"),
+                            ("IN_PROGRESS", "En Proceso"),
+                            ("COMPLETED", "Completada"),
+                            ("REJECTED", "Rechazada"),
+                            ("CANCELLED", "Cancelada"),
+                        ],
+                        db_index=True,
+                        default="PENDING",
+                        max_length=20,
+                        verbose_name="Estado",
+                    ),
+                ),
+                (
+                    "priority",
+                    models.CharField(
+                        choices=[
+                            ("LOW", "Baja"),
+                            ("MEDIUM", "Media"),
+                            ("HIGH", "Alta"),
+                            ("CRITICAL", "Crítica"),
+                        ],
+                        default="MEDIUM",
+                        max_length=20,
+                        verbose_name="Prioridad",
+                    ),
+                ),
+                (
+                    "category",
+                    models.CharField(
+                        choices=[("APPROVAL", "Aprobación de Flujo"), ("TASK", "Tarea Operativa")],
+                        db_index=True,
+                        default="APPROVAL",
+                        help_text="APPROVAL: Aprobación de flujo | TASK: Tarea operativa",
+                        max_length=20,
+                        verbose_name="Categoría",
+                    ),
+                ),
+                ("object_id", models.PositiveIntegerField(blank=True, null=True)),
+                ("data", models.JSONField(blank=True, default=dict)),
+                ("notes", models.TextField(blank=True, verbose_name="Notas")),
+                (
+                    "due_date",
+                    models.DateTimeField(blank=True, null=True, verbose_name="Fecha Vencimiento"),
+                ),
+                ("completed_at", models.DateTimeField(blank=True, null=True)),
+                ("created_at", models.DateTimeField(auto_now_add=True)),
+                ("updated_at", models.DateTimeField(auto_now=True)),
+                (
+                    "assigned_group",
+                    models.ForeignKey(
+                        blank=True,
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        related_name="assigned_tasks",
+                        to="auth.group",
+                        verbose_name="Grupo Asignado",
+                    ),
+                ),
+                (
+                    "assigned_to",
+                    models.ForeignKey(
+                        blank=True,
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        related_name="assigned_tasks",
+                        to=settings.AUTH_USER_MODEL,
+                    ),
+                ),
+                (
+                    "completed_by",
+                    models.ForeignKey(
+                        blank=True,
+                        help_text="Usuario que completó/aprobó esta tarea",
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        related_name="completed_tasks",
+                        to=settings.AUTH_USER_MODEL,
+                        verbose_name="Completada por",
+                    ),
+                ),
+                (
+                    "content_type",
+                    models.ForeignKey(
+                        blank=True,
+                        null=True,
+                        on_delete=django.db.models.deletion.CASCADE,
+                        to="contenttypes.contenttype",
+                    ),
+                ),
+                (
+                    "created_by",
+                    models.ForeignKey(
+                        blank=True,
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        related_name="created_tasks",
+                        to=settings.AUTH_USER_MODEL,
+                    ),
+                ),
             ],
             options={
-                'verbose_name': 'Tarea',
-                'verbose_name_plural': 'Tareas',
-                'ordering': ['-created_at'],
+                "verbose_name": "Tarea",
+                "verbose_name_plural": "Tareas",
+                "ordering": ["-created_at"],
             },
         ),
         migrations.CreateModel(
-            name='TaskAssignmentRule',
+            name="TaskAssignmentRule",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('task_type', models.CharField(help_text='Identificador único del tipo (ej: OT_PREPRESS_APPROVAL)', max_length=100, unique=True, verbose_name='Tipo de Tarea')),
-                ('description', models.CharField(blank=True, max_length=255, verbose_name='Descripción')),
-                ('assigned_group', models.CharField(blank=True, help_text='Si no hay usuario, se puede usar un string para lógica custom', max_length=100, verbose_name='Grupo Asignado (Legacy)')),
-                ('created_at', models.DateTimeField(auto_now_add=True)),
-                ('updated_at', models.DateTimeField(auto_now=True)),
-                ('assigned_user', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='assignment_rules', to=settings.AUTH_USER_MODEL, verbose_name='Usuario Asignado por Defecto')),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True, primary_key=True, serialize=False, verbose_name="ID"
+                    ),
+                ),
+                (
+                    "task_type",
+                    models.CharField(
+                        help_text="Identificador único del tipo (ej: OT_PREPRESS_APPROVAL)",
+                        max_length=100,
+                        unique=True,
+                        verbose_name="Tipo de Tarea",
+                    ),
+                ),
+                (
+                    "description",
+                    models.CharField(blank=True, max_length=255, verbose_name="Descripción"),
+                ),
+                (
+                    "assigned_group",
+                    models.CharField(
+                        blank=True,
+                        help_text="Si no hay usuario, se puede usar un string para lógica custom",
+                        max_length=100,
+                        verbose_name="Grupo Asignado (Legacy)",
+                    ),
+                ),
+                ("created_at", models.DateTimeField(auto_now_add=True)),
+                ("updated_at", models.DateTimeField(auto_now=True)),
+                (
+                    "assigned_user",
+                    models.ForeignKey(
+                        blank=True,
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        related_name="assignment_rules",
+                        to=settings.AUTH_USER_MODEL,
+                        verbose_name="Usuario Asignado por Defecto",
+                    ),
+                ),
             ],
             options={
-                'verbose_name': 'Regla de Asignación',
-                'verbose_name_plural': 'Reglas de Asignación',
+                "verbose_name": "Regla de Asignación",
+                "verbose_name_plural": "Reglas de Asignación",
             },
         ),
     ]

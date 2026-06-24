@@ -20,7 +20,7 @@ import { CashFlowTable } from "@/features/finance/components/CashFlowTable"
 import { MappingConfigDrawer } from "@/features/finance/components/MappingConfigDrawer"
 import { useMappingDrawer } from "@/features/finance/hooks/useMappingDrawer"
 import { DateRangeFilter } from "@/components/shared"
-import { DateRange } from "react-day-picker"
+import { type DateRange } from "react-day-picker"
 import { format, startOfYear, subYears } from "date-fns"
 import { es } from 'date-fns/locale'
 import { cn } from "@/lib/utils"

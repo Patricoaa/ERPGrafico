@@ -17,7 +17,7 @@ import { ActionSlideButton, CancelButton } from "@/components/shared"
 import { useGlobalModals } from "@/components/providers/GlobalModalProvider"
 import { useHubPanel } from "@/components/providers/HubPanelProvider"
 import { useContact, useContactCreditLedger } from "../hooks/useContacts"
-import { Contact, InsightsData } from "../types"
+import { type Contact, type InsightsData } from "../types"
 import { formatRUT, validateRUT } from "@/lib/utils/format"
 import { useContactMutations, useContactInsights } from "@/features/contacts"
 import { useDefaultCustomer, useDefaultVendor } from "../hooks/useContactDefaults"
@@ -34,7 +34,7 @@ import { contactDocumentActions, type ContactDocumentActionsCtx } from './contac
 
 import { DataTable } from '@/components/shared'
 
-import { ColumnDef } from "@tanstack/react-table"
+import { type ColumnDef } from "@tanstack/react-table"
 
 import { getHubStatuses } from '@/features/orders/utils/status'
 import { LabeledInput, LabeledContainer, LabeledCheckboxGroup, TabBar, TabBarContent, type TabItem, FormFooter, FormSection, FormSplitLayout, SkeletonShell } from "@/components/shared"

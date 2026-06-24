@@ -4,15 +4,18 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('accounting', '0008_add_tax_withholding_account'),
+        ("accounting", "0008_add_tax_withholding_account"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='accountingsettings',
-            name='auto_post_reconciliation_adjustments',
-            field=models.BooleanField(default=False, help_text='Si se activa, los ajustes contables generados desde la conciliación bancaria se crearán en estado PUBLICADO (POSTED) en lugar de BORRADOR (DRAFT).', verbose_name='Auto-Publicar Ajustes de Conciliación'),
+            model_name="accountingsettings",
+            name="auto_post_reconciliation_adjustments",
+            field=models.BooleanField(
+                default=False,
+                help_text="Si se activa, los ajustes contables generados desde la conciliación bancaria se crearán en estado PUBLICADO (POSTED) en lugar de BORRADOR (DRAFT).",
+                verbose_name="Auto-Publicar Ajustes de Conciliación",
+            ),
         ),
     ]

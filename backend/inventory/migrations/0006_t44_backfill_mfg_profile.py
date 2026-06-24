@@ -3,20 +3,27 @@
 from django.db import migrations
 
 MFG_FIELDS = [
-    'mfg_auto_finalize',
-    'mfg_enable_prepress', 'mfg_enable_press', 'mfg_enable_postpress',
-    'mfg_prepress_design', 'mfg_prepress_specs', 'mfg_prepress_folio',
-    'mfg_press_offset', 'mfg_press_digital', 'mfg_press_special',
-    'mfg_postpress_finishing', 'mfg_postpress_binding',
+    "mfg_auto_finalize",
+    "mfg_enable_prepress",
+    "mfg_enable_press",
+    "mfg_enable_postpress",
+    "mfg_prepress_design",
+    "mfg_prepress_specs",
+    "mfg_prepress_folio",
+    "mfg_press_offset",
+    "mfg_press_digital",
+    "mfg_press_special",
+    "mfg_postpress_finishing",
+    "mfg_postpress_binding",
 ]
 
 
 def forwards(apps, schema_editor):
-    Product = apps.get_model('inventory', 'Product')
-    ProductManufacturingProfile = apps.get_model('inventory', 'ProductManufacturingProfile')
+    Product = apps.get_model("inventory", "Product")
+    ProductManufacturingProfile = apps.get_model("inventory", "ProductManufacturingProfile")
 
     to_create = []
-    for product in Product.objects.filter(product_type='MANUFACTURABLE').iterator():
+    for product in Product.objects.filter(product_type="MANUFACTURABLE").iterator():
         # Only create if not already exists
         if not ProductManufacturingProfile.objects.filter(product=product).exists():
             profile = ProductManufacturingProfile(product=product)
@@ -29,16 +36,13 @@ def forwards(apps, schema_editor):
 
 
 def backwards(apps, schema_editor):
-    ProductManufacturingProfile = apps.get_model('inventory', 'ProductManufacturingProfile')
+    ProductManufacturingProfile = apps.get_model("inventory", "ProductManufacturingProfile")
     ProductManufacturingProfile.objects.all().delete()
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('inventory', '0005_t44_product_manufacturing_profile'),
+        ("inventory", "0005_t44_product_manufacturing_profile"),
     ]
 
-    operations = [
-        migrations.RunPython(forwards, backwards)
-    ]
+    operations = [migrations.RunPython(forwards, backwards)]

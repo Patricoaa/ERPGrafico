@@ -1,4 +1,4 @@
-import { LucideIcon } from "lucide-react"
+import { type LucideIcon } from "lucide-react"
 import type { WorkOrderStageData } from './schemas'
 import type { StageId } from './constants/stages'
 export type { StageId }

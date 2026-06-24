@@ -5,7 +5,7 @@ import { useRouter, usePathname, useSearchParams } from "next/navigation"
 import { useSelectedEntity } from "@/hooks/useSelectedEntity"
 
 import { DataTableView, DataTableColumnHeader, EntityCard, StatusBadge, SegmentationBar, useSegmentation } from '@/components/shared'
-import { ColumnDef } from "@tanstack/react-table"
+import { type ColumnDef } from "@tanstack/react-table"
 import { DataCell } from '@/components/shared'
 import { posSessionActions, type POSSessionActionsCtx } from "@/features/sales/posSessionActions"
 import { toast } from "sonner"

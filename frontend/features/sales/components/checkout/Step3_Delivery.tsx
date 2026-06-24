@@ -25,7 +25,7 @@ import {
 import { NumpadModal } from "@/features/pos/components/NumpadModal"
 import { useTouchMode } from "@/hooks/useTouchMode"
 
-import { CheckoutDeliveryData, SaleOrderLine } from "../../types"
+import { type CheckoutDeliveryData, type SaleOrderLine } from "../../types"
 
 function UoMSelector({ line, currentUom, onUomChange }: { line: SaleOrderLine, currentUom: string | number | null, onUomChange: (uomId: number) => void }) {
     const prodId = line.product && typeof line.product === 'object' ? line.product.id : line.product

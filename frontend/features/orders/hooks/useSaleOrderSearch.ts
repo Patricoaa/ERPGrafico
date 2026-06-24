@@ -1,6 +1,6 @@
 import { useState, useCallback } from "react"
 import { showApiError } from "@/lib/errors"
-import { SaleOrder } from "@/types/entities"
+import { type SaleOrder } from "@/types/entities"
 import { ordersApi } from "../api/ordersApi"
 
 interface UseSaleOrderSearchReturn {

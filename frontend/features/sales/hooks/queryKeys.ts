@@ -1,4 +1,4 @@
-import { SaleOrderFilters } from '../types'
+import { type SaleOrderFilters } from '../types'
 
 /**
  * Hierarchical query-key factory para el dominio sales.

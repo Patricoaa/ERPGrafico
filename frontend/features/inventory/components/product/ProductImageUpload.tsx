@@ -2,8 +2,8 @@ import Image from "next/image"
 import { FormField } from "@/components/ui/form"
 import { Button } from "@/components/ui/button"
 import { Plus, X } from "lucide-react"
-import { UseFormReturn } from "react-hook-form"
-import { ProductFormValues } from "./schema"
+import { type UseFormReturn } from "react-hook-form"
+import { type ProductFormValues } from "./schema"
 
 interface ProductImageUploadProps {
     form: UseFormReturn<ProductFormValues>

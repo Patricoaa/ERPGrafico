@@ -7,47 +7,59 @@ Schema changes (decimal_places already 0 in both models):
 
 No column added or dropped.
 """
+
 from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('sales', '0006_saleorder_transactional_document'),
-        ('accounting', '0009_accountingsettings_auto_post_reconciliation_adjustments'),
+        ("sales", "0006_saleorder_transactional_document"),
+        ("accounting", "0009_accountingsettings_auto_post_reconciliation_adjustments"),
     ]
 
     operations = [
         # SaleDelivery
         migrations.AlterField(
-            model_name='saledelivery',
-            name='total_net',
-            field=models.DecimalField(decimal_places=0, default=0, max_digits=14, verbose_name='Neto'),
+            model_name="saledelivery",
+            name="total_net",
+            field=models.DecimalField(
+                decimal_places=0, default=0, max_digits=14, verbose_name="Neto"
+            ),
         ),
         migrations.AlterField(
-            model_name='saledelivery',
-            name='total_tax',
-            field=models.DecimalField(decimal_places=0, default=0, max_digits=14, verbose_name='Impuesto'),
+            model_name="saledelivery",
+            name="total_tax",
+            field=models.DecimalField(
+                decimal_places=0, default=0, max_digits=14, verbose_name="Impuesto"
+            ),
         ),
         migrations.AlterField(
-            model_name='saledelivery',
-            name='total',
-            field=models.DecimalField(decimal_places=0, default=0, max_digits=14, verbose_name='Total'),
+            model_name="saledelivery",
+            name="total",
+            field=models.DecimalField(
+                decimal_places=0, default=0, max_digits=14, verbose_name="Total"
+            ),
         ),
         # SaleReturn
         migrations.AlterField(
-            model_name='salereturn',
-            name='total_net',
-            field=models.DecimalField(decimal_places=0, default=0, max_digits=14, verbose_name='Neto'),
+            model_name="salereturn",
+            name="total_net",
+            field=models.DecimalField(
+                decimal_places=0, default=0, max_digits=14, verbose_name="Neto"
+            ),
         ),
         migrations.AlterField(
-            model_name='salereturn',
-            name='total_tax',
-            field=models.DecimalField(decimal_places=0, default=0, max_digits=14, verbose_name='Impuesto'),
+            model_name="salereturn",
+            name="total_tax",
+            field=models.DecimalField(
+                decimal_places=0, default=0, max_digits=14, verbose_name="Impuesto"
+            ),
         ),
         migrations.AlterField(
-            model_name='salereturn',
-            name='total',
-            field=models.DecimalField(decimal_places=0, default=0, max_digits=14, verbose_name='Total'),
+            model_name="salereturn",
+            name="total",
+            field=models.DecimalField(
+                decimal_places=0, default=0, max_digits=14, verbose_name="Total"
+            ),
         ),
     ]

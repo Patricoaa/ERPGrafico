@@ -7,7 +7,7 @@ import { useRouter, usePathname, useSearchParams } from "next/navigation"
 // deleteUoMCategory consumido vía useUoMs.
 import { ActionConfirmModal, DataTableColumnHeader, DataTableView, EntityCard } from '@/components/shared'
 import { DataCell } from '@/components/shared'
-import { ColumnDef } from "@tanstack/react-table"
+import { type ColumnDef } from "@tanstack/react-table"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Trash2 } from "lucide-react"
 import type { BulkAction } from "@/components/shared"

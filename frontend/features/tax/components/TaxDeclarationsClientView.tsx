@@ -20,11 +20,11 @@ import { F29PaymentModal } from "@/features/tax/components/F29PaymentModal"
 import { useSearchParams, useRouter, usePathname } from "next/navigation"
 import { useServerDate } from "@/hooks/useServerDate"
 import { DataTableColumnHeader, DataTableView, EntityCard, StatusBadge } from '@/components/shared'
-import { ColumnDef } from "@tanstack/react-table"
+import { type ColumnDef } from "@tanstack/react-table"
 import { taxDeclarationActions, type TaxDeclarationActionsCtx } from './taxDeclarationActions'
 import { cn } from "@/lib/utils"
 
-import { TaxPeriod, TaxDeclaration, TaxPaymentData } from "../types"
+import { type TaxPeriod, type TaxDeclaration, type TaxPaymentData } from "../types"
 import { useSelectedEntity } from "@/hooks/useSelectedEntity"
 import { type Row, type Table } from "@tanstack/react-table"
 import { SkeletonShell, SmartSearchBar, useClientSearch } from "@/components/shared"

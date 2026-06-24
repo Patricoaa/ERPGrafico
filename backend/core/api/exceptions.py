@@ -1,11 +1,14 @@
-from rest_framework.views import exception_handler
-from rest_framework.response import Response
-from rest_framework import status
-from core.exceptions import ERPGraficoError
-from django.conf import settings
 import logging
 
+from django.conf import settings
+from rest_framework import status
+from rest_framework.response import Response
+from rest_framework.views import exception_handler
+
+from core.exceptions import ERPGraficoError
+
 logger = logging.getLogger(__name__)
+
 
 def erpgrafico_exception_handler(exc, context):
     """
@@ -22,7 +25,7 @@ def erpgrafico_exception_handler(exc, context):
                 "message": exc.message,
                 "code": exc.code,
                 "details": exc.details,
-                "timestamp": exc.timestamp.isoformat()
+                "timestamp": exc.timestamp.isoformat(),
             }
         }
         return Response(data, status=exc.status_code)
@@ -32,7 +35,7 @@ def erpgrafico_exception_handler(exc, context):
         # We wrap them in our standard structure
         message = response.data.get("detail") or str(response.data)
         code = "API_ERROR"
-        
+
         if response.status_code == status.HTTP_401_UNAUTHORIZED:
             code = "UNAUTHORIZED"
         elif response.status_code == status.HTTP_403_FORBIDDEN:
@@ -45,20 +48,20 @@ def erpgrafico_exception_handler(exc, context):
                 "message": message,
                 "code": code,
                 "details": response.data,
-                "status_code": response.status_code
+                "status_code": response.status_code,
             }
         }
         print(f"DEBUG API ERROR RESPONSE: {response.data}")
     else:
         # Handle unexpected exceptions (500 Internal Server Error)
         logger.exception("Generando 500 error no controlado:")
-        
+
         data = {
             "error": {
                 "message": "Ocurrió un error inesperado en el servidor.",
                 "code": "INTERNAL_SERVER_ERROR",
                 "details": str(exc) if settings.DEBUG else {},
-                "status_code": 500
+                "status_code": 500,
             }
         }
         return Response(data, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

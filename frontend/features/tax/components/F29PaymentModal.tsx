@@ -17,7 +17,7 @@ import { cn, parseDateOnly } from "@/lib/utils"
 import { format } from "date-fns"
 import { es } from "date-fns/locale"
 import { PaymentModal } from "@/features/treasury"
-import { TaxDeclaration, TaxPaymentData } from "../types"
+import { type TaxDeclaration, type TaxPaymentData } from "../types"
 
 interface F29PaymentModalProps {
     isOpen: boolean

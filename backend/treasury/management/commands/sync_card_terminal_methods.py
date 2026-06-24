@@ -21,22 +21,22 @@ class Command(BaseCommand):
 
     def add_arguments(self, parser):
         parser.add_argument(
-            '--dry-run',
-            action='store_true',
-            help='Muestra qué se crearía sin escribir nada en DB.',
+            "--dry-run",
+            action="store_true",
+            help="Muestra qué se crearía sin escribir nada en DB.",
         )
 
     @transaction.atomic
     def handle(self, *args, **options):
-        from treasury.models import POSTerminal, PaymentMethod
+        from treasury.models import PaymentMethod, POSTerminal
 
-        dry_run = options['dry_run']
+        dry_run = options["dry_run"]
 
         terminals = POSTerminal.objects.filter(
             payment_terminal_device__isnull=False,
             is_active=True,
         ).select_related(
-            'payment_terminal_device__provider__bank_treasury_account',
+            "payment_terminal_device__provider__bank_treasury_account",
         )
 
         created_count = 0
@@ -82,7 +82,7 @@ class Command(BaseCommand):
                 continue
 
             # Crear método CARD_TERMINAL
-            method_name = f'Tarjeta — {device.name}'
+            method_name = f"Tarjeta — {device.name}"
             if dry_run:
                 self.stdout.write(
                     self.style.SUCCESS(
@@ -111,9 +111,7 @@ class Command(BaseCommand):
                 )
                 created_count += 1
             except Exception as exc:
-                self.stdout.write(
-                    self.style.ERROR(f"  ERROR {terminal.code}: {exc}")
-                )
+                self.stdout.write(self.style.ERROR(f"  ERROR {terminal.code}: {exc}"))
                 error_count += 1
 
         self.stdout.write("")

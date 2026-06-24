@@ -4,49 +4,64 @@ from django.db import migrations, models
 
 
 def backfill_statement_periods(apps, schema_editor):
-    BankStatement = apps.get_model('treasury', 'BankStatement')
-    from django.db.models import Min, Max
-    
+    BankStatement = apps.get_model("treasury", "BankStatement")
+    from django.db.models import Max, Min
+
     for statement in BankStatement.objects.all():
         lines_agg = statement.lines.aggregate(
-            min_date=Min('transaction_date'),
-            max_date=Max('transaction_date')
+            min_date=Min("transaction_date"), max_date=Max("transaction_date")
         )
         BankStatement.objects.filter(id=statement.id).update(
-            period_start=lines_agg['min_date'] or statement.statement_date,
-            period_end=lines_agg['max_date'] or statement.statement_date
+            period_start=lines_agg["min_date"] or statement.statement_date,
+            period_end=lines_agg["max_date"] or statement.statement_date,
         )
+
 
 def reverse_backfill(apps, schema_editor):
     pass
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('treasury', '0024_bankstatementline_uniq_stmt_txnid'),
+        ("treasury", "0024_bankstatementline_uniq_stmt_txnid"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='bankstatement',
-            name='period_end',
-            field=models.DateField(help_text='Fecha de la transacción más reciente incluida', null=True, verbose_name='Fin del Periodo'),
+            model_name="bankstatement",
+            name="period_end",
+            field=models.DateField(
+                help_text="Fecha de la transacción más reciente incluida",
+                null=True,
+                verbose_name="Fin del Periodo",
+            ),
         ),
         migrations.AddField(
-            model_name='bankstatement',
-            name='period_start',
-            field=models.DateField(help_text='Fecha de la transacción más antigua incluida', null=True, verbose_name='Inicio del Periodo'),
+            model_name="bankstatement",
+            name="period_start",
+            field=models.DateField(
+                help_text="Fecha de la transacción más antigua incluida",
+                null=True,
+                verbose_name="Inicio del Periodo",
+            ),
         ),
         migrations.AddField(
-            model_name='historicalbankstatement',
-            name='period_end',
-            field=models.DateField(help_text='Fecha de la transacción más reciente incluida', null=True, verbose_name='Fin del Periodo'),
+            model_name="historicalbankstatement",
+            name="period_end",
+            field=models.DateField(
+                help_text="Fecha de la transacción más reciente incluida",
+                null=True,
+                verbose_name="Fin del Periodo",
+            ),
         ),
         migrations.AddField(
-            model_name='historicalbankstatement',
-            name='period_start',
-            field=models.DateField(help_text='Fecha de la transacción más antigua incluida', null=True, verbose_name='Inicio del Periodo'),
+            model_name="historicalbankstatement",
+            name="period_start",
+            field=models.DateField(
+                help_text="Fecha de la transacción más antigua incluida",
+                null=True,
+                verbose_name="Inicio del Periodo",
+            ),
         ),
         migrations.RunPython(backfill_statement_periods, reverse_backfill),
     ]

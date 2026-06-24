@@ -11,7 +11,7 @@ import { BaseModal, DataTableView, EntityCard } from '@/components/shared'
 import { DataTableColumnHeader } from '@/components/shared'
 import { DataCell } from '@/components/shared'
 import { attributeActions, type AttributeActionsCtx } from './attributeActions'
-import { ColumnDef } from "@tanstack/react-table"
+import { type ColumnDef } from "@tanstack/react-table"
 import { Checkbox } from "@/components/ui/checkbox"
 import type { BulkAction } from "@/components/shared"
 import { ActivitySidebar } from "@/features/audit/components/ActivitySidebar"

@@ -8,13 +8,13 @@ import { toast } from "sonner"
 import { useState, useEffect, useCallback } from "react"
 import dynamic from "next/dynamic"
 import Link from "next/link"
-import { useNotifications, NotificationPayload } from "@/features/notifications/hooks/useNotifications"
+import { useNotifications, type NotificationPayload } from "@/features/notifications/hooks/useNotifications"
 import {
     getNotifications,
     getUnreadNotificationCount,
     markNotificationRead,
     markAllNotificationsRead,
-    Notification,
+    type Notification,
     getTasks
 } from '@/features/workflow/api/workflowApi'
 import { PermissionGuard } from "@/components/auth/PermissionGuard"

@@ -15,4 +15,5 @@ class HeavyReportThrottle(UserRateThrottle):
 
     Rate is defined in settings.REST_FRAMEWORK['DEFAULT_THROTTLE_RATES']['heavy_report'].
     """
-    scope = 'heavy_report'
+
+    scope = "heavy_report"

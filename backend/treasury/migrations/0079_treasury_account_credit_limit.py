@@ -4,20 +4,33 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('treasury', '0078_standardize_is_active_archive_flag'),
+        ("treasury", "0078_standardize_is_active_archive_flag"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='historicaltreasuryaccount',
-            name='credit_limit',
-            field=models.DecimalField(blank=True, decimal_places=2, help_text='Límite de crédito total otorgado por el banco para esta tarjeta.', max_digits=18, null=True, verbose_name='Cupo Total'),
+            model_name="historicaltreasuryaccount",
+            name="credit_limit",
+            field=models.DecimalField(
+                blank=True,
+                decimal_places=2,
+                help_text="Límite de crédito total otorgado por el banco para esta tarjeta.",
+                max_digits=18,
+                null=True,
+                verbose_name="Cupo Total",
+            ),
         ),
         migrations.AddField(
-            model_name='treasuryaccount',
-            name='credit_limit',
-            field=models.DecimalField(blank=True, decimal_places=2, help_text='Límite de crédito total otorgado por el banco para esta tarjeta.', max_digits=18, null=True, verbose_name='Cupo Total'),
+            model_name="treasuryaccount",
+            name="credit_limit",
+            field=models.DecimalField(
+                blank=True,
+                decimal_places=2,
+                help_text="Límite de crédito total otorgado por el banco para esta tarjeta.",
+                max_digits=18,
+                null=True,
+                verbose_name="Cupo Total",
+            ),
         ),
     ]

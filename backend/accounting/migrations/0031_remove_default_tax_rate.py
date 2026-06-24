@@ -6,14 +6,13 @@ from django.db import migrations
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('accounting', '0030_remove_obsolete_settings_fields'),
+        ("accounting", "0030_remove_obsolete_settings_fields"),
     ]
 
     operations = [
         migrations.RemoveField(
-            model_name='accountingsettings',
-            name='default_tax_rate',
+            model_name="accountingsettings",
+            name="default_tax_rate",
         ),
     ]

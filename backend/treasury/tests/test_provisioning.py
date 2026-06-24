@@ -5,6 +5,7 @@ Cubre: provisión CHECKING con tenders seleccionados, CASH con tender fijo,
 defaults de uso (débito → solo compras), flags allows_* derivados, y rollback
 atómico cuando la cuenta no pasa validación.
 """
+
 import pytest
 from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError

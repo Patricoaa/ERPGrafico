@@ -15,7 +15,7 @@ import {
     SelectTrigger, 
     SelectValue 
 } from "@/components/ui/select";
-import { BudgetVarianceTable, BudgetVarianceNode } from "./BudgetVarianceTable";
+import { BudgetVarianceTable, type BudgetVarianceNode } from "./BudgetVarianceTable";
 import { EmptyState, MoneyDisplay, PageHeader, StatCard } from '@/components/shared';
 import { useBudgets, useBudgetVariance } from "../hooks/useBudgets";
 const MONTH_NAMES = [

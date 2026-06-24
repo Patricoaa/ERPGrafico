@@ -1,4 +1,4 @@
-import { Metadata } from "next"
+import { type Metadata } from "next"
 import { PageSectionHeader } from "@/components/shared"
 import { POSSessionsClientView } from "@/features/sales"
 

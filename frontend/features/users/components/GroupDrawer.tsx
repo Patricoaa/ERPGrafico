@@ -22,7 +22,7 @@ import { Printer } from "lucide-react"
 import { useReactToPrint } from "react-to-print"
 import { PrintableLayout } from "@/features/_shared/transaction-drawer"
 import type { DrawerMode } from "@/features/_shared/drawer/types"
-import { AppGroup } from "@/types/entities"
+import { type AppGroup } from "@/types/entities"
 import { formDrawerWidth } from "@/lib/form-widths"
 
 const formSchema = z.object({

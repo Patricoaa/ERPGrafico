@@ -4,15 +4,14 @@ from django.db import migrations
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('workflow', '0004_comment'),
+        ("workflow", "0004_comment"),
     ]
 
     operations = [
         migrations.RenameIndex(
-            model_name='comment',
-            new_name='workflow_co_content_c512dc_idx',
-            old_name='workflow_co_content_idx',
+            model_name="comment",
+            new_name="workflow_co_content_c512dc_idx",
+            old_name="workflow_co_content_idx",
         ),
     ]

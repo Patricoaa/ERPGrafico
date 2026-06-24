@@ -4,20 +4,43 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('treasury', '0081_add_payment_method_types_check_debit_credit_card_terminal'),
+        ("treasury", "0081_add_payment_method_types_check_debit_credit_card_terminal"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='historicalpaymentmethod',
-            name='method_type',
-            field=models.CharField(choices=[('CASH', 'Efectivo Directo'), ('CARD', 'Tarjeta (Manual)'), ('DEBIT_CARD', 'Tarjeta Débito Empresa'), ('CREDIT_CARD', 'Tarjeta Crédito Empresa'), ('CARD_TERMINAL', 'Tarjeta (Terminal de cobro)'), ('TRANSFER', 'Transferencia Bancaria'), ('CHECK', 'Cheque')], max_length=20, verbose_name='Tipo de Método'),
+            model_name="historicalpaymentmethod",
+            name="method_type",
+            field=models.CharField(
+                choices=[
+                    ("CASH", "Efectivo Directo"),
+                    ("CARD", "Tarjeta (Manual)"),
+                    ("DEBIT_CARD", "Tarjeta Débito Empresa"),
+                    ("CREDIT_CARD", "Tarjeta Crédito Empresa"),
+                    ("CARD_TERMINAL", "Tarjeta (Terminal de cobro)"),
+                    ("TRANSFER", "Transferencia Bancaria"),
+                    ("CHECK", "Cheque"),
+                ],
+                max_length=20,
+                verbose_name="Tipo de Método",
+            ),
         ),
         migrations.AlterField(
-            model_name='paymentmethod',
-            name='method_type',
-            field=models.CharField(choices=[('CASH', 'Efectivo Directo'), ('CARD', 'Tarjeta (Manual)'), ('DEBIT_CARD', 'Tarjeta Débito Empresa'), ('CREDIT_CARD', 'Tarjeta Crédito Empresa'), ('CARD_TERMINAL', 'Tarjeta (Terminal de cobro)'), ('TRANSFER', 'Transferencia Bancaria'), ('CHECK', 'Cheque')], max_length=20, verbose_name='Tipo de Método'),
+            model_name="paymentmethod",
+            name="method_type",
+            field=models.CharField(
+                choices=[
+                    ("CASH", "Efectivo Directo"),
+                    ("CARD", "Tarjeta (Manual)"),
+                    ("DEBIT_CARD", "Tarjeta Débito Empresa"),
+                    ("CREDIT_CARD", "Tarjeta Crédito Empresa"),
+                    ("CARD_TERMINAL", "Tarjeta (Terminal de cobro)"),
+                    ("TRANSFER", "Transferencia Bancaria"),
+                    ("CHECK", "Cheque"),
+                ],
+                max_length=20,
+                verbose_name="Tipo de Método",
+            ),
         ),
     ]

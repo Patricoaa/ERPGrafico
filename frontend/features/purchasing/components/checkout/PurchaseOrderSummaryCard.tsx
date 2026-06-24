@@ -6,7 +6,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip
 import { ShoppingBag } from "lucide-react"
 import { formatCurrency } from "@/lib/money"
 import { PricingUtils } from '@/features/inventory/utils/pricing'
-import { CheckoutLine } from "../../types"
+import { type CheckoutLine } from "../../types"
 
 interface PurchaseOrderSummaryCardProps {
     orderLines: CheckoutLine[]

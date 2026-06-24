@@ -16,7 +16,7 @@ import { statementLineUnmatchActions, BankPageHeader, type StatementLineUnmatchA
 import { format } from "date-fns"
 import { es } from "date-fns/locale"
 import api from "@/lib/api"
-import { ColumnDef } from "@tanstack/react-table"
+import { type ColumnDef } from "@tanstack/react-table"
 import { Progress } from "@/components/ui/progress"
 import { useConfirmAction } from "@/hooks/useConfirmAction"
 import { toast } from "sonner"

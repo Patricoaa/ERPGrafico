@@ -21,8 +21,8 @@ import { Alert, AlertDescription } from "@/components/ui/alert"
 import { settingsApi } from "../../hooks"
 import { partnersApi } from "@/features/contacts/api/partnersApi"
 import { cn } from "@/lib/utils"
-import { Partner } from "@/features/contacts/types/partner"
-import { Product } from "@/features/inventory/types"
+import { type Partner } from "@/features/contacts/types/partner"
+import { type Product } from "@/features/inventory/types"
 
 interface InventoryContributionModalProps {
     open: boolean

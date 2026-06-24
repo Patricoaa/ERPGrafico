@@ -18,10 +18,11 @@ Wire protocol (server → client):
 The user-scoped group `entity.user.<id>` is joined automatically on connect,
 so a feature does NOT need to subscribe to it explicitly to get cross-tab sync.
 """
+
 import json
 import re
-from channels.generic.websocket import AsyncJsonWebsocketConsumer
 
+from channels.generic.websocket import AsyncJsonWebsocketConsumer
 
 # Matches `<app>.<model>` or `<app>.<model>.<int_id>` with lowercase identifiers.
 _TOPIC_RE = re.compile(r"^[a-z][a-z0-9_]*\.[a-z][a-z0-9_]*(\.[0-9]+)?$")

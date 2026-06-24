@@ -9,7 +9,7 @@ import {
     DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { FiscalYear, AccountingPeriod } from '../../types';
+import { type FiscalYear, type AccountingPeriod } from '../../types';
 import { CalendarRange, Lock, MoreVertical, PlayCircle, Settings2, ShieldAlert } from 'lucide-react';
 import { PeriodGridItem } from './PeriodGridItem';
 ;

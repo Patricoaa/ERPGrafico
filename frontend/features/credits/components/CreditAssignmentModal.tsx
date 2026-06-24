@@ -17,9 +17,9 @@ import {
 import { ActionSlideButton, BaseModal, CancelButton, FormFooter, LabeledInput, MoneyDisplay } from '@/components/shared'
 
 import { useContactMutations } from "@/features/contacts/hooks/useContacts"
-import { CreditContact } from '@/features/credits/api/creditsApi'
+import { type CreditContact } from '@/features/credits/api/creditsApi'
 import { AdvancedContactSelector } from "@/components/selectors"
-import { Contact } from "@/types/entities"
+import { type Contact } from "@/types/entities"
 
 const creditSchema = z.object({
     credit_limit: z.coerce.number().min(0, "El límite debe ser mayor o igual a 0").nullable(),

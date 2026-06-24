@@ -1,7 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '@/lib/api';
 import { toast } from 'sonner';
-import { AccountingPeriod } from '../types';
+import { type AccountingPeriod } from '../types';
 import { showApiError } from '@/lib/errors';
 
 import { ACCOUNTING_PERIODS_QUERY_KEY } from './queryKeys'

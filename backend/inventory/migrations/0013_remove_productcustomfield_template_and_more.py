@@ -4,28 +4,27 @@ from django.db import migrations
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('inventory', '0012_remove_historicalproduct_expense_account_and_more'),
+        ("inventory", "0012_remove_historicalproduct_expense_account_and_more"),
     ]
 
     operations = [
         migrations.AlterUniqueTogether(
-            name='productcustomfield',
+            name="productcustomfield",
             unique_together=None,
         ),
         migrations.RemoveField(
-            model_name='productcustomfield',
-            name='product',
+            model_name="productcustomfield",
+            name="product",
         ),
         migrations.RemoveField(
-            model_name='productcustomfield',
-            name='template',
+            model_name="productcustomfield",
+            name="template",
         ),
         migrations.DeleteModel(
-            name='CustomFieldTemplate',
+            name="CustomFieldTemplate",
         ),
         migrations.DeleteModel(
-            name='ProductCustomField',
+            name="ProductCustomField",
         ),
     ]

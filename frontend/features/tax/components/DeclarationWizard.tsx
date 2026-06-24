@@ -3,7 +3,7 @@
 import { useState, useEffect, useMemo } from "react"
 import { Button } from "@/components/ui/button"
 
-import { BaseModal, FormSection, GenericWizard, LabeledInput, MoneyDisplay, WizardStep } from '@/components/shared'
+import { BaseModal, FormSection, GenericWizard, LabeledInput, MoneyDisplay, type WizardStep } from '@/components/shared'
 import {
     Calculator,
     CheckCircle2,
@@ -19,7 +19,7 @@ import { cn } from "@/lib/utils"
 import { useVatRate } from '@/hooks/useVatRate'
 import { useServerDate } from "@/hooks/useServerDate"
 
-import { TaxPeriod, TaxCalculationData } from "../types"
+import { type TaxPeriod, type TaxCalculationData } from "../types"
 import { useHubPanel } from "@/components/providers/HubPanelProvider"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 

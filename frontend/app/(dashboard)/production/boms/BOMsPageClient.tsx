@@ -3,7 +3,7 @@ import { formatCurrency } from "@/lib/money"
 
 import React, { useEffect, useState } from "react"
 import { useSearchParams, useRouter } from "next/navigation"
-import { ColumnDef } from "@tanstack/react-table"
+import { type ColumnDef } from "@tanstack/react-table"
 import { ActionConfirmModal, DataTableColumnHeader, DataTableView, EntityCard, StatusBadge, Chip } from '@/components/shared'
 import { DataCell } from '@/components/shared'
 import { Layers } from "lucide-react"

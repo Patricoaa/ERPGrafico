@@ -21,14 +21,14 @@ Child entities (lines of a transactional document) do not get their own topic â€
 they broadcast `op="updated"` for the parent so listeners on the parent list /
 detail invalidate. Register them in `PARENT_BROADCASTS`.
 """
-from django.apps import apps
-from django.db.models.signals import post_save, post_delete
-from django.utils import timezone
+
 from asgiref.sync import async_to_sync
 from channels.layers import get_channel_layer
+from django.apps import apps
+from django.db.models.signals import post_delete, post_save
+from django.utils import timezone
 
 from .middleware import get_current_user_id
-
 
 # (app_label, model_name) â€” lowercase, matches Django `Model._meta.app_label` / `model_name`.
 ALLOWLIST: set[tuple[str, str]] = {

@@ -4,7 +4,7 @@ import { Separator } from "@/components/ui/separator"
 import {CheckCircle2, FileText, Package, AlertCircle} from "lucide-react"
 import { cn } from "@/lib/utils"
 import {DataCell, DocumentAttachmentDropzone, EmptyState, FolioValidationInput, LabeledContainer, PeriodValidationDateInput} from '@/components/shared'
-import { PaymentMethodCardSelector, PaymentData } from "@/features/treasury/components/PaymentMethodCardSelector"
+import { PaymentMethodCardSelector, type PaymentData } from "@/features/treasury/components/PaymentMethodCardSelector"
 
 // --- STEP 1: General Information ---
 

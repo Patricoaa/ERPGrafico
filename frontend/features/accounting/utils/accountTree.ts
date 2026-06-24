@@ -1,4 +1,4 @@
-import { Account } from "../types"
+import { type Account } from "../types"
 
 interface AccountWithChildren extends Account {
     children?: AccountWithChildren[]

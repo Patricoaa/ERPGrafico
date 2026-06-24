@@ -1,4 +1,4 @@
-import { Metadata } from "next"
+import { type Metadata } from "next"
 import { PageContainer } from "@/components/shared"
 import { PurchasingHeader } from "./PurchasingHeader"
 

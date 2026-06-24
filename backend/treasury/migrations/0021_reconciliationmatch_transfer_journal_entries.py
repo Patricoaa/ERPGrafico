@@ -4,16 +4,20 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('accounting', '0008_add_tax_withholding_account'),
-        ('treasury', '0020_rule_success_rate_refactor'),
+        ("accounting", "0008_add_tax_withholding_account"),
+        ("treasury", "0020_rule_success_rate_refactor"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='reconciliationmatch',
-            name='transfer_journal_entries',
-            field=models.ManyToManyField(blank=True, related_name='reconciliation_matches_transfers', to='accounting.journalentry', verbose_name='Asientos de Transferencia'),
+            model_name="reconciliationmatch",
+            name="transfer_journal_entries",
+            field=models.ManyToManyField(
+                blank=True,
+                related_name="reconciliation_matches_transfers",
+                to="accounting.journalentry",
+                verbose_name="Asientos de Transferencia",
+            ),
         ),
     ]

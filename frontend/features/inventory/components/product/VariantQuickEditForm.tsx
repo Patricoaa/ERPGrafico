@@ -2,8 +2,8 @@
 
 import { useState, useEffect } from "react"
 import { createPortal } from "react-dom"
-import { Product } from "@/types/entities"
-import { useForm, UseFormReturn } from "react-hook-form"
+import { type Product } from "@/types/entities"
+import { useForm, type UseFormReturn } from "react-hook-form"
 import { z } from "zod"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { Form, FormField } from "@/components/ui/form"

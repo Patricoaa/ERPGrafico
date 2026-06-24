@@ -1,6 +1,6 @@
 "use client"
 
-import { ReactNode } from "react"
+import { type ReactNode } from "react"
 import { Checkbox } from "@/components/ui/checkbox"
 import { LabeledContainer } from "./LabeledContainer"
 import { cn } from "@/lib/utils"

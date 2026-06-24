@@ -2,13 +2,13 @@
 
 import { showApiError } from "@/lib/errors"
 import React, { useState, useEffect, useMemo } from "react"
-import { LabeledInput, LabeledSelect, PeriodValidationDateInput, GenericWizard, WizardStep, DataCell } from "@/components/shared"
+import { LabeledInput, LabeledSelect, PeriodValidationDateInput, GenericWizard, type WizardStep, DataCell } from "@/components/shared"
 import { Input } from "@/components/ui/input"
 import { Card } from "@/components/ui/card"
 import { partnersApi } from "@/features/contacts/api/partnersApi"
-import { ProfitDistribution, ProfitDistributionLine } from "@/features/contacts/types/partner"
+import { type ProfitDistribution, type ProfitDistributionLine } from "@/features/contacts/types/partner"
 import { accountingApi } from "@/features/accounting/api/accountingApi"
-import { FiscalYear } from "@/features/accounting/types"
+import { type FiscalYear } from "@/features/accounting/types"
 import { toast } from "sonner"
 
 import {

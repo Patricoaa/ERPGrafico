@@ -5,7 +5,7 @@ import { useEffect, useState, useMemo } from "react"
 import { useRouter, usePathname, useSearchParams } from "next/navigation"
 import {ActionConfirmModal, DataCell, DataTableColumnHeader, DataTableView} from '@/components/shared'
 import { warehouseActions, type WarehouseActionsCtx } from "@/features/inventory/warehouseActions"
-import { ColumnDef } from "@tanstack/react-table"
+import { type ColumnDef } from "@tanstack/react-table"
 import { Checkbox } from "@/components/ui/checkbox"
 import { WarehouseDrawer } from "./WarehouseDrawer"
 import { Trash2 } from "lucide-react"

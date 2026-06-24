@@ -1,7 +1,7 @@
 "use client"
 
 import React from "react"
-import { BaseModal, BaseModalProps } from "./BaseModal"
+import { BaseModal, type BaseModalProps } from "./BaseModal"
 import { ActionSlideButton } from "./ActionSlideButton"
 import { Button } from "@/components/ui/button"
 import { ChevronLeft, ChevronRight, CheckCircle2 } from "lucide-react"

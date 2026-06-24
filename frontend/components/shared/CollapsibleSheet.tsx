@@ -4,7 +4,7 @@ import React, { useEffect, useState } from "react"
 import { Sheet, SheetContent, SheetTitle, SheetDescription } from "@/components/ui/sheet"
 import { cn } from "@/lib/utils"
 import { useGlobalModals } from "@/components/providers/GlobalModalProvider"
-import { LucideIcon } from "lucide-react"
+import { type LucideIcon } from "lucide-react"
 
 interface CollapsibleSheetProps {
     children: React.ReactNode

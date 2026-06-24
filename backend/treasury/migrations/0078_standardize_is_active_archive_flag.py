@@ -4,30 +4,39 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('treasury', '0077_treasury_movement_status'),
+        ("treasury", "0077_treasury_movement_status"),
     ]
 
     operations = [
         migrations.RenameIndex(
-            model_name='cardpendingcharge',
-            new_name='treasury_ca_card_ac_83e928_idx',
-            old_name='treasury_ca_card_a_5f2c88_idx',
+            model_name="cardpendingcharge",
+            new_name="treasury_ca_card_ac_83e928_idx",
+            old_name="treasury_ca_card_a_5f2c88_idx",
         ),
         migrations.RenameIndex(
-            model_name='cardpendingcharge',
-            new_name='treasury_ca_card_ac_7685b6_idx',
-            old_name='treasury_ca_card_a_5b18d9_idx',
+            model_name="cardpendingcharge",
+            new_name="treasury_ca_card_ac_7685b6_idx",
+            old_name="treasury_ca_card_a_5b18d9_idx",
         ),
         migrations.AddField(
-            model_name='historicaltreasuryaccount',
-            name='is_active',
-            field=models.BooleanField(db_index=True, default=True, help_text='Desactivar para archivar la cuenta (cerrada); los movimientos históricos la siguen referenciando.', verbose_name='Activa'),
+            model_name="historicaltreasuryaccount",
+            name="is_active",
+            field=models.BooleanField(
+                db_index=True,
+                default=True,
+                help_text="Desactivar para archivar la cuenta (cerrada); los movimientos históricos la siguen referenciando.",
+                verbose_name="Activa",
+            ),
         ),
         migrations.AddField(
-            model_name='treasuryaccount',
-            name='is_active',
-            field=models.BooleanField(db_index=True, default=True, help_text='Desactivar para archivar la cuenta (cerrada); los movimientos históricos la siguen referenciando.', verbose_name='Activa'),
+            model_name="treasuryaccount",
+            name="is_active",
+            field=models.BooleanField(
+                db_index=True,
+                default=True,
+                help_text="Desactivar para archivar la cuenta (cerrada); los movimientos históricos la siguen referenciando.",
+                verbose_name="Activa",
+            ),
         ),
     ]

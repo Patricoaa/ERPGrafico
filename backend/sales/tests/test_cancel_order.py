@@ -1,34 +1,36 @@
 """
 Tests para SalesService.cancel_sale_order.
 """
-import pytest
+
 from decimal import Decimal
-from django.core.exceptions import ValidationError
+
+import pytest
 from django.contrib.auth import get_user_model
 
+from contacts.models import Contact
 from sales.models import SaleOrder
 from sales.services import SalesService
-from contacts.models import Contact
 
 User = get_user_model()
 
 
 @pytest.fixture
 def env(db):
-    user = User.objects.create_user(username='cancelsale', password='x')
+    user = User.objects.create_user(username="cancelsale", password="x")
     customer = Contact.objects.create(
-        name='Cliente Venta', tax_id='22222222-2',
+        name="Cliente Venta",
+        tax_id="22222222-2",
     )
-    return {'user': user, 'customer': customer}
+    return {"user": user, "customer": customer}
 
 
 def _orden(env, **overrides):
     kwargs = dict(
-        customer=env['customer'],
-        number='TEST-SO-001',
-        total=Decimal('100000'),
-        total_net=Decimal('84034'),
-        total_tax=Decimal('15966'),
+        customer=env["customer"],
+        number="TEST-SO-001",
+        total=Decimal("100000"),
+        total_net=Decimal("84034"),
+        total_tax=Decimal("15966"),
     )
     kwargs.update(overrides)
     return SaleOrder.objects.create(**kwargs)

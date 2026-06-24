@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/popover"
 import { useWarehouses } from "@/features/inventory/hooks/useWarehouses"
 import { EmptyState } from '@/components/shared'
-import { Warehouse } from "@/types/entities"
+import { type Warehouse } from "@/types/entities"
 
 interface WarehouseSelectorProps {
     value?: string | number | null

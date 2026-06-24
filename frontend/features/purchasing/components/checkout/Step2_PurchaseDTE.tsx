@@ -9,7 +9,7 @@ import { cn } from "@/lib/utils"
 
 import { DocumentAttachmentDropzone, FolioValidationInput, PeriodValidationDateInput } from '@/components/shared'
 
-import { DTEData } from "../../types"
+import { type DTEData } from "../../types"
 
 interface Step2_PurchaseDTEProps {
     dteData: DTEData

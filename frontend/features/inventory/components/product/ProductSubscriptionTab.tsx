@@ -2,8 +2,8 @@
 
 import { FormField } from "@/components/ui/form"
 import {LabeledInput, LabeledSelect, PeriodValidationDateInput, FormSection, LabeledSwitch} from "@/components/shared"
-import { UseFormReturn } from "react-hook-form"
-import { ProductFormValues } from "./schema"
+import { type UseFormReturn } from "react-hook-form"
+import { type ProductFormValues } from "./schema"
 import {CalendarClock, DollarSign, Calendar, Wallet} from "lucide-react"
 import { AdvancedContactSelector } from "@/components/selectors/AdvancedContactSelector"
 import { AccountSelector } from "@/components/selectors/AccountSelector"

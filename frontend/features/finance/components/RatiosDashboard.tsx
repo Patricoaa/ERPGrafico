@@ -5,7 +5,7 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/com
 import { EmptyState, MoneyDisplay, PageContainer, PieChart, BarChart, LineChart, SkeletonShell, StatCard } from '@/components/shared'
 import { formatMoney } from "@/lib/money"
 import { useAnalysis } from "../hooks/useAnalysis";
-import { DateRange } from "react-day-picker";
+import { type DateRange } from "react-day-picker";
 import { format } from "date-fns";
 ;
 

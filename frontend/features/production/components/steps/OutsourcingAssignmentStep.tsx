@@ -10,7 +10,7 @@ import { useHubPanel } from '@/components/providers/HubPanelProvider'
 import { useWorkOrderMutations, productionApi } from '../../hooks'
 import { useState } from 'react'
 import { useVatRate } from '@/hooks/useVatRate'
-import { OutsourcedServiceForm, OutsourcedServiceValues, emptyOutsourcedService } from '../shared/OutsourcedServiceForm'
+import { OutsourcedServiceForm, type OutsourcedServiceValues, emptyOutsourcedService } from '../shared/OutsourcedServiceForm'
 import type { WorkOrder, WorkOrderMaterial, UoM } from '../../types'
 
 interface OutsourcingAssignmentStepProps {

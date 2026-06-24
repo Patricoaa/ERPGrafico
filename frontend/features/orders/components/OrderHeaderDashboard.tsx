@@ -8,8 +8,8 @@ import { cn } from "@/lib/utils"
 import { TrendingUp, Package, FileText, Banknote, ClipboardList } from "lucide-react"
 import { StatCard } from "@/components/shared"
 
-import { Order } from "../types"
-import { LucideIcon } from "lucide-react"
+import { type Order } from "../types"
+import { type LucideIcon } from "lucide-react"
 
 interface OrderHeaderDashboardProps {
     order: Partial<Order> | null

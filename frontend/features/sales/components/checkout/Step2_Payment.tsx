@@ -1,7 +1,7 @@
 "use client"
 
-import { PaymentMethodCardSelector, PaymentData } from "@/features/treasury/components/PaymentMethodCardSelector"
-import { CheckoutPaymentData } from "../../types"
+import { PaymentMethodCardSelector, type PaymentData } from "@/features/treasury/components/PaymentMethodCardSelector"
+import { type CheckoutPaymentData } from "../../types"
 import { FormSection } from '@/components/shared'
 import { Wallet } from "lucide-react"
 

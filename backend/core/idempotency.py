@@ -102,9 +102,7 @@ def idempotent_endpoint(scope: str):
     return decorator
 
 
-def _get_or_create_record(
-    *, key: str, scope: str, body_hash: str, user
-) -> IdempotencyRecord:
+def _get_or_create_record(*, key: str, scope: str, body_hash: str, user) -> IdempotencyRecord:
     """
     INSERT idempotente bajo unique_together(key, scope). Race-safe: si dos
     requests entran simultáneamente, una crea y la otra lo encuentra en el

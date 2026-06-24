@@ -8,14 +8,14 @@ import {
     unblockContact,
     recoverDebt
 } from '@/features/credits/api/creditsApi'
-import { CreditContact, CreditLedgerEntry } from '@/features/credits/api/creditsApi'
+import { type CreditContact, type CreditLedgerEntry } from '@/features/credits/api/creditsApi'
 import {SmartSearchBar, useClientSearch, useSegmentation, SegmentationBar} from '@/components/shared'
 import { creditContactSearchDef } from "../searchDef"
 import { creditContactSegDef } from "../segmentationDef"
 import { useBlacklistedPortfolio } from "../hooks/useCredits"
 
 import { DataTable } from '@/components/shared'
-import { ColumnDef } from "@tanstack/react-table"
+import { type ColumnDef } from "@tanstack/react-table"
 import { DataTableColumnHeader } from '@/components/shared'
 
 import { Button } from "@/components/ui/button"

@@ -2,9 +2,9 @@
 
 import * as React from "react"
 import {
-    ColumnDef,
-    SortingState,
-    VisibilityState,
+    type ColumnDef,
+    type SortingState,
+    type VisibilityState,
     flexRender,
     getCoreRowModel,
     getFilteredRowModel,
@@ -14,9 +14,9 @@ import {
     getFacetedRowModel,
     useReactTable,
     getExpandedRowModel,
-    Row,
-    RowSelectionState,
-    Table as ReactTable,
+    type Row,
+    type RowSelectionState,
+    type Table as ReactTable,
 } from "@tanstack/react-table"
 
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter } from "@/components/ui/table"
@@ -25,7 +25,7 @@ import { cn } from "@/lib/utils"
 
 import { motion, AnimatePresence } from "framer-motion"
 import { Skeleton } from "@/components/ui/skeleton"
-import { LucideIcon } from "lucide-react"
+import { type LucideIcon } from "lucide-react"
 import { ScrollArea } from "@/components/ui/scroll-area"
 
 import { BulkActionButtons, BulkActionDock, DataTablePagination, DataTableToolbar, EmptyState, SkeletonShell, StatCard, type BulkAction, type AnalyticsPanelConfig } from '@/components/shared'

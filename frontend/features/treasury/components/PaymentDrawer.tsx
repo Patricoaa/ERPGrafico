@@ -3,7 +3,7 @@
 import { showApiError } from "@/lib/errors"
 import { useState, useEffect, useMemo, useRef } from "react"
 import { useForm, useWatch } from "react-hook-form"
-import { PaymentInitialData } from "@/types/forms"
+import { type PaymentInitialData } from "@/types/forms"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
 import {

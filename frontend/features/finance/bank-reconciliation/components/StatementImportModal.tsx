@@ -8,14 +8,14 @@ import { getErrorMessage } from "@/lib/errors"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { LabeledSelect, GenericWizard, WizardStep, FormSection, DocumentAttachmentDropzone, LabeledInput } from "@/components/shared"
+import { LabeledSelect, GenericWizard, type WizardStep, FormSection, DocumentAttachmentDropzone, LabeledInput } from "@/components/shared"
 import { TreasuryAccountSelector } from "@/components/selectors/TreasuryAccountSelector"
 import {FileUp, Columns, Table as TableIcon, CheckCircle2, FileSearch, Landmark, SlidersHorizontal} from "lucide-react"
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 import { financeApi } from "../../api/financeApi"
 import { cn } from "@/lib/utils"
 import { Chip } from "@/components/shared"
-import ImportPreviewStep, { DryRunResult } from "./ImportPreviewStep"
+import ImportPreviewStep, { type DryRunResult } from "./ImportPreviewStep"
 
 const importSchema = z.object({
     treasury_account_id: z.string().min(1, "Debes seleccionar una cuenta"),

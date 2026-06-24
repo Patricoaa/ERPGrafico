@@ -2,12 +2,12 @@
 
 import { Button } from "@/components/ui/button"
 import { Chip } from "@/components/shared"
-import { Action } from "@/types/actions"
+import { type Action } from "@/types/actions"
 import { getActionBadgeCount } from '@/lib/action-utils'
 import { cn } from "@/lib/utils"
 
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
-import { Order } from "../types"
+import { type Order } from "../types"
 
 interface ActionButtonProps {
     action: Action

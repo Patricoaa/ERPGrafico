@@ -17,9 +17,7 @@ def list_contacts(*, params: dict) -> QuerySet:
 
     search_param = params.get("search")
     if search_param:
-        normalized_search = (
-            search_param.replace(".", "").replace("-", "").replace(" ", "")
-        )
+        normalized_search = search_param.replace(".", "").replace("-", "").replace(" ", "")
         queryset = queryset.annotate(
             normalized_tax_id=Replace(
                 Replace(
@@ -92,69 +90,70 @@ def customer_aging_report(*, cutoff_date, limit: int = 20) -> list[dict]:
     results = []
 
     contacts_with_sales = (
-        Contact.objects
-        .filter(sale_orders__date__lte=cutoff_date)
-        .exclude(sale_orders__status__in=['DRAFT', 'CANCELLED'])
+        Contact.objects.filter(sale_orders__date__lte=cutoff_date)
+        .exclude(sale_orders__status__in=["DRAFT", "CANCELLED"])
         .distinct()
     )
 
     for contact in contacts_with_sales:
         payment_term = contact.credit_days or 30
         buckets = {
-            'current': Decimal('0'),
-            'overdue_30': Decimal('0'),
-            'overdue_60': Decimal('0'),
-            'overdue_90': Decimal('0'),
-            'overdue_90plus': Decimal('0'),
+            "current": Decimal("0"),
+            "overdue_30": Decimal("0"),
+            "overdue_60": Decimal("0"),
+            "overdue_90": Decimal("0"),
+            "overdue_90plus": Decimal("0"),
         }
 
         orders = contact.sale_orders.filter(date__lte=cutoff_date).exclude(
-            status__in=['DRAFT', 'CANCELLED']
+            status__in=["DRAFT", "CANCELLED"]
         )
         for order in orders:
             payments = order.payments.filter(is_pending_registration=False)
             paid_in = sum(
-                (p.amount for p in payments if p.movement_type in ['INBOUND', 'ADJUSTMENT']),
-                Decimal('0'),
+                (p.amount for p in payments if p.movement_type in ["INBOUND", "ADJUSTMENT"]),
+                Decimal("0"),
             )
             paid_out = sum(
-                (p.amount for p in payments if p.movement_type == 'OUTBOUND'),
-                Decimal('0'),
+                (p.amount for p in payments if p.movement_type == "OUTBOUND"),
+                Decimal("0"),
             )
             balance = order.effective_total - (paid_in - paid_out)
 
-            if balance <= Decimal('0'):
+            if balance <= Decimal("0"):
                 continue
 
-            order_date = order.date if not hasattr(order.date, 'date') else order.date.date()
+            order_date = order.date if not hasattr(order.date, "date") else order.date.date()
             due_date = order_date + timedelta(days=payment_term)
             days_overdue = (cutoff_date - due_date).days
 
             if days_overdue <= 0:
-                buckets['current'] += balance
+                buckets["current"] += balance
             elif days_overdue <= 30:
-                buckets['overdue_30'] += balance
+                buckets["overdue_30"] += balance
             elif days_overdue <= 60:
-                buckets['overdue_60'] += balance
+                buckets["overdue_60"] += balance
             elif days_overdue <= 90:
-                buckets['overdue_90'] += balance
+                buckets["overdue_90"] += balance
             else:
-                buckets['overdue_90plus'] += balance
+                buckets["overdue_90plus"] += balance
 
         total = sum(buckets.values())
-        if total <= Decimal('0'):
+        if total <= Decimal("0"):
             continue
 
-        results.append({
-            'contact_id': contact.id,
-            'name': contact.name,
-            'tax_id': contact.tax_id,
-            'credit_days': payment_term,
-            **buckets,
-            'total': total,
-        })
+        results.append(
+            {
+                "contact_id": contact.id,
+                "name": contact.name,
+                "tax_id": contact.tax_id,
+                "credit_days": payment_term,
+                **buckets,
+                "total": total,
+            }
+        )
 
-    results.sort(key=lambda r: r['total'], reverse=True)
+    results.sort(key=lambda r: r["total"], reverse=True)
     return results[:limit]
 
 
@@ -177,72 +176,73 @@ def supplier_aging_report(*, cutoff_date, limit: int = 20) -> list[dict]:
     results = []
 
     contacts_with_purchases = (
-        Contact.objects
-        .filter(purchase_orders__date__lte=cutoff_date)
-        .exclude(purchase_orders__status__in=['DRAFT', 'CANCELLED'])
+        Contact.objects.filter(purchase_orders__date__lte=cutoff_date)
+        .exclude(purchase_orders__status__in=["DRAFT", "CANCELLED"])
         .distinct()
     )
 
     for contact in contacts_with_purchases:
         payment_term = contact.credit_days or 30
         buckets = {
-            'current': Decimal('0'),
-            'overdue_30': Decimal('0'),
-            'overdue_60': Decimal('0'),
-            'overdue_90': Decimal('0'),
-            'overdue_90plus': Decimal('0'),
+            "current": Decimal("0"),
+            "overdue_30": Decimal("0"),
+            "overdue_60": Decimal("0"),
+            "overdue_90": Decimal("0"),
+            "overdue_90plus": Decimal("0"),
         }
 
         orders = contact.purchase_orders.filter(date__lte=cutoff_date).exclude(
-            status__in=['DRAFT', 'CANCELLED']
+            status__in=["DRAFT", "CANCELLED"]
         )
         for order in orders:
             # Payments on purchase orders are stored as TreasuryMovements
             # linked via order.payments (OUTBOUND = paying the supplier).
             payments = order.payments.filter(is_pending_registration=False)
             paid_out = sum(
-                (p.amount for p in payments if p.movement_type == 'OUTBOUND'),
-                Decimal('0'),
+                (p.amount for p in payments if p.movement_type == "OUTBOUND"),
+                Decimal("0"),
             )
             # Inbound refunds from supplier reduce the balance
             paid_in = sum(
-                (p.amount for p in payments if p.movement_type == 'INBOUND'),
-                Decimal('0'),
+                (p.amount for p in payments if p.movement_type == "INBOUND"),
+                Decimal("0"),
             )
             balance = order.total - (paid_out - paid_in)
 
-            if balance <= Decimal('0'):
+            if balance <= Decimal("0"):
                 continue
 
-            order_date = order.date if not hasattr(order.date, 'date') else order.date.date()
+            order_date = order.date if not hasattr(order.date, "date") else order.date.date()
             due_date = order_date + timedelta(days=payment_term)
             days_overdue = (cutoff_date - due_date).days
 
             if days_overdue <= 0:
-                buckets['current'] += balance
+                buckets["current"] += balance
             elif days_overdue <= 30:
-                buckets['overdue_30'] += balance
+                buckets["overdue_30"] += balance
             elif days_overdue <= 60:
-                buckets['overdue_60'] += balance
+                buckets["overdue_60"] += balance
             elif days_overdue <= 90:
-                buckets['overdue_90'] += balance
+                buckets["overdue_90"] += balance
             else:
-                buckets['overdue_90plus'] += balance
+                buckets["overdue_90plus"] += balance
 
         total = sum(buckets.values())
-        if total <= Decimal('0'):
+        if total <= Decimal("0"):
             continue
 
-        results.append({
-            'contact_id': contact.id,
-            'name': contact.name,
-            'tax_id': contact.tax_id,
-            'credit_days': payment_term,
-            **buckets,
-            'total': total,
-        })
+        results.append(
+            {
+                "contact_id": contact.id,
+                "name": contact.name,
+                "tax_id": contact.tax_id,
+                "credit_days": payment_term,
+                **buckets,
+                "total": total,
+            }
+        )
 
-    results.sort(key=lambda r: r['total'], reverse=True)
+    results.sort(key=lambda r: r["total"], reverse=True)
     return results[:limit]
 
 
@@ -255,8 +255,12 @@ def list_credit_portfolio(*, is_blacklist: bool) -> QuerySet:
     if is_blacklist:
         return Contact.objects.filter(credit_blocked=True).distinct()
 
-    return Contact.objects.filter(
-        models.Q(credit_enabled=True)
-        | models.Q(credit_limit__isnull=False)
-        | models.Q(sale_orders__isnull=False)
-    ).filter(credit_blocked=False).distinct()
+    return (
+        Contact.objects.filter(
+            models.Q(credit_enabled=True)
+            | models.Q(credit_limit__isnull=False)
+            | models.Q(sale_orders__isnull=False)
+        )
+        .filter(credit_blocked=False)
+        .distinct()
+    )

@@ -5,15 +5,22 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('accounting', '0007_accountingsettings_billing_model'),
+        ("accounting", "0007_accountingsettings_billing_model"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='accountingsettings',
-            name='tax_withholding_account',
-            field=models.ForeignKey(blank=True, help_text='Cuenta para ajustes de conciliación por retenciones de impuestos.', null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='settings_tax_withholding', to='accounting.account', verbose_name='Cuenta de Retenciones / Impuestos'),
+            model_name="accountingsettings",
+            name="tax_withholding_account",
+            field=models.ForeignKey(
+                blank=True,
+                help_text="Cuenta para ajustes de conciliación por retenciones de impuestos.",
+                null=True,
+                on_delete=django.db.models.deletion.SET_NULL,
+                related_name="settings_tax_withholding",
+                to="accounting.account",
+                verbose_name="Cuenta de Retenciones / Impuestos",
+            ),
         ),
     ]

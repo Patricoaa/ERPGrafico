@@ -3,7 +3,7 @@
 import React from 'react';
 
 import { Chip, EntityCard, IconButton, StatusBadge } from '@/components/shared';
-import { AccountingPeriod } from '../../types';
+import { type AccountingPeriod } from '../../types';
 import { Calendar, Lock, LockOpen, CheckCircle2, Clock, ShieldCheck, ShieldAlert } from 'lucide-react';
 import { formatPlainDate } from '@/lib/utils';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';

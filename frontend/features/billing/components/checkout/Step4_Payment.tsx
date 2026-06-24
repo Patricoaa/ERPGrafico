@@ -1,7 +1,7 @@
 "use client"
 
 import { CheckCircle2 } from "lucide-react"
-import { PaymentMethodCardSelector, PaymentData } from "@/features/treasury/components/PaymentMethodCardSelector"
+import { PaymentMethodCardSelector, type PaymentData } from "@/features/treasury/components/PaymentMethodCardSelector"
 import { useEffect } from "react"
 
 interface Step4_PaymentProps {

@@ -20,7 +20,7 @@ import { ordersApi, useProcessLogistics } from "../hooks/useOrdersMutations"
 import {Loader2} from "lucide-react"
 import { useServerDate } from "@/hooks/useServerDate"
 
-import { Order } from "../types"
+import { type Order } from "../types"
 
 interface InvoiceLine {
     product_id: number

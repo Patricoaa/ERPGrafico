@@ -1,56 +1,75 @@
 from rest_framework import serializers
-from .models import WorkOrder, ProductionConsumption, BillOfMaterials, BillOfMaterialsLine, WorkOrderMaterial, WorkOrderHistory
+
 from core.serializers import AttachmentSerializer
-from inventory.models import Product, UoM, Warehouse
+from inventory.models import Product, UoM
+
+from .models import (
+    BillOfMaterials,
+    BillOfMaterialsLine,
+    ProductionConsumption,
+    WorkOrder,
+    WorkOrderHistory,
+    WorkOrderMaterial,
+)
+
 
 class ProductionConsumptionSerializer(serializers.ModelSerializer):
-    product_name = serializers.CharField(source='product.name', read_only=True)
-    warehouse_name = serializers.CharField(source='warehouse.name', read_only=True)
-    
+    product_name = serializers.CharField(source="product.name", read_only=True)
+    warehouse_name = serializers.CharField(source="warehouse.name", read_only=True)
+
     class Meta:
         model = ProductionConsumption
-        fields = '__all__'
+        fields = "__all__"
 
     def validate(self, data):
-        product = data.get('product')
+        product = data.get("product")
         if product and not product.uom:
             raise serializers.ValidationError(
                 f"El producto '{product.name}' no tiene una Unidad de Medida (UoM) asignada."
             )
         return data
 
+
 class WorkOrderHistorySerializer(serializers.ModelSerializer):
-    user_name = serializers.CharField(source='user.first_name', read_only=True)
-    
+    user_name = serializers.CharField(source="user.first_name", read_only=True)
+
     class Meta:
         model = WorkOrderHistory
-        fields = '__all__'
+        fields = "__all__"
+
 
 class WorkOrderMaterialSerializer(serializers.ModelSerializer):
-    component_name = serializers.CharField(source='component.name', read_only=True)
-    component_code = serializers.CharField(source='component.code', read_only=True)
-    uom_name = serializers.CharField(source='uom.name', read_only=True)
+    component_name = serializers.CharField(source="component.name", read_only=True)
+    component_code = serializers.CharField(source="component.code", read_only=True)
+    uom_name = serializers.CharField(source="uom.name", read_only=True)
     stock_available = serializers.SerializerMethodField()
     is_available = serializers.SerializerMethodField()
     component_cost = serializers.SerializerMethodField()
-    supplier_name = serializers.CharField(source='supplier.name', read_only=True)
-    purchase_order_number = serializers.CharField(source='purchase_line.order.number', read_only=True)
-    purchase_order_receiving_status = serializers.CharField(source='purchase_line.order.receiving_status', read_only=True)
-    purchase_order_id = serializers.IntegerField(source='purchase_line.order.id', read_only=True)
+    supplier_name = serializers.CharField(source="supplier.name", read_only=True)
+    purchase_order_number = serializers.CharField(
+        source="purchase_line.order.number", read_only=True
+    )
+    purchase_order_receiving_status = serializers.CharField(
+        source="purchase_line.order.receiving_status", read_only=True
+    )
+    purchase_order_id = serializers.IntegerField(source="purchase_line.order.id", read_only=True)
     total_cost = serializers.SerializerMethodField()
     planned_cost = serializers.SerializerMethodField()
     actual_cost = serializers.SerializerMethodField()
-    
+
     class Meta:
         model = WorkOrderMaterial
-        fields = '__all__'
+        fields = "__all__"
 
     def get_stock_available(self, obj):
         component = obj.component
-        if component.product_type == 'SERVICE':
+        if component.product_type == "SERVICE":
             return 999999
 
-        if component.product_type == 'MANUFACTURABLE' and not component.requires_advanced_manufacturing:
+        if (
+            component.product_type == "MANUFACTURABLE"
+            and not component.requires_advanced_manufacturing
+        ):
             return component.get_manufacturable_quantity() or 0.0
 
         warehouse = obj.work_order.warehouse
@@ -58,27 +77,39 @@ class WorkOrderMaterialSerializer(serializers.ModelSerializer):
             return 0.0
 
         # 1. Pre-computed dict injected by WorkOrderViewSet.retrieve() — zero extra queries
-        stocks_by_product = self.context.get('stocks_by_product')
+        stocks_by_product = self.context.get("stocks_by_product")
         if stocks_by_product is not None:
             stock = stocks_by_product.get(component.id, 0.0)
         else:
             # 2. Fallback for list() or other actions: request-level cache
             from django.db.models import Sum
-            request = self.context.get('request')
+
+            request = self.context.get("request")
             if request:
-                if not hasattr(request, '_stock_cache'):
+                if not hasattr(request, "_stock_cache"):
                     request._stock_cache = {}
                 cache_key = (warehouse.id, component.id)
                 if cache_key in request._stock_cache:
                     stock = request._stock_cache[cache_key]
                 else:
-                    stock = component.stock_moves.filter(warehouse=warehouse).aggregate(total=Sum('quantity'))['total'] or 0.0
+                    stock = (
+                        component.stock_moves.filter(warehouse=warehouse).aggregate(
+                            total=Sum("quantity")
+                        )["total"]
+                        or 0.0
+                    )
                     request._stock_cache[cache_key] = stock
             else:
-                stock = component.stock_moves.filter(warehouse=warehouse).aggregate(total=Sum('quantity'))['total'] or 0.0
+                stock = (
+                    component.stock_moves.filter(warehouse=warehouse).aggregate(
+                        total=Sum("quantity")
+                    )["total"]
+                    or 0.0
+                )
 
         # Convert from component base UoM to line UoM for display consistency
         from inventory.services import UoMService
+
         try:
             if component.uom and obj.uom and component.uom != obj.uom:
                 stock = UoMService.convert_quantity(stock, component.uom, obj.uom)
@@ -103,67 +134,73 @@ class WorkOrderMaterialSerializer(serializers.ModelSerializer):
 
     def get_planned_cost(self, obj):
         from inventory.services import UoMService
+
         qty = obj.quantity_planned
         component = obj.component
-        
+
         if obj.uom and component.uom and obj.uom != component.uom:
             try:
                 qty = UoMService.convert_quantity(obj.quantity_planned, obj.uom, component.uom)
-            except:
+            except Exception:
                 pass
-                
+
         cost = obj.unit_cost_snapshot
         if obj.is_outsourced and obj.unit_price > 0:
             cost = obj.unit_price
-            
+
         total = qty * cost
         return float(total)
 
     def get_actual_cost(self, obj):
         from inventory.services import UoMService
+
         qty = obj.quantity_planned
         component = obj.component
-        
+
         if obj.uom and component.uom and obj.uom != component.uom:
             try:
                 qty = UoMService.convert_quantity(obj.quantity_planned, obj.uom, component.uom)
-            except:
+            except Exception:
                 pass
-                
+
         cost = obj.component.cost_price
         if obj.is_outsourced and obj.unit_price > 0:
             cost = obj.unit_price
-            
+
         total = qty * cost
         return float(total)
+
 
 class WorkOrderInitialMaterialSerializer(serializers.Serializer):
     component_id = serializers.IntegerField()
     quantity_planned = serializers.DecimalField(max_digits=12, decimal_places=4)
     is_outsourced = serializers.BooleanField(default=False)
     supplier_id = serializers.IntegerField(required=False, allow_null=True)
-    unit_price = serializers.DecimalField(max_digits=12, decimal_places=2, required=False, allow_null=True)
+    unit_price = serializers.DecimalField(
+        max_digits=12, decimal_places=2, required=False, allow_null=True
+    )
     uom_id = serializers.IntegerField(required=False, allow_null=True)
 
     def validate(self, data):
         try:
-            Product.objects.get(pk=data['component_id'])
+            Product.objects.get(pk=data["component_id"])
         except Product.DoesNotExist:
             raise serializers.ValidationError({"component_id": "El componente no existe."})
 
-        if data.get('is_outsourced') and not data.get('supplier_id'):
+        if data.get("is_outsourced") and not data.get("supplier_id"):
             raise serializers.ValidationError("Material tercerizado requiere supplier_id.")
 
-        if data.get('supplier_id'):
+        if data.get("supplier_id"):
             from contacts.models import Contact
+
             try:
-                Contact.objects.get(pk=data['supplier_id'])
+                Contact.objects.get(pk=data["supplier_id"])
             except Contact.DoesNotExist:
                 raise serializers.ValidationError({"supplier_id": "El proveedor no existe."})
 
-        if data.get('uom_id'):
+        if data.get("uom_id"):
             try:
-                UoM.objects.get(pk=data['uom_id'])
+                UoM.objects.get(pk=data["uom_id"])
             except UoM.DoesNotExist:
                 raise serializers.ValidationError({"uom_id": "La unidad de medida no existe."})
 
@@ -174,14 +211,24 @@ class WorkOrderSerializer(serializers.ModelSerializer):
     consumptions = ProductionConsumptionSerializer(many=True, read_only=True)
     materials = WorkOrderMaterialSerializer(many=True, read_only=True)
     stage_history = WorkOrderHistorySerializer(many=True, read_only=True)
-    sale_order_number = serializers.CharField(source='sale_order.number', read_only=True, allow_null=True)
-    sale_order_date = serializers.DateField(source='sale_order.date', read_only=True, allow_null=True)
-    sale_order_delivery_date = serializers.DateField(source='sale_order.delivery_date', read_only=True, allow_null=True)
+    sale_order_number = serializers.CharField(
+        source="sale_order.number", read_only=True, allow_null=True
+    )
+    sale_order_date = serializers.DateField(
+        source="sale_order.date", read_only=True, allow_null=True
+    )
+    sale_order_delivery_date = serializers.DateField(
+        source="sale_order.delivery_date", read_only=True, allow_null=True
+    )
     product_description = serializers.SerializerMethodField()
     sale_customer_name = serializers.SerializerMethodField()
     sale_customer_rut = serializers.SerializerMethodField()
-    related_contact_id = serializers.IntegerField(source='related_contact.id', read_only=True, allow_null=True)
-    related_contact_name = serializers.CharField(source='related_contact.name', read_only=True, allow_null=True)
+    related_contact_id = serializers.IntegerField(
+        source="related_contact.id", read_only=True, allow_null=True
+    )
+    related_contact_name = serializers.CharField(
+        source="related_contact.name", read_only=True, allow_null=True
+    )
     product_info = serializers.ReadOnlyField()
     main_product_id = serializers.SerializerMethodField()
     production_progress = serializers.SerializerMethodField()
@@ -190,9 +237,11 @@ class WorkOrderSerializer(serializers.ModelSerializer):
     is_cancellable = serializers.ReadOnlyField()
     cancellation_limit_stage = serializers.ReadOnlyField()
     display_id = serializers.SerializerMethodField()
-    
+
     # Alias para compatibilidad con frontend (modelo usa estimated_completion_date)
-    due_date = serializers.DateField(source='estimated_completion_date', read_only=True, allow_null=True)
+    due_date = serializers.DateField(
+        source="estimated_completion_date", read_only=True, allow_null=True
+    )
 
     # Metadata helpers
     requires_prepress = serializers.SerializerMethodField()
@@ -215,6 +264,7 @@ class WorkOrderSerializer(serializers.ModelSerializer):
 
     def get_side_effects(self, obj):
         from .services import WorkOrderService
+
         return WorkOrderService.check_side_effects(obj)
 
     def get_product_name(self, obj):
@@ -222,14 +272,14 @@ class WorkOrderSerializer(serializers.ModelSerializer):
             return obj.sale_line.product.name
         if obj.product:
             return obj.product.name
-        return ''
+        return ""
 
     def get_quantity(self, obj):
         if obj.sale_line and obj.sale_line.quantity is not None:
             return float(obj.sale_line.quantity)
-        if obj.stage_data and obj.stage_data.get('quantity') is not None:
+        if obj.stage_data and obj.stage_data.get("quantity") is not None:
             try:
-                return float(obj.stage_data['quantity'])
+                return float(obj.stage_data["quantity"])
             except (TypeError, ValueError):
                 return None
         return None
@@ -237,9 +287,9 @@ class WorkOrderSerializer(serializers.ModelSerializer):
     def get_uom_id(self, obj):
         if obj.sale_line and obj.sale_line.uom_id:
             return obj.sale_line.uom_id
-        if obj.stage_data and obj.stage_data.get('uom_id'):
+        if obj.stage_data and obj.stage_data.get("uom_id"):
             try:
-                return int(obj.stage_data['uom_id'])
+                return int(obj.stage_data["uom_id"])
             except (TypeError, ValueError):
                 return None
         return None
@@ -247,10 +297,10 @@ class WorkOrderSerializer(serializers.ModelSerializer):
     def get_uom_name(self, obj):
         if obj.sale_line and obj.sale_line.uom:
             return obj.sale_line.uom.name
-        if obj.stage_data and obj.stage_data.get('uom_name'):
-            return obj.stage_data['uom_name']
+        if obj.stage_data and obj.stage_data.get("uom_name"):
+            return obj.stage_data["uom_name"]
         # Fallback: resolve UoM model from id stored in stage_data
-        uom_id = obj.stage_data.get('uom_id') if obj.stage_data else None
+        uom_id = obj.stage_data.get("uom_id") if obj.stage_data else None
         if uom_id:
             try:
                 return UoM.objects.get(pk=int(uom_id)).name
@@ -266,20 +316,20 @@ class WorkOrderSerializer(serializers.ModelSerializer):
         if produced == sold:
             return None
         return {
-            'produced': produced,
-            'sold': sold,
-            'delta': round(produced - sold, 4),
+            "produced": produced,
+            "sold": sold,
+            "delta": round(produced - sold, 4),
         }
 
     def get_product_description(self, obj):
-        if obj.stage_data and obj.stage_data.get('product_description'):
-            return obj.stage_data.get('product_description')
+        if obj.stage_data and obj.stage_data.get("product_description"):
+            return obj.stage_data.get("product_description")
         return ""
 
     def get_sale_customer_name(self, obj):
         # 1. Prefer override from stage_data (set via Manufacturing Dialog)
-        if obj.stage_data and obj.stage_data.get('contact_name'):
-            return obj.stage_data.get('contact_name')
+        if obj.stage_data and obj.stage_data.get("contact_name"):
+            return obj.stage_data.get("contact_name")
         # 2. Fallback to Sale Order customer
         if obj.sale_order and obj.sale_order.customer:
             return obj.sale_order.customer.name
@@ -294,33 +344,45 @@ class WorkOrderSerializer(serializers.ModelSerializer):
         return None
 
     def get_sale_customer_rut(self, obj):
-        if obj.stage_data and obj.stage_data.get('contact_tax_id'):
-            return obj.stage_data.get('contact_tax_id')
+        if obj.stage_data and obj.stage_data.get("contact_tax_id"):
+            return obj.stage_data.get("contact_tax_id")
         if obj.sale_order and obj.sale_order.customer:
             return obj.sale_order.customer.tax_id
         return ""
 
     def get_requires_prepress(self, obj):
         # 1. Try stage_data (specific for this order)
-        if obj.stage_data and 'phases' in obj.stage_data:
-            return obj.stage_data['phases'].get('prepress', False)
+        if obj.stage_data and "phases" in obj.stage_data:
+            return obj.stage_data["phases"].get("prepress", False)
         # 2. Fallback to product default
         if obj.sale_line and obj.sale_line.product:
-            return obj.sale_line.product.mfg_profile.mfg_enable_prepress if obj.sale_line.product.mfg_profile else False
+            return (
+                obj.sale_line.product.mfg_profile.mfg_enable_prepress
+                if obj.sale_line.product.mfg_profile
+                else False
+            )
         return False
 
     def get_requires_press(self, obj):
-        if obj.stage_data and 'phases' in obj.stage_data:
-            return obj.stage_data['phases'].get('press', False)
+        if obj.stage_data and "phases" in obj.stage_data:
+            return obj.stage_data["phases"].get("press", False)
         if obj.sale_line and obj.sale_line.product:
-            return obj.sale_line.product.mfg_profile.mfg_enable_press if obj.sale_line.product.mfg_profile else False
+            return (
+                obj.sale_line.product.mfg_profile.mfg_enable_press
+                if obj.sale_line.product.mfg_profile
+                else False
+            )
         return False
 
     def get_requires_postpress(self, obj):
-        if obj.stage_data and 'phases' in obj.stage_data:
-            return obj.stage_data['phases'].get('postpress', False)
+        if obj.stage_data and "phases" in obj.stage_data:
+            return obj.stage_data["phases"].get("postpress", False)
         if obj.sale_line and obj.sale_line.product:
-            return obj.sale_line.product.mfg_profile.mfg_enable_postpress if obj.sale_line.product.mfg_profile else False
+            return (
+                obj.sale_line.product.mfg_profile.mfg_enable_postpress
+                if obj.sale_line.product.mfg_profile
+                else False
+            )
         return False
 
     def get_main_product_id(self, obj):
@@ -329,13 +391,13 @@ class WorkOrderSerializer(serializers.ModelSerializer):
         if obj.product_id:
             return obj.product_id
         return None
-    
+
     def get_production_progress(self, obj):
         if obj.status == WorkOrder.Status.FINISHED:
             return 100
         if obj.status == WorkOrder.Status.CANCELLED:
             return 0
-        
+
         # Progression based on stages
         weights = {
             WorkOrder.Stage.MATERIAL_ASSIGNMENT.value: 0,
@@ -347,157 +409,179 @@ class WorkOrderSerializer(serializers.ModelSerializer):
             WorkOrder.Stage.OUTSOURCING_VERIFICATION.value: 88,
             WorkOrder.Stage.RECTIFICATION.value: 95,
             WorkOrder.Stage.FINISHED.value: 100,
-            WorkOrder.Stage.CANCELLED.value: 0
+            WorkOrder.Stage.CANCELLED.value: 0,
         }
         return weights.get(obj.current_stage, 0)
-    
+
     def get_outsourcing_status(self, obj):
         mats = obj.materials.all()
         if not mats.exists():
-            return 'none'
-        
+            return "none"
+
         outsourced = mats.filter(is_outsourced=True)
         if not outsourced.exists():
-            return 'none'
-        
+            return "none"
+
         if outsourced.count() == mats.count():
-            return 'full'
-        return 'partial'
+            return "full"
+        return "partial"
 
     def get_checkout_files(self, obj):
         files = []
         if not obj.sale_order and not obj.sale_line:
             return files
 
-        from core.models import Attachment
         from django.contrib.contenttypes.models import ContentType
-        from sales.models import SaleOrder, SaleLine
-        
+
+        from core.models import Attachment
+        from sales.models import SaleLine, SaleOrder
+
         # 1. From Sale Order
         if obj.sale_order:
             ct = ContentType.objects.get_for_model(SaleOrder)
-            files.extend(list(Attachment.objects.filter(
-                content_type=ct,
-                object_id=obj.sale_order.id
-            )))
-            
+            files.extend(
+                list(Attachment.objects.filter(content_type=ct, object_id=obj.sale_order.id))
+            )
+
         # 2. From Sale Line (where manufacturing specs usually live)
         if obj.sale_line:
             ct_line = ContentType.objects.get_for_model(SaleLine)
-            files.extend(list(Attachment.objects.filter(
-                content_type=ct_line,
-                object_id=obj.sale_line.id
-            )))
+            files.extend(
+                list(Attachment.objects.filter(content_type=ct_line, object_id=obj.sale_line.id))
+            )
 
         return AttachmentSerializer(files, many=True).data
-    
+
     def get_workflow_tasks(self, obj):
+        from django.contrib.contenttypes.models import ContentType
+
         from workflow.models import Task
         from workflow.serializers import TaskSerializer
-        from django.contrib.contenttypes.models import ContentType
-        
+
         ct = ContentType.objects.get_for_model(obj)
-        tasks = Task.objects.filter(
-            content_type=ct,
-            object_id=obj.id
-        ).order_by('created_at')
+        tasks = Task.objects.filter(content_type=ct, object_id=obj.id).order_by("created_at")
         return TaskSerializer(tasks, many=True).data
-    
+
     class Meta:
         model = WorkOrder
-        fields = '__all__'
-        read_only_fields = ['id', 'number', 'status', 'current_stage']
+        fields = "__all__"
+        read_only_fields = ["id", "number", "status", "current_stage"]
+
 
 class BillOfMaterialsLineSerializer(serializers.ModelSerializer):
-    component_name = serializers.CharField(source='component.name', read_only=True)
-    component_code = serializers.CharField(source='component.code', read_only=True)
-    component_cost = serializers.DecimalField(source='component.cost_price', max_digits=12, decimal_places=0, read_only=True)
-    uom_name = serializers.CharField(source='uom.name', read_only=True)
+    component_name = serializers.CharField(source="component.name", read_only=True)
+    component_code = serializers.CharField(source="component.code", read_only=True)
+    component_cost = serializers.DecimalField(
+        source="component.cost_price", max_digits=12, decimal_places=0, read_only=True
+    )
+    uom_name = serializers.CharField(source="uom.name", read_only=True)
     component_stock = serializers.SerializerMethodField()
-    supplier_name = serializers.CharField(source='supplier.name', read_only=True)
-    
+    supplier_name = serializers.CharField(source="supplier.name", read_only=True)
+
     class Meta:
         model = BillOfMaterialsLine
         fields = [
-            'id', 'component', 'component_code', 'component_name', 'component_cost',
-            'component_stock', 'quantity', 'uom', 'uom_name',
-            'is_outsourced', 'supplier', 'supplier_name', 'unit_price', 'document_type'
+            "id",
+            "component",
+            "component_code",
+            "component_name",
+            "component_cost",
+            "component_stock",
+            "quantity",
+            "uom",
+            "uom_name",
+            "is_outsourced",
+            "supplier",
+            "supplier_name",
+            "unit_price",
+            "document_type",
         ]
 
     def get_component_stock(self, obj):
         # Use annotated stock if available on the component (from prefetched queryset)
-        if hasattr(obj.component, 'annotated_current_stock'):
+        if hasattr(obj.component, "annotated_current_stock"):
             return float(obj.component.annotated_current_stock or 0.0)
         return float(obj.component.qty_on_hand)
 
     def validate(self, data):
-        component = data.get('component')
-        uom = data.get('uom')
-        is_outsourced = data.get('is_outsourced', False)
-        
+        component = data.get("component")
+        uom = data.get("uom")
+        is_outsourced = data.get("is_outsourced", False)
+
         # Validate component has base UoM
         if component and not component.uom:
             raise serializers.ValidationError(
                 f"El componente '{component.name}' debe tener una UoM base asignada."
             )
-        
+
         # Outsourced service validation
         if is_outsourced:
-            if component and component.product_type != 'SERVICE':
-                raise serializers.ValidationError({
-                    'component': f"Las líneas tercerizadas solo pueden usar productos de tipo Servicio. "
-                                 f"'{component.name}' es de tipo '{component.get_product_type_display()}'."
-                })
-            supplier = data.get('supplier')
+            if component and component.product_type != "SERVICE":
+                raise serializers.ValidationError(
+                    {
+                        "component": f"Las líneas tercerizadas solo pueden usar productos de tipo Servicio. "
+                        f"'{component.name}' es de tipo '{component.get_product_type_display()}'."
+                    }
+                )
+            supplier = data.get("supplier")
             if not supplier:
-                raise serializers.ValidationError({
-                    'supplier': "Debe seleccionar un proveedor para el servicio tercerizado."
-                })
-            unit_price = data.get('unit_price', 0)
+                raise serializers.ValidationError(
+                    {"supplier": "Debe seleccionar un proveedor para el servicio tercerizado."}
+                )
+            unit_price = data.get("unit_price", 0)
             if not unit_price or float(unit_price) <= 0:
-                raise serializers.ValidationError({
-                    'unit_price': "El precio unitario debe ser mayor a 0 para servicios tercerizados."
-                })
-            
+                raise serializers.ValidationError(
+                    {
+                        "unit_price": "El precio unitario debe ser mayor a 0 para servicios tercerizados."
+                    }
+                )
+
         # Validate compatibility if both present - BOM allows full category flexibility
         if component and uom and not is_outsourced:
             from inventory.services import UoMService
-            
+
             if not UoMService.validate_uom_compatibility(component.uom, uom):
-                raise serializers.ValidationError({
-                    'uom': f"La unidad '{uom.name}' no es compatible con la categoría "
-                           f"del componente ('{component.uom.category.name}'). "
-                           f"Puede usar cualquier unidad de la misma categoría para mayor flexibilidad."
-                })
-                
+                raise serializers.ValidationError(
+                    {
+                        "uom": f"La unidad '{uom.name}' no es compatible con la categoría "
+                        f"del componente ('{component.uom.category.name}'). "
+                        f"Puede usar cualquier unidad de la misma categoría para mayor flexibilidad."
+                    }
+                )
+
         return data
+
 
 class BillOfMaterialsSerializer(serializers.ModelSerializer):
     lines = BillOfMaterialsLineSerializer(many=True, required=False)
-    product_code = serializers.CharField(source='product.code', read_only=True)
-    product_internal_code = serializers.CharField(source='product.internal_code', read_only=True)
-    product_name = serializers.CharField(source='product.name', read_only=True)
-    category_name = serializers.CharField(source='product.category.name', read_only=True)
-    yield_uom_name = serializers.CharField(source='yield_uom.name', read_only=True)
+    product_code = serializers.CharField(source="product.code", read_only=True)
+    product_internal_code = serializers.CharField(source="product.internal_code", read_only=True)
+    product_name = serializers.CharField(source="product.name", read_only=True)
+    category_name = serializers.CharField(source="product.category.name", read_only=True)
+    yield_uom_name = serializers.CharField(source="yield_uom.name", read_only=True)
     lines_count = serializers.SerializerMethodField()
     total_cost = serializers.SerializerMethodField()
-    
-    product = serializers.PrimaryKeyRelatedField(queryset=Product.objects.all(), required=False, allow_null=True)
+
+    product = serializers.PrimaryKeyRelatedField(
+        queryset=Product.objects.all(), required=False, allow_null=True
+    )
 
     class Meta:
         model = BillOfMaterials
-        fields = '__all__'
-    
+        fields = "__all__"
+
     def get_lines_count(self, obj):
         return obj.lines.count()
-    
+
     def get_total_cost(self, obj):
         from decimal import Decimal
+
         from inventory.services import UoMService
-        total = Decimal('0.00')
+
+        total = Decimal("0.00")
         for line in obj.lines.all():
             qty = line.quantity
-            
+
             if line.is_outsourced:
                 # Outsourced services: use the configured unit_price (net)
                 total += qty * line.unit_price
@@ -505,22 +589,24 @@ class BillOfMaterialsSerializer(serializers.ModelSerializer):
                 # Stock components: convert UoM and use component cost_price
                 if line.uom and line.component.uom and line.uom != line.component.uom:
                     try:
-                        qty = UoMService.convert_quantity(line.quantity, line.uom, line.component.uom)
+                        qty = UoMService.convert_quantity(
+                            line.quantity, line.uom, line.component.uom
+                        )
                     except Exception:
                         pass
                 total += qty * line.component.cost_price
-            
+
         # Divide by yield quantity to get cost per produced unit
         if obj.yield_quantity and obj.yield_quantity > 0:
             total = total / obj.yield_quantity
-            
+
         return float(total)
 
     def validate(self, data):
-        product = data.get('product')
+        product = data.get("product")
         if not product and self.instance:
             product = self.instance.product
-            
+
         if product:
             effective_uom = product.uom or product.sale_uom or product.purchase_uom
             if product.track_inventory and not effective_uom:
@@ -531,21 +617,20 @@ class BillOfMaterialsSerializer(serializers.ModelSerializer):
         return data
 
     def create(self, validated_data):
-        lines_data = validated_data.pop('lines', [])
+        lines_data = validated_data.pop("lines", [])
         bom = BillOfMaterials.objects.create(**validated_data)
         for line_data in lines_data:
             BillOfMaterialsLine.objects.create(bom=bom, **line_data)
         return bom
 
     def update(self, instance, validated_data):
-        lines_data = validated_data.pop('lines', None)
+        lines_data = validated_data.pop("lines", None)
         for attr, value in validated_data.items():
             setattr(instance, attr, value)
         instance.save()
-        
+
         if lines_data is not None:
             instance.lines.all().delete()
             for line_data in lines_data:
                 BillOfMaterialsLine.objects.create(bom=instance, **line_data)
         return instance
-

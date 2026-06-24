@@ -1,6 +1,6 @@
 "use client"
 
-import { useFieldArray, useWatch, Control } from "react-hook-form"
+import { useFieldArray, useWatch, type Control } from "react-hook-form"
 import { Trash2 } from "lucide-react"
 import { TableBody, TableCell, TableRow } from "@/components/ui/table"
 import {

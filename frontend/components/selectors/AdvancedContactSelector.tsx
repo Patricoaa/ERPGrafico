@@ -14,7 +14,7 @@ import { useDebounce } from "@/hooks/useDebounce"
 import { formatRUT } from "@/lib/utils/format"
 import { useContactSearch, useSingleContact } from "@/features/contacts/hooks/useContactSearch"
 
-import { Contact } from "@/types/entities"
+import { type Contact } from "@/types/entities"
 import { CardSkeleton, EmptyState, LabeledContainer } from '@/components/shared'
 import React, { Suspense } from "react"
 

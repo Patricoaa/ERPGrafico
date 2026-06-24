@@ -22,7 +22,7 @@
 import React from 'react'
 import { cva, type VariantProps } from 'class-variance-authority'
 import { cn } from '@/lib/utils'
-import { LucideIcon } from 'lucide-react'
+import { type LucideIcon } from 'lucide-react'
 import {
     Tooltip,
     TooltipContent,

@@ -1,5 +1,5 @@
 import { Suspense } from "react"
-import { Metadata } from "next"
+import { type Metadata } from "next"
 import { PageContainer, Skeleton } from "@/components/shared"
 import { TreasuryHeader } from "./TreasuryHeader"
 

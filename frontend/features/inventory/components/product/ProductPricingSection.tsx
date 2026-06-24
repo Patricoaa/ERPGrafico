@@ -3,12 +3,12 @@
 import { FormField } from "@/components/ui/form"
 import { LabeledInput, LabeledSwitch, FormSection, LabeledSelect } from "@/components/shared"
 import { DollarSign, Zap } from "lucide-react"
-import { UseFormReturn } from "react-hook-form"
-import { ProductFormValues } from "./schema"
+import { type UseFormReturn } from "react-hook-form"
+import { type ProductFormValues } from "./schema"
 import { useVatRate } from '@/hooks/useVatRate'
 import { PricingUtils } from "../../utils/pricing"
 import { cn } from "@/lib/utils"
-import { UoM } from "@/types/entities"
+import { type UoM } from "@/types/entities"
 
 interface ProductPricingSectionProps {
     form: UseFormReturn<ProductFormValues>

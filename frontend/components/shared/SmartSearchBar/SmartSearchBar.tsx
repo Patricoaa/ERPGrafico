@@ -1,6 +1,6 @@
 'use client'
 
-import { useRef, useState, useCallback, useEffect, KeyboardEvent, useMemo } from 'react'
+import { useRef, useState, useCallback, useEffect, type KeyboardEvent, useMemo } from 'react'
 import { Search, X, CornerDownLeft } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { SearchDefinition, FieldDef, TextFieldDef } from '@/types/search'

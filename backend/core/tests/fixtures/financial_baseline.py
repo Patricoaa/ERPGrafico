@@ -29,6 +29,7 @@ Uso:
 Ver: docs/50-audit/Arquitectura Django/50-testing-strategy.md
      docs/50-audit/Arquitectura Django/20-task-list.md (T-56)
 """
+
 from __future__ import annotations
 
 import random
@@ -39,7 +40,6 @@ from typing import Any
 
 from django.db import transaction
 
-
 YEAR = 2026
 START_DATE = date(YEAR, 1, 1)
 END_DATE = date(YEAR, 12, 31)
@@ -48,6 +48,7 @@ END_DATE = date(YEAR, 12, 31)
 @dataclass
 class BaselineDataset:
     """Resultado de `build_baseline_dataset` — referencias para los tests."""
+
     contacts: dict[str, Any] = field(default_factory=dict)
     accounts: dict[str, Any] = field(default_factory=dict)
     sale_orders: list = field(default_factory=list)
@@ -68,28 +69,28 @@ def _create_chart_of_accounts() -> dict[str, Any]:
     Returns a dict mapping logical names (e.g. 'cash') to Account instances
     for convenient use in journal entry generation.
     """
-    from accounting.services import AccountingService
     from accounting.models import Account
+    from accounting.services import AccountingService
 
     AccountingService.populate_ifrs_coa()
 
     return {
-        'cash': Account.objects.get(code='1.1.01.01'),                    # Caja General
-        'bank': Account.objects.get(code='1.1.01.02'),                    # Banco Principal
-        'receivable': Account.objects.get(code='1.1.02.01'),              # Clientes Locales
-        'inventory': Account.objects.get(code='1.1.03.01'),               # Mercaderías
-        'vat_credit': Account.objects.get(code='1.1.04.01'),              # IVA Crédito
-        'ppe_machinery': Account.objects.get(code='1.2.01.01'),           # Maquinaria y Equipos
-        'accumulated_dep': Account.objects.get(code='1.2.02.01'),         # Depreciación Acumulada
-        'payable': Account.objects.get(code='2.1.01.01'),                 # Proveedores Locales
-        'vat_debit': Account.objects.get(code='2.1.02.01'),               # IVA Débito
-        'salary_payable': Account.objects.get(code='2.1.03.01'),          # Remuneraciones por Pagar
-        'capital': Account.objects.get(code='3.1.01'),                    # Capital Social
-        'sales_product': Account.objects.get(code='4.1.01'),              # Venta de Productos
-        'sales_service': Account.objects.get(code='4.1.02'),              # Venta de Servicios
-        'cogs_product': Account.objects.get(code='5.1.01'),               # Costo de Mercaderías
-        'expense_salary': Account.objects.get(code='5.2.01.01'),          # Sueldo Base
-        'expense_rent': Account.objects.get(code='5.2.02'),               # Arriendos
+        "cash": Account.objects.get(code="1.1.01.01"),  # Caja General
+        "bank": Account.objects.get(code="1.1.01.02"),  # Banco Principal
+        "receivable": Account.objects.get(code="1.1.02.01"),  # Clientes Locales
+        "inventory": Account.objects.get(code="1.1.03.01"),  # Mercaderías
+        "vat_credit": Account.objects.get(code="1.1.04.01"),  # IVA Crédito
+        "ppe_machinery": Account.objects.get(code="1.2.01.01"),  # Maquinaria y Equipos
+        "accumulated_dep": Account.objects.get(code="1.2.02.01"),  # Depreciación Acumulada
+        "payable": Account.objects.get(code="2.1.01.01"),  # Proveedores Locales
+        "vat_debit": Account.objects.get(code="2.1.02.01"),  # IVA Débito
+        "salary_payable": Account.objects.get(code="2.1.03.01"),  # Remuneraciones por Pagar
+        "capital": Account.objects.get(code="3.1.01"),  # Capital Social
+        "sales_product": Account.objects.get(code="4.1.01"),  # Venta de Productos
+        "sales_service": Account.objects.get(code="4.1.02"),  # Venta de Servicios
+        "cogs_product": Account.objects.get(code="5.1.01"),  # Costo de Mercaderías
+        "expense_salary": Account.objects.get(code="5.2.01.01"),  # Sueldo Base
+        "expense_rent": Account.objects.get(code="5.2.02"),  # Arriendos
     }
 
 
@@ -101,32 +102,32 @@ def _create_contacts() -> dict[str, Any]:
     from contacts.models import Contact
 
     customer_specs = [
-        ('66100001-1', 'Imprenta del Sur SpA'),
-        ('66100002-2', 'Comercial Andina Ltda'),
-        ('66100003-3', 'Distribuidora El Roble S.A.'),
-        ('66100004-4', 'Editorial Pacífico'),
-        ('66100005-5', 'Cliente Final POS'),
+        ("66100001-1", "Imprenta del Sur SpA"),
+        ("66100002-2", "Comercial Andina Ltda"),
+        ("66100003-3", "Distribuidora El Roble S.A."),
+        ("66100004-4", "Editorial Pacífico"),
+        ("66100005-5", "Cliente Final POS"),
     ]
     supplier_specs = [
-        ('77200001-1', 'Papeles y Cartón Chile'),
-        ('77200002-2', 'Tintas Industriales SpA'),
-        ('77200003-3', 'Servicios Gráficos del Norte'),
+        ("77200001-1", "Papeles y Cartón Chile"),
+        ("77200002-2", "Tintas Industriales SpA"),
+        ("77200003-3", "Servicios Gráficos del Norte"),
     ]
 
     out: dict[str, Any] = {}
     for i, (rut, name) in enumerate(customer_specs, start=1):
         c, _ = Contact.objects.get_or_create(
             tax_id=rut,
-            defaults={'name': name, 'email': f'cliente{i}@test.cl'},
+            defaults={"name": name, "email": f"cliente{i}@test.cl"},
         )
-        out[f'customer_{i}'] = c
+        out[f"customer_{i}"] = c
 
     for i, (rut, name) in enumerate(supplier_specs, start=1):
         c, _ = Contact.objects.get_or_create(
             tax_id=rut,
-            defaults={'name': name, 'email': f'proveedor{i}@test.cl'},
+            defaults={"name": name, "email": f"proveedor{i}@test.cl"},
         )
-        out[f'supplier_{i}'] = c
+        out[f"supplier_{i}"] = c
 
     return out
 
@@ -137,7 +138,7 @@ def _build_journal_entry(
     description: str,
     reference: str,
     items: list[tuple[Any, Decimal, Decimal]],
-    status: str = 'POSTED',
+    status: str = "POSTED",
 ) -> Any:
     """
     Crea un `JournalEntry` con sus `JournalItem`s atómicamente.
@@ -162,7 +163,9 @@ def _build_journal_entry(
 
 
 def _generate_sale_journal_entries(
-    accounts: dict, contacts: dict, rng: random.Random,
+    accounts: dict,
+    contacts: dict,
+    rng: random.Random,
 ) -> tuple[list, list]:
     """
     Genera 100 ventas con su asiento contable POSTED + 100 cabeceras `SaleOrder`.
@@ -179,7 +182,7 @@ def _generate_sale_journal_entries(
     """
     from sales.models import SaleOrder
 
-    customers = [contacts[f'customer_{i}'] for i in range(1, 6)]
+    customers = [contacts[f"customer_{i}"] for i in range(1, 6)]
     sale_orders = []
     journal_entries = []
 
@@ -189,7 +192,7 @@ def _generate_sale_journal_entries(
             day=rng.randint(1, 28),
         )
         net = Decimal(rng.randrange(50_000, 500_000, 1_000))
-        tax = (net * get_default_vat_rate() / Decimal('100')).quantize(Decimal('1'))
+        tax = (net * get_default_vat_rate() / Decimal("100")).quantize(Decimal("1"))
         total = net + tax
 
         # Determine outcome
@@ -216,27 +219,31 @@ def _generate_sale_journal_entries(
         if status == SaleOrder.Status.CANCELLED:
             continue  # cancelled orders don't post
 
-        debit_account = accounts['bank'] if status == SaleOrder.Status.PAID else accounts['receivable']
+        debit_account = (
+            accounts["bank"] if status == SaleOrder.Status.PAID else accounts["receivable"]
+        )
 
         je = _build_journal_entry(
             date_=d,
-            description=f'Venta NV-{i:06d}',
-            reference=f'NV-{i:06d}',
+            description=f"Venta NV-{i:06d}",
+            reference=f"NV-{i:06d}",
             items=[
-                (debit_account, total, Decimal('0')),
-                (accounts['sales_product'], Decimal('0'), net),
-                (accounts['vat_debit'], Decimal('0'), tax),
+                (debit_account, total, Decimal("0")),
+                (accounts["sales_product"], Decimal("0"), net),
+                (accounts["vat_debit"], Decimal("0"), tax),
             ],
         )
         order.journal_entry = je
-        order.save(update_fields=['journal_entry'])
+        order.save(update_fields=["journal_entry"])
         journal_entries.append(je)
 
     return sale_orders, journal_entries
 
 
 def _generate_purchase_journal_entries(
-    accounts: dict, contacts: dict, rng: random.Random,
+    accounts: dict,
+    contacts: dict,
+    rng: random.Random,
 ) -> tuple[list, list]:
     """
     Genera 50 compras con su asiento contable POSTED + 50 cabeceras `PurchaseOrder`.
@@ -248,7 +255,7 @@ def _generate_purchase_journal_entries(
     """
     from purchasing.models import PurchaseOrder
 
-    suppliers = [contacts[f'supplier_{i}'] for i in range(1, 4)]
+    suppliers = [contacts[f"supplier_{i}"] for i in range(1, 4)]
     purchase_orders = []
     journal_entries = []
 
@@ -258,7 +265,7 @@ def _generate_purchase_journal_entries(
             day=rng.randint(1, 28),
         )
         net = Decimal(rng.randrange(80_000, 800_000, 1_000))
-        tax = (net * get_default_vat_rate() / Decimal('100')).quantize(Decimal('1'))
+        tax = (net * get_default_vat_rate() / Decimal("100")).quantize(Decimal("1"))
         total = net + tax
 
         supplier = rng.choice(suppliers)
@@ -275,23 +282,25 @@ def _generate_purchase_journal_entries(
 
         je = _build_journal_entry(
             date_=d,
-            description=f'Compra OC-{i:06d}',
-            reference=f'OC-{i:06d}',
+            description=f"Compra OC-{i:06d}",
+            reference=f"OC-{i:06d}",
             items=[
-                (accounts['inventory'], net, Decimal('0')),
-                (accounts['vat_credit'], tax, Decimal('0')),
-                (accounts['payable'], Decimal('0'), total),
+                (accounts["inventory"], net, Decimal("0")),
+                (accounts["vat_credit"], tax, Decimal("0")),
+                (accounts["payable"], Decimal("0"), total),
             ],
         )
         order.journal_entry = je
-        order.save(update_fields=['journal_entry'])
+        order.save(update_fields=["journal_entry"])
         journal_entries.append(je)
 
     return purchase_orders, journal_entries
 
 
 def _generate_credit_notes(
-    accounts: dict, sale_orders: list, rng: random.Random,
+    accounts: dict,
+    sale_orders: list,
+    rng: random.Random,
 ) -> tuple[list, list]:
     """
     Genera 30 NC sobre ventas POSTED. Reverso parcial del asiento original.
@@ -307,8 +316,8 @@ def _generate_credit_notes(
     for i, source in enumerate(selected, start=1):
         # Reverso parcial: 30%-70% del total original
         ratio = Decimal(str(round(rng.uniform(0.30, 0.70), 2)))
-        net = (source.total_net * ratio).quantize(Decimal('1'))
-        tax = (net * get_default_vat_rate() / Decimal('100')).quantize(Decimal('1'))
+        net = (source.total_net * ratio).quantize(Decimal("1"))
+        tax = (net * get_default_vat_rate() / Decimal("100")).quantize(Decimal("1"))
         total = net + tax
 
         d = source.date + timedelta(days=rng.randint(5, 30))
@@ -317,7 +326,7 @@ def _generate_credit_notes(
 
         nc = Invoice.objects.create(
             dte_type=Invoice.DTEType.NOTA_CREDITO,
-            number=f'{i:06d}',
+            number=f"{i:06d}",
             date=d,
             contact=source.customer,
             sale_order=source,
@@ -331,23 +340,25 @@ def _generate_credit_notes(
 
         je = _build_journal_entry(
             date_=d,
-            description=f'NC sobre {source.number}',
-            reference=f'NC-{i:06d}',
+            description=f"NC sobre {source.number}",
+            reference=f"NC-{i:06d}",
             items=[
-                (accounts['sales_product'], net, Decimal('0')),
-                (accounts['vat_debit'], tax, Decimal('0')),
-                (accounts['receivable'], Decimal('0'), total),
+                (accounts["sales_product"], net, Decimal("0")),
+                (accounts["vat_debit"], tax, Decimal("0")),
+                (accounts["receivable"], Decimal("0"), total),
             ],
         )
         nc.journal_entry = je
-        nc.save(update_fields=['journal_entry'])
+        nc.save(update_fields=["journal_entry"])
         journal_entries.append(je)
 
     return invoices, journal_entries
 
 
 def _generate_debit_notes(
-    accounts: dict, purchase_orders: list, rng: random.Random,
+    accounts: dict,
+    purchase_orders: list,
+    rng: random.Random,
 ) -> tuple[list, list]:
     """
     Genera 20 ND sobre compras. Suma adicional al asiento original.
@@ -361,8 +372,8 @@ def _generate_debit_notes(
 
     for i, source in enumerate(selected, start=1):
         ratio = Decimal(str(round(rng.uniform(0.05, 0.20), 2)))
-        net = (source.total_net * ratio).quantize(Decimal('1'))
-        tax = (net * get_default_vat_rate() / Decimal('100')).quantize(Decimal('1'))
+        net = (source.total_net * ratio).quantize(Decimal("1"))
+        tax = (net * get_default_vat_rate() / Decimal("100")).quantize(Decimal("1"))
         total = net + tax
 
         d = source.date + timedelta(days=rng.randint(5, 30))
@@ -371,7 +382,7 @@ def _generate_debit_notes(
 
         nd = Invoice.objects.create(
             dte_type=Invoice.DTEType.NOTA_DEBITO,
-            number=f'{i:06d}',
+            number=f"{i:06d}",
             date=d,
             contact=source.supplier,
             purchase_order=source,
@@ -385,23 +396,25 @@ def _generate_debit_notes(
 
         je = _build_journal_entry(
             date_=d,
-            description=f'ND sobre {source.number}',
-            reference=f'ND-{i:06d}',
+            description=f"ND sobre {source.number}",
+            reference=f"ND-{i:06d}",
             items=[
-                (accounts['inventory'], net, Decimal('0')),
-                (accounts['vat_credit'], tax, Decimal('0')),
-                (accounts['payable'], Decimal('0'), total),
+                (accounts["inventory"], net, Decimal("0")),
+                (accounts["vat_credit"], tax, Decimal("0")),
+                (accounts["payable"], Decimal("0"), total),
             ],
         )
         nd.journal_entry = je
-        nd.save(update_fields=['journal_entry'])
+        nd.save(update_fields=["journal_entry"])
         journal_entries.append(je)
 
     return invoices, journal_entries
 
 
 def _generate_treasury_movements(
-    accounts: dict, contacts: dict, rng: random.Random,
+    accounts: dict,
+    contacts: dict,
+    rng: random.Random,
 ) -> tuple[list, list]:
     """
     Genera 100 TreasuryMovement (50 INBOUND cobranzas, 50 OUTBOUND pagos).
@@ -410,17 +423,17 @@ def _generate_treasury_movements(
         INBOUND:   Dr Banco          / Cr Clientes
         OUTBOUND:  Dr Proveedores    / Cr Banco
     """
-    from treasury.models import TreasuryMovement, TreasuryAccount
+    from treasury.models import TreasuryAccount, TreasuryMovement
 
     # Ensure a treasury account exists (CASH type — no bank/account_number required).
     # Linked to "Caja General" (1.1.01.01) which sits within the cash pool prefix
     # `1.1.01.x`. Movements debit/credit this same account so the snapshots stay
     # consistent.
     treasury_acc, _ = TreasuryAccount.objects.get_or_create(
-        name='Caja Tests',
+        name="Caja Tests",
         defaults={
-            'account': accounts['cash'],
-            'account_type': TreasuryAccount.Type.CASH,
+            "account": accounts["cash"],
+            "account_type": TreasuryAccount.Type.CASH,
         },
     )
 
@@ -428,7 +441,7 @@ def _generate_treasury_movements(
     journal_entries = []
 
     # 50 INBOUND
-    customers = [contacts[f'customer_{i}'] for i in range(1, 6)]
+    customers = [contacts[f"customer_{i}"] for i in range(1, 6)]
     for i in range(1, 51):
         d = _date_in_year(
             month=rng.randint(1, 12),
@@ -442,28 +455,28 @@ def _generate_treasury_movements(
             movement_type=TreasuryMovement.Type.INBOUND,
             payment_method=TreasuryMovement.Method.CASH,
             to_account=treasury_acc,
-            account=accounts['cash'],
+            account=accounts["cash"],
             amount=amount,
             date=d,
             contact=customer,
-            transaction_number=f'COB-{i:06d}',
-            reference=f'COB-{i:06d}',
+            transaction_number=f"COB-{i:06d}",
+            reference=f"COB-{i:06d}",
         )
         movements.append(mv)
 
         je = _build_journal_entry(
             date_=d,
-            description=f'Cobro cliente {customer.name}',
-            reference=f'COB-{i:06d}',
+            description=f"Cobro cliente {customer.name}",
+            reference=f"COB-{i:06d}",
             items=[
-                (accounts['cash'], amount, Decimal('0')),
-                (accounts['receivable'], Decimal('0'), amount),
+                (accounts["cash"], amount, Decimal("0")),
+                (accounts["receivable"], Decimal("0"), amount),
             ],
         )
         journal_entries.append(je)
 
     # 50 OUTBOUND
-    suppliers = [contacts[f'supplier_{i}'] for i in range(1, 4)]
+    suppliers = [contacts[f"supplier_{i}"] for i in range(1, 4)]
     for i in range(1, 51):
         d = _date_in_year(
             month=rng.randint(1, 12),
@@ -476,22 +489,22 @@ def _generate_treasury_movements(
             movement_type=TreasuryMovement.Type.OUTBOUND,
             payment_method=TreasuryMovement.Method.CASH,
             from_account=treasury_acc,
-            account=accounts['cash'],
+            account=accounts["cash"],
             amount=amount,
             date=d,
             contact=supplier,
-            transaction_number=f'PAG-{i:06d}',
-            reference=f'PAG-{i:06d}',
+            transaction_number=f"PAG-{i:06d}",
+            reference=f"PAG-{i:06d}",
         )
         movements.append(mv)
 
         je = _build_journal_entry(
             date_=d,
-            description=f'Pago proveedor {supplier.name}',
-            reference=f'PAG-{i:06d}',
+            description=f"Pago proveedor {supplier.name}",
+            reference=f"PAG-{i:06d}",
             items=[
-                (accounts['payable'], amount, Decimal('0')),
-                (accounts['cash'], Decimal('0'), amount),
+                (accounts["payable"], amount, Decimal("0")),
+                (accounts["cash"], Decimal("0"), amount),
             ],
         )
         journal_entries.append(je)
@@ -500,7 +513,8 @@ def _generate_treasury_movements(
 
 
 def _generate_manual_journal_entries(
-    accounts: dict, rng: random.Random,
+    accounts: dict,
+    rng: random.Random,
 ) -> list:
     """
     Genera 50 asientos manuales que cubren caminos contables especiales:
@@ -516,11 +530,11 @@ def _generate_manual_journal_entries(
     # Aporte inicial de capital (1 enero)
     je = _build_journal_entry(
         date_=_date_in_year(1, 1),
-        description='Aporte inicial de capital',
-        reference='APERTURA-2026',
+        description="Aporte inicial de capital",
+        reference="APERTURA-2026",
         items=[
-            (accounts['bank'], Decimal('10000000'), Decimal('0')),
-            (accounts['capital'], Decimal('0'), Decimal('10000000')),
+            (accounts["bank"], Decimal("10000000"), Decimal("0")),
+            (accounts["capital"], Decimal("0"), Decimal("10000000")),
         ],
     )
     journal_entries.append(je)
@@ -530,39 +544,41 @@ def _generate_manual_journal_entries(
         # Depreciación mensual fija (no aleatoria — predictibilidad)
         je = _build_journal_entry(
             date_=date(YEAR, month, 28),
-            description=f'Depreciación mes {month:02d}/{YEAR}',
-            reference=f'DEP-{month:02d}',
+            description=f"Depreciación mes {month:02d}/{YEAR}",
+            reference=f"DEP-{month:02d}",
             items=[
-                (accounts['expense_rent'], Decimal('0'), Decimal('0')),  # placeholder
-            ] if False else [  # Use a dedicated depreciation expense path
-                (accounts['expense_rent'], Decimal('200000'), Decimal('0')),
-                (accounts['accumulated_dep'], Decimal('0'), Decimal('200000')),
+                (accounts["expense_rent"], Decimal("0"), Decimal("0")),  # placeholder
+            ]
+            if False
+            else [  # Use a dedicated depreciation expense path
+                (accounts["expense_rent"], Decimal("200000"), Decimal("0")),
+                (accounts["accumulated_dep"], Decimal("0"), Decimal("200000")),
             ],
         )
         journal_entries.append(je)
 
         # Devengo de remuneraciones
-        salary_amount = Decimal('1500000')
+        salary_amount = Decimal("1500000")
         je = _build_journal_entry(
             date_=date(YEAR, month, 28),
-            description=f'Devengo remuneraciones {month:02d}/{YEAR}',
-            reference=f'PAYROLL-{month:02d}',
+            description=f"Devengo remuneraciones {month:02d}/{YEAR}",
+            reference=f"PAYROLL-{month:02d}",
             items=[
-                (accounts['expense_salary'], salary_amount, Decimal('0')),
-                (accounts['salary_payable'], Decimal('0'), salary_amount),
+                (accounts["expense_salary"], salary_amount, Decimal("0")),
+                (accounts["salary_payable"], Decimal("0"), salary_amount),
             ],
         )
         journal_entries.append(je)
 
         # Pago de arriendo
-        rent_amount = Decimal('800000')
+        rent_amount = Decimal("800000")
         je = _build_journal_entry(
             date_=date(YEAR, month, 5),
-            description=f'Arriendo {month:02d}/{YEAR}',
-            reference=f'RENT-{month:02d}',
+            description=f"Arriendo {month:02d}/{YEAR}",
+            reference=f"RENT-{month:02d}",
             items=[
-                (accounts['expense_rent'], rent_amount, Decimal('0')),
-                (accounts['bank'], Decimal('0'), rent_amount),
+                (accounts["expense_rent"], rent_amount, Decimal("0")),
+                (accounts["bank"], Decimal("0"), rent_amount),
             ],
         )
         journal_entries.append(je)
@@ -571,11 +587,11 @@ def _generate_manual_journal_entries(
         adjust = Decimal(str(rng.randrange(5_000, 25_000)))
         je = _build_journal_entry(
             date_=date(YEAR, month, 15),
-            description=f'Ajuste de inventario {month:02d}/{YEAR}',
-            reference=f'ADJ-{month:02d}',
+            description=f"Ajuste de inventario {month:02d}/{YEAR}",
+            reference=f"ADJ-{month:02d}",
             items=[
-                (accounts['inventory'], adjust, Decimal('0')),
-                (accounts['cogs_product'], Decimal('0'), adjust),
+                (accounts["inventory"], adjust, Decimal("0")),
+                (accounts["cogs_product"], Decimal("0"), adjust),
             ],
         )
         journal_entries.append(je)
@@ -612,19 +628,29 @@ def build_baseline_dataset(seed: int = 42) -> BaselineDataset:
     dataset.contacts = _create_contacts()
 
     sale_orders, sale_jes = _generate_sale_journal_entries(
-        dataset.accounts, dataset.contacts, rng,
+        dataset.accounts,
+        dataset.contacts,
+        rng,
     )
     purchase_orders, purchase_jes = _generate_purchase_journal_entries(
-        dataset.accounts, dataset.contacts, rng,
+        dataset.accounts,
+        dataset.contacts,
+        rng,
     )
     credit_notes, nc_jes = _generate_credit_notes(
-        dataset.accounts, sale_orders, rng,
+        dataset.accounts,
+        sale_orders,
+        rng,
     )
     debit_notes, nd_jes = _generate_debit_notes(
-        dataset.accounts, purchase_orders, rng,
+        dataset.accounts,
+        purchase_orders,
+        rng,
     )
     movements, treasury_jes = _generate_treasury_movements(
-        dataset.accounts, dataset.contacts, rng,
+        dataset.accounts,
+        dataset.contacts,
+        rng,
     )
     manual_jes = _generate_manual_journal_entries(dataset.accounts, rng)
 
@@ -632,8 +658,6 @@ def build_baseline_dataset(seed: int = 42) -> BaselineDataset:
     dataset.purchase_orders = purchase_orders
     dataset.invoices = credit_notes + debit_notes
     dataset.treasury_movements = movements
-    dataset.journal_entries = (
-        sale_jes + purchase_jes + nc_jes + nd_jes + treasury_jes + manual_jes
-    )
+    dataset.journal_entries = sale_jes + purchase_jes + nc_jes + nd_jes + treasury_jes + manual_jes
 
     return dataset

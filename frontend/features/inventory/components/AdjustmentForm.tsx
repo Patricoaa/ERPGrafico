@@ -20,7 +20,7 @@ import {
 import { toast } from "sonner"
 import { ProductSelector } from "@/components/selectors/ProductSelector"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
-import { Product, UoM } from "@/types/entities"
+import { type Product, type UoM } from "@/types/entities"
 import { cn } from "@/lib/utils"
 import { useWarehouses } from "../hooks/useWarehouses"
 import { useUoMs } from "../hooks/useUoMs"
