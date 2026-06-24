@@ -284,7 +284,7 @@ export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
     shortTemplate: 'AS-{number}',
     listUrl: '/accounting/entries',
     detailUrlPattern: '/accounting/entries/{id}',
-    viewPolicy: { availableViews: ['list'], defaultView: 'list' },
+    viewPolicy: { availableViews: ['card'], defaultView: 'card', cardComponent: 'entity', gridLayout: 'single-column' },
   },
   'tax.taxperiod': {
     label: 'tax.taxperiod',
