@@ -371,7 +371,24 @@ class TreasuryMovementViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
     filter_backends = [DjangoFilterBackend]
 
     def get_queryset(self):
-        qs = self.queryset
+        qs = self.queryset.select_related(
+            "account",
+            "from_account__account",
+            "to_account__account",
+            "payment_method_new",
+            "reconciled_by",
+            "created_by",
+            "terminal_batch",
+            "contact",
+            "invoice__contact",
+            "invoice__sale_order__customer",
+            "invoice__purchase_order__supplier",
+            "sale_order__customer",
+            "purchase_order__supplier",
+            "journal_entry",
+            "card_purchase_group__partner",
+            "bank_statement_line__statement",
+        )
 
         # Handle bank filtering (matches movements from/to any account of the bank)
         bank_id = self.request.query_params.get("bank")
@@ -700,6 +717,22 @@ class BankStatementViewSet(viewsets.ModelViewSet):
     queryset = BankStatement.objects.all().select_related("treasury_account", "imported_by")
     filterset_fields = ["status", "treasury_account"]
 
+    def get_queryset(self):
+        qs = super().get_queryset()
+        if self.action == "retrieve":
+            from django.db.models import Prefetch
+            qs = qs.prefetch_related(
+                Prefetch("lines", queryset=BankStatementLine.objects.select_related(
+                    "reconciled_by", "reconciliation_match", "difference_journal_entry"
+                ).prefetch_related(
+                    "reconciliation_match__movements__terminal_batch",
+                    "reconciliation_match__movements__contact",
+                    "matched_movements__terminal_batch",
+                    "matched_movements__contact"
+                ))
+            )
+        return qs
+
     def get_serializer_class(self):
         if self.action == "list":
             return BankStatementListSerializer
@@ -822,7 +855,14 @@ class BankStatementViewSet(viewsets.ModelViewSet):
 class BankStatementLineViewSet(viewsets.ModelViewSet):
     """ViewSet for bank statement lines"""
 
-    queryset = BankStatementLine.objects.all().select_related("statement", "reconciled_by")
+    queryset = BankStatementLine.objects.all().select_related(
+        "statement", "reconciled_by", "reconciliation_match", "difference_journal_entry"
+    ).prefetch_related(
+        "reconciliation_match__movements__terminal_batch",
+        "reconciliation_match__movements__contact",
+        "matched_movements__terminal_batch",
+        "matched_movements__contact"
+    )
     serializer_class = BankStatementLineSerializer
     pagination_class = StandardResultsSetPagination
 
@@ -1016,7 +1056,15 @@ class ReconciliationSettingsViewSet(viewsets.ModelViewSet):
 class POSSessionViewSet(viewsets.ModelViewSet):
     """ViewSet for POS Session Management (Apertura/Cierre de Caja)"""
 
-    queryset = POSSession.objects.all().select_related("treasury_account", "user", "closed_by")
+    from django.db.models import Prefetch
+    queryset = POSSession.objects.all().select_related("treasury_account", "user", "closed_by", "terminal").prefetch_related(
+        Prefetch("movements", queryset=TreasuryMovement.objects.select_related(
+            "account", "payment_method_new", "contact", "sale_order__customer", "invoice__contact",
+            "invoice__sale_order__customer", "purchase_order__supplier", "invoice__purchase_order__supplier",
+            "terminal_batch", "journal_entry", "card_purchase_group__partner", "bank_statement_line__statement",
+            "reconciled_by", "created_by"
+        ))
+    )
     serializer_class = POSSessionSerializer
     filterset_fields = ["status", "treasury_account", "user"]
 
