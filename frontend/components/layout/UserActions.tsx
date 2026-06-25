@@ -34,7 +34,6 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
-import { motion } from "framer-motion"
 import { cn } from "@/lib/utils"
 
 // Lazy load cost calculator
@@ -156,18 +155,17 @@ export function UserActions({ isInboxOpen, onInboxToggle }: UserActionsProps) {
                 {/* Calculator Action */}
                 <Tooltip>
                     <TooltipTrigger asChild>
-                        <motion.button
-                            whileTap={{ scale: 0.95 }}
+                        <button
                             onClick={() => setIsCalculatorOpen(true)}
                             className={cn(
-                                "h-10 w-10 flex items-center justify-center rounded-md transition-all duration-200",
+                                "h-10 w-10 flex items-center justify-center rounded-md transition-all duration-200 active:scale-95",
                                 isCalculatorOpen
                                     ? "bg-primary text-primary-foreground"
                                     : "text-foreground/50 hover:bg-accent hover:text-accent-foreground"
                             )}
                         >
                             <Calculator className="h-5 w-5" />
-                        </motion.button>
+                        </button>
                     </TooltipTrigger>
                     <TooltipContent side="bottom">
                         Calculadora de Costos
@@ -177,15 +175,12 @@ export function UserActions({ isInboxOpen, onInboxToggle }: UserActionsProps) {
                 {/* Inbox Action */}
                 <Tooltip>
                     <TooltipTrigger asChild>
-                        <motion.button
-                            whileTap={{ scale: 0.95 }}
+                        <button
                             onClick={onInboxToggle}
                             className={cn(
-                                "relative h-10 w-10 flex items-center justify-center rounded-md transition-all duration-200",
+                                "relative h-10 w-10 flex items-center justify-center rounded-md transition-all duration-200 active:scale-95",
                                 isInboxOpen
-                                    // Active: filled primary to signal open panel
                                     ? "bg-primary text-primary-foreground"
-                                    // Rest: ghost, barely visible
                                     : "text-foreground/50 hover:bg-accent hover:text-accent-foreground"
                             )}
                         >
@@ -195,7 +190,7 @@ export function UserActions({ isInboxOpen, onInboxToggle }: UserActionsProps) {
                                     {pendingTasksCount > 99 ? '99+' : pendingTasksCount}
                                 </span>
                             )}
-                        </motion.button>
+                        </button>
                     </TooltipTrigger>
                     <TooltipContent side="bottom">
                         Bandeja de Entrada {pendingTasksCount > 0 && `(${pendingTasksCount})`}
@@ -209,9 +204,8 @@ export function UserActions({ isInboxOpen, onInboxToggle }: UserActionsProps) {
                     <Tooltip>
                         <TooltipTrigger asChild>
                             <DropdownMenuTrigger asChild>
-                                <motion.button
-                                    whileTap={{ scale: 0.95 }}
-                                    className="relative h-10 w-10 flex items-center justify-center rounded-md text-foreground/50 hover:bg-accent hover:text-accent-foreground transition-all duration-200 bg-transparent border-none shadow-none"
+                                <button
+                                    className="relative h-10 w-10 flex items-center justify-center rounded-md text-foreground/50 hover:bg-accent hover:text-accent-foreground transition-all duration-200 active:scale-95 bg-transparent border-none shadow-none"
                                 >
                                     <Bell className="h-5 w-5" />
                                     {unreadCount > 0 && (
@@ -220,7 +214,7 @@ export function UserActions({ isInboxOpen, onInboxToggle }: UserActionsProps) {
                                             <span className="relative inline-flex rounded-full h-2 w-2 bg-primary"></span>
                                         </span>
                                     )}
-                                </motion.button>
+                                </button>
                             </DropdownMenuTrigger>
                         </TooltipTrigger>
                         <TooltipContent side="bottom">
@@ -260,16 +254,15 @@ export function UserActions({ isInboxOpen, onInboxToggle }: UserActionsProps) {
                     <Tooltip>
                         <TooltipTrigger asChild>
                             <DropdownMenuTrigger asChild>
-                                <motion.button
-                                    whileTap={{ scale: 0.95 }}
-                                    className="relative h-10 w-10 flex items-center justify-center rounded-md text-foreground/50 hover:bg-accent hover:text-accent-foreground transition-all duration-200 bg-transparent border border-border/60"
+                                <button
+                                    className="relative h-10 w-10 flex items-center justify-center rounded-md text-foreground/50 hover:bg-accent hover:text-accent-foreground transition-all duration-200 active:scale-95 bg-transparent border border-border/60"
                                 >
                                     <Avatar className="h-full w-full rounded-md bg-transparent">
                                         <AvatarFallback className="bg-transparent text-current font-heading font-black text-[10px] rounded-md">
                                             {user?.username?.substring(0, 2).toUpperCase() || 'US'}
                                         </AvatarFallback>
                                     </Avatar>
-                                </motion.button>
+                                </button>
                             </DropdownMenuTrigger>
                         </TooltipTrigger>
                         <TooltipContent side="bottom">

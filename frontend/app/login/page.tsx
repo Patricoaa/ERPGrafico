@@ -1,6 +1,5 @@
 "use client"
 
-import { motion } from "framer-motion"
 import { LoginForm } from "@/features/auth"
 import { GuestGuard } from "@/components/auth"
 import { useBranding } from "@/contexts/BrandingProvider"
@@ -14,11 +13,8 @@ export default function LoginPage() {
     return (
         <GuestGuard>
             <div className="min-h-screen w-full flex items-center justify-center bg-background selection:bg-primary/20 relative overflow-hidden">
-                <motion.div
-                    initial={{ opacity: 0, y: 12 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
-                    className="w-full max-w-sm relative z-10 mx-6"
+                <div
+                    className="w-full max-w-sm relative z-10 mx-6 animate-in fade-in slide-in-from-bottom-3 ease-premium fill-mode-both duration-[600ms]"
                 >
                     <div className="rounded-xl border bg-card shadow-card p-8 canvas-prepress">
                         {/* Logo */}
@@ -51,7 +47,7 @@ export default function LoginPage() {
                             </p>
                         </div>
                     </div>
-                </motion.div>
+                </div>
             </div>
         </GuestGuard>
     )
