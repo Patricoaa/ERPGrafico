@@ -11,7 +11,83 @@ from django.db import transaction
 from django.db.models import Sum
 from django.utils.translation import gettext_lazy as _
 
-from .models import Payroll
+from .models import Employee, EmployeeConceptAmount, Payroll
+
+
+class EmployeeService:
+    """
+    Service layer for Employee lifecycle operations.
+
+    Owns all write operations that touch more than one model, ensuring
+    every multi-table mutation is wrapped in a single atomic transaction.
+    Serializers must delegate here instead of containing ORM calls directly.
+    """
+
+    @staticmethod
+    @transaction.atomic
+    def create_employee(validated_data: dict) -> Employee:
+        """
+        Create an Employee and synchronise its ConceptAmounts in one transaction.
+
+        Args:
+            validated_data: Dict produced by EmployeeSerializer after validation.
+                            `concept_amounts` (if present) is popped and handled here.
+
+        Returns:
+            The newly created Employee instance.
+        """
+        concept_amounts_data = validated_data.pop("concept_amounts", None)
+        employee = Employee.objects.create(**validated_data)
+        EmployeeService._sync_concept_amounts(employee, concept_amounts_data)
+        return employee
+
+    @staticmethod
+    @transaction.atomic
+    def update_employee(instance: Employee, validated_data: dict) -> Employee:
+        """
+        Update an Employee and synchronise its ConceptAmounts in one transaction.
+
+        Args:
+            instance: The Employee instance to update.
+            validated_data: Dict produced by EmployeeSerializer after validation.
+
+        Returns:
+            The updated Employee instance.
+        """
+        concept_amounts_data = validated_data.pop("concept_amounts", None)
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
+        instance.save()
+        EmployeeService._sync_concept_amounts(instance, concept_amounts_data)
+        return instance
+
+    @staticmethod
+    def _sync_concept_amounts(employee: Employee, concept_amounts_data) -> None:
+        """
+        Upsert + prune the ConceptAmount list for an employee.
+
+        Performs an update_or_create for each item in the new list and deletes
+        any EmployeeConceptAmount rows that are no longer present. Called inside
+        an already-open atomic transaction from create_employee / update_employee.
+
+        Args:
+            employee: The Employee whose concept amounts are being synced.
+            concept_amounts_data: List of dicts with keys `concept` and `amount`,
+                                  or None (no-op).
+        """
+        if concept_amounts_data is None:
+            return
+        existing_ids: list[int] = []
+        for item_data in concept_amounts_data:
+            obj, _ = EmployeeConceptAmount.objects.update_or_create(
+                employee=employee,
+                concept=item_data["concept"],
+                defaults={"amount": item_data["amount"]},
+            )
+            existing_ids.append(obj.id)
+        EmployeeConceptAmount.objects.filter(employee=employee).exclude(
+            id__in=existing_ids
+        ).delete()
 
 
 class PayrollService:

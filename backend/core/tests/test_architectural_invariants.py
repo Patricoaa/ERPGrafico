@@ -282,3 +282,156 @@ class TestArchitecturalInvariants:
             f"T-103/ADR-0022 — {len(violations)} entidad(es) con list_url divergente "
             f"entre UniversalRegistry y searchableEntityRoutes.ts:\n" + "\n".join(violations)
         )
+
+    # -----------------------------------------------------------------------
+    # Serializer Antipattern Invariants (Hallazgo 3 enforcement)
+    # -----------------------------------------------------------------------
+
+    def _get_serializer_files(self):
+        """Return all serializers.py paths in the project (excludes venv, migrations)."""
+        backend_dir = Path(settings.BASE_DIR)
+        skip_dirs = {"venv", ".venv", "migrations", "__pycache__", "node_modules"}
+        result = []
+        for p in backend_dir.rglob("serializers.py"):
+            if not any(part in skip_dirs for part in p.parts):
+                result.append(p)
+        return result
+
+    def _class_direct_methods(self, class_node):
+        """Yield FunctionDef nodes that are direct children of a class body."""
+        for item in class_node.body:
+            if isinstance(item, ast.FunctionDef):
+                yield item
+
+    def _is_serializer_class(self, node):
+        return isinstance(node, ast.ClassDef) and node.name.endswith("Serializer")
+
+    def test_no_transaction_atomic_in_serializers(self):
+        """
+        ARCH-RULE-A/B: No serializer class may contain transaction.atomic.
+
+        Architecture contract: atomic transaction boundaries belong exclusively
+        in the service layer (services.py). Serializers map validated_data and
+        delegate writes to a service — they must not own transaction scope.
+
+        If you need to fix a violation:
+          1. Extract the write logic into services.py with @transaction.atomic.
+          2. Have the serializer's create()/update() call the service method.
+          Reference: docs/90-governance/zero-transaction-in-serializer-policy.md
+        """
+        ORM_MANAGER_ATTRS = {"objects"}
+        ORM_CALL_NAMES = {
+            "create", "get", "filter", "all", "update", "delete",
+            "update_or_create", "get_or_create", "bulk_create", "bulk_update",
+        }
+        serializer_files = self._get_serializer_files()
+        violations = []
+
+        for path in sorted(serializer_files):
+            try:
+                tree = ast.parse(path.read_text(encoding="utf-8"), filename=str(path))
+            except SyntaxError:
+                continue
+
+            for class_node in ast.walk(tree):
+                if not self._is_serializer_class(class_node):
+                    continue
+
+                for method_node in self._class_direct_methods(class_node):
+                    for node in ast.walk(method_node):
+                        # Pattern: with transaction.atomic():
+                        if isinstance(node, ast.With):
+                            for item in node.items:
+                                ctx = item.context_expr
+                                if (
+                                    isinstance(ctx, ast.Call)
+                                    and isinstance(ctx.func, ast.Attribute)
+                                    and ctx.func.attr == "atomic"
+                                    and isinstance(ctx.func.value, ast.Name)
+                                    and ctx.func.value.id == "transaction"
+                                ):
+                                    violations.append(
+                                        f"{path}:{node.lineno}: "
+                                        f"[RULE-A/B] `with transaction.atomic()` in "
+                                        f"{class_node.name}.{method_node.name}()"
+                                    )
+                        # Pattern: from django.db import transaction (inline)
+                        if isinstance(node, ast.ImportFrom):
+                            if node.module in ("django.db", "django.db.transaction") and any(
+                                a.name == "transaction" for a in node.names
+                            ):
+                                violations.append(
+                                    f"{path}:{node.lineno}: "
+                                    f"[RULE-A/B] inline `import transaction` in "
+                                    f"{class_node.name}.{method_node.name}()"
+                                )
+
+        assert not violations, (
+            f"\n{len(violations)} violation(s) of ARCH-RULE-A/B "
+            f"(transaction.atomic in serializer):\n"
+            + "\n".join(f"  {v}" for v in violations)
+            + "\n\nFix: move to services.py with @transaction.atomic. "
+            "See docs/90-governance/zero-transaction-in-serializer-policy.md"
+        )
+
+    def test_no_direct_orm_in_serializer_create_update(self):
+        """
+        ARCH-RULE-C: Serializer create() and update() must not contain direct ORM calls.
+
+        Architecture contract: `Model.objects.create/get/filter/...` belongs in
+        services.py. Serializer create()/update() must only call a service method
+        and return its result.
+
+        If you need to fix a violation:
+          1. Move the ORM logic to a service in services.py.
+          2. Have the serializer delegate: `return MyService.create_x(validated_data)`.
+          Reference: docs/90-governance/zero-transaction-in-serializer-policy.md
+        """
+        WATCHED_METHODS = {"create", "update"}
+        ORM_MANAGER_ATTRS = {"objects"}
+        ORM_CALL_NAMES = {
+            "create", "get", "filter", "all", "update", "delete",
+            "update_or_create", "get_or_create", "bulk_create", "bulk_update",
+        }
+        serializer_files = self._get_serializer_files()
+        violations = []
+
+        for path in sorted(serializer_files):
+            try:
+                tree = ast.parse(path.read_text(encoding="utf-8"), filename=str(path))
+            except SyntaxError:
+                continue
+
+            for class_node in ast.walk(tree):
+                if not self._is_serializer_class(class_node):
+                    continue
+
+                for method_node in self._class_direct_methods(class_node):
+                    if method_node.name not in WATCHED_METHODS:
+                        continue
+
+                    for node in ast.walk(method_node):
+                        if not isinstance(node, ast.Call):
+                            continue
+                        func = node.func
+                        # Pattern: Something.objects.<orm_method>(...)
+                        if (
+                            isinstance(func, ast.Attribute)
+                            and func.attr in ORM_CALL_NAMES
+                            and isinstance(func.value, ast.Attribute)
+                            and func.value.attr in ORM_MANAGER_ATTRS
+                        ):
+                            violations.append(
+                                f"{path}:{node.lineno}: "
+                                f"[RULE-C] Direct ORM call `.objects.{func.attr}()` in "
+                                f"{class_node.name}.{method_node.name}()"
+                            )
+
+        assert not violations, (
+            f"\n{len(violations)} violation(s) of ARCH-RULE-C "
+            f"(direct ORM in serializer create/update):\n"
+            + "\n".join(f"  {v}" for v in violations)
+            + "\n\nFix: move ORM calls to services.py and delegate from the serializer. "
+            "See docs/90-governance/zero-transaction-in-serializer-policy.md"
+        )
+
