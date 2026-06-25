@@ -1,3 +1,4 @@
+from core.api.pagination import StandardResultsSetPagination
 from decimal import Decimal
 
 from django.contrib.contenttypes.models import ContentType
@@ -16,6 +17,7 @@ from .serializers import ContactListSerializer, ContactSerializer
 
 
 class ContactViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
+    pagination_class = StandardResultsSetPagination
     """
     ViewSet for managing contacts.
     Supports filtering by type (customer/supplier/both/none).

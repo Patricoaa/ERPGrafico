@@ -1,3 +1,4 @@
+from core.api.pagination import StandardResultsSetPagination
 from django.utils import timezone
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
@@ -8,6 +9,7 @@ from .subscription_serializers import SubscriptionSerializer
 
 
 class SubscriptionViewSet(viewsets.ModelViewSet):
+    pagination_class = StandardResultsSetPagination
     """
     ViewSet for managing subscriptions.
     Provides CRUD operations plus custom actions for pause, cancel, and resume.

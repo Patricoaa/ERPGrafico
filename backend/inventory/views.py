@@ -261,6 +261,7 @@ class ProductViewSet(NoDestroyModelMixin, BulkImportMixin, AuditHistory, viewset
 
 
 class ProductAttributeViewSet(NoDestroyModelMixin, viewsets.ModelViewSet, AuditHistory):
+    pagination_class = StandardResultsSetPagination
     queryset = ProductAttribute.objects.all()
     serializer_class = ProductAttributeSerializer
     filter_backends = [filters.SearchFilter]
@@ -268,6 +269,7 @@ class ProductAttributeViewSet(NoDestroyModelMixin, viewsets.ModelViewSet, AuditH
 
 
 class ProductAttributeValueViewSet(NoDestroyModelMixin, viewsets.ModelViewSet, AuditHistory):
+    pagination_class = StandardResultsSetPagination
     queryset = ProductAttributeValue.objects.all()
     serializer_class = ProductAttributeValueSerializer
     filterset_fields = ["attribute"]
@@ -316,6 +318,7 @@ class UoMViewSet(NoDestroyModelMixin, viewsets.ModelViewSet, AuditHistory):
 
 
 class UoMCategoryViewSet(NoDestroyModelMixin, viewsets.ModelViewSet, AuditHistory):
+    pagination_class = StandardResultsSetPagination
     queryset = UoMCategory.objects.all()
     serializer_class = UoMCategorySerializer
 
@@ -411,6 +414,7 @@ class SubscriptionViewSet(NoDestroyModelMixin, viewsets.ModelViewSet):
 
 
 class ProductUoMPriceViewSet(NoDestroyModelMixin, viewsets.ModelViewSet):
+    pagination_class = StandardResultsSetPagination
     serializer_class = ProductUoMPriceSerializer
     filter_backends = [DjangoFilterBackend]
     filterset_fields = ["product", "uom"]

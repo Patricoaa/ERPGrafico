@@ -1,3 +1,4 @@
+from core.api.pagination import StandardResultsSetPagination
 from django.core.exceptions import ValidationError
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
@@ -14,6 +15,7 @@ from core.mixins import AuditHistoryMixin
 
 
 class NoteWorkflowViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
+    pagination_class = StandardResultsSetPagination
     """
     ViewSet for Note Workflow (Credit/Debit Note checkout)
 

@@ -1,3 +1,4 @@
+from core.api.pagination import StandardResultsSetPagination
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
@@ -8,6 +9,7 @@ from .serializers import ProfitDistributionResolutionSerializer
 
 
 class ProfitDistributionResolutionViewSet(viewsets.ModelViewSet):
+    pagination_class = StandardResultsSetPagination
     queryset = ProfitDistributionResolution.objects.all().order_by("-fiscal_year", "-created_at")
     serializer_class = ProfitDistributionResolutionSerializer
 

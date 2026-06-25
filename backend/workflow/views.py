@@ -1,3 +1,4 @@
+from core.api.pagination import StandardResultsSetPagination
 from django.utils import timezone
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import filters, status, viewsets
@@ -18,6 +19,7 @@ from .services import WorkflowService
 
 
 class TaskViewSet(viewsets.ModelViewSet):
+    pagination_class = StandardResultsSetPagination
     """
     Manage system tasks.
     Standard users see only their assigned tasks or tasks they created.
@@ -71,6 +73,7 @@ class TaskViewSet(viewsets.ModelViewSet):
 
 
 class NotificationViewSet(viewsets.ModelViewSet):
+    pagination_class = StandardResultsSetPagination
     """
     Manage user notifications.
     Users only see their own notifications.
@@ -100,6 +103,7 @@ class NotificationViewSet(viewsets.ModelViewSet):
 
 
 class TaskAssignmentRuleViewSet(viewsets.ModelViewSet):
+    pagination_class = StandardResultsSetPagination
     """
     Manage assignment rules.
     Only admins should edit this, but authenticated users might need to read?
@@ -139,6 +143,7 @@ class WorkflowSettingsViewSet(viewsets.ModelViewSet):
 
 
 class NotificationRuleViewSet(viewsets.ModelViewSet):
+    pagination_class = StandardResultsSetPagination
     """
     Manage notification rules.
     Only admins should edit this.

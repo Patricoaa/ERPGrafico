@@ -1,3 +1,4 @@
+from core.api.pagination import StandardResultsSetPagination
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
@@ -10,6 +11,7 @@ from .models import DraftCart
 
 
 class DraftCartViewSet(viewsets.ModelViewSet):
+    pagination_class = StandardResultsSetPagination
     """
     ViewSet para gestionar borradores de carrito POS por sesión.
     Todos los usuarios de una sesión ven los mismos borradores (multi-usuario).

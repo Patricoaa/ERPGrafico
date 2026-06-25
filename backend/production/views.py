@@ -1,3 +1,4 @@
+from core.api.pagination import StandardResultsSetPagination
 import logging
 
 from rest_framework import filters, status, viewsets
@@ -59,6 +60,7 @@ from .services import WorkOrderMetricsService, WorkOrderPdfService, WorkOrderSer
 
 
 class WorkOrderViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
+    pagination_class = StandardResultsSetPagination
     filter_backends = [DjangoFilterBackend, filters.SearchFilter]
     filterset_class = WorkOrderFilterSet
     search_fields = [
@@ -363,6 +365,7 @@ class WorkOrderViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
 
 
 class BillOfMaterialsViewSet(viewsets.ModelViewSet):
+    pagination_class = StandardResultsSetPagination
     queryset = BillOfMaterials.objects.all()
     serializer_class = BillOfMaterialsSerializer
     filter_backends = [DjangoFilterBackend, filters.SearchFilter]

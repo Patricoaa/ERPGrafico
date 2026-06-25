@@ -1,3 +1,4 @@
+from core.api.pagination import StandardResultsSetPagination
 from decimal import Decimal
 
 import django_filters
@@ -134,6 +135,7 @@ class SaleOrderFilterSet(django_filters.FilterSet):
 
 
 class SaleOrderViewSet(NoDestroyModelMixin, viewsets.ModelViewSet, AuditHistoryMixin):
+    pagination_class = StandardResultsSetPagination
     def get_queryset(self):
         return SaleOrder.objects.select_related(
             "customer", "credit_approval_task", "pos_session"
@@ -401,6 +403,7 @@ class SaleOrderViewSet(NoDestroyModelMixin, viewsets.ModelViewSet, AuditHistoryM
 
 
 class SaleDeliveryViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
+    pagination_class = StandardResultsSetPagination
     queryset = SaleDelivery.objects.all()
     serializer_class = SaleDeliverySerializer
 
@@ -418,6 +421,7 @@ class SaleDeliveryViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
 
 
 class SaleReturnViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
+    pagination_class = StandardResultsSetPagination
     queryset = SaleReturn.objects.all()
     serializer_class = SaleReturnSerializer
 
