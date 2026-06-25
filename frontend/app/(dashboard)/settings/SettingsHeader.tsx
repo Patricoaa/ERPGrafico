@@ -43,6 +43,12 @@ export const SETTINGS_TABS = [
         href: "/settings/accounts",
     },
     {
+        value: "jobs",
+        label: "Procesos",
+        iconName: "server-cog",
+        href: "/settings/jobs",
+    },
+    {
         value: "workflow",
         label: "Workflow",
         iconName: "git-branch",
@@ -111,6 +117,12 @@ export function SettingsHeader() {
                     title: "Cuentas Contables",
                     description: "Configure las cuentas contables por defecto de cada módulo del sistema.",
                     iconName: "book-open"
+                }
+            case 'jobs':
+                return {
+                    title: "Procesos en Segundo Plano",
+                    description: "Gestión de importaciones, exportaciones y reportes asíncronos.",
+                    iconName: "server-cog"
                 }
             case 'workflow':
                 if (subActiveValue === 'tasks') return { title: "Tareas Automáticas", description: "Configuración de responsables y disparadores de tareas.", iconName: "list-todo" }

@@ -18,7 +18,7 @@ from purchasing.models import PurchaseOrder
 from sales.models import SaleOrder
 from treasury.models import TreasuryMovement
 
-from .models import ActionLog, CompanySettings, User, UserPreference
+from .models import ActionLog, CompanySettings, User, UserPreference, BackgroundJob
 from .serializers import (
     ActionLogSerializer,
     CompanySettingsSerializer,
@@ -26,8 +26,15 @@ from .serializers import (
     GroupSerializer,
     HistoricalRecordSerializer,
     UserSerializer,
+    BackgroundJobSerializer,
 )
 from .services import ActionLoggingService, UserService
+
+
+class BackgroundJobViewSet(viewsets.ModelViewSet):
+    queryset = BackgroundJob.objects.all()
+    serializer_class = BackgroundJobSerializer
+    permission_classes = [IsAuthenticated]
 
 
 class CustomTokenRefreshView(TokenRefreshView):
@@ -511,3 +518,19 @@ def system_status(request):
             "server_time": timezone.now().isoformat(),
         }
     )
+
+
+class BackgroundJobViewSet(viewsets.ReadOnlyModelViewSet):
+    """
+    Expose background jobs (read-only for users).
+    Users can only see their own jobs, unless they are superusers.
+    """
+    serializer_class = BackgroundJobSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        user = self.request.user
+        qs = BackgroundJob.objects.all()
+        if not user.is_superuser:
+            qs = qs.filter(user=user)
+        return qs

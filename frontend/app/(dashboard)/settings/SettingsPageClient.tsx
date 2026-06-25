@@ -1,7 +1,7 @@
 "use client"
 
 import Link from "next/link"
-import { Building2, ShieldCheck, History, GitBranch, Terminal, Info, BookOpen } from "lucide-react"
+import { Building2, ShieldCheck, History, GitBranch, Terminal, Info, BookOpen, ServerCog } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { getFrontendVersion, getGitHash, getBuildDate } from "@/lib/version"
 import { useSystemStatus } from "@/features/settings"
@@ -53,6 +53,15 @@ const settingsModules = [
         url: "/settings/accounts",
         status: "Configurado",
         statusColor: "text-success bg-success/10"
+    },
+    {
+        id: "jobs",
+        icon: ServerCog,
+        label: "Procesos",
+        description: "Importaciones y reportes",
+        url: "/settings/jobs",
+        status: "Activo",
+        statusColor: "text-info bg-info/10"
     },
 ]
 

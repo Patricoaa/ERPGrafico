@@ -15,6 +15,7 @@ from .abstracts import AuditedModel, TimeStampedModel, TransactionalDocument
 from .idempotency import IdempotencyRecord
 from .search import GlobalSearchIndex
 from .user_preference import UserPreference
+from .jobs import BackgroundJob
 
 __all__ = [
     "User",
@@ -28,6 +29,7 @@ __all__ = [
     "GlobalSearchIndex",
     "IdempotencyRecord",
     "UserPreference",
+    "BackgroundJob",
 ]
 
 

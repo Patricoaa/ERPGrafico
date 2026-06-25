@@ -3,7 +3,7 @@ from rest_framework import serializers
 from rest_framework_simplejwt.exceptions import InvalidToken
 from rest_framework_simplejwt.serializers import TokenRefreshSerializer
 
-from core.models import ActionLog, Attachment, CompanySettings, User, UserPreference
+from core.models import ActionLog, Attachment, CompanySettings, User, UserPreference, BackgroundJob
 
 
 class CustomTokenRefreshSerializer(TokenRefreshSerializer):
@@ -231,3 +231,25 @@ class UserPreferenceSerializer(serializers.ModelSerializer):
         model = UserPreference
         fields = ["id", "key", "value", "updated_at"]
         read_only_fields = ["id", "updated_at"]
+
+
+class BackgroundJobSerializer(serializers.ModelSerializer):
+    job_type_display = serializers.CharField(source="get_job_type_display", read_only=True)
+    status_display = serializers.CharField(source="get_status_display", read_only=True)
+
+    class Meta:
+        model = BackgroundJob
+        fields = [
+            "id",
+            "job_type",
+            "job_type_display",
+            "status",
+            "status_display",
+            "title",
+            "progress_percent",
+            "result_file_url",
+            "error_message",
+            "completed_at",
+            "created_at",
+        ]
+        read_only_fields = fields
