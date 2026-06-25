@@ -270,6 +270,7 @@ class SaleOrderViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
         except Exception as e:
             return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
+    @idempotent_endpoint(scope="sales.order.confirm")
     @action(detail=True, methods=["post"])
     def confirm(self, request, pk=None):
         order = self.get_object()
@@ -281,6 +282,7 @@ class SaleOrderViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
         except Exception as e:
             return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
+    @idempotent_endpoint(scope="sales.order.dispatch")
     @action(detail=True, methods=["post"], url_path="dispatch")
     def dispatch_order(self, request, pk=None):
         """Dispatch complete order"""

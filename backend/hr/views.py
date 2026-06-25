@@ -1,3 +1,4 @@
+from core.idempotency import idempotent_endpoint
 from decimal import Decimal
 
 import django_filters
@@ -204,6 +205,7 @@ class PayrollViewSet(viewsets.ModelViewSet):
         payroll.recalculate_totals()
         return Response(PayrollDetailSerializer(payroll).data)
 
+    @idempotent_endpoint(scope="hr.payroll.draft")
     @action(detail=False, methods=["post"])
     def create_draft_payrolls(self, request):
         """Dispara manualmente la creación de liquidaciones borrador para el mes actual."""

@@ -545,6 +545,7 @@ class TreasuryMovementViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
             traceback.print_exc()
             return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
+    @idempotent_endpoint(scope="treasury.movement.register")
     @action(detail=False, methods=["post"])
     def register_movement(self, request):
         try:
@@ -562,6 +563,7 @@ class TreasuryMovementViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
             traceback.print_exc()
             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
+    @idempotent_endpoint(scope="treasury.card.purchase")
     @action(detail=False, methods=["post"], url_path="card-purchase")
     def card_purchase(self, request):
         """
@@ -711,6 +713,7 @@ class TreasuryMovementViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
         except Exception as e:
             return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
+    @idempotent_endpoint(scope="treasury.allocation.create")
     @action(detail=True, methods=["post"])
     def allocate(self, request, pk=None):
         """S5.2: Set partial allocations for a payment"""
@@ -1063,6 +1066,7 @@ class BankStatementLineViewSet(viewsets.ModelViewSet):
 
         return queryset
 
+    @idempotent_endpoint(scope="treasury.reconciliation.match")
     @action(detail=False, methods=["post"])
     def match_group(self, request):
         """Match multiple lines with multiple payments (N:M)"""
@@ -1536,6 +1540,7 @@ class TreasuryDashboardViewSet(viewsets.ViewSet):
         serializer = CashFlowSerializer(results, many=True)
         return Response(serializer.data)
 
+    @idempotent_endpoint(scope="treasury.transfer.register")
     @action(detail=False, methods=["post"])
     def register_transfer(self, request):
         """
