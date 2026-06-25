@@ -36,7 +36,7 @@ def _orden(env, **overrides):
     return SaleOrder.objects.create(**kwargs)
 
 
-@pytest.mark.django_db
+@pytest.mark.django_db(transaction=True)
 def test_cancel_draft_sale_order(env):
     order = _orden(env)
     assert order.status == SaleOrder.Status.DRAFT
@@ -48,7 +48,7 @@ def test_cancel_draft_sale_order(env):
     assert result.status == SaleOrder.Status.CANCELLED
 
 
-@pytest.mark.django_db
+@pytest.mark.django_db(transaction=True)
 def test_cancel_cancelled_sale_order_idempotente(env):
     order = _orden(env, status=SaleOrder.Status.CANCELLED)
 
