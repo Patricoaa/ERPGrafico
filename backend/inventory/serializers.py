@@ -485,20 +485,35 @@ class ProductSerializer(serializers.ModelSerializer):
         return obj.sale_price
 
     def get_qty_reserved(self, obj):
+        if hasattr(obj, "annotated_qty_reserved"):
+            return float(obj.annotated_qty_reserved)
         request = self.context.get("request")
         exclude_id = request.query_params.get("exclude_draft_id") if request else None
         return float(obj.get_qty_reserved(exclude_id))
 
     def get_qty_available(self, obj):
+        if hasattr(obj, "annotated_qty_reserved") and hasattr(obj, "annotated_current_stock"):
+            return float(obj.annotated_current_stock or 0.0) - float(obj.annotated_qty_reserved)
+            
         request = self.context.get("request")
         exclude_id = request.query_params.get("exclude_draft_id") if request else None
         return float(obj.get_qty_available(exclude_id))
 
     def get_last_purchase_price(self, obj):
-        from purchasing.models import PurchaseLine
+        # Si el selector anotó last_purchase_price, usarlo directamente (sin query)
+        if hasattr(obj, "annotated_last_purchase_price"):
+            v = obj.annotated_last_purchase_price
+            return float(v) if v is not None else 0.0
 
-        last_line = PurchaseLine.objects.filter(product=obj).order_by("-order__date", "-id").first()
-        return float(last_line.unit_cost) if last_line else 0.0
+        # Fallback para detalle único (retrieve) — 1 sola query aceptable
+        from purchasing.models import PurchaseLine
+        last_line = (
+            PurchaseLine.objects.filter(product=obj)
+            .order_by("-order__date", "-id")
+            .values("unit_cost")
+            .first()
+        )
+        return float(last_line["unit_cost"]) if last_line else 0.0
 
     def get_manufacturable_quantity(self, obj):
         """Return the calculated manufacturable quantity for MANUFACTURABLE products."""
@@ -513,7 +528,11 @@ class ProductSerializer(serializers.ModelSerializer):
         return obj.has_active_bom()
 
     def get_active_bom_id(self, obj):
-        active_bom = obj.boms.filter(active=True).first()
+        # Use prefetched cache to avoid extra query per product
+        if hasattr(obj, "_prefetched_objects_cache") and "boms" in obj._prefetched_objects_cache:
+            active_bom = next((bom for bom in obj.boms.all() if bom.active), None)
+        else:
+            active_bom = obj.boms.filter(active=True).first()
         return active_bom.id if active_bom else None
 
     def get_requires_bom_validation(self, obj):
@@ -577,74 +596,81 @@ class ProductSerializer(serializers.ModelSerializer):
             raise e
 
     def create(self, validated_data):
+        from django.db import transaction
+
         boms_data = validated_data.pop("boms", [])
         allowed_sale_uoms = validated_data.pop("allowed_sale_uoms", [])
         attribute_values = validated_data.pop("attribute_values", [])
         variant_generation_selection = validated_data.pop("variant_generation_selection", None)
         uom_prices_data = validated_data.pop("uom_prices", [])
 
-        product = Product.objects.create(**validated_data)
+        with transaction.atomic():
+            product = Product.objects.create(**validated_data)
 
-        if allowed_sale_uoms:
-            product.allowed_sale_uoms.set(allowed_sale_uoms)
+            if allowed_sale_uoms:
+                product.allowed_sale_uoms.set(allowed_sale_uoms)
 
-        if attribute_values:
-            product.attribute_values.set(attribute_values)
+            if attribute_values:
+                product.attribute_values.set(attribute_values)
 
-        for bom_data in boms_data:
-            lines_data = bom_data.pop("lines", [])
-            bom = BillOfMaterials.objects.create(product=product, **bom_data)
-            for line_data in lines_data:
-                line_data.pop("id", None)
-                BillOfMaterialsLine.objects.create(bom=bom, **line_data)
+            for bom_data in boms_data:
+                lines_data = bom_data.pop("lines", [])
+                bom = BillOfMaterials.objects.create(product=product, **bom_data)
+                for line_data in lines_data:
+                    line_data.pop("id", None)
+                    BillOfMaterialsLine.objects.create(bom=bom, **line_data)
 
-        for uom_price in uom_prices_data:
-            ProductUoMPrice.objects.create(product=product, **uom_price)
+            for uom_price in uom_prices_data:
+                ProductUoMPrice.objects.create(product=product, **uom_price)
 
-        # Handle initial variant generation
-        if variant_generation_selection and product.has_variants:
-            ProductService.generate_variants(product, variant_generation_selection)
+            # Handle initial variant generation
+            if variant_generation_selection and product.has_variants:
+                ProductService.generate_variants(product, variant_generation_selection)
 
         return product
 
     def update(self, instance, validated_data):
+        from django.db import transaction
+
         boms_data = validated_data.pop("boms", None)  # If None, don't touch
         allowed_sale_uoms = validated_data.pop("allowed_sale_uoms", None)
         attribute_values = validated_data.pop("attribute_values", None)
         variant_updates = validated_data.pop("variant_updates", None)
         uom_prices_data = validated_data.pop("uom_prices", None)
 
-        # Standard update
-        for attr, value in validated_data.items():
-            setattr(instance, attr, value)
-        instance.save()
+        with transaction.atomic():
+            # Standard update
+            for attr, value in validated_data.items():
+                setattr(instance, attr, value)
+            instance.save()
 
-        if allowed_sale_uoms is not None:
-            instance.allowed_sale_uoms.set(allowed_sale_uoms)
+            if allowed_sale_uoms is not None:
+                instance.allowed_sale_uoms.set(allowed_sale_uoms)
 
-        if attribute_values is not None:
-            instance.attribute_values.set(attribute_values)
+            if attribute_values is not None:
+                instance.attribute_values.set(attribute_values)
 
-        # Propagate parent-level fields to child variants (only for template products)
-        _VARIANT_SYNC_FIELDS = {
-            "uom",
-            "purchase_uom",
-            "can_be_sold",
-            "can_be_purchased",
-            "category",
-            "track_inventory",
-        }
-        _changed_sync = {k: v for k, v in validated_data.items() if k in _VARIANT_SYNC_FIELDS}
-        if (_changed_sync or allowed_sale_uoms is not None) and not instance.parent_template_id:
-            _children = list(Product.objects.filter(parent_template=instance))
-            if _children:
-                for _child in _children:
-                    for _field, _value in _changed_sync.items():
-                        setattr(_child, _field, _value)
-                    _child.save()
-                if allowed_sale_uoms is not None:
+            # Propagate parent-level fields to child variants (only for template products)
+            _VARIANT_SYNC_FIELDS = {
+                "uom",
+                "purchase_uom",
+                "can_be_sold",
+                "can_be_purchased",
+                "category",
+                "track_inventory",
+            }
+            _changed_sync = {k: v for k, v in validated_data.items() if k in _VARIANT_SYNC_FIELDS}
+            if (_changed_sync or allowed_sale_uoms is not None) and not instance.parent_template_id:
+                # Prefetch children en una sola query en lugar de ORM filtrado en loop
+                _children = list(instance.variants.all())
+                if _children:
                     for _child in _children:
-                        _child.allowed_sale_uoms.set(instance.allowed_sale_uoms.all())
+                        for _field, _value in _changed_sync.items():
+                            setattr(_child, _field, _value)
+                        _child.save()
+                    if allowed_sale_uoms is not None:
+                        for _child in _children:
+                            _child.allowed_sale_uoms.set(instance.allowed_sale_uoms.all())
 
         if boms_data is not None:
             # Simple sync: Delete missing BOMs, update existing ones, create new ones.
@@ -775,6 +801,7 @@ class WarehouseSerializer(serializers.ModelSerializer):
     class Meta:
         model = Warehouse
         fields = "__all__"
+
 
 
 class StockMoveSerializer(serializers.ModelSerializer):
