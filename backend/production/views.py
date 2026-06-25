@@ -55,8 +55,8 @@ from decimal import Decimal
 
 from django.contrib.contenttypes.models import ContentType
 from django.db.models import Q, Sum
+from django.core.exceptions import ValidationError
 from django.http import HttpResponse
-
 from core.mixins import AuditHistoryMixin
 from core.idempotency import idempotent_endpoint
 from core.models import Attachment
@@ -92,34 +92,14 @@ class WorkOrderViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
         "consumptions",
         "stage_history",
         "attachments",
+        "sale_order__attachments",
+        "sale_line__attachments",
+        "tasks",
     )
     serializer_class = WorkOrderSerializer
 
     def _build_stock_context(self, work_order):
-        """
-        Returns a dict {product_id: stock_float} for all storable materials in this OT,
-        computed in a single aggregated query against the OT's warehouse.
-        """
-        from inventory.models import StockMove
-
-        warehouse = work_order.warehouse
-        if not warehouse:
-            return {}
-
-        component_ids = list(
-            work_order.materials.exclude(component__product_type="SERVICE").values_list(
-                "component_id", flat=True
-            )
-        )
-        if not component_ids:
-            return {}
-
-        rows = (
-            StockMove.objects.filter(warehouse=warehouse, product_id__in=component_ids)
-            .values("product_id")
-            .annotate(total=Sum("quantity"))
-        )
-        return {row["product_id"]: float(row["total"] or 0.0) for row in rows}
+        return WorkOrderService.build_stock_context(work_order)
 
     def retrieve(self, request, *args, **kwargs):
         instance = self.get_object()
@@ -150,35 +130,12 @@ class WorkOrderViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
     def update(self, request, *args, **kwargs):
-        """
-        Overridden update to handle file attachments.
-        Identity fields (product, sale_order, sale_line) are immutable post-creation.
-        Terminal stages (FINISHED, CANCELLED) block all edits.
-        """
         instance = self.get_object()
-        terminal_stages = {WorkOrder.Stage.FINISHED, WorkOrder.Stage.CANCELLED}
-        if instance.current_stage in terminal_stages:
-            return Response(
-                {"error": "No se puede editar una OT en etapa Finalizada o Cancelada."},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-        immutable = {
-            "product",
-            "sale_order",
-            "sale_line",
-            "product_id",
-            "sale_order_id",
-            "sale_line_id",
-        }
-        if immutable.intersection(request.data.keys()):
-            return Response(
-                {
-                    "error": 'Producto y Nota de Venta no pueden modificarse después de crear la OT. Use "Crear OT corregida" para generar una nueva.'
-                },
-                status=status.HTTP_400_BAD_REQUEST,
-            )
+        try:
+            WorkOrderService.validate_update_allowed(instance, request.data.keys())
+        except ValidationError as e:
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
         response = super().update(request, *args, **kwargs)
-
         if response.status_code == 200:
             try:
                 WorkOrderService.handle_update_attachments(
@@ -186,43 +143,15 @@ class WorkOrderViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
                 )
             except Exception:
                 logger.exception("Error attaching files in update for WorkOrder %s", instance.pk)
-
         return response
 
     def destroy(self, request, *args, **kwargs):
-        """
-        Overridden to allow deletion only in early stages and without linked documents.
-        """
         instance = self.get_object()
-
-        # 1. Stage restriction: Only allow in MATERIAL_ASSIGNMENT
-        if instance.current_stage != WorkOrder.Stage.MATERIAL_ASSIGNMENT:
-            return Response(
-                {
-                    "error": "Solo se pueden eliminar órdenes en etapa de Asignación de Materiales. Para otras etapas, use la opción Anular."
-                },
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-
-        # 2. Document restriction: Check for linked POs
-        if instance.purchase_orders.exists():
-            return Response(
-                {
-                    "error": "No se puede eliminar una orden con Órdenes de Compra generadas. Anule la OT en su lugar."
-                },
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-
-        # 3. Cleanup: Delete associated Tasks and Notifications
-        # Since these are GenericForeignKey, CASCADE doesn't happen automatically
-        from workflow.models import Notification, Task
-
-        content_type = ContentType.objects.get_for_model(instance)
-
-        Task.objects.filter(content_type=content_type, object_id=instance.id).delete()
-        Notification.objects.filter(content_type=content_type, object_id=instance.id).delete()
-
-        return super().destroy(request, *args, **kwargs)
+        try:
+            WorkOrderService.delete_work_order(instance)
+            return Response(status=status.HTTP_204_NO_CONTENT)
+        except ValidationError as e:
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
     @action(detail=True, methods=["post"])
     def annul(self, request, pk=None):
@@ -237,30 +166,9 @@ class WorkOrderViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
 
     @action(detail=True, methods=["post"])
     def rectify(self, request, pk=None):
-        """
-        Declare real quantities consumed and produced before finalizing the OT.
-        Must be called while the OT is in RECTIFICATION stage.
-
-        Body:
-            material_adjustments: list of {material_id, actual_quantity}  (optional)
-            produced_quantity: number  (only for manual OTs with track_inventory=True)
-            notes: string  (optional)
-        """
         work_order = self.get_object()
         try:
-            material_adjustments = request.data.get("material_adjustments", [])
-            outsourced_adjustments = request.data.get("outsourced_adjustments", [])
-            produced_quantity = request.data.get("produced_quantity")
-            notes = request.data.get("notes", "")
-
-            WorkOrderService.rectify_production(
-                work_order=work_order,
-                material_adjustments=material_adjustments,
-                outsourced_adjustments=outsourced_adjustments,
-                produced_quantity=produced_quantity,
-                user=request.user,
-                notes=notes,
-            )
+            WorkOrderService.rectify_from_request(work_order, request)
             work_order.refresh_from_db()
             return Response(WorkOrderSerializer(work_order).data)
         except Exception as e:
@@ -268,49 +176,9 @@ class WorkOrderViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
 
     @action(detail=True, methods=["post"])
     def transition(self, request, pk=None):
-        """Transition OT to next stage with optional data"""
         work_order = self.get_object()
         try:
-            next_stage = request.data.get("next_stage")
-            notes = request.data.get("notes", "")
-            data = request.data.get("data", {})
-
-            if isinstance(data, str):
-                import json
-                try:
-                    data = json.loads(data)
-                except Exception:
-                    data = {}
-
-            # Validate stage
-            stage_match = None
-            for choice, label in WorkOrder.Stage.choices:
-                if choice == next_stage:
-                    stage_match = choice
-                    break
-
-            if not stage_match:
-                return Response(
-                    {"error": f"Etapa inválida: {next_stage}"}, status=status.HTTP_400_BAD_REQUEST
-                )
-
-            # Validate stock availability via service
-            ctx = self.get_serializer_context()
-            ctx["stocks_by_product"] = self._build_stock_context(work_order)
-            serializer = WorkOrderSerializer(work_order, context=ctx)
-            WorkOrderService.validate_transition_stock(
-                work_order, next_stage, serializer.data.get("materials", [])
-            )
-
-            WorkOrderService.transition_to(
-                work_order=work_order,
-                next_stage=stage_match,
-                user=request.user,
-                notes=notes,
-                data=data,
-                files=request.FILES,
-            )
-
+            WorkOrderService.transition_from_request(work_order, request)
             return Response(WorkOrderSerializer(work_order).data)
         except ValidationError as e:
             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
@@ -351,58 +219,17 @@ class WorkOrderViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
 
     @action(detail=True, methods=["post"], url_path="restart")
     def restart(self, request, pk=None):
-        """Delete a clean DRAFT OT and return its creation defaults.
-
-        The frontend uses the returned initial_data to reopen the wizard pre-filled.
-        Fails if the OT has any side-effects (POs, stock movements, completed tasks).
-        """
         work_order = self.get_object()
-
-        if work_order.status != WorkOrder.Status.DRAFT:
-            return Response(
-                {"error": "Solo se pueden reiniciar órdenes en Borrador."},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-
-        se = WorkOrderService.check_side_effects(work_order)
-        if any(
-            [
-                se["has_confirmed_pos"],
-                se["has_stock_movements"],
-                se["completed_tasks_count"],
-                se["manually_edited_materials_count"],
-            ]
-        ):
-            return Response(
-                {
-                    "error": 'La OT tiene actividad registrada y no puede reiniciarse. Use "Crear OT corregida" en su lugar.',
-                    "side_effects": se,
-                },
-                status=status.HTTP_409_CONFLICT,
-            )
-
-        # Capture initial_data before deletion
-        initial_data = {
-            "sale_order_id": work_order.sale_order_id,
-            "sale_order_number": work_order.sale_order.number if work_order.sale_order else None,
-            "sale_line_id": work_order.sale_line_id,
-            "product_id": work_order.product_id
-            or (work_order.sale_line.product_id if work_order.sale_line else None),
-            "stage_data": work_order.stage_data,
-            "ot_type": "LINKED" if work_order.sale_order_id else "NONE",
-        }
-
-        # Cleanup generic relations (same as destroy)
-        from django.contrib.contenttypes.models import ContentType
-
-        from workflow.models import Notification, Task
-
-        ct = ContentType.objects.get_for_model(work_order)
-        Task.objects.filter(content_type=ct, object_id=work_order.id).delete()
-        Notification.objects.filter(content_type=ct, object_id=work_order.id).delete()
-        work_order.delete()
-
-        return Response({"initial_data": initial_data}, status=status.HTTP_200_OK)
+        try:
+            initial_data = WorkOrderService.restart_work_order(work_order)
+            return Response({"initial_data": initial_data}, status=status.HTTP_200_OK)
+        except ValidationError as e:
+            if work_order.status != WorkOrder.Status.DRAFT:
+                return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+            se = WorkOrderService.check_side_effects(work_order)
+            return Response({"error": str(e), "side_effects": se}, status=status.HTTP_409_CONFLICT)
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
     @action(detail=False, methods=["get"])
     def metrics(self, request):
@@ -433,37 +260,9 @@ class WorkOrderViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
 
     @action(detail=True, methods=["post"])
     def add_material(self, request, pk=None):
-        """Add a material manually to the Work Order"""
         work_order = self.get_object()
         try:
-            product_id = request.data.get("product_id")
-            quantity = Decimal(str(request.data.get("quantity")))
-            uom_id = request.data.get("uom_id")
-
-            # New fields
-            is_outsourced = request.data.get("is_outsourced", False)
-            supplier_id = request.data.get("supplier_id")
-            unit_price = Decimal(str(request.data.get("unit_price", 0)))
-            document_type = request.data.get("document_type", "FACTURA")
-
-            product = Product.objects.get(pk=product_id)
-            uom = UoM.objects.get(pk=uom_id) if uom_id else None
-
-            from contacts.models import Contact
-
-            supplier = Contact.objects.get(pk=supplier_id) if supplier_id else None
-
-            WorkOrderService.add_material(
-                work_order=work_order,
-                component=product,
-                quantity=quantity,
-                uom=uom,
-                is_outsourced=is_outsourced,
-                supplier=supplier,
-                unit_price=unit_price,
-                document_type=document_type,
-            )
-
+            WorkOrderService.add_material_from_request(work_order, request)
             return Response(WorkOrderSerializer(work_order).data)
         except Exception as e:
             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
@@ -552,92 +351,23 @@ class WorkOrderViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
 
     @action(detail=True, methods=["get", "post"], url_path="comments")
     def comments(self, request, pk=None):
-        """TASK-307: Unified comment feed for an OT (includes linked NV comments)."""
-        from django.contrib.contenttypes.models import ContentType
-
-        from workflow.models import Comment
         from workflow.serializers import CommentSerializer
-
         order = self.get_object()
-        wo_ct = ContentType.objects.get_for_model(WorkOrder)
-
         if request.method == "GET":
-            qs = Comment.objects.filter(content_type=wo_ct, object_id=order.pk)
-            if order.sale_order_id:
-                from sales.models import SaleOrder
-
-                so_ct = ContentType.objects.get_for_model(SaleOrder)
-                so_qs = Comment.objects.filter(content_type=so_ct, object_id=order.sale_order_id)
-                qs = (qs | so_qs).order_by("created_at")
-            serializer = CommentSerializer(qs, many=True)
-            return Response(serializer.data)
-
-        text = (request.data.get("text") or "").strip()
-        if not text:
-            return Response({"error": "text es requerido"}, status=status.HTTP_400_BAD_REQUEST)
-
-        from workflow.serializers import CommentSerializer
-        from workflow.services import WorkflowService
-
-        comment = WorkflowService.add_comment(
-            content_object=order,
-            user=request.user,
-            text=text,
-        )
-        return Response(CommentSerializer(comment).data, status=status.HTTP_201_CREATED)
+            qs = WorkOrderService.get_comments_queryset(order)
+            return Response(CommentSerializer(qs, many=True).data)
+        try:
+            comment = WorkOrderService.add_comment_from_request(order, request)
+            return Response(CommentSerializer(comment).data, status=status.HTTP_201_CREATED)
+        except ValidationError as e:
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
     @action(detail=False, methods=["post"])
     def create_manual(self, request):
-        """Create a manual OT"""
         try:
-            import json
-
-            product_id = request.data.get("product_id")
-            quantity = Decimal(str(request.data.get("quantity")))
-            description = request.data.get("description", "")
-            warehouse_id = request.data.get("warehouse_id")
-            uom_id = request.data.get("uom_id")
-            stage_data = request.data.get("stage_data", {})
-
-            if isinstance(stage_data, str):
-                try:
-                    stage_data = json.loads(stage_data)
-                except (json.JSONDecodeError, TypeError):
-                    stage_data = {}
-
-            product = Product.objects.get(pk=product_id)
-
-            # Validate BOM requirement for Express products/variants
-            if product.requires_bom_validation:
-                error_msg = f"El producto '{product.name}' es Express y requiere un BOM asignado antes de crear una Orden de Trabajo."
-                if product.parent_template:
-                    error_msg += (
-                        " Por favor, asigne un BOM a esta variante desde el formulario de producto."
-                    )
-                return Response({"error": error_msg}, status=status.HTTP_400_BAD_REQUEST)
-
-            warehouse = (
-                Warehouse.objects.get(pk=warehouse_id)
-                if warehouse_id
-                else Warehouse.objects.first()
-            )
-            if not uom_id:
-                return Response(
-                    {"error": "La unidad de medida es requerida para fabricaciones manuales."},
-                    status=status.HTTP_400_BAD_REQUEST,
-                )
-
-            uom = UoM.objects.get(pk=uom_id) if uom_id else None
-
-            work_order = WorkOrderService.create_manual(
-                product=product,
-                quantity=quantity,
-                description=description,
-                warehouse=warehouse,
-                uom=uom,
-                stage_data=stage_data,
-            )
-
+            work_order = WorkOrderService.create_manual_from_request(request)
             return Response(WorkOrderSerializer(work_order).data, status=status.HTTP_201_CREATED)
         except Exception as e:
             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
@@ -662,7 +392,15 @@ class BillOfMaterialsViewSet(viewsets.ModelViewSet):
                 Q(product_id=parent_id) | Q(product__parent_template_id=parent_id)
             )
 
-        return queryset.select_related("product", "product__parent_template")
+        return queryset.select_related(
+            "product", "product__parent_template", "yield_uom"
+        ).prefetch_related(
+            "lines",
+            "lines__component",
+            "lines__component__uom",
+            "lines__uom",
+            "lines__supplier",
+        )
 
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
