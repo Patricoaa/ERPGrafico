@@ -461,52 +461,16 @@ class ContactViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
         Uses PartnerService for proper accounting separation.
         """
         from .partner_service import PartnerService
-
-        contact_id = request.data.get("contact_id")
-        amount = Decimal(str(request.data.get("amount", "0")))
-        move_type = request.data.get("type")  # 'SUBSCRIPTION' or 'REDUCTION'
-        date = request.data.get("date", timezone.now().date())
-        description = request.data.get("description", "")
-
-        if amount <= 0:
-            return Response({"error": "El monto debe ser mayor a cero."}, status=400)
-
         try:
-            contact = Contact.objects.get(id=contact_id)
-
-            # Ensure partner setup via service (promoción automática si no es socio aún)
-            from .partner_service import PartnerService
-            PartnerService.ensure_partner_setup(contact=contact, as_of_date=date)
-
-            if move_type == "SUBSCRIPTION":
-                ptx = PartnerService.record_equity_subscription(
-                    partner=contact,
-                    amount=amount,
-                    date=date,
-                    description=description,
-                    created_by=request.user,
-                )
-            elif move_type == "REDUCTION":
-                ptx = PartnerService.record_equity_reduction(
-                    partner=contact,
-                    amount=amount,
-                    date=date,
-                    description=description,
-                    created_by=request.user,
-                )
-            else:
-                return Response(
-                    {"error": "Tipo de movimiento inválido. Use 'SUBSCRIPTION' o 'REDUCTION'."},
-                    status=400,
-                )
-
+            ptx = PartnerService.handle_equity_movement_from_payload(request.data, request.user)
             return Response(
                 {
                     "message": "Movimiento de capital registrado.",
                     "journal_entry": ptx.journal_entry.display_id if ptx.journal_entry else None,
                 }
             )
-
+        except ValidationError as e:
+            return Response({"error": str(e.message if hasattr(e, 'message') else e)}, status=400)
         except Exception as e:
             return Response({"error": str(e)}, status=500)
 
@@ -618,57 +582,18 @@ class ContactViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
         }
         """
         from django.core.exceptions import ValidationError
-
         from .partner_service import PartnerService
 
-        data_date = request.data.get("date")
-        description = request.data.get("description", "Movilización masiva de utilidades")
-        mobilizations = request.data.get("mobilizations", [])
-
-        if not data_date:
-            return Response({"error": "La fecha (date) es obligatoria."}, status=400)
-
-        if not mobilizations or not isinstance(mobilizations, list):
-            return Response({"error": "Debe proporcionar una lista 'mobilizations'."}, status=400)
-
-        created_by = request.user
-        success_count = 0
-
         try:
-            with transaction.atomic():
-                for mob_data in mobilizations:
-                    partner_id = mob_data.get("partner_id")
-                    dividend_amount = Decimal(str(mob_data.get("dividend_amount", 0)))
-                    reinvest_amount = Decimal(str(mob_data.get("reinvest_amount", 0)))
-
-                    if not partner_id:
-                        raise ValidationError("Falta partner_id en los datos de movilización.")
-
-                    partner = Contact.objects.get(id=partner_id, is_partner=True)
-
-                    if dividend_amount == 0 and reinvest_amount == 0:
-                        continue  # Nothing to do
-
-                    PartnerService.mobilize_retained_earnings(
-                        partner=partner,
-                        amount_dividend=dividend_amount,
-                        amount_reinvest=reinvest_amount,
-                        date=data_date,
-                        description=description,
-                        created_by=created_by,
-                    )
-                    success_count += 1
-
+            success_count = PartnerService.mass_mobilize_retained_earnings_from_payload(
+                payload=request.data, user=request.user
+            )
             return Response(
                 {
                     "message": f"Se ejecutaron {success_count} movilizaciones de utilidades retenidas correctamente."
                 }
             )
-        except Contact.DoesNotExist:
-            return Response(
-                {"error": f"Socio con ID {partner_id} no encontrado o no es socio."}, status=404
-            )
         except ValidationError as e:
-            return Response({"error": str(e)}, status=400)
+            return Response({"error": str(e.message if hasattr(e, 'message') else e)}, status=400)
         except Exception as e:
             return Response({"error": f"Error interno: {str(e)}"}, status=500)

@@ -37,6 +37,97 @@ class PartnerService:
 
     @staticmethod
     @transaction.atomic
+    def handle_equity_movement_from_payload(payload: dict, user) -> "PartnerTransaction":
+        from decimal import Decimal
+        from django.core.exceptions import ValidationError
+        from contacts.models import Contact
+        from django.utils import timezone
+
+        contact_id = payload.get("contact_id")
+        amount = Decimal(str(payload.get("amount", "0")))
+        move_type = payload.get("type")  # 'SUBSCRIPTION' or 'REDUCTION'
+        date = payload.get("date", timezone.now().date())
+        description = payload.get("description", "")
+
+        if amount <= 0:
+            raise ValidationError("El monto debe ser mayor a cero.")
+
+        try:
+            contact = Contact.objects.get(id=contact_id)
+        except Contact.DoesNotExist:
+            raise ValidationError("Socio no encontrado.")
+
+        # Ensure partner setup via service (promoción automática si no es socio aún)
+        PartnerService.ensure_partner_setup(contact=contact, as_of_date=date)
+
+        if move_type == "SUBSCRIPTION":
+            return PartnerService.record_equity_subscription(
+                partner=contact,
+                amount=amount,
+                date=date,
+                description=description,
+                created_by=user,
+            )
+        elif move_type == "REDUCTION":
+            return PartnerService.record_equity_reduction(
+                partner=contact,
+                amount=amount,
+                date=date,
+                description=description,
+                created_by=user,
+            )
+        else:
+            raise ValidationError("Tipo de movimiento inválido. Use 'SUBSCRIPTION' o 'REDUCTION'.")
+
+    @staticmethod
+    @transaction.atomic
+    def mass_mobilize_retained_earnings_from_payload(payload: dict, user) -> int:
+        from decimal import Decimal
+        from django.core.exceptions import ValidationError
+        from contacts.models import Contact
+
+        data_date = payload.get("date")
+        description = payload.get("description", "Movilización masiva de utilidades")
+        mobilizations = payload.get("mobilizations", [])
+
+        if not data_date:
+            raise ValidationError("La fecha (date) es obligatoria.")
+
+        if not mobilizations or not isinstance(mobilizations, list):
+            raise ValidationError("Debe proporcionar una lista 'mobilizations'.")
+
+        success_count = 0
+
+        for mob_data in mobilizations:
+            partner_id = mob_data.get("partner_id")
+            dividend_amount = Decimal(str(mob_data.get("dividend_amount", 0)))
+            reinvest_amount = Decimal(str(mob_data.get("reinvest_amount", 0)))
+
+            if not partner_id:
+                raise ValidationError("Falta partner_id en los datos de movilización.")
+
+            try:
+                partner = Contact.objects.get(id=partner_id, is_partner=True)
+            except Contact.DoesNotExist:
+                raise ValidationError(f"Socio con ID {partner_id} no encontrado o no es socio.")
+
+            if dividend_amount == 0 and reinvest_amount == 0:
+                continue
+
+            PartnerService.mobilize_retained_earnings(
+                partner=partner,
+                amount_dividend=dividend_amount,
+                amount_reinvest=reinvest_amount,
+                date=data_date,
+                description=description,
+                created_by=user,
+            )
+            success_count += 1
+
+        return success_count
+
+    @staticmethod
+    @transaction.atomic
     def ensure_partner_setup(*, contact: Contact, as_of_date=None) -> Contact:
         """
         Promueve automáticamente un Contact a socio si aún no lo es.
