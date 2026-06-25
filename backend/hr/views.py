@@ -201,78 +201,31 @@ class PayrollViewSet(viewsets.ModelViewSet):
     def create_draft_payrolls(self, request):
         """Dispara manualmente la creación de liquidaciones borrador para el mes actual."""
         from .tasks import create_monthly_draft_payrolls
+        from celery import uuid
+        from django.db import transaction
 
-        result = create_monthly_draft_payrolls.delay()
+        task_id = uuid()
+        transaction.on_commit(lambda: create_monthly_draft_payrolls.apply_async(task_id=task_id))
         return Response(
             {
                 "detail": "Tarea iniciada. Las liquidaciones borrador serán creadas en breve.",
-                "task_id": result.id,
+                "task_id": task_id,
             },
             status=status.HTTP_202_ACCEPTED,
         )
 
     @action(detail=True, methods=["post"])
     def pay_previred(self, request, pk=None):
-        treasury_account_id = request.data.get("treasury_account_id")
-        if not treasury_account_id:
-            return Response(
-                {"detail": "Se requiere la cuenta de tesorería (treasury_account_id)."},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-        amount = request.data.get("amount")
-        if amount is not None:
-            try:
-                amount = Decimal(str(amount))
-            except (ValueError, TypeError):
-                return Response({"detail": "Monto inválido."}, status=status.HTTP_400_BAD_REQUEST)
         try:
-            payment = PayrollPaymentService.pay_previred(
-                self.get_object(),
-                treasury_account_id=int(treasury_account_id),
-                payment_date=request.data.get("documentDate")
-                or request.data.get("date")
-                or timezone.now().date().isoformat(),
-                payment_method=request.data.get("paymentMethod", "TRANSFER"),
-                payment_method_id=request.data.get("payment_method_new"),
-                notes=request.data.get("notes", ""),
-                transaction_number=request.data.get("transaction_number"),
-                is_pending_registration=request.data.get("is_pending_registration", False),
-                created_by=request.user,
-                amount=amount,
-            )
+            payment = PayrollPaymentService.pay_previred_from_request(request, self.get_object())
         except ValidationError as e:
             return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
         return Response(PayrollPaymentSerializer(payment).data, status=status.HTTP_201_CREATED)
 
     @action(detail=True, methods=["post"])
     def pay_salary(self, request, pk=None):
-        treasury_account_id = request.data.get("treasury_account_id")
-        if not treasury_account_id:
-            return Response(
-                {"detail": "Se requiere la cuenta de tesorería (treasury_account_id)."},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-        amount = request.data.get("amount")
-        if amount is not None:
-            try:
-                amount = Decimal(str(amount))
-            except (ValueError, TypeError):
-                return Response({"detail": "Monto inválido."}, status=status.HTTP_400_BAD_REQUEST)
         try:
-            payment = PayrollPaymentService.pay_salary(
-                self.get_object(),
-                treasury_account_id=int(treasury_account_id),
-                payment_date=request.data.get("documentDate")
-                or request.data.get("date")
-                or timezone.now().date().isoformat(),
-                payment_method=request.data.get("paymentMethod", "TRANSFER"),
-                payment_method_id=request.data.get("payment_method_new"),
-                notes=request.data.get("notes", ""),
-                transaction_number=request.data.get("transaction_number"),
-                is_pending_registration=request.data.get("is_pending_registration", False),
-                created_by=request.user,
-                amount=amount,
-            )
+            payment = PayrollPaymentService.pay_salary_from_request(request, self.get_object())
         except ValidationError as e:
             return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
         return Response(PayrollPaymentSerializer(payment).data, status=status.HTTP_201_CREATED)
@@ -368,26 +321,8 @@ class SalaryAdvanceViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         from .services import SalaryAdvanceService
 
-        request_data = self.request.data
-        if "amount" in request_data:
-            from decimal import Decimal
-
-            try:
-                serializer.validated_data["amount"] = Decimal(str(request_data["amount"]))
-            except (ValueError, TypeError):
-                pass
-        if "date" in request_data:
-            serializer.validated_data["date"] = request_data["date"]
-
-        advance = serializer.save()
-
-        SalaryAdvanceService.create_advance_with_payment(
-            advance,
-            payment_method_id=request_data.get("payment_method_new"),
-            treasury_account_id=request_data.get("treasury_account_id"),
-            payment_method_slug=request_data.get("paymentMethod", ""),
-            transaction_number=request_data.get("transaction_number"),
-            user=self.request.user,
+        SalaryAdvanceService.create_advance_from_serializer(
+            serializer, self.request.data, self.request.user
         )
 
 
