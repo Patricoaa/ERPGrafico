@@ -250,6 +250,7 @@ class InvoiceViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
             "user": request.user,
         }
 
+    @idempotent_endpoint(scope="billing.pos.checkout")
     @action(detail=False, methods=["post"])
     def pos_checkout(self, request):
         params = self._parse_pos_checkout_params(request)
