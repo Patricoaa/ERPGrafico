@@ -158,13 +158,14 @@ class PayrollFilter(django_filters.FilterSet):
 
 
 class PayrollViewSet(viewsets.ModelViewSet):
-    queryset = (
-        Payroll.objects.select_related(
-            "employee", "employee__contact", "journal_entry", "previred_journal_entry"
+    def get_queryset(self):
+        return (
+            Payroll.objects.select_related(
+                "employee", "employee__contact", "journal_entry", "previred_journal_entry"
+            )
+            .prefetch_related("items", "items__concept", "advances", "payments")
+            .all()
         )
-        .prefetch_related("items", "items__concept")
-        .all()
-    )
     filter_backends = [DjangoFilterBackend, filters.SearchFilter]
     filterset_class = PayrollFilter
     search_fields = ["employee__contact__name"]
