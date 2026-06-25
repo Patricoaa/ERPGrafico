@@ -67,14 +67,6 @@ def _handle_report_request(request, report_type, generator_func, default_start=N
         ),
     )
     return Response(data)
-        return Response({"status": "PENDING"})
-    elif task.state == "SUCCESS":
-        return Response({"status": "SUCCESS", "data": task.result})
-    elif task.state == "FAILURE":
-        return Response({"status": "FAILURE", "error": str(task.info)}, status=500)
-    else:
-        return Response({"status": task.state})
-
 
 @api_view(["GET"])
 def get_balance_sheet_data(request):
