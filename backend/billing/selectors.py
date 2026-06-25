@@ -54,3 +54,18 @@ class InvoiceSelector:
             }
 
         return {"is_unique": True, "message": "Folio disponible"}
+
+    @staticmethod
+    def get_cancel_impact(invoice: Invoice) -> dict:
+        is_purchase_doc = invoice.purchase_order_id is not None or not invoice.is_sale_document()
+        return {
+            "invoice_status": invoice.status,
+            "has_folio": bool(invoice.number and invoice.number != "Draft"),
+            "is_sale_document": not is_purchase_doc,
+            "journal_entry_status": invoice.journal_entry.status if invoice.journal_entry else None,
+            "payments": [
+                {"id": p.id, "amount": str(p.amount), "status": p.status}
+                for p in invoice.payments.all()
+            ],
+            "action": "cancel" if invoice.status == Invoice.Status.DRAFT else "annul",
+        }

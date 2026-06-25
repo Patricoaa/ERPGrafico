@@ -216,43 +216,10 @@ class SaleOrderViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
     @action(detail=True, methods=["get"])
     def cancel_impact(self, request, pk=None):
         """Preview what will happen when cancelling this order."""
-        order = self.get_object()
-        action_kind = "soft_cancel" if order.status == "DRAFT" else "full_annul"
-        impact = {
-            "order_status": order.status,
-            "invoices": [
-                {"id": inv.id, "display_id": inv.display_id, "status": inv.status}
-                for inv in order.invoices.all()
-            ],
-            "deliveries": [{"id": d.id, "status": d.status} for d in order.deliveries.all()],
-            "payments": [
-                {
-                    "id": p.id,
-                    "amount": str(p.amount),
-                    "status": p.status if hasattr(p, "status") else "POSTED",
-                }
-                for p in order.payments.all()
-            ],
-            "work_orders": [
-                {"id": w.id, "number": w.number, "status": w.status, "stage": w.current_stage}
-                for w in order.work_orders.exclude(status="CANCELLED")
-            ],
-            "has_confirmed_deliveries": order.deliveries.filter(status="CONFIRMED").exists(),
-            "has_posted_payments": order.payments.filter(journal_entry__status="POSTED").exists(),
-            "has_folio_invoices": order.invoices.exclude(number="")
-            .exclude(number="Draft")
-            .exclude(number__isnull=True)
-            .exists(),
-            "requires_reason": action_kind == "full_annul",
-            "action": action_kind,
-        }
-        from tax.services import AccountingPeriodService, TaxPeriodService
+        from .selectors import SaleOrderSelector
 
-        today = timezone.now().date()
-        impact["period_open"] = not (
-            TaxPeriodService.is_period_closed(today)
-            or AccountingPeriodService.is_period_closed(today)
-        )
+        order = self.get_object()
+        impact = SaleOrderSelector.get_cancel_impact(order)
         return Response(impact)
 
     @action(detail=True, methods=["post"])
@@ -337,56 +304,17 @@ class SaleOrderViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
 
     @action(detail=True, methods=["post"])
     def register_note(self, request, pk=None):
-        print(f"DEBUG: register_note reached for order {pk}")
         order = self.get_object()
-
-        # Manually handle multipart/form-data requiring json parsing for complex fields
-        data = request.data.dict() if hasattr(request.data, "dict") else request.data.copy()
-
-        # If accessing via multipart, lists might be strings
-        if "return_items" in data and isinstance(data["return_items"], str):
-            import json
-
-            try:
-                data["return_items"] = json.loads(data["return_items"])
-            except Exception as e:
-                print(f"DEBUG: Error parsing return_items: {e}")
-                pass
-
-        print(f"DEBUG: data['return_items'] type: {type(data.get('return_items'))}")
-        print(f"DEBUG: data['return_items'] value: {data.get('return_items')}")
-
-        from purchasing.serializers import NoteCreationSerializer
-
-        serializer = NoteCreationSerializer(data=data)
-
-        if serializer.is_valid():
-            try:
-                val = serializer.validated_data
-                invoice = SalesService.create_note(
-                    order=order,
-                    note_type=val["note_type"],
-                    amount_net=val["amount_net"],
-                    amount_tax=val["amount_tax"],
-                    document_number=val["document_number"],
-                    document_attachment=request.FILES.get("document_attachment"),
-                    return_items=val.get("return_items"),
-                    original_invoice_id=val.get("original_invoice_id"),
-                    date=val.get("document_date"),
-                )
-
-                from billing.serializers import InvoiceSerializer
-
-                return Response(InvoiceSerializer(invoice).data, status=status.HTTP_201_CREATED)
-            except ValidationError as e:
-                return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
-            except Exception as e:
-                import traceback
-
-                traceback.print_exc()
-                return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-        else:
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        try:
+            invoice = SalesService.register_note_from_request(request, order)
+            from billing.serializers import InvoiceSerializer
+            return Response(InvoiceSerializer(invoice).data, status=status.HTTP_201_CREATED)
+        except ValidationError as e:
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            import traceback
+            traceback.print_exc()
+            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
     @action(detail=True, methods=["post"])
     def register_merchandise_return(self, request, pk=None):

@@ -194,6 +194,24 @@ class POSService:
     # ------------------------------------------------------------------ #
 
     @staticmethod
+    def register_manual_movement_from_request(request, session: "POSSession") -> "TreasuryMovement":
+        is_inflow = request.data.get("is_inflow", False)
+        if isinstance(is_inflow, str):
+            is_inflow = is_inflow.lower() == "true"
+        else:
+            is_inflow = bool(is_inflow)
+
+        return POSService.register_manual_movement(
+            session=session,
+            move_type=request.data.get("type"),
+            amount=Decimal(str(request.data.get("amount", "0"))),
+            is_inflow=is_inflow,
+            notes=request.data.get("notes", ""),
+            target_account_id=request.data.get("target_account_id"),
+            user=request.user,
+        )
+
+    @staticmethod
     @transaction.atomic
     def register_manual_movement(
         *,

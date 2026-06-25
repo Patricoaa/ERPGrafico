@@ -17,6 +17,14 @@ from .models import PurchaseOrder, PurchaseReceipt, PurchaseReceiptLine
 
 class PurchasingService:
     @staticmethod
+    def confirm_purchase(order: PurchaseOrder, user=None):
+        if order.status != "DRAFT":
+            raise ValidationError("La orden no está en estado borrador.")
+        from core.services.document import DocumentRegistry
+        DocumentRegistry.for_instance(order).confirm(order, user=user)
+        return order
+
+    @staticmethod
     @transaction.atomic
     def receive_order(
         order: PurchaseOrder,
@@ -628,6 +636,34 @@ class PurchasingService:
         order.save()
 
     @staticmethod
+    def register_note_from_request(request, order: PurchaseOrder):
+        import json
+        from .serializers import NoteCreationSerializer
+
+        data = request.data.dict() if hasattr(request.data, "dict") else request.data.copy()
+        if "return_items" in data and isinstance(data["return_items"], str):
+            try:
+                data["return_items"] = json.loads(data["return_items"])
+            except Exception:
+                pass
+
+        serializer = NoteCreationSerializer(data=data)
+        serializer.is_valid(raise_exception=True)
+        val = serializer.validated_data
+
+        return PurchasingService.create_note(
+            order=order,
+            note_type=val["note_type"],
+            amount_net=val["amount_net"],
+            amount_tax=val["amount_tax"],
+            document_number=val["document_number"],
+            document_attachment=request.FILES.get("document_attachment"),
+            return_items=val.get("return_items"),
+            original_invoice_id=val.get("original_invoice_id"),
+            date=val.get("document_date"),
+        )
+
+    @staticmethod
     @transaction.atomic
     def create_note(
         order: PurchaseOrder,
@@ -1079,6 +1115,53 @@ class PurchasingService:
 
         WorkflowService.log_transition(receipt, "annul", user=user, reason=reason)
         return receipt
+
+    @staticmethod
+    def purchase_checkout_from_request(request) -> dict:
+        import json
+        
+        data = request.data
+        order_data = data.get("order_data")
+        if isinstance(order_data, str):
+            order_data = json.loads(order_data)
+
+        receipt_data = data.get("receipt_data")
+        if isinstance(receipt_data, str):
+            receipt_data = json.loads(receipt_data)
+
+        check_bank_id = data.get("check_bank_id")
+        if check_bank_id:
+            check_bank_id = int(check_bank_id)
+
+        installments_raw = data.get("installments", 1)
+        try:
+            installments = int(installments_raw) if installments_raw is not None else 1
+        except (ValueError, TypeError):
+            installments = 1
+
+        params = {
+            "order_data": order_data,
+            "dte_type": data.get("dte_type", "FACTURA"),
+            "document_number": data.get("document_number", ""),
+            "document_date": data.get("document_date"),
+            "document_attachment": request.FILES.get("document_attachment"),
+            "payment_method": data.get("payment_method", "CREDIT"),
+            "amount": data.get("amount"),
+            "installments": installments,
+            "treasury_account_id": data.get("treasury_account_id"),
+            "transaction_number": data.get("transaction_number"),
+            "payment_is_pending": data.get("payment_is_pending", "false").lower() == "true",
+            "payment_method_id": data.get("payment_method_id"),
+            "check_number": data.get("check_number") or data.get("transaction_number"),
+            "check_bank_id": check_bank_id,
+            "check_issue_date": data.get("check_issue_date"),
+            "check_due_date": data.get("check_due_date"),
+            "checkbook_id": data.get("checkbook_id"),
+            "receipt_type": data.get("receipt_type", "IMMEDIATE"),
+            "receipt_data": receipt_data,
+            "user": request.user,
+        }
+        return PurchasingService.purchase_checkout(**params)
 
     @staticmethod
     def purchase_checkout(*args, **kwargs):

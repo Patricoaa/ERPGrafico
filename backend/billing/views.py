@@ -89,35 +89,9 @@ class InvoiceViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
     def create_from_order(self, request):
         serializer = CreateInvoiceSerializer(data=request.data)
         if serializer.is_valid():
-            order_id = serializer.validated_data["order_id"]
-            order_type = serializer.validated_data["order_type"]
-            dte_type = serializer.validated_data["dte_type"]
-            payment_method = serializer.validated_data["payment_method"]
-
             try:
-                if order_type == "sale":
-                    order = SaleOrder.objects.get(id=order_id)
-                    invoice = BillingService.create_sale_invoice(order, dte_type, payment_method)
-                else:
-                    order = PurchaseOrder.objects.get(id=order_id)
-                    supplier_invoice_number = serializer.validated_data.get(
-                        "supplier_invoice_number", ""
-                    )
-                    document_attachment = serializer.validated_data.get("document_attachment")
-                    issue_date = serializer.validated_data.get("issue_date")
-                    status_val = serializer.validated_data.get("status", Invoice.Status.POSTED)
-                    invoice = BillingService.create_purchase_bill(
-                        order,
-                        supplier_invoice_number,
-                        dte_type=dte_type,
-                        document_attachment=document_attachment,
-                        date=issue_date,
-                        status=status_val,
-                    )
-
+                invoice = BillingService.create_invoice_from_payload(serializer.validated_data)
                 return Response(InvoiceSerializer(invoice).data, status=status.HTTP_201_CREATED)
-            except (SaleOrder.DoesNotExist, PurchaseOrder.DoesNotExist):
-                return Response({"error": "Order not found"}, status=status.HTTP_404_NOT_FOUND)
             except ValidationError as e:
                 return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
             except Exception as e:
@@ -165,130 +139,11 @@ class InvoiceViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
         )
         return Response(result)
 
-    @staticmethod
-    def _parse_pos_checkout_params(request):
-        """Extract and coerce all POS checkout parameters from the multipart request."""
-        data = request.data
-        is_pending_registration = data.get("is_pending_registration", False)
-        if isinstance(is_pending_registration, str):
-            is_pending_registration = is_pending_registration.lower() == "true"
-
-        payment_is_pending = data.get("payment_is_pending", False)
-        if isinstance(payment_is_pending, str):
-            payment_is_pending = payment_is_pending.lower() == "true"
-
-        installments = data.get("installments")
-        if installments is not None:
-            try:
-                installments = int(installments)
-            except (ValueError, TypeError):
-                installments = 1
-        else:
-            installments = 1
-
-        immediate_lines = data.get("immediate_lines")
-        if isinstance(immediate_lines, str):
-            import json
-            try:
-                immediate_lines = json.loads(immediate_lines)
-            except Exception:
-                pass
-
-        line_files = {}
-        for key, file_obj in request.FILES.items():
-            if key.startswith("line_"):
-                parts = key.split("_")
-                if len(parts) >= 3:
-                    try:
-                        line_idx = int(parts[1])
-                        file_type = parts[2]
-                        if line_idx not in line_files:
-                            line_files[line_idx] = {"design": [], "approval": None}
-                        if file_type == "design":
-                            line_files[line_idx]["design"].append(file_obj)
-                        elif file_type == "approval":
-                            line_files[line_idx]["approval"] = file_obj
-                    except (ValueError, IndexError):
-                        continue
-
-        direct_credit_approval = data.get("direct_credit_approval", False)
-        if isinstance(direct_credit_approval, str):
-            direct_credit_approval = direct_credit_approval.lower() == "true"
-
-        check_bank_id = data.get("check_bank_id")
-        if check_bank_id:
-            check_bank_id = int(check_bank_id)
-
-        return {
-            "order_data": data.get("order_data"),
-            "dte_type": data.get("dte_type"),
-            "payment_method": data.get("payment_method"),
-            "payment_method_id": data.get("payment_method_id"),
-            "transaction_number": data.get("transaction_number"),
-            "is_pending_registration": is_pending_registration,
-            "payment_is_pending": payment_is_pending,
-            "document_number": data.get("document_number") or data.get("document_reference"),
-            "document_date": data.get("document_date"),
-            "document_attachment": request.FILES.get("document_attachment"),
-            "amount": data.get("amount"),
-            "installments": installments,
-            "treasury_account_id": data.get("treasury_account_id"),
-            "payment_type": data.get("payment_type", "INBOUND"),
-            "pos_session_id": data.get("pos_session_id"),
-            "delivery_type": data.get("delivery_type", "IMMEDIATE"),
-            "delivery_date": data.get("delivery_date"),
-            "immediate_lines": immediate_lines,
-            "line_files": line_files,
-            "direct_credit_approval": direct_credit_approval,
-            "check_number": data.get("check_number") or data.get("transaction_number"),
-            "check_bank_id": check_bank_id,
-            "check_issue_date": data.get("check_issue_date"),
-            "check_due_date": data.get("check_due_date"),
-            "checkbook_id": data.get("checkbook_id"),
-            "credit_approval_task_id": data.get("credit_approval_task_id"),
-            "draft_id": data.get("draft_id"),
-            "user": request.user,
-        }
-
     @idempotent_endpoint(scope="billing.pos.checkout")
     @action(detail=False, methods=["post"])
     def pos_checkout(self, request):
-        params = self._parse_pos_checkout_params(request)
-
-        if not all([params["order_data"], params["dte_type"], params["payment_method"]]):
-            return Response({"error": "Missing data"}, status=status.HTTP_400_BAD_REQUEST)
-
         try:
-            invoice = BillingService.pos_checkout(
-                params["order_data"],
-                params["dte_type"],
-                params["payment_method"],
-                transaction_number=params["transaction_number"],
-                is_pending_registration=params["is_pending_registration"],
-                payment_is_pending=params["payment_is_pending"],
-                amount=params["amount"],
-                installments=params["installments"],
-                treasury_account_id=params["treasury_account_id"],
-                document_number=params["document_number"],
-                document_date=params["document_date"],
-                document_attachment=params["document_attachment"],
-                delivery_type=params["delivery_type"],
-                delivery_date=params["delivery_date"],
-                immediate_lines=params["immediate_lines"],
-                payment_type=params["payment_type"],
-                line_files=params["line_files"],
-                pos_session_id=params["pos_session_id"],
-                payment_method_id=params["payment_method_id"],
-                user=params["user"],
-                credit_approval_task_id=params["credit_approval_task_id"],
-                draft_id=params["draft_id"],
-                direct_credit_approval=params["direct_credit_approval"],
-                check_number=params["check_number"],
-                check_bank_id=params["check_bank_id"],
-                check_issue_date=params["check_issue_date"],
-                check_due_date=params["check_due_date"],
-                checkbook_id=params["checkbook_id"],
-            )
+            invoice = BillingService.pos_checkout_from_request(request)
             return Response(InvoiceSerializer(invoice).data, status=status.HTTP_201_CREATED)
         except ValidationError as e:
             msg = e.messages[0] if hasattr(e, "messages") and e.messages else str(e)
@@ -358,19 +213,10 @@ class InvoiceViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
     @action(detail=True, methods=["get"])
     def cancel_impact(self, request, pk=None):
         """Preview what will happen when cancelling/annulling this invoice."""
+        from .selectors import InvoiceSelector
+
         invoice = self.get_object()
-        is_purchase_doc = invoice.purchase_order_id is not None or not invoice.is_sale_document()
-        impact = {
-            "invoice_status": invoice.status,
-            "has_folio": bool(invoice.number and invoice.number != "Draft"),
-            "is_sale_document": not is_purchase_doc,
-            "journal_entry_status": invoice.journal_entry.status if invoice.journal_entry else None,
-            "payments": [
-                {"id": p.id, "amount": str(p.amount), "status": p.status}
-                for p in invoice.payments.all()
-            ],
-            "action": "cancel" if invoice.status == Invoice.Status.DRAFT else "annul",
-        }
+        impact = InvoiceSelector.get_cancel_impact(invoice)
         return Response(impact)
 
     @action(detail=True, methods=["post"])

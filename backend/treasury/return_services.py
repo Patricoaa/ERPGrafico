@@ -19,6 +19,20 @@ class TreasuryReturnService:
     """
 
     @staticmethod
+    def register_payment_return_from_request(request, payment: TreasuryMovement):
+        amount = request.data.get("amount")
+        reason = request.data.get("reason", "")
+        treasury_account_id = request.data.get("treasury_account_id")
+
+        if not amount:
+            raise ValidationError("Debe especificar el monto a devolver.")
+
+        amount_decimal = Decimal(str(amount))
+        return TreasuryReturnService.register_payment_return(
+            payment, amount_decimal, reason=reason, treasury_account_id=treasury_account_id
+        )
+
+    @staticmethod
     @transaction.atomic
     def register_payment_return(
         payment: TreasuryMovement,

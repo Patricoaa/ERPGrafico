@@ -17,6 +17,163 @@ from .models import Invoice
 
 class BillingService:
     @staticmethod
+    def _parse_pos_checkout_params(request):
+        """Extract and coerce all POS checkout parameters from the multipart request."""
+        data = request.data
+        is_pending_registration = data.get("is_pending_registration", False)
+        if isinstance(is_pending_registration, str):
+            is_pending_registration = is_pending_registration.lower() == "true"
+
+        payment_is_pending = data.get("payment_is_pending", False)
+        if isinstance(payment_is_pending, str):
+            payment_is_pending = payment_is_pending.lower() == "true"
+
+        installments = data.get("installments")
+        if installments is not None:
+            try:
+                installments = int(installments)
+            except (ValueError, TypeError):
+                installments = 1
+        else:
+            installments = 1
+
+        immediate_lines = data.get("immediate_lines")
+        if isinstance(immediate_lines, str):
+            import json
+            try:
+                immediate_lines = json.loads(immediate_lines)
+            except Exception:
+                pass
+
+        line_files = {}
+        for key, file_obj in request.FILES.items():
+            if key.startswith("line_"):
+                parts = key.split("_")
+                if len(parts) >= 3:
+                    try:
+                        line_idx = int(parts[1])
+                        file_type = parts[2]
+                        if line_idx not in line_files:
+                            line_files[line_idx] = {"design": [], "approval": None}
+                        if file_type == "design":
+                            line_files[line_idx]["design"].append(file_obj)
+                        elif file_type == "approval":
+                            line_files[line_idx]["approval"] = file_obj
+                    except (ValueError, IndexError):
+                        continue
+
+        direct_credit_approval = data.get("direct_credit_approval", False)
+        if isinstance(direct_credit_approval, str):
+            direct_credit_approval = direct_credit_approval.lower() == "true"
+
+        check_bank_id = data.get("check_bank_id")
+        if check_bank_id:
+            check_bank_id = int(check_bank_id)
+
+        return {
+            "order_data": data.get("order_data"),
+            "dte_type": data.get("dte_type"),
+            "payment_method": data.get("payment_method"),
+            "payment_method_id": data.get("payment_method_id"),
+            "transaction_number": data.get("transaction_number"),
+            "is_pending_registration": is_pending_registration,
+            "payment_is_pending": payment_is_pending,
+            "document_number": data.get("document_number") or data.get("document_reference"),
+            "document_date": data.get("document_date"),
+            "document_attachment": request.FILES.get("document_attachment"),
+            "amount": data.get("amount"),
+            "installments": installments,
+            "treasury_account_id": data.get("treasury_account_id"),
+            "payment_type": data.get("payment_type", "INBOUND"),
+            "pos_session_id": data.get("pos_session_id"),
+            "delivery_type": data.get("delivery_type", "IMMEDIATE"),
+            "delivery_date": data.get("delivery_date"),
+            "immediate_lines": immediate_lines,
+            "line_files": line_files,
+            "direct_credit_approval": direct_credit_approval,
+            "check_number": data.get("check_number") or data.get("transaction_number"),
+            "check_bank_id": check_bank_id,
+            "check_issue_date": data.get("check_issue_date"),
+            "check_due_date": data.get("check_due_date"),
+            "checkbook_id": data.get("checkbook_id"),
+            "credit_approval_task_id": data.get("credit_approval_task_id"),
+            "draft_id": data.get("draft_id"),
+            "user": request.user,
+        }
+
+    @staticmethod
+    def pos_checkout_from_request(request) -> Invoice:
+        params = BillingService._parse_pos_checkout_params(request)
+
+        if not all([params["order_data"], params["dte_type"], params["payment_method"]]):
+            raise ValidationError("Missing data")
+
+        return BillingService.pos_checkout(
+            params["order_data"],
+            params["dte_type"],
+            params["payment_method"],
+            transaction_number=params["transaction_number"],
+            is_pending_registration=params["is_pending_registration"],
+            payment_is_pending=params["payment_is_pending"],
+            amount=params["amount"],
+            installments=params["installments"],
+            treasury_account_id=params["treasury_account_id"],
+            document_number=params["document_number"],
+            document_date=params["document_date"],
+            document_attachment=params["document_attachment"],
+            delivery_type=params["delivery_type"],
+            delivery_date=params["delivery_date"],
+            immediate_lines=params["immediate_lines"],
+            payment_type=params["payment_type"],
+            line_files=params["line_files"],
+            pos_session_id=params["pos_session_id"],
+            payment_method_id=params["payment_method_id"],
+            user=params["user"],
+            credit_approval_task_id=params["credit_approval_task_id"],
+            draft_id=params["draft_id"],
+            direct_credit_approval=params["direct_credit_approval"],
+            check_number=params["check_number"],
+            check_bank_id=params["check_bank_id"],
+            check_issue_date=params["check_issue_date"],
+            check_due_date=params["check_due_date"],
+            checkbook_id=params["checkbook_id"],
+        )
+
+    @staticmethod
+    def create_invoice_from_payload(validated_data) -> Invoice:
+        order_id = validated_data["order_id"]
+        order_type = validated_data["order_type"]
+        dte_type = validated_data["dte_type"]
+        payment_method = validated_data["payment_method"]
+
+        if order_type == "sale":
+            from sales.models import SaleOrder
+            try:
+                order = SaleOrder.objects.get(id=order_id)
+            except SaleOrder.DoesNotExist:
+                raise ValidationError("Order not found")
+            return BillingService.create_sale_invoice(order, dte_type, payment_method)
+        else:
+            from purchasing.models import PurchaseOrder
+            try:
+                order = PurchaseOrder.objects.get(id=order_id)
+            except PurchaseOrder.DoesNotExist:
+                raise ValidationError("Order not found")
+            
+            supplier_invoice_number = validated_data.get("supplier_invoice_number", "")
+            document_attachment = validated_data.get("document_attachment")
+            issue_date = validated_data.get("issue_date")
+            status_val = validated_data.get("status", Invoice.Status.POSTED)
+            return BillingService.create_purchase_bill(
+                order,
+                supplier_invoice_number,
+                dte_type=dte_type,
+                document_attachment=document_attachment,
+                date=issue_date,
+                status=status_val,
+            )
+
+    @staticmethod
     def request_credit_approval(
         order_data, amount, payment_method, full_request_data, requesting_user
     ):
