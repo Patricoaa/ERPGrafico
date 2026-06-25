@@ -201,6 +201,7 @@ class ContactViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
         """
         from core.api.throttles import HeavyReportThrottle
         from core.cache import cache_report
+        from .selectors import ContactSelector
 
         throttle = HeavyReportThrottle()
         if not throttle.allow_request(request, self):
@@ -213,110 +214,7 @@ class ContactViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
         is_blacklist = request.query_params.get("blacklist", "false") == "true"
 
         def _generate():
-            from decimal import Decimal
-
-            contacts = list_credit_portfolio(is_blacklist=is_blacklist)
-
-            from .serializers import ContactSerializer
-
-            contact_list = []
-
-            summary = {
-                "total_debt": Decimal("0"),
-                "total_exposure": Decimal("0"),
-                "potential_loss": Decimal("0"),
-                "current": Decimal("0"),
-                "overdue_30": Decimal("0"),
-                "overdue_60": Decimal("0"),
-                "overdue_90": Decimal("0"),
-                "overdue_90plus": Decimal("0"),
-                "count_with_credit": 0,
-                "count_debtors": 0,
-                "count_overdue": 0,
-                "risk_distribution": {
-                    "LOW": 0,
-                    "MEDIUM": 0,
-                    "HIGH": 0,
-                    "CRITICAL": 0,
-                },
-            }
-
-            for contact in contacts:
-                balance_used = contact.credit_balance_used
-                aging = contact.credit_aging
-
-                if is_blacklist:
-                    from django.db.models import Sum
-
-                    write_offs = contact.treasury_movements.filter(
-                        payment_method="WRITE_OFF", is_pending_registration=False
-                    ).aggregate(Sum("amount"))["amount__sum"] or Decimal("0")
-                    recoveries = contact.treasury_movements.filter(
-                        reference="RECUPERACION", is_pending_registration=False
-                    ).aggregate(Sum("amount"))["amount__sum"] or Decimal("0")
-                    balance_used = write_offs - recoveries
-
-                if (
-                    balance_used > 0
-                    or contact.credit_enabled
-                    or contact.credit_limit
-                    or is_blacklist
-                ):
-                    summary["count_with_credit"] += 1
-
-                    if contact.credit_limit:
-                        summary["total_exposure"] += contact.credit_limit
-
-                    risk_level = contact.credit_risk_level
-                    summary["risk_distribution"][risk_level] += 1
-
-                    if risk_level == "CRITICAL":
-                        summary["potential_loss"] += balance_used
-
-                    if balance_used > 0:
-                        summary["count_debtors"] += 1
-                        summary["total_debt"] += balance_used
-                        summary["current"] += aging["current"]
-                        summary["overdue_30"] += aging["overdue_30"]
-                        summary["overdue_60"] += aging["overdue_60"]
-                        summary["overdue_90"] += aging["overdue_90"]
-                        summary["overdue_90plus"] += aging["overdue_90plus"]
-
-                        overdue = (
-                            aging["overdue_30"]
-                            + aging["overdue_60"]
-                            + aging["overdue_90"]
-                            + aging["overdue_90plus"]
-                        )
-                        if overdue > 0:
-                            summary["count_overdue"] += 1
-
-                    data = ContactSerializer(contact).data
-                    if is_blacklist:
-                        data["credit_balance_used"] = str(balance_used)
-                    contact_list.append(data)
-
-            summary["utilization_rate"] = "0.00"
-            if summary["total_exposure"] > 0:
-                rate = (summary["total_debt"] / summary["total_exposure"]) * 100
-                summary["utilization_rate"] = f"{rate:.2f}"
-
-            for key in [
-                "total_debt",
-                "total_exposure",
-                "potential_loss",
-                "current",
-                "overdue_30",
-                "overdue_60",
-                "overdue_90",
-                "overdue_90plus",
-            ]:
-                summary[key] = str(summary[key])
-
-            return {
-                "contacts": contact_list,
-                "summary": summary,
-            }
+            return ContactSelector.get_credit_portfolio_data(is_blacklist)
 
         data = cache_report(
             module="contacts",
@@ -333,112 +231,12 @@ class ContactViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
         Record the contact's current debt as an uncollectible loss.
         Creates a Journal Entry and technical movements to clear the balance.
         """
-        from decimal import Decimal
-
-        from django.db import transaction
-
-        from accounting.models import AccountingSettings, JournalEntry, JournalItem
-        from treasury.models import TreasuryMovement
+        from .services import ContactService
+        from django.core.exceptions import ValidationError
 
         contact = self.get_object()
-        orders_with_balance = []
-        total_balance = Decimal("0")
-
-        # We must carefully re-calculate using the logic from Contact.credit_aging/used
-        orders = contact.sale_orders.exclude(status__in=["DRAFT", "CANCELLED"])
-        for order in orders:
-            payments = order.payments.filter(is_pending_registration=False)
-            paid_in = sum(
-                (p.amount for p in payments if p.movement_type in ["INBOUND", "ADJUSTMENT"]),
-                Decimal("0"),
-            )
-            paid_out = sum(
-                (p.amount for p in payments if p.movement_type == "OUTBOUND"), Decimal("0")
-            )
-            payments_net = paid_in - paid_out
-            order_balance = order.effective_total - payments_net
-            if order_balance > 0:
-                orders_with_balance.append((order, order_balance))
-                total_balance += order_balance
-
-        if total_balance <= 0:
-            return Response(
-                {"error": "El contacto no tiene deuda activa para castigar."}, status=400
-            )
-
-        settings = AccountingSettings.get_solo()
-        if not settings or not settings.default_uncollectible_expense_account:
-            return Response(
-                {
-                    "error": "No hay una cuenta de gasto por incobrabilidad configurada en Contabilidad."
-                },
-                status=400,
-            )
-
-        receivable_account = settings.default_receivable_account
-        if not receivable_account:
-            return Response(
-                {
-                    "error": "No se encontró una cuenta por cobrar configurada para este contacto o sistema."
-                },
-                status=400,
-            )
-
         try:
-            with transaction.atomic():
-                # 1. Create Journal Entry
-                entry = JournalEntry.objects.create(
-                    description=f"Castigo de deuda incobrable: {contact.name}",
-                    reference=f"CASTIGO-{contact.code}",
-                    status="POSTED",
-                    source_content_type=ContentType.objects.get_for_model(Contact),
-                    source_object_id=contact.id,
-                )
-
-                # Debit: Expense (Loss)
-                JournalItem.objects.create(
-                    entry=entry,
-                    account=settings.default_uncollectible_expense_account,
-                    label=f"Pérdida por incobrabilidad RUT {contact.tax_id}",
-                    debit=total_balance,
-                    credit=0,
-                )
-
-                # Credit: Asset (Receivable)
-                JournalItem.objects.create(
-                    entry=entry,
-                    account=receivable_account,
-                    partner=contact,
-                    partner_name=contact.name,
-                    label=f"Cierre de deuda incobrable RUT {contact.tax_id}",
-                    debit=0,
-                    credit=total_balance,
-                )
-
-                # 2. Create technical movements to clear the sale orders balance
-                for order, amount in orders_with_balance:
-                    TreasuryMovement.objects.create(
-                        movement_type="ADJUSTMENT",
-                        payment_method="WRITE_OFF",
-                        amount=amount,
-                        contact=contact,
-                        sale_order=order,
-                        journal_entry=entry,
-                        reference="CASTIGO",
-                        notes=f"Ajuste por castigo de deuda (Asiento {entry.display_id})",
-                        is_pending_registration=False,
-                    )
-
-                # 3. Permanently block and mark as critical
-                if not contact.is_default_customer:
-                    contact.credit_blocked = True
-                    contact.credit_auto_blocked = False
-                    contact.credit_risk_level = "CRITICAL"
-                from django.utils import timezone
-
-                contact.credit_last_evaluated = timezone.now()
-                contact.save()
-
+            total_balance, entry = ContactService.write_off_debt(contact)
             return Response(
                 {
                     "message": f"Castigo procesado. Se han regularizado {total_balance} a pérdidas.",
@@ -446,6 +244,8 @@ class ContactViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
                     "amount": str(total_balance),
                 }
             )
+        except ValidationError as e:
+            return Response({"error": str(e.message if hasattr(e, "message") else e)}, status=400)
         except Exception as e:
             return Response({"error": f"Error interno al procesar castigo: {str(e)}"}, status=500)
 
@@ -497,11 +297,8 @@ class ContactViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
         This doesn't re-open the debt, but records the income as 'Other Income / Recovery'.
         """
         from decimal import Decimal
-
-        from django.db import transaction
-
-        from accounting.models import AccountingSettings, JournalEntry, JournalItem
-        from treasury.models import TreasuryMovement
+        from django.core.exceptions import ValidationError
+        from .services import ContactService
 
         contact = self.get_object()
         amount_str = request.data.get("amount")
@@ -509,78 +306,17 @@ class ContactViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
             return Response({"error": "Debe especificar el monto recuperado."}, status=400)
 
         amount = Decimal(amount_str)
-        settings = AccountingSettings.get_solo()
-
-        # We need a recovery account. If not set, use uncollectible expense as negative (reversal)
-        # or a generic other income account.
-        recovery_account = (
-            getattr(settings, "default_recovery_income_account", None)
-            or settings.default_uncollectible_expense_account
-        )
-
-        if not recovery_account:
-            return Response({"error": "No hay una cuenta de recuperación configurada."}, status=400)
-
-        # We assume the money goes to the default bank/cash account
-        from treasury.models import TreasuryAccount
-
-        target_account = (
-            TreasuryAccount.objects.filter(is_active=True).first()
-            if hasattr(TreasuryAccount, "is_active")
-            else TreasuryAccount.objects.first()
-        )
-        if not target_account:
-            return Response(
-                {"error": "No hay una cuenta de tesorería activa para recibir el pago."}, status=400
-            )
 
         try:
-            with transaction.atomic():
-                entry = JournalEntry.objects.create(
-                    description=f"Recuperación de deuda castigada: {contact.name}",
-                    reference=f"RECUP-{contact.code}",
-                    status="POSTED",
-                    source_content_type=ContentType.objects.get_for_model(Contact),
-                    source_object_id=contact.id,
-                )
-
-                # Debit: Cash/Bank
-                JournalItem.objects.create(
-                    entry=entry,
-                    account=target_account.account,
-                    label=f"Ingreso por recuperación de deuda RUT {contact.tax_id}",
-                    debit=amount,
-                    credit=0,
-                )
-
-                # Credit: Recovery Income / Expense Reversal
-                JournalItem.objects.create(
-                    entry=entry,
-                    account=recovery_account,
-                    label=f"Recuperación de incobrable RUT {contact.tax_id}",
-                    debit=0,
-                    credit=amount,
-                )
-
-                # Record the movement
-                TreasuryMovement.objects.create(
-                    movement_type="INBOUND",
-                    payment_method="OTHER",  # Using OTHER with RECUPERACION reference
-                    amount=amount,
-                    contact=contact,
-                    journal_entry=entry,
-                    reference="RECUPERACION",
-                    notes=f"Recuperación de deuda castigada (Asiento {entry.display_id})",
-                    is_pending_registration=False,
-                    to_account=target_account,
-                )
-
+            entry = ContactService.recover_written_off_debt(contact, amount)
             return Response(
                 {
                     "message": f"Recuperación procesada por {amount}.",
                     "journal_entry": entry.display_id,
                 }
             )
+        except ValidationError as e:
+            return Response({"error": str(e.message if hasattr(e, "message") else e)}, status=400)
         except Exception as e:
             return Response({"error": str(e)}, status=500)
 
