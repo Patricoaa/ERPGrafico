@@ -442,7 +442,7 @@ These entities do not have lifecycle states. They use `is_active` (archive patte
 
 | Entity | Pattern | Notes |
 |--------|---------|-------|
-| Product | Archive (`active`) | `is_active=False` for archived products |
+| Product | Archive (`is_active`) | `is_active=False` for archived products |
 | Contact | Archive (`is_active`) | Roles are dynamic, not states |
 | Account | Archive (`is_active`) | Leaf accounts only |
 | UoM / UoMCategory | Archive | — |
@@ -459,7 +459,7 @@ These entities do not have lifecycle states. They use `is_active` (archive patte
 ## Workflow transition invariants
 
 - Transitions forbidden outside table above are rejected with HTTP 400.
-- Every transition emits a `workflow.Transition` row (audit).
+- Every state change is automatically audited via `django-simple-history` (`HistoricalRecords`), capturing the user, timestamp, and field deltas. This immutable audit log is exposed via `/api/core/audit/global/` and consumed by the `ActivitySidebar` and `AuditPage` in the frontend.
 - Some transitions require permission (e.g. fiscal year close requires `can_close_fiscal_year`).
 
 ## Frontend enforcement
