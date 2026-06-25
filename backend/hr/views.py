@@ -373,11 +373,8 @@ class SalaryAdvanceViewSet(viewsets.ModelViewSet):
     filterset_class = SalaryAdvanceFilter
 
     def perform_create(self, serializer):
-        from treasury.models import TreasuryMovement
-        from treasury.services import TreasuryService
+        from .services import SalaryAdvanceService
 
-        # The advance itself is saved first
-        # We ensure amount and date are taken from request if provided (e.g. from PaymentDialog)
         request_data = self.request.data
         if "amount" in request_data:
             from decimal import Decimal
@@ -391,45 +388,14 @@ class SalaryAdvanceViewSet(viewsets.ModelViewSet):
 
         advance = serializer.save()
 
-        # Check if we have payment details in the request data
-        payment_method = request_data.get("payment_method_new")
-        treasury_account_id = request_data.get("treasury_account_id")
-
-        if payment_method and treasury_account_id:
-            from treasury.models import PaymentMethod, TreasuryAccount
-
-            try:
-                treasury_account = TreasuryAccount.objects.get(pk=int(treasury_account_id))
-            except (TreasuryAccount.DoesNotExist, ValueError):
-                return
-
-            payment_method_obj = None
-            try:
-                payment_method_obj = PaymentMethod.objects.get(pk=int(payment_method))
-            except (PaymentMethod.DoesNotExist, ValueError):
-                pass
-
-            with transaction.atomic():
-                movement = TreasuryService.create_movement(
-                    amount=advance.amount,
-                    movement_type=TreasuryMovement.Type.OUTBOUND,
-                    from_account=treasury_account,
-                    payment_method=request_data.get("paymentMethod", TreasuryMovement.Method.CASH),
-                    payment_method_new=payment_method_obj,
-                    transaction_number=request_data.get("transaction_number"),
-                    reference=f"Anticipo de sueldo: {advance.employee.contact.name} - {advance.date}",
-                    date=advance.date,
-                    partner=advance.employee.contact,
-                    payroll=advance.payroll,
-                    payroll_payment_type=TreasuryMovement.PayrollPaymentType.ADVANCE,
-                    created_by=self.request.user,
-                )
-                if movement and movement.journal_entry:
-                    advance.journal_entry = movement.journal_entry
-                    advance.save()
-                # We could link the movement to the advance if we add a field,
-                # but the treasury engine already links to payroll if provided.
-                # For an advance, it's often a pre-payroll payment.
+        SalaryAdvanceService.create_advance_with_payment(
+            advance,
+            payment_method_id=request_data.get("payment_method_new"),
+            treasury_account_id=request_data.get("treasury_account_id"),
+            payment_method_slug=request_data.get("paymentMethod", ""),
+            transaction_number=request_data.get("transaction_number"),
+            user=self.request.user,
+        )
 
 
 # --- Payroll Payments ---

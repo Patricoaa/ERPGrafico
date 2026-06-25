@@ -649,3 +649,55 @@ class PayrollPaymentService:
             notes=notes,
             journal_entry=movement.journal_entry,
         )
+
+
+class SalaryAdvanceService:
+    @staticmethod
+    @transaction.atomic
+    def create_advance_with_payment(
+        advance,
+        *,
+        payment_method_id: int | str | None,
+        treasury_account_id: int | str | None,
+        payment_method_slug: str = "",
+        transaction_number: str | None = None,
+        user=None,
+    ) -> None:
+        """
+        After creating a SalaryAdvance, optionally registers a treasury outbound
+        movement (payment) for the advance and links its journal entry.
+        """
+        if not payment_method_id or not treasury_account_id:
+            return
+
+        from treasury.models import PaymentMethod, TreasuryAccount, TreasuryMovement
+        from treasury.services import TreasuryService
+
+        try:
+            treasury_account = TreasuryAccount.objects.get(pk=int(treasury_account_id))
+        except (TreasuryAccount.DoesNotExist, ValueError):
+            return
+
+        payment_method_obj = None
+        try:
+            payment_method_obj = PaymentMethod.objects.get(pk=int(payment_method_id))
+        except (PaymentMethod.DoesNotExist, ValueError):
+            pass
+
+        movement = TreasuryService.create_movement(
+            amount=advance.amount,
+            movement_type=TreasuryMovement.Type.OUTBOUND,
+            from_account=treasury_account,
+            payment_method=payment_method_slug or TreasuryMovement.Method.CASH,
+            payment_method_new=payment_method_obj,
+            transaction_number=transaction_number,
+            reference=f"Anticipo de sueldo: {advance.employee.contact.name} - {advance.date}",
+            date=advance.date,
+            partner=advance.employee.contact,
+            payroll=advance.payroll,
+            payroll_payment_type=TreasuryMovement.PayrollPaymentType.ADVANCE,
+            created_by=user,
+        )
+        if movement and movement.journal_entry:
+            advance.journal_entry = movement.journal_entry
+            advance.save(update_fields=["journal_entry"])

@@ -1658,6 +1658,76 @@ class WorkOrderService:
             user=user,
         )
 
+    @staticmethod
+    def handle_update_attachments(work_order, files, user):
+        """
+        Processes file attachments after a WorkOrder update.
+        Handles design files, approval files, and final photos.
+        """
+        if not files:
+            return
+
+        content_type = ContentType.objects.get_for_model(work_order)
+
+        # 1. Design Files (design_file_0, design_file_1, etc.)
+        for key, file_obj in files.items():
+            if key.startswith("design_file_"):
+                Attachment.objects.create(
+                    file=file_obj,
+                    original_filename=file_obj.name,
+                    content_type=content_type,
+                    object_id=work_order.id,
+                    user=user,
+                )
+
+        # 2. Approval File
+        approval_file = files.get("approval_file")
+        if approval_file:
+            Attachment.objects.create(
+                file=approval_file,
+                original_filename=approval_file.name,
+                content_type=content_type,
+                object_id=work_order.id,
+                user=user,
+            )
+            if not work_order.stage_data:
+                work_order.stage_data = {}
+            work_order.stage_data["approval_attachment"] = approval_file.name
+            work_order.save(update_fields=["stage_data"])
+
+        # 3. Final Photo
+        final_photo = files.get("final_photo")
+        if final_photo:
+            Attachment.objects.create(
+                file=final_photo,
+                original_filename=f"[final_photo] {final_photo.name}",
+                content_type=content_type,
+                object_id=work_order.id,
+                user=user,
+            )
+            if not work_order.stage_data:
+                work_order.stage_data = {}
+            work_order.stage_data["final_photo"] = final_photo.name
+            work_order.save(update_fields=["stage_data"])
+
+    @staticmethod
+    def validate_transition_stock(work_order, next_stage, materials_data):
+        """
+        Validates stock availability when transitioning from MATERIAL_APPROVAL.
+        Raises ValidationError if any component has insufficient stock.
+        """
+        skip_stages = {"MATERIAL_ASSIGNMENT", "MATERIAL_APPROVAL", "CANCELLED"}
+        if work_order.current_stage != "MATERIAL_APPROVAL" or next_stage in skip_stages:
+            return
+
+        for m in materials_data:
+            if not m.get("is_available", False):
+                raise ValidationError(
+                    f"No hay suficiente stock para el componente: {m.get('component_name')}. "
+                    f"Requerido: {m.get('quantity_planned')} {m.get('uom_name')}, "
+                    f"Disponible: {m.get('stock_available')}."
+                )
+
 
 class WorkOrderPdfService:
     @staticmethod

@@ -179,53 +179,9 @@ class WorkOrderViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
 
         if response.status_code == 200:
             try:
-                # Handle file attachments
-                if request.FILES:
-                    instance = self.get_object()
-                    content_type = ContentType.objects.get_for_model(instance)
-
-                    # 1. Design Files (design_file_0, design_file_1, etc.)
-                    # We look for keys starting with 'design_file_'
-                    for key, file_obj in request.FILES.items():
-                        if key.startswith("design_file_"):
-                            Attachment.objects.create(
-                                file=file_obj,
-                                original_filename=file_obj.name,
-                                content_type=content_type,
-                                object_id=instance.id,
-                                user=request.user,
-                            )
-
-                    # 2. Approval File
-                    approval_file = request.FILES.get("approval_file")
-                    if approval_file:
-                        Attachment.objects.create(
-                            file=approval_file,
-                            original_filename=approval_file.name,
-                            content_type=content_type,
-                            object_id=instance.id,
-                            user=request.user,
-                        )
-                        if not instance.stage_data:
-                            instance.stage_data = {}
-                        instance.stage_data["approval_attachment"] = approval_file.name
-                        instance.save()
-
-                    # 3. Final Photo
-                    final_photo = request.FILES.get("final_photo")
-                    if final_photo:
-                        Attachment.objects.create(
-                            file=final_photo,
-                            original_filename=f"[final_photo] {final_photo.name}",
-                            content_type=content_type,
-                            object_id=instance.id,
-                            user=request.user,
-                        )
-                        if not instance.stage_data:
-                            instance.stage_data = {}
-                        instance.stage_data["final_photo"] = final_photo.name
-                        instance.save()
-
+                WorkOrderService.handle_update_attachments(
+                    self.get_object(), request.FILES, request.user
+                )
             except Exception:
                 logger.exception("Error attaching files in update for WorkOrder %s", instance.pk)
 
@@ -317,16 +273,14 @@ class WorkOrderViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
             notes = request.data.get("notes", "")
             data = request.data.get("data", {})
 
-            # If data is a string (due to multipart/form-data), parse it as JSON
             if isinstance(data, str):
                 import json
-
                 try:
                     data = json.loads(data)
                 except Exception:
                     data = {}
 
-            # Find the stage choice
+            # Validate stage
             stage_match = None
             for choice, label in WorkOrder.Stage.choices:
                 if choice == next_stage:
@@ -338,26 +292,13 @@ class WorkOrderViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
                     {"error": f"Etapa inválida: {next_stage}"}, status=status.HTTP_400_BAD_REQUEST
                 )
 
-            # Validation: Stock Availability for Stage Transition
-            if work_order.current_stage == "MATERIAL_APPROVAL" and next_stage not in [
-                "MATERIAL_ASSIGNMENT",
-                "MATERIAL_APPROVAL",
-                "CANCELLED",
-            ]:
-                ctx = self.get_serializer_context()
-                ctx["stocks_by_product"] = self._build_stock_context(work_order)
-                serializer = WorkOrderSerializer(work_order, context=ctx)
-                materials = serializer.data.get("materials", [])
-                for m in materials:
-                    if not m.get("is_available", False):
-                        return Response(
-                            {
-                                "error": f"No hay suficiente stock para el componente: {m.get('component_name')}. "
-                                f"Requerido: {m.get('quantity_planned')} {m.get('uom_name')}, "
-                                f"Disponible: {m.get('stock_available')}."
-                            },
-                            status=status.HTTP_400_BAD_REQUEST,
-                        )
+            # Validate stock availability via service
+            ctx = self.get_serializer_context()
+            ctx["stocks_by_product"] = self._build_stock_context(work_order)
+            serializer = WorkOrderSerializer(work_order, context=ctx)
+            WorkOrderService.validate_transition_stock(
+                work_order, next_stage, serializer.data.get("materials", [])
+            )
 
             WorkOrderService.transition_to(
                 work_order=work_order,
@@ -369,6 +310,8 @@ class WorkOrderViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
             )
 
             return Response(WorkOrderSerializer(work_order).data)
+        except ValidationError as e:
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
         except Exception as e:
             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
