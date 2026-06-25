@@ -1,6 +1,7 @@
 from django.db.models import (
     BooleanField,
     Count,
+    DecimalField,
     Exists,
     IntegerField,
     OuterRef,
@@ -51,6 +52,21 @@ def list_products(*, user, params: dict) -> QuerySet:
         .annotate(
             annotated_current_stock=Sum("stock_moves__quantity"),
             variants_count=Count("variants"),
+        )
+    )
+
+    # Último precio de compra: Subquery O(1) para evitar N+1 en get_last_purchase_price
+    from purchasing.models import PurchaseLine
+
+    last_purchase_qs = (
+        PurchaseLine.objects.filter(product=OuterRef("pk"))
+        .order_by("-order__date", "-id")
+        .values("unit_cost")[:1]
+    )
+    queryset = queryset.annotate(
+        annotated_last_purchase_price=Subquery(
+            last_purchase_qs,
+            output_field=DecimalField(max_digits=14, decimal_places=4),
         )
     )
 

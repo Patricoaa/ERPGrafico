@@ -665,6 +665,76 @@ class PartnerService:
         return ptx
 
     # ──────────────────────────────────────────────────────────────
+    @staticmethod
+    def equity_transfer_from_request(request) -> tuple:
+        from contacts.models import Contact
+
+        from_id = request.data.get("from_contact_id")
+        to_id = request.data.get("to_contact_id")
+        amount = Decimal(str(request.data.get("amount", "0")))
+        date = request.data.get("date")
+        description = request.data.get("description", "")
+
+        if amount <= 0 or from_id == to_id:
+            raise ValidationError("Datos de transferencia inválidos.")
+
+        try:
+            seller = Contact.objects.get(id=from_id)
+            buyer = Contact.objects.get(id=to_id)
+        except Contact.DoesNotExist:
+            raise ValidationError("Uno o ambos contactos no existen.")
+
+        return PartnerService.record_equity_transfer(
+            seller=seller,
+            buyer=buyer,
+            amount=amount,
+            date=date,
+            description=description,
+            created_by=request.user,
+        )
+
+    @staticmethod
+    def partner_transactions_from_request(request, contact: "Contact"):
+        transaction_type = request.data.get("transaction_type")
+        amount_str = request.data.get("amount")
+        date = request.data.get("date")
+        description = request.data.get("description", "")
+        treasury_account_id = request.data.get("treasury_account_id")
+
+        if not all([transaction_type, amount_str, date]):
+            raise ValidationError("Faltan campos obligatorios (transaction_type, amount, date).")
+
+        try:
+            amount = Decimal(amount_str)
+        except Exception:
+            raise ValidationError("Monto inválido.")
+
+        if transaction_type == "CAPITAL_CASH":
+            return PartnerService.record_capital_contribution(
+                partner=contact,
+                amount=amount,
+                date=date,
+                description=description,
+                treasury_account_id=treasury_account_id,
+                created_by=request.user,
+            )
+        elif transaction_type in ["PROV_WITHDRAWAL", "DIVIDEND_PAYMENT"]:
+            return PartnerService.record_dividend_payment(
+                partner=contact,
+                amount=amount,
+                date=date,
+                description=description,
+                treasury_account_id=treasury_account_id,
+                created_by=request.user,
+                is_withdrawal=(transaction_type == "PROV_WITHDRAWAL"),
+            )
+        else:
+            raise ValidationError(
+                f"Tipo de transacción '{transaction_type}' no soportado en este endpoint. "
+                "Use los endpoints específicos para suscripción, transferencia, etc."
+            )
+
+    # ──────────────────────────────────────────────────────────────
     # EQUITY TRANSFER
     # ──────────────────────────────────────────────────────────────
 

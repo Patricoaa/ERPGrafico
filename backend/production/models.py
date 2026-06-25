@@ -147,6 +147,7 @@ class WorkOrder(models.Model):
     )
 
     attachments = GenericRelation("core.Attachment")
+    tasks = GenericRelation("workflow.Task")
     history = HistoricalRecords()
 
     no_materials_required = models.BooleanField(

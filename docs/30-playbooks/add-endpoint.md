@@ -13,8 +13,8 @@ validation:
   - python manage.py makemigrations --dry-run --check
 forbidden:
   - business logic inside views
-  - exposing integer PKs
-  - hardcoded money (must be cents)
+  - exponer el integer PK como único identificador de negocio en la UI — siempre acompañar con display_id o number (ver api-contracts.md §ID format)
+  - usar convención _cents o dividir/multiplicar montos — los valores son Decimal directo en CLP (no centavos), ver api-contracts.md §Money format
   - skipping permission class
 status: active
 owner: backend-team
@@ -165,3 +165,4 @@ python manage.py spectacular --file /tmp/schema.yml && echo ok
 - [ ] Frontend hook + Zod schema in sync.
 - [ ] Rate limit tier confirmed.
 - [ ] Celery tasks (if any) idempotent.
+- [ ] Si el endpoint crea/modifica recursos fiscales (facturas, asientos, pagos): verificar si debe agregarse a la lista cerrada de idempotency.md §Lista cerrada de endpoints HTTP.

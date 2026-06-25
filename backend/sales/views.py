@@ -140,10 +140,12 @@ class SaleOrderViewSet(NoDestroyModelMixin, viewsets.ModelViewSet, AuditHistoryM
         ).prefetch_related(
             "lines", 
             "lines__product", 
+            "lines__product__mfg_profile",
             "lines__work_orders", 
             "invoices", 
             "deliveries", 
-            "payments"
+            "payments",
+            "work_orders"
         ).order_by("-date", "-id")
     permission_classes = [StandardizedModelPermissions]
     filter_backends = [DjangoFilterBackend, DistinctSearchFilter]

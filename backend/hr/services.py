@@ -502,6 +502,46 @@ class PayrollPaymentService:
     """Handles Previred and salary payment registration for a posted payroll."""
 
     @staticmethod
+    def _parse_payment_request(request):
+        treasury_account_id = request.data.get("treasury_account_id")
+        if not treasury_account_id:
+            raise ValidationError("Se requiere la cuenta de tesorería (treasury_account_id).")
+
+        amount_raw = request.data.get("amount")
+        amount = None
+        if amount_raw is not None:
+            try:
+                amount = Decimal(str(amount_raw))
+            except (ValueError, TypeError):
+                raise ValidationError("Monto inválido.")
+
+        return {
+            "treasury_account_id": int(treasury_account_id),
+            "payment_date": (
+                request.data.get("documentDate")
+                or request.data.get("date")
+                or timezone.now().date().isoformat()
+            ),
+            "payment_method": request.data.get("paymentMethod", "TRANSFER"),
+            "payment_method_id": request.data.get("payment_method_new"),
+            "notes": request.data.get("notes", ""),
+            "transaction_number": request.data.get("transaction_number"),
+            "is_pending_registration": request.data.get("is_pending_registration", False),
+            "created_by": request.user,
+            "amount": amount,
+        }
+
+    @staticmethod
+    def pay_previred_from_request(request, payroll):
+        kwargs = PayrollPaymentService._parse_payment_request(request)
+        return PayrollPaymentService.pay_previred(payroll, **kwargs)
+
+    @staticmethod
+    def pay_salary_from_request(request, payroll):
+        kwargs = PayrollPaymentService._parse_payment_request(request)
+        return PayrollPaymentService.pay_salary(payroll, **kwargs)
+
+    @staticmethod
     @transaction.atomic
     def pay_previred(
         payroll,
@@ -723,3 +763,26 @@ class SalaryAdvanceService:
         if movement and movement.journal_entry:
             advance.journal_entry = movement.journal_entry
             advance.save(update_fields=["journal_entry"])
+
+    @staticmethod
+    @transaction.atomic
+    def create_advance_from_serializer(serializer, request_data, user) -> None:
+        if "amount" in request_data:
+            from decimal import Decimal
+            try:
+                serializer.validated_data["amount"] = Decimal(str(request_data["amount"]))
+            except (ValueError, TypeError):
+                pass
+        if "date" in request_data:
+            serializer.validated_data["date"] = request_data["date"]
+
+        advance = serializer.save()
+
+        SalaryAdvanceService.create_advance_with_payment(
+            advance,
+            payment_method_id=request_data.get("payment_method_new"),
+            treasury_account_id=request_data.get("treasury_account_id"),
+            payment_method_slug=request_data.get("paymentMethod", ""),
+            transaction_number=request_data.get("transaction_number"),
+            user=user,
+        )

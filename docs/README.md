@@ -62,7 +62,8 @@ last_review: 2026-06-19
 | “logs”, “metrics”, “traces”, “alerting” | [observability.md](40-quality/observability.md) | 40 |
 | “slow”, “optimize”, “query N+1”, “bundle size” | [performance.md](40-quality/performance.md) | 40 |
 | “deploy”, “pipeline”, “CI failure” | [ci-cd.md](40-quality/ci-cd.md) | 40 |
-| “any type”, “TypeScript unknown”, “type escape hatch” | [zero-any-policy.md](90-governance/zero-any-policy.md) | 90 |
+| "N+1", "select_related", "prefetch_related", "queries en serializer", "slow list endpoint", "assertNumQueries" | [zero-n-plus-one-policy.md](90-governance/zero-n-plus-one-policy.md) | 90 |
+| "any type", "TypeScript unknown", "type escape hatch" | [zero-any-policy.md](90-governance/zero-any-policy.md) | 90 |
 | “versioning”, “release process”, “SemVer”, “how to version” | [versioning-policy.md](90-governance/versioning-policy.md) | 90 |
 | “naming”, “sufijo de componente”, “FormModal prohibido”, “cómo nombrar”, “Drawer vs Modal”, “nombre de archivo”, “naming hook”, “naming type” | [naming-conventions.md](90-governance/naming-conventions.md) | 90 |
 | “ADR”, “decision record”, “major change” | [adr/README.md](10-architecture/adr/README.md) | 10 |
@@ -105,6 +106,7 @@ last_review: 2026-06-19
 10. **Views ≤ 20 lines** per Django action — logic in `services.py`.
 11. **Component suffix must match surface** — `Drawer` = slide-over, `Modal` = dialog, `Sheet`/`Wizard`/`Form`…; `FormModal`/`FormDrawer` are prohibited. See [naming-conventions.md](90-governance/naming-conventions.md).
 12. **Changing a contract (layer 20), public API, or a global invariant requires an ADR.**
+13. **Zero N+1** — Ningún `Serializer` o `SerializerMethodField` ejecuta queries ORM. Toda relación se precarga en el `ViewSet` con `select_related`/`prefetch_related`. Creación de grafos en `services.py` con `@transaction.atomic`. Ver [zero-n-plus-one-policy.md](90-governance/zero-n-plus-one-policy.md).
 
 ## Agentic model instructions
 

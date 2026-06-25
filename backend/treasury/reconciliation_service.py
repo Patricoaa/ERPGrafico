@@ -617,3 +617,31 @@ class ReconciliationService:
 
         except Exception as e:
             raise ValueError(f"No se pudo generar vista previa: {str(e)}")
+
+    @staticmethod
+    def get_task_status_data(task_id):
+        from celery.result import AsyncResult
+
+        task = AsyncResult(task_id)
+        if task.state == "PENDING":
+            return {"status": "PENDING", "processed": 0, "total": 0, "matched": 0, "percent": 0}, 200
+        if task.state == "PROGRESS":
+            meta = task.info or {}
+            return {
+                "status": "PROGRESS",
+                "processed": meta.get("processed", 0),
+                "total": meta.get("total", 0),
+                "matched": meta.get("matched", 0),
+                "percent": meta.get("percent", 0),
+            }, 200
+        if task.state == "SUCCESS":
+            result = task.result or {}
+            return {
+                "status": "SUCCESS",
+                "matched_count": result.get("matched_count", 0),
+                "total_unreconciled": result.get("total_unreconciled", 0),
+                "percent": 100,
+            }, 200
+        if task.state == "FAILURE":
+            return {"status": "FAILURE", "error": str(task.info)}, 500
+        return {"status": task.state}, 200

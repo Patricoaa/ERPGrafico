@@ -4,6 +4,17 @@ import io
 from rest_framework import status
 from rest_framework.decorators import action
 from rest_framework.response import Response
+from rest_framework.exceptions import MethodNotAllowed
+
+
+class NoDestroyModelMixin:
+    """
+    Mixin to prevent hard deletion of models via the API.
+    Raises a 405 Method Not Allowed error on DELETE requests.
+    """
+
+    def destroy(self, request, *args, **kwargs):
+        raise MethodNotAllowed("DELETE", detail="La eliminación de este registro no está permitida.")
 
 
 class BulkImportMixin:

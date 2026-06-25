@@ -1,12 +1,14 @@
 import django_filters
 from django.core.exceptions import ValidationError
+from django.db.models import Prefetch
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import filters as drf_filters
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
 
-from core.mixins import AuditHistoryMixin
+from core.api.pagination import StandardResultsSetPagination
+from core.mixins import AuditHistoryMixin, NoDestroyModelMixin
 from core.idempotency import idempotent_endpoint
 from purchasing.models import PurchaseOrder
 from sales.models import SaleOrder
@@ -35,9 +37,9 @@ class InvoiceFilterSet(django_filters.FilterSet):
         }
 
 
-class InvoiceViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
-    queryset = Invoice.objects.all().order_by("-date", "-id")
+class InvoiceViewSet(NoDestroyModelMixin, viewsets.ModelViewSet, AuditHistoryMixin):
     serializer_class = InvoiceSerializer
+    pagination_class = StandardResultsSetPagination
     filter_backends = [DjangoFilterBackend, drf_filters.SearchFilter]
     filterset_class = InvoiceFilterSet
     search_fields = [
@@ -48,6 +50,69 @@ class InvoiceViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
         "sale_order__customer__name",
         "sale_order__customer__tax_id",
     ]
+
+    def get_queryset(self):
+        from treasury.models import PaymentAllocation, TreasuryMovement
+        from inventory.models import StockMove
+
+        return (
+            Invoice.objects.all()
+            # FKs directas — JOIN en SQL (O(1))
+            .select_related(
+                "sale_order__customer",
+                "sale_order__pos_session",
+                "purchase_order__supplier",
+                "contact",
+                "journal_entry",
+                "corrected_invoice",
+            )
+            # Relaciones inversas — queries separadas cacheadas en RAM
+            .prefetch_related(
+                # Pagos directos sobre la factura
+                Prefetch(
+                    "payments",
+                    queryset=TreasuryMovement.objects.select_related(
+                        "payment_method_ref", "account"
+                    ),
+                ),
+                # Allocaciones parciales con su movimiento de tesorería
+                Prefetch(
+                    "payment_allocations",
+                    queryset=PaymentAllocation.objects.select_related("treasury_movement__payment_method_ref"),
+                ),
+                # Archivos adjuntos
+                "attachments",
+                # Notas correctoras (NC/ND que apuntan a esta factura)
+                "adjustments",
+                # Devoluciones de venta y sus líneas + stock move
+                "sale_returns__lines__stock_move",
+                # Devoluciones de compra y sus líneas + stock move
+                "purchase_returns__lines__stock_move",
+                # Entregas suplementarias (ND venta) y sus líneas + stock move
+                "sale_deliveries__lines__stock_move",
+                # Recepciones suplementarias (ND compra) y sus líneas + stock move
+                "purchase_receipts__lines__stock_move",
+                # Órdenes de trabajo vinculadas
+                "work_orders",
+                # Líneas de nota de crédito/débito de venta
+                "note_sale_lines",
+                # Líneas de nota de crédito/débito de compra
+                "note_purchase_lines",
+                # Workflow de notas (para NC/ND con selected_items)
+                "workflow",
+                # Líneas de la orden de venta (fallback)
+                "sale_order__lines__product",
+                # Líneas de la orden de compra (fallback)
+                "purchase_order__lines__product",
+                # Moves vinculados al JE de la factura
+                Prefetch(
+                    "journal_entry__stockmove_set",
+                    queryset=StockMove.objects.select_related("product", "warehouse"),
+                    to_attr="prefetched_stock_moves",
+                ),
+            )
+            .order_by("-date", "-id")
+        )
 
     @idempotent_endpoint(scope="billing.invoice.create")
     def create(self, request, *args, **kwargs):
@@ -156,18 +221,11 @@ class InvoiceViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
 
     @action(detail=False, methods=["post"])
     def request_credit(self, request):
-        """
-        Creates an approval request task for a POS sale that exceeds the customer's credit limit.
-        """
         try:
-            order_data = request.data.get("order_data")
-            amount = request.data.get("amount")
-            payment_method = request.data.get("payment_method")
-
             task = BillingService.request_credit_approval(
-                order_data=order_data,
-                amount=amount,
-                payment_method=payment_method,
+                order_data=request.data.get("order_data"),
+                amount=request.data.get("amount"),
+                payment_method=request.data.get("payment_method"),
                 full_request_data=request.data,
                 requesting_user=request.user,
             )
@@ -226,25 +284,8 @@ class InvoiceViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
         """
         from .note_checkout_service import NoteCheckoutService
 
-        warehouse_id = request.data.get("warehouse_id")
-        date = request.data.get("date")
-        line_data = request.data.get("line_data")
-        notes = request.data.get("notes", "")
-
-        if not all([warehouse_id, date, line_data]):
-            return Response(
-                {"error": "Faltan datos requeridos (bodega, fecha o líneas)"},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-
         try:
-            doc = NoteCheckoutService.process_logistics_from_invoice(
-                invoice_id=pk,
-                warehouse_id=warehouse_id,
-                date=date,
-                line_data=line_data,
-                notes=notes,
-            )
+            doc = NoteCheckoutService.process_logistics_from_request(request, pk)
             return Response(
                 {
                     "message": "Logística procesada correctamente",

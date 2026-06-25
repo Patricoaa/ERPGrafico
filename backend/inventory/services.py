@@ -593,6 +593,29 @@ class PricingService:
         # OVERRIDE — precio propio
         return variant.sale_price, variant.sale_price_gross
 
+    @staticmethod
+    def get_effective_price(product, quantity, uom_id):
+        from decimal import Decimal
+        from inventory.models import UoM
+        from accounting.utils import get_vat_multiplier
+
+        uom = None
+        if uom_id:
+            try:
+                uom = UoM.objects.get(pk=uom_id)
+            except UoM.DoesNotExist:
+                pass
+
+        price_gross = PricingService.get_product_price(product, Decimal(str(quantity)), uom=uom)
+        price_net = (price_gross / get_vat_multiplier()).quantize(
+            Decimal("1"), rounding="ROUND_HALF_UP"
+        )
+        return {
+            "price": float(price_net),
+            "price_gross": float(price_gross),
+            "price_net": float(price_net),
+        }
+
 
 class UoMService:
     """
@@ -814,6 +837,55 @@ class UoMService:
 
 
 class ProductService:
+    @staticmethod
+    def bulk_annotate_reserved_qty(products):
+        """
+        Calculates reserved quantity for a list of products in bulk to avoid N+1 queries.
+        Injects an 'annotated_qty_reserved' attribute into each product instance.
+        Performs exactly 3 queries regardless of the number of products.
+        """
+        if not products:
+            return
+
+        from decimal import Decimal
+        from production.models import WorkOrder, WorkOrderMaterial
+        from sales.models import DraftCart, SaleLine, SaleOrder
+
+        product_ids = [p.id for p in products]
+        reserved_map = {p.id: Decimal("0.0") for p in products}
+
+        # 1. Confirmed Sales (excluding fully delivered)
+        pending_sales = SaleLine.objects.filter(
+            product_id__in=product_ids, order__status=SaleOrder.Status.CONFIRMED
+        ).exclude(order__delivery_status=SaleOrder.DeliveryStatus.DELIVERED)
+        
+        for line in pending_sales:
+            # We calculate quantity_pending in Python, but only for lines matching the criteria
+            reserved_map[line.product_id] += line.quantity_pending
+
+        # 2. POS Drafts (only OPEN sessions)
+        active_drafts = DraftCart.objects.filter(pos_session__status="OPEN")
+        for draft in active_drafts:
+            if draft.items and isinstance(draft.items, list):
+                for item in draft.items:
+                    item_p_id = item.get("id") or item.get("product_id")
+                    if item_p_id and int(item_p_id) in reserved_map:
+                        reserved_map[int(item_p_id)] += Decimal(str(item.get("quantity", 0)))
+
+        # 3. Work Orders
+        pending_ot_materials = WorkOrderMaterial.objects.filter(
+            component_id__in=product_ids,
+            work_order__status__in=[WorkOrder.Status.DRAFT, WorkOrder.Status.IN_PROGRESS],
+        )
+        for material in pending_ot_materials:
+            remaining = material.quantity_planned - material.quantity_consumed
+            if remaining > 0:
+                reserved_map[material.component_id] += remaining
+
+        # Inject into products
+        for p in products:
+            p.annotated_qty_reserved = reserved_map[p.id]
+
     @staticmethod
     def check_archiving_restrictions(product: Product):
         """
@@ -1171,3 +1243,18 @@ class ProductService:
             "message": f"BOM clonada en {cloned_count} variante(s).",
             "cloned": cloned_count,
         }
+
+    @staticmethod
+    def bulk_set_surcharge(template, variant_ids, surcharge):
+        from decimal import Decimal
+        from .models import Product
+
+        variants_qs = template.variants.filter(is_active=True)
+        if variant_ids:
+            variants_qs = variants_qs.filter(id__in=variant_ids)
+
+        updated = variants_qs.update(
+            price_inheritance_mode=Product.PriceInheritance.SURCHARGE,
+            price_surcharge=Decimal(str(surcharge)),
+        )
+        return updated

@@ -290,3 +290,39 @@ class ReturnService:
         return_doc.status = SaleReturn.Status.CONFIRMED
         return_doc.save()
         return return_doc
+
+
+class SalesReturnService:
+    """Alias/facade for merchandise return operations called from views."""
+
+    @staticmethod
+    def register_merchandise_return(order: SaleOrder, return_items: list, warehouse, notes: str = ""):
+        """
+        Creates and immediately confirms a merchandise return for a sale order.
+        Called from the register_merchandise_return view action.
+        """
+        import datetime
+        ret_doc = ReturnService.create_return_from_note_request(
+            order=order,
+            items=return_items,
+            warehouse_id=warehouse.id,
+            date=datetime.date.today().isoformat(),
+            notes=notes,
+        )
+        return ReturnService.confirm_return(ret_doc)
+
+    @staticmethod
+    def register_merchandise_return_from_request(request, order: SaleOrder):
+        """Parse request and call register_merchandise_return."""
+        return_items = request.data.get("return_items", [])
+        warehouse_id = request.data.get("warehouse_id")
+        notes = request.data.get("notes", "")
+
+        if not warehouse_id:
+            raise ValidationError("Se requiere especificar la bodega.")
+        if not return_items:
+            raise ValidationError("Debe especificar al menos un producto a devolver.")
+
+        warehouse = Warehouse.objects.get(id=warehouse_id)
+        return SalesReturnService.register_merchandise_return(order, return_items, warehouse, notes)
+

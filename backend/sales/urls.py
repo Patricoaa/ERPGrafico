@@ -6,10 +6,10 @@ from .pricing_views import PricingViewSet
 from .views import SaleDeliveryViewSet, SaleOrderViewSet, SaleReturnViewSet, SalesSettingsViewSet
 
 router = DefaultRouter()
-router.register(r"orders", SaleOrderViewSet)
-router.register(r"settings", SalesSettingsViewSet)
-router.register(r"deliveries", SaleDeliveryViewSet)
-router.register(r"returns", SaleReturnViewSet)
+router.register(r"orders", SaleOrderViewSet, basename="saleorder")
+router.register(r"settings", SalesSettingsViewSet, basename="salessettings")
+router.register(r"deliveries", SaleDeliveryViewSet, basename="saledelivery")
+router.register(r"returns", SaleReturnViewSet, basename="salereturn")
 router.register(r"pos-drafts", DraftCartViewSet, basename="pos-draft")
 router.register(r"pricing", PricingViewSet, basename="pricing")
 

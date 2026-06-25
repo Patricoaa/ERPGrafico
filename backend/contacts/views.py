@@ -389,67 +389,19 @@ class ContactViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
         """
         contact = self.get_object()
         if not contact.is_partner:
-            from rest_framework import status
-
             return Response(
                 {"error": "El contacto no está marcado como socio."},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        transaction_type = request.data.get("transaction_type")
-        amount_str = request.data.get("amount")
-        date = request.data.get("date")
-        description = request.data.get("description", "")
-        treasury_account_id = request.data.get("treasury_account_id")
-
-        if not all([transaction_type, amount_str, date]):
-            from rest_framework import status
-
-            return Response(
-                {"error": "Faltan campos obligatorios (transaction_type, amount, date)."},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-
-        try:
-            amount = Decimal(amount_str)
-        except Exception:
-            return Response({"error": "Monto inválido."}, status=400)
-
         from .partner_service import PartnerService
         from .serializers import PartnerTransactionSerializer
 
         try:
-            if transaction_type in ["CAPITAL_CASH"]:
-                ptx = PartnerService.record_capital_contribution(
-                    partner=contact,
-                    amount=amount,
-                    date=date,
-                    description=description,
-                    treasury_account_id=treasury_account_id,
-                    created_by=request.user,
-                )
-            elif transaction_type in ["PROV_WITHDRAWAL", "DIVIDEND_PAYMENT"]:
-                ptx = PartnerService.record_dividend_payment(
-                    partner=contact,
-                    amount=amount,
-                    date=date,
-                    description=description,
-                    treasury_account_id=treasury_account_id,
-                    created_by=request.user,
-                    is_withdrawal=(transaction_type == "PROV_WITHDRAWAL"),
-                )
-
-            else:
-                return Response(
-                    {
-                        "error": f"Tipo de transacción '{transaction_type}' no soportado en este endpoint. "
-                        "Use los endpoints específicos para suscripción, transferencia, etc."
-                    },
-                    status=400,
-                )
-
+            ptx = PartnerService.partner_transactions_from_request(request, contact)
             return Response(PartnerTransactionSerializer(ptx).data)
-
+        except ValidationError as e:
+            return Response({"error": str(e.message if hasattr(e, 'message') else e)}, status=400)
         except Exception as e:
             return Response({"error": f"Error al procesar la transacción: {str(e)}"}, status=500)
 
@@ -480,30 +432,8 @@ class ContactViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
         """Records a transfer of participation between two partners."""
         from .partner_service import PartnerService
 
-        from_id = request.data.get("from_contact_id")
-        to_id = request.data.get("to_contact_id")
-        amount = Decimal(str(request.data.get("amount", "0")))
-        date = request.data.get("date", timezone.now().date())
-        description = request.data.get("description", "")
-
-        if amount <= 0 or from_id == to_id:
-            return Response({"error": "Datos de transferencia inválidos."}, status=400)
-
         try:
-            seller = Contact.objects.get(id=from_id)
-            buyer = Contact.objects.get(id=to_id)
-        except Contact.DoesNotExist:
-            return Response({"error": "Uno o ambos contactos no existen."}, status=400)
-
-        try:
-            seller_tx, buyer_tx = PartnerService.record_equity_transfer(
-                seller=seller,
-                buyer=buyer,
-                amount=amount,
-                date=date,
-                description=description,
-                created_by=request.user,
-            )
+            seller_tx, buyer_tx = PartnerService.equity_transfer_from_request(request)
             return Response(
                 {
                     "message": "Transferencia completada.",
@@ -512,6 +442,8 @@ class ContactViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
                     else None,
                 }
             )
+        except ValidationError as e:
+            return Response({"error": str(e.message if hasattr(e, 'message') else e)}, status=400)
         except Exception as e:
             return Response({"error": str(e)}, status=500)
 

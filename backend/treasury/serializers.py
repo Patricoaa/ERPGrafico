@@ -1030,67 +1030,59 @@ class BankLoanSerializer(serializers.ModelSerializer):
     installments = LoanInstallmentSerializer(many=True, read_only=True)
 
     def get_outstanding_balance(self, obj):
-        # Saldo insoluto real: principal original menos capital pagado real.
-        # Los PAID installments ya tienen su principal_amount actualizado al
-        # valor real si hubo override en el pago.
         from decimal import Decimal
-
-        from django.db.models import Sum
-
         from .models import LoanInstallment
 
-        paid_principal = obj.installments.filter(
-            status=LoanInstallment.Status.PAID,
-        ).aggregate(s=Sum("principal_amount"))["s"] or Decimal("0")
-        return (obj.principal - paid_principal).quantize(Decimal("0.01"))
+        # Reads from prefetched installments in RAM
+        installments = obj.installments.all()
+        paid_principal = sum(
+            (inst.principal_amount or Decimal("0"))
+            for inst in installments
+            if inst.status == LoanInstallment.Status.PAID
+        )
+
+        bal = obj.principal - paid_principal
+        return str(bal.quantize(Decimal("0.01")))
 
     def get_next_due_date(self, obj):
         from .models import LoanInstallment
-
-        nxt = (
-            obj.installments.filter(
-                status=LoanInstallment.Status.PENDING,
-            )
-            .order_by("due_date")
-            .values_list("due_date", flat=True)
-            .first()
-        )
-        return nxt
+        
+        installments = [inst for inst in obj.installments.all() if inst.status == LoanInstallment.Status.PENDING]
+        if not installments:
+            return None
+        
+        # Sort by due_date to find the earliest
+        installments.sort(key=lambda x: x.due_date)
+        return str(installments[0].due_date)
 
     def get_next_installment_amount(self, obj):
         from .models import LoanInstallment
 
-        nxt = (
-            obj.installments.filter(
-                status=LoanInstallment.Status.PENDING,
-            )
-            .order_by("due_date")
-            .first()
-        )
-        if not nxt:
+        installments = [inst for inst in obj.installments.all() if inst.status == LoanInstallment.Status.PENDING]
+        if not installments:
             return None
-        return nxt.total_amount
+            
+        installments.sort(key=lambda x: x.due_date)
+        return installments[0].total_amount
 
     def get_installments_count(self, obj):
-        return obj.installments.count()
+        return len(obj.installments.all())
 
     def get_paid_installments_count(self, obj):
         from .models import LoanInstallment
-
-        return obj.installments.filter(status=LoanInstallment.Status.PAID).count()
+        return sum(1 for inst in obj.installments.all() if inst.status == LoanInstallment.Status.PAID)
 
     total_disbursed = serializers.SerializerMethodField()
 
     def get_total_disbursed(self, obj):
         from decimal import Decimal
-
-        from django.db.models import Sum
-
         from .models import LoanInstallment
 
-        result = obj.installments.filter(
-            status=LoanInstallment.Status.PAID,
-        ).aggregate(s=Sum("total_amount"))["s"]
+        result = sum(
+            (inst.total_amount or Decimal("0"))
+            for inst in obj.installments.all()
+            if inst.status == LoanInstallment.Status.PAID
+        )
         return (result or Decimal("0")).quantize(Decimal("0.01"))
 
     class Meta:
