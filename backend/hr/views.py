@@ -1,3 +1,4 @@
+from core.api.pagination import StandardResultsSetPagination
 from core.idempotency import idempotent_endpoint
 from decimal import Decimal
 
@@ -79,6 +80,7 @@ class GlobalHRSettingsViewSet(viewsets.ViewSet):
 
 
 class AFPViewSet(viewsets.ModelViewSet):
+    pagination_class = StandardResultsSetPagination
     queryset = AFP.objects.all()
     serializer_class = AFPSerializer
     lookup_field = "id"
@@ -97,6 +99,7 @@ class PayrollConceptFilter(django_filters.FilterSet):
 
 
 class PayrollConceptViewSet(viewsets.ModelViewSet):
+    pagination_class = StandardResultsSetPagination
     queryset = PayrollConcept.objects.select_related("account").all()
     serializer_class = PayrollConceptSerializer
     filter_backends = [DjangoFilterBackend]
@@ -116,6 +119,7 @@ class EmployeeFilter(django_filters.FilterSet):
 
 
 class EmployeeViewSet(AuditHistory, viewsets.ModelViewSet):
+    pagination_class = StandardResultsSetPagination
     queryset = Employee.objects.select_related("contact", "afp").all()
     serializer_class = EmployeeSerializer
     filter_backends = [DjangoFilterBackend, filters.SearchFilter]
@@ -137,6 +141,7 @@ class AbsenceFilter(django_filters.FilterSet):
 
 
 class AbsenceViewSet(viewsets.ModelViewSet):
+    pagination_class = StandardResultsSetPagination
     queryset = Absence.objects.select_related("employee", "employee__contact").all()
     serializer_class = AbsenceSerializer
     filter_backends = [DjangoFilterBackend]
@@ -158,6 +163,7 @@ class PayrollFilter(django_filters.FilterSet):
 
 
 class PayrollViewSet(viewsets.ModelViewSet):
+    pagination_class = StandardResultsSetPagination
     def get_queryset(self):
         return (
             Payroll.objects.select_related(
@@ -269,6 +275,7 @@ class PayrollViewSet(viewsets.ModelViewSet):
 
 
 class PayrollItemViewSet(viewsets.ModelViewSet):
+    pagination_class = StandardResultsSetPagination
     serializer_class = PayrollItemSerializer
 
     def get_queryset(self):
@@ -292,6 +299,7 @@ class PayrollItemViewSet(viewsets.ModelViewSet):
 
 
 class EmployeeConceptAmountViewSet(viewsets.ModelViewSet):
+    pagination_class = StandardResultsSetPagination
     queryset = EmployeeConceptAmount.objects.all()
     serializer_class = EmployeeConceptAmountSerializer
     filter_backends = [DjangoFilterBackend]
@@ -312,6 +320,7 @@ class SalaryAdvanceFilter(django_filters.FilterSet):
 
 
 class SalaryAdvanceViewSet(viewsets.ModelViewSet):
+    pagination_class = StandardResultsSetPagination
     queryset = SalaryAdvance.objects.select_related(
         "employee", "employee__contact", "payroll"
     ).all()
@@ -340,6 +349,7 @@ class PayrollPaymentFilter(django_filters.FilterSet):
 
 
 class PayrollPaymentViewSet(viewsets.ModelViewSet):
+    pagination_class = StandardResultsSetPagination
     queryset = PayrollPayment.objects.select_related(
         "payroll", "payroll__employee", "payroll__employee__contact"
     ).all()

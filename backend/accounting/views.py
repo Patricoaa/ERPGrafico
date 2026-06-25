@@ -1,3 +1,4 @@
+from core.api.pagination import StandardResultsSetPagination
 import django_filters
 from django.http import HttpResponse
 from django_filters.rest_framework import DjangoFilterBackend, FilterSet
@@ -84,6 +85,7 @@ class AccountingSettingsViewSet(viewsets.ModelViewSet):
 
 
 class AccountViewSet(BulkImportMixin, AuditHistory, viewsets.ModelViewSet):
+    pagination_class = StandardResultsSetPagination
     queryset = Account.objects.all()
     serializer_class = AccountSerializer
 
@@ -140,6 +142,7 @@ class AccountViewSet(BulkImportMixin, AuditHistory, viewsets.ModelViewSet):
 
 
 class JournalEntryViewSet(viewsets.ModelViewSet, AuditHistory):
+    pagination_class = StandardResultsSetPagination
     def get_queryset(self):
         return JournalEntry.objects.select_related("reversal_of", "source_content_type").prefetch_related("items", "items__account", "items__partner", "source_document").all()
     serializer_class = JournalEntrySerializer
@@ -204,6 +207,7 @@ class JournalEntryViewSet(viewsets.ModelViewSet, AuditHistory):
 
 
 class BudgetViewSet(viewsets.ModelViewSet):
+    pagination_class = StandardResultsSetPagination
     def get_queryset(self):
         return Budget.objects.prefetch_related("items", "items__account").all()
     serializer_class = BudgetSerializer
@@ -284,12 +288,14 @@ class BudgetViewSet(viewsets.ModelViewSet):
 
 
 class BudgetItemViewSet(viewsets.ModelViewSet):
+    pagination_class = StandardResultsSetPagination
     def get_queryset(self):
         return BudgetItem.objects.select_related("account").all()
     serializer_class = BudgetItemSerializer
 
 
 class FiscalYearViewSet(viewsets.ModelViewSet):
+    pagination_class = StandardResultsSetPagination
     """
     CRUD + custom actions for Fiscal Year management and annual closing.
     """

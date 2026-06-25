@@ -1,3 +1,4 @@
+from core.api.pagination import StandardResultsSetPagination
 from django.conf import settings
 from django.contrib.auth.models import Group
 from django.utils import timezone
@@ -32,6 +33,7 @@ from .services import ActionLoggingService, UserService
 
 
 class BackgroundJobViewSet(viewsets.ModelViewSet):
+    pagination_class = StandardResultsSetPagination
     queryset = BackgroundJob.objects.all()
     serializer_class = BackgroundJobSerializer
     permission_classes = [IsAuthenticated]
@@ -170,6 +172,7 @@ class UserPreferenceView(APIView):
 
 
 class UserViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
+    pagination_class = StandardResultsSetPagination
     queryset = User.objects.all()
     serializer_class = UserSerializer
 
@@ -195,6 +198,7 @@ class UserViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
 
 
 class GroupViewSet(viewsets.ModelViewSet):
+    pagination_class = StandardResultsSetPagination
     """
     Expose user groups (roles) with full CRUD.
     """
@@ -240,6 +244,7 @@ class CompanySettingsViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
 
 
 class ActionLogViewSet(viewsets.ReadOnlyModelViewSet):
+    pagination_class = StandardResultsSetPagination
     queryset = ActionLog.objects.all()
     serializer_class = ActionLogSerializer
     permission_classes = [IsAuthenticated]
@@ -287,6 +292,7 @@ def system_status(request):
 
 
 class BackgroundJobViewSet(viewsets.ReadOnlyModelViewSet):
+    pagination_class = StandardResultsSetPagination
     """
     Expose background jobs (read-only for users).
     Users can only see their own jobs, unless they are superusers.

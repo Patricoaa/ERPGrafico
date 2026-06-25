@@ -1,3 +1,4 @@
+from core.api.pagination import StandardResultsSetPagination
 from core.idempotency import idempotent_endpoint
 from django.core.exceptions import ValidationError as DjangoValidationError
 from django.utils import timezone
@@ -26,6 +27,7 @@ from .services import (
 
 
 class TaxPeriodViewSet(viewsets.ModelViewSet):
+    pagination_class = StandardResultsSetPagination
     queryset = TaxPeriod.objects.all()
     serializer_class = TaxPeriodSerializer
     permission_classes = [IsAuthenticated]
@@ -75,6 +77,7 @@ class TaxPeriodViewSet(viewsets.ModelViewSet):
 
 
 class F29DeclarationViewSet(viewsets.ModelViewSet):
+    pagination_class = StandardResultsSetPagination
     queryset = F29Declaration.objects.all()
     serializer_class = F29DeclarationSerializer
     permission_classes = [IsAuthenticated]
@@ -131,6 +134,7 @@ class F29DeclarationViewSet(viewsets.ModelViewSet):
 
 
 class F29PaymentViewSet(viewsets.ModelViewSet):
+    pagination_class = StandardResultsSetPagination
     queryset = F29Payment.objects.all()
     serializer_class = F29PaymentSerializer
     permission_classes = [IsAuthenticated]
@@ -156,6 +160,7 @@ class F29PaymentViewSet(viewsets.ModelViewSet):
 
 
 class AccountingPeriodViewSet(viewsets.ModelViewSet):
+    pagination_class = StandardResultsSetPagination
     queryset = AccountingPeriod.objects.all()
     serializer_class = AccountingPeriodSerializer
     permission_classes = [IsAuthenticated]

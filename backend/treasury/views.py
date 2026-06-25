@@ -70,6 +70,7 @@ from .services import TerminalBatchService, TreasuryService
 
 
 class BankViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
+    pagination_class = StandardResultsSetPagination
     queryset = Bank.objects.all().order_by("name")
     serializer_class = BankSerializer
 
@@ -126,6 +127,7 @@ class BankViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
 
 
 class PaymentMethodViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
+    pagination_class = StandardResultsSetPagination
     queryset = PaymentMethod.objects.all().order_by("name")
     serializer_class = PaymentMethodSerializer
 
@@ -201,6 +203,7 @@ class TreasuryAccountFilterSet(FilterSet):
 
 
 class TreasuryAccountViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
+    pagination_class = StandardResultsSetPagination
     queryset = TreasuryAccount.objects.all().order_by("account_type", "name")
     serializer_class = TreasuryAccountSerializer
     filter_backends = [DjangoFilterBackend, drf_filters.SearchFilter]
@@ -268,17 +271,20 @@ class TreasuryAccountViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
 
 
 class PaymentTerminalProviderViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
+    pagination_class = StandardResultsSetPagination
     queryset = PaymentTerminalProvider.objects.all().order_by("name")
     serializer_class = PaymentTerminalProviderSerializer
 
 
 class PaymentTerminalDeviceViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
+    pagination_class = StandardResultsSetPagination
     queryset = PaymentTerminalDevice.objects.all().order_by("name")
     serializer_class = PaymentTerminalDeviceSerializer
     filterset_fields = ["provider", "status"]
 
 
 class POSTerminalViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
+    pagination_class = StandardResultsSetPagination
     """
     ViewSet for managing POS Terminals.
     Supports filtering by active status via `?active_only=true` query param.
@@ -509,6 +515,7 @@ class TreasuryMovementViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
 
 
 class BankStatementViewSet(viewsets.ModelViewSet):
+    pagination_class = StandardResultsSetPagination
     """ViewSet for managing bank statements"""
 
     queryset = BankStatement.objects.all().select_related("treasury_account", "imported_by")
@@ -756,6 +763,7 @@ class ReconciliationSettingsViewSet(viewsets.ModelViewSet):
 
 
 class POSSessionViewSet(viewsets.ModelViewSet):
+    pagination_class = StandardResultsSetPagination
     """ViewSet for POS Session Management (Apertura/Cierre de Caja)"""
 
     from django.db.models import Prefetch
@@ -829,6 +837,7 @@ class POSSessionViewSet(viewsets.ModelViewSet):
         except Exception as e:
             return Response({'error': str(e)}, status=500)
 class CheckViewSet(viewsets.ModelViewSet):
+    pagination_class = StandardResultsSetPagination
     """CRUD + transiciones de estado para cheques recibidos."""
 
     from .filters import CheckFilter
@@ -1012,6 +1021,7 @@ class TreasuryDashboardViewSet(viewsets.ViewSet):
 
 
 class TerminalBatchViewSet(viewsets.ModelViewSet):
+    pagination_class = StandardResultsSetPagination
     """
     ViewSet for managing Terminal Batches (Settlements).
     """
@@ -1065,6 +1075,7 @@ class TerminalBatchViewSet(viewsets.ModelViewSet):
 
 
 class BankLoanViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
+    pagination_class = StandardResultsSetPagination
     """CRUD + acciones de lifecycle para créditos bancarios (Fase 2).
 
     Acciones custom:
@@ -1172,6 +1183,7 @@ class BankLoanViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
 
 
 class CreditLineViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
+    pagination_class = StandardResultsSetPagination
     """
     CRUD para Líneas de Crédito (sobregiro) asociadas a cuentas corrientes.
 
@@ -1223,6 +1235,7 @@ class CreditLineViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
 
 
 class LoanInstallmentViewSet(viewsets.ModelViewSet):
+    pagination_class = StandardResultsSetPagination
     """Listado y pago de cuotas. Creación/edición no expuestas (se generan
     vía `BankLoan.generate_schedule` y se cierran vía acciones de pago)."""
 
@@ -1253,6 +1266,7 @@ class LoanInstallmentViewSet(viewsets.ModelViewSet):
 
 
 class CreditCardStatementViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
+    pagination_class = StandardResultsSetPagination
     """CRUD + acciones de lifecycle para estados de cuenta de tarjeta de crédito propia.
 
     Acciones custom:
