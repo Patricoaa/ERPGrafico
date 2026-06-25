@@ -76,50 +76,10 @@ class ContactViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
         serializer = self.get_serializer(contacts, many=True)
         return Response(serializer.data)
 
-    @action(detail=True, methods=["get"])
+    @action(detail=True, methods=['get'])
     def insights(self, request, pk=None):
-        """
-        Get insights for a specific contact including:
-        - Sales summary (invoices, sale orders)
-        - Purchases summary (purchase orders)
-        - Work orders summary (as customer or related contact)
-        """
-        contact = self.get_object()
-
-        # Sales data (NV)
-        sale_orders = contact.sale_orders.all().order_by("-date")
-
-        # Purchase data (PO)
-        purchase_orders = contact.purchase_orders.all().order_by("-date")
-
-        # Work orders Strictly as related contact (NOT as sale customer)
-        # These are the ones for the "Contacto Relacionado" tab
-        work_orders_as_related = contact.related_work_orders.exclude(
-            sale_order__customer=contact
-        ).order_by("-created_at")
-
-        # Serialize data
-        from production.serializers import WorkOrderSerializer
-        from purchasing.serializers import PurchaseOrderSerializer
-        from sales.serializers import SaleOrderSerializer
-
-        return Response(
-            {
-                "contact": ContactSerializer(contact).data,
-                "sales": {
-                    "count": sale_orders.count(),
-                    "orders": SaleOrderSerializer(sale_orders[:50], many=True).data,
-                },
-                "purchases": {
-                    "count": purchase_orders.count(),
-                    "orders": PurchaseOrderSerializer(purchase_orders[:50], many=True).data,
-                },
-                "work_orders": {
-                    "count": work_orders_as_related.count(),
-                    "orders": WorkOrderSerializer(work_orders_as_related[:50], many=True).data,
-                },
-            }
-        )
+        from .selectors import ContactSelectorExt
+        return Response(ContactSelectorExt.get_insights(self.get_object()))
 
     @action(detail=True, methods=["get"])
     def credit_ledger(self, request, pk=None):
@@ -135,62 +95,22 @@ class ContactViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
         ledger_data = ContactSelector.get_credit_ledger(contact=contact, include_all=include_all)
         return Response(ledger_data)
 
-    @action(detail=False, methods=["get"])
+    @action(detail=False, methods=['get'])
     def credit_portfolio(self, request):
-        """
-        Returns a cartera view: all contacts with active credit or outstanding balance.
-        Includes per-contact aging breakdown and aggregate summary KPIs.
-        Cached in Redis for 120s — invalidated by payment/credit events.
-        """
-        from core.api.throttles import HeavyReportThrottle
-        from core.cache import cache_report
-        from .selectors import ContactSelector
+        from .selectors import ContactSelectorExt
+        return Response(ContactSelectorExt.get_credit_portfolio_data_cached(request, self))
 
-        throttle = HeavyReportThrottle()
-        if not throttle.allow_request(request, self):
-            from rest_framework.exceptions import Throttled
-
-            raise Throttled(
-                detail="Demasiadas solicitudes al reporte de crédito. Intente en un momento."
-            )
-
-        is_blacklist = request.query_params.get("blacklist", "false") == "true"
-
-        def _generate():
-            return ContactSelector.get_credit_portfolio_data(is_blacklist)
-
-        data = cache_report(
-            module="contacts",
-            endpoint="credit_portfolio",
-            params={"blacklist": str(is_blacklist)},
-            timeout=120,
-            generator=_generate,
-        )
-        return Response(data)
-
-    @action(detail=True, methods=["post"])
+    @action(detail=True, methods=['post'])
     def write_off_debt(self, request, pk=None):
-        """
-        Record the contact's current debt as an uncollectible loss.
-        Creates a Journal Entry and technical movements to clear the balance.
-        """
         from .services import ContactService
-        from django.core.exceptions import ValidationError
-
-        contact = self.get_object()
+        from django.core.exceptions import ValidationError as DjangoValidationError
+        from rest_framework.exceptions import ValidationError
         try:
-            total_balance, entry = ContactService.write_off_debt(contact)
-            return Response(
-                {
-                    "message": f"Castigo procesado. Se han regularizado {total_balance} a pérdidas.",
-                    "journal_entry": entry.display_id,
-                    "amount": str(total_balance),
-                }
-            )
-        except ValidationError as e:
-            return Response({"error": str(e.message if hasattr(e, "message") else e)}, status=400)
+            return Response(ContactService.write_off_debt_from_request(request, self.get_object()))
+        except (DjangoValidationError, ValidationError) as e:
+            return Response({'error': str(e.message if hasattr(e, 'message') else e)}, status=400)
         except Exception as e:
-            return Response({"error": f"Error interno al procesar castigo: {str(e)}"}, status=500)
+            return Response({'error': f'Error interno: {str(e)}'}, status=500)
 
     @action(detail=True, methods=["get"])
     def credit_history(self, request, pk=None):
@@ -220,35 +140,17 @@ class ContactViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
         ContactService.unblock_credit(contact=contact, unblocked_by=request.user)
         return Response({"message": "Crédito rehabilitado correctamente."})
 
-    @action(detail=True, methods=["post"])
+    @action(detail=True, methods=['post'])
     def recover_written_off_debt(self, request, pk=None):
-        """
-        Records a recovery payment for debt that was previously written off.
-        This doesn't re-open the debt, but records the income as 'Other Income / Recovery'.
-        """
-        from decimal import Decimal
-        from django.core.exceptions import ValidationError
         from .services import ContactService
-
-        contact = self.get_object()
-        amount_str = request.data.get("amount")
-        if not amount_str:
-            return Response({"error": "Debe especificar el monto recuperado."}, status=400)
-
-        amount = Decimal(amount_str)
-
+        from django.core.exceptions import ValidationError as DjangoValidationError
+        from rest_framework.exceptions import ValidationError
         try:
-            entry = ContactService.recover_written_off_debt(contact, amount)
-            return Response(
-                {
-                    "message": f"Recuperación procesada por {amount}.",
-                    "journal_entry": entry.display_id,
-                }
-            )
-        except ValidationError as e:
-            return Response({"error": str(e.message if hasattr(e, "message") else e)}, status=400)
+            return Response(ContactService.recover_written_off_debt_from_request(request, self.get_object()))
+        except (DjangoValidationError, ValidationError) as e:
+            return Response({'error': str(e.message if hasattr(e, 'message') else e)}, status=400)
         except Exception as e:
-            return Response({"error": str(e)}, status=500)
+            return Response({'error': str(e)}, status=500)
 
     # ==========================================================
     # PARTNERS (SOCIOS) ENDPOINTS
@@ -261,41 +163,14 @@ class ContactViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
         serializer = self.get_serializer(contacts, many=True)
         return Response(serializer.data)
 
-    @action(detail=True, methods=["get"])
+    @action(detail=True, methods=['get'])
     def partner_statement(self, request, pk=None):
-        """Get statement of account for a specific partner"""
-        contact = self.get_object()
-        if not contact.is_partner:
-            from rest_framework import status
-
-            return Response(
-                {"error": "El contacto no está marcado como socio."},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-
-        from .partner_models import PartnerTransaction
-        from .serializers import PartnerTransactionSerializer
-
-        transactions = PartnerTransaction.objects.filter(partner=contact).order_by(
-            "-date", "-created_at"
-        )
-        serializer = PartnerTransactionSerializer(transactions, many=True)
-
-        return Response(
-            {
-                "contact": self.get_serializer(contact).data,
-                "summary": {
-                    "equity_percentage": str(contact.partner_equity_percentage or 0),
-                    "balance": str(contact.partner_balance),
-                    "total_contributions": str(contact.partner_total_contributions),
-                    "total_paid_in": str(contact.partner_total_paid_in),
-                    "pending_capital": str(contact.partner_pending_capital),
-                    "provisional_withdrawals": str(contact.partner_provisional_withdrawals_balance),
-                    "total_formal_withdrawals": str(contact.partner_total_withdrawals),
-                },
-                "transactions": serializer.data,
-            }
-        )
+        from .selectors import ContactSelectorExt
+        from rest_framework.exceptions import ValidationError
+        try:
+            return Response(ContactSelectorExt.get_partner_statement(self.get_object(), self.get_serializer))
+        except ValidationError as e:
+            return Response({'error': str(e)}, status=400)
 
     @action(detail=False, methods=["get"])
     def partners_summary(self, request):
@@ -353,57 +228,24 @@ class ContactViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
         )
         return Response(self.get_serializer(contact).data)
 
-    @action(detail=True, methods=["post"])
-    @transaction.atomic
+    @action(detail=True, methods=['post'])
     def individual_dividend_payment(self, request, pk=None):
-        """
-        Specialized endpoint for individual dividend payment.
-        Expects: amount, date, description (opt), treasury_account_id (opt).
-        """
-        contact = self.get_object()
-        from .partner_service import PartnerService
-        from .serializers import PartnerTransactionActionSerializer, PartnerTransactionSerializer
-
-        serializer = PartnerTransactionActionSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-
-        data = serializer.validated_data
+        from .services import ContactService
+        from rest_framework.exceptions import ValidationError
         try:
-            ptx = PartnerService.record_dividend_payment(
-                partner=contact,
-                amount=data["amount"],
-                date=data["date"],
-                description=data.get("description", ""),
-                treasury_account_id=data.get("treasury_account_id"),
-                created_by=request.user,
-            )
-            return Response(PartnerTransactionSerializer(ptx).data)
-        except Exception as e:
-            return Response({"error": str(e)}, status=400)
-
-    @action(detail=True, methods=["post"])
-    def partner_transactions(self, request, pk=None):
-        """
-        Register a new partner transaction using PartnerService.
-        Supports: CAPITAL_CASH, PROV_WITHDRAWAL
-        """
-        contact = self.get_object()
-        if not contact.is_partner:
-            return Response(
-                {"error": "El contacto no está marcado como socio."},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-
-        from .partner_service import PartnerService
-        from .serializers import PartnerTransactionSerializer
-
-        try:
-            ptx = PartnerService.partner_transactions_from_request(request, contact)
-            return Response(PartnerTransactionSerializer(ptx).data)
+            return Response(ContactService.individual_dividend_payment_from_request(request, self.get_object()))
         except ValidationError as e:
-            return Response({"error": str(e.message if hasattr(e, 'message') else e)}, status=400)
-        except Exception as e:
-            return Response({"error": f"Error al procesar la transacción: {str(e)}"}, status=500)
+            return Response({'error': str(e)}, status=400)
+
+    @action(detail=True, methods=['get'])
+    def partner_transactions(self, request, pk=None):
+        from .partner_models import PartnerTransaction
+        from .serializers import PartnerTransactionSerializer
+        transactions = PartnerTransaction.objects.filter(partner=self.get_object()).order_by('-date', '-created_at')
+        page = self.paginate_queryset(transactions)
+        if page is not None:
+            return self.get_paginated_response(PartnerTransactionSerializer(page, many=True).data)
+        return Response(PartnerTransactionSerializer(transactions, many=True).data)
 
     @action(detail=False, methods=["post"])
     @transaction.atomic
@@ -470,62 +312,20 @@ class ContactViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
 
         return Response(PartnerEquityStakeSerializer(qs, many=True).data)
 
-    @action(detail=False, methods=["post"])
+    @action(detail=False, methods=['post'])
     def initial_setup(self, request):
-        """Bulk setup for partners and initial capital subscription."""
-        from .partner_service import PartnerService
-
-        partners_data = request.data.get("partners", [])
-        if not partners_data or not isinstance(partners_data, list):
-            return Response(
-                {"error": "Debe proporcionar una lista de socios con sus montos."}, status=400
-            )
-
+        from .services import ContactService
+        from rest_framework.exceptions import ValidationError
         try:
-            result = PartnerService.initial_setup(
-                partners_data=partners_data,
-                created_by=request.user,
-            )
-            return Response(
-                {
-                    "message": "Configuración inicial completada con éxito.",
-                    "total_capital": str(result["total_capital"]),
-                    "journal_entry": result["journal_entry"].display_id,
-                    "partners_updated": result["partners_updated"],
-                }
-            )
-        except Exception as e:
-            return Response(
-                {"error": f"Error durante la configuración inicial: {str(e)}"}, status=500
-            )
-
-    @action(detail=False, methods=["post"])
-    def mass_mobilize_retained_earnings(self, request):
-        """
-        Mobilize retained earnings in bulk for multiple partners.
-        Payload format:
-        {
-          "date": "2024-05-15",
-          "description": "Distribución general de utilidades históricas",
-          "mobilizations": [
-             { "partner_id": 1, "dividend_amount": 100000, "reinvest_amount": 0 },
-             { "partner_id": 2, "dividend_amount": 50000, "reinvest_amount": 50000 }
-          ]
-        }
-        """
-        from django.core.exceptions import ValidationError
-        from .partner_service import PartnerService
-
-        try:
-            success_count = PartnerService.mass_mobilize_retained_earnings_from_payload(
-                payload=request.data, user=request.user
-            )
-            return Response(
-                {
-                    "message": f"Se ejecutaron {success_count} movilizaciones de utilidades retenidas correctamente."
-                }
-            )
+            return Response(ContactService.initial_setup_from_request(request))
         except ValidationError as e:
-            return Response({"error": str(e.message if hasattr(e, 'message') else e)}, status=400)
-        except Exception as e:
-            return Response({"error": f"Error interno: {str(e)}"}, status=500)
+            return Response({'error': str(e)}, status=400)
+
+    @action(detail=False, methods=['post'])
+    def mass_mobilize_retained_earnings(self, request):
+        from .services import ContactService
+        from rest_framework.exceptions import ValidationError
+        try:
+            return Response(ContactService.mass_mobilize_retained_earnings_from_request(request))
+        except ValidationError as e:
+            return Response({'error': str(e)}, status=400)

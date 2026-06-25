@@ -56,6 +56,30 @@ def _peso(x: Decimal) -> Decimal:
 
 
 class LoanService:
+    @classmethod
+    def create_loan_from_request(cls, user, validated):
+        from .loan_provisioning import get_or_create_loan_treasury_account
+        from .models import Bank, BankLoan
+        acc = validated.get('liability_account')
+        if acc is not None:
+            lender = validated.get('lender')
+            if not isinstance(lender, Bank): lender = Bank.objects.get(pk=lender)
+            validated['liability_account'] = get_or_create_loan_treasury_account(bank=lender, accounting_account=acc, currency=validated.get('currency', 'CLP'))
+        return BankLoan.objects.create(created_by=user, **validated)
+
+    @classmethod
+    def disburse_from_request(cls, request, loan, v):
+        from decimal import Decimal
+        of = Decimal(str(v['opening_fee'])) if v.get('opening_fee') is not None else None
+        st = Decimal(str(v['stamp_tax'])) if v.get('stamp_tax') is not None else None
+        return cls.disburse(loan, date=v.get('date'), opening_fee_override=of, stamp_tax_override=st, commission_expense_account=v.get('commission_expense_account'), stamp_tax_expense_account=v.get('stamp_tax_expense_account'), created_by=request.user)
+
+    @classmethod
+    def prepay_from_request(cls, request, loan, v):
+        from decimal import Decimal
+        amt = Decimal(str(v['amount']))
+        return cls.prepay(loan, amount=amt, date=v.get('date'), penalty_fee=Decimal(str(v['penalty_fee'])) if v.get('penalty_fee') is not None else None, penalty_expense_account=v.get('penalty_expense_account'), created_by=request.user)
+
     """Operaciones sobre créditos / préstamos bancarios."""
 
     @staticmethod

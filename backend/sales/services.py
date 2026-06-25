@@ -15,6 +15,30 @@ from .models import SaleDelivery, SaleDeliveryLine, SaleOrder
 
 class SalesService:
     @staticmethod
+    @transaction.atomic
+    def create_sale_order(validated_data: dict) -> SaleOrder:
+        """Creates a SaleOrder and its lines atomically."""
+        from .models import SaleLine
+
+        lines_data = validated_data.pop("lines", [])
+        payment_method_id = validated_data.pop("payment_method_id", None)
+
+        pm_ref = None
+        if payment_method_id:
+            from treasury.models import PaymentMethod as TreasuryPM
+            pm_ref = TreasuryPM.objects.filter(id=payment_method_id).first()
+
+        order = SaleOrder.objects.create(**validated_data, payment_method_ref=pm_ref)
+
+        for line_data in lines_data:
+            SaleLine.objects.create(order=order, **line_data)
+
+        order.recalculate_totals()
+        order.save()
+
+        return order
+
+    @staticmethod
     def create_sale_order_from_pos(user, data, files, serializer):
         """
         Validates POS session and PIN, then saves the serializer and confirms the sale.

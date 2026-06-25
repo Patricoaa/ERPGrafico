@@ -29,26 +29,15 @@ class WorkOrderFilterSet(FilterSet):
         fields = ["status", "due_date_after", "due_date_before"]
 
     def filter_my_tasks(self, queryset, name, value):
-        if value and self.request and self.request.user.is_authenticated:
-            from django.contrib.contenttypes.models import ContentType
-            from django.db.models import Q
-
-            from workflow.models import Task
-
-            user = self.request.user
-            ct = ContentType.objects.get_for_model(queryset.model)
-
-            tasks = Task.objects.filter(
-                content_type=ct, status__in=[Task.Status.PENDING, Task.Status.IN_PROGRESS]
-            )
-
-            q = Q(assigned_to=user)
-            if user.groups.exists():
-                q |= Q(assigned_group__in=user.groups.all())
-
-            task_ids = tasks.filter(q).values_list("object_id", flat=True)
-            return queryset.filter(id__in=task_ids)
-        return queryset
+        if not (value and self.request and self.request.user.is_authenticated): return queryset
+        from django.contrib.contenttypes.models import ContentType
+        from django.db.models import Q
+        from workflow.models import Task
+        u = self.request.user
+        tasks = Task.objects.filter(content_type=ContentType.objects.get_for_model(queryset.model), status__in=[Task.Status.PENDING, Task.Status.IN_PROGRESS])
+        q = Q(assigned_to=u)
+        if u.groups.exists(): q |= Q(assigned_group__in=u.groups.all())
+        return queryset.filter(id__in=tasks.filter(q).values_list('object_id', flat=True))
 
 
 from decimal import Decimal
@@ -381,26 +370,12 @@ class BillOfMaterialsViewSet(viewsets.ModelViewSet):
     search_fields = ["name", "product__name", "product__code"]
 
     def get_queryset(self):
-        queryset = super().get_queryset()
-        product_id = self.request.query_params.get("product_id")
-        parent_id = self.request.query_params.get("parent_id")
-
-        if product_id:
-            queryset = queryset.filter(product_id=product_id)
-        elif parent_id:
-            queryset = queryset.filter(
-                Q(product_id=parent_id) | Q(product__parent_template_id=parent_id)
-            )
-
-        return queryset.select_related(
-            "product", "product__parent_template", "yield_uom"
-        ).prefetch_related(
-            "lines",
-            "lines__component",
-            "lines__component__uom",
-            "lines__uom",
-            "lines__supplier",
-        )
+        from django.db.models import Q
+        qs = super().get_queryset()
+        pid, parent = self.request.query_params.get('product_id'), self.request.query_params.get('parent_id')
+        if pid: qs = qs.filter(product_id=pid)
+        elif parent: qs = qs.filter(Q(product_id=parent) | Q(product__parent_template_id=parent))
+        return qs.select_related('product', 'product__parent_template', 'yield_uom').prefetch_related('lines', 'lines__component', 'lines__component__uom', 'lines__uom', 'lines__supplier')
 
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)

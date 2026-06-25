@@ -8,6 +8,7 @@ from rest_framework.response import Response
 
 
 
+from core.api.pagination import StandardResultsSetPagination
 from core.api.permissions import StandardizedModelPermissions
 from core.api.search import DistinctSearchFilter
 from core.idempotency import idempotent_endpoint
@@ -116,6 +117,7 @@ class PurchaseOrderViewSet(NoDestroyModelMixin, viewsets.ModelViewSet, AuditHist
             "receipts__lines__stock_move__product",
             "receipts__lines__product"
         ).all()
+    pagination_class = StandardResultsSetPagination
     filter_backends = [DjangoFilterBackend, filters.SearchFilter]
     filterset_class = PurchaseOrderFilterSet
     search_fields = ["supplier__name", "supplier__tax_id", "number", "lines__product__name"]
@@ -279,7 +281,7 @@ class PurchaseOrderViewSet(NoDestroyModelMixin, viewsets.ModelViewSet, AuditHist
             return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
-class PurchaseReceiptViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
+class PurchaseReceiptViewSet(NoDestroyModelMixin, viewsets.ModelViewSet, AuditHistoryMixin):
     def get_queryset(self):
         return PurchaseReceipt.objects.select_related(
             "purchase_order__supplier", "warehouse"
@@ -287,6 +289,7 @@ class PurchaseReceiptViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
             "lines__product"
         ).all()
     serializer_class = PurchaseReceiptSerializer
+    pagination_class = StandardResultsSetPagination
 
     @action(detail=True, methods=["post"])
     def annul(self, request, pk=None):
@@ -301,7 +304,7 @@ class PurchaseReceiptViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
             return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
-class PurchaseReturnViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
+class PurchaseReturnViewSet(NoDestroyModelMixin, viewsets.ModelViewSet, AuditHistoryMixin):
     def get_queryset(self):
         return PurchaseReturn.objects.select_related(
             "purchase_order__supplier", "warehouse"
@@ -309,6 +312,7 @@ class PurchaseReturnViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
             "lines__product", "lines__uom"
         ).all()
     serializer_class = PurchaseReturnSerializer
+    pagination_class = StandardResultsSetPagination
 
     @action(detail=True, methods=["post"])
     def annul(self, request, pk=None):

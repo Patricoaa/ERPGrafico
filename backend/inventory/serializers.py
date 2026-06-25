@@ -5,9 +5,8 @@ from rest_framework.fields import empty
 
 logger = logging.getLogger(__name__)
 
-# BillOfMaterialsSerializer will be imported locally to avoid circular dependencies
 from core.serializers import AttachmentSerializer
-from production.models import BillOfMaterials, BillOfMaterialsLine
+
 
 from .models import (
     PricingRule,
@@ -385,80 +384,8 @@ class ProductSerializer(serializers.ModelSerializer):
         return ProductSimpleSerializer(variants, many=True).data
 
     def to_internal_value(self, data):
-        # Handle JSON strings and multiple values for list fields when using multipart/form-data
-        import json
-
-        from django.http import QueryDict
-
-        # Convert QueryDict to a dict that preserves lists for our specific fields
-        if isinstance(data, QueryDict):
-            ret = data.dict()  # Start with standard dict (last-value)
-            for field in [
-                "boms",
-                "allowed_sale_uoms",
-                "attribute_values",
-                "variant_updates",
-                "variant_generation_selection",
-                "uom_prices",
-            ]:
-                if field in data:
-                    ret[field] = data.getlist(field)
-        else:
-            ret = data.copy() if hasattr(data, "copy") else data
-
-        # Process the list fields (handle JSON strings if necessary)
-        for field in [
-            "boms",
-            "allowed_sale_uoms",
-            "attribute_values",
-            "variant_updates",
-            "variant_generation_selection",
-            "uom_prices",
-        ]:
-            if field in ret:
-                raw_value = ret[field]
-
-                if isinstance(raw_value, list):
-                    processed_list = []
-                    for item in raw_value:
-                        if isinstance(item, str):
-                            try:
-                                # Try to parse as JSON (for BOMs or nested objects)
-                                parsed_item = json.loads(item)
-                                if isinstance(parsed_item, list):
-                                    processed_list.extend(parsed_item)
-                                else:
-                                    processed_list.append(parsed_item)
-                            except (ValueError, TypeError):
-                                # If it's a simple ID string, it will be handled by the field itself or we can cast to int
-                                # Casting to int is safer for Many-to-Many IDs
-                                if (
-                                    field == "allowed_sale_uoms" or field == "attribute_values"
-                                ) and item.isdigit():
-                                    processed_list.append(int(item))
-                                else:
-                                    processed_list.append(item)
-                        else:
-                            processed_list.append(item)
-                    ret[field] = processed_list
-                elif isinstance(raw_value, str):
-                    try:
-                        ret[field] = json.loads(raw_value)
-                    except (ValueError, TypeError):
-                        if (
-                            field == "allowed_sale_uoms" or field == "attribute_values"
-                        ) and raw_value.isdigit():
-                            ret[field] = [int(raw_value)]
-                elif raw_value == "":
-                    ret[field] = None
-            elif field in ret and ret[field] == "":
-                ret[field] = None
-
-        # General cleanup of empty strings for any other field
-        for key in list(ret.keys()):
-            if ret[key] == "":
-                ret[key] = None
-
+        from .validators import ProductValidator
+        ret = ProductValidator.parse_request_data(data)
         return super().to_internal_value(ret)
 
     def get_current_stock(self, obj):
@@ -547,46 +474,8 @@ class ProductSerializer(serializers.ModelSerializer):
         return UoMSerializer(uoms, many=True).data
 
     def validate(self, data):
-        # Fallback for base UoM if missing but others are present
-        if not data.get("uom"):
-            fallback = data.get("sale_uom") or data.get("purchase_uom")
-            if fallback:
-                data["uom"] = fallback
-
-        uom = data.get("uom")
-        if uom:
-            uom_category = uom.category
-
-            # Validate sale_uom
-            sale_uom = data.get("sale_uom")
-            if sale_uom and sale_uom.category != uom_category:
-                raise serializers.ValidationError(
-                    {
-                        "sale_uom": f"La unidad de venta ({sale_uom.name}) debe pertenecer a la misma categoría que la unidad de stock ({uom.category.name})."
-                    }
-                )
-
-            # Validate purchase_uom
-            purchase_uom = data.get("purchase_uom")
-            if purchase_uom and purchase_uom.category != uom_category:
-                raise serializers.ValidationError(
-                    {
-                        "purchase_uom": f"La unidad de compra ({purchase_uom.name}) debe pertenecer a la misma categoría que la unidad de stock ({uom.category.name})."
-                    }
-                )
-
-            # Validate allowed_sale_uoms
-            allowed_sale_uoms = data.get("allowed_sale_uoms")
-            if allowed_sale_uoms:
-                for a_uom in allowed_sale_uoms:
-                    if a_uom.category != uom_category:
-                        raise serializers.ValidationError(
-                            {
-                                "allowed_sale_uoms": f"La unidad '{a_uom.name}' no pertenece a la categoría '{uom.category.name}' de la unidad base."
-                            }
-                        )
-
-        return data
+        from .validators import ProductValidator
+        return ProductValidator.validate(data)
 
     def run_validation(self, data=empty):
         try:
@@ -596,205 +485,12 @@ class ProductSerializer(serializers.ModelSerializer):
             raise e
 
     def create(self, validated_data):
-        from django.db import transaction
-
-        boms_data = validated_data.pop("boms", [])
-        allowed_sale_uoms = validated_data.pop("allowed_sale_uoms", [])
-        attribute_values = validated_data.pop("attribute_values", [])
-        variant_generation_selection = validated_data.pop("variant_generation_selection", None)
-        uom_prices_data = validated_data.pop("uom_prices", [])
-
-        with transaction.atomic():
-            product = Product.objects.create(**validated_data)
-
-            if allowed_sale_uoms:
-                product.allowed_sale_uoms.set(allowed_sale_uoms)
-
-            if attribute_values:
-                product.attribute_values.set(attribute_values)
-
-            for bom_data in boms_data:
-                lines_data = bom_data.pop("lines", [])
-                bom = BillOfMaterials.objects.create(product=product, **bom_data)
-                for line_data in lines_data:
-                    line_data.pop("id", None)
-                    BillOfMaterialsLine.objects.create(bom=bom, **line_data)
-
-            for uom_price in uom_prices_data:
-                ProductUoMPrice.objects.create(product=product, **uom_price)
-
-            # Handle initial variant generation
-            if variant_generation_selection and product.has_variants:
-                ProductService.generate_variants(product, variant_generation_selection)
-
-        return product
+        return ProductService.create_product(validated_data)
 
     def update(self, instance, validated_data):
-        from django.db import transaction
+        return ProductService.update_product(instance, validated_data)
 
-        boms_data = validated_data.pop("boms", None)  # If None, don't touch
-        allowed_sale_uoms = validated_data.pop("allowed_sale_uoms", None)
-        attribute_values = validated_data.pop("attribute_values", None)
-        variant_updates = validated_data.pop("variant_updates", None)
-        uom_prices_data = validated_data.pop("uom_prices", None)
 
-        with transaction.atomic():
-            # Standard update
-            for attr, value in validated_data.items():
-                setattr(instance, attr, value)
-            instance.save()
-
-            if allowed_sale_uoms is not None:
-                instance.allowed_sale_uoms.set(allowed_sale_uoms)
-
-            if attribute_values is not None:
-                instance.attribute_values.set(attribute_values)
-
-            # Propagate parent-level fields to child variants (only for template products)
-            _VARIANT_SYNC_FIELDS = {
-                "uom",
-                "purchase_uom",
-                "can_be_sold",
-                "can_be_purchased",
-                "category",
-                "track_inventory",
-            }
-            _changed_sync = {k: v for k, v in validated_data.items() if k in _VARIANT_SYNC_FIELDS}
-            if (_changed_sync or allowed_sale_uoms is not None) and not instance.parent_template_id:
-                # Prefetch children en una sola query en lugar de ORM filtrado en loop
-                _children = list(instance.variants.all())
-                if _children:
-                    for _child in _children:
-                        for _field, _value in _changed_sync.items():
-                            setattr(_child, _field, _value)
-                        _child.save()
-                    if allowed_sale_uoms is not None:
-                        for _child in _children:
-                            _child.allowed_sale_uoms.set(instance.allowed_sale_uoms.all())
-
-        if boms_data is not None:
-            # Simple sync: Delete missing BOMs, update existing ones, create new ones.
-            # However, for nested data in DRF, it's safer to either match by ID or
-            # replace if it's a manageable list. Considering users might just want to
-            # overwrite/sync the whole set of BOMs for a product.
-            existing_boms = {b.id: b for b in instance.boms.all()}
-            incoming_ids = [b.get("id") for b in boms_data if b.get("id")]
-
-            # Delete removed ones
-            for bom_id, bom_obj in existing_boms.items():
-                if bom_id not in incoming_ids:
-                    bom_obj.delete()
-
-            for bom_item in boms_data:
-                bom_id = bom_item.get("id")
-                lines_data = bom_item.pop("lines", [])
-                bom_item.pop("id", None)  # Remove ID if present to avoid conflicts
-
-                if bom_id and bom_id in existing_boms:
-                    # Update existing
-                    bom = existing_boms[bom_id]
-                    for attr, value in bom_item.items():
-                        setattr(bom, attr, value)
-                    bom.save()
-
-                    # Update lines (replace all)
-                    bom.lines.all().delete()
-                    for line_data in lines_data:
-                        line_data.pop("id", None)
-                        BillOfMaterialsLine.objects.create(bom=bom, **line_data)
-                else:
-                    # Create new
-                    bom = BillOfMaterials.objects.create(product=instance, **bom_item)
-                    for line_data in lines_data:
-                        line_data.pop("id", None)
-                        BillOfMaterialsLine.objects.create(bom=bom, **line_data)
-
-        if uom_prices_data is not None:
-            instance.uom_prices.all().delete()
-            for uom_price in uom_prices_data:
-                ProductUoMPrice.objects.create(product=instance, **uom_price)
-
-        if variant_updates:
-            for update_data in variant_updates:
-                variant_id = update_data.get("id")
-                if not variant_id:
-                    continue
-
-                try:
-                    variant_product = Product.objects.get(id=variant_id, parent_template=instance)
-
-                    # Fields we allow to update via variant_updates
-                    for field in [
-                        "sale_price",
-                        "code",
-                        "has_bom",
-                        "product_type",
-                        "price_inheritance_mode",
-                        "price_surcharge",
-                    ]:
-                        if field in update_data:
-                            setattr(variant_product, field, update_data[field])
-
-                    # When switching to INHERIT or SURCHARGE, clear any OVERRIDE price lock
-                    mode = update_data.get("price_inheritance_mode")
-                    if mode == "INHERIT":
-                        variant_product.price_surcharge = None
-
-                    # Special handlings
-                    if "sale_uom" in update_data:
-                        uom_id = update_data["sale_uom"]
-                        if uom_id:
-                            variant_product.sale_uom_id = uom_id
-                        else:
-                            variant_product.sale_uom = None
-
-                    # Handle BOM cloning
-                    copy_bom_from_raw = update_data.get("copy_bom_from")
-                    if copy_bom_from_raw:
-                        try:
-                            if str(copy_bom_from_raw) == "template":
-                                source_product = instance
-                            else:
-                                source_product = Product.objects.get(id=copy_bom_from_raw)
-                            source_bom = source_product.boms.filter(active=True).first()
-
-                            if source_bom:
-                                # Overwrite existing BOMs for this variant
-                                variant_product.boms.all().delete()
-
-                                # Clone BOM
-                                new_bom = BillOfMaterials.objects.create(
-                                    product=variant_product,
-                                    name=source_bom.name,
-                                    active=True,
-                                    yield_quantity=source_bom.yield_quantity,
-                                    yield_uom=source_bom.yield_uom,
-                                )
-                                # Clone Lines
-                                for line in source_bom.lines.all():
-                                    BillOfMaterialsLine.objects.create(
-                                        bom=new_bom,
-                                        component=line.component,
-                                        quantity=line.quantity,
-                                        uom=line.uom,
-                                        is_outsourced=line.is_outsourced,
-                                        supplier=line.supplier,
-                                        unit_price=line.unit_price,
-                                        document_type=line.document_type,
-                                    )
-                                variant_product.has_bom = True
-                                # If variant wasn't manufacturable, make it so
-                                if variant_product.product_type != Product.Type.MANUFACTURABLE:
-                                    variant_product.product_type = Product.Type.MANUFACTURABLE
-
-                        except (Product.DoesNotExist, ValueError):
-                            pass
-
-                    variant_product.save()
-                except Product.DoesNotExist:
-                    pass
-
-        return instance
 
 
 class WarehouseSerializer(serializers.ModelSerializer):
@@ -833,73 +529,8 @@ class StockMoveSerializer(serializers.ModelSerializer):
         return data
 
     def get_related_documents(self, obj):
-        docs = []
-        # 1. Check via journal entry
-        if obj.journal_entry:
-            docs.extend(obj.journal_entry.get_source_documents)
-
-        # 2. Check via Purchase Receipt Line
-        try:
-            if hasattr(obj, "purchase_receipt_line"):
-                pr = obj.purchase_receipt_line.receipt
-                po = pr.purchase_order
-                if po:
-                    po_doc = {
-                        "type": "purchase_order",
-                        "id": po.id,
-                        "name": str(po),
-                        "url": "/purchasing/orders",
-                    }
-                    docs.append(po_doc)
-
-                    # Add Invoices related to this PO
-                    for inv in po.invoices.all():
-                        inv_doc = {
-                            "type": "invoice",
-                            "id": inv.id,
-                            "name": str(inv),
-                            "url": "/billing/purchases",
-                        }
-                        docs.append(inv_doc)
-        except Exception:
-            pass
-
-        # 3. Check via Sale Delivery Line
-        try:
-            if hasattr(obj, "sale_delivery_line"):
-                sd = obj.sale_delivery_line.delivery
-                so = sd.sale_order
-                if so:
-                    so_doc = {
-                        "type": "sale_order",
-                        "id": so.id,
-                        "name": str(so),
-                        "url": "/sales/orders",
-                    }
-                    docs.append(so_doc)
-
-                    # Add Invoices related to this SO
-                    for inv in so.invoices.all():
-                        inv_doc = {
-                            "type": "invoice",
-                            "id": inv.id,
-                            "name": str(inv),
-                            "url": "/billing/sales",
-                        }
-                        docs.append(inv_doc)
-        except Exception:
-            pass
-
-        # Deduplicate and filter out 'inventory' (self)
-        unique_docs = []
-        seen = set()
-        for d in docs:
-            key = (d["type"], d["id"])
-            if key not in seen and d["type"] != "inventory":
-                seen.add(key)
-                unique_docs.append(d)
-
-        return unique_docs
+        from .selectors import StockMoveSelector
+        return StockMoveSelector.get_related_documents(obj)
 
     def get_reference_code(self, obj):
         # Prefer the internal MOV code as requested by the user

@@ -55,6 +55,70 @@ if TYPE_CHECKING:
 
 
 class CardService:
+    @classmethod
+    def pay_statement_from_request(cls, request, stmt):
+        from .models import TreasuryAccount
+        from rest_framework.exceptions import ValidationError
+        v = request.data
+        try:
+            pa = TreasuryAccount.objects.get(pk=v['payment_account'])
+        except TreasuryAccount.DoesNotExist: raise ValidationError('payment_account no existe.')
+        return cls.pay_statement(stmt, payment_account=pa, amount=v.get('amount'), date=v.get('date'), created_by=request.user)
+
+    @classmethod
+    def apply_charges_from_request(cls, request, stmt):
+        from rest_framework.exceptions import ValidationError
+        from core.models import Account
+        v = request.data
+        ie = None
+        fe = None
+        if v.get('interest_expense_account'):
+            try: ie = Account.objects.get(pk=v['interest_expense_account'])
+            except Account.DoesNotExist: raise ValidationError('interest_expense_account no existe.')
+        if v.get('fees_expense_account'):
+            try: fe = Account.objects.get(pk=v['fees_expense_account'])
+            except Account.DoesNotExist: raise ValidationError('fees_expense_account no existe.')
+        return cls.apply_charges(stmt, interest_expense_account=ie, fees_expense_account=fe, created_by=request.user)
+
+    @classmethod
+    def reapply_charges_from_request(cls, request, stmt):
+        from rest_framework.exceptions import ValidationError
+        from core.models import Account
+        v = request.data
+        ie = None
+        fe = None
+        if v.get('interest_expense_account'):
+            try: ie = Account.objects.get(pk=v['interest_expense_account'])
+            except Account.DoesNotExist: raise ValidationError('interest_expense_account no existe.')
+        if v.get('fees_expense_account'):
+            try: fe = Account.objects.get(pk=v['fees_expense_account'])
+            except Account.DoesNotExist: raise ValidationError('fees_expense_account no existe.')
+        return cls.reapply_charges(stmt, interest_expense_account=ie, fees_expense_account=fe, created_by=request.user)
+
+    @classmethod
+    def update_charge_from_request(cls, request):
+        from rest_framework.exceptions import ValidationError
+        from .models import CardPendingCharge
+        from .serializers import CardPendingChargeSerializer
+        cid = request.data.get('id')
+        if not cid: raise ValidationError('id del cargo requerido.')
+        try: charge = CardPendingCharge.objects.get(pk=cid, is_billed=False)
+        except CardPendingCharge.DoesNotExist: raise ValidationError('Cargo no encontrado.')
+        serializer = CardPendingChargeSerializer(charge, data=request.data, partial=True, context={'request': request})
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return serializer.data
+
+    @classmethod
+    def delete_charge_from_request(cls, request):
+        from rest_framework.exceptions import ValidationError
+        from .models import CardPendingCharge
+        cid = request.data.get('id')
+        if not cid: raise ValidationError('id del cargo requerido.')
+        try: charge = CardPendingCharge.objects.get(pk=cid, is_billed=False)
+        except CardPendingCharge.DoesNotExist: raise ValidationError('Cargo no encontrado.')
+        charge.delete()
+
     """Operaciones sobre la tarjeta de crédito propia."""
 
     @staticmethod

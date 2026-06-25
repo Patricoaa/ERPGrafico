@@ -63,28 +63,15 @@ class TaxPeriodViewSet(viewsets.ModelViewSet):
         checklist = TaxPeriodService.get_period_status(period.year, month=period.month)
         return Response(checklist)
 
-    @action(detail=False, methods=["get"], permission_classes=[AllowAny])
+    @action(detail=False, methods=['get'], permission_classes=[AllowAny])
     def check_closed(self, request):
-        """
-        Check if a period is closed for a specific date.
-        Query param: ?date=YYYY-MM-DD
-        """
-        date_str = request.query_params.get("date")
-        if not date_str:
-            return Response(
-                {"error": "Date parameter is required"}, status=status.HTTP_400_BAD_REQUEST
-            )
-
+        ds = request.query_params.get('date')
+        if not ds: return Response({'error': 'Date required'}, status=400)
         try:
             from datetime import datetime
-
-            query_date = datetime.strptime(date_str, "%Y-%m-%d").date()
-            is_closed = TaxPeriodService.is_period_closed(query_date)
-            return Response({"is_closed": is_closed, "date": date_str})
+            return Response({'is_closed': TaxPeriodService.is_period_closed(datetime.strptime(ds, '%Y-%m-%d').date()), 'date': ds})
         except (ValueError, TypeError):
-            return Response(
-                {"error": "Invalid date format. Use YYYY-MM-DD"}, status=status.HTTP_400_BAD_REQUEST
-            )
+            return Response({'error': 'Invalid date'}, status=400)
 
 
 class F29DeclarationViewSet(viewsets.ModelViewSet):
@@ -96,32 +83,13 @@ class F29DeclarationViewSet(viewsets.ModelViewSet):
     ordering = ["-tax_period__year", "-tax_period__month"]
 
     def create(self, request, *args, **kwargs):
-        """
-        Create or update an F29 declaration.
-        Handles tax_period_year and tax_period_month from the request.
-        """
-        year = request.data.get("tax_period_year")
-        month = request.data.get("tax_period_month")
-
-        if not year or not month:
-            # Fallback to current year/month if not provided
-            now = timezone.now()
-            year = year or now.year
-            month = month or now.month
-
+        from .services_ext import TaxServiceExt
+        from django.core.exceptions import ValidationError as DjangoValidationError
         try:
-            # The service handles finding/creating the TaxPeriod and calculation
-            declaration = F29CalculationService.create_or_update_declaration(
-                year=int(year), month=int(month), manual_fields=request.data
-            )
-            serializer = self.get_serializer(declaration)
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        except (ValueError, TypeError) as e:
-            return Response(
-                {"error": f"Año o mes inválidos: {str(e)}"}, status=status.HTTP_400_BAD_REQUEST
-            )
-        except DjangoValidationError as e:
-            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+            dec = TaxServiceExt.create_declaration_from_request(request)
+            return Response(self.get_serializer(dec).data, status=201)
+        except (ValueError, TypeError, DjangoValidationError) as e:
+            return Response({'error': str(e)}, status=400)
 
     @action(detail=False, methods=["post"])
     def calculate(self, request):
@@ -156,30 +124,10 @@ class F29DeclarationViewSet(viewsets.ModelViewSet):
         except DjangoValidationError as e:
             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
-    @action(detail=True, methods=["get"])
+    @action(detail=True, methods=['get'])
     def documents(self, request, pk=None):
-        """Get all invoices included in this declaration"""
-        from datetime import date
-
-        from billing.serializers import InvoiceSerializer
-
-        declaration = self.get_object()
-        period = declaration.tax_period
-
-        # Calculate date range
-        start_date = date(period.year, period.month, 1)
-        if period.month == 12:
-            end_date = date(period.year + 1, 1, 1)
-        else:
-            end_date = date(period.year, period.month + 1, 1)
-
-        # Get all invoices in period
-        invoices = Invoice.objects.filter(
-            date__gte=start_date, date__lt=end_date, status=Invoice.Status.POSTED
-        ).order_by("date", "id")
-
-        serializer = InvoiceSerializer(invoices, many=True)
-        return Response(serializer.data)
+        from .selectors import TaxSelectorExt
+        return Response(TaxSelectorExt.get_declaration_documents(self.get_object()))
 
 
 class F29PaymentViewSet(viewsets.ModelViewSet):
@@ -263,25 +211,12 @@ class AccountingPeriodViewSet(viewsets.ModelViewSet):
         status_data = AccountingPeriodService.get_period_status(period.year, period.month)
         return Response(status_data)
 
-    @action(detail=False, methods=["get"], permission_classes=[AllowAny])
+    @action(detail=False, methods=['get'], permission_classes=[AllowAny])
     def check_closed(self, request):
-        """
-        Check if an accounting period is closed for a specific date.
-        Query param: ?date=YYYY-MM-DD
-        """
-        date_str = request.query_params.get("date")
-        if not date_str:
-            return Response(
-                {"error": "Date parameter is required"}, status=status.HTTP_400_BAD_REQUEST
-            )
-
+        ds = request.query_params.get('date')
+        if not ds: return Response({'error': 'Date required'}, status=400)
         try:
             from datetime import datetime
-
-            query_date = datetime.strptime(date_str, "%Y-%m-%d").date()
-            is_closed = AccountingPeriodService.is_period_closed(query_date)
-            return Response({"is_closed": is_closed, "date": date_str})
+            return Response({'is_closed': AccountingPeriodService.is_period_closed(datetime.strptime(ds, '%Y-%m-%d').date()), 'date': ds})
         except (ValueError, TypeError):
-            return Response(
-                {"error": "Invalid date format. Use YYYY-MM-DD"}, status=status.HTTP_400_BAD_REQUEST
-            )
+            return Response({'error': 'Invalid date'}, status=400)

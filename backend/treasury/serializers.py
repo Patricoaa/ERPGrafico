@@ -231,50 +231,8 @@ class POSTerminalSerializer(serializers.ModelSerializer):
         return obj.allowed_payment_method_types
 
     def validate(self, attrs):
-        """
-        Ensure default_treasury_account is compatible with the terminal's allowed methods.
-        """
-        # Get the default account from attrs or current instance
-        default_account = attrs.get("default_treasury_account")
-        if default_account is None and self.instance:
-            default_account = self.instance.default_treasury_account
-
-        # If no default account is set or being set, validation passes
-        if not default_account:
-            return attrs
-
-        # Get allowed accounts from either current attrs (new selection) or database
-        # Note: We use the source names here
-        allowed_methods = attrs.get("allowed_payment_methods")
-
-        allowed_account_ids = set()
-
-        # If methods are being updated, use new ones
-        if allowed_methods is not None:
-            allowed_account_ids.update(m.treasury_account_id for m in allowed_methods)
-        elif self.instance:
-            # Fallback to current methods if not in attrs
-            allowed_account_ids.update(
-                self.instance.allowed_payment_methods.values_list("treasury_account_id", flat=True)
-            )
-
-        # Also check legacy field if provided (for backward compatibility during migration)
-        allowed_accounts_legacy = attrs.get("allowed_treasury_accounts")
-        if allowed_accounts_legacy is not None:
-            allowed_account_ids.update(a.id for a in allowed_accounts_legacy)
-        elif self.instance and allowed_methods is None:  # Only fallback if not sending new methods
-            allowed_account_ids.update(
-                self.instance.allowed_treasury_accounts.values_list("id", flat=True)
-            )
-
-        if allowed_account_ids and default_account.id not in allowed_account_ids:
-            raise serializers.ValidationError(
-                {
-                    "default_treasury_account": "La cuenta predeterminada debe ser una de las cuentas asociadas a los métodos de pago permitidos."
-                }
-            )
-
-        return attrs
+        from .validators import TerminalValidator
+        return TerminalValidator.validate_pos_terminal(self.instance, attrs)
 
 
 class PaymentAllocationSerializer(serializers.ModelSerializer):
@@ -444,53 +402,10 @@ class TreasuryMovementSerializer(serializers.ModelSerializer):
         return None
 
     def get_partner_name(self, obj):
-        # S4.1: If it's a terminal batch settlement, include the batch display ID
-        if obj.terminal_batch:
-            contact_prefix = obj.contact.name if obj.contact else "Liquidación"
-            return f"{contact_prefix} (Lote: {obj.terminal_batch.display_id})"
-
-        # 1. Direct contact
-        if obj.contact:
-            return obj.contact.name
-
-        # 2. From Invoice or its linked orders
-        if obj.invoice:
-            if obj.invoice.contact:
-                return obj.invoice.contact.name
-            if obj.invoice.sale_order and obj.invoice.sale_order.customer:
-                return obj.invoice.sale_order.customer.name
-            if obj.invoice.purchase_order and obj.invoice.purchase_order.supplier:
-                return obj.invoice.purchase_order.supplier.name
-
-        # 3. Direct Order links
-        if obj.sale_order and obj.sale_order.customer:
-            return obj.sale_order.customer.name
-        if obj.purchase_order and obj.purchase_order.supplier:
-            return obj.purchase_order.supplier.name
-
-        return "Particular"
+        return TreasuryMovementSelector.get_partner_name(obj)
 
     def get_partner_id(self, obj):
-        # 1. Direct contact
-        if obj.contact:
-            return obj.contact.id
-
-        # 2. From Invoice or its linked orders
-        if obj.invoice:
-            if obj.invoice.contact:
-                return obj.invoice.contact.id
-            if obj.invoice.sale_order and obj.invoice.sale_order.customer:
-                return obj.invoice.sale_order.customer.id
-            if obj.invoice.purchase_order and obj.invoice.purchase_order.supplier:
-                return obj.invoice.purchase_order.supplier.id
-
-        # 3. Direct Order links
-        if obj.sale_order and obj.sale_order.customer:
-            return obj.sale_order.customer.id
-        if obj.purchase_order and obj.purchase_order.supplier:
-            return obj.purchase_order.supplier.id
-
-        return None
+        return TreasuryMovementSelector.get_partner_id(obj)
 
     def get_journal_entry(self, obj):
         if obj.journal_entry:
@@ -511,33 +426,7 @@ class TreasuryMovementSerializer(serializers.ModelSerializer):
         return obj.justify_reason
 
     def get_document_info(self, obj):
-        info = {"type": None, "id": None, "number": None, "label": None, "display_id": None}
-        if obj.invoice:
-            info["type"] = "invoice"
-            info["id"] = obj.invoice.id
-            info["number"] = obj.invoice.number
-            info["display_id"] = obj.invoice.display_id
-            info["label"] = obj.invoice.display_id
-        elif obj.purchase_order:
-            info["type"] = "purchase_order"
-            info["id"] = obj.purchase_order.id
-            info["number"] = obj.purchase_order.number
-            info["display_id"] = obj.purchase_order.display_id
-            info["label"] = obj.purchase_order.display_id
-        elif obj.sale_order:
-            info["type"] = "sale_order"
-            info["id"] = obj.sale_order.id
-            info["number"] = obj.sale_order.number
-            info["display_id"] = obj.sale_order.display_id
-            info["label"] = obj.sale_order.display_id
-        elif obj.journal_entry:
-            info["type"] = "journal_entry"
-            info["id"] = obj.journal_entry.id
-            info["number"] = obj.journal_entry.number
-            info["display_id"] = obj.journal_entry.display_id
-            info["label"] = obj.journal_entry.display_id
-
-        return info if info["type"] else None
+        return TreasuryMovementSelector.get_document_info(obj)
 
     def get_bank_statement_info(self, obj):
         if obj.bank_statement_line:
@@ -642,121 +531,7 @@ class BankStatementLineSerializer(serializers.ModelSerializer):
     reconciliation_group_data = serializers.SerializerMethodField()
 
     def get_reconciliation_group_data(self, obj):
-        if not obj.reconciliation_match:
-            return None
-
-        match = obj.reconciliation_match
-        movements = match.movements.all()
-        # Batches are linked via movements in the model structure (TreasuryMovement -> TerminalBatch)
-        # However, a match might link to movements that belong to batches.
-        # We also check for movements linked directly to this line (backward compatibility)
-        line_movements = obj.matched_movements.all()
-
-        # Combine all movements
-        all_movements = (movements | line_movements).distinct()
-
-        # Get unique batches from movements
-        batch_ids = (
-            all_movements.filter(terminal_batch__isnull=False)
-            .values_list("terminal_batch_id", flat=True)
-            .distinct()
-        )
-        from .models import TerminalBatch
-
-        batches = TerminalBatch.objects.filter(id__in=batch_ids)
-
-        # Move movements that are part of batches to a separate list if preferred,
-        # but the frontend expects movements and batches lists.
-        # We'll filter out movements that are part of the batches displayed to avoid double counting
-        standalone_movements = all_movements.filter(terminal_batch__isnull=True)
-
-        return {
-            "id": match.id,
-            "movements": TreasuryMovementSerializer(standalone_movements, many=True).data,
-            "batches": TerminalBatchSerializer(batches, many=True).data,
-            "difference_amount": float(obj.difference_amount),
-            "difference_type": obj.difference_reason,
-            "difference_type_display": obj.difference_reason,
-            "difference_journal_entry": obj.difference_journal_entry_id,
-        }
-
-    class Meta:
-        model = BankStatementLine
-        fields = "__all__"
-
-
-class BankStatementSerializer(serializers.ModelSerializer):
-    treasury_account_name = serializers.CharField(source="treasury_account.name", read_only=True)
-    imported_by_name = serializers.CharField(source="imported_by.username", read_only=True)
-    reconciliation_progress = serializers.FloatField(read_only=True)
-    display_id = serializers.CharField(read_only=True)
-    lines = BankStatementLineSerializer(many=True, read_only=True)
-
-    class Meta:
-        model = BankStatement
-        fields = "__all__"
-        read_only_fields = ["id", "status"]
-
-
-class BankStatementListSerializer(serializers.ModelSerializer):
-    treasury_account_name = serializers.CharField(source="treasury_account.name", read_only=True)
-    imported_by_name = serializers.CharField(source="imported_by.username", read_only=True)
-    reconciliation_progress = serializers.FloatField(read_only=True)
-    display_id = serializers.CharField(read_only=True)
-    reconciled_lines = serializers.IntegerField(read_only=True)
-
-    class Meta:
-        model = BankStatement
-        fields = [
-            "id",
-            "display_id",
-            "treasury_account",
-            "treasury_account_name",
-            "statement_date",
-            "opening_balance",
-            "closing_balance",
-            "status",
-            "total_lines",
-            "reconciled_lines",
-            "reconciliation_progress",
-            "imported_at",
-            "imported_by_name",
-        ]
-
-
-class ReconciliationSettingsSerializer(serializers.ModelSerializer):
-    treasury_account_name = serializers.CharField(source="treasury_account.name", read_only=True)
-
-    class Meta:
-        model = ReconciliationSettings
-        fields = "__all__"
-
-
-class PaymentTerminalProviderSerializer(serializers.ModelSerializer):
-    supplier_name = serializers.CharField(source="supplier.name", read_only=True)
-    receivable_account_name = serializers.CharField(
-        source="receivable_account.name", read_only=True
-    )
-    commission_expense_account_name = serializers.CharField(
-        source="commission_expense_account.name", read_only=True
-    )
-    commission_iva_account_name = serializers.CharField(
-        source="commission_iva_account.name", read_only=True
-    )
-    bank_treasury_account_name = serializers.CharField(
-        source="bank_treasury_account.name", read_only=True
-    )
-    default_deposit_account_name = serializers.CharField(
-        source="default_deposit_account.name", read_only=True
-    )
-    provider_type_display = serializers.CharField(
-        source="get_provider_type_display", read_only=True
-    )
-
-    class Meta:
-        model = PaymentTerminalProvider
-        fields = "__all__"
-        read_only_fields = ("bank_treasury_account",)
+        return ReconciliationMatchSelector.get_group_data(obj)
 
     def validate_default_deposit_account(self, value):
         if value and value.account_type in ("BRIDGE", "CHECK_PORTFOLIO", "ISSUED_CHECKS"):
@@ -1210,30 +985,8 @@ class BankLoanWriteSerializer(serializers.ModelSerializer):
         return value
 
     def validate(self, attrs):
-        # Validar que first_due_date >= start_date (delegable al clean() del modelo).
-        start = attrs.get("start_date")
-        first_due = attrs.get("first_due_date")
-        if start and first_due and first_due < start:
-            raise serializers.ValidationError(
-                {
-                    "first_due_date": "El primer vencimiento no puede ser anterior al inicio.",
-                }
-            )
-        disbursement = attrs.get("disbursement_account")
-        if disbursement and disbursement.account_type in (
-            TreasuryAccount.Type.CREDIT_CARD,
-            TreasuryAccount.Type.LOAN,
-            TreasuryAccount.Type.CHECK_PORTFOLIO,
-        ):
-            raise serializers.ValidationError(
-                {
-                    "disbursement_account": (
-                        "La cuenta de desembolso debe ser una cuenta bancaria (CHECKING) o "
-                        "caja (CASH); no puede ser de pasivo ni puente."
-                    )
-                }
-            )
-        return attrs
+        from .validators import LoanValidator
+        return LoanValidator.validate_bank_loan(attrs)
 
 
 class CreditLineSerializer(serializers.ModelSerializer):

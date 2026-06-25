@@ -8,7 +8,7 @@ from rest_framework.response import Response
 
 from core.api.pagination import StandardResultsSetPagination
 from core.mixins import AuditHistoryMixin as AuditHistory
-from core.mixins import BulkImportMixin
+from core.mixins import BulkImportMixin, NoDestroyModelMixin
 from core.idempotency import idempotent_endpoint
 
 from .filters import ProductFilter, StockMoveFilter, UoMFilter
@@ -41,14 +41,15 @@ from .serializers import (
     UoMSerializer,
     WarehouseSerializer,
 )
-from .services import StockService, UoMService
+from .services import StockService, UoMService, ProductService, PricingService
 
 
-class ProductViewSet(BulkImportMixin, AuditHistory, viewsets.ModelViewSet):
+class ProductViewSet(NoDestroyModelMixin, BulkImportMixin, AuditHistory, viewsets.ModelViewSet):
     queryset = Product.objects.all()
     serializer_class = ProductSerializer
     filter_backends = [DjangoFilterBackend, filters.SearchFilter]
     filterset_class = ProductFilter
+    pagination_class = StandardResultsSetPagination
     search_fields = ["name", "internal_code", "code"]
 
     def get_queryset(self):
@@ -113,8 +114,6 @@ class ProductViewSet(BulkImportMixin, AuditHistory, viewsets.ModelViewSet):
 
         # If we are archiving (is_active: True -> False)
         if active_val is False and instance.is_active is True:
-            from .services import ProductService
-
             restrictions = ProductService.check_archiving_restrictions(instance)
             if restrictions:
                 return Response(
@@ -131,10 +130,9 @@ class ProductViewSet(BulkImportMixin, AuditHistory, viewsets.ModelViewSet):
     def stock_report(self, request):
         from core.api.throttles import HeavyReportThrottle
         from core.cache import cache_report
+        from rest_framework.exceptions import Throttled
 
         if not HeavyReportThrottle().allow_request(request, self):
-            from rest_framework.exceptions import Throttled
-
             raise Throttled(
                 detail="Demasiadas solicitudes al reporte de stock. Intente en un momento."
             )
@@ -157,14 +155,13 @@ class ProductViewSet(BulkImportMixin, AuditHistory, viewsets.ModelViewSet):
         4. Production Usage (OTs)
         """
         from .selectors import ProductSelector
-        
+
         instance = self.get_object()
         data = ProductSelector.get_insights(instance)
         return Response(data)
 
     @action(detail=True, methods=["post"])
     def generate_variants(self, request, pk=None):
-        from .services import ProductService
         from django.core.exceptions import ValidationError
 
         template = self.get_object()
@@ -209,8 +206,6 @@ class ProductViewSet(BulkImportMixin, AuditHistory, viewsets.ModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST,
             )
         try:
-            from .services import ProductService
-
             result = ProductService.bulk_clone_bom(template, variant_ids or None)
             return Response(result)
         except Exception as e:
@@ -231,8 +226,6 @@ class ProductViewSet(BulkImportMixin, AuditHistory, viewsets.ModelViewSet):
                 {"error": "Este producto no es un template de variantes."},
                 status=status.HTTP_400_BAD_REQUEST,
             )
-        from .services import ProductService
-
         updated = ProductService.bulk_set_surcharge(
             template, request.data.get("variant_ids", []), surcharge
         )
@@ -250,8 +243,6 @@ class ProductViewSet(BulkImportMixin, AuditHistory, viewsets.ModelViewSet):
         product = self.get_object()
         quantity = request.query_params.get("quantity", 1)
         uom_id = request.query_params.get("uom_id")
-        from .services import PricingService
-
         data = PricingService.get_effective_price(product, quantity, uom_id)
         return Response(data)
 
@@ -261,8 +252,6 @@ class ProductViewSet(BulkImportMixin, AuditHistory, viewsets.ModelViewSet):
         Validates stock availability for multiple product lines.
         Checks both storable products and manufacturable products (including components).
         """
-        from .services import ProductService
-
         lines = request.data.get("lines", [])
         if not lines:
             return Response({"error": "No lines provided"}, status=status.HTTP_400_BAD_REQUEST)
@@ -271,32 +260,35 @@ class ProductViewSet(BulkImportMixin, AuditHistory, viewsets.ModelViewSet):
         return Response(result)
 
 
-class ProductAttributeViewSet(viewsets.ModelViewSet, AuditHistory):
+class ProductAttributeViewSet(NoDestroyModelMixin, viewsets.ModelViewSet, AuditHistory):
     queryset = ProductAttribute.objects.all()
     serializer_class = ProductAttributeSerializer
     filter_backends = [filters.SearchFilter]
     search_fields = ["name"]
 
 
-class ProductAttributeValueViewSet(viewsets.ModelViewSet, AuditHistory):
+class ProductAttributeValueViewSet(NoDestroyModelMixin, viewsets.ModelViewSet, AuditHistory):
     queryset = ProductAttributeValue.objects.all()
     serializer_class = ProductAttributeValueSerializer
     filterset_fields = ["attribute"]
 
 
-class CategoryViewSet(viewsets.ModelViewSet, AuditHistory):
+class CategoryViewSet(NoDestroyModelMixin, viewsets.ModelViewSet, AuditHistory):
     queryset = ProductCategory.objects.all()
     serializer_class = ProductCategorySerializer
+    pagination_class = StandardResultsSetPagination
 
 
-class WarehouseViewSet(viewsets.ModelViewSet, AuditHistory):
+class WarehouseViewSet(NoDestroyModelMixin, viewsets.ModelViewSet, AuditHistory):
     queryset = Warehouse.objects.all()
     serializer_class = WarehouseSerializer
+    pagination_class = StandardResultsSetPagination
 
 
-class UoMViewSet(viewsets.ModelViewSet, AuditHistory):
+class UoMViewSet(NoDestroyModelMixin, viewsets.ModelViewSet, AuditHistory):
     queryset = UoM.objects.all()
     serializer_class = UoMSerializer
+    pagination_class = StandardResultsSetPagination
     filter_backends = [DjangoFilterBackend, filters.SearchFilter]
     filterset_class = UoMFilter
     search_fields = ["name", "abbreviation"]
@@ -323,7 +315,7 @@ class UoMViewSet(viewsets.ModelViewSet, AuditHistory):
             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
 
-class UoMCategoryViewSet(viewsets.ModelViewSet, AuditHistory):
+class UoMCategoryViewSet(NoDestroyModelMixin, viewsets.ModelViewSet, AuditHistory):
     queryset = UoMCategory.objects.all()
     serializer_class = UoMCategorySerializer
 
@@ -368,7 +360,6 @@ class StockMoveViewSet(viewsets.ReadOnlyModelViewSet, AuditHistory):
         Supports partner_contact_id for PARTNER_CONTRIBUTION/PARTNER_WITHDRAWAL reasons.
         """
         from django.core.exceptions import ValidationError
-        from .services import StockService
 
         try:
             move = StockService.adjust_stock_from_payload(request.data)
@@ -379,17 +370,19 @@ class StockMoveViewSet(viewsets.ReadOnlyModelViewSet, AuditHistory):
             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
 
-class PricingRuleViewSet(AuditHistory, viewsets.ModelViewSet):
+class PricingRuleViewSet(NoDestroyModelMixin, AuditHistory, viewsets.ModelViewSet):
     queryset = PricingRule.objects.all()
     serializer_class = PricingRuleSerializer
+    pagination_class = StandardResultsSetPagination
     filter_backends = [DjangoFilterBackend, filters.SearchFilter]
     filterset_fields = ["product", "category", "active"]
     search_fields = ["name"]
 
 
-class SubscriptionViewSet(viewsets.ModelViewSet):
+class SubscriptionViewSet(NoDestroyModelMixin, viewsets.ModelViewSet):
     queryset = Subscription.objects.all()
     serializer_class = SubscriptionSerializer
+    pagination_class = StandardResultsSetPagination
     filter_backends = [DjangoFilterBackend, filters.SearchFilter]
     filterset_fields = ["status", "product", "supplier"]
     search_fields = ["product__name", "supplier__name", "supplier__tax_id"]
@@ -402,20 +395,22 @@ class SubscriptionViewSet(viewsets.ModelViewSet):
 
     @action(detail=True, methods=["post"])
     def pause(self, request, pk=None):
+        from .services import SubscriptionService
+
         sub = self.get_object()
-        sub.status = Subscription.Status.PAUSED
-        sub.save(update_fields=["status"])
+        SubscriptionService.pause_subscription(sub)
         return Response({"status": "paused"})
 
     @action(detail=True, methods=["post"])
     def resume(self, request, pk=None):
+        from .services import SubscriptionService
+
         sub = self.get_object()
-        sub.status = Subscription.Status.ACTIVE
-        sub.save(update_fields=["status"])
+        SubscriptionService.resume_subscription(sub)
         return Response({"status": "active"})
 
 
-class ProductUoMPriceViewSet(viewsets.ModelViewSet):
+class ProductUoMPriceViewSet(NoDestroyModelMixin, viewsets.ModelViewSet):
     serializer_class = ProductUoMPriceSerializer
     filter_backends = [DjangoFilterBackend]
     filterset_fields = ["product", "uom"]

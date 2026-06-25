@@ -30,33 +30,8 @@ class TaxPeriodSerializer(serializers.ModelSerializer):
         read_only_fields = ["closed_at", "closed_by", "created_at", "updated_at"]
 
     def get_declaration_summary(self, obj):
-        declaration = obj.declarations.first()
-        if not declaration:
-            return None
-
-        # Check if fully paid
-        payments = declaration.payments.all()
-        total_paid = sum(p.amount for p in payments)
-
-        # Use the models property that encapsulates all tax logic correctly.
-        vat_to_pay = declaration.total_amount_due
-
-        return {
-            "id": declaration.id,
-            "vat_to_pay": vat_to_pay,
-            "total_paid": total_paid,
-            "is_fully_paid": total_paid >= vat_to_pay and vat_to_pay > 0 or (vat_to_pay == 0),
-            "folio_number": declaration.folio_number,
-            "payments": [
-                {
-                    "id": p.id,
-                    "payment_date": p.payment_date,
-                    "amount": p.amount,
-                    "payment_method_display": p.get_payment_method_display(),
-                }
-                for p in payments
-            ],
-        }
+        from .selectors import TaxSelectorExt
+        return TaxSelectorExt.get_declaration_summary(obj)
 
 
 class AccountingPeriodSerializer(serializers.ModelSerializer):

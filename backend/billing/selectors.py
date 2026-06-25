@@ -1,71 +1,72 @@
-from .models import Invoice
-
-
-class InvoiceSelector:
+class InvoiceSelectorExt:
     @staticmethod
-    def check_folio_uniqueness(
-        *,
-        number: str,
-        dte_type: str,
-        exclude_id: int | None = None,
-        contact_id: int | None = None,
-        is_purchase: bool = False,
-    ) -> dict:
-        """
-        Validates folio uniqueness for a given document type.
-        Returns a dict with is_unique, message, and optionally existing_invoice.
-        """
-        # Skip validation for empty or draft numbers
-        if not number or number == "Draft" or number.strip() == "":
-            return {"is_unique": True, "message": "OK"}
+    def get_queryset_from_request(view, request):
+        from .models import Invoice
+        qs = Invoice.objects.select_related('company', 'partner', 'journal_entry').prefetch_related('lines__product', 'lines__taxes', 'taxes')
+        if view.action in ['list', 'debit_notes_list', 'credit_notes_list', 'unpaid_invoices', 'dashboard_stats']:
+            d_type = request.query_params.get('document_type')
+            inv_type = request.query_params.get('invoice_type')
+            is_purch = request.query_params.get('is_purchase')
+            stat = request.query_params.get('status')
+            part = request.query_params.get('partner')
+            df = request.query_params.get('date_from')
+            dt = request.query_params.get('date_to')
+            is_boleta = request.query_params.get('is_boleta')
+            if d_type: qs = qs.filter(document_type=d_type)
+            if inv_type: qs = qs.filter(invoice_type=inv_type)
+            if is_purch: qs = qs.filter(is_purchase=is_purch.lower() == 'true')
+            if stat: qs = qs.filter(status=stat)
+            if part: qs = qs.filter(partner_id=part)
+            if df: qs = qs.filter(date__gte=df)
+            if dt: qs = qs.filter(date__lte=dt)
+            if is_boleta: qs = qs.filter(document_type__in=['39', '41']) if is_boleta.lower() == 'true' else qs.exclude(document_type__in=['39', '41'])
+        return qs.order_by('-date', '-id')
 
-        query = Invoice.objects.filter(number=number, dte_type=dte_type)
+    @staticmethod
+    def get_serialized_payments(invoice):
+        from .serializers_common import InvoicePaymentLineSerializer
+        from .models import InvoicePaymentLine
+        lines = InvoicePaymentLine.objects.filter(invoice=invoice).select_related('payment_record', 'payment_record__account', 'payment_record__journal_entry').order_by('payment_record__date')
+        return InvoicePaymentLineSerializer(lines, many=True).data
 
-        if exclude_id:
-            query = query.exclude(id=exclude_id)
+    @staticmethod
+    def get_lines(invoice):
+        from .serializers_common import InvoiceLineSerializer
+        return InvoiceLineSerializer(invoice.lines.all(), many=True).data
 
-        if is_purchase:
-            query = query.filter(purchase_order__isnull=False)
-            if contact_id:
-                query = query.filter(contact_id=contact_id)
+    @staticmethod
+    def get_related_documents(invoice):
+        docs = []
+        if invoice.is_purchase and hasattr(invoice, 'purchase_order') and invoice.purchase_order:
+            docs.append({'type': 'purchase_order', 'id': invoice.purchase_order.id, 'name': invoice.purchase_order.name, 'url': f'/purchasing/orders/{invoice.purchase_order.id}'})
+        if not invoice.is_purchase and hasattr(invoice, 'sale_order') and invoice.sale_order:
+            docs.append({'type': 'sale_order', 'id': invoice.sale_order.id, 'name': invoice.sale_order.name, 'url': f'/sales/orders/{invoice.sale_order.id}'})
+        for inv in invoice.related_invoices.all():
+            if inv != invoice: docs.append({'type': 'invoice', 'id': inv.id, 'name': str(inv), 'url': f'/billing/{"purchases" if inv.is_purchase else "sales"}/{inv.id}'})
+        for dn in invoice.debit_notes.all(): docs.append({'type': 'debit_note', 'id': dn.id, 'name': str(dn), 'url': f'/billing/{"purchases" if dn.is_purchase else "sales"}/{dn.id}'})
+        for cn in invoice.credit_notes.all(): docs.append({'type': 'credit_note', 'id': cn.id, 'name': str(cn), 'url': f'/billing/{"purchases" if cn.is_purchase else "sales"}/{cn.id}'})
+        return docs
+
+    @staticmethod
+    def get_related_stock_moves(invoice):
+        moves = []
+        if hasattr(invoice, 'sale_order') and invoice.sale_order:
+            for m in invoice.sale_order.stock_moves.all():
+                moves.append({'id': m.id, 'reference': m.reference, 'date': m.date, 'status': m.status})
+        if hasattr(invoice, 'purchase_order') and invoice.purchase_order:
+            for m in invoice.purchase_order.stock_moves.all():
+                moves.append({'id': m.id, 'reference': m.reference, 'date': m.date, 'status': m.status})
+        return moves
+
+    @staticmethod
+    def get_related_returns(invoice):
+        from sales.models import SaleReturn
+        from purchasing.models import PurchaseReturn
+        returns = []
+        if invoice.is_purchase:
+            for r in PurchaseReturn.objects.filter(invoice=invoice):
+                returns.append({'id': r.id, 'name': str(r), 'status': r.status})
         else:
-            query = query.filter(sale_order__isnull=False)
-
-        existing = query.first()
-
-        if existing:
-            doc_origin = "compra" if is_purchase else "venta"
-            partner_name = (
-                existing.contact.name
-                if existing.contact
-                else (existing.sale_order.customer.name if existing.sale_order else "Unknown")
-            )
-
-            return {
-                "is_unique": False,
-                "message": f"El folio {number} ya ha sido utilizado en otro documento de {doc_origin}.",
-                "existing_invoice": {
-                    "id": existing.id,
-                    "number": existing.number,
-                    "date": existing.date.isoformat() if existing.date else None,
-                    "partner_name": partner_name,
-                    "total": float(existing.total),
-                },
-            }
-
-        return {"is_unique": True, "message": "Folio disponible"}
-
-    @staticmethod
-    def get_cancel_impact(invoice: Invoice) -> dict:
-        is_purchase_doc = invoice.purchase_order_id is not None or not invoice.is_sale_document()
-        return {
-            "invoice_status": invoice.status,
-            "has_folio": bool(invoice.number and invoice.number != "Draft"),
-            "is_sale_document": not is_purchase_doc,
-            "journal_entry_status": invoice.journal_entry.status if invoice.journal_entry else None,
-            "payments": [
-                {"id": p.id, "amount": str(p.amount), "status": p.status}
-                for p in invoice.payments.all()
-            ],
-            "action": "cancel" if invoice.status == Invoice.Status.DRAFT else "annul",
-        }
+            for r in SaleReturn.objects.filter(invoice=invoice):
+                returns.append({'id': r.id, 'name': str(r), 'status': r.status})
+        return returns
