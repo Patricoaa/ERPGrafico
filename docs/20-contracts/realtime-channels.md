@@ -46,7 +46,7 @@ ERPGrafico usa **tres canales realtime complementarios**, no uno solo. La elecci
 |------|-------|---------|----------|-----------|
 | POS draft sync multi-terminal | WebSocket por-feature | `sales.consumers.POSDraftConsumer` + `sales.signals` | `features/pos/hooks/useDraftSync.ts` | Bidireccional: cliente edita carrito, lock por sesión, broadcast a otros terminales |
 | Notificaciones globales | WebSocket por-feature | `workflow.consumers.NotificationConsumer` + `workflow.signals.push_notification_to_channels` | `features/notifications/hooks/useNotifications.ts` | Solo recepción de notificaciones por usuario — bidireccionalidad reservada para read-receipts |
-| **Entity Bus (refresh de listados/modales)** | **WS multiplexado** | `core.consumers.EntityBusConsumer` + `core.signals.entity_bus` (allowlist) | `RealtimeProvider` + `useEntitySubscription` | **Piloto en `sales` (SaleOrder + lines). Ver [ADR-0026](../10-architecture/adr/0026-entity-bus-realtime-invalidation.md). Estado: Proposed — implementación pendiente.** |
+| **Entity Bus (refresh de listados/modales)** | **WS multiplexado** | `core.consumers.EntityBusConsumer` + `core.signals.entity_bus` (allowlist) | `RealtimeProvider` + `useEntitySubscription` | **Piloto activo en `sales` (SaleOrder + SaleLine). Ver [ADR-0026](../10-architecture/adr/0026-entity-bus-realtime-invalidation.md). Estado: Activo (piloto). Extender a otras apps requiere validar carga de WS sobre el piloto primero.** |
 | Workflow transitions | (routing existente, no consumer activo) | `workflow.routing` registrado en ASGI | — | Reservado para presencia/colaboración en aprobaciones |
 
 ---

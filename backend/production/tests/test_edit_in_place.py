@@ -105,7 +105,6 @@ def test_check_side_effects_stock_movement(draft_order):
             work_order=draft_order,
             product=product,
             quantity=Decimal("5"),
-            uom=uom,
             warehouse=warehouse,
         )
         effects = WorkOrderService.check_side_effects(draft_order)
@@ -151,7 +150,6 @@ def test_update_volume_blocked_with_stock_movements(draft_order, uom, component)
         work_order=draft_order,
         product=component,
         quantity=Decimal("5"),
-        uom=uom,
         warehouse=warehouse,
     )
     with pytest.raises(ValidationError, match="movimientos de stock"):
@@ -291,7 +289,7 @@ def test_update_section_volume_via_api(api_client, draft_order, uom, bom_materia
 @pytest.mark.django_db
 def test_update_section_missing_payload_returns_400(api_client, draft_order):
     url = f"/api/production/orders/{draft_order.id}/update_section/"
-    resp = api_client.patch(url, {"section": "planning"}, format="json")
+    resp = api_client.patch(url, {"section": "planning", "payload": None}, format="json")
     assert resp.status_code == 400
 
 

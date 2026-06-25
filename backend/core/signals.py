@@ -48,10 +48,16 @@ def clear_schema_cache_on_migrate(sender, **kwargs):
     Regla P-06: Limpia todas las cachés de schemas (schema:*) luego de una migración,
     ya que los modelos, metadatos y permisos pueden haber cambiado drásticamente.
     """
-    # Si se usa un caché compatible con wildcard (como Redis):
     try:
+        # Backends django-redis soportan delete_pattern con wildcard
         cache.delete_pattern("schema:*")
     except AttributeError:
-        # Fallback para locmem o memcached que no soportan delete_pattern.
-        # Solo limpia todo si no hay delete_pattern.
-        cache.clear()
+        # Fallback para locmem o memcached que no soportan delete_pattern
+        try:
+            cache.clear()
+        except Exception:
+            pass
+    except Exception:
+        # Redis no disponible (ej. entorno de test local sin Docker).
+        # Registrar en silencio para no bloquear las migraciones.
+        pass

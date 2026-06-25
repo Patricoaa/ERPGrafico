@@ -450,6 +450,22 @@ class SalesService:
         return delivery
 
     @staticmethod
+    def partial_dispatch_from_request(order, request_data):
+        warehouse_id = request_data.get("warehouse_id")
+        delivery_date = request_data.get("delivery_date")
+        # Support both old and new format for safer transition
+        line_quantities = request_data.get("line_quantities")
+        if line_quantities and isinstance(line_quantities, dict):
+            line_data = [{"line_id": int(k), "quantity": v} for k, v in line_quantities.items()]
+        else:
+            line_data = request_data.get("line_data", [])
+
+        warehouse = Warehouse.objects.get(pk=warehouse_id)
+        return SalesService.partial_dispatch(
+            order=order, warehouse=warehouse, line_data=line_data, delivery_date=delivery_date
+        )
+
+    @staticmethod
     def _create_delivery_line(delivery, sale_line, quantity, warehouse, uom=None):
         """Helper to create a delivery line"""
         product = sale_line.product
@@ -1398,7 +1414,107 @@ class SaleOrderService(DocumentService):
             order.notes = (order.notes or "") + f"\nAnulado: {reason}"
         order.save()
 
-        from workflow.services import WorkflowService
-
         WorkflowService.log_transition(order, "annul", user=user, reason=reason)
         return order
+
+    @staticmethod
+    def get_comments_queryset(order):
+        from django.contrib.contenttypes.models import ContentType
+        from production.models import WorkOrder
+        from workflow.models import Comment
+
+        so_ct = ContentType.objects.get_for_model(order.__class__)
+        qs = Comment.objects.filter(content_type=so_ct, object_id=order.pk)
+
+        # Fetch comments from all related WorkOrders
+        production_orders = order.production_orders.all()
+        if production_orders.exists():
+            wo_ct = ContentType.objects.get_for_model(WorkOrder)
+            wo_qs = Comment.objects.filter(
+                content_type=wo_ct, object_id__in=production_orders.values_list("pk", flat=True)
+            )
+            qs = (qs | wo_qs).order_by("created_at")
+        else:
+            qs = qs.order_by("created_at")
+        return qs
+
+    @staticmethod
+    def add_comment_from_request(order, request):
+        text = (request.data.get("text") or "").strip()
+        if not text:
+            raise ValidationError("text es requerido")
+
+        from workflow.services import WorkflowService
+
+        return WorkflowService.add_comment(
+            content_object=order,
+            user=request.user,
+            text=text,
+        )
+
+
+class SalesSettingsService:
+    ACCOUNTING_SETTINGS_FIELDS = ["default_receivable_account", "default_revenue_account"]
+
+    @staticmethod
+    def get_accounting_settings_data():
+        from accounting.models import AccountingSettings
+
+        settings = AccountingSettings.get_solo()
+        return {
+            "default_receivable_account": settings.default_receivable_account_id,
+            "default_revenue_account": settings.default_revenue_account_id,
+        }
+
+    @staticmethod
+    def update_accounting_settings(fields_data):
+        from accounting.models import Account, AccountingSettings
+
+        settings = AccountingSettings.get_solo()
+        updated = False
+        if "default_receivable_account" in fields_data:
+            val = fields_data["default_receivable_account"]
+            settings.default_receivable_account = (
+                Account.objects.get(pk=int(val)) if val else None
+            )
+            updated = True
+        if "default_revenue_account" in fields_data:
+            val = fields_data["default_revenue_account"]
+            settings.default_revenue_account = (
+                Account.objects.get(pk=int(val)) if val else None
+            )
+            updated = True
+        if updated:
+            settings.save()
+
+    @staticmethod
+    def get_or_update_current_settings(obj, request_data, method, serializer_factory):
+        if method == "GET":
+            serializer = serializer_factory(obj)
+            data = serializer.data
+            data.update(SalesSettingsService.get_accounting_settings_data())
+            return data
+
+        sales_fields = {
+            k: v
+            for k, v in request_data.items()
+            if k not in SalesSettingsService.ACCOUNTING_SETTINGS_FIELDS
+        }
+        accounting_fields = {
+            k: v
+            for k, v in request_data.items()
+            if k in SalesSettingsService.ACCOUNTING_SETTINGS_FIELDS
+        }
+
+        if sales_fields:
+            serializer = serializer_factory(obj, data=sales_fields, partial=True)
+            serializer.is_valid(raise_exception=True)
+            serializer.save()
+
+        if accounting_fields:
+            SalesSettingsService.update_accounting_settings(accounting_fields)
+
+        serializer = serializer_factory(obj)
+        data = serializer.data
+        data.update(SalesSettingsService.get_accounting_settings_data())
+        return data

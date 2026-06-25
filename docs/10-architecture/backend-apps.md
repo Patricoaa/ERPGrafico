@@ -337,4 +337,4 @@ class SingletonSettingsViewSet(viewsets.GenericViewSet):
 | `sales` | SaleOrder, Quote | No |
 | `tax` | TaxRate, FiscalDocument | Yes (fiscal submit) |
 | `treasury` | BankAccount, Transaction | Yes (import, reconcile) |
-| `workflow` | State, Transition, Approval | Yes (transitions) |
+| `workflow` | State, Approval | Yes (transitions) |

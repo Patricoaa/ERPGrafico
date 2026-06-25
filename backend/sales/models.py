@@ -2,6 +2,7 @@ from decimal import Decimal
 
 from django.core.validators import MinValueValidator
 from django.db import models
+from django.contrib.contenttypes.fields import GenericRelation
 from django.utils.translation import gettext_lazy as _
 
 from core.mixins import TotalsCalculationMixin
@@ -121,6 +122,8 @@ class SaleOrder(TransactionalDocument, TotalsCalculationMixin):
         verbose_name=_("Tarea de Aprobación de Crédito"),
     )
 
+    attachments = GenericRelation("core.Attachment")
+
     class FormMeta:
         ui_layout = {
             "tabs": [
@@ -212,8 +215,9 @@ class SaleOrder(TransactionalDocument, TotalsCalculationMixin):
 
         # Include both confirmed (POSTED) and settled (PAID) invoices — exclude drafts and cancelled
         ACTIVE_STATUSES = [Invoice.Status.POSTED, Invoice.Status.PAID]
-        invoices = self.invoices.filter(status__in=ACTIVE_STATUSES)
-        if not invoices.exists():
+        # Use python-level filtering to respect prefetch_related and avoid N+1
+        active_invoices = [inv for inv in self.invoices.all() if inv.status in ACTIVE_STATUSES]
+        if not active_invoices:
             return self.total
 
         # We define which DTE types are considered "primary" documents (not corrections)
@@ -226,14 +230,14 @@ class SaleOrder(TransactionalDocument, TotalsCalculationMixin):
 
         # If we have primary documents, we sum them (plus debit notes, minus credit notes)
         # Otherwise we use the original order total as base.
-        has_primary = invoices.filter(dte_type__in=primary_types).exists()
+        has_primary = any(inv.dte_type in primary_types for inv in active_invoices)
 
         if not has_primary:
             base: Decimal = self.total
         else:
             base: Decimal = Decimal("0")
 
-        for inv in invoices:
+        for inv in active_invoices:
             if inv.dte_type in primary_types or inv.dte_type == Invoice.DTEType.NOTA_DEBITO:
                 base += Decimal(str(inv.total))
             elif inv.dte_type == Invoice.DTEType.NOTA_CREDITO:
@@ -385,6 +389,8 @@ class SaleLine(models.Model):
             "Metadatos capturados para fabricación avanzada (diseño, fechas, contactos, etc.)"
         ),
     )
+
+    attachments = GenericRelation("core.Attachment")
 
     class FormMeta:
         ui_layout = {

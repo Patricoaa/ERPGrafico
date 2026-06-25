@@ -69,7 +69,12 @@ Cómo se "elimina" una entidad en ERPGrafico depende de qué tipo de entidad sea
 | `treasury` | `TreasuryMovement` | Cancelación / Anulación | Cancel si DRAFT (sin JE o JE DRAFT). Annul si JE POSTED (reverso). |
 | `treasury` | `PaymentRequest` | Anulación | status; idempotency_key preserva trazabilidad |
 | `treasury` | `BankStatementLine` | Anulación | No se borra; se marca `unmatched` o `discarded` |
-| `workflow` | `Transition` | — (append-only) | Nunca se modifica ni se borra. Es el audit log |
+| `treasury` | `BankLoan` | Cancelación / Anulación | Cancel si DRAFT (sin desembolso). Annul si ACTIVE (reversas contables del pasivo + cuotas CANCELED). Ver ADR-0033. |
+| `treasury` | `LoanInstallment` | append-only (sistema) | Solo `LoanService` modifica el estado; nunca se borra manualmente. `CANCELED` es el estado terminal por `prepay` / `refinance`. |
+| `treasury` | `CreditCardStatement` | Cancelación | Cancel si OPEN (sin pago). `CardService.cancel_statement()` es la única vía. Ver ADR-0034. |
+| `treasury` | `CreditLine` | Archivo | `status=CANCELED` es terminal; no se borra. Ciclo de vida vía `CreditLineService`. Ver ADR-0049/0050. |
+| `treasury` | `Checkbook` | Archivo | `status=CLOSED` / `EXHAUSTED` — nunca se borra; preserva trazabilidad de folios usados. |
+| `workflow` | `Transition` | — (eliminado) | Sustituido por `django-simple-history` en todo el sistema. |
 
 ## Reglas operativas
 
@@ -92,7 +97,7 @@ Cómo se "elimina" una entidad en ERPGrafico depende de qué tipo de entidad sea
 - El servicio:
   1. Valida que la transición está permitida desde el estado actual (ver state-map).
   2. Genera el reverso contable/inventario si aplica (en `transaction.atomic()`).
-  3. Escribe a `workflow.Transition` con el motivo.
+  3. Escribe a `django-simple-history` con el motivo (history reason).
 - `obj.delete()` sobre estas entidades debe **fallar** o emitir warning explícito. Considerar override de `delete()` en `TransactionalDocument` para bloquearlo en prod.
 
 ### Para entidades de Archivo
@@ -150,7 +155,7 @@ Cómo se "elimina" una entidad en ERPGrafico depende de qué tipo de entidad sea
   gateado con `billing.delete_invoice`).
 - En backend los ViewSets usan `StandardizedModelPermissions`
   ([core/api/permissions.py](../../backend/core/api/permissions.py)), y los servicios
-  cancel/annul reciben `user`/`reason` y los registran en `workflow.Transition`.
+  cancel/annul reciben `user`/`reason` y los registran en el audit trail (`django-simple-history`).
 
 ## Migrations: cambio de patrón
 

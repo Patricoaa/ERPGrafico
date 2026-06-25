@@ -21,10 +21,10 @@ from .views import (
 )
 
 router = DefaultRouter()
-router.register(r"users", UserViewSet)
-router.register(r"groups", GroupViewSet)
-router.register(r"company", CompanySettingsViewSet)
-router.register(r"action-logs", ActionLogViewSet)
+router.register(r"users", UserViewSet, basename="user")
+router.register(r"groups", GroupViewSet, basename="group")
+router.register(r"company", CompanySettingsViewSet, basename="companysettings")
+router.register(r"action-logs", ActionLogViewSet, basename="actionlog")
 router.register(r"jobs", BackgroundJobViewSet, basename="jobs")
 
 urlpatterns = [

@@ -72,6 +72,7 @@ Rules apply to every PR. Violations block merge unless an accepted ADR waives th
 37. Permission class declared on every viewset.
 38. Multi-table writes wrapped in `transaction.atomic()`.
 39. Async side effects via Celery — never synchronous in request path when >300ms.
+40. **Zero N+1** — No ORM queries (`.objects.filter/get/create`) inside any `Serializer` or `SerializerMethodField`. All related data MUST be preloaded via `select_related` / `prefetch_related` in the ViewSet. Creation of object graphs belongs in `services.py` with `@transaction.atomic`. Enforced by `assertNumQueries` tests on every list endpoint. See [zero-n-plus-one-policy.md](./zero-n-plus-one-policy.md).
 
 ## 9. API contracts
 
@@ -97,6 +98,9 @@ Rules apply to every PR. Violations block merge unless an accepted ADR waives th
 
 51. Every PR touching auth / permissions / uploads reviewed by security team.
 52. Never log or transmit secrets / PII in plaintext (see `40-quality/security.md`).
+
+---
+last_review: 2026-06-25
 
 ## Amendment
 

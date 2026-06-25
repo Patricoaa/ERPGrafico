@@ -21,6 +21,14 @@ Backend REST surface under `/api/`. Every endpoint has request schema, response 
 - Ordering: `?ordering=field,-other`.
 - Errors: DRF standard — `{ detail }` or `{ field: [msg] }`.
 
+## Serializer Integrity & Performance (Zero N+1)
+
+Queda estrictamente **PROHIBIDO** ejecutar consultas a la base de datos (uso del ORM como `.objects.filter()`, `.objects.get()`, `.create()`, `.all()`) dentro de los métodos de cualquier `serializers.Serializer` o `SerializerMethodField`.
+
+*   **Delegación de precarga:** Si un Serializador requiere datos de modelos relacionados, es responsabilidad exclusiva del `ViewSet` precargar esos datos en memoria utilizando `select_related()` o `prefetch_related()` en su queryset.
+*   **Iteración en memoria:** Todo método del serializador debe trabajar leyendo la caché en memoria RAM. Ejemplo: En lugar de `Payment.objects.filter(invoice=obj)`, se debe usar `[p for p in obj.payments.all()]` (sabiendo que `payments` fue prefetcheado en el ViewSet).
+*   **Motivo:** Ejecutar queries dentro del serializador genera un comportamiento N+1 catastrófico cuando el endpoint retorna listados paginados de 50 o más elementos.
+
 ## Status codes
 
 | Code | Meaning |

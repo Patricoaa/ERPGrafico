@@ -1767,6 +1767,273 @@ class WorkOrderService:
                     f"Disponible: {m.get('stock_available')}."
                 )
 
+    @staticmethod
+    def build_stock_context(work_order):
+        """
+        Returns a dict {product_id: stock_float} for all storable materials in this OT,
+        computed in a single aggregated query against the OT's warehouse.
+        """
+        from django.db.models import Sum
+        from inventory.models import StockMove
+
+        warehouse = work_order.warehouse
+        if not warehouse:
+            return {}
+
+        component_ids = list(
+            work_order.materials.exclude(component__product_type="SERVICE").values_list(
+                "component_id", flat=True
+            )
+        )
+        if not component_ids:
+            return {}
+
+        rows = (
+            StockMove.objects.filter(warehouse=warehouse, product_id__in=component_ids)
+            .values("product_id")
+            .annotate(total=Sum("quantity"))
+        )
+        return {row["product_id"]: float(row["total"] or 0.0) for row in rows}
+
+    @staticmethod
+    def validate_update_allowed(work_order, data_keys):
+        terminal_stages = {WorkOrder.Stage.FINISHED, WorkOrder.Stage.CANCELLED}
+        if work_order.current_stage in terminal_stages:
+            raise ValidationError("No se puede editar una OT en etapa Finalizada o Cancelada.")
+        immutable = {
+            "product",
+            "sale_order",
+            "sale_line",
+            "product_id",
+            "sale_order_id",
+            "sale_line_id",
+        }
+        if immutable.intersection(data_keys):
+            raise ValidationError(
+                'Producto y Nota de Venta no pueden modificarse después de crear la OT. Use "Crear OT corregida" para generar una nueva.'
+            )
+
+    @staticmethod
+    @transaction.atomic
+    def delete_work_order(work_order):
+        if work_order.current_stage != WorkOrder.Stage.MATERIAL_ASSIGNMENT:
+            raise ValidationError(
+                "Solo se pueden eliminar órdenes en etapa de Asignación de Materiales. Para otras etapas, use la opción Anular."
+            )
+
+        if work_order.purchase_orders.exists():
+            raise ValidationError(
+                "No se puede eliminar una orden con Órdenes de Compra generadas. Anule la OT en su lugar."
+            )
+
+        from django.contrib.contenttypes.models import ContentType
+        from workflow.models import Notification, Task
+
+        content_type = ContentType.objects.get_for_model(work_order)
+        Task.objects.filter(content_type=content_type, object_id=work_order.id).delete()
+        Notification.objects.filter(content_type=content_type, object_id=work_order.id).delete()
+        work_order.delete()
+
+    @staticmethod
+    def rectify_from_request(work_order, request):
+        material_adjustments = request.data.get("material_adjustments", [])
+        outsourced_adjustments = request.data.get("outsourced_adjustments", [])
+        produced_quantity = request.data.get("produced_quantity")
+        notes = request.data.get("notes", "")
+
+        WorkOrderService.rectify_production(
+            work_order=work_order,
+            material_adjustments=material_adjustments,
+            outsourced_adjustments=outsourced_adjustments,
+            produced_quantity=produced_quantity,
+            user=request.user,
+            notes=notes,
+        )
+
+    @staticmethod
+    def transition_from_request(work_order, request):
+        next_stage = request.data.get("next_stage")
+        notes = request.data.get("notes", "")
+        data = request.data.get("data", {})
+
+        if isinstance(data, str):
+            import json
+            try:
+                data = json.loads(data)
+            except Exception:
+                data = {}
+
+        # Validate stage
+        stage_match = None
+        for choice, label in WorkOrder.Stage.choices:
+            if choice == next_stage:
+                stage_match = choice
+                break
+
+        if not stage_match:
+            raise ValidationError(f"Etapa inválida: {next_stage}")
+
+        # Validate stock availability via service
+        from .serializers import WorkOrderSerializer
+        ctx = {"stocks_by_product": WorkOrderService.build_stock_context(work_order)}
+        serializer = WorkOrderSerializer(work_order, context=ctx)
+        WorkOrderService.validate_transition_stock(
+            work_order, next_stage, serializer.data.get("materials", [])
+        )
+
+        WorkOrderService.transition_to(
+            work_order=work_order,
+            next_stage=stage_match,
+            user=request.user,
+            notes=notes,
+            data=data,
+            files=request.FILES,
+        )
+
+    @staticmethod
+    @transaction.atomic
+    def restart_work_order(work_order):
+        if work_order.status != WorkOrder.Status.DRAFT:
+            raise ValidationError("Solo se pueden reiniciar órdenes en Borrador.")
+
+        se = WorkOrderService.check_side_effects(work_order)
+        if any(
+            [
+                se["has_confirmed_pos"],
+                se["has_stock_movements"],
+                se["completed_tasks_count"],
+                se["manually_edited_materials_count"],
+            ]
+        ):
+            raise ValidationError(
+                'La OT tiene actividad registrada y no puede reiniciarse. Use "Crear OT corregida" en su lugar.'
+            )
+
+        # Capture initial_data before deletion
+        initial_data = {
+            "sale_order_id": work_order.sale_order_id,
+            "sale_order_number": work_order.sale_order.number if work_order.sale_order else None,
+            "sale_line_id": work_order.sale_line_id,
+            "product_id": work_order.product_id
+            or (work_order.sale_line.product_id if work_order.sale_line else None),
+            "stage_data": work_order.stage_data,
+            "ot_type": "LINKED" if work_order.sale_order_id else "NONE",
+        }
+
+        # Cleanup generic relations (same as destroy)
+        from django.contrib.contenttypes.models import ContentType
+        from workflow.models import Notification, Task
+
+        ct = ContentType.objects.get_for_model(work_order)
+        Task.objects.filter(content_type=ct, object_id=work_order.id).delete()
+        Notification.objects.filter(content_type=ct, object_id=work_order.id).delete()
+        work_order.delete()
+
+        return initial_data
+
+    @staticmethod
+    def add_material_from_request(work_order, request):
+        product_id = request.data.get("product_id")
+        quantity = Decimal(str(request.data.get("quantity")))
+        uom_id = request.data.get("uom_id")
+
+        is_outsourced = request.data.get("is_outsourced", False)
+        supplier_id = request.data.get("supplier_id")
+        unit_price = Decimal(str(request.data.get("unit_price", 0)))
+        document_type = request.data.get("document_type", "FACTURA")
+
+        product = Product.objects.get(pk=product_id)
+        uom = UoM.objects.get(pk=uom_id) if uom_id else None
+
+        from contacts.models import Contact
+        supplier = Contact.objects.get(pk=supplier_id) if supplier_id else None
+
+        WorkOrderService.add_material(
+            work_order=work_order,
+            component=product,
+            quantity=quantity,
+            uom=uom,
+            is_outsourced=is_outsourced,
+            supplier=supplier,
+            unit_price=unit_price,
+            document_type=document_type,
+        )
+
+    @staticmethod
+    def get_comments_queryset(work_order):
+        from django.contrib.contenttypes.models import ContentType
+        from workflow.models import Comment
+
+        wo_ct = ContentType.objects.get_for_model(WorkOrder)
+        qs = Comment.objects.filter(content_type=wo_ct, object_id=work_order.pk)
+        if work_order.sale_order_id:
+            from sales.models import SaleOrder
+            so_ct = ContentType.objects.get_for_model(SaleOrder)
+            so_qs = Comment.objects.filter(content_type=so_ct, object_id=work_order.sale_order_id)
+            qs = (qs | so_qs).order_by("created_at")
+        else:
+            qs = qs.order_by("created_at")
+        return qs
+
+    @staticmethod
+    def add_comment_from_request(work_order, request):
+        text = (request.data.get("text") or "").strip()
+        if not text:
+            raise ValidationError("text es requerido")
+
+        from workflow.services import WorkflowService
+        return WorkflowService.add_comment(
+            content_object=work_order,
+            user=request.user,
+            text=text,
+        )
+
+    @staticmethod
+    def create_manual_from_request(request):
+        import json
+        product_id = request.data.get("product_id")
+        quantity = Decimal(str(request.data.get("quantity")))
+        description = request.data.get("description", "")
+        warehouse_id = request.data.get("warehouse_id")
+        uom_id = request.data.get("uom_id")
+        stage_data = request.data.get("stage_data", {})
+
+        if isinstance(stage_data, str):
+            try:
+                stage_data = json.loads(stage_data)
+            except (json.JSONDecodeError, TypeError):
+                stage_data = {}
+
+        product = Product.objects.get(pk=product_id)
+
+        # Validate BOM requirement for Express products/variants
+        if product.requires_bom_validation:
+            error_msg = f"El producto '{product.name}' es Express y requiere un BOM asignado antes de crear una Orden de Trabajo."
+            if product.parent_template:
+                error_msg += (
+                    " Por favor, asigne un BOM a esta variante desde el formulario de producto."
+                )
+            raise ValidationError(error_msg)
+
+        warehouse = (
+            Warehouse.objects.get(pk=warehouse_id)
+            if warehouse_id
+            else Warehouse.objects.first()
+        )
+        if not uom_id:
+            raise ValidationError("La unidad de medida es requerida para fabricaciones manuales.")
+
+        uom = UoM.objects.get(pk=uom_id) if uom_id else None
+
+        return WorkOrderService.create_manual(
+            product=product,
+            quantity=quantity,
+            description=description,
+            warehouse=warehouse,
+            uom=uom,
+            stage_data=stage_data,
+        )
+
 
 class WorkOrderPdfService:
     @staticmethod
@@ -1779,6 +2046,20 @@ class WorkOrderPdfService:
             from weasyprint import HTML
         except ImportError:
             raise Exception("WeasyPrint is not installed. Please install it.")
+
+        import base64
+        from io import BytesIO
+        import qrcode
+
+        base_url = (
+            request.build_absolute_uri("/")[:-1] if request else "http://localhost:3000"
+        )
+        qr = qrcode.QRCode(version=1, box_size=6, border=2)
+        qr.add_data(f"{base_url}/production/orders/{work_order.pk}")
+        qr.make(fit=True)
+        buf = BytesIO()
+        qr.make_image(fill_color="black", back_color="white").save(buf, format="PNG")
+        qr_base64 = base64.b64encode(buf.getvalue()).decode()
 
         # Prepare flat stage data for rendering (filtering out None or complex objects if needed)
         flat_stage_data = {}

@@ -25,6 +25,26 @@ class NoteCheckoutService:
     """
 
     @staticmethod
+    def process_logistics_from_request(request, invoice_id: int):
+        """Parse request and call process_logistics_from_invoice."""
+        warehouse_id = request.data.get("warehouse_id")
+        date = request.data.get("date")
+        line_data = request.data.get("line_data")
+        notes = request.data.get("notes", "")
+
+        from django.core.exceptions import ValidationError
+        if not all([warehouse_id, date, line_data]):
+            raise ValidationError("Faltan datos requeridos (bodega, fecha o líneas)")
+
+        return NoteCheckoutService.process_logistics_from_invoice(
+            invoice_id=invoice_id,
+            warehouse_id=warehouse_id,
+            date=date,
+            line_data=line_data,
+            notes=notes,
+        )
+
+    @staticmethod
     @transaction.atomic
     def process_logistics_from_invoice(
         invoice_id: int, warehouse_id: int, date: str, line_data: list, notes: str = ""

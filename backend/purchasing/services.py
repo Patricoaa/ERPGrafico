@@ -25,6 +25,57 @@ class PurchasingService:
         return order
 
     @staticmethod
+    def receive_order_from_request(order, request_data):
+        warehouse_id = request_data.get("warehouse_id")
+        receipt_date = request_data.get("receipt_date")
+
+        warehouse = order.warehouse
+        if warehouse_id:
+            warehouse = Warehouse.objects.get(pk=warehouse_id)
+
+        return PurchasingService.receive_order(
+            order=order,
+            warehouse=warehouse,
+            receipt_date=receipt_date,
+            delivery_reference=request_data.get("delivery_reference", ""),
+            notes=request_data.get("notes", ""),
+        )
+
+    @staticmethod
+    def partial_receive_from_request(order, request_data):
+        warehouse = order.warehouse
+        if warehouse_id := request_data.get("warehouse_id"):
+            warehouse = Warehouse.objects.get(pk=warehouse_id)
+
+        return PurchasingService.partial_receive(
+            order=order,
+            warehouse=warehouse,
+            line_data=request_data.get("line_data", []),
+            receipt_date=request_data.get("receipt_date"),
+            delivery_reference=request_data.get("delivery_reference", ""),
+            notes=request_data.get("notes", ""),
+        )
+
+    @staticmethod
+    def partial_return_from_request(order, request_data):
+        warehouse_id = request_data.get("warehouse_id")
+        receipt_date = request_data.get("receipt_date")
+        line_data = request_data.get("line_data", [])
+
+        warehouse = order.warehouse
+        if warehouse_id:
+            warehouse = Warehouse.objects.get(pk=warehouse_id)
+
+        return PurchasingService.partial_return(
+            order=order,
+            warehouse=warehouse,
+            line_data=line_data,
+            receipt_date=receipt_date,
+            delivery_reference=request_data.get("delivery_reference", ""),
+            notes=request_data.get("notes", ""),
+        )
+
+    @staticmethod
     @transaction.atomic
     def receive_order(
         order: PurchaseOrder,
