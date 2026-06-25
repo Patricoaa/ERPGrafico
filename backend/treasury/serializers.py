@@ -533,6 +533,84 @@ class BankStatementLineSerializer(serializers.ModelSerializer):
     def get_reconciliation_group_data(self, obj):
         return ReconciliationMatchSelector.get_group_data(obj)
 
+    class Meta:
+        model = BankStatementLine
+        fields = "__all__"
+
+
+class BankStatementSerializer(serializers.ModelSerializer):
+    treasury_account_name = serializers.CharField(source="treasury_account.name", read_only=True)
+    imported_by_name = serializers.CharField(source="imported_by.username", read_only=True)
+    reconciliation_progress = serializers.FloatField(read_only=True)
+    display_id = serializers.CharField(read_only=True)
+    lines = BankStatementLineSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = BankStatement
+        fields = "__all__"
+        read_only_fields = ["id", "status"]
+
+
+class BankStatementListSerializer(serializers.ModelSerializer):
+    treasury_account_name = serializers.CharField(source="treasury_account.name", read_only=True)
+    imported_by_name = serializers.CharField(source="imported_by.username", read_only=True)
+    reconciliation_progress = serializers.FloatField(read_only=True)
+    display_id = serializers.CharField(read_only=True)
+    reconciled_lines = serializers.IntegerField(read_only=True)
+
+    class Meta:
+        model = BankStatement
+        fields = [
+            "id",
+            "display_id",
+            "treasury_account",
+            "treasury_account_name",
+            "statement_date",
+            "opening_balance",
+            "closing_balance",
+            "status",
+            "total_lines",
+            "reconciled_lines",
+            "reconciliation_progress",
+            "imported_at",
+            "imported_by_name",
+        ]
+
+
+class ReconciliationSettingsSerializer(serializers.ModelSerializer):
+    treasury_account_name = serializers.CharField(source="treasury_account.name", read_only=True)
+
+    class Meta:
+        model = ReconciliationSettings
+        fields = "__all__"
+
+
+class PaymentTerminalProviderSerializer(serializers.ModelSerializer):
+    supplier_name = serializers.CharField(source="supplier.name", read_only=True)
+    receivable_account_name = serializers.CharField(
+        source="receivable_account.name", read_only=True
+    )
+    commission_expense_account_name = serializers.CharField(
+        source="commission_expense_account.name", read_only=True
+    )
+    commission_iva_account_name = serializers.CharField(
+        source="commission_iva_account.name", read_only=True
+    )
+    bank_treasury_account_name = serializers.CharField(
+        source="bank_treasury_account.name", read_only=True
+    )
+    default_deposit_account_name = serializers.CharField(
+        source="default_deposit_account.name", read_only=True
+    )
+    provider_type_display = serializers.CharField(
+        source="get_provider_type_display", read_only=True
+    )
+
+    class Meta:
+        model = PaymentTerminalProvider
+        fields = "__all__"
+        read_only_fields = ("bank_treasury_account",)
+
     def validate_default_deposit_account(self, value):
         if value and value.account_type in ("BRIDGE", "CHECK_PORTFOLIO", "ISSUED_CHECKS"):
             from rest_framework import serializers as rf_serializers
