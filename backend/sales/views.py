@@ -66,7 +66,7 @@ class SalesSettingsViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
 
 
 from core.api.permissions import StandardizedModelPermissions
-
+from core.idempotency import idempotent_endpoint
 
 class SaleOrderFilterSet(django_filters.FilterSet):
     customer_name = django_filters.CharFilter(field_name="customer__name", lookup_expr="icontains")
@@ -167,6 +167,7 @@ class SaleOrderViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
             return CreateSaleOrderSerializer
         return SaleOrderSerializer
 
+    @idempotent_endpoint(scope="sales.order.create")
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
         from django.core.exceptions import ValidationError

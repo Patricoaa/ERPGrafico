@@ -58,6 +58,7 @@ from django.db.models import Q, Sum
 from django.http import HttpResponse
 
 from core.mixins import AuditHistoryMixin
+from core.idempotency import idempotent_endpoint
 from core.models import Attachment
 from inventory.models import Product, UoM, Warehouse
 
@@ -127,6 +128,7 @@ class WorkOrderViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
         serializer = self.get_serializer(instance, context=context)
         return Response(serializer.data)
 
+    @idempotent_endpoint(scope="production.order.create")
     def create(self, request, *args, **kwargs):
         """TASK-202: Delegate all creation logic to WorkOrderService.
 

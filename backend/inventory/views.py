@@ -9,6 +9,7 @@ from rest_framework.response import Response
 from core.api.pagination import StandardResultsSetPagination
 from core.mixins import AuditHistoryMixin as AuditHistory
 from core.mixins import BulkImportMixin
+from core.idempotency import idempotent_endpoint
 
 from .filters import ProductFilter, StockMoveFilter, UoMFilter
 from .models import (
@@ -393,6 +394,7 @@ class StockMoveViewSet(viewsets.ReadOnlyModelViewSet, AuditHistory):
         ).aggregate(total=Sum("quantity"))["total"] or Decimal("0.0")
         return Response({"stock_level": str(total)})
 
+    @idempotent_endpoint(scope="inventory.move.create")
     @action(detail=False, methods=["post"])
     def adjust(self, request):
         """

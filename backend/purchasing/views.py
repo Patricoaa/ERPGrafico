@@ -6,6 +6,11 @@ from rest_framework import filters, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
 
+
+
+from core.api.permissions import StandardizedModelPermissions
+from core.api.search import DistinctSearchFilter
+from core.idempotency import idempotent_endpoint
 from core.mixins import AuditHistoryMixin
 from inventory.models import Warehouse
 
@@ -337,6 +342,7 @@ class PurchaseOrderViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
             "receipt_data": receipt_data,
         }
 
+    @idempotent_endpoint(scope="purchasing.order.checkout")
     @action(detail=False, methods=["post"])
     def purchase_checkout(self, request):
         """Unified purchase checkout endpoint."""
