@@ -52,67 +52,8 @@ class InvoiceViewSet(NoDestroyModelMixin, viewsets.ModelViewSet, AuditHistoryMix
     ]
 
     def get_queryset(self):
-        from treasury.models import PaymentAllocation, TreasuryMovement
-        from inventory.models import StockMove
-
-        return (
-            Invoice.objects.all()
-            # FKs directas — JOIN en SQL (O(1))
-            .select_related(
-                "sale_order__customer",
-                "sale_order__pos_session",
-                "purchase_order__supplier",
-                "contact",
-                "journal_entry",
-                "corrected_invoice",
-            )
-            # Relaciones inversas — queries separadas cacheadas en RAM
-            .prefetch_related(
-                # Pagos directos sobre la factura
-                Prefetch(
-                    "payments",
-                    queryset=TreasuryMovement.objects.select_related(
-                        "payment_method_ref", "account"
-                    ),
-                ),
-                # Allocaciones parciales con su movimiento de tesorería
-                Prefetch(
-                    "payment_allocations",
-                    queryset=PaymentAllocation.objects.select_related("treasury_movement__payment_method_ref"),
-                ),
-                # Archivos adjuntos
-                "attachments",
-                # Notas correctoras (NC/ND que apuntan a esta factura)
-                "adjustments",
-                # Devoluciones de venta y sus líneas + stock move
-                "sale_returns__lines__stock_move",
-                # Devoluciones de compra y sus líneas + stock move
-                "purchase_returns__lines__stock_move",
-                # Entregas suplementarias (ND venta) y sus líneas + stock move
-                "sale_deliveries__lines__stock_move",
-                # Recepciones suplementarias (ND compra) y sus líneas + stock move
-                "purchase_receipts__lines__stock_move",
-                # Órdenes de trabajo vinculadas
-                "work_orders",
-                # Líneas de nota de crédito/débito de venta
-                "note_sale_lines",
-                # Líneas de nota de crédito/débito de compra
-                "note_purchase_lines",
-                # Workflow de notas (para NC/ND con selected_items)
-                "workflow",
-                # Líneas de la orden de venta (fallback)
-                "sale_order__lines__product",
-                # Líneas de la orden de compra (fallback)
-                "purchase_order__lines__product",
-                # Moves vinculados al JE de la factura
-                Prefetch(
-                    "journal_entry__stockmove_set",
-                    queryset=StockMove.objects.select_related("product", "warehouse"),
-                    to_attr="prefetched_stock_moves",
-                ),
-            )
-            .order_by("-date", "-id")
-        )
+        from .selectors import InvoiceSelectorExt
+        return InvoiceSelectorExt.get_queryset_from_request(self, self.request)
 
     @idempotent_endpoint(scope="billing.invoice.create")
     def create(self, request, *args, **kwargs):
@@ -181,28 +122,13 @@ class InvoiceViewSet(NoDestroyModelMixin, viewsets.ModelViewSet, AuditHistoryMix
         except Exception as e:
             return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-    @action(detail=False, methods=["get"])
+    @action(detail=False, methods=['get'])
     def check_folio(self, request):
-        """Validates folio uniqueness in real-time."""
         from .selectors import InvoiceSelector
-
-        number = request.query_params.get("number")
-        dte_type = request.query_params.get("dte_type")
-
-        if not number or not dte_type:
-            return Response(
-                {"error": "Missing required parameters: number and dte_type"},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-
-        result = InvoiceSelector.check_folio_uniqueness(
-            number=number,
-            dte_type=dte_type,
-            exclude_id=request.query_params.get("exclude_id"),
-            contact_id=request.query_params.get("contact_id"),
-            is_purchase=request.query_params.get("is_purchase", "false").lower() == "true",
-        )
-        return Response(result)
+        num, dte = request.query_params.get('number'), request.query_params.get('dte_type')
+        if not num or not dte: return Response({'error': 'Faltan parametros'}, status=400)
+        res = InvoiceSelector.check_folio_uniqueness(number=num, dte_type=dte, exclude_id=request.query_params.get('exclude_id'), contact_id=request.query_params.get('contact_id'), is_purchase=request.query_params.get('is_purchase', 'false').lower() == 'true')
+        return Response(res)
 
     @idempotent_endpoint(scope="billing.pos.checkout")
     @action(detail=False, methods=["post"])

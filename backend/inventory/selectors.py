@@ -404,3 +404,19 @@ class ProductSelector:
             },
             "production_usage": production_usage,
         }
+
+class StockMoveSelector:
+    @staticmethod
+    def get_related_documents(obj):
+        docs = obj.journal_entry.get_source_documents if obj.journal_entry else []
+        if hasattr(obj, 'purchase_receipt_line') and obj.purchase_receipt_line.receipt.purchase_order:
+            po = obj.purchase_receipt_line.receipt.purchase_order
+            docs.append({'type': 'purchase_order', 'id': po.id, 'name': str(po), 'url': '/purchasing/orders'})
+            docs.extend([{'type': 'invoice', 'id': i.id, 'name': str(i), 'url': '/billing/purchases'} for i in po.invoices.all()])
+        if hasattr(obj, 'sale_delivery_line') and obj.sale_delivery_line.delivery.sale_order:
+            so = obj.sale_delivery_line.delivery.sale_order
+            docs.append({'type': 'sale_order', 'id': so.id, 'name': str(so), 'url': '/sales/orders'})
+            docs.extend([{'type': 'invoice', 'id': i.id, 'name': str(i), 'url': '/billing/sales'} for i in so.invoices.all()])
+        
+        seen = set()
+        return [d for d in docs if not (d['type'] == 'inventory' or (d['type'], d['id']) in seen or seen.add((d['type'], d['id'])))]

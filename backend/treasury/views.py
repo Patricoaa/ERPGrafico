@@ -317,51 +317,21 @@ class POSTerminalViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-    @action(detail=True, methods=["get"])
+    @action(detail=True, methods=['get'])
     def available_accounts(self, request, pk=None):
-        """
-        Retorna cuentas de tesorería disponibles para este terminal,
-        opcionalmente filtradas por método de pago.
-
-        Query params:
-        - payment_method: 'CASH', 'CARD', 'TRANSFER' (optional)
-
-        Returns:
-            list[TreasuryAccount]: Cuentas permitidas, opcionalmente filtradas
-        """
         terminal = self.get_object()
-        payment_method = request.query_params.get("payment_method")
+        pm = request.query_params.get('payment_method')
+        accounts = terminal.get_accounts_for_method(pm) if pm else terminal.allowed_treasury_accounts.all()
+        return Response(TreasuryAccountSerializer(accounts, many=True).data)
 
-        if payment_method:
-            accounts = terminal.get_accounts_for_method(payment_method)
-        else:
-            accounts = terminal.allowed_treasury_accounts.all()
-
-        serializer = TreasuryAccountSerializer(accounts, many=True)
-        return Response(serializer.data)
-
-    @action(detail=True, methods=["get"])
+    @action(detail=True, methods=['get'])
     def allowed_payment_methods(self, request, pk=None):
-        """
-        Retorna métodos de pago permitidos para este terminal.
-
-        Query params:
-        - operation: 'sales' or 'purchases' (optional) - filtra por tipo de operación
-        """
         terminal = self.get_object()
-        operation = request.query_params.get("operation")
-
-        # Obtener métodos de pago permitidos directamente
+        op = request.query_params.get('operation')
         methods = terminal.allowed_payment_methods.filter(is_active=True)
-
-        # Filtrar por tipo de operación
-        if operation == "sales":
-            methods = methods.filter(allow_for_sales=True)
-        elif operation == "purchases":
-            methods = methods.filter(allow_for_purchases=True)
-
-        serializer = PaymentMethodSerializer(methods, many=True)
-        return Response(serializer.data)
+        if op == 'sales': methods = methods.filter(allow_for_sales=True)
+        elif op == 'purchases': methods = methods.filter(allow_for_purchases=True)
+        return Response(PaymentMethodSerializer(methods, many=True).data)
 
 
 class TreasuryMovementViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
@@ -371,140 +341,7 @@ class TreasuryMovementViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
     filter_backends = [DjangoFilterBackend]
 
     def get_queryset(self):
-        qs = self.queryset.select_related(
-            "account",
-            "from_account__account",
-            "to_account__account",
-            "payment_method_new",
-            "reconciled_by",
-            "created_by",
-            "terminal_batch",
-            "contact",
-            "invoice__contact",
-            "invoice__sale_order__customer",
-            "invoice__purchase_order__supplier",
-            "sale_order__customer",
-            "purchase_order__supplier",
-            "journal_entry",
-            "card_purchase_group__partner",
-            "bank_statement_line__statement",
-        )
-
-        # Handle bank filtering (matches movements from/to any account of the bank)
-        bank_id = self.request.query_params.get("bank")
-        if bank_id:
-            from django.db.models import Q
-
-            bank_accounts = TreasuryAccount.objects.filter(bank_id=bank_id).values_list(
-                "id", flat=True
-            )
-            qs = qs.filter(
-                Q(from_account_id__in=bank_accounts) | Q(to_account_id__in=bank_accounts)
-            )
-
-        # Handle treasury_account filtering (matches either from or to)
-        treasury_account = self.request.query_params.get("treasury_account")
-        if treasury_account:
-            from django.db.models import Q
-
-            qs = qs.filter(Q(from_account_id=treasury_account) | Q(to_account_id=treasury_account))
-
-        # Date filter
-        date = self.request.query_params.get("date")
-        if date:
-            qs = qs.filter(date=date)
-
-        date_from = self.request.query_params.get("date_from")
-        date_to = self.request.query_params.get("date_to")
-        if date_from:
-            qs = qs.filter(date__gte=date_from)
-        if date_to:
-            qs = qs.filter(date__lte=date_to)
-
-        # Amount range
-        amount_min = self.request.query_params.get("amount_min")
-        amount_max = self.request.query_params.get("amount_max")
-        if amount_min:
-            qs = qs.filter(amount__gte=amount_min)
-        if amount_max:
-            qs = qs.filter(amount__lte=amount_max)
-
-        # Batch filtering (IsNull)
-        terminal_batch_isnull = self.request.query_params.get("terminal_batch__isnull")
-        if terminal_batch_isnull:
-            val = terminal_batch_isnull.lower() == "true"
-            qs = qs.filter(terminal_batch__isnull=val)
-
-        # Terminal provider filter (used by batch creation modal): restrict to
-        # movements captured through devices owned by this provider. This excludes
-        # cash payments and movements from other providers, even if they belong to
-        # the same sale order (split payments).
-        terminal_provider = self.request.query_params.get("terminal_provider")
-        if terminal_provider:
-            from django.db.models import Q
-
-            qs = qs.filter(
-                Q(terminal_device__provider_id=terminal_provider)
-                | Q(payment_method_new__linked_terminal_device__provider_id=terminal_provider),
-                payment_method_new__method_type=PaymentMethod.Type.CARD_TERMINAL,
-            ).distinct()
-
-        pm = self.request.query_params.get("payment_method_new")
-        if pm:
-            qs = qs.filter(payment_method_new_id=pm)
-
-        direction = self.request.query_params.get("direction")
-        if direction and treasury_account:
-            from django.db.models import Q
-
-            if direction == "IN":
-                # Inbound movements or Transfers where the selected account is the destination
-                qs = qs.filter(
-                    Q(movement_type="INBOUND")
-                    | Q(movement_type="TRANSFER", to_account_id=treasury_account)
-                    | Q(movement_type="ADJUSTMENT", amount__gt=0)  # Adjustments can be positive
-                )
-            elif direction == "OUT":
-                # Outbound movements or Transfers where the selected account is the source
-                qs = qs.filter(
-                    Q(movement_type="OUTBOUND")
-                    | Q(movement_type="TRANSFER", from_account_id=treasury_account)
-                    | Q(movement_type="ADJUSTMENT", amount__lt=0)  # Adjustments can be negative
-                )
-
-        display_id = self.request.query_params.get("display_id")
-        if display_id:
-            import re
-
-            match = re.search(r"(\d+)$", display_id)
-            if match:
-                qs = qs.filter(id=match.group(1))
-
-        search = self.request.query_params.get("search")
-        if search:
-            from django.db.models import Q
-
-            q = (
-                Q(contact__name__icontains=search)
-                | Q(contact__tax_id__icontains=search)
-                | Q(reference__icontains=search)
-                | Q(description__icontains=search)
-                | Q(notes__icontains=search)
-            )
-            if search.isdigit():
-                q |= Q(id=search)
-            qs = qs.filter(q)
-
-        return qs
-
-    filterset_fields = [
-        "is_reconciled",
-        "movement_type",
-        "payment_method",
-        "payment_method_new",
-        "contact",
-    ]
-
+        return TreasuryMovementSelector.list_treasury_movements(self.queryset, self.request.query_params)
     def destroy(self, request, *args, **kwargs):
         instance = self.get_object()
         if not request.user.is_staff:
@@ -524,43 +361,18 @@ class TreasuryMovementViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
         # Trigger status update on related documents
         TreasuryService.update_related_document_status(instance)
 
-    @idempotent_endpoint(scope="treasury.movement.create")
+    @idempotent_endpoint(scope='treasury.movement.create')
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        data = serializer.validated_data
-
         try:
-            instance = TreasuryService.create_movement(
-                movement_type=data.get("movement_type"),
-                amount=data.get("amount"),
-                created_by=self.request.user,
-                date=data.get("date"),
-                from_account=data.get("from_account"),
-                to_account=data.get("to_account"),
-                payment_method=data.get("payment_method", TreasuryMovement.Method.CASH),
-                payment_method_new=data.get("payment_method_new"),
-                reference=data.get("reference", ""),
-                notes=data.get("notes", ""),
-                justify_reason=data.get("justify_reason"),
-                partner=data.get("contact"),
-                invoice=data.get("invoice"),
-                sale_order=data.get("sale_order"),
-                purchase_order=data.get("purchase_order"),
-                pos_session=data.get("pos_session"),
-                transaction_number=data.get("transaction_number"),
-                is_pending_registration=data.get("is_pending_registration", False),
-            )
-            return Response(
-                TreasuryMovementSerializer(instance).data, status=status.HTTP_201_CREATED
-            )
+            from .services import TreasuryService
+            instance = TreasuryService.create_movement_from_request(request, serializer.validated_data)
+            return Response(TreasuryMovementSerializer(instance).data, status=status.HTTP_201_CREATED)
         except ValidationError as e:
-            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({'error': str(e)}, status=400)
         except Exception as e:
-            import traceback
-
-            traceback.print_exc()
-            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            return Response({'error': str(e)}, status=500)
 
     @idempotent_endpoint(scope="treasury.movement.register")
     @action(detail=False, methods=["post"])
@@ -647,30 +459,15 @@ class TreasuryMovementViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
         except Exception as e:
             return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-    @action(detail=True, methods=["post"])
+    @action(detail=True, methods=['post'])
     def register_return(self, request, pk=None):
-        """
-        Register payment return.
-        Only available for payments linked to DRAFT invoices.
-        """
-        payment = self.get_object()
-
         try:
             from treasury.return_services import TreasuryReturnService
-            return_payment = TreasuryReturnService.register_payment_return_from_request(request, payment)
-
-            return Response(
-                {
-                    "message": "Devolución de pago registrada exitosamente",
-                    "return_payment_id": return_payment.id,
-                    "return_payment": TreasuryMovementSerializer(return_payment).data,
-                },
-                status=status.HTTP_201_CREATED,
-            )
-        except ValidationError as e:
-            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+            payment = self.get_object()
+            rp = TreasuryReturnService.register_payment_return_from_request(request, payment)
+            return Response({'message': 'Devolución de pago registrada exitosamente', 'return_payment_id': rp.id, 'return_payment': TreasuryMovementSerializer(rp).data}, status=201)
         except Exception as e:
-            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            return Response({'error': str(e)}, status=400)
 
     @action(detail=True, methods=["get"])
     def suggestions(self, request, pk=None):
@@ -718,21 +515,7 @@ class BankStatementViewSet(viewsets.ModelViewSet):
     filterset_fields = ["status", "treasury_account"]
 
     def get_queryset(self):
-        qs = super().get_queryset()
-        if self.action == "retrieve":
-            from django.db.models import Prefetch
-            qs = qs.prefetch_related(
-                Prefetch("lines", queryset=BankStatementLine.objects.select_related(
-                    "reconciled_by", "reconciliation_match", "difference_journal_entry"
-                ).prefetch_related(
-                    "reconciliation_match__movements__terminal_batch",
-                    "reconciliation_match__movements__contact",
-                    "matched_movements__terminal_batch",
-                    "matched_movements__contact"
-                ))
-            )
-        return qs
-
+        return BankStatementSelector.list_bank_statements(self.queryset, self.request.query_params)
     def get_serializer_class(self):
         if self.action == "list":
             return BankStatementListSerializer
@@ -834,22 +617,17 @@ class BankStatementViewSet(viewsets.ModelViewSet):
         data, http_status = ReconciliationService.get_task_status_data(task_id)
         return Response(data, status=http_status)
 
-    @action(detail=True, methods=["post"])
+    @action(detail=True, methods=['post'])
     def confirm(self, request, pk=None):
-        """Confirm statement (locks it)"""
         try:
-            statement = BankStatement.objects.get(id=pk)
             from .services import BankStatementService
-
-            BankStatementService.confirm(statement=statement)
-            return Response(BankStatementSerializer(statement).data)
-
-        except BankStatement.DoesNotExist:
-            return Response({"error": "Cartola no encontrada"}, status=status.HTTP_404_NOT_FOUND)
+            stmt = self.get_object()
+            BankStatementService.confirm_from_request(request, stmt)
+            return Response(BankStatementSerializer(stmt).data)
         except ValueError as e:
-            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({'error': str(e)}, status=400)
         except Exception as e:
-            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            return Response({'error': str(e)}, status=500)
 
 
 class BankStatementLineViewSet(viewsets.ModelViewSet):
@@ -867,83 +645,20 @@ class BankStatementLineViewSet(viewsets.ModelViewSet):
     pagination_class = StandardResultsSetPagination
 
     def get_queryset(self):
-        queryset = super().get_queryset()
+        from .selectors import BankStatementSelector
+        return BankStatementSelector.list_statement_lines(super().get_queryset(), self.request.query_params)
 
-        # Filter by statement if provided
-        statement_id = self.request.query_params.get("statement")
-        if statement_id:
-            queryset = queryset.filter(statement_id=statement_id)
-
-        # Filter by reconciliation status
-        reconciliation_status = self.request.query_params.get(
-            "reconciliation_status"
-        ) or self.request.query_params.get("reconciliation_state")
-        if reconciliation_status:
-            if "," in reconciliation_status:
-                queryset = queryset.filter(
-                    reconciliation_status__in=reconciliation_status.split(",")
-                )
-            else:
-                queryset = queryset.filter(reconciliation_status=reconciliation_status)
-
-        date_from = self.request.query_params.get("date_from")
-        date_to = self.request.query_params.get("date_to")
-        if date_from:
-            queryset = queryset.filter(transaction_date__gte=date_from)
-        if date_to:
-            queryset = queryset.filter(transaction_date__lte=date_to)
-
-        amount_min = self.request.query_params.get("amount_min")
-        amount_max = self.request.query_params.get("amount_max")
-        if amount_min:
-            from django.db.models import Q
-
-            queryset = queryset.filter(Q(credit__gte=amount_min) | Q(debit__gte=amount_min))
-        if amount_max:
-            from django.db.models import Q
-
-            queryset = queryset.filter(Q(credit__lte=amount_max) | Q(debit__lte=amount_max))
-
-        search = self.request.query_params.get("search")
-        if search:
-            from django.db.models import Q
-
-            queryset = queryset.filter(
-                Q(description__icontains=search) | Q(reference__icontains=search)
-            )
-
-        direction = self.request.query_params.get("direction")
-        if direction == "IN":
-            queryset = queryset.filter(credit__gt=0)
-        elif direction == "OUT":
-            queryset = queryset.filter(debit__gt=0)
-
-        return queryset
-
-    @idempotent_endpoint(scope="treasury.reconciliation.match")
-    @action(detail=False, methods=["post"])
+    @idempotent_endpoint(scope='treasury.reconciliation.match')
+    @action(detail=False, methods=['post'])
     def match_group(self, request):
-        """Match multiple lines with multiple payments (N:M)"""
         try:
-            line_ids = request.data.get("line_ids", [])
-            payment_ids = request.data.get("payment_ids", [])
-
-            if not line_ids or not payment_ids:
-                return Response(
-                    {"error": "line_ids y payment_ids requeridos"},
-                    status=status.HTTP_400_BAD_REQUEST,
-                )
-
-            difference_reason = request.data.get("difference_reason")
-            notes = request.data.get("notes")
-            group = MatchingService.create_match_group(
-                line_ids, payment_ids, request.user, difference_reason, notes
-            )
-            return Response({"message": "Grupo creado", "group_id": group.id})
+            from .matching_service import MatchingService
+            group = MatchingService.create_match_group_from_request(request)
+            return Response({'message': 'Grupo creado', 'group_id': group.id})
         except ValueError as e:
-            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({'error': str(e)}, status=400)
         except Exception as e:
-            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            return Response({'error': str(e)}, status=500)
 
     @action(detail=False, methods=["post"])
     def bulk_exclude(self, request):
@@ -986,29 +701,16 @@ class BankStatementLineViewSet(viewsets.ModelViewSet):
         except Exception as e:
             return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-    @action(detail=True, methods=["post"])
+    @action(detail=True, methods=['post'])
     def confirm(self, request, pk=None):
-        """Confirm a matched line (MATCHED -> RECONCILED)"""
         try:
-            line = self.get_object()
-
-            # Check for difference adjustment
-            difference_type = request.data.get("difference_type")
-            notes = request.data.get("notes", "")
-            accounting_date = request.data.get("accounting_date")
-
-            if difference_type and line.difference_amount != 0:
-                DifferenceService.create_difference_adjustment(
-                    line, difference_type, request.user, notes, accounting_date
-                )
-
-            confirmed_line = MatchingService.confirm_match(pk, request.user)
+            from .matching_service import MatchingService
+            confirmed_line = MatchingService.confirm_match_from_request(request, self.get_object())
             return Response(BankStatementLineSerializer(confirmed_line).data)
-
         except ValueError as e:
-            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({'error': str(e)}, status=400)
         except Exception as e:
-            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            return Response({'error': str(e)}, status=500)
 
     @action(detail=True, methods=["post"])
     def unmatch(self, request, pk=None):
@@ -1080,58 +782,27 @@ class POSSessionViewSet(viewsets.ModelViewSet):
             return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
     @action(detail=False, methods=["post"])
+    @action(detail=False, methods=['post'])
     def open_session(self, request):
-        """Open a new POS session (Abrir Caja)"""
         try:
-            session = POSService.open_session(
-                user=request.user,
-                terminal_id=request.data.get("terminal_id"),
-                treasury_account_id=request.data.get("treasury_account_id"),
-                opening_balance=Decimal(str(request.data.get("opening_balance", "0"))),
-                fund_source_id=request.data.get("fund_source_id"),
-                justify_reason=request.data.get("justify_reason"),
-                justify_target_id=request.data.get("justify_target_id"),
-                notes=request.data.get("notes", ""),
-            )
+            from .pos_service import POSService
+            session = POSService.open_session_from_request(request)
             return Response(POSSessionSerializer(session).data, status=status.HTTP_201_CREATED)
         except ValidationError as e:
-            return Response(
-                {"error": str(e.message) if hasattr(e, "message") else str(e)},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
+            return Response({'error': str(getattr(e, 'message', e))}, status=400)
         except Exception as e:
-            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
+            return Response({'error': str(e)}, status=500)
     @action(detail=True, methods=["post"])
+    @action(detail=True, methods=['post'])
     def close_session(self, request, pk=None):
-        """Close a POS session with cash audit (Cierre de Caja / Arqueo)"""
-        session = self.get_object()
         try:
-            session, audit = POSService.close_session(
-                session=session,
-                actual_cash=Decimal(str(request.data.get("actual_cash", "0"))),
-                notes=request.data.get("notes", ""),
-                justify_reason=request.data.get("justify_reason", "UNKNOWN"),
-                justify_target_id=request.data.get("justify_target_id"),
-                withdrawal_amount=Decimal(str(request.data.get("withdrawal_amount", "0"))),
-                cash_destination_id=request.data.get("cash_destination_id"),
-                user=request.user,
-            )
-            return Response(
-                {
-                    "session": POSSessionSerializer(session).data,
-                    "audit": POSSessionAuditSerializer(audit).data,
-                    "message": "Caja cerrada correctamente",
-                }
-            )
+            from .pos_service import POSService
+            session, audit = POSService.close_session_from_request(request, self.get_object())
+            return Response({'session': POSSessionSerializer(session).data, 'audit': POSSessionAuditSerializer(audit).data, 'message': 'Caja cerrada correctamente'})
         except ValidationError as e:
-            return Response(
-                {"error": str(e.message) if hasattr(e, "message") else str(e)},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
+            return Response({'error': str(getattr(e, 'message', e))}, status=400)
         except Exception as e:
-            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
+            return Response({'error': str(e)}, status=500)
     @action(detail=True, methods=["get"])
     def summary(self, request, pk=None):
         """Get detailed summary of sales in this session (X/Z Report data)"""
@@ -1148,31 +819,15 @@ class POSSessionViewSet(viewsets.ModelViewSet):
             return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
     @action(detail=True, methods=["post"])
+    @action(detail=True, methods=['post'])
     def register_manual_movement(self, request, pk=None):
-        """
-        Registers a manual cash movement (withdrawal or inflow) for this session.
-        Supporting hardcoded types: PARTNER_WITHDRAWAL, THEFT, OTHER_IN, OTHER_OUT
-        """
         try:
             from .pos_service import POSService
-
             session = self.get_object()
             POSService.register_manual_movement_from_request(request, session)
-
-            return Response(
-                {
-                    "session": POSSessionSerializer(session).data,
-                    "message": "Movimiento registrado correctamente",
-                }
-            )
-
+            return Response({'session': POSSessionSerializer(session).data, 'message': 'Movimiento registrado correctamente'})
         except Exception as e:
-            import traceback
-
-            traceback.print_exc()
-            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
-
+            return Response({'error': str(e)}, status=500)
 class CheckViewSet(viewsets.ModelViewSet):
     """CRUD + transiciones de estado para cheques recibidos."""
 
@@ -1334,67 +989,26 @@ class TreasuryDashboardViewSet(viewsets.ViewSet):
         return Response(data)
 
     def list(self, request):
-        """
-        Lista consolidada de flujos de efectivo.
-        Query params:
-        - flow_type: 'all', 'third_party', 'internal' (default: 'all')
-        - date_from, date_to, treasury_account
-        """
-        from datetime import datetime
+        from datetime import date as _date
         from .selectors import TreasuryDashboardSelector
         from .serializers import CashFlowSerializer
-
-        flow_type = request.query_params.get("flow_type", "all")
-        date_from_str = request.query_params.get("date_from")
-        date_to_str = request.query_params.get("date_to")
-        treasury_account_id = request.query_params.get("treasury_account")
-
-        date_from = datetime.fromisoformat(date_from_str).date() if date_from_str else None
-        date_to = datetime.fromisoformat(date_to_str).date() if date_to_str else None
-
-        results = TreasuryDashboardSelector.get_cash_flows(
-            flow_type=flow_type,
-            date_from=date_from,
-            date_to=date_to,
-            treasury_account_id=treasury_account_id,
-        )
-
-        serializer = CashFlowSerializer(results, many=True)
-        return Response(serializer.data)
-
-    @idempotent_endpoint(scope="treasury.transfer.register")
-    @action(detail=False, methods=["post"])
+        ft = request.query_params.get("flow_type", "all")
+        df_str = request.query_params.get("date_from")
+        dt_str = request.query_params.get("date_to")
+        acc_id = request.query_params.get("treasury_account")
+        df = _date.fromisoformat(df_str) if df_str else None
+        dt = _date.fromisoformat(dt_str) if dt_str else None
+        res = TreasuryDashboardSelector.get_cash_flows(ft, df, dt, acc_id)
+        return Response(CashFlowSerializer(res, many=True).data)
+    @idempotent_endpoint(scope='treasury.transfer.register')
+    @action(detail=False, methods=['post'])
     def register_transfer(self, request):
-        """
-        Registra un traspaso interno entre cuentas.
-        """
-        from datetime import datetime
-
-        from_acc_id = request.data.get("from_account_id")
-        to_acc_id = request.data.get("to_account_id")
-        amount = Decimal(str(request.data.get("amount", 0)))
-        notes = request.data.get("notes", "")
-        date_str = request.data.get("date")
-
-        if not from_acc_id or not to_acc_id or amount <= 0:
-            return Response({"error": "Datos incompletos"}, status=status.HTTP_400_BAD_REQUEST)
-
         try:
-            from_acc = TreasuryAccount.objects.get(pk=from_acc_id)
-            to_acc = TreasuryAccount.objects.get(pk=to_acc_id)
-
-            movement = TreasuryService.register_internal_transfer(
-                from_account=from_acc,
-                to_account=to_acc,
-                amount=amount,
-                created_by=request.user,
-                notes=notes,
-                date=datetime.fromisoformat(date_str) if date_str else None,
-            )
-
-            return Response({"message": "Traspaso registrado correctamente", "id": movement.id})
+            from .services import TreasuryService
+            movement = TreasuryService.register_internal_transfer_from_request(request)
+            return Response({'message': 'Traspaso registrado correctamente', 'id': movement.id})
         except Exception as e:
-            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({'error': str(e)}, status=400)
 
 
 class TerminalBatchViewSet(viewsets.ModelViewSet):
@@ -1436,44 +1050,15 @@ class TerminalBatchViewSet(viewsets.ModelViewSet):
             traceback.print_exc()
             return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-    @action(detail=False, methods=["post"])
+    @action(detail=False, methods=['post'])
     def generate_invoice(self, request):
-        """
-        Generate supplier invoice for settled batches.
-        """
         try:
-            provider_id = request.data.get("provider_id")
-            year = int(request.data.get("year"))
-            month = int(request.data.get("month"))
-            provider = PaymentTerminalProvider.objects.get(pk=provider_id)
-
-            invoice = TerminalBatchService.generate_monthly_invoice(
-                provider=provider,
-                year=year,
-                month=month,
-                user=request.user,
-                number=request.data.get("number"),
-                date=request.data.get("date"),
-                document_attachment=request.FILES.get("document_attachment"),
-            )
-
-            if not invoice:
-                return Response(
-                    {"message": "No hay lotes liquidados para facturar en este mes."},
-                    status=status.HTTP_404_NOT_FOUND,
-                )
-
-            return Response(
-                {
-                    "message": "Factura generada exitosamente",
-                    "invoice_id": invoice.id,
-                    "number": invoice.number,
-                },
-                status=status.HTTP_201_CREATED,
-            )
-
+            from .services import TerminalBatchService
+            invoice = TerminalBatchService.generate_monthly_invoice_from_request(request)
+            if not invoice: return Response({'message': 'No hay lotes para facturar.'}, status=404)
+            return Response({'message': 'Factura generada', 'invoice_id': invoice.id, 'number': invoice.number}, status=201)
         except Exception as e:
-            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({'error': str(e)}, status=400)
 
 
 # ── F2.11: Créditos bancarios (BankLoan + LoanInstallment) ──────────────────
@@ -1520,50 +1105,12 @@ class BankLoanViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
 
     def perform_create(self, serializer):
         from django.core.exceptions import ValidationError as DjangoValidationError
-
-        from .loan_provisioning import get_or_create_loan_treasury_account
-
-        # El write serializer expone `liability_account` apuntando a
-        # `Account` (cuenta contable), no a `TreasuryAccount`. Aquí
-        # resolvemos/creamos la wrapper LOAN correspondiente y la
-        # inyectamos en `validated_data` para que el `save()` del
-        # ModelSerializer asigne la FK correcta del modelo.
-        validated = serializer.validated_data
-        accounting_account = validated.get("liability_account")
-        if accounting_account is not None:
-            # Necesitamos `loan.lender` para resolver; pero todavía no
-            # tenemos `loan`. Usamos el `lender` validado directamente.
-            from .models import Bank
-
-            lender = validated.get("lender")
-            if not isinstance(lender, Bank):
-                lender = Bank.objects.get(pk=lender)
-            try:
-                ta = get_or_create_loan_treasury_account(
-                    bank=lender,
-                    accounting_account=accounting_account,
-                    currency=validated.get("currency", "CLP"),
-                )
-            except DjangoValidationError as e:
-                # Si la cuenta contable ya está usada por otro tipo de TA,
-                # devolvemos 400 con detalle legible.
-                msg = (
-                    e.message_dict
-                    if hasattr(e, "message_dict")
-                    else (e.messages if hasattr(e, "messages") else [str(e)])
-                )
-                raise drf_serializers.ValidationError({"liability_account": msg})
-            validated["liability_account"] = ta
-
+        from rest_framework.exceptions import ValidationError
+        from .loan_service import LoanService
         try:
-            loan = serializer.save(created_by=self.request.user)
+            self._just_created = LoanService.create_loan_from_request(self.request.user, serializer.validated_data)
         except DjangoValidationError as e:
-            raise drf_serializers.ValidationError(
-                e.message_dict if hasattr(e, "message_dict") else e.messages
-            )
-
-        # Devolver el objeto hidratado al serializer de lectura.
-        self._just_created = loan
+            raise ValidationError(e.message_dict if hasattr(e, 'message_dict') else e.messages)
 
     def create(self, request, *args, **kwargs):
         write_serializer = self.get_serializer(data=request.data)
@@ -1582,70 +1129,27 @@ class BankLoanViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
                 e.message_dict if hasattr(e, "message_dict") else e.messages
             )
 
-    @action(detail=True, methods=["post"])
+    @action(detail=True, methods=['post'])
     def disburse(self, request, pk=None):
-        from decimal import Decimal
-
         from .loan_service import LoanService
-
-        loan = self.get_object()
         payload = DisburseLoanActionSerializer(data=request.data)
         payload.is_valid(raise_exception=True)
-        v = payload.validated_data
         try:
-            loan = LoanService.disburse(
-                loan,
-                date=v.get("date"),
-                opening_fee_override=(
-                    Decimal(str(v["opening_fee"])) if v.get("opening_fee") is not None else None
-                ),
-                stamp_tax_override=(
-                    Decimal(str(v["stamp_tax"])) if v.get("stamp_tax") is not None else None
-                ),
-                commission_expense_account=v.get("commission_expense_account"),
-                stamp_tax_expense_account=v.get("stamp_tax_expense_account"),
-                created_by=request.user,
-            )
+            loan = LoanService.disburse_from_request(request, self.get_object(), payload.validated_data)
+            return Response(self.get_serializer(loan).data)
         except ValidationError as e:
-            return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
-        # Refrescar para invalidar el prefetch de installments.
-        loan.refresh_from_db()
-        return Response(self.get_serializer(loan).data)
+            return Response({'detail': str(e)}, status=400)
 
-    @action(detail=True, methods=["post"])
+    @action(detail=True, methods=['post'])
     def prepay(self, request, pk=None):
         from .loan_service import LoanService
-        from .models import TreasuryAccount
-
-        loan = self.get_object()
         payload = PrepayLoanActionSerializer(data=request.data)
         payload.is_valid(raise_exception=True)
-        v = payload.validated_data
         try:
-            payment_account = TreasuryAccount.objects.get(pk=v["payment_account"])
-        except TreasuryAccount.DoesNotExist:
-            return Response(
-                {"detail": "payment_account no existe."},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-        interest_exp = v.get("interest_expense_account")
-        insurance_exp = v.get("insurance_expense_account")
-        try:
-            loan = LoanService.prepay(
-                loan,
-                payment_account=payment_account,
-                interest_expense_account=interest_exp,
-                insurance_expense_account=insurance_exp,
-                date=v.get("date"),
-                created_by=request.user,
-                insurance_amount=v.get("insurance_amount"),
-                tax_amount=v.get("tax_amount"),
-                penalty_amount=v.get("penalty_amount"),
-            )
+            loan = LoanService.prepay_from_request(request, self.get_object(), payload.validated_data)
+            return Response(self.get_serializer(loan).data)
         except ValidationError as e:
-            return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
-        loan.refresh_from_db()
-        return Response(self.get_serializer(loan).data)
+            return Response({'detail': str(e)}, status=400)
 
     @action(detail=True, methods=["get"])
     def schedule(self, request, pk=None):
@@ -1735,16 +1239,14 @@ class LoanInstallmentViewSet(viewsets.ModelViewSet):
             "loan", "loan__lender", "payment_movement"
         ).order_by("loan", "number")
 
-    @action(detail=True, methods=["post"])
+    @action(detail=True, methods=['post'])
     def pay(self, request, pk=None):
         from .loan_service import LoanService
-
-        installment = self.get_object()
         try:
-            installment = LoanService.pay_installment_from_request(request, installment)
+            inst = LoanService.pay_installment_from_request(request, self.get_object())
+            return Response(self.get_serializer(inst).data)
         except ValidationError as e:
-            return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
-        return Response(self.get_serializer(installment).data)
+            return Response({'detail': str(e)}, status=400)
 
 
 # ── F3.5: Tarjeta de crédito propia — estados de cuenta ─────────────────────
@@ -1810,72 +1312,23 @@ class CreditCardStatementViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
                 e.message_dict if hasattr(e, "message_dict") else e.messages
             )
 
-    @action(detail=True, methods=["post"])
+    @action(detail=True, methods=['post'])
     def pay(self, request, pk=None):
         from .card_service import CardService
-        from .models import TreasuryAccount
-
-        stmt = self.get_object()
-        payload = PayStatementActionSerializer(data=request.data)
-        payload.is_valid(raise_exception=True)
-        v = payload.validated_data
         try:
-            payment_account = TreasuryAccount.objects.get(pk=v["payment_account"])
-        except TreasuryAccount.DoesNotExist:
-            return Response(
-                {"detail": "payment_account no existe."},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-        try:
-            stmt = CardService.pay_statement(
-                stmt,
-                payment_account=payment_account,
-                amount=v.get("amount"),
-                date=v.get("date"),
-                created_by=request.user,
-            )
+            stmt = CardService.pay_statement_from_request(request, self.get_object())
+            return Response(self.get_serializer(stmt).data)
         except ValidationError as e:
-            return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
-        stmt.refresh_from_db()
-        return Response(self.get_serializer(stmt).data)
+            return Response({'detail': str(e)}, status=400)
 
-    @action(detail=True, methods=["post"], url_path="apply-charges")
+    @action(detail=True, methods=['post'], url_path='apply-charges')
     def apply_charges(self, request, pk=None):
         from .card_service import CardService
-
-        stmt = self.get_object()
-        payload = ApplyChargesActionSerializer(data=request.data)
-        payload.is_valid(raise_exception=True)
-        v = payload.validated_data
-        interest_exp = None
-        fees_exp = None
-        if v.get("interest_expense_account"):
-            try:
-                interest_exp = Account.objects.get(pk=v["interest_expense_account"])
-            except Account.DoesNotExist:
-                return Response(
-                    {"detail": "interest_expense_account no existe."},
-                    status=status.HTTP_400_BAD_REQUEST,
-                )
-        if v.get("fees_expense_account"):
-            try:
-                fees_exp = Account.objects.get(pk=v["fees_expense_account"])
-            except Account.DoesNotExist:
-                return Response(
-                    {"detail": "fees_expense_account no existe."},
-                    status=status.HTTP_400_BAD_REQUEST,
-                )
         try:
-            stmt = CardService.apply_charges(
-                stmt,
-                interest_expense_account=interest_exp,
-                fees_expense_account=fees_exp,
-                created_by=request.user,
-            )
+            stmt = CardService.apply_charges_from_request(request, self.get_object())
+            return Response(self.get_serializer(stmt).data)
         except ValidationError as e:
-            return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
-        stmt.refresh_from_db()
-        return Response(self.get_serializer(stmt).data)
+            return Response({'detail': str(e)}, status=400)
 
     @action(detail=True, methods=["post"])
     def cancel(self, request, pk=None):
@@ -1910,76 +1363,27 @@ class CreditCardStatementViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
         stmt.refresh_from_db()
         return Response(self.get_serializer(stmt).data)
 
-    @action(detail=True, methods=["post"], url_path="reapply-charges")
+    @action(detail=True, methods=['post'], url_path='reapply-charges')
     def reapply_charges(self, request, pk=None):
-        """Reversa el cargo actual y vuelve a imputarlo (Gap 1.4)."""
         from .card_service import CardService
-
-        stmt = self.get_object()
-        payload = ApplyChargesActionSerializer(data=request.data)
-        payload.is_valid(raise_exception=True)
-        v = payload.validated_data
-        interest_exp = None
-        fees_exp = None
-        if v.get("interest_expense_account"):
-            try:
-                interest_exp = Account.objects.get(pk=v["interest_expense_account"])
-            except Account.DoesNotExist:
-                return Response(
-                    {"detail": "interest_expense_account no existe."},
-                    status=status.HTTP_400_BAD_REQUEST,
-                )
-        if v.get("fees_expense_account"):
-            try:
-                fees_exp = Account.objects.get(pk=v["fees_expense_account"])
-            except Account.DoesNotExist:
-                return Response(
-                    {"detail": "fees_expense_account no existe."},
-                    status=status.HTTP_400_BAD_REQUEST,
-                )
         try:
-            stmt = CardService.reapply_charges(
-                stmt,
-                interest_expense_account=interest_exp,
-                fees_expense_account=fees_exp,
-                created_by=request.user,
-            )
+            stmt = CardService.reapply_charges_from_request(request, self.get_object())
+            return Response(self.get_serializer(stmt).data)
         except ValidationError as e:
-            return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
-        stmt.refresh_from_db()
-        return Response(self.get_serializer(stmt).data)
+            return Response({'detail': str(e)}, status=400)
 
-    @action(detail=False, methods=["get"], url_path="unbilled-charges")
+    @action(detail=False, methods=['get'], url_path='unbilled-charges')
     def unbilled_charges(self, request):
-        """Lista cargos no facturados de una tarjeta de crédito."""
-        from datetime import date as _date_type
-        from .models import TreasuryAccount
+        from django.shortcuts import get_object_or_404
+        from datetime import date as _date
         from .selectors import CardSelector
-
-        card_account_id = request.query_params.get("card_account")
-        if not card_account_id:
-            return Response(
-                {"detail": "card_account es requerido."},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-        try:
-            card_account = TreasuryAccount.objects.get(pk=card_account_id)
-        except TreasuryAccount.DoesNotExist:
-            return Response(
-                {"detail": "card_account no existe."},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-        if card_account.account_type != TreasuryAccount.Type.CREDIT_CARD:
-            return Response(
-                {"detail": "La cuenta debe ser de tipo Tarjeta de Crédito."},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-
-        cut_off_date_str = request.query_params.get("cut_off_date")
-        cut_off_date = _date_type.fromisoformat(cut_off_date_str) if cut_off_date_str else None
-
-        data = CardSelector.get_unbilled_charges_data(card_account, cut_off_date)
-        return Response(data)
+        from .models import TreasuryAccount
+        acc_id = request.query_params.get('card_account')
+        if not acc_id: return Response({'detail': 'card_account req.'}, status=400)
+        card = get_object_or_404(TreasuryAccount, pk=acc_id, account_type=TreasuryAccount.Type.CREDIT_CARD)
+        c_date_str = request.query_params.get('cut_off_date')
+        c_date = _date.fromisoformat(c_date_str) if c_date_str else None
+        return Response(CardSelector.get_unbilled_charges_data(card, c_date))
 
     @action(detail=False, methods=["post"], url_path="add-charge")
     def add_charge(self, request):
@@ -1991,76 +1395,23 @@ class CreditCardStatementViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
         except ValidationError as e:
             return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
-    @action(detail=False, methods=["post"], url_path="update-charge")
+    @action(detail=False, methods=['post'], url_path='update-charge')
     def update_charge(self, request):
-        """Actualiza un cargo pendiente no facturado."""
-        from .models import CardPendingCharge
-        from .serializers import CardPendingChargeSerializer
-
-        charge_id = request.data.get("id")
-        if not charge_id:
-            return Response(
-                {"detail": "id del cargo es requerido."},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-
+        from .card_service import CardService
         try:
-            charge = CardPendingCharge.objects.get(pk=charge_id, is_billed=False)
-        except CardPendingCharge.DoesNotExist:
-            return Response(
-                {"detail": "Cargo pendiente no encontrado o ya facturado."},
-                status=status.HTTP_404_NOT_FOUND,
-            )
+            data = CardService.update_charge_from_request(request)
+            return Response({'id': data['id'], 'amount': str(data['amount']), 'date': data['date'], 'charge_type': data['charge_type'], 'charge_type_display': data['charge_type_display'], 'description': data.get('description', ''), 'reference': '', 'source': 'pending', 'from_account_name': None, 'partner_name': None})
+        except ValidationError as e:
+            return Response({'detail': str(e)}, status=400)
 
-        serializer = CardPendingChargeSerializer(
-            charge,
-            data=request.data,
-            partial=True,
-            context={"request": request},
-        )
-        if serializer.is_valid():
-            serializer.save()
-            data = serializer.data
-            return Response(
-                {
-                    "id": data["id"],
-                    "amount": str(data["amount"]),
-                    "date": data["date"].isoformat()
-                    if hasattr(data["date"], "isoformat")
-                    else data["date"],
-                    "charge_type": data["charge_type"],
-                    "charge_type_display": data["charge_type_display"],
-                    "description": data.get("description", ""),
-                    "reference": "",
-                    "source": "pending",
-                    "from_account_name": None,
-                    "partner_name": None,
-                }
-            )
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-    @action(detail=False, methods=["post"], url_path="delete-charge")
+    @action(detail=False, methods=['post'], url_path='delete-charge')
     def delete_charge(self, request):
-        """Elimina un cargo pendiente no facturado."""
-        from .models import CardPendingCharge
-
-        charge_id = request.data.get("id")
-        if not charge_id:
-            return Response(
-                {"detail": "id del cargo es requerido."},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-
+        from .card_service import CardService
         try:
-            charge = CardPendingCharge.objects.get(pk=charge_id, is_billed=False)
-        except CardPendingCharge.DoesNotExist:
-            return Response(
-                {"detail": "Cargo pendiente no encontrado o ya facturado."},
-                status=status.HTTP_404_NOT_FOUND,
-            )
-
-        charge.delete()
-        return Response(status=status.HTTP_204_NO_CONTENT)
+            CardService.delete_charge_from_request(request)
+            return Response(status=204)
+        except ValidationError as e:
+            return Response({'detail': str(e)}, status=400)
 
     @action(detail=False, methods=["post"], url_path="bill-charges")
     def bill_charges(self, request):
@@ -2072,118 +1423,23 @@ class CreditCardStatementViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
         except ValidationError as e:
             return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
-    @action(detail=False, methods=["get"], url_path="analytics")
+    @action(detail=False, methods=['get'])
     def analytics(self, request):
-        """Retorna analytics consolidados de TC para el hub de gestión.
-
-        Query params:
-          - card_account (opcional): filtrar por cuenta específica.
-          - months (opcional, default 12): ventana de meses históricos.
-          - granularity (opcional, default 'month'): agrupación temporal
-            ('day', 'month', 'year') para payment_performance.
-        """
         from .card_analytics import CardAnalyticsService
         from .models import TreasuryAccount
+        acc_id = request.query_params.get('card_account')
+        months = int(request.query_params.get('months', '12'))
+        gran = request.query_params.get('granularity', 'month')
+        card = None
+        if acc_id:
+            try: card = TreasuryAccount.objects.get(pk=acc_id)
+            except TreasuryAccount.DoesNotExist: return Response({'detail': 'No existe'}, status=400)
+        return Response(CardAnalyticsService.get_consolidated_hub_data(card, months, gran))
 
-        card_account_id = request.query_params.get("card_account")
-        months_str = request.query_params.get("months", "12")
-        months = max(1, int(months_str)) if months_str.isdigit() else 12
-        granularity = request.query_params.get("granularity", "month")
-
-        card_account = None
-        if card_account_id:
-            try:
-                card_account = TreasuryAccount.objects.get(pk=card_account_id)
-            except TreasuryAccount.DoesNotExist:
-                return Response(
-                    {"detail": "card_account no existe."},
-                    status=status.HTTP_400_BAD_REQUEST,
-                )
-
-        data = CardAnalyticsService.get_consolidated_hub_data(
-            card_account=card_account,
-            months=months,
-            granularity=granularity,
-        )
-        return Response(data)
-
-    @action(detail=True, methods=["get"], url_path="charges")
+    @action(detail=True, methods=['get'], url_path='charges')
     def charges(self, request, pk=None):
-        """Retorna cargos facturados en este statement (movimientos + cuotas + pendientes)."""
-        from django.db.models import CharField, IntegerField, OuterRef, Subquery
-
-        from .models import CardPendingCharge, CardPurchaseInstallment, TreasuryMovement
-        from .serializers import CardPendingChargeSerializer, TreasuryMovementSerializer
-
-        stmt = self.get_object()
-        movements = (
-            TreasuryMovement.objects.filter(
-                billed_in_statement=stmt,
-            )
-            .select_related("card_purchase_group", "card_purchase_group__partner")
-            .order_by("-date", "-id")
-        )
-        pending = CardPendingCharge.objects.filter(
-            billed_in_statement=stmt,
-        ).order_by("-date", "-id")
-        installments = (
-            CardPurchaseInstallment.objects.filter(
-                billed_in_statement=stmt,
-            )
-            .select_related("card_purchase_group", "card_purchase_group__partner")
-            .order_by("-due_date", "-id")
-        )
-
-        po_subq = Subquery(
-            TreasuryMovement.objects.filter(
-                card_purchase_group=OuterRef("card_purchase_group"),
-                movement_type=TreasuryMovement.Type.OUTBOUND,
-            ).values("purchase_order_id")[:1],
-            output_field=IntegerField(),
-        )
-        po_number_subq = Subquery(
-            TreasuryMovement.objects.filter(
-                card_purchase_group=OuterRef("card_purchase_group"),
-                movement_type=TreasuryMovement.Type.OUTBOUND,
-            ).values("purchase_order__number")[:1],
-            output_field=CharField(max_length=20),
-        )
-        installments = installments.annotate(po_id=po_subq, po_display_number=po_number_subq)
-
-        installments_data = [
-            {
-                "id": inst.id,
-                "number": inst.number,
-                "due_date": inst.due_date.isoformat(),
-                "principal_amount": str(inst.principal_amount),
-                "group_uuid": str(inst.card_purchase_group.uuid)
-                if inst.card_purchase_group
-                else None,
-                "group_display_id": inst.card_purchase_group.display_id
-                if inst.card_purchase_group
-                else None,
-                "partner_name": (
-                    inst.card_purchase_group.partner.name
-                    if inst.card_purchase_group and inst.card_purchase_group.partner
-                    else None
-                ),
-                "total_installments": inst.card_purchase_group.installments
-                if inst.card_purchase_group
-                else None,
-                "purchase_order_id": inst.po_id,
-                "purchase_order_display_id": f"OCS-{inst.po_display_number}"
-                if inst.po_display_number
-                else None,
-            }
-            for inst in installments
-        ]
-        return Response(
-            {
-                "movements": TreasuryMovementSerializer(movements, many=True).data,
-                "pending_charges": CardPendingChargeSerializer(pending, many=True).data,
-                "installments": installments_data,
-            }
-        )
+        from .selectors import CardSelector
+        return Response(CardSelector.get_statement_charges(self.get_object()))
 
     @action(detail=True, methods=["post"], url_path="reverse")
     def reverse(self, request, pk=None):

@@ -188,30 +188,16 @@ class JournalEntryViewSet(viewsets.ModelViewSet, AuditHistory):
             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
     def update(self, request, *args, **kwargs):
-        # Only DRAFT entries can be edited; POSTED/CLOSED/REVERSAL/CANCELLED are immutable
-        instance = self.get_object()
-        if instance.status != "DRAFT":
-            return Response(
-                {"error": "Solo se pueden editar asientos en estado Borrador."},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-        
+        inst = self.get_object()
+        if inst.status != 'DRAFT': return Response({'error': 'Solo editar en Borrador.'}, status=400)
         data = request.data.copy()
-        items_data = data.pop("items", None)
-
+        items = data.pop('items', None)
         try:
-            # We use the serializer just to validate the main data
-            serializer = self.get_serializer(
-                instance, data=data, partial=kwargs.get("partial", False)
-            )
-            serializer.is_valid(raise_exception=True)
-
-            JournalEntryService.update_entry(instance, serializer.validated_data, items_data)
-
-            # Re-serialize updated instance
-            return Response(self.get_serializer(instance).data)
-        except Exception as e:
-            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+            ser = self.get_serializer(inst, data=data, partial=kwargs.get('partial', False))
+            ser.is_valid(raise_exception=True)
+            JournalEntryService.update_entry(inst, ser.validated_data, items)
+            return Response(self.get_serializer(inst).data)
+        except Exception as e: return Response({'error': str(e)}, status=400)
 
 
 # --- Budgeting ViewSets ---
@@ -330,30 +316,11 @@ class FiscalYearViewSet(viewsets.ModelViewSet):
         except Exception as e:
             return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-    @action(detail=False, methods=["post"], url_path="(?P<year>[0-9]{4})/close")
+    @action(detail=False, methods=['post'], url_path='(?P<year>[0-9]{4})/close')
     def close(self, request, year=None):
-        """
-        Executes the annual fiscal year closing.
-        """
-        if not request.user.has_perm("accounting.can_close_fiscal_year"):
-            return Response(
-                {"error": "No tiene permisos para cerrar el ejercicio fiscal."},
-                status=status.HTTP_403_FORBIDDEN,
-            )
-
-        notes = request.data.get("notes", "")
-
-        try:
-            result = FiscalYearClosingService.close_fiscal_year(
-                year=int(year), user=request.user, notes=notes
-            )
-            serializer = self.get_serializer(result)
-            return Response(serializer.data)
-        except ValidationError as e:
-            return Response(
-                {"error": str(e.message if hasattr(e, "message") else e)},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
+        if not request.user.has_perm('accounting.can_close_fiscal_year'): return Response({'error': 'Sin permisos'}, status=403)
+        try: return Response(self.get_serializer(FiscalYearClosingService.close_fiscal_year(year=int(year), user=request.user, notes=request.data.get('notes', ''))).data)
+        except ValidationError as e: return Response({'error': str(e.message if hasattr(e, 'message') else e)}, status=400)
 
     @action(detail=False, methods=["post"], url_path="(?P<year>[0-9]{4})/reopen")
     def reopen(self, request, year=None):

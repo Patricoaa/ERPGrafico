@@ -20,6 +20,31 @@ logger = logging.getLogger(__name__)
 
 
 class TreasuryService:
+    @classmethod
+    def create_movement_from_request(cls, request, data):
+        from .models import TreasuryMovement
+        return cls.create_movement(
+            movement_type=data.get('movement_type'), amount=data.get('amount'), created_by=request.user,
+            date=data.get('date'), from_account=data.get('from_account'), to_account=data.get('to_account'),
+            payment_method=data.get('payment_method', TreasuryMovement.Method.CASH), payment_method_new=data.get('payment_method_new'),
+            reference=data.get('reference', ''), notes=data.get('notes', ''), justify_reason=data.get('justify_reason'),
+            partner=data.get('contact'), invoice=data.get('invoice'), sale_order=data.get('sale_order'),
+            purchase_order=data.get('purchase_order'), pos_session=data.get('pos_session'),
+            transaction_number=data.get('transaction_number'), is_pending_registration=data.get('is_pending_registration', False)
+        )
+
+    @classmethod
+    def register_internal_transfer_from_request(cls, request):
+        from datetime import datetime
+        from decimal import Decimal
+        from .models import TreasuryAccount
+        fa = TreasuryAccount.objects.get(pk=request.data['from_account_id'])
+        ta = TreasuryAccount.objects.get(pk=request.data['to_account_id'])
+        am = Decimal(str(request.data.get('amount', 0)))
+        if am <= 0: raise ValueError('Invalid amount')
+        ds = request.data.get('date')
+        return cls.register_internal_transfer(fa, ta, am, request.user, request.data.get('notes', ''), datetime.fromisoformat(ds) if ds else None)
+
     @staticmethod
     @transaction.atomic
     def create_movement(
@@ -1180,6 +1205,12 @@ class TreasuryService:
 
 
 class TerminalBatchService:
+    @classmethod
+    def generate_monthly_invoice_from_request(cls, request):
+        from .models import PaymentTerminalProvider
+        prov = PaymentTerminalProvider.objects.get(pk=request.data['provider_id'])
+        return cls.generate_monthly_invoice(prov, int(request.data['year']), int(request.data['month']), request.user, request.data.get('number'), request.data.get('date'), request.FILES.get('document_attachment'))
+
     @staticmethod
     def create_batch_from_request(request) -> "TerminalBatch":
         data = request.data
@@ -1563,6 +1594,10 @@ class ProviderAccountService:
 
 
 class BankStatementService:
+    @classmethod
+    def confirm_from_request(cls, request, statement):
+        return cls.confirm(statement=statement)
+
     """
     Lógica de negocio para BankStatement.
     Centraliza operaciones de ciclo de vida que antes vivían directamente en las vistas.

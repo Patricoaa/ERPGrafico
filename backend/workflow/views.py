@@ -32,32 +32,8 @@ class TaskViewSet(viewsets.ModelViewSet):
     ordering_fields = ["created_at", "priority", "due_date"]
 
     def get_queryset(self):
-        user = self.request.user
-        # Create a base queryset
-        qs = Task.objects.all()
-
-        # If user is superuser, return all
-        if user.is_superuser:
-            return qs
-
-        # Get user's groups
-        user_groups = user.groups.values_list("name", flat=True)
-
-        # Filter:
-        # 1. Assigned directly to user
-        # 2. Key 'candidate_group' in data matches one of user's groups
-        # 3. Assigned group matches one of user's groups
-        # 4. TASK-category tasks with no assignment (visible to all)
-
-        from django.db.models import Q
-
-        return qs.filter(
-            Q(assigned_to=user)
-            | Q(assigned_group__in=user.groups.all())
-            | Q(data__candidate_group__in=list(user_groups))
-            | Q(category="TASK", assigned_to__isnull=True, assigned_group__isnull=True)
-            | Q(created_by=user)
-        ).distinct()
+        from .selectors import TaskSelectorExt
+        return TaskSelectorExt.get_queryset_for_user(self.request.user)
 
     def perform_update(self, serializer):
         instance = self.get_object()

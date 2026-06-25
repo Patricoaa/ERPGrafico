@@ -91,6 +91,54 @@ class ContactPartnerService:
         return contact
 
 class ContactService:
+    @classmethod
+    def write_off_debt_from_request(cls, request, contact):
+        total, entry = cls.write_off_debt(contact)
+        return {'message': f'Castigo procesado. Se han regularizado {total} a pérdidas.', 'journal_entry': entry.display_id, 'amount': str(total)}
+
+    @classmethod
+    def recover_written_off_debt_from_request(cls, request, contact):
+        from decimal import Decimal
+        from rest_framework.exceptions import ValidationError
+        amount_str = request.data.get('amount')
+        if not amount_str: raise ValidationError('Debe especificar el monto recuperado.')
+        amount = Decimal(amount_str)
+        entry = cls.recover_written_off_debt(contact, amount)
+        return {'message': f'Recuperación procesada por {amount}.', 'journal_entry': entry.display_id}
+
+    @classmethod
+    def initial_setup_from_request(cls, request):
+        from .partner_models import RetainedEarnings
+        from datetime import date
+        from decimal import Decimal
+        from rest_framework.exceptions import ValidationError
+        amount_str = request.data.get('amount')
+        date_str = request.data.get('date', date.today().isoformat())
+        notes = request.data.get('notes', 'Saldo Inicial / Setup')
+        if not amount_str: raise ValidationError('Monto requerido.')
+        RetainedEarnings.objects.create(amount=Decimal(amount_str), date=date_str, notes=notes)
+        return {'message': 'Saldo inicial de utilidades retenidas configurado exitosamente.'}
+
+    @classmethod
+    def individual_dividend_payment_from_request(cls, request, contact):
+        from rest_framework.exceptions import ValidationError
+        from treasury.models import TreasuryAccount
+        from decimal import Decimal
+        v = request.data
+        if 'amount' not in v or 'treasury_account_id' not in v: raise ValidationError('Monto y cuenta requeridos.')
+        ta = TreasuryAccount.objects.get(pk=v['treasury_account_id'])
+        entry = cls.individual_dividend_payment(partner=contact, amount=Decimal(str(v['amount'])), treasury_account=ta, date=v.get('date'), created_by=request.user)
+        return {'message': 'Pago de dividendos procesado.', 'journal_entry': entry.display_id}
+
+    @classmethod
+    def mass_mobilize_retained_earnings_from_request(cls, request):
+        from decimal import Decimal
+        from rest_framework.exceptions import ValidationError
+        amount = request.data.get('amount')
+        if not amount: raise ValidationError('Monto requerido.')
+        cls.mass_mobilize_retained_earnings(amount=Decimal(str(amount)), date=request.data.get('date'), created_by=request.user)
+        return {'message': 'Utilidades retenidas movilizadas exitosamente.'}
+
     @staticmethod
     @transaction.atomic
     def write_off_debt(contact: Contact) -> tuple:

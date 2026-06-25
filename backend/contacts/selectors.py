@@ -434,3 +434,57 @@ class ContactSelector:
                 )
 
         return ledger_data
+
+class ContactSelectorExt:
+    @staticmethod
+    def get_insights(contact):
+        from production.serializers import WorkOrderSerializer
+        from purchasing.serializers import PurchaseOrderSerializer
+        from sales.serializers import SaleOrderSerializer
+        from .serializers import ContactSerializer
+        sos = contact.sale_orders.all().order_by('-date')
+        pos = contact.purchase_orders.all().order_by('-date')
+        wor = contact.related_work_orders.exclude(sale_order__customer=contact).order_by('-created_at')
+        return {
+            'contact': ContactSerializer(contact).data,
+            'sales': {'count': sos.count(), 'orders': SaleOrderSerializer(sos[:50], many=True).data},
+            'purchases': {'count': pos.count(), 'orders': PurchaseOrderSerializer(pos[:50], many=True).data},
+            'work_orders': {'count': wor.count(), 'orders': WorkOrderSerializer(wor[:50], many=True).data}
+        }
+
+    @staticmethod
+    def get_credit_portfolio_data_cached(request, view):
+        from core.api.throttles import HeavyReportThrottle
+        from core.cache import cache_report
+        from rest_framework.exceptions import Throttled
+        if not HeavyReportThrottle().allow_request(request, view):
+            raise Throttled(detail='Demasiadas solicitudes al reporte de crédito. Intente en un momento.')
+        
+        from .selectors import ContactSelector
+        is_blacklist = request.query_params.get('blacklist', 'false') == 'true'
+        return cache_report(
+            module='contacts', endpoint='credit_portfolio', 
+            params={'blacklist': str(is_blacklist)}, timeout=120, 
+            generator=lambda: ContactSelector.get_credit_portfolio_data(is_blacklist)
+        )
+
+    @staticmethod
+    def get_partner_statement(contact, serializer_class):
+        from rest_framework.exceptions import ValidationError
+        if not contact.is_partner: raise ValidationError('El contacto no está marcado como socio.')
+        from .partner_models import PartnerTransaction
+        from .serializers import PartnerTransactionSerializer
+        transactions = PartnerTransaction.objects.filter(partner=contact).order_by('-date', '-created_at')
+        return {
+            'contact': serializer_class(contact).data,
+            'summary': {
+                'equity_percentage': str(contact.partner_equity_percentage or 0),
+                'balance': str(contact.partner_balance),
+                'total_contributions': str(contact.partner_total_contributions),
+                'total_paid_in': str(contact.partner_total_paid_in),
+                'pending_capital': str(contact.partner_pending_capital),
+                'provisional_withdrawals': str(contact.partner_provisional_withdrawals_balance),
+                'total_formal_withdrawals': str(contact.partner_total_withdrawals)
+            },
+            'transactions': PartnerTransactionSerializer(transactions, many=True).data
+        }

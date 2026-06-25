@@ -35,6 +35,21 @@ except ImportError:
 
 
 class MatchingService:
+    @classmethod
+    def create_match_group_from_request(cls, request):
+        lid = request.data.get('line_ids', [])
+        pid = request.data.get('payment_ids', [])
+        if not lid or not pid: raise ValueError('line_ids and payment_ids required')
+        return cls.create_match_group(lid, pid, request.user, request.data.get('difference_reason'), request.data.get('notes'))
+
+    @classmethod
+    def confirm_match_from_request(cls, request, line):
+        dt = request.data.get('difference_type')
+        if dt and line.difference_amount != 0:
+            from .difference_service import DifferenceService
+            DifferenceService.create_difference_adjustment(line, dt, request.user, request.data.get('notes', ''), request.data.get('accounting_date'))
+        return cls.confirm_match(line.id, request.user)
+
     """
     Servicio para matching de líneas de cartola con pagos.
 

@@ -838,6 +838,210 @@ class UoMService:
 
 class ProductService:
     @staticmethod
+    @transaction.atomic
+    def create_product(validated_data: dict) -> "Product":
+        """
+        Creates a Product and its related graph (BOMs, UoM prices, attribute values,
+        allowed sale UoMs, and initial variant generation) atomically.
+
+        The serializer must extract all nested/M2M fields before calling this method,
+        passing them as part of ``validated_data``.
+        """
+        from production.models import BillOfMaterials, BillOfMaterialsLine
+
+        boms_data = validated_data.pop("boms", [])
+        allowed_sale_uoms = validated_data.pop("allowed_sale_uoms", [])
+        attribute_values = validated_data.pop("attribute_values", [])
+        variant_generation_selection = validated_data.pop("variant_generation_selection", None)
+        uom_prices_data = validated_data.pop("uom_prices", [])
+
+        product = Product.objects.create(**validated_data)
+
+        if allowed_sale_uoms:
+            product.allowed_sale_uoms.set(allowed_sale_uoms)
+
+        if attribute_values:
+            product.attribute_values.set(attribute_values)
+
+        for bom_data in boms_data:
+            lines_data = bom_data.pop("lines", [])
+            bom = BillOfMaterials.objects.create(product=product, **bom_data)
+            for line_data in lines_data:
+                line_data.pop("id", None)
+                BillOfMaterialsLine.objects.create(bom=bom, **line_data)
+
+        for uom_price in uom_prices_data:
+            ProductUoMPrice.objects.create(product=product, **uom_price)
+
+        if variant_generation_selection and product.has_variants:
+            ProductService.generate_variants(product, variant_generation_selection)
+
+        return product
+
+    @staticmethod
+    @transaction.atomic
+    def update_product(instance: "Product", validated_data: dict) -> "Product":
+        """
+        Updates a Product and its related graph atomically.
+
+        Handles:
+        - Standard scalar field updates
+        - M2M sync (allowed_sale_uoms, attribute_values)
+        - Variant field propagation to child variants
+        - BOM sync (create/update/delete)
+        - UoM price replacement
+        - Inline variant_updates (price, BOM cloning, etc.)
+        """
+        from production.models import BillOfMaterials, BillOfMaterialsLine
+
+        boms_data = validated_data.pop("boms", None)
+        allowed_sale_uoms = validated_data.pop("allowed_sale_uoms", None)
+        attribute_values = validated_data.pop("attribute_values", None)
+        variant_updates = validated_data.pop("variant_updates", None)
+        uom_prices_data = validated_data.pop("uom_prices", None)
+
+        # Standard scalar update
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
+        instance.save()
+
+        if allowed_sale_uoms is not None:
+            instance.allowed_sale_uoms.set(allowed_sale_uoms)
+
+        if attribute_values is not None:
+            instance.attribute_values.set(attribute_values)
+
+        # Propagate parent-level fields to child variants (only for template products)
+        _VARIANT_SYNC_FIELDS = {
+            "uom",
+            "purchase_uom",
+            "can_be_sold",
+            "can_be_purchased",
+            "category",
+            "track_inventory",
+        }
+        _changed_sync = {k: v for k, v in validated_data.items() if k in _VARIANT_SYNC_FIELDS}
+        if (_changed_sync or allowed_sale_uoms is not None) and not instance.parent_template_id:
+            _children = list(instance.variants.all())
+            if _children:
+                for _child in _children:
+                    for _field, _value in _changed_sync.items():
+                        setattr(_child, _field, _value)
+                    _child.save()
+                if allowed_sale_uoms is not None:
+                    for _child in _children:
+                        _child.allowed_sale_uoms.set(instance.allowed_sale_uoms.all())
+
+        # BOM sync: delete missing, update existing, create new
+        if boms_data is not None:
+            existing_boms = {b.id: b for b in instance.boms.all()}
+            incoming_ids = [b.get("id") for b in boms_data if b.get("id")]
+
+            for bom_id, bom_obj in existing_boms.items():
+                if bom_id not in incoming_ids:
+                    bom_obj.delete()
+
+            for bom_item in boms_data:
+                bom_id = bom_item.get("id")
+                lines_data = bom_item.pop("lines", [])
+                bom_item.pop("id", None)
+
+                if bom_id and bom_id in existing_boms:
+                    bom = existing_boms[bom_id]
+                    for attr, value in bom_item.items():
+                        setattr(bom, attr, value)
+                    bom.save()
+                    bom.lines.all().delete()
+                    for line_data in lines_data:
+                        line_data.pop("id", None)
+                        BillOfMaterialsLine.objects.create(bom=bom, **line_data)
+                else:
+                    bom = BillOfMaterials.objects.create(product=instance, **bom_item)
+                    for line_data in lines_data:
+                        line_data.pop("id", None)
+                        BillOfMaterialsLine.objects.create(bom=bom, **line_data)
+
+        # Replace UoM prices
+        if uom_prices_data is not None:
+            instance.uom_prices.all().delete()
+            for uom_price in uom_prices_data:
+                ProductUoMPrice.objects.create(product=instance, **uom_price)
+
+        # Inline variant updates (price, BOM cloning, etc.)
+        if variant_updates:
+            for update_data in variant_updates:
+                variant_id = update_data.get("id")
+                if not variant_id:
+                    continue
+
+                try:
+                    variant_product = Product.objects.get(id=variant_id, parent_template=instance)
+
+                    for field in [
+                        "sale_price",
+                        "code",
+                        "has_bom",
+                        "product_type",
+                        "price_inheritance_mode",
+                        "price_surcharge",
+                    ]:
+                        if field in update_data:
+                            setattr(variant_product, field, update_data[field])
+
+                    mode = update_data.get("price_inheritance_mode")
+                    if mode == "INHERIT":
+                        variant_product.price_surcharge = None
+
+                    if "sale_uom" in update_data:
+                        uom_id = update_data["sale_uom"]
+                        if uom_id:
+                            variant_product.sale_uom_id = uom_id
+                        else:
+                            variant_product.sale_uom = None
+
+                    copy_bom_from_raw = update_data.get("copy_bom_from")
+                    if copy_bom_from_raw:
+                        try:
+                            if str(copy_bom_from_raw) == "template":
+                                source_product = instance
+                            else:
+                                source_product = Product.objects.get(id=copy_bom_from_raw)
+                            source_bom = source_product.boms.filter(active=True).first()
+
+                            if source_bom:
+                                variant_product.boms.all().delete()
+                                new_bom = BillOfMaterials.objects.create(
+                                    product=variant_product,
+                                    name=source_bom.name,
+                                    active=True,
+                                    yield_quantity=source_bom.yield_quantity,
+                                    yield_uom=source_bom.yield_uom,
+                                )
+                                for line in source_bom.lines.all():
+                                    BillOfMaterialsLine.objects.create(
+                                        bom=new_bom,
+                                        component=line.component,
+                                        quantity=line.quantity,
+                                        uom=line.uom,
+                                        is_outsourced=line.is_outsourced,
+                                        supplier=line.supplier,
+                                        unit_price=line.unit_price,
+                                        document_type=line.document_type,
+                                    )
+                                variant_product.has_bom = True
+                                if variant_product.product_type != Product.Type.MANUFACTURABLE:
+                                    variant_product.product_type = Product.Type.MANUFACTURABLE
+
+                        except (Product.DoesNotExist, ValueError):
+                            pass
+
+                    variant_product.save()
+                except Product.DoesNotExist:
+                    pass
+
+        return instance
+
+    @staticmethod
     def bulk_annotate_reserved_qty(products):
         """
         Calculates reserved quantity for a list of products in bulk to avoid N+1 queries.

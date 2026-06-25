@@ -2,6 +2,8 @@ from django.db.models import Sum
 from rest_framework import serializers
 
 from production.serializers import WorkOrderSerializer
+from sales.selectors import SaleOrderSelector
+from sales.services import SalesService
 from treasury.serializers import TreasuryMovementSerializer
 
 from .models import (
@@ -263,59 +265,7 @@ class SaleOrderSerializer(serializers.ModelSerializer):
         ]
 
     def get_related_documents(self, obj):
-        from billing.models import Invoice
-
-        docs = {"invoices": [], "notes": [], "payments": [], "deliveries": []}
-
-        for inv in obj.invoices.all():
-            doc_info = {
-                "id": inv.id,
-                "number": inv.number or "Draft",
-                "display_id": inv.display_id,
-                "dte_type": inv.dte_type,
-                "type_display": inv.get_dte_type_display(),
-                "status": inv.status,
-                "total": inv.total,
-            }
-            if inv.dte_type in [Invoice.DTEType.NOTA_CREDITO, Invoice.DTEType.NOTA_DEBITO]:
-                docs["notes"].append(doc_info)
-            else:
-                docs["invoices"].append(doc_info)
-
-        # Only include deliveries NOT linked to a note (original order deliveries)
-        for deliv in obj.deliveries.all():
-            if getattr(deliv, "related_note_id", None) is not None:
-                continue
-            docs["deliveries"].append(
-                {
-                    "id": deliv.id,
-                    "number": deliv.number,
-                    "display_id": deliv.display_id,
-                    "status": deliv.status,
-                    "date": deliv.delivery_date,
-                    "docType": "sale_delivery",
-                }
-            )
-
-        for pay in obj.payments.all():
-            docs["payments"].append(
-                {
-                    "id": pay.id,
-                    "amount": pay.amount,
-                    "date": pay.date,
-                    "payment_method": pay.payment_method,
-                    "payment_method_display": pay.get_payment_method_display(),
-                    "method": pay.get_payment_method_display(),  # Legacy support
-                    "transaction_number": pay.transaction_number,
-                    "is_pending_registration": pay.is_pending_registration,
-                    "reference": pay.reference,
-                    "invoice_id": pay.invoice_id,
-                    "display_id": pay.display_id,
-                    "code": pay.display_id,  # Use display_id for consistency
-                }
-            )
-
-        return docs
+        return SaleOrderSelector.get_related_documents(obj)
 
     def get_lines(self, obj):
         # Only include original lines (not those from notes)
@@ -389,28 +339,7 @@ class CreateSaleOrderSerializer(serializers.ModelSerializer):
         return attrs
 
     def create(self, validated_data):
-        from django.db import transaction
-
-        lines_data = validated_data.pop("lines")
-        payment_method_id = validated_data.pop("payment_method_id", None)
-
-        # Resolve PaymentMethod FK if ID provided
-        pm_ref = None
-        if payment_method_id:
-            from treasury.models import PaymentMethod as TreasuryPM
-
-            pm_ref = TreasuryPM.objects.filter(id=payment_method_id).first()
-
-        with transaction.atomic():
-            order = SaleOrder.objects.create(**validated_data, payment_method_ref=pm_ref)
-
-            for line_data in lines_data:
-                SaleLine.objects.create(order=order, **line_data)
-
-            order.recalculate_totals()
-            order.save()
-
-        return order
+        return SalesService.create_sale_order(validated_data)
 
 
 class SaleDeliveryLineSerializer(serializers.ModelSerializer):

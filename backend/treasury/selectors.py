@@ -681,4 +681,184 @@ class CardSelector:
             "pending_charges": CardPendingChargeSerializer(pending, many=True).data,
         }
 
+class TreasuryMovementSelector:
+    @staticmethod
+    def list_treasury_movements(qs, params: dict):
+        import re
+        from django.db.models import Q
+        from .models import PaymentMethod, TreasuryAccount
 
+        qs = qs.select_related(
+            "account", "from_account__account", "to_account__account",
+            "payment_method_new", "reconciled_by", "created_by", "terminal_batch",
+            "contact", "invoice__contact", "invoice__sale_order__customer",
+            "invoice__purchase_order__supplier", "sale_order__customer",
+            "purchase_order__supplier", "journal_entry", "card_purchase_group__partner",
+            "bank_statement_line__statement",
+        )
+
+        bank_id = params.get("bank")
+        if bank_id:
+            bank_accounts = TreasuryAccount.objects.filter(bank_id=bank_id).values_list("id", flat=True)
+            qs = qs.filter(Q(from_account_id__in=bank_accounts) | Q(to_account_id__in=bank_accounts))
+
+        treasury_account = params.get("treasury_account")
+        if treasury_account:
+            qs = qs.filter(Q(from_account_id=treasury_account) | Q(to_account_id=treasury_account))
+
+        if date := params.get("date"): qs = qs.filter(date=date)
+        if df := params.get("date_from"): qs = qs.filter(date__gte=df)
+        if dt := params.get("date_to"): qs = qs.filter(date__lte=dt)
+        if amin := params.get("amount_min"): qs = qs.filter(amount__gte=amin)
+        if amax := params.get("amount_max"): qs = qs.filter(amount__lte=amax)
+
+        if val_str := params.get("terminal_batch__isnull"):
+            qs = qs.filter(terminal_batch__isnull=(val_str.lower() == "true"))
+
+        if provider := params.get("terminal_provider"):
+            qs = qs.filter(
+                Q(terminal_device__provider_id=provider) |
+                Q(payment_method_new__linked_terminal_device__provider_id=provider),
+                payment_method_new__method_type=PaymentMethod.Type.CARD_TERMINAL,
+            ).distinct()
+
+        if pm := params.get("payment_method_new"):
+            qs = qs.filter(payment_method_new_id=pm)
+
+        if (direction := params.get("direction")) and treasury_account:
+            if direction == "IN":
+                qs = qs.filter(
+                    Q(movement_type="INBOUND") |
+                    Q(movement_type="TRANSFER", to_account_id=treasury_account) |
+                    Q(movement_type="ADJUSTMENT", amount__gt=0)
+                )
+            elif direction == "OUT":
+                qs = qs.filter(
+                    Q(movement_type="OUTBOUND") |
+                    Q(movement_type="TRANSFER", from_account_id=treasury_account) |
+                    Q(movement_type="ADJUSTMENT", amount__lt=0)
+                )
+
+        if display_id := params.get("display_id"):
+            if match := re.search(r"(\d+)$", display_id):
+                qs = qs.filter(id=match.group(1))
+
+        if search := params.get("search"):
+            q = (Q(contact__name__icontains=search) | Q(contact__tax_id__icontains=search) |
+                 Q(reference__icontains=search) | Q(description__icontains=search) |
+                 Q(notes__icontains=search))
+            if search.isdigit(): q |= Q(id=search)
+            qs = qs.filter(q)
+
+        return qs
+
+class BankStatementSelector:
+    @staticmethod
+    def list_statement_lines(qs, params: dict):
+        if st := params.get('statement'): qs = qs.filter(statement_id=st)
+        if rs := (params.get('reconciliation_status') or params.get('reconciliation_state')):
+            qs = qs.filter(reconciliation_status__in=rs.split(',')) if ',' in rs else qs.filter(reconciliation_status=rs)
+        if df := params.get('date_from'): qs = qs.filter(transaction_date__gte=df)
+        if dt := params.get('date_to'): qs = qs.filter(transaction_date__lte=dt)
+        if search := params.get('search'):
+            from django.db.models import Q
+            qs = qs.filter(Q(description__icontains=search) | Q(reference__icontains=search))
+        if d := params.get('direction'):
+            qs = qs.filter(credit__gt=0) if d == 'IN' else qs.filter(debit__gt=0) if d == 'OUT' else qs
+        from django.db.models import Q
+        if amin := params.get('amount_min'): qs = qs.filter(Q(credit__gte=amin) | Q(debit__gte=amin))
+        if amax := params.get('amount_max'): qs = qs.filter(Q(credit__lte=amax) | Q(debit__lte=amax))
+        return qs
+
+    @staticmethod
+    def list_bank_statements(qs, params: dict):
+        qs = qs.select_related("treasury_account", "treasury_account__bank")
+
+        if acc := params.get("treasury_account"): qs = qs.filter(treasury_account_id=acc)
+        if dt := params.get("statement_date"): qs = qs.filter(statement_date=dt)
+        if df := params.get("date_from"): qs = qs.filter(statement_date__gte=df)
+        if d_to := params.get("date_to"): qs = qs.filter(statement_date__lte=d_to)
+        if s := params.get("status"): qs = qs.filter(status=s)
+
+        # "Reconciling" en UI significa UNRECONCILED u OPEN (en el modelo puede estar mapeado a varios)
+        if ui_status := params.get("ui_status"):
+            from .models import BankStatement
+            if ui_status == "reconciling":
+                qs = qs.filter(status__in=[
+                    BankStatement.Status.DRAFT, BankStatement.Status.OPEN, BankStatement.Status.UNRECONCILED
+                ])
+            elif ui_status == "reconciled":
+                qs = qs.filter(status=BankStatement.Status.RECONCILED)
+
+        # Match exact month/year
+        if m := params.get("month"): qs = qs.filter(statement_date__month=m)
+        if y := params.get("year"): qs = qs.filter(statement_date__year=y)
+
+        # Ordering
+        if order := params.get("ordering"):
+            qs = qs.order_by(order)
+        else:
+            qs = qs.order_by("-statement_date", "-id")
+
+        return qs
+
+    @staticmethod
+    def get_partner_name(obj) -> str:
+        if obj.terminal_batch:
+            contact_prefix = obj.contact.name if obj.contact else "Liquidación"
+            return f"{contact_prefix} (Lote: {obj.terminal_batch.display_id})"
+        if obj.contact: return obj.contact.name
+        if obj.invoice:
+            if obj.invoice.contact: return obj.invoice.contact.name
+            if obj.invoice.sale_order and obj.invoice.sale_order.customer: return obj.invoice.sale_order.customer.name
+            if obj.invoice.purchase_order and obj.invoice.purchase_order.supplier: return obj.invoice.purchase_order.supplier.name
+        if obj.sale_order and obj.sale_order.customer: return obj.sale_order.customer.name
+        if obj.purchase_order and obj.purchase_order.supplier: return obj.purchase_order.supplier.name
+        return "Particular"
+
+    @staticmethod
+    def get_partner_id(obj):
+        if obj.contact: return obj.contact.id
+        if obj.invoice:
+            if obj.invoice.contact: return obj.invoice.contact.id
+            if obj.invoice.sale_order and obj.invoice.sale_order.customer: return obj.invoice.sale_order.customer.id
+            if obj.invoice.purchase_order and obj.invoice.purchase_order.supplier: return obj.invoice.purchase_order.supplier.id
+        if obj.sale_order and obj.sale_order.customer: return obj.sale_order.customer.id
+        if obj.purchase_order and obj.purchase_order.supplier: return obj.purchase_order.supplier.id
+        return None
+
+    @staticmethod
+    def get_document_info(obj) -> dict | None:
+        info = {"type": None, "id": None, "number": None, "label": None, "display_id": None}
+        if obj.invoice:
+            info.update({"type": "invoice", "id": obj.invoice.id, "number": obj.invoice.number, "display_id": obj.invoice.display_id, "label": obj.invoice.display_id})
+        elif obj.purchase_order:
+            info.update({"type": "purchase_order", "id": obj.purchase_order.id, "number": obj.purchase_order.number, "display_id": obj.purchase_order.display_id, "label": obj.purchase_order.display_id})
+        elif obj.sale_order:
+            info.update({"type": "sale_order", "id": obj.sale_order.id, "number": obj.sale_order.number, "display_id": obj.sale_order.display_id, "label": obj.sale_order.display_id})
+        elif obj.journal_entry:
+            info.update({"type": "journal_entry", "id": obj.journal_entry.id, "number": obj.journal_entry.number, "display_id": obj.journal_entry.display_id, "label": obj.journal_entry.display_id})
+        return info if info["type"] else None
+
+class ReconciliationMatchSelector:
+    @staticmethod
+    def get_group_data(obj) -> dict | None:
+        if not obj.reconciliation_match: return None
+        match = obj.reconciliation_match
+        all_movements = (match.movements.all() | obj.matched_movements.all()).distinct()
+        batch_ids = all_movements.filter(terminal_batch__isnull=False).values_list("terminal_batch_id", flat=True).distinct()
+        
+        from .models import TerminalBatch
+        batches = TerminalBatch.objects.filter(id__in=batch_ids)
+        standalone_movements = all_movements.filter(terminal_batch__isnull=True)
+        
+        from .serializers import TreasuryMovementSerializer, TerminalBatchSerializer
+        return {
+            "id": match.id,
+            "movements": TreasuryMovementSerializer(standalone_movements, many=True).data,
+            "batches": TerminalBatchSerializer(batches, many=True).data,
+            "difference_amount": float(obj.difference_amount),
+            "difference_type": obj.difference_reason,
+            "difference_type_display": obj.difference_reason,
+            "difference_journal_entry": obj.difference_journal_entry_id,
+        }

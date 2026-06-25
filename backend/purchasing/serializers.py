@@ -1,5 +1,7 @@
 from rest_framework import serializers
 
+from purchasing.selectors import PurchaseOrderSelector
+from purchasing.services import PurchasingService
 from treasury.serializers import TreasuryMovementSerializer
 
 from .models import (
@@ -55,27 +57,12 @@ class PurchaseLineSerializer(serializers.ModelSerializer):
         return obj.product.requires_advanced_manufacturing if obj.product else False
 
     def validate(self, data):
-        product = data.get("product")
-        uom = data.get("uom")
-
+        product, uom = data.get('product'), data.get('uom')
         if product and uom:
             from inventory.services import UoMService
-
-            # COMPRAS: Permite toda la categoría del UoM base (flexible)
-            if not product.uom:
-                raise serializers.ValidationError(
-                    {"product": f"El producto '{product.name}' debe tener una UoM base asignada."}
-                )
-
+            if not product.uom: raise serializers.ValidationError({'product': f"El producto '{product.name}' debe tener UoM base."}) 
             if not UoMService.validate_uom_compatibility(product.uom, uom):
-                raise serializers.ValidationError(
-                    {
-                        "uom": f"La unidad '{uom.name}' no es compatible con la categoría "
-                        f"del producto ('{product.uom.category.name}'). "
-                        f"Solo puede usar unidades de la misma categoría."
-                    }
-                )
-
+                raise serializers.ValidationError({'uom': f"La unidad '{uom.name}' no es compatible con '{product.uom.category.name}'."})
         return data
 
 
@@ -185,129 +172,10 @@ class PurchaseOrderSerializer(serializers.ModelSerializer):
         )
 
     def get_invoice_details(self, obj):
-        from billing.models import Invoice
-
-        invoices = list(obj.invoices.all())
-        invoice = next(
-            (inv for inv in invoices if inv.dte_type in [
-                Invoice.DTEType.FACTURA,
-                Invoice.DTEType.BOLETA,
-                Invoice.DTEType.PURCHASE_INV,
-            ]),
-            None
-        )
-
-        if not invoice and invoices:
-            # Fallback to any linked document (like a Note) if no primary exists
-            invoice = invoices[0]
-
-        if invoice:
-            return {
-                "id": invoice.id,
-                "dte_type": invoice.dte_type,
-                "number": invoice.number,
-                "document_attachment": invoice.document_attachment.url
-                if invoice.document_attachment
-                else None,
-            }
-        return None
+        return PurchaseOrderSelector.get_invoice_details(obj)
 
     def get_related_documents(self, obj):
-        """Returns a summary of all documents related to this PO for UI linking"""
-        docs = {
-            "invoices": [],  # Primary bills
-            "notes": [],  # NC / ND
-            "receipts": [],  # Stock receipts
-            "payments": [],  # Payments
-        }
-
-        from billing.models import Invoice
-
-        for inv in obj.invoices.all():
-            doc_info = {
-                "id": inv.id,
-                "number": inv.number or "Draft",
-                "display_id": inv.display_id,
-                "dte_type": inv.dte_type,
-                "type_display": inv.get_dte_type_display(),
-                "status": inv.status,
-                "total": inv.total,
-            }
-            if inv.dte_type in [Invoice.DTEType.NOTA_CREDITO, Invoice.DTEType.NOTA_DEBITO]:
-                docs["notes"].append(doc_info)
-            else:
-                docs["invoices"].append(doc_info)
-
-        # Filter out receipts linked to Notes (e.g. supplemental receipts from Debit Notes)
-        # We assume they are shown in the Note's Hub, not here.
-        receipts = [r for r in obj.receipts.all() if getattr(r, "related_note_id", None) is None]
-        for rec in receipts:
-            processed_moves = set()
-            lines = list(rec.lines.all())
-            for line in lines:
-                if line.stock_move and line.stock_move_id not in processed_moves:
-                    move = line.stock_move
-                    processed_moves.add(move.id)
-                    docs["receipts"].append(
-                        {
-                            "id": move.id,
-                            "number": move.display_id,
-                            "display_id": move.display_id,
-                            "date": rec.receipt_date,
-                            "docType": "inventory",
-                            "stock_moves": [
-                                {
-                                    "id": move.id,
-                                    "product": move.product.name,
-                                    "quantity": move.quantity,
-                                    "is_return": move.quantity < 0,
-                                }
-                            ],
-                        }
-                    )
-
-            # Add entry for service/subscription delivery if this receipt has them
-            has_service = any(
-                line.product and line.product.product_type in ["SERVICE", "SUBSCRIPTION"]
-                for line in lines
-            )
-            if has_service:
-                docs["receipts"].append(
-                    {
-                        "id": rec.id,
-                        "number": rec.display_id,
-                        "display_id": rec.display_id,
-                        "date": rec.receipt_date,
-                        "docType": "purchase_receipt",
-                        "is_service": True,
-                    }
-                )
-
-        for pay in obj.payments.all():
-            # Exclude payments explicitly linked to NC/ND
-            if pay.invoice and pay.invoice.dte_type in [
-                Invoice.DTEType.NOTA_CREDITO,
-                Invoice.DTEType.NOTA_DEBITO,
-            ]:
-                continue
-
-            docs["payments"].append(
-                {
-                    "id": pay.id,
-                    "amount": pay.amount,
-                    "date": pay.date,
-                    "method": pay.get_payment_method_display(),
-                    "payment_method": pay.payment_method,
-                    "transaction_number": pay.transaction_number,
-                    "is_pending_registration": pay.is_pending_registration,
-                    "invoice_id": pay.invoice_id,
-                    "payment_type": pay.movement_type,
-                    "display_id": pay.display_id,
-                    "code": pay.display_id,
-                }
-            )
-
-        return docs
+        return PurchaseOrderSelector.get_related_documents(obj)
 
     def get_actual_receipt_date(self, obj):
         confirmed_receipts = [r for r in obj.receipts.all() if r.status == PurchaseReceipt.Status.CONFIRMED]
@@ -342,76 +210,10 @@ class WritePurchaseOrderSerializer(serializers.ModelSerializer):
         read_only_fields = ["id", "number", "status"]
 
     def create(self, validated_data):
-        from django.db import transaction
-
-        lines_data = validated_data.pop("lines")
-        payment_method_id = validated_data.pop("payment_method_id", None)
-
-        pm_ref = None
-        if payment_method_id:
-            from treasury.models import PaymentMethod as TreasuryPM
-
-            pm_ref = TreasuryPM.objects.filter(id=payment_method_id).first()
-
-        with transaction.atomic():
-            order = PurchaseOrder.objects.create(**validated_data, payment_method_ref=pm_ref)
-            self._save_lines(order, lines_data)
-            order.recalculate_totals()
-
-        return order
+        return PurchasingService.create_purchase_order(validated_data)
 
     def update(self, instance, validated_data):
-        from django.db import transaction
-
-        lines_data = validated_data.pop("lines", None)
-        payment_method_id = validated_data.pop("payment_method_id", None)
-
-        with transaction.atomic():
-            if payment_method_id:
-                from treasury.models import PaymentMethod as TreasuryPM
-
-                pm_ref = TreasuryPM.objects.filter(id=payment_method_id).first()
-                if pm_ref:
-                    instance.payment_method_ref = pm_ref
-
-            # Update simple fields
-            for attr, value in validated_data.items():
-                setattr(instance, attr, value)
-
-            if lines_data is not None:
-                self._save_lines(instance, lines_data)
-                instance.recalculate_totals()
-
-            instance.save()
-            
-        return instance
-
-    def _save_lines(self, order, lines_data):
-        # Current lines mapping
-        current_lines = {line.id: line for line in order.lines.all()}
-        incoming_line_ids = [item.get("id") for item in lines_data if item.get("id")]
-
-        # 1. Delete lines not in request
-        for line_id, line in current_lines.items():
-            if line_id not in incoming_line_ids:
-                line.delete()
-
-        # 2. Create or Update
-        for line_data in lines_data:
-            line_id = line_data.get("id")
-
-            if line_id and line_id in current_lines:
-                # Update existing
-                line = current_lines[line_id]
-                for attr, value in line_data.items():
-                    if attr != "id":
-                        setattr(line, attr, value)
-                line.save()
-            else:
-                # Create new
-                if "id" in line_data:
-                    del line_data["id"]  # Avoid passing explicit ID for creation
-                PurchaseLine.objects.create(order=order, **line_data)
+        return PurchasingService.update_purchase_order(instance, validated_data)
 
 
 class PurchaseReceiptLineSerializer(serializers.ModelSerializer):

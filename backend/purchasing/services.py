@@ -17,6 +17,70 @@ from .models import PurchaseOrder, PurchaseReceipt, PurchaseReceiptLine
 
 class PurchasingService:
     @staticmethod
+    @transaction.atomic
+    def create_purchase_order(validated_data: dict) -> PurchaseOrder:
+        """Creates a PurchaseOrder and its lines atomically."""
+        lines_data = validated_data.pop("lines")
+        payment_method_id = validated_data.pop("payment_method_id", None)
+
+        pm_ref = None
+        if payment_method_id:
+            from treasury.models import PaymentMethod as TreasuryPM
+            pm_ref = TreasuryPM.objects.filter(id=payment_method_id).first()
+
+        order = PurchaseOrder.objects.create(**validated_data, payment_method_ref=pm_ref)
+        PurchasingService._sync_lines(order, lines_data)
+        order.recalculate_totals()
+        return order
+
+    @staticmethod
+    @transaction.atomic
+    def update_purchase_order(instance: PurchaseOrder, validated_data: dict) -> PurchaseOrder:
+        """Updates a PurchaseOrder and syncs its lines atomically."""
+        lines_data = validated_data.pop("lines", None)
+        payment_method_id = validated_data.pop("payment_method_id", None)
+
+        if payment_method_id:
+            from treasury.models import PaymentMethod as TreasuryPM
+            pm_ref = TreasuryPM.objects.filter(id=payment_method_id).first()
+            if pm_ref:
+                instance.payment_method_ref = pm_ref
+
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
+
+        if lines_data is not None:
+            PurchasingService._sync_lines(instance, lines_data)
+            instance.recalculate_totals()
+
+        instance.save()
+        return instance
+
+    @staticmethod
+    def _sync_lines(order: PurchaseOrder, lines_data: list) -> None:
+        """Creates, updates, and deletes PurchaseLines to match lines_data."""
+        from .models import PurchaseLine
+
+        current_lines = {line.id: line for line in order.lines.all()}
+        incoming_ids = [item.get("id") for item in lines_data if item.get("id")]
+
+        for line_id, line in current_lines.items():
+            if line_id not in incoming_ids:
+                line.delete()
+
+        for line_data in lines_data:
+            line_id = line_data.get("id")
+            if line_id and line_id in current_lines:
+                line = current_lines[line_id]
+                for attr, value in line_data.items():
+                    if attr != "id":
+                        setattr(line, attr, value)
+                line.save()
+            else:
+                line_data.pop("id", None)
+                PurchaseLine.objects.create(order=order, **line_data)
+
+    @staticmethod
     def confirm_purchase(order: PurchaseOrder, user=None):
         if order.status != "DRAFT":
             raise ValidationError("La orden no está en estado borrador.")

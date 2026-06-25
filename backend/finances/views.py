@@ -35,45 +35,9 @@ def _to_date(d):
         return None
 
 def _handle_report_request(request, report_type, generator_func, default_start=None, default_end=None):
-    from core.cache import cache_report
-    
-    end_date = request.query_params.get("end_date") or request.query_params.get("date") or default_end
-    start_date = request.query_params.get("start_date", default_start)
-    comp_end = request.query_params.get("comp_end_date")
-    comp_start = request.query_params.get("comp_start_date")
-
-    if request.query_params.get("is_async", "false").lower() == "true":
-        from celery import uuid
-        from django.db import transaction
-        
-        task_id = uuid()
-        transaction.on_commit(lambda: generate_report_task.apply_async(
-            kwargs={
-                "report_type": report_type,
-                "end_date": str(end_date) if end_date else None,
-                "start_date": str(start_date) if start_date else None,
-                "comp_end_date": str(comp_end) if comp_end else None,
-                "comp_start_date": str(comp_start) if comp_start else None,
-            },
-            task_id=task_id
-        ))
-        return Response({"task_id": task_id, "status": "PENDING"})
-
-    data = cache_report(
-        module="finances",
-        endpoint=report_type,
-        params={
-            "start": str(start_date) if start_date else None,
-            "end": str(end_date) if end_date else None,
-            "comp_start": str(comp_start) if comp_start else None,
-            "comp_end": str(comp_end) if comp_end else None,
-        },
-        timeout=90,
-        generator=lambda: generator_func(
-            _to_date(start_date), _to_date(end_date), _to_date(comp_start), _to_date(comp_end)
-        ),
-    )
-    return Response(data)
+    from .services_ext import FinanceServiceExt
+    res = FinanceServiceExt.handle_report_request(request, report_type, generator_func, default_start, default_end)
+    return Response(res)
 
 @api_view(["GET"])
 def get_balance_sheet_data(request):
