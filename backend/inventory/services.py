@@ -25,6 +25,71 @@ from .models import (
 class StockService:
     @staticmethod
     @transaction.atomic
+    def adjust_stock_from_payload(payload: dict) -> "StockMove":
+        """
+        Parses payload, validates references (product, warehouse, partner),
+        and delegates to adjust_stock.
+        """
+        from decimal import Decimal
+        from django.core.exceptions import ValidationError
+        from contacts.models import Contact
+        from .models import Product, Warehouse, UoM, StockMove
+
+        product_id = payload.get("product_id")
+        warehouse_id = payload.get("warehouse_id")
+        quantity = Decimal(str(payload.get("quantity", "0")))
+        unit_cost = Decimal(str(payload.get("unit_cost", "0")))
+        description = payload.get("description", "Manual Adjustment")
+        adjustment_reason = payload.get("adjustment_reason")
+        uom_id = payload.get("uom_id")
+        partner_contact_id = payload.get("partner_contact_id")
+
+        if not product_id or not warehouse_id:
+            raise ValidationError("Producto y bodega son requeridos.")
+
+        try:
+            product = Product.objects.get(pk=product_id)
+            warehouse = Warehouse.objects.get(pk=warehouse_id)
+        except (Product.DoesNotExist, Warehouse.DoesNotExist) as e:
+            raise ValidationError(str(e))
+
+        uom = None
+        if uom_id:
+            try:
+                uom = UoM.objects.get(pk=uom_id)
+            except UoM.DoesNotExist:
+                pass
+
+        partner_contact = None
+        partner_reasons = [
+            StockMove.AdjustmentReason.PARTNER_CONTRIBUTION,
+            StockMove.AdjustmentReason.PARTNER_WITHDRAWAL,
+        ]
+        if adjustment_reason in partner_reasons:
+            if not partner_contact_id:
+                raise ValidationError(
+                    "Debe seleccionar un socio para aportes o retiros de capital en inventario."
+                )
+            try:
+                partner_contact = Contact.objects.get(pk=partner_contact_id)
+            except Contact.DoesNotExist:
+                raise ValidationError("Socio no encontrado.")
+            if not partner_contact.is_partner:
+                raise ValidationError("El contacto seleccionado no es un socio.")
+
+        return StockService.adjust_stock(
+            product=product,
+            warehouse=warehouse,
+            quantity=quantity,
+            unit_cost=unit_cost,
+            description=description,
+            adjustment_reason=adjustment_reason,
+            uom=uom,
+            partner_contact=partner_contact,
+        )
+
+    @staticmethod
+    @transaction.atomic
     def adjust_stock(
         product: Product,
         warehouse: Warehouse,
