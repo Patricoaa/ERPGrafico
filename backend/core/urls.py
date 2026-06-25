@@ -17,6 +17,7 @@ from .views import (
     UserViewSet,
     server_time,
     system_status,
+    BackgroundJobViewSet,
 )
 
 router = DefaultRouter()
@@ -24,6 +25,7 @@ router.register(r"users", UserViewSet)
 router.register(r"groups", GroupViewSet)
 router.register(r"company", CompanySettingsViewSet)
 router.register(r"action-logs", ActionLogViewSet)
+router.register(r"jobs", BackgroundJobViewSet, basename="jobs")
 
 urlpatterns = [
     path("", include(router.urls)),
