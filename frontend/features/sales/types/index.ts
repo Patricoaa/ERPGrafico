@@ -1,4 +1,5 @@
 import { type Invoice } from "@/features/billing/types"
+import type { PageParams } from "@/lib/pagination"
 
 export type SaleOrderStatus = 'DRAFT' | 'OPEN' | 'CANCELLED' | 'COMPLETED' | 'PAID' | 'PARTIAL'
 export type DeliveryStatus = 'PENDING' | 'PARTIAL' | 'DELIVERED'
@@ -96,7 +97,7 @@ export interface SaleOrder {
     pos_session?: number
 }
 
-export interface SaleOrderFilters {
+export interface SaleOrderFilters extends PageParams {
     customer_name?: string
     date_after?: string
     date_before?: string

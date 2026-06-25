@@ -1,6 +1,6 @@
 "use client"
 
-import React from "react"
+import React, { useState } from "react"
 import { useRouter, useSearchParams, usePathname } from "next/navigation"
 import { DataTableView } from '@/components/shared'
 import { DataTableColumnHeader } from '@/components/shared'
@@ -59,14 +59,18 @@ export function SalesOrdersView({ viewMode, posSessionId, onActionSuccess, hideS
     const { filters: segFilters, isFiltered: isSegFiltered, clearAll: clearSeg } = useSegmentation(segDef, basePeriod)
     const isFiltered = isTextFiltered || isSegFiltered
 
-    const { orders, isLoading: isLoadingOrders, isRefetching, refetch: refetchOrders } = useSalesOrders({
+    const [pageState, setPageState] = useState({ pageIndex: 0, pageSize: 20 })
+
+    const { page, orders, isLoading: isLoadingOrders, isRefetching, refetch: refetchOrders } = useSalesOrders({
         filters: {
             ...(textFilters as SaleOrderFilters),
             ...(segFilters as Record<string, string>),
             pos_session: posSessionId || undefined,
+            page: pageState.pageIndex + 1,
+            page_size: pageState.pageSize,
         },
-        initialData: initialOrders,
     })
+    // TODO: migrate sales notes to Page<T>
     const { notes, isLoading: isLoadingNotes, refetch: refetchNotes } = useSalesNotes({
         filters: {
             ...(textFilters as Record<string, string>),
@@ -223,6 +227,11 @@ export function SalesOrdersView({ viewMode, posSessionId, onActionSuccess, hideS
                     variant="embedded"
                     isLoading={viewMode === 'orders' ? isLoadingOrders : isLoadingNotes}
                     isRefetching={viewMode === 'orders' ? isRefetching : undefined}
+                    manualPagination={viewMode === 'orders'}
+                    pageCount={viewMode === 'orders' ? (page ? Math.ceil(page.count / page.pageSize) : 0) : undefined}
+                    rowCount={viewMode === 'orders' ? (page?.count ?? 0) : undefined}
+                    pagination={viewMode === 'orders' ? pageState : undefined}
+                    onPaginationChange={viewMode === 'orders' ? setPageState as any : undefined}
                     smartSearch={viewMode === 'orders'
                         ? <SmartSearchBar searchDef={salesOrderSearchDef} placeholder="Buscar órdenes..." />
                         : <SmartSearchBar searchDef={salesNoteSearchDef} placeholder="Buscar notas..." />

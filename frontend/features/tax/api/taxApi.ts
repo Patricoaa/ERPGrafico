@@ -1,9 +1,12 @@
 import api from '@/lib/api'
+import { toPage, type Page } from '@/lib/pagination'
 
 export const taxApi = {
     /* Periods */
-    getPeriods: () =>
-        api.get('/tax/periods/', { params: { page_size: 100 } }).then(r => r.data),
+    getPeriods: async (): Promise<Page<unknown>> => {
+        const res = await api.get('/tax/periods/', { params: { page_size: 100 } })
+        return toPage(res.data, 1, 100)
+    },
     getPeriod: (id: number | string) =>
         api.get(`/tax/periods/${id}/`).then(r => r.data),
     closePeriod: (id: number) =>
@@ -12,8 +15,10 @@ export const taxApi = {
         api.get(`tax/periods/check_closed/?date=${date}`).then(r => r.data),
 
     /* F29 Declarations */
-    getDeclarations: (params: Record<string, unknown>) =>
-        api.get('/tax/declarations/', { params }).then(r => r.data),
+    getDeclarations: async (params: Record<string, unknown>): Promise<Page<unknown>> => {
+        const res = await api.get('/tax/declarations/', { params })
+        return toPage(res.data, (params.page as number) ?? 1, (params.page_size as number) ?? 50)
+    },
     createDeclaration: (data: Record<string, unknown>) =>
         api.post('/tax/declarations/', data).then(r => r.data),
     calculateDeclaration: (data: { year: number; month: number }) =>

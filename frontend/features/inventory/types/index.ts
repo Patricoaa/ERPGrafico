@@ -130,6 +130,7 @@ export interface ProductFilters {
     search?: string
     product_type?: string
     category?: number
+    page?: number
     page_size?: number
     fields?: string
     track_inventory?: boolean

@@ -52,8 +52,10 @@ export function PurchasingOrdersClientView({ viewMode, externalOpenCheckout, cre
     const basePeriod = { serverParamFrom: 'date_after', serverParamTo: 'date_before' }
     const { filters: segFilters, isFiltered: isSegFiltered, clearAll: clearSeg } = useSegmentation(purchaseOrderSegDef, basePeriod)
     const isFiltered = isTextFiltered || isSegFiltered
-    const allFilters = { ...textFilters, ...segFilters }
-    const { orders, isLoading: isLoadingOrders, isRefetching, refetch: fetchOrders, deleteOrder } = usePurchasingOrders(allFilters, initialOrders)
+    const [pageState, setPageState] = useState({ pageIndex: 0, pageSize: 20 })
+    const allFilters = { ...(textFilters as any), ...(segFilters as any), page: pageState.pageIndex + 1, page_size: pageState.pageSize }
+    const { page, orders, isLoading: isLoadingOrders, isRefetching, refetch: fetchOrders, deleteOrder } = usePurchasingOrders(allFilters, initialOrders)
+    // TODO: migrate purchasing notes to Page<T>
     const { notes, isLoading: isLoadingNotes } = usePurchasingNotes(initialNotes)
 
     const { rate } = useVatRate()
@@ -600,6 +602,11 @@ export function PurchasingOrdersClientView({ viewMode, externalOpenCheckout, cre
                         segmentation={<SegmentationBar def={purchaseOrderSegDef} basePeriod={basePeriod} />}
                         showReset={isFiltered}
                         onReset={() => { clearText(); clearSeg() }}
+                        manualPagination={viewMode === 'orders'}
+                        pageCount={viewMode === 'orders' ? (page ? Math.ceil(page.count / page.pageSize) : 0) : undefined}
+                        rowCount={viewMode === 'orders' ? (page?.count ?? 0) : undefined}
+                        pagination={viewMode === 'orders' ? pageState : undefined}
+                        onPaginationChange={viewMode === 'orders' ? setPageState as any : undefined}
                         createAction={createAction}
                         isSelected={(data: any) => viewMode === 'orders'
                             ? hubConfig?.orderId === data.id

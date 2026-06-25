@@ -1,5 +1,6 @@
 import api from '@/lib/api'
 import type { Account, AccountFilters, AccountPayload, FiscalYear, LedgerData } from '../types'
+import { toPage, type Page } from '@/lib/pagination'
 
 export const accountingApi = {
     getAccounts: async (filters?: AccountFilters): Promise<Account[]> => {
@@ -21,9 +22,9 @@ export const accountingApi = {
         return data
     },
 
-    getEntries: async (params?: Record<string, unknown>) => {
+    getEntries: async (params?: Record<string, unknown>): Promise<Page<unknown>> => {
         const { data } = await api.get('/accounting/entries/', { params })
-        return data
+        return toPage(data, (params?.page as number) ?? 1, (params?.page_size as number) ?? 50)
     },
     getEntry: async (id: number | string) => {
         const { data } = await api.get(`/accounting/entries/${id}/`)

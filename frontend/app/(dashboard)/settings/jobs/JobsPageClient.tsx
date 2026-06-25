@@ -1,7 +1,7 @@
 "use client"
 
 import { useQuery } from "@tanstack/react-query"
-import { api } from "@/lib/api"
+import api from "@/lib/api"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -30,11 +30,12 @@ export default function JobsPageClient() {
         queryKey: ["background_jobs"],
         queryFn: async () => {
             const res = await api.get("/core/jobs/")
-            return res.data
+            // Handle pagination gracefully if applicable
+            return Array.isArray(res.data) ? res.data : (res.data?.results ?? [])
         },
-        refetchInterval: (data) => {
+        refetchInterval: (query) => {
             // Polling every 3s if any job is pending or processing
-            const hasActiveJobs = data?.some(j => j.status === "PENDING" || j.status === "PROCESSING")
+            const hasActiveJobs = query.state.data?.some(j => j.status === "PENDING" || j.status === "PROCESSING")
             return hasActiveJobs ? 3000 : false
         }
     })

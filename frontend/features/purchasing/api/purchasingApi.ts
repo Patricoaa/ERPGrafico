@@ -3,8 +3,10 @@ import type {
     PurchaseOrderAPI,
 } from '../types'
 import type { Invoice } from '@/features/billing/types'
+import { toPage, type Page } from '@/lib/pagination'
+import type { PageParams } from '@/lib/pagination'
 
-interface OrderFilters {
+interface OrderFilters extends PageParams {
     status?: string
     search?: string
     date_from?: string
@@ -39,8 +41,10 @@ interface PartialReceivePayload {
 export const purchasingApi = {
     // ========== Orders ==========
 
-    getOrders: async (filters?: OrderFilters): Promise<PurchaseOrderAPI[]> => {
+    getOrders: async (filters?: OrderFilters): Promise<Page<PurchaseOrderAPI>> => {
         const params = new URLSearchParams()
+        if (filters?.page) params.append('page', String(filters.page))
+        if (filters?.page_size) params.append('page_size', String(filters.page_size))
         if (filters?.status) params.append('status', filters.status)
         if (filters?.search) params.append('search', filters.search)
         if (filters?.date_from) params.append('date_after', filters.date_from)
@@ -58,8 +62,8 @@ export const purchasingApi = {
         if (filters?.supplier_name) params.append('supplier_name', filters.supplier_name)
         if (filters?.number) params.append('number', filters.number)
         if (filters?.product_name) params.append('product_name', filters.product_name)
-        const res = await api.get<PurchaseOrderAPI[]>('/purchasing/orders/', { params })
-        return res.data
+        const res = await api.get('/purchasing/orders/', { params })
+        return toPage<PurchaseOrderAPI>(res.data, filters?.page ?? 1, filters?.page_size ?? 50)
     },
 
     getOrder: async (id: number): Promise<PurchaseOrderAPI> => {

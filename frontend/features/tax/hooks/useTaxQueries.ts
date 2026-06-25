@@ -40,11 +40,11 @@ export function useLazyTaxDeclarations() {
   const queryClient = useQueryClient()
 
   const fetchDeclarations = async (params: Record<string, unknown>): Promise<TaxDeclaration[]> => {
-    const data = await queryClient.fetchQuery({
+    const pageData = await queryClient.fetchQuery({
       queryKey: TAX_KEYS.declarations.list(params),
       queryFn: () => taxApi.getDeclarations(params),
     })
-    return Array.isArray(data) ? data : ((data as { results?: TaxDeclaration[] })?.results ?? [])
+    return (pageData?.results ?? []) as TaxDeclaration[]
   }
 
   return { fetchDeclarations }

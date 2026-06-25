@@ -52,7 +52,7 @@ export function TaxDeclarationsClientView({ externalOpen, onExternalOpenChange, 
     const { fetchDeclarations } = useLazyTaxDeclarations()
     const createPaymentMutation = useCreateTaxPayment()
 
-    const periods = ((periodsData as { results?: TaxPeriod[] })?.results || (periodsData as TaxPeriod[]) || []) as TaxPeriod[]
+    const periods = ((periodsData as { results?: TaxPeriod[] })?.results ?? []) as TaxPeriod[]
     const isLoading = isLoadingPeriods
 
     const action = searchParams.get('action')

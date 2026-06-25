@@ -1,5 +1,6 @@
 import api from '@/lib/api'
 import type { Product, ProductFilters, ProductUpdatePayload } from '../types'
+import { toPage, type Page } from '@/lib/pagination'
 
 /**
  * Resolves a media URL from the backend.
@@ -29,8 +30,9 @@ export const inventoryApi = {
     /**
      * Fetch products with optional filtering
      */
-    getProducts: async (filters?: ProductFilters & { page_size?: number, fields?: string }): Promise<Product[]> => {
+    getProducts: async (filters?: ProductFilters & { page_size?: number, fields?: string }): Promise<Page<Product>> => {
         const params = new URLSearchParams()
+        if (filters?.page) params.append('page', String(filters.page))
         if (filters?.is_active !== undefined) {
             // Send 'all' literally so the backend enters the correct branch.
             // An empty string '' would fall through to the default (is_active=True only).
@@ -48,8 +50,8 @@ export const inventoryApi = {
         if (filters?.page_size) params.append('page_size', String(filters.page_size))
         if (filters?.fields) params.append('fields', filters.fields)
 
-        const { data } = await api.get<Product[]>('inventory/products/', { params })
-        return data
+        const { data } = await api.get('inventory/products/', { params })
+        return toPage<Product>(data, filters?.page ?? 1, filters?.page_size ?? 50)
     },
 
     /**

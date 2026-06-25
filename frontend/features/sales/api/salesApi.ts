@@ -2,6 +2,7 @@ import api from '@/lib/api'
 import type { SaleOrder, SaleOrderFilters, SaleOrderPayload, SaleNote } from '../types'
 import type { SaleNoteFilters } from '../hooks/useSalesOrders'
 import { type Invoice } from '@/features/billing/types'
+import { toPage, type Page } from '@/lib/pagination'
 
 /**
  * Centralized API service for sales operations
@@ -10,8 +11,10 @@ export const salesApi = {
     /**
      * Fetch all sales orders
      */
-    getOrders: async (filters?: SaleOrderFilters): Promise<SaleOrder[]> => {
+    getOrders: async (filters?: SaleOrderFilters): Promise<Page<SaleOrder>> => {
         const params = new URLSearchParams()
+        if (filters?.page) params.append('page', String(filters.page))
+        if (filters?.page_size) params.append('page_size', String(filters.page_size))
         if (filters?.customer_name) params.append('customer_name', filters.customer_name)
         if (filters?.date_after) params.append('date_after', filters.date_after)
         if (filters?.date_before) params.append('date_before', filters.date_before)
@@ -27,8 +30,8 @@ export const salesApi = {
         if (filters?.pos_session) params.append('pos_session', String(filters.pos_session))
         if (filters?.search) params.append('search', filters.search)
 
-        const { data } = await api.get<SaleOrder[]>('/sales/orders/', { params })
-        return data
+        const { data } = await api.get('/sales/orders/', { params })
+        return toPage<SaleOrder>(data, filters?.page ?? 1, filters?.page_size ?? 50)
     },
 
     /**

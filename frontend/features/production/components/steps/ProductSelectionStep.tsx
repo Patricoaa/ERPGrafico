@@ -38,7 +38,7 @@ export function ProductSelectionStep({
     isError,
   } = useWorkOrderProducts(otType, searchTerm);
 
-  const products = (data?.pages ?? []).flat()
+  const products = (data?.pages ?? []).flatMap(page => page.results ?? [])
     .filter(p => !p.mfg_auto_finalize);
 
   useEffect(() => {

@@ -1,8 +1,11 @@
 import api from '@/lib/api'
+import { toPage, type Page } from '@/lib/pagination'
 
 export const usersApi = {
-    getUsers: (config?: Record<string, unknown>) =>
-        api.get('/core/users/', config as any).then(r => r.data),
+    getUsers: async (params?: Record<string, unknown>): Promise<Page<any>> => {
+        const res = await api.get('/core/users/', { params })
+        return toPage(res.data, (params?.page as number) ?? 1, (params?.page_size as number) ?? 50)
+    },
     getUser: (id: number | string) =>
         api.get(`/core/users/${id}/`).then(r => r.data),
     createUser: (payload: any) =>

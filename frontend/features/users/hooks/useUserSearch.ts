@@ -11,8 +11,8 @@ export function useUserSearch(search: string = "", enabled: boolean = true) {
             if (search) params.append("search", search)
             params.append("limit", "50")
 
-            const data = await usersApi.getUsers({ params } as any)
-            return data as AppUser[]
+            const res = await usersApi.getUsers({ params } as any)
+            return (res.results as AppUser[]) ?? []
         },
         enabled,
         staleTime: 5 * 60 * 1000,
