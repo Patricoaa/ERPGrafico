@@ -62,10 +62,7 @@ class WorkflowService:
             assigned_user = assignee_info.get("user")
             candidate_group = assignee_info.get("group")
 
-        # If data is None initialize it
         task_data = data or {}
-
-        # If pool assignment (Group but no User)
         if candidate_group and not assigned_user:
             task_data = {**task_data, "candidate_group": candidate_group}
 
@@ -86,6 +83,77 @@ class WorkflowService:
         elif candidate_group:
             WorkflowService.notify_group_assignment(task, candidate_group)
 
+        return task
+
+    @staticmethod
+    @transaction.atomic
+    def handle_task_update(task, old_status):
+        if old_status != task.status and task.status in [Task.Status.COMPLETED, Task.Status.REJECTED]:
+            if task.status == Task.Status.COMPLETED and task.category == Task.Category.APPROVAL and task.created_by and task.task_type == "CREDIT_POS_REQUEST":
+                draft_id = task.data.get("request_data", {}).get("draft_id")
+                link = f"/sales/pos?draftId={draft_id}" if draft_id else "/sales/pos"
+                WorkflowService.send_notification(
+                    notification_type="POS_CREDIT_APPROVAL",
+                    user=task.created_by,
+                    title=f"Aprobación de Crédito Completada: {task.title}",
+                    message="La solicitud de crédito ha sido aprobada y está lista para ser procesada en el POS.",
+                    link=link,
+                    level=Notification.Type.SUCCESS,
+                )
+            elif task.status == Task.Status.REJECTED and task.category == Task.Category.APPROVAL and task.created_by and task.task_type == "CREDIT_POS_REQUEST":
+                WorkflowService.send_notification(
+                    notification_type="POS_CREDIT_APPROVAL",
+                    user=task.created_by,
+                    title=f"Aprobación de Crédito Rechazada: {task.title}",
+                    message="La solicitud de crédito para el POS ha sido rechazada.",
+                    link="/sales/pos",
+                    level=Notification.Type.ERROR,
+                )
+
+    @staticmethod
+    @transaction.atomic
+    def complete_task(task, user, notes=None, files=None):
+        from rest_framework.exceptions import PermissionDenied
+        if task.category == Task.Category.TASK and task.task_type.startswith("HUB_"):
+            raise ValueError("Las tareas de etapa del HUB se completan automáticamente al finalizar la etapa correspondiente.")
+
+        if not user.is_superuser:
+            if task.assigned_to and task.assigned_to != user:
+                raise PermissionDenied("No tienes permisos para completar esta tarea asignada a otro usuario.")
+            if task.assigned_group and not user.groups.filter(id=task.assigned_group.id).exists():
+                raise PermissionDenied(f"No tienes permisos para completar esta tarea. Debes pertenecer al grupo '{task.assigned_group.name}'.")
+
+        task.status = Task.Status.COMPLETED
+        task.completed_at = timezone.now()
+        task.completed_by = user
+        if notes:
+            task.notes = notes
+        task.save()
+
+        if files:
+            from django.contrib.contenttypes.models import ContentType
+            from core.models import Attachment
+            task_ct = ContentType.objects.get_for_model(Task)
+            for f in files:
+                Attachment.objects.create(
+                    file=f,
+                    original_filename=f.name,
+                    content_type=task_ct,
+                    object_id=task.id,
+                    user=user,
+                )
+
+        if task.category == Task.Category.APPROVAL and task.created_by and task.task_type == "CREDIT_POS_REQUEST":
+            draft_id = task.data.get("request_data", {}).get("draft_id")
+            link = f"/sales/pos?draftId={draft_id}" if draft_id else "/sales/pos"
+            WorkflowService.send_notification(
+                notification_type="POS_CREDIT_APPROVAL",
+                user=task.created_by,
+                title=f"Aprobación de Crédito Completada: {task.title}",
+                message="La solicitud de crédito ha sido aprobada y está lista para ser procesada en el POS.",
+                level=Notification.Type.SUCCESS,
+                link=link,
+            )
         return task
 
     # --- HUB Stage Tasks ---
