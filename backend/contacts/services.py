@@ -243,3 +243,66 @@ class ContactService:
         )
 
         return entry
+
+    @staticmethod
+    @transaction.atomic
+    def unblock_credit(*, contact: Contact, unblocked_by=None) -> Contact:
+        """
+        Rehabilita el crédito de un contacto bloqueado manualmente.
+
+        Reemplaza el bloque ``contact.save()`` + ``WorkflowService.send_notification``
+        que vivía en ``ContactViewSet.unblock_credit``.
+
+        Args:
+            contact: Instancia del contacto a desbloquear.
+            unblocked_by: Usuario que ejecuta la acción (para el mensaje de notificación).
+
+        Returns:
+            Instancia ``Contact`` actualizada.
+        """
+        contact.credit_blocked = False
+        contact.credit_auto_blocked = False
+        contact.credit_risk_level = "LOW"
+        contact.save(update_fields=["credit_blocked", "credit_auto_blocked", "credit_risk_level"])
+
+        from workflow.services import WorkflowService
+
+        actor = (
+            unblocked_by.get_full_name() or unblocked_by.username
+            if unblocked_by
+            else "sistema"
+        )
+        WorkflowService.send_notification(
+            notification_type="CREDIT_UNBLOCK",
+            title=f"Crédito Rehabilitado: {contact.name}",
+            message=f"El cliente ha sido desbloqueado manualmente por {actor}.",
+            link=f"/credits/portfolio?search={contact.tax_id}",
+            content_object=contact,
+            level="SUCCESS",
+        )
+        return contact
+
+    @staticmethod
+    @transaction.atomic
+    def setup_partner(*, contact: Contact, is_partner: bool, equity_percentage=None) -> Contact:
+        """
+        Habilita o actualiza la configuración de socio de un contacto.
+
+        Reemplaza el bloque ``contact.is_partner = ...; contact.save()``
+        que vivía en ``ContactViewSet.setup_partner``.
+
+        Args:
+            contact: Contacto a actualizar.
+            is_partner: Valor booleano del flag de socio.
+            equity_percentage: Porcentaje de participación (opcional).
+
+        Returns:
+            Instancia ``Contact`` actualizada.
+        """
+        update_fields = ["is_partner"]
+        contact.is_partner = is_partner
+        if equity_percentage is not None:
+            contact.partner_equity_percentage = equity_percentage
+            update_fields.append("partner_equity_percentage")
+        contact.save(update_fields=update_fields)
+        return contact

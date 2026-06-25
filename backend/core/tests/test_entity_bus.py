@@ -39,7 +39,7 @@ def no_actor(monkeypatch):
 
 @pytest.fixture
 def customer(db):
-    return Contact.objects.create(name="Realtime Test Customer", is_customer=True)
+    return Contact.objects.create(name="Realtime Test Customer", tax_id="1-9")
 
 
 @pytest.fixture
@@ -198,7 +198,7 @@ def test_saleline_delete_broadcasts_parent_updated(broadcast_spy, customer):
 @pytest.mark.django_db
 def test_unlisted_model_does_not_broadcast(broadcast_spy):
     # Contact is in neither ALLOWLIST nor PARENT_BROADCASTS.
-    Contact.objects.create(name="Realtime Bystander", is_customer=True)
+    Contact.objects.create(name="Realtime Bystander", tax_id="2-7")
     assert broadcast_spy == []
 
 

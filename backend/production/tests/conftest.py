@@ -49,6 +49,8 @@ def customer_factory(db):
         count = Contact.objects.count()
         defaults = {"name": f"Cliente Test {count}", "tax_id": f"99{count:06d}-K"}
         defaults.update(kwargs)
+        if "tax_id" not in defaults:
+            defaults["tax_id"] = "12345678-9"
         return Contact.objects.create(**defaults)
 
     return make

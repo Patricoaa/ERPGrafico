@@ -490,14 +490,14 @@ class SubscriptionViewSet(viewsets.ModelViewSet):
     def pause(self, request, pk=None):
         sub = self.get_object()
         sub.status = Subscription.Status.PAUSED
-        sub.save()
+        sub.save(update_fields=["status"])
         return Response({"status": "paused"})
 
     @action(detail=True, methods=["post"])
     def resume(self, request, pk=None):
         sub = self.get_object()
         sub.status = Subscription.Status.ACTIVE
-        sub.save()
+        sub.save(update_fields=["status"])
         return Response({"status": "active"})
 
 

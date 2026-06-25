@@ -977,30 +977,15 @@ class BankStatementViewSet(viewsets.ModelViewSet):
         """Confirm statement (locks it)"""
         try:
             statement = BankStatement.objects.get(id=pk)
+            from .services import BankStatementService
 
-            if statement.status == "CONFIRMED":
-                return Response(
-                    {"error": "Cartola ya confirmada"}, status=status.HTTP_400_BAD_REQUEST
-                )
-
-            # Validate all lines are reconciled or excluded
-            unreconciled = statement.lines.filter(reconciliation_status="UNRECONCILED").count()
-
-            if unreconciled > 0:
-                return Response(
-                    {
-                        "error": f"{unreconciled} líneas sin reconciliar. Debes reconciliar o excluir todas las líneas."
-                    },
-                    status=status.HTTP_400_BAD_REQUEST,
-                )
-
-            statement.status = "CONFIRMED"
-            statement.save()
-
+            BankStatementService.confirm(statement=statement)
             return Response(BankStatementSerializer(statement).data)
 
         except BankStatement.DoesNotExist:
             return Response({"error": "Cartola no encontrada"}, status=status.HTTP_404_NOT_FOUND)
+        except ValueError as e:
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
         except Exception as e:
             return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 

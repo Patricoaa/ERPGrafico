@@ -25,7 +25,7 @@ def setup_test_data():
         code="1.1.01", defaults={"name": "Cuentas por Cobrar", "account_type": "ASSET"}
     )
     acc_revenue, _ = Account.objects.get_or_create(
-        code="4.1.01", defaults={"name": "Ingresos", "account_type": "REVENUE"}
+        code="4.1.01", defaults={"name": "Ingresos", "account_type": "INCOME"}
     )
     acc_tax_payable, _ = Account.objects.get_or_create(
         code="2.1.02", defaults={"name": "IVA por Pagar", "account_type": "LIABILITY"}

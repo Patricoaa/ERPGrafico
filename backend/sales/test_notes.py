@@ -15,7 +15,7 @@ from sales.services import SalesService
 def basic_setup(db):
     # Setup Accounting
     acc_receivable = Account.objects.create(code="1.1.01", name="Receivable", account_type="ASSET")
-    acc_revenue = Account.objects.create(code="4.1.01", name="Revenue", account_type="REVENUE")
+    acc_revenue = Account.objects.create(code="4.1.01", name="Revenue", account_type="INCOME")
     acc_tax = Account.objects.create(code="2.1.01", name="Tax", account_type="LIABILITY")
 
     settings = AccountingSettings.objects.create(
@@ -25,10 +25,10 @@ def basic_setup(db):
     )
 
     # Setup UoM
-    uom = UoM.objects.create(name="Unit", code="UNT")
+    uom = UoM.objects.create(name="Unit")
 
     # Setup Customer
-    customer = Contact.objects.create(name="Test Customer", is_customer=True)
+    customer = Contact.objects.create(name="Test Customer", tax_id="1-9")
 
     # Setup Warehouse
     warehouse = Warehouse.objects.create(name="Main Warehouse")

@@ -1503,3 +1503,45 @@ class ProviderAccountService:
         if created:
             logger.info(f"Auto-creada TreasuryAccount BRIDGE: {bridge.name} (code={bridge.code})")
         return bridge
+
+
+class BankStatementService:
+    """
+    Lógica de negocio para BankStatement.
+    Centraliza operaciones de ciclo de vida que antes vivían directamente en las vistas.
+    """
+
+    @staticmethod
+    @transaction.atomic
+    def confirm(*, statement: "BankStatement") -> "BankStatement":
+        """
+        Confirma (cierra) una cartola bancaria validando que todas las líneas
+        estén reconciliadas o excluidas.
+
+        Reemplaza el bloque de validación + ``statement.save()`` que vivía en
+        ``BankStatementViewSet.confirm`` (treasury/views.py).
+
+        Args:
+            statement: Instancia de BankStatement a confirmar.
+
+        Raises:
+            ValueError: Si la cartola ya está confirmada o quedan líneas sin reconciliar.
+
+        Returns:
+            La misma instancia con ``status = "CONFIRMED"``.
+        """
+        from .models import BankStatement
+
+        if statement.status == "CONFIRMED":
+            raise ValueError("Cartola ya confirmada.")
+
+        unreconciled = statement.lines.filter(reconciliation_status="UNRECONCILED").count()
+        if unreconciled > 0:
+            raise ValueError(
+                f"{unreconciled} líneas sin reconciliar. "
+                "Debes reconciliar o excluir todas las líneas."
+            )
+
+        statement.status = "CONFIRMED"
+        statement.save(update_fields=["status"])
+        return statement

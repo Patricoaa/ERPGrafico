@@ -473,28 +473,19 @@ class WorkOrderViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
         """Update a manually added material"""
         work_order = self.get_object()
         try:
-            material_id = request.data.get("material_id")
-            quantity = Decimal(str(request.data.get("quantity")))
-            uom_id = request.data.get("uom_id")
-
-            material = WorkOrderMaterial.objects.get(pk=material_id, work_order=work_order)
-            material.quantity_planned = quantity
-            if uom_id:
-                material.uom_id = uom_id
-
-            # New fields
-            if "is_outsourced" in request.data:
-                material.is_outsourced = request.data.get("is_outsourced")
-            if "supplier_id" in request.data:
-                material.supplier_id = request.data.get("supplier_id")
-            if "unit_price" in request.data:
-                material.unit_price = Decimal(str(request.data.get("unit_price", 0)))
-            if "document_type" in request.data:
-                material.document_type = request.data.get("document_type")
-
-            material.save()
-
+            material = WorkOrderService.update_material(
+                work_order=work_order,
+                material_id=request.data.get("material_id"),
+                quantity=Decimal(str(request.data.get("quantity"))),
+                uom_id=request.data.get("uom_id") or None,
+                is_outsourced=request.data.get("is_outsourced") if "is_outsourced" in request.data else None,
+                supplier_id=request.data.get("supplier_id") if "supplier_id" in request.data else None,
+                unit_price=Decimal(str(request.data.get("unit_price", 0))) if "unit_price" in request.data else None,
+                document_type=request.data.get("document_type") if "document_type" in request.data else None,
+            )
             return Response(WorkOrderSerializer(work_order).data)
+        except WorkOrderMaterial.DoesNotExist:
+            return Response({"error": "Material no encontrado en esta orden."}, status=status.HTTP_404_NOT_FOUND)
         except Exception as e:
             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -584,9 +575,12 @@ class WorkOrderViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
         text = (request.data.get("text") or "").strip()
         if not text:
             return Response({"error": "text es requerido"}, status=status.HTTP_400_BAD_REQUEST)
-        comment = Comment.objects.create(
-            content_type=wo_ct,
-            object_id=order.pk,
+
+        from workflow.serializers import CommentSerializer
+        from workflow.services import WorkflowService
+
+        comment = WorkflowService.add_comment(
+            content_object=order,
             user=request.user,
             text=text,
         )

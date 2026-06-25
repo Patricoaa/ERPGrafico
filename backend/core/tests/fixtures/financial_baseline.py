@@ -11,8 +11,6 @@ Premisa:
     el comportamiento basta con generar journal entries determinísticos que
     reflejen las operaciones del negocio. No es necesario reproducir el
     pipeline completo de servicios (warehouses, BOMs, terminales POS, etc.) —
-    eso aumentaría la fragilidad sin agregar cobertura de reportes.
-
     Adicionalmente se crean cabeceras `Contact`, `SaleOrder`, `PurchaseOrder`,
     `Invoice` y `TreasuryMovement` para los reportes que iteran sobre documentos
     (auxiliares de clientes/proveedores, F29).
@@ -69,7 +67,9 @@ def _create_chart_of_accounts() -> dict[str, Any]:
     Returns a dict mapping logical names (e.g. 'cash') to Account instances
     for convenient use in journal entry generation.
     """
-    from accounting.models import Account
+    import pytest
+    from accounting.utils import get_default_vat_rate
+    from accounting.models import Account, AccountType
     from accounting.services import AccountingService
 
     AccountingService.populate_ifrs_coa()

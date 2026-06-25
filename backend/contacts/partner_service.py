@@ -35,6 +35,44 @@ class PartnerService:
     All operations create atomic transactions with proper accounting entries.
     """
 
+    @staticmethod
+    @transaction.atomic
+    def ensure_partner_setup(*, contact: Contact, as_of_date=None) -> Contact:
+        """
+        Promueve automáticamente un Contact a socio si aún no lo es.
+
+        Consolida el bloque ``if not contact.is_partner: ... contact.save()`` que
+        estaba incrustado en ``ContactViewSet.equity_subscription``.
+
+        Args:
+            contact: Contacto a promover.
+            as_of_date: Fecha de inicio como socio. Si es None, se usa hoy.
+
+        Returns:
+            La instancia ``Contact`` (modificada si se promovió, sin cambios si ya era socio).
+        """
+        if contact.is_partner:
+            return contact
+
+        contact.is_partner = True
+        if not contact.partner_since:
+            if as_of_date:
+                from datetime import datetime
+
+                try:
+                    contact.partner_since = (
+                        datetime.strptime(str(as_of_date), "%Y-%m-%d").date()
+                        if isinstance(as_of_date, str)
+                        else as_of_date
+                    )
+                except (ValueError, TypeError):
+                    contact.partner_since = timezone.now().date()
+            else:
+                contact.partner_since = timezone.now().date()
+
+        contact.save(update_fields=["is_partner", "partner_since"])
+        return contact
+
     # ──────────────────────────────────────────────────────────────
     # CAPITAL CONTRIBUTIONS
     # ──────────────────────────────────────────────────────────────

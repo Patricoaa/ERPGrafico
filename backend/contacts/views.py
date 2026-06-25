@@ -271,23 +271,10 @@ class ContactViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
     @action(detail=True, methods=["post"])
     def unblock_credit(self, request, pk=None):
         """Re-enables credit for a manually blocked contact"""
+        from .services import ContactService
+
         contact = self.get_object()
-        contact.credit_blocked = False
-        contact.credit_auto_blocked = False
-        contact.credit_risk_level = "LOW"  # Reset to LOW as a gesture of fresh start
-        contact.save()
-
-        from workflow.services import WorkflowService
-
-        WorkflowService.send_notification(
-            notification_type="CREDIT_UNBLOCK",
-            title=f"Crédito Rehabilitado: {contact.name}",
-            message=f"El cliente ha sido desbloqueado manualmente por {request.user.get_full_name() or request.user.username}.",
-            link=f"/credits/portfolio?search={contact.tax_id}",
-            content_object=contact,
-            level="SUCCESS",
-        )
-
+        ContactService.unblock_credit(contact=contact, unblocked_by=request.user)
         return Response({"message": "Crédito rehabilitado correctamente."})
 
     @action(detail=True, methods=["post"])
@@ -413,15 +400,14 @@ class ContactViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
     @action(detail=True, methods=["post", "put", "patch"])
     def setup_partner(self, request, pk=None):
         """Enable or update partner specific settings for a contact"""
+        from .services import ContactService
+
         contact = self.get_object()
-        is_partner = request.data.get("is_partner", contact.is_partner)
-        equity_percentage = request.data.get("partner_equity_percentage")
-
-        contact.is_partner = is_partner
-        if equity_percentage is not None:
-            contact.partner_equity_percentage = equity_percentage
-
-        contact.save()
+        ContactService.setup_partner(
+            contact=contact,
+            is_partner=request.data.get("is_partner", contact.is_partner),
+            equity_percentage=request.data.get("partner_equity_percentage"),
+        )
         return Response(self.get_serializer(contact).data)
 
     @action(detail=True, methods=["post"])
@@ -545,21 +531,9 @@ class ContactViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
         try:
             contact = Contact.objects.get(id=contact_id)
 
-            # Ensure partner setup
-            if not contact.is_partner:
-                contact.is_partner = True
-                if not contact.partner_since:
-                    try:
-                        from datetime import datetime
-
-                        contact.partner_since = (
-                            datetime.strptime(str(date), "%Y-%m-%d").date()
-                            if isinstance(date, str)
-                            else date
-                        )
-                    except (ValueError, TypeError):
-                        contact.partner_since = timezone.now().date()
-                contact.save()
+            # Ensure partner setup via service (promoción automática si no es socio aún)
+            from .partner_service import PartnerService
+            PartnerService.ensure_partner_setup(contact=contact, as_of_date=date)
 
             if move_type == "SUBSCRIPTION":
                 ptx = PartnerService.record_equity_subscription(

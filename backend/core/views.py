@@ -1,5 +1,4 @@
 from django.conf import settings
-from django.contrib.auth.hashers import make_password
 from django.contrib.auth.models import Group
 from django.utils import timezone
 from rest_framework import status, viewsets
@@ -28,7 +27,7 @@ from .serializers import (
     HistoricalRecordSerializer,
     UserSerializer,
 )
-from .services import ActionLoggingService
+from .services import ActionLoggingService, UserService
 
 
 class CustomTokenRefreshView(TokenRefreshView):
@@ -267,16 +266,7 @@ class ChangePasswordView(APIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        user.set_password(new_password)
-        user.save()
-
-        ActionLoggingService.log_action(
-            user=user,
-            action_type=ActionLog.Type.SECURITY,
-            description=f"Usuario {user.username} cambió su contraseña.",
-            request=request,
-        )
-
+        UserService.change_password(user=user, new_password=new_password, request=request)
         return Response({"detail": "Contraseña actualizada exitosamente."})
 
 
@@ -309,17 +299,7 @@ class ChangePinView(APIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        # We store the PIN securely using make_password but in the pos_pin field
-        user.pos_pin = make_password(new_pin)
-        user.save()
-
-        ActionLoggingService.log_action(
-            user=user,
-            action_type=ActionLog.Type.SECURITY,
-            description=f"Usuario {user.username} cambió su PIN de POS.",
-            request=request,
-        )
-
+        UserService.change_pin(user=user, new_pin=new_pin, request=request)
         return Response({"detail": "PIN de POS actualizado exitosamente."})
 
 
@@ -350,17 +330,7 @@ class UserViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
         Instead, the user is deactivated.
         """
         instance = self.get_object()
-        instance.is_active = False
-        instance.save()
-
-        ActionLoggingService.log_action(
-            user=request.user,
-            action_type=ActionLog.Type.SECURITY,
-            description=f"Usuario {instance.username} fue desactivado (Baja de sistema) en lugar de eliminado para trazabilidad.",
-            request=request,
-            metadata={"target_user_id": instance.id, "target_username": instance.username},
-        )
-
+        UserService.deactivate(user=instance, deactivated_by=request.user, request=request)
         return Response(
             {
                 "detail": "Los usuarios no pueden ser eliminados físicamente para mantener la trazabilidad. El usuario ha sido desactivado."
@@ -391,12 +361,9 @@ class CompanySettingsViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
 
     @action(detail=False, methods=["get", "put", "patch"])
     def current(self, request):
-        obj = CompanySettings.get_solo()
-        if not obj:
-            if request.method == "GET":
-                return Response({"detail": "Settings not found"}, status=status.HTTP_404_NOT_FOUND)
-            # For put/patch, create if not exist
-            obj = CompanySettings.objects.create(name="Mi Empresa")
+        obj, _ = CompanySettings.objects.get_or_create(
+            pk=1, defaults={"name": "Mi Empresa"}
+        )
 
         if request.method == "GET":
             serializer = self.get_serializer(obj)

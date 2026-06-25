@@ -94,6 +94,28 @@ class PayrollService:
             return Decimal("0")
 
     @staticmethod
+    def initialize_after_create(*, payroll: "Payroll") -> None:
+        """
+        Post-creación: ajusta el base_salary si no fue enviado y lanza la proforma.
+
+        Consolida la lógica que antes vivía en ``PayrollViewSet.perform_create``
+        evitando un ``payroll.save()`` directo en la vista.
+        """
+        from decimal import Decimal
+
+        if payroll.base_salary == Decimal("0") and payroll.employee.base_salary:
+            payroll.base_salary = payroll.employee.base_salary
+            payroll.save(update_fields=["base_salary"])
+
+        try:
+            PayrollService.generate_proforma_payroll(payroll=payroll)
+        except Exception as exc:
+            import logging
+            logging.getLogger(__name__).warning(
+                "Error generando proforma automática para payroll %s: %s", payroll.id, exc
+            )
+
+    @staticmethod
     @transaction.atomic
     def generate_proforma_payroll(employee_id=None, year=None, month=None, payroll=None):
         """
