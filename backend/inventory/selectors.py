@@ -169,6 +169,21 @@ def get_product_base_queryset(*, user) -> QuerySet:
         )
     )
 
+    # Último precio de compra para que no haga N+1 en vistas de detalle
+    from purchasing.models import PurchaseLine
+
+    last_purchase_qs = (
+        PurchaseLine.objects.filter(product=OuterRef("pk"))
+        .order_by("-order__date", "-id")
+        .values("unit_cost")[:1]
+    )
+    queryset = queryset.annotate(
+        annotated_last_purchase_price=Subquery(
+            last_purchase_qs,
+            output_field=DecimalField(max_digits=14, decimal_places=4),
+        )
+    )
+
     if user and user.is_authenticated:
         queryset = queryset.annotate(
             is_favorite=Exists(ProductFavorite.objects.filter(user=user, product=OuterRef("id")))

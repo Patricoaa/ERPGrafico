@@ -629,6 +629,24 @@ class UoMService:
     """
 
     @staticmethod
+    def get_cached_uom_name(uid: int) -> str | None:
+        """
+        Retorna el nombre de la Unidad de Medida (UoM) usando caché en memoria
+        para evitar N+1 (Mecánicamente extraído fuera de los serializadores).
+        """
+        from functools import lru_cache
+        from inventory.models import UoM
+
+        @lru_cache(maxsize=32)
+        def _get_uom_name(uom_id):
+            try:
+                return UoM.objects.get(pk=int(uom_id)).name
+            except (UoM.DoesNotExist, TypeError, ValueError):
+                return None
+                
+        return _get_uom_name(uid)
+
+    @staticmethod
     def convert_quantity(qty: Decimal, from_uom: UoM, to_uom: UoM) -> Decimal:
         """
         Convierte cantidad entre UoMs de la misma categoría.
