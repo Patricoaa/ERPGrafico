@@ -43,7 +43,7 @@ export function PageSectionHeader({ title, description, tabs, subTabs }: PageSec
                 {hasTabs && (
                     <TabBar
                         items={tabs.map(t => ({ value: t.value, label: t.label }))}
-                        value={activeTab!}
+                        value={activeTab ?? ''}
                         onValueChange={(value) => {
                             const tab = tabs.find(t => t.value === value)
                             if (tab) router.push(tab.href)

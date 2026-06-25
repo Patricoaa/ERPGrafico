@@ -47,7 +47,7 @@ export function useJournalEntry(id: string | number | undefined) {
     return useQuery({
         queryKey: [...JOURNAL_ENTRIES_QUERY_KEY, 'detail', id],
         queryFn: async () => {
-            const data = await accountingApi.getEntry(id!)
+            const data = await accountingApi.getEntry(id as string | number)
             return data
         },
         enabled: !!id,

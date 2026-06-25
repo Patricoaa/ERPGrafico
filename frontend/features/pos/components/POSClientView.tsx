@@ -12,7 +12,7 @@ import { PrintableReceipt, BaseModal } from '@/components/shared'
 import { useVatRate } from '@/hooks/useVatRate'
 import { useDeviceContext } from '@/hooks/useDeviceContext'
 import { Loader2, FileText, BarChart3, Save, Lock, Unlock, ArrowRightLeft, LogOut, ShoppingCart, Wallet, Check, Printer } from 'lucide-react'
-import { AnimatePresence, motion } from 'framer-motion'
+
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -554,66 +554,64 @@ export function POSClientView() {
                 )}
 
                 <div className="md:col-span-12 lg:col-span-7 flex flex-col min-h-0">
-                    <AnimatePresence mode="wait">
-                        {posMode === 'SHOPPING' ? (
-                            <motion.div key="shop" initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, scale: 0.98 }} className="flex-1 flex flex-col min-h-0">
-                                <Card className="flex-1 flex flex-col overflow-hidden bg-muted/10 border py-1.5">
-                                    <div className="px-2 pt-1.5 pb-1.5 border-b bg-background/50 space-y-2">
-                                        <SearchBar
-                                            value={searchTerm}
-                                            onChange={setSearchTerm}
-                                            onEnter={handleSearchEnter}
-                                            rightAction={isDesktop ? (
-                                                <CategoryDropdown
-                                                    categories={categories}
-                                                    selectedCategoryId={selectedCategoryId}
-                                                    onSelectCategory={setSelectedCategoryId}
-                                                />
-                                            ) : undefined}
-                                        />
-                                        {!isDesktop && (
-                                            <CategoryFilter
+                    {posMode === 'SHOPPING' ? (
+                        <div key="shop" className="flex-1 flex flex-col min-h-0 animate-in fade-in slide-in-from-left-2 ease-premium duration-300 fill-mode-both">
+                            <Card className="flex-1 flex flex-col overflow-hidden bg-muted/10 border py-1.5">
+                                <div className="px-2 pt-1.5 pb-1.5 border-b bg-background/50 space-y-2">
+                                    <SearchBar
+                                        value={searchTerm}
+                                        onChange={setSearchTerm}
+                                        onEnter={handleSearchEnter}
+                                        rightAction={isDesktop ? (
+                                            <CategoryDropdown
                                                 categories={categories}
                                                 selectedCategoryId={selectedCategoryId}
                                                 onSelectCategory={setSelectedCategoryId}
                                             />
-                                        )}
-                                    </div>
-                                    <div className="flex-1 px-1.5 pt-1.5 pb-0"><ProductGrid products={filteredProducts} categories={categories} limits={stockLimits} isProductDisabled={(p) => isPOSProductDisabled(p as unknown as Product)} onProductClick={(p) => handleProductClick(p as unknown as Product)} onToggleFavorite={toggleFavorite} /></div>
-                                </Card>
-                            </motion.div>
-                        ) : (
-                            <motion.div key={currentDraftId || 'checkout-new'} initial={{ opacity: 0, scale: 0.98, x: 20 }} animate={{ opacity: 1, scale: 1, x: 0 }} exit={{ opacity: 0, x: 20 }} className="flex-1 flex flex-col min-h-0 bg-background border rounded-md shadow-card overflow-hidden relative border-primary/20">
-                                <SalesCheckoutWizardContent
-                                    key={currentDraftId || 'checkout-new'}
-                                    order={null}
-                                    orderLines={currentOrderLines as any}
-                                    total={totals.total_gross}
-                                    totalDiscountAmount={totalDiscountAmount}
-                                    onComplete={(data) => handleCheckoutComplete(data as any)}
-                                    onCancel={() => setPosMode('SHOPPING')}
-                                    onSuspend={(state) => handleSuspendDraft(state as any)}
-                                    initialCustomerId={selectedCustomerId?.toString() || (wizardState?.isQuickSale ? defaultCustomerId?.toString() : undefined)}
-                                    posSessionId={currentSession?.id}
-                                    terminalId={currentSession?.terminal}
-                                    terminalDeviceId={currentSession?.terminal_details?.payment_terminal_device ?? null}
-                                    quickSale={wizardState?.isQuickSale}
-                                    initialStep={wizardState?.step}
-                                    initialDteData={wizardState?.dteData as any}
-                                    initialPaymentData={wizardState?.paymentData as any}
-                                    initialDeliveryData={wizardState?.deliveryData as any}
-                                    initialApprovalTaskId={wizardState?.approvalTaskId}
-                                    initialIsWaitingApproval={wizardState?.isWaitingApproval}
-                                    initialIsApproved={wizardState?.isApproved}
-                                    initialDraftId={currentDraftId}
-                                    onStateChange={handleWizardStateChange}
-                                    isInline
-                                    isSessionHost={user?.id === currentSession?.user}
-                                    touchMode={isTouchMode}
-                                />
-                            </motion.div>
-                        )}
-                    </AnimatePresence>
+                                        ) : undefined}
+                                    />
+                                    {!isDesktop && (
+                                        <CategoryFilter
+                                            categories={categories}
+                                            selectedCategoryId={selectedCategoryId}
+                                            onSelectCategory={setSelectedCategoryId}
+                                        />
+                                    )}
+                                </div>
+                                <div className="flex-1 px-1.5 pt-1.5 pb-0"><ProductGrid products={filteredProducts} categories={categories} limits={stockLimits} isProductDisabled={(p) => isPOSProductDisabled(p as unknown as Product)} onProductClick={(p) => handleProductClick(p as unknown as Product)} onToggleFavorite={toggleFavorite} /></div>
+                            </Card>
+                        </div>
+                    ) : (
+                        <div key={currentDraftId || 'checkout-new'} className="flex-1 flex flex-col min-h-0 bg-background border rounded-md shadow-card overflow-hidden relative border-primary/20 animate-in fade-in slide-in-from-right-2 ease-premium duration-300 fill-mode-both">
+                            <SalesCheckoutWizardContent
+                                key={currentDraftId || 'checkout-new'}
+                                order={null}
+                                orderLines={currentOrderLines as any}
+                                total={totals.total_gross}
+                                totalDiscountAmount={totalDiscountAmount}
+                                onComplete={(data) => handleCheckoutComplete(data as any)}
+                                onCancel={() => setPosMode('SHOPPING')}
+                                onSuspend={(state) => handleSuspendDraft(state as any)}
+                                initialCustomerId={selectedCustomerId?.toString() || (wizardState?.isQuickSale ? defaultCustomerId?.toString() : undefined)}
+                                posSessionId={currentSession?.id}
+                                terminalId={currentSession?.terminal}
+                                terminalDeviceId={currentSession?.terminal_details?.payment_terminal_device ?? null}
+                                quickSale={wizardState?.isQuickSale}
+                                initialStep={wizardState?.step}
+                                initialDteData={wizardState?.dteData as any}
+                                initialPaymentData={wizardState?.paymentData as any}
+                                initialDeliveryData={wizardState?.deliveryData as any}
+                                initialApprovalTaskId={wizardState?.approvalTaskId}
+                                initialIsWaitingApproval={wizardState?.isWaitingApproval}
+                                initialIsApproved={wizardState?.isApproved}
+                                initialDraftId={currentDraftId}
+                                onStateChange={handleWizardStateChange}
+                                isInline
+                                isSessionHost={user?.id === currentSession?.user}
+                                touchMode={isTouchMode}
+                            />
+                        </div>
+                    )}
                 </div>
 
                 <div className="md:col-span-12 lg:col-span-5 flex flex-col min-h-0">

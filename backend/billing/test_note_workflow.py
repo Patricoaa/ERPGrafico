@@ -26,7 +26,7 @@ def comprehensive_setup(db):
         code="2.1.01", name="Cuentas por Pagar", account_type=AccountType.LIABILITY
     )
     acc_revenue = Account.objects.create(
-        code="4.1.01", name="Ingresos por Ventas", account_type=AccountType.REVENUE
+        code="4.1.01", name="Ingresos por Ventas", account_type=AccountType.INCOME
     )
     acc_expense = Account.objects.create(
         code="5.1.01", name="Costo de Ventas", account_type=AccountType.EXPENSE

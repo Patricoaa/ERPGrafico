@@ -122,7 +122,7 @@ export function useProducts({ filters, initialData }: UseProductsProps = {}) {
 export function useProduct(id: number | null | undefined) {
     return useQuery({
         queryKey: id ? PRODUCTS_KEYS.detail(id) : ['products', 'detail', 'noop'],
-        queryFn: () => inventoryApi.getProduct(id!),
+        queryFn: () => inventoryApi.getProduct(id as number),
         enabled: !!id,
     })
 }

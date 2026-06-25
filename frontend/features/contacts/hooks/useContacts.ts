@@ -92,8 +92,8 @@ export function useContactMutations() {
 
 export function useContactInsights(id: number | undefined) {
     return useQuery({
-        queryKey: CONTACTS_KEYS.insights(id!),
-        queryFn: () => contactsApi.getInsights(id!),
+        queryKey: id ? CONTACTS_KEYS.insights(id) : ['contacts', 'insights', 'noop'],
+        queryFn: () => contactsApi.getInsights(id as number),
         enabled: !!id,
         staleTime: 5 * 60 * 1000, // 5 min
     })
@@ -103,7 +103,7 @@ export function useContactInsights(id: number | undefined) {
 export function useContact(id: number | null | undefined) {
     return useQuery({
         queryKey: id ? CONTACTS_KEYS.detail(id) : ['contacts', 'detail', 'noop'],
-        queryFn: () => contactsApi.getContact(id!),
+        queryFn: () => contactsApi.getContact(id as number),
         enabled: !!id,
     })
 }
@@ -123,7 +123,7 @@ export function useContactCreditLedger(contactId: number | null | undefined) {
     return useQuery<PendingDebt[]>({
         queryKey: contactId ? [...CONTACTS_KEYS.detail(contactId), 'creditLedger'] : ['contacts', 'creditLedger', 'noop'],
         queryFn: async () => {
-            const data = await contactsApi.getCreditLedger(contactId!)
+            const data = await contactsApi.getCreditLedger(contactId as number)
             return data.filter(d => Number(d.balance) > 0)
         },
         enabled: !!contactId,

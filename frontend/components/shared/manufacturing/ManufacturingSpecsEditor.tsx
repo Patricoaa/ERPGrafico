@@ -118,7 +118,7 @@ export function ManufacturingSpecsEditor({
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
-      set({ design_files: [...value.design_files, ...Array.from(e.target.files!)] })
+      set({ design_files: [...value.design_files, ...Array.from(e.target.files)] })
     }
   }
 

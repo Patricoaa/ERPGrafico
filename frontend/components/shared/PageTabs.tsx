@@ -92,7 +92,7 @@ export function PageTabs({ tabs, activeValue, subActiveValue, maxWidth, classNam
                                             align="start" 
                                             className="w-48 rounded-sm border-border/40 shadow-floating shadow-black/5 bg-background/95 backdrop-blur-sm p-1 mt-1"
                                         >
-                                            {tab.subTabs!.map((sub) => {
+                                            {tab.subTabs?.map((sub) => {
                                                 const isSubActive = isActive && sub.value === subActiveValue
                                                 return (
                                                     <DropdownMenuItem 

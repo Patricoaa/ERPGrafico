@@ -119,10 +119,9 @@ export function AccountingClosuresClientView({ externalOpen, onExternalOpenChang
 
         // Group periods by year
         periods.forEach(p => {
-            if (!grouped.has(p.year)) {
-                grouped.set(p.year, []);
-            }
-            grouped.get(p.year)!.push(p);
+            const arr = grouped.get(p.year) ?? [];
+            arr.push(p);
+            grouped.set(p.year, arr);
         });
 
         // Add any fiscal years that might not have periods (rare)

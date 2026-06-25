@@ -110,7 +110,7 @@ export function useInvoices({ filters, initialData }: UseInvoicesProps = {}) {
 export function useInvoice(id: number | null | undefined) {
     return useQuery({
         queryKey: id ? [...INVOICES_QUERY_KEY, 'detail', id] : [...INVOICES_QUERY_KEY, 'detail', 'noop'],
-        queryFn: () => billingApi.getInvoice(id!),
+        queryFn: () => billingApi.getInvoice(id as number),
         enabled: !!id,
     })
 }

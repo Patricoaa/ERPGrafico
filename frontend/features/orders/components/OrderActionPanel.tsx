@@ -225,11 +225,11 @@ export function OrderActionPanel({
                                     Acciones Disponibles
                                 </h3>
 
-                                {Object.entries(filteredActions).map(([key, category]) => (
+                                {order && Object.entries(filteredActions).map(([key, category]) => (
                                     <ActionCategory
                                         key={key}
                                         category={category}
-                                        order={order!}
+                                        order={order}
                                         userPermissions={userPermissions?.permissions || []}
                                         onActionSuccess={handleActionComplete}
                                     />

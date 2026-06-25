@@ -30,7 +30,7 @@ const ALLOWED_SUFFIXES = [
   'Settings', 'Actions', 'Cart', 'Bell', 'Inbox',
 ];
 
-export default {
+const rule = {
   meta: {
     type: 'suggestion',
     docs: {
@@ -109,3 +109,5 @@ export default {
     };
   },
 };
+
+export default rule;

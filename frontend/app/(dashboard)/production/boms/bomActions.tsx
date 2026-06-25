@@ -11,7 +11,7 @@ export const bomActions = createEntityActions<
     BOMActionsCtx
 >((item, ctx) => (
     <>
-        <DataCell.Action action="edit" onClick={() => ctx.onEdit(item.id!)} />
-        <DataCell.Action action="delete" onClick={() => ctx.onDelete(item.id!)} />
+        <DataCell.Action action="edit" onClick={() => item.id != null && ctx.onEdit(item.id)} />
+        <DataCell.Action action="delete" onClick={() => item.id != null && ctx.onDelete(item.id)} />
     </>
 ))

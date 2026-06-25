@@ -149,7 +149,7 @@ export function Step2_ManufacturingDetails({ orderLines, setOrderLines }: Step2_
                     onOpenChange={(open) => !open && setEditingLineIndex(null)}
                     product={{
                         ...editingLine,
-                        id: editingLine.id!,
+                        id: editingLine.id as number,
                         // Ensure required flags are present for the dialog logic
                         requires_advanced_manufacturing: true,
                         mfg_enable_prepress: editingLine.mfg_enable_prepress ?? true,

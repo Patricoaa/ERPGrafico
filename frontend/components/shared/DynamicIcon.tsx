@@ -21,7 +21,7 @@ const getIconComponent = (iconName: keyof typeof dynamicIconImports) => {
       loading: LoadingFallback
     }) as any)
   }
-  return iconCache.get(iconName)!
+  return iconCache.get(iconName) as React.LazyExoticComponent<React.ComponentType<any>>
 }
 
 export const DynamicIcon = ({ name, ...props }: DynamicIconProps) => {

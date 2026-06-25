@@ -254,7 +254,7 @@ export function Step3_Delivery({ deliveryData, setDeliveryData, orderLines }: St
                                                     readOnly={isTouchMode}
                                                     onClick={() => {
                                                         if (isTouchMode && isEligible) {
-                                                            setNumpadTarget({ lineId: Number(line.id), productId: Number(line.product), uom: line.uom!, pendingQty })
+                                                            setNumpadTarget({ lineId: Number(line.id), productId: Number(line.product), uom: line.uom ?? '', pendingQty })
                                                             setNumpadValue(currentVal.toString())
                                                             setNumpadOpen(true)
                                                         }
@@ -267,7 +267,7 @@ export function Step3_Delivery({ deliveryData, setDeliveryData, orderLines }: St
                                                             if (existingIdx >= 0) {
                                                                 pqs[existingIdx] = { ...pqs[existingIdx], dispatchedQty: val };
                                                             } else {
-                                                                pqs.push({ lineId: line.id!, productId: Number(line.product)!, dispatchedQty: val, uom: line.uom! });
+                                                                pqs.push({ lineId: line.id ?? 0, productId: Number(line.product) ?? 0, dispatchedQty: val, uom: line.uom ?? '' });
                                                             }
                                                             return { ...prev, partialQuantities: pqs };
                                                         });
@@ -286,7 +286,7 @@ export function Step3_Delivery({ deliveryData, setDeliveryData, orderLines }: St
                                                             if (existingIdx >= 0) {
                                                                 pqs[existingIdx] = { ...pqs[existingIdx], uom: uomId };
                                                             } else {
-                                                                pqs.push({ lineId: line.id!, productId: Number(line.product)!, dispatchedQty: 1, uom: uomId });
+                                                                pqs.push({ lineId: line.id ?? 0, productId: Number(line.product) ?? 0, dispatchedQty: 1, uom: uomId });
                                                             }
                                                             return { ...prev, partialQuantities: pqs };
                                                         });

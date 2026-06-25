@@ -12,16 +12,16 @@ export function useCreditLines(params?: { treasury_account_id?: number; bank_id?
 
 export function useCreditLine(id: number | null) {
     return useQuery({
-        queryKey: CREDIT_LINES_KEYS.detail(id!),
-        queryFn: () => creditLinesApi.get(id!),
+        queryKey: CREDIT_LINES_KEYS.detail(id as number),
+        queryFn: () => creditLinesApi.get(id as number),
         enabled: !!id,
     })
 }
 
 export function useCreditLineOverview(id: number | null) {
     return useQuery({
-        queryKey: [...CREDIT_LINES_KEYS.detail(id!), 'overview'],
-        queryFn: () => creditLinesApi.overview(id!),
+        queryKey: [...CREDIT_LINES_KEYS.detail(id as number), 'overview'],
+        queryFn: () => creditLinesApi.overview(id as number),
         enabled: !!id,
     })
 }

@@ -61,3 +61,15 @@ def clear_singleton_cache():
     cache.clear()
     yield
     cache.clear()
+
+@pytest.fixture(autouse=True)
+def setup_cash_group_account(db):
+    """Ensure CASH_GROUP_CODE account exists for get_cash_pool_accounts() validation."""
+    from accounting.models import Account, AccountType
+    if not Account.objects.filter(code=Account.CASH_GROUP_CODE).exists():
+        Account.objects.create(
+            code=Account.CASH_GROUP_CODE,
+            name="Efectivo y Equivalentes",
+            account_type=AccountType.ASSET,
+            accepts_entries=False
+        )

@@ -145,9 +145,9 @@ export function SmartSearchBar({ searchDef, placeholder = 'Buscar...', className
           handleFieldSelect(filteredFields[focusedIndex])
           return
         }
-        if (activeSuggestionsUrl && focusedIndex >= 0 && suggestions[focusedIndex]) {
+        if (activeSuggestionsUrl && parsedActiveFieldInfo && focusedIndex >= 0 && suggestions[focusedIndex]) {
           e.preventDefault()
-          handleSuggestionSelect(parsedActiveFieldInfo!.field, suggestions[focusedIndex])
+          handleSuggestionSelect(parsedActiveFieldInfo.field, suggestions[focusedIndex])
           return
         }
         if (stage.type === 'closed' || stage.type === 'fields' || activeSuggestionsUrl) {
@@ -359,7 +359,7 @@ export function SmartSearchBar({ searchDef, placeholder = 'Buscar...', className
                       type="button"
                       role="option"
                       aria-selected={i === focusedIndex}
-                      onClick={() => handleSuggestionSelect(parsedActiveFieldInfo!.field, value)}
+                      onClick={() => parsedActiveFieldInfo && handleSuggestionSelect(parsedActiveFieldInfo.field, value)}
                       className={cn(
                         'w-full flex items-center px-2.5 py-1.5 text-left transition-colors rounded-sm',
                         'text-[9px] font-black',

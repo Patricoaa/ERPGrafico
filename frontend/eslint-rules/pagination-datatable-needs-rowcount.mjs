@@ -20,7 +20,7 @@ function getAttr(openingElement, name) {
     );
 }
 
-export default {
+const rule = {
     meta: {
         type: 'problem',
         docs: {
@@ -54,3 +54,5 @@ export default {
         };
     },
 };
+
+export default rule;

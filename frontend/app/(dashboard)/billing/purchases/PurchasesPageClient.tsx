@@ -319,7 +319,7 @@ export default function PurchasesPageClient({ initialInvoices }: PurchasesPageCl
                                 variant="default"
                                 size="sm"
                                 onClick={() => openHub({
-                                    orderId: doc.purchase_order!,
+                                    orderId: doc.purchase_order,
                                     invoiceId: ['NOTA_CREDITO', 'NOTA_DEBITO'].includes(doc.dte_type) ? doc.id : null,
                                     type: 'purchase',
                                     onActionSuccess: refetch

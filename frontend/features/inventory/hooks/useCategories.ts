@@ -103,7 +103,7 @@ export function useCategory(id: number | null | undefined) {
     return useQuery({
         queryKey: id ? CATEGORIES_KEYS.detail(id) : ['categories', 'detail', 'noop'],
         queryFn: async (): Promise<Category> => {
-            const res = await api.get<Category>(`/inventory/categories/${id!}/`)
+            const res = await api.get<Category>(`/inventory/categories/${id as number}/`)
             return res.data
         },
         enabled: !!id,

@@ -7,7 +7,7 @@ import { ActionConfirmModal, DataTable } from '@/components/shared'
 import { DataTableColumnHeader } from '@/components/shared'
 import { DataCell } from '@/components/shared'
 import { workOrderActions, type WorkOrderActionsCtx } from './workOrderActions'
-import { type ColumnDef } from "@tanstack/react-table"
+import { type ColumnDef, type Row, type Table } from "@tanstack/react-table"
 import { Printer, User, Check } from "lucide-react"
 import { useViewMode } from "@/hooks/useViewMode"
 import {
@@ -250,11 +250,11 @@ export default function WorkOrdersPageClient({ initialOrders }: WorkOrdersPageCl
         workOrderActions.column(workOrderActionsCtx) as ColumnDef<WorkOrder>,
     ], [handleDuplicate, handleCancel, handleDelete, searchParams, router, pathname])
 
-    const renderKanbanView = useCallback((table: import("@tanstack/react-table").Table<WorkOrder>) => (
+    const renderKanbanView = useCallback((table: Table<WorkOrder>) => (
         <div className="relative">
             <div className="min-h-[600px]">
                 <WorkOrderKanban
-                    orders={table.getFilteredRowModel().rows.map((row: import("@tanstack/react-table").Row<WorkOrder>) => row.original)}
+                    orders={table.getFilteredRowModel().rows.map((row: Row<WorkOrder>) => row.original)}
                     onManage={handleManage}
                     onDuplicate={handleDuplicate}
                     onAnnul={handleCancel}
@@ -265,9 +265,9 @@ export default function WorkOrdersPageClient({ initialOrders }: WorkOrdersPageCl
         </div>
     ), [loading, handleManage, handleDuplicate, handleCancel, handleDelete])
 
-    const renderTimelineView = useCallback((table: import("@tanstack/react-table").Table<WorkOrder>) => (
+    const renderTimelineView = useCallback((table: Table<WorkOrder>) => (
         <WorkOrderTimeline
-            orders={table.getFilteredRowModel().rows.map((row: import("@tanstack/react-table").Row<WorkOrder>) => row.original)}
+            orders={table.getFilteredRowModel().rows.map((row: Row<WorkOrder>) => row.original)}
             onManage={handleManage}
             isLoading={loading}
         />

@@ -16,8 +16,8 @@ export function useBudgetDetailData(id: number | null) {
         queryKey: FINANCE_KEYS.budgets.detailData(id ?? 0),
         queryFn: async () => {
             const [budget, execution] = await Promise.all([
-                financeApi.getBudgetDetail(id!),
-                financeApi.getBudgetExecution(id!)
+                financeApi.getBudgetDetail(id as number),
+                financeApi.getBudgetExecution(id as number)
             ])
             return { budget, execution }
         },
@@ -29,7 +29,7 @@ export function useBudgetDetailData(id: number | null) {
 export function useBudgetVariance(id: number | null, params?: Record<string, unknown>) {
     return useQuery({
         queryKey: FINANCE_KEYS.budgets.variance(id ?? 0),
-        queryFn: () => financeApi.getBudgetVariance(id!, params),
+        queryFn: () => financeApi.getBudgetVariance(id as number, params),
         enabled: id != null,
         staleTime: 2 * 60 * 1000,
     })

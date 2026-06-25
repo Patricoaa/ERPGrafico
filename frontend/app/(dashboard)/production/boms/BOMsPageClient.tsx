@@ -19,7 +19,7 @@ import { useAllBOMs } from "@/features/production"
 import { bomSearchDef } from "@/features/production/searchDef"
 import { bomSegDef } from "@/features/production/segmentationDef"
 
-import type { BOM } from "@/features/production/types"
+import type { BOM, ProductMinimal } from "@/features/production/types"
 
 export interface BOMListItem extends BOM {
     product_name: string
@@ -200,7 +200,7 @@ export default function BOMsPageClient({ initialBoms }: BOMsPageClientProps) {
                         description: "Crea una lista de materiales (BOM) para definir cómo se fabrica un producto.",
                     }}
                     renderCard={(bom: BOMListItem) => (
-                        <EntityCard onClick={() => handleEdit(bom.id!)}>
+                        <EntityCard onClick={() => bom.id != null && handleEdit(bom.id)}>
                             <EntityCard.Header
                                 title={bom.name}
                                 subtitle={bom.product_name}
@@ -226,7 +226,7 @@ export default function BOMsPageClient({ initialBoms }: BOMsPageClientProps) {
                     id: editingBom.product,
                     name: (editingBom as BOMListItem).product_name,
                     code: (editingBom as BOMListItem).product_code
-                } as unknown as import('@/features/production/types').ProductMinimal : undefined}
+                } as unknown as ProductMinimal : undefined}
             />
 
             <ActionConfirmModal

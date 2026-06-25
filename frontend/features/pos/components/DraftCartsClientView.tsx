@@ -90,7 +90,7 @@ export function DraftCartsClientView({
 
     const isControlled = externalOpen !== undefined
     const open = isControlled ? externalOpen : internalOpen
-    const setOpen = isControlled ? setExternalOpen! : setInternalOpen
+    const setOpen: (open: boolean) => void = isControlled ? (setExternalOpen as (open: boolean) => void) : setInternalOpen
 
     const fetchDrafts = async () => {
         if (!posSessionId) {

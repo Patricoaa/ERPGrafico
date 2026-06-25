@@ -47,7 +47,7 @@ function isHardcodedColorValue(className) {
   return HARDCODED_VALUE_PATTERN.test(className);
 }
 
-export default {
+const rule = {
   meta: {
     type: 'suggestion',
     docs: {
@@ -162,3 +162,5 @@ export default {
     };
   },
 };
+
+export default rule;

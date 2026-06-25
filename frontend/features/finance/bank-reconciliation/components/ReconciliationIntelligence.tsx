@@ -111,8 +111,9 @@ export function ReconciliationIntelligence({ externalOpen }: { externalOpen?: bo
     }, [settings, form])
 
     const onSave = useCallback(async (data: IntelligenceFormValues) => {
-        await updateMutation.mutateAsync({ ...data, id: settings!.id })
-    }, [updateMutation, settings?.id])
+        if (!settings) return
+        await updateMutation.mutateAsync({ ...data, id: settings.id })
+    }, [updateMutation, settings])
 
     const { status, invalidReason, lastSavedAt, retry } = useAutoSaveForm({
         form,

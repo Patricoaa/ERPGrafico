@@ -199,11 +199,15 @@ export default function StatementImportModal({ open, onOpenChange, onSuccess, de
             return false
         }
         
+        if (!file) {
+            setError("No hay archivo seleccionado")
+            return false
+        }
         setLoading(true)
         setError(null)
         try {
             const dryRunData = new FormData()
-            dryRunData.append('file', file!)
+            dryRunData.append('file', file)
             dryRunData.append('treasury_account_id', treasuryAccountId)
             dryRunData.append('bank_format', bankFormat)
             
@@ -238,11 +242,16 @@ export default function StatementImportModal({ open, onOpenChange, onSuccess, de
             return false
         }
 
+        if (!file) {
+            setError("No hay archivo seleccionado")
+            return false
+        }
+
         try {
             setLoading(true)
 
             const importData = new FormData()
-            importData.append('file', file!)
+            importData.append('file', file)
             importData.append('treasury_account_id', treasuryAccountId)
             importData.append('bank_format', bankFormat)
 

@@ -11,10 +11,17 @@
       "sourceType": "github",
       "computedHash": "20889af7cb9b3abca1e38824f7fffaa873eb0cc4d45187967b97bd85462cf934"
     },
+    "django-expert": {
+      "source": "vintasoftware/django-ai-plugins",
+      "sourceType": "github",
+      "skillPath": "plugins/django-expert/skills/SKILL.md",
+      "computedHash": "a6b8c224017570496d688a526fcbea74025a01cc90d9afb0977bfcc1f76af306"
+    },
     "frontend-design": {
       "source": "anthropics/skills",
       "sourceType": "github",
-      "computedHash": "516bd2154eb843a8240e43d5b285229129853114ad7075a5e141e1c08e408c84"
+      "skillPath": "skills/frontend-design/SKILL.md",
+      "computedHash": "4eabc66183767153e404b39d1b839b1c37f2d82d86f0a0d7e880a579d8d62336"
     },
     "redesign-existing-projects": {
       "source": "leonxlnx/taste-skill",

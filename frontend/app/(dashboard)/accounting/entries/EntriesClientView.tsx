@@ -23,6 +23,7 @@ import { useEntityRouteActions } from "@/hooks/useEntityRouteActions"
 import { SmartSearchBar, useSmartSearch, SegmentationBar, useSegmentation } from "@/components/shared"
 import { journalEntrySearchDef } from "@/features/accounting/searchDef"
 import { journalEntrySegDef } from "@/features/accounting/segmentationDef"
+import type { JournalEntryInitialData } from '@/types/forms'
 
 interface EntriesPageProps {
     externalOpen?: boolean
@@ -277,7 +278,7 @@ export default function EntriesPage({ externalOpen, onExternalOpenChange, create
 
                 <JournalEntryDrawer
                     accounts={accounts as any}
-                    initialData={editingEntry as unknown as import('@/types/forms').JournalEntryInitialData | undefined}
+                    initialData={editingEntry as unknown as JournalEntryInitialData | undefined}
                     onSuccess={() => {
                         refetch()
                         handleFormOpenChange(false)
