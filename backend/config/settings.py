@@ -257,6 +257,7 @@ REST_FRAMEWORK = {
     ),
     "DEFAULT_PERMISSION_CLASSES": ("core.api.permissions.StandardizedModelPermissions",),
     "DEFAULT_FILTER_BACKENDS": ("django_filters.rest_framework.DjangoFilterBackend",),
+    "DEFAULT_PAGINATION_CLASS": "core.api.pagination.StandardResultsSetPagination",
     "EXCEPTION_HANDLER": "core.api.exceptions.erpgrafico_exception_handler",
     "DEFAULT_THROTTLE_CLASSES": (
         "rest_framework.throttling.AnonRateThrottle",
