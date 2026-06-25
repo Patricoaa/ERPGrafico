@@ -140,7 +140,8 @@ class AccountViewSet(BulkImportMixin, AuditHistory, viewsets.ModelViewSet):
 
 
 class JournalEntryViewSet(viewsets.ModelViewSet, AuditHistory):
-    queryset = JournalEntry.objects.all()
+    def get_queryset(self):
+        return JournalEntry.objects.select_related("reversal_of", "source_content_type").prefetch_related("items", "items__account", "items__partner", "source_document").all()
     serializer_class = JournalEntrySerializer
     filter_backends = [DjangoFilterBackend, filters.SearchFilter]
     filterset_class = JournalEntryFilterSet
@@ -217,7 +218,8 @@ class JournalEntryViewSet(viewsets.ModelViewSet, AuditHistory):
 
 
 class BudgetViewSet(viewsets.ModelViewSet):
-    queryset = Budget.objects.all()
+    def get_queryset(self):
+        return Budget.objects.prefetch_related("items", "items__account").all()
     serializer_class = BudgetSerializer
 
     @action(detail=True, methods=["get"])
@@ -296,7 +298,8 @@ class BudgetViewSet(viewsets.ModelViewSet):
 
 
 class BudgetItemViewSet(viewsets.ModelViewSet):
-    queryset = BudgetItem.objects.all()
+    def get_queryset(self):
+        return BudgetItem.objects.select_related("account").all()
     serializer_class = BudgetItemSerializer
 
 
@@ -305,7 +308,8 @@ class FiscalYearViewSet(viewsets.ModelViewSet):
     CRUD + custom actions for Fiscal Year management and annual closing.
     """
 
-    queryset = FiscalYear.objects.all()
+    def get_queryset(self):
+        return FiscalYear.objects.select_related("closing_entry", "opening_entry", "closed_by").all()
     serializer_class = FiscalYearSerializer
 
     @action(detail=False, methods=["get"], url_path="(?P<year>[0-9]{4})/preview-closing")

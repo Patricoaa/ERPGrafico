@@ -119,11 +119,9 @@ class SaleLineSerializer(serializers.ModelSerializer):
         if not obj.product or obj.product.product_type != "MANUFACTURABLE":
             return True
 
-        # If it's express manufacturing (mfg_auto_finalize), it's considered finished
-        # but we also need to check if an OT actually exists and is finished
-        # because even express items generate an OT that might be manually handled.
-        ots = obj.work_orders.exclude(status="CANCELLED")
-        if not ots.exists():
+        # Use prefetched work_orders
+        ots = [ot for ot in obj.work_orders.all() if ot.status != "CANCELLED"]
+        if not ots:
             # If no OT yet (or all cancelled), but it's manufacturable, it's not finished
             return False
 
@@ -131,12 +129,12 @@ class SaleLineSerializer(serializers.ModelSerializer):
         return all(ot.current_stage == "FINISHED" for ot in ots)
 
     def get_work_order_summary(self, obj):
-        ots = obj.work_orders.exclude(status="CANCELLED")
-        if not ots.exists():
+        ots = [ot for ot in obj.work_orders.all() if ot.status != "CANCELLED"]
+        if not ots:
             return None
 
         # Return summary of first active OT for simple UI display
-        ot = ots.first()
+        ot = ots[0]
         return {
             "number": ot.number,
             "status": ot.status,
@@ -285,7 +283,9 @@ class SaleOrderSerializer(serializers.ModelSerializer):
                 docs["invoices"].append(doc_info)
 
         # Only include deliveries NOT linked to a note (original order deliveries)
-        for deliv in obj.deliveries.filter(related_note__isnull=True):
+        for deliv in obj.deliveries.all():
+            if getattr(deliv, "related_note_id", None) is not None:
+                continue
             docs["deliveries"].append(
                 {
                     "id": deliv.id,
@@ -319,15 +319,17 @@ class SaleOrderSerializer(serializers.ModelSerializer):
 
     def get_lines(self, obj):
         # Only include original lines (not those from notes)
-        return SaleLineSerializer(obj.lines.filter(related_note__isnull=True), many=True).data
+        lines = [line for line in obj.lines.all() if getattr(line, "related_note_id", None) is None]
+        return SaleLineSerializer(lines, many=True).data
 
     def get_work_orders(self, obj):
         # Only include OTs NOT linked to a note (original order OTs)
-        ots = obj.work_orders.filter(related_note__isnull=True)
+        ots = [ot for ot in obj.work_orders.all() if getattr(ot, "related_note_id", None) is None]
         return WorkOrderSerializer(ots, many=True).data
 
     def get_has_pending_work_orders(self, obj):
-        return obj.work_orders.filter(related_note__isnull=True).exclude(status="FINISHED").exists()
+        ots = [ot for ot in obj.work_orders.all() if getattr(ot, "related_note_id", None) is None and ot.status != "FINISHED"]
+        return len(ots) > 0
 
     def get_total_paid(self, obj):
         return sum(p.amount for p in obj.payments.all())
@@ -337,13 +339,13 @@ class SaleOrderSerializer(serializers.ModelSerializer):
 
     def get_production_progress(self, obj):
         # Only calculate progress for OTs NOT linked to notes and NOT cancelled
-        wos = obj.work_orders.filter(related_note__isnull=True).exclude(status="CANCELLED")
-        if not wos.exists():
+        wos = [ot for ot in obj.work_orders.all() if getattr(ot, "related_note_id", None) is None and ot.status != "CANCELLED"]
+        if not wos:
             return 0
         total_progress = sum(
             WorkOrderSerializer(wo).data.get("production_progress", 0) for wo in wos
         )
-        return total_progress / wos.count()
+        return total_progress / len(wos)
 
 
 class CreateSaleOrderSerializer(serializers.ModelSerializer):
@@ -387,6 +389,8 @@ class CreateSaleOrderSerializer(serializers.ModelSerializer):
         return attrs
 
     def create(self, validated_data):
+        from django.db import transaction
+
         lines_data = validated_data.pop("lines")
         payment_method_id = validated_data.pop("payment_method_id", None)
 
@@ -397,13 +401,14 @@ class CreateSaleOrderSerializer(serializers.ModelSerializer):
 
             pm_ref = TreasuryPM.objects.filter(id=payment_method_id).first()
 
-        order = SaleOrder.objects.create(**validated_data, payment_method_ref=pm_ref)
+        with transaction.atomic():
+            order = SaleOrder.objects.create(**validated_data, payment_method_ref=pm_ref)
 
-        for line_data in lines_data:
-            SaleLine.objects.create(order=order, **line_data)
+            for line_data in lines_data:
+                SaleLine.objects.create(order=order, **line_data)
 
-        order.recalculate_totals()
-        order.save()
+            order.recalculate_totals()
+            order.save()
 
         return order
 

@@ -12,7 +12,9 @@ class ProfitDistributionResolutionViewSet(viewsets.ModelViewSet):
     serializer_class = ProfitDistributionResolutionSerializer
 
     def get_queryset(self):
-        qs = super().get_queryset()
+        qs = super().get_queryset().prefetch_related(
+            "lines", "lines__partner", "lines__destinations", "payments"
+        )
         fiscal_year = self.request.query_params.get("fiscal_year")
         if fiscal_year:
             qs = qs.filter(fiscal_year=fiscal_year)
