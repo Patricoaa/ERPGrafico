@@ -135,7 +135,8 @@ class SubscriptionViewSet(viewsets.ModelViewSet):
 
         # Run asynchronously so the frontend doesn't hang
         try:
-            generate_subscription_orders.delay()
+            from django.db import transaction
+            transaction.on_commit(lambda: generate_subscription_orders.delay())
             return Response(
                 {"message": "Inspección de suscripciones encolada (ejecución asíncrona)."}
             )

@@ -49,9 +49,10 @@ def product_post_save(sender, instance, created, **kwargs):
     if cost_changed or sale_changed:
         try:
             from .tasks import check_product_margin_task
+            from django.db import transaction
 
-            # Delay the task to run asynchronously
-            check_product_margin_task.delay(instance.id)
+            # Delay the task to run asynchronously after commit
+            transaction.on_commit(lambda: check_product_margin_task.delay(instance.id))
         except Exception as e:
             logger.error(f"Failed to queue margin check for product {instance.id}: {e}")
 

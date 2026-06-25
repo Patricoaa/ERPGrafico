@@ -707,20 +707,8 @@ class BankStatementViewSet(viewsets.ModelViewSet):
 
     @action(detail=False, methods=["post"])
     def import_statement(self, request):
-        """
-        Import a bank statement from file.
-
-        Required fields:
-        - file: File to import
-        - treasury_account_id: ID of treasury account
-        - bank_format: Format identifier (BANCO_CHILE_CSV, SCOTIABANK_CSV, etc.)
-
-        Optional fields:
-        - custom_config: Custom parser configuration (JSON)
-        """
         try:
             result = ReconciliationService.import_statement_from_request(request)
-
             return Response(
                 {
                     "message": "Cartola importada exitosamente",
@@ -730,12 +718,9 @@ class BankStatementViewSet(viewsets.ModelViewSet):
                 },
                 status=status.HTTP_201_CREATED,
             )
-
         except ValueError as e:
             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
         except Exception as e:
-            import traceback
-            traceback.print_exc()
             return Response(
                 {"error": f"Error al importar cartola: {str(e)}"},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -793,11 +778,14 @@ class BankStatementViewSet(viewsets.ModelViewSet):
     def auto_match(self, request, pk=None):
         """S4.8: Kicks off async auto-match, returns task_id for polling."""
         from .tasks import auto_match_statement_task
+        from celery import uuid
+        from django.db import transaction
 
         try:
             threshold = float(request.data.get("confidence_threshold", 90.0))
-            task = auto_match_statement_task.delay(int(pk), threshold)
-            return Response({"task_id": task.id, "status": "PENDING"})
+            task_id = uuid()
+            transaction.on_commit(lambda: auto_match_statement_task.apply_async(args=[int(pk), threshold], task_id=task_id))
+            return Response({"task_id": task_id, "status": "PENDING"})
         except ValueError as e:
             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
         except Exception as e:
@@ -805,48 +793,13 @@ class BankStatementViewSet(viewsets.ModelViewSet):
 
     @action(detail=True, methods=["get"])
     def auto_match_status(self, request, pk=None):
-        """S4.8: Poll the progress of an ongoing auto_match task."""
         task_id = request.query_params.get("task_id")
         if not task_id:
             return Response({"error": "task_id requerido"}, status=status.HTTP_400_BAD_REQUEST)
+        from .reconciliation_service import ReconciliationService
 
-        task = AsyncResult(task_id)
-
-        if task.state == "PENDING":
-            return Response(
-                {"status": "PENDING", "processed": 0, "total": 0, "matched": 0, "percent": 0}
-            )
-
-        if task.state == "PROGRESS":
-            meta = task.info or {}
-            return Response(
-                {
-                    "status": "PROGRESS",
-                    "processed": meta.get("processed", 0),
-                    "total": meta.get("total", 0),
-                    "matched": meta.get("matched", 0),
-                    "percent": meta.get("percent", 0),
-                }
-            )
-
-        if task.state == "SUCCESS":
-            result = task.result or {}
-            return Response(
-                {
-                    "status": "SUCCESS",
-                    "matched_count": result.get("matched_count", 0),
-                    "total_unreconciled": result.get("total_unreconciled", 0),
-                    "percent": 100,
-                }
-            )
-
-        if task.state == "FAILURE":
-            return Response(
-                {"status": "FAILURE", "error": str(task.info)},
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            )
-
-        return Response({"status": task.state})
+        data, http_status = ReconciliationService.get_task_status_data(task_id)
+        return Response(data, status=http_status)
 
     @action(detail=True, methods=["post"])
     def confirm(self, request, pk=None):
