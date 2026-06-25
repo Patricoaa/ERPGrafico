@@ -61,11 +61,7 @@ class AccountingSettingsViewSet(viewsets.ModelViewSet):
 
     @action(detail=False, methods=["get", "put", "patch"])
     def current(self, request):
-        obj = AccountingSettings.get_solo()
-        if not obj:
-            if request.method == "GET":
-                return Response({"detail": "Settings not found"}, status=status.HTTP_404_NOT_FOUND)
-            obj = AccountingSettings.objects.create()
+        obj, _ = AccountingSettings.objects.get_or_create(pk=1)
 
         if request.method == "GET":
             serializer = self.get_serializer(obj)

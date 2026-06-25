@@ -36,9 +36,7 @@ class SalesSettingsViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
 
     @action(detail=False, methods=["get", "put", "patch"])
     def current(self, request):
-        obj = SalesSettings.get_solo()
-        if not obj:
-            obj = SalesSettings.objects.create()
+        obj, _ = SalesSettings.objects.get_or_create(pk=1)
 
         from .services import SalesSettingsService
 
@@ -540,9 +538,11 @@ class SaleOrderViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
         text = (request.data.get("text") or "").strip()
         if not text:
             return Response({"error": "text es requerido"}, status=status.HTTP_400_BAD_REQUEST)
-        comment = Comment.objects.create(
-            content_type=so_ct,
-            object_id=order.pk,
+
+        from workflow.services import WorkflowService
+
+        comment = WorkflowService.add_comment(
+            content_object=order,
             user=request.user,
             text=text,
         )

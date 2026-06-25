@@ -148,12 +148,8 @@ class F29DeclarationViewSet(viewsets.ModelViewSet):
                 declaration.id,
                 serializer.validated_data.get("folio_number", ""),
                 serializer.validated_data.get("declaration_date"),
+                notes=serializer.validated_data.get("notes"),
             )
-
-            # Update notes if provided
-            if "notes" in serializer.validated_data:
-                updated_declaration.notes = serializer.validated_data["notes"]
-                updated_declaration.save()
 
             result_serializer = self.get_serializer(updated_declaration)
             return Response(result_serializer.data)

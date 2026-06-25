@@ -167,3 +167,75 @@ class PINService:
             if user.check_pos_pin(pin_text):
                 return user
         return None
+
+
+class UserService:
+    """
+    Operaciones de ciclo de vida del usuario (seguridad, acceso).
+
+    Centraliza mutaciones de User que antes estaban directamente en las vistas
+    ChangePasswordView, ChangePinView y UserViewSet.
+    """
+
+    @staticmethod
+    def change_password(*, user, new_password: str, request=None) -> None:
+        """
+        Cambia la contraseña del usuario y registra la acción en el audit log.
+
+        Reemplaza ``user.set_password(); user.save()`` + ``ActionLoggingService.log_action``
+        que estaban en ``ChangePasswordView.post``.
+        """
+        from core.models import ActionLog
+
+        user.set_password(new_password)
+        user.save(update_fields=["password"])
+
+        ActionLoggingService.log_action(
+            user=user,
+            action_type=ActionLog.Type.SECURITY,
+            description=f"Usuario {user.username} cambió su contraseña.",
+            request=request,
+        )
+
+    @staticmethod
+    def change_pin(*, user, new_pin: str, request=None) -> None:
+        """
+        Actualiza el PIN de POS del usuario y registra la acción en el audit log.
+
+        Reemplaza ``user.pos_pin = make_password(pin); user.save()`` + log que
+        estaban en ``ChangePinView.post``.
+        """
+        from django.contrib.auth.hashers import make_password
+
+        from core.models import ActionLog
+
+        user.pos_pin = make_password(new_pin)
+        user.save(update_fields=["pos_pin"])
+
+        ActionLoggingService.log_action(
+            user=user,
+            action_type=ActionLog.Type.SECURITY,
+            description=f"Usuario {user.username} cambió su PIN de POS.",
+            request=request,
+        )
+
+    @staticmethod
+    def deactivate(*, user, deactivated_by=None, request=None) -> None:
+        """
+        Desactiva un usuario en lugar de eliminarlo (soft-delete de seguridad).
+
+        Reemplaza ``instance.is_active = False; instance.save()`` + log que estaban
+        en ``UserViewSet.destroy``.
+        """
+        from core.models import ActionLog
+
+        user.is_active = False
+        user.save(update_fields=["is_active"])
+
+        ActionLoggingService.log_action(
+            user=deactivated_by or user,
+            action_type=ActionLog.Type.SECURITY,
+            description=f"Usuario {user.username} fue desactivado (Baja de sistema) en lugar de eliminado para trazabilidad.",
+            request=request,
+            metadata={"target_user_id": user.id, "target_username": user.username},
+        )

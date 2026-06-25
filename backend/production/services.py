@@ -1298,6 +1298,45 @@ class WorkOrderService:
         return material
 
     @staticmethod
+    def update_material(
+        *,
+        work_order: "WorkOrder",
+        material_id: int,
+        quantity: "Decimal",
+        uom_id: int | None = None,
+        is_outsourced: bool | None = None,
+        supplier_id: int | None = None,
+        unit_price: "Decimal | None" = None,
+        document_type: str | None = None,
+    ) -> "WorkOrderMaterial":
+        """
+        Actualiza los campos editables de un WorkOrderMaterial.
+
+        Reemplaza el bloque de ``if field in request.data: material.field = ...`` +
+        ``material.save()`` que vivía directamente en
+        ``WorkOrderViewSet.update_material`` (producción/views.py).
+
+        Raises:
+            WorkOrderMaterial.DoesNotExist: Si el material no pertenece al work_order.
+        """
+        material = WorkOrderMaterial.objects.get(pk=material_id, work_order=work_order)
+        material.quantity_planned = quantity
+
+        if uom_id is not None:
+            material.uom_id = uom_id
+        if is_outsourced is not None:
+            material.is_outsourced = is_outsourced
+        if supplier_id is not None:
+            material.supplier_id = supplier_id
+        if unit_price is not None:
+            material.unit_price = unit_price
+        if document_type is not None:
+            material.document_type = document_type
+
+        material.save()
+        return material
+
+    @staticmethod
     def _create_outsourcing_purchase_orders(work_order):
         """
         Creates confirmed Purchase Orders and draft Invoices for outsourced materials in the Work Order.

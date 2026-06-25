@@ -70,9 +70,10 @@ class TaskViewSet(viewsets.ModelViewSet):
             Task.Status.REJECTED,
         ]:
             if not updated_task.completed_by:
-                updated_task.completed_by = self.request.user
-                updated_task.completed_at = timezone.now()
-                updated_task.save(update_fields=["completed_by", "completed_at"])
+                # Delegar la persistencia al servicio — no mutar directamente en la vista
+                WorkflowService.finalize_task_completion(
+                    task=updated_task, completed_by=self.request.user
+                )
 
             WorkflowService.handle_task_update(updated_task, old_status)
 
@@ -113,8 +114,7 @@ class NotificationViewSet(viewsets.ModelViewSet):
     @action(detail=True, methods=["post"])
     def mark_read(self, request, pk=None):
         notif = self.get_object()
-        notif.read = True
-        notif.save()
+        WorkflowService.mark_notification_read(notification=notif)
         return Response({"status": "read"})
 
     @action(detail=False, methods=["get"])

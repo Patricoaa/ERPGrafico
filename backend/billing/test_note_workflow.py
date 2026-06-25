@@ -52,14 +52,14 @@ def comprehensive_setup(db):
     )
 
     # UoM
-    uom = UoM.objects.create(name="Unit", code="UNT")
+    uom = UoM.objects.create(name="Unit")
 
     # Contacts
-    customer = Contact.objects.create(
+    customer = Contact.objects.create(tax_id="1-9", 
         name="Test Customer",
-        is_customer=True,
+        
     )
-    supplier = Contact.objects.create(
+    supplier = Contact.objects.create(tax_id="1-9", 
         name="Test Supplier",
         is_supplier=True,
     )

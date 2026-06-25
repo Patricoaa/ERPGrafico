@@ -176,17 +176,8 @@ class PayrollViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         payroll = serializer.save()
-        # Si base_salary es 0, tomamos el del empleado
-        if payroll.base_salary == Decimal("0") and payroll.employee.base_salary:
-            payroll.base_salary = payroll.employee.base_salary
-            payroll.save(update_fields=["base_salary"])
-
-        # Generar propuesta inicial automáticamente
-        try:
-            services.PayrollService.generate_proforma_payroll(payroll=payroll)
-        except Exception as e:
-            # No bloqueamos la creación si falla la proforma, pero logueamos
-            print(f"Error generando proforma automática para payroll {payroll.id}: {e}")
+        # Inicializar base_salary y generar proforma via servicio
+        services.PayrollService.initialize_after_create(payroll=payroll)
 
     @action(detail=True, methods=["post"])
     def post_payroll(self, request, pk=None):

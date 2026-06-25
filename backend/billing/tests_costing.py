@@ -56,7 +56,7 @@ class InventoryCostingTestCase(TestCase):
         self.warehouse = Warehouse.objects.create(code="WH01", name="Main Warehouse")
 
         # Create supplier
-        self.supplier = Contact.objects.create(
+        self.supplier = Contact.objects.create(tax_id="1-9", 
             name="Test Supplier",
             contact_type="SUPPLIER",
         )

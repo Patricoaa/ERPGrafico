@@ -255,7 +255,7 @@ class F29CalculationService:
     @staticmethod
     @transaction.atomic
     def register_declaration(
-        declaration_id: int, folio_number: str = "", declaration_date: date = None
+        declaration_id: int, folio_number: str = "", declaration_date: date = None, notes: str | None = None
     ) -> F29Declaration:
         """
         Officially register an F29 declaration and create accounting entry.
@@ -523,6 +523,8 @@ class F29CalculationService:
         declaration.declaration_date = declaration_date
         declaration.folio_number = folio_number
         declaration.journal_entry = journal_entry
+        if notes is not None:
+            declaration.notes = notes
         declaration.save()
 
         return declaration

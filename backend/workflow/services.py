@@ -111,6 +111,18 @@ class WorkflowService:
                 )
 
     @staticmethod
+    def finalize_task_completion(*, task: "Task", completed_by) -> None:
+        """
+        Persiste el usuario y timestamp de completado de una tarea.
+
+        Reemplaza el ``task.save(update_fields=["completed_by", "completed_at"])``
+        que antes vivía directamente en ``TaskViewSet.perform_update``.
+        """
+        task.completed_by = completed_by
+        task.completed_at = timezone.now()
+        task.save(update_fields=["completed_by", "completed_at"])
+
+    @staticmethod
     @transaction.atomic
     def complete_task(task, user, notes=None, files=None):
         from rest_framework.exceptions import PermissionDenied
@@ -756,3 +768,42 @@ class WorkflowService:
             # We save them individually so that post_save signals fire for real-time updates.
             for n in notifications_to_create:
                 n.save()
+
+    @staticmethod
+    def add_comment(*, content_object, user, text: str) -> "Comment":
+        """
+        Crea un Comment genérico sobre cualquier modelo (WorkOrder, SaleOrder, etc.).
+
+        Centraliza el patrón ``Comment.objects.create(content_type=..., object_id=..., user=..., text=...)``
+        que antes se duplicaba en production/views.py y sales/views.py.
+
+        Args:
+            content_object: Instancia del modelo al que se adjunta el comentario.
+            user: Usuario autor del comentario.
+            text: Texto del comentario (debe ser no vacío; validar antes de llamar).
+
+        Returns:
+            Instancia ``Comment`` recién creada.
+        """
+        from django.contrib.contenttypes.models import ContentType
+
+        from workflow.models import Comment
+
+        ct = ContentType.objects.get_for_model(content_object.__class__)
+        return Comment.objects.create(
+            content_type=ct,
+            object_id=content_object.pk,
+            user=user,
+            text=text,
+        )
+
+    @staticmethod
+    def mark_notification_read(*, notification: "Notification") -> None:
+        """
+        Marca una notificación como leída.
+
+        Reemplaza el ``notif.save()`` directo que existía en
+        ``workflow/views.py::NotificationViewSet.mark_read``.
+        """
+        notification.read = True
+        notification.save(update_fields=["read"])
