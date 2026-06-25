@@ -7,6 +7,7 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 
 from core.mixins import AuditHistoryMixin
+from core.idempotency import idempotent_endpoint
 from purchasing.models import PurchaseOrder
 from sales.models import SaleOrder
 
@@ -47,6 +48,10 @@ class InvoiceViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
         "sale_order__customer__name",
         "sale_order__customer__tax_id",
     ]
+
+    @idempotent_endpoint(scope="billing.invoice.create")
+    def create(self, request, *args, **kwargs):
+        return super().create(request, *args, **kwargs)
 
     def update(self, request, *args, **kwargs):
         instance = self.get_object()

@@ -57,6 +57,107 @@ if TYPE_CHECKING:
 class CardService:
     """Operaciones sobre la tarjeta de crédito propia."""
 
+    @staticmethod
+    def add_unbilled_charge_from_payload(data: dict, user) -> dict:
+        from .models import TreasuryAccount
+        from .serializers import CardPendingChargeSerializer
+        
+        card_account_id = data.get("card_account")
+        amount = data.get("amount")
+        charge_type = data.get("charge_type", "OTHER")
+        description = data.get("description", "")
+        date_str = data.get("date")
+
+        if not card_account_id:
+            raise ValidationError("card_account es requerido.")
+        if not amount:
+            raise ValidationError("amount es requerido.")
+
+        try:
+            card_account = TreasuryAccount.objects.get(pk=card_account_id)
+        except TreasuryAccount.DoesNotExist:
+            raise ValidationError("card_account no existe.")
+
+        charge_date = None
+        if date_str:
+            from datetime import date as _date_type
+            try:
+                charge_date = _date_type.fromisoformat(date_str)
+            except ValueError:
+                raise ValidationError("Formato de fecha inválido. Use YYYY-MM-DD.")
+
+        movement = CardService.add_unbilled_charge(
+            card_account=card_account,
+            amount=Decimal(str(amount)),
+            charge_type=charge_type,
+            description=description,
+            date=charge_date,
+            created_by=user,
+        )
+
+        p = CardPendingChargeSerializer(movement).data
+        return {
+            "id": p["id"],
+            "amount": str(p["amount"]),
+            "date": p["date"].isoformat() if hasattr(p["date"], "isoformat") else p["date"],
+            "charge_type": p["charge_type"],
+            "charge_type_display": p["charge_type_display"],
+            "description": p.get("description", ""),
+            "reference": "",
+            "source": "pending",
+            "from_account_name": None,
+            "partner_name": None,
+        }
+
+    @staticmethod
+    def bill_charges_from_payload(data: dict, user) -> dict:
+        from .models import TreasuryAccount
+        from datetime import date as _date_type
+
+        card_account_id = data.get("card_account")
+        period_year = data.get("period_year")
+        period_month = data.get("period_month")
+        cut_off_date_str = data.get("cut_off_date")
+        due_date_str = data.get("due_date")
+        minimum_payment = data.get("minimum_payment", "0")
+        notes = data.get("notes", "")
+
+        if not card_account_id:
+            raise ValidationError("card_account es requerido.")
+        if not period_year or not period_month:
+            raise ValidationError("period_year y period_month son requeridos.")
+        if not cut_off_date_str or not due_date_str:
+            raise ValidationError("cut_off_date y due_date son requeridos.")
+
+        try:
+            card_account = TreasuryAccount.objects.get(pk=card_account_id)
+        except TreasuryAccount.DoesNotExist:
+            raise ValidationError("card_account no existe.")
+
+        try:
+            cut_off_date = _date_type.fromisoformat(cut_off_date_str)
+            due_date = _date_type.fromisoformat(due_date_str)
+        except ValueError:
+            raise ValidationError("Formato de fecha inválido. Use YYYY-MM-DD.")
+
+        statement = CardService.bill_unbilled_charges(
+            card_account=card_account,
+            period_year=int(period_year),
+            period_month=int(period_month),
+            cut_off_date=cut_off_date,
+            due_date=due_date,
+            minimum_payment=Decimal(str(minimum_payment)),
+            notes=notes,
+            created_by=user,
+        )
+
+        from .serializers import CreditCardStatementSerializer
+        result = CreditCardStatementSerializer(statement).data
+        breakdown = getattr(statement, "_purchase_group_breakdown", None)
+        if breakdown:
+            result["purchase_group_breakdown"] = breakdown
+        return result
+
     # ── Apertura del estado de cuenta (F3.2) ─────────────────────────────
 
     @staticmethod

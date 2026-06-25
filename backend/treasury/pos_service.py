@@ -189,6 +189,96 @@ class POSService:
 
         return session, audit
 
+    # ------------------------------------------------------------------ #
+    # Manual Movement                                                      #
+    # ------------------------------------------------------------------ #
+
+    @staticmethod
+    @transaction.atomic
+    def register_manual_movement(
+        *,
+        session: POSSession,
+        move_type: str,
+        amount: Decimal,
+        is_inflow: bool,
+        notes: str = "",
+        target_account_id: int | None = None,
+        user,
+    ) -> TreasuryMovement:
+        from accounting.models import AccountingSettings
+
+        if session.status != "OPEN":
+            raise ValidationError("La sesión no está abierta")
+
+        if amount <= 0:
+            raise ValidationError("El monto debe ser mayor a cero")
+
+        settings = AccountingSettings.get_solo()
+        if not settings:
+            raise ValidationError("Configuración contable no encontrada")
+
+        direction = "IN" if is_inflow else "OUT"
+
+        if move_type == "TRANSFER":
+            if not target_account_id:
+                raise ValidationError("Debe especificar la cuenta para traspasos")
+
+            try:
+                target_obj = TreasuryAccount.objects.get(id=target_account_id)
+            except TreasuryAccount.DoesNotExist:
+                raise ValidationError("Cuenta no encontrada")
+
+            treasury_account_obj = _get_session_treasury(session)
+
+            if treasury_account_obj == target_obj:
+                raise ValidationError("No puede transferir a la misma cuenta de origen")
+
+        else:
+            target_account = TreasuryService._get_reason_account(settings, move_type, direction)
+            if not target_account:
+                lbl = _LABEL_MAP.get(move_type, move_type)
+                raise ValidationError(f"Cuenta contable no configurada para {lbl}")
+
+        if not is_inflow and amount > session.expected_cash:
+            raise ValidationError(f"Saldo insuficiente en efectivo. Máximo disponible para retiro: ${session.expected_cash:,.0f}")
+
+        treasury_account_obj = _get_session_treasury(session)
+        if not treasury_account_obj:
+            raise ValidationError("No se pudo determinar la cuenta de tesorería para esta sesión")
+
+        from_account = None
+        to_account = None
+
+        if move_type == "TRANSFER":
+            if is_inflow:
+                from_account = TreasuryAccount.objects.get(id=target_account_id)
+                to_account = treasury_account_obj
+            else:
+                from_account = treasury_account_obj
+                to_account = TreasuryAccount.objects.get(id=target_account_id)
+        elif is_inflow:
+            to_account = treasury_account_obj
+        else:
+            from_account = treasury_account_obj
+
+        movement = TreasuryService.create_movement(
+            amount=amount,
+            movement_type=TreasuryMovement.Type.TRANSFER
+            if move_type == "TRANSFER"
+            else (TreasuryMovement.Type.INBOUND if is_inflow else TreasuryMovement.Type.OUTBOUND),
+            created_by=user,
+            from_account=from_account,
+            to_account=to_account,
+            pos_session=session,
+            notes=notes,
+            justify_reason=move_type,
+        )
+        movement.reference = f"POS-MANUAL-{movement.id}"
+        movement.save(update_fields=["reference"])
+
+        session.refresh_from_db()
+        return movement
+
 
 # ------------------------------------------------------------------ #
 # Private helpers                                                      #

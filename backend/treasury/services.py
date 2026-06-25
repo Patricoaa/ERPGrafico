@@ -542,6 +542,76 @@ class TreasuryService:
 
     @staticmethod
     @transaction.atomic
+    def create_card_purchase_from_payload(data: dict, user) -> tuple:
+        """Parses API payload and creates a card purchase."""
+        from_account_id = data.get("from_account")
+        if not from_account_id:
+            raise ValidationError("from_account es requerido.")
+            
+        try:
+            from .models import TreasuryAccount
+            from_account = TreasuryAccount.objects.get(pk=from_account_id)
+        except TreasuryAccount.DoesNotExist:
+            raise ValidationError("from_account no existe.")
+            
+        if from_account.account_type != TreasuryAccount.Type.CREDIT_CARD:
+            raise ValidationError("card-purchase requiere from_account de tipo CREDIT_CARD.")
+
+        partner = None
+        partner_id = data.get("partner")
+        if partner_id:
+            from contacts.models import Contact
+            try:
+                partner = Contact.objects.get(pk=partner_id)
+            except Contact.DoesNotExist:
+                raise ValidationError("partner no existe.")
+
+        installments = int(data.get("installments", 1))
+        monthly_rate = data.get("monthly_rate", "0") or "0"
+        amount = data.get("amount", "0")
+        
+        date_value = data.get("date")
+        if date_value and isinstance(date_value, str):
+            from datetime import date as _date
+            date_value = _date.fromisoformat(date_value)
+
+        invoice = None
+        invoice_id = data.get("invoice")
+        if invoice_id:
+            from billing.models import Invoice
+            invoice = Invoice.objects.filter(pk=invoice_id).first()
+
+        sale_order = None
+        sale_order_id = data.get("sale_order")
+        if sale_order_id:
+            from sales.models import SaleOrder
+            sale_order = SaleOrder.objects.filter(pk=sale_order_id).first()
+
+        purchase_order = None
+        purchase_order_id = data.get("purchase_order")
+        if purchase_order_id:
+            from purchasing.models import PurchaseOrder
+            purchase_order = PurchaseOrder.objects.filter(pk=purchase_order_id).first()
+
+        group = TreasuryService.create_card_purchase(
+            amount=amount,
+            card_account=from_account,
+            installments=installments,
+            monthly_rate=monthly_rate,
+            date=date_value,
+            partner=partner,
+            invoice=invoice,
+            sale_order=sale_order,
+            purchase_order=purchase_order,
+            client_reference=data.get("client_reference", "") or "",
+            notes=data.get("notes", "") or "",
+            created_by=user,
+        )
+        
+        return group, from_account
+
+    @staticmethod
+    @transaction.atomic
     def create_card_purchase(
         amount,
         card_account: "TreasuryAccount",
