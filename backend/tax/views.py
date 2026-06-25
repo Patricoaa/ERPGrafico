@@ -1,3 +1,4 @@
+from core.idempotency import idempotent_endpoint
 from django.core.exceptions import ValidationError as DjangoValidationError
 from django.utils import timezone
 from rest_framework import status, viewsets
@@ -32,6 +33,7 @@ class TaxPeriodViewSet(viewsets.ModelViewSet):
     ordering_fields = ["year", "month", "status"]
     ordering = ["-year", "-month"]
 
+    @idempotent_endpoint(scope="tax.period.close")
     @action(detail=True, methods=["post"])
     def close(self, request, pk=None):
         """Close a tax period"""
@@ -133,6 +135,7 @@ class F29DeclarationViewSet(viewsets.ModelViewSet):
         calc_data = F29CalculationService.calculate_f29_for_period(year, month)
         return Response(calc_data)
 
+    @idempotent_endpoint(scope="tax.f29.register")
     @action(detail=True, methods=["post"])
     def register(self, request, pk=None):
         """Register an F29 declaration officially"""
@@ -216,6 +219,7 @@ class AccountingPeriodViewSet(viewsets.ModelViewSet):
     ordering_fields = ["year", "month", "status"]
     ordering = ["-year", "-month"]
 
+    @idempotent_endpoint(scope="tax.period.close")
     @action(detail=True, methods=["post"])
     def close(self, request, pk=None):
         """Close an accounting period"""

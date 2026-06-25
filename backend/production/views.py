@@ -517,6 +517,7 @@ class WorkOrderViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
         except Exception as e:
             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
+    @idempotent_endpoint(scope="production.order.bulk_transition")
     @action(detail=False, methods=["post"], url_path="bulk_transition")
     def bulk_transition(self, request):
         """TASK-306: Advance multiple OTs to the same next stage."""

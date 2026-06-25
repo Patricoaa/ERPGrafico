@@ -168,6 +168,7 @@ class PurchaseOrderViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
         except Exception as e:
             return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
+    @idempotent_endpoint(scope="purchasing.order.confirm")
     @action(detail=True, methods=["post"])
     def confirm(self, request, pk=None):
         order = self.get_object()
@@ -203,6 +204,7 @@ class PurchaseOrderViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
         except Exception as e:
             return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
+    @idempotent_endpoint(scope="purchasing.order.receive")
     @action(detail=True, methods=["post"])
     def partial_receive(self, request, pk=None):
         order = self.get_object()
