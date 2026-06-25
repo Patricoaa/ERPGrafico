@@ -299,13 +299,20 @@ class WorkOrderSerializer(serializers.ModelSerializer):
             return obj.sale_line.uom.name
         if obj.stage_data and obj.stage_data.get("uom_name"):
             return obj.stage_data["uom_name"]
-        # Fallback: resolve UoM model from id stored in stage_data
+        
         uom_id = obj.stage_data.get("uom_id") if obj.stage_data else None
         if uom_id:
-            try:
-                return UoM.objects.get(pk=int(uom_id)).name
-            except (UoM.DoesNotExist, TypeError, ValueError):
-                return None
+            from functools import lru_cache
+            from inventory.models import UoM
+
+            @lru_cache(maxsize=32)
+            def _get_uom_name(uid):
+                try:
+                    return UoM.objects.get(pk=int(uid)).name
+                except (UoM.DoesNotExist, TypeError, ValueError):
+                    return None
+            
+            return _get_uom_name(uom_id)
         return None
 
     def get_production_discrepancy(self, obj):
@@ -414,52 +421,42 @@ class WorkOrderSerializer(serializers.ModelSerializer):
         return weights.get(obj.current_stage, 0)
 
     def get_outsourcing_status(self, obj):
-        mats = obj.materials.all()
-        if not mats.exists():
+        # Use prefetched materials — avoid .exists(), .filter(), .count()
+        mats = list(obj.materials.all())
+        if not mats:
             return "none"
 
-        outsourced = mats.filter(is_outsourced=True)
-        if not outsourced.exists():
+        outsourced = [m for m in mats if m.is_outsourced]
+        if not outsourced:
             return "none"
 
-        if outsourced.count() == mats.count():
+        if len(outsourced) == len(mats):
             return "full"
         return "partial"
 
-    def get_checkout_files(self, obj):
+    def get_attached_files(self, obj):
         files = []
         if not obj.sale_order and not obj.sale_line:
             return files
 
-        from django.contrib.contenttypes.models import ContentType
-
-        from core.models import Attachment
-        from sales.models import SaleLine, SaleOrder
-
-        # 1. From Sale Order
+        # 1. From Sale Order — reads from prefetched RAM
         if obj.sale_order:
-            ct = ContentType.objects.get_for_model(SaleOrder)
-            files.extend(
-                list(Attachment.objects.filter(content_type=ct, object_id=obj.sale_order.id))
-            )
+            files.extend(list(obj.sale_order.attachments.all()))
 
-        # 2. From Sale Line (where manufacturing specs usually live)
+        # 2. From Sale Line (where manufacturing specs usually live) — reads from prefetched RAM
         if obj.sale_line:
-            ct_line = ContentType.objects.get_for_model(SaleLine)
-            files.extend(
-                list(Attachment.objects.filter(content_type=ct_line, object_id=obj.sale_line.id))
-            )
+            files.extend(list(obj.sale_line.attachments.all()))
 
+        from core.serializers import AttachmentSerializer
         return AttachmentSerializer(files, many=True).data
 
     def get_workflow_tasks(self, obj):
-        from django.contrib.contenttypes.models import ContentType
-
-        from workflow.models import Task
         from workflow.serializers import TaskSerializer
 
-        ct = ContentType.objects.get_for_model(obj)
-        tasks = Task.objects.filter(content_type=ct, object_id=obj.id).order_by("created_at")
+        # Reads from prefetched GenericRelation in RAM
+        tasks = list(obj.tasks.all())
+        # Sort in Python to avoid hitting the DB (since tasks are prefetched)
+        tasks.sort(key=lambda t: t.created_at)
         return TaskSerializer(tasks, many=True).data
 
     class Meta:
@@ -571,7 +568,8 @@ class BillOfMaterialsSerializer(serializers.ModelSerializer):
         fields = "__all__"
 
     def get_lines_count(self, obj):
-        return obj.lines.count()
+        # Use prefetched lines if available
+        return len(obj.lines.all())
 
     def get_total_cost(self, obj):
         from decimal import Decimal
@@ -617,20 +615,26 @@ class BillOfMaterialsSerializer(serializers.ModelSerializer):
         return data
 
     def create(self, validated_data):
+        from django.db import transaction
+
         lines_data = validated_data.pop("lines", [])
-        bom = BillOfMaterials.objects.create(**validated_data)
-        for line_data in lines_data:
-            BillOfMaterialsLine.objects.create(bom=bom, **line_data)
+        with transaction.atomic():
+            bom = BillOfMaterials.objects.create(**validated_data)
+            for line_data in lines_data:
+                BillOfMaterialsLine.objects.create(bom=bom, **line_data)
         return bom
 
     def update(self, instance, validated_data):
-        lines_data = validated_data.pop("lines", None)
-        for attr, value in validated_data.items():
-            setattr(instance, attr, value)
-        instance.save()
+        from django.db import transaction
 
-        if lines_data is not None:
-            instance.lines.all().delete()
-            for line_data in lines_data:
-                BillOfMaterialsLine.objects.create(bom=instance, **line_data)
+        lines_data = validated_data.pop("lines", None)
+        with transaction.atomic():
+            for attr, value in validated_data.items():
+                setattr(instance, attr, value)
+            instance.save()
+
+            if lines_data is not None:
+                instance.lines.all().delete()
+                for line_data in lines_data:
+                    BillOfMaterialsLine.objects.create(bom=instance, **line_data)
         return instance
