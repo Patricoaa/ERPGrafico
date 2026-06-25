@@ -159,12 +159,13 @@ class PurchaseOrderSerializer(serializers.ModelSerializer):
     def get_pending_amount(self, obj):
         # Calculate base total from Primary Invoices (Factura/Boleta) OR PO Total
         # We exclude Notes (NC/ND) to keep the PO Hub status pure.
-        # Use string literals to avoid importing Invoice model and potential circular deps
-        primary_invoices = obj.invoices.filter(
-            dte_type__in=["FACTURA", "BOLETA", "PURCHASE_INV"]
-        ).exclude(status="CANCELLED")
+        # Use python iteration over prefetched obj.invoices.all()
+        primary_invoices = [
+            inv for inv in obj.invoices.all()
+            if inv.dte_type in ["FACTURA", "BOLETA", "PURCHASE_INV"] and inv.status != "CANCELLED"
+        ]
 
-        if primary_invoices.exists():
+        if primary_invoices:
             base_total = sum(inv.total for inv in primary_invoices)
         else:
             base_total = obj.total
@@ -174,28 +175,31 @@ class PurchaseOrderSerializer(serializers.ModelSerializer):
     def get_is_invoiced(self, obj):
         from billing.models import Invoice
 
-        return obj.invoices.filter(
-            dte_type__in=[
+        return any(
+            inv.dte_type in [
                 Invoice.DTEType.FACTURA,
                 Invoice.DTEType.BOLETA,
                 Invoice.DTEType.PURCHASE_INV,
             ]
-        ).exists()
+            for inv in obj.invoices.all()
+        )
 
     def get_invoice_details(self, obj):
         from billing.models import Invoice
 
-        invoice = obj.invoices.filter(
-            dte_type__in=[
+        invoices = list(obj.invoices.all())
+        invoice = next(
+            (inv for inv in invoices if inv.dte_type in [
                 Invoice.DTEType.FACTURA,
                 Invoice.DTEType.BOLETA,
                 Invoice.DTEType.PURCHASE_INV,
-            ]
-        ).first()
+            ]),
+            None
+        )
 
-        if not invoice:
+        if not invoice and invoices:
             # Fallback to any linked document (like a Note) if no primary exists
-            invoice = obj.invoices.first()
+            invoice = invoices[0]
 
         if invoice:
             return {
@@ -236,10 +240,11 @@ class PurchaseOrderSerializer(serializers.ModelSerializer):
 
         # Filter out receipts linked to Notes (e.g. supplemental receipts from Debit Notes)
         # We assume they are shown in the Note's Hub, not here.
-        receipts = obj.receipts.filter(related_note__isnull=True)
+        receipts = [r for r in obj.receipts.all() if getattr(r, "related_note_id", None) is None]
         for rec in receipts:
             processed_moves = set()
-            for line in rec.lines.all():
+            lines = list(rec.lines.all())
+            for line in lines:
                 if line.stock_move and line.stock_move_id not in processed_moves:
                     move = line.stock_move
                     processed_moves.add(move.id)
@@ -262,7 +267,11 @@ class PurchaseOrderSerializer(serializers.ModelSerializer):
                     )
 
             # Add entry for service/subscription delivery if this receipt has them
-            if rec.lines.filter(product__product_type__in=["SERVICE", "SUBSCRIPTION"]).exists():
+            has_service = any(
+                line.product and line.product.product_type in ["SERVICE", "SUBSCRIPTION"]
+                for line in lines
+            )
+            if has_service:
                 docs["receipts"].append(
                     {
                         "id": rec.id,
@@ -301,16 +310,16 @@ class PurchaseOrderSerializer(serializers.ModelSerializer):
         return docs
 
     def get_actual_receipt_date(self, obj):
-        first = (
-            obj.receipts.filter(status=PurchaseReceipt.Status.CONFIRMED)
-            .order_by("receipt_date")
-            .first()
-        )
-        return first.receipt_date.isoformat() if first else None
+        confirmed_receipts = [r for r in obj.receipts.all() if r.status == PurchaseReceipt.Status.CONFIRMED]
+        if not confirmed_receipts:
+            return None
+        confirmed_receipts.sort(key=lambda r: r.receipt_date)
+        return confirmed_receipts[0].receipt_date.isoformat()
 
     def get_lines(self, obj):
         # Only include original lines (not those from notes)
-        return PurchaseLineSerializer(obj.lines.filter(related_note__isnull=True), many=True).data
+        lines = [l for l in obj.lines.all() if getattr(l, "related_note_id", None) is None]
+        return PurchaseLineSerializer(lines, many=True).data
 
 
 class WritePurchaseOrderSerializer(serializers.ModelSerializer):
@@ -333,6 +342,8 @@ class WritePurchaseOrderSerializer(serializers.ModelSerializer):
         read_only_fields = ["id", "number", "status"]
 
     def create(self, validated_data):
+        from django.db import transaction
+
         lines_data = validated_data.pop("lines")
         payment_method_id = validated_data.pop("payment_method_id", None)
 
@@ -342,33 +353,37 @@ class WritePurchaseOrderSerializer(serializers.ModelSerializer):
 
             pm_ref = TreasuryPM.objects.filter(id=payment_method_id).first()
 
-        order = PurchaseOrder.objects.create(**validated_data, payment_method_ref=pm_ref)
-
-        self._save_lines(order, lines_data)
-        order.recalculate_totals()
+        with transaction.atomic():
+            order = PurchaseOrder.objects.create(**validated_data, payment_method_ref=pm_ref)
+            self._save_lines(order, lines_data)
+            order.recalculate_totals()
 
         return order
 
     def update(self, instance, validated_data):
+        from django.db import transaction
+
         lines_data = validated_data.pop("lines", None)
         payment_method_id = validated_data.pop("payment_method_id", None)
 
-        if payment_method_id:
-            from treasury.models import PaymentMethod as TreasuryPM
+        with transaction.atomic():
+            if payment_method_id:
+                from treasury.models import PaymentMethod as TreasuryPM
 
-            pm_ref = TreasuryPM.objects.filter(id=payment_method_id).first()
-            if pm_ref:
-                instance.payment_method_ref = pm_ref
+                pm_ref = TreasuryPM.objects.filter(id=payment_method_id).first()
+                if pm_ref:
+                    instance.payment_method_ref = pm_ref
 
-        # Update simple fields
-        for attr, value in validated_data.items():
-            setattr(instance, attr, value)
+            # Update simple fields
+            for attr, value in validated_data.items():
+                setattr(instance, attr, value)
 
-        if lines_data is not None:
-            self._save_lines(instance, lines_data)
-            instance.recalculate_totals()
+            if lines_data is not None:
+                self._save_lines(instance, lines_data)
+                instance.recalculate_totals()
 
-        instance.save()
+            instance.save()
+            
         return instance
 
     def _save_lines(self, order, lines_data):
