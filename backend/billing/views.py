@@ -144,28 +144,11 @@ class InvoiceViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
 
     @action(detail=False, methods=["get"])
     def check_folio(self, request):
-        """
-        Validates folio uniqueness in real-time.
+        """Validates folio uniqueness in real-time."""
+        from .selectors import InvoiceSelector
 
-        Query params:
-        - number: Folio number to check
-        - dte_type: Document type (BOLETA, FACTURA, etc.)
-        - exclude_id (optional): Invoice ID to exclude from check (for editing)
-        - contact_id (optional): Supplier ID for purchase documents
-        - is_purchase (optional): "true" if checking a purchase document
-
-        Response:
-        {
-            "is_unique": true/false,
-            "message": "...",
-            "existing_invoice": {...} (if not unique)
-        }
-        """
         number = request.query_params.get("number")
         dte_type = request.query_params.get("dte_type")
-        exclude_id = request.query_params.get("exclude_id")
-        contact_id = request.query_params.get("contact_id")
-        is_purchase = request.query_params.get("is_purchase", "false").lower() == "true"
 
         if not number or not dte_type:
             return Response(
@@ -173,74 +156,28 @@ class InvoiceViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        # Skip validation for empty or draft numbers
-        if not number or number == "Draft" or number.strip() == "":
-            return Response({"is_unique": True, "message": "OK"})
+        result = InvoiceSelector.check_folio_uniqueness(
+            number=number,
+            dte_type=dte_type,
+            exclude_id=request.query_params.get("exclude_id"),
+            contact_id=request.query_params.get("contact_id"),
+            is_purchase=request.query_params.get("is_purchase", "false").lower() == "true",
+        )
+        return Response(result)
 
-        # Build query
-        query = Invoice.objects.filter(number=number, dte_type=dte_type)
-
-        if exclude_id:
-            query = query.exclude(id=exclude_id)
-
-        if is_purchase:
-            # For purchase documents, uniqueness is usually per supplier
-            query = query.filter(purchase_order__isnull=False)
-            if contact_id:
-                query = query.filter(contact_id=contact_id)
-        else:
-            # For sales documents, folio must be unique across all sales
-            query = query.filter(sale_order__isnull=False)
-
-        existing = query.first()
-
-        if existing:
-            doc_origin = "compra" if is_purchase else "venta"
-            partner_name = (
-                existing.contact.name
-                if existing.contact
-                else (existing.sale_order.customer.name if existing.sale_order else "Unknown")
-            )
-
-            return Response(
-                {
-                    "is_unique": False,
-                    "message": f"El folio {number} ya ha sido utilizado en otro documento de {doc_origin}.",
-                    "existing_invoice": {
-                        "id": existing.id,
-                        "number": existing.number,
-                        "date": existing.date.isoformat() if existing.date else None,
-                        "partner_name": partner_name,
-                        "total": float(existing.total),
-                    },
-                }
-            )
-
-        return Response({"is_unique": True, "message": "Folio disponible"})
-
-    @action(detail=False, methods=["post"])
-    def pos_checkout(self, request):
-        print(f"DEBUG: pos_checkout request data: {request.data}")
-        order_data = request.data.get("order_data")
-        dte_type = request.data.get("dte_type")
-        payment_method = request.data.get("payment_method")
-        payment_method_id = request.data.get("payment_method_id")
-        transaction_number = request.data.get("transaction_number")
-        is_pending_registration = request.data.get("is_pending_registration", False)
+    @staticmethod
+    def _parse_pos_checkout_params(request):
+        """Extract and coerce all POS checkout parameters from the multipart request."""
+        data = request.data
+        is_pending_registration = data.get("is_pending_registration", False)
         if isinstance(is_pending_registration, str):
             is_pending_registration = is_pending_registration.lower() == "true"
 
-        payment_is_pending = request.data.get("payment_is_pending", False)
+        payment_is_pending = data.get("payment_is_pending", False)
         if isinstance(payment_is_pending, str):
             payment_is_pending = payment_is_pending.lower() == "true"
 
-        document_number = request.data.get("document_number") or request.data.get(
-            "document_reference"
-        )
-        document_date = request.data.get("document_date")
-        document_attachment = request.FILES.get("document_attachment")
-        amount = request.data.get("amount")
-        installments = request.data.get("installments")
+        installments = data.get("installments")
         if installments is not None:
             try:
                 installments = int(installments)
@@ -248,33 +185,25 @@ class InvoiceViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
                 installments = 1
         else:
             installments = 1
-        treasury_account_id = request.data.get("treasury_account_id")
-        payment_type = request.data.get("payment_type", "INBOUND")
-        pos_session_id = request.data.get("pos_session_id")
 
-        # New delivery parameters
-        delivery_type = request.data.get("delivery_type", "IMMEDIATE")
-        delivery_date = request.data.get("delivery_date")
-        immediate_lines = request.data.get("immediate_lines")
+        immediate_lines = data.get("immediate_lines")
         if isinstance(immediate_lines, str):
             import json
-
             try:
                 immediate_lines = json.loads(immediate_lines)
             except Exception:
                 pass
-        line_files = {}  # keyed by line_idx
+
+        line_files = {}
         for key, file_obj in request.FILES.items():
             if key.startswith("line_"):
                 parts = key.split("_")
-                if len(parts) >= 3:  # line_0_design_0 or line_0_approval
+                if len(parts) >= 3:
                     try:
                         line_idx = int(parts[1])
-                        file_type = parts[2]  # 'design' or 'approval'
-
+                        file_type = parts[2]
                         if line_idx not in line_files:
                             line_files[line_idx] = {"design": [], "approval": None}
-
                         if file_type == "design":
                             line_files[line_idx]["design"].append(file_obj)
                         elif file_type == "approval":
@@ -282,57 +211,86 @@ class InvoiceViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
                     except (ValueError, IndexError):
                         continue
 
-        if not all([order_data, dte_type, payment_method]):
-            return Response({"error": "Missing data"}, status=status.HTTP_400_BAD_REQUEST)
-
-        direct_credit_approval = request.data.get("direct_credit_approval", False)
+        direct_credit_approval = data.get("direct_credit_approval", False)
         if isinstance(direct_credit_approval, str):
             direct_credit_approval = direct_credit_approval.lower() == "true"
 
-        # Check-specific params (paymentMethodCardSelector sends check# as transaction_number)
-        check_number = request.data.get("check_number") or transaction_number
-        check_bank_id = request.data.get("check_bank_id")
+        check_bank_id = data.get("check_bank_id")
         if check_bank_id:
             check_bank_id = int(check_bank_id)
-        check_issue_date = request.data.get("check_issue_date")
-        check_due_date = request.data.get("check_due_date")
-        checkbook_id = request.data.get("checkbook_id")
+
+        return {
+            "order_data": data.get("order_data"),
+            "dte_type": data.get("dte_type"),
+            "payment_method": data.get("payment_method"),
+            "payment_method_id": data.get("payment_method_id"),
+            "transaction_number": data.get("transaction_number"),
+            "is_pending_registration": is_pending_registration,
+            "payment_is_pending": payment_is_pending,
+            "document_number": data.get("document_number") or data.get("document_reference"),
+            "document_date": data.get("document_date"),
+            "document_attachment": request.FILES.get("document_attachment"),
+            "amount": data.get("amount"),
+            "installments": installments,
+            "treasury_account_id": data.get("treasury_account_id"),
+            "payment_type": data.get("payment_type", "INBOUND"),
+            "pos_session_id": data.get("pos_session_id"),
+            "delivery_type": data.get("delivery_type", "IMMEDIATE"),
+            "delivery_date": data.get("delivery_date"),
+            "immediate_lines": immediate_lines,
+            "line_files": line_files,
+            "direct_credit_approval": direct_credit_approval,
+            "check_number": data.get("check_number") or data.get("transaction_number"),
+            "check_bank_id": check_bank_id,
+            "check_issue_date": data.get("check_issue_date"),
+            "check_due_date": data.get("check_due_date"),
+            "checkbook_id": data.get("checkbook_id"),
+            "credit_approval_task_id": data.get("credit_approval_task_id"),
+            "draft_id": data.get("draft_id"),
+            "user": request.user,
+        }
+
+    @action(detail=False, methods=["post"])
+    def pos_checkout(self, request):
+        params = self._parse_pos_checkout_params(request)
+
+        if not all([params["order_data"], params["dte_type"], params["payment_method"]]):
+            return Response({"error": "Missing data"}, status=status.HTTP_400_BAD_REQUEST)
 
         try:
             invoice = BillingService.pos_checkout(
-                order_data,
-                dte_type,
-                payment_method,
-                transaction_number=transaction_number,
-                is_pending_registration=is_pending_registration,
-                payment_is_pending=payment_is_pending,
-                amount=amount,
-                installments=installments,
-                treasury_account_id=treasury_account_id,
-                document_number=document_number,
-                document_date=document_date,
-                document_attachment=document_attachment,
-                delivery_type=delivery_type,
-                delivery_date=delivery_date,
-                immediate_lines=immediate_lines,
-                payment_type=payment_type,
-                line_files=line_files,
-                pos_session_id=pos_session_id,
-                payment_method_id=payment_method_id,
-                user=request.user,
-                credit_approval_task_id=request.data.get("credit_approval_task_id"),
-                draft_id=request.data.get("draft_id"),
-                direct_credit_approval=direct_credit_approval,
-                check_number=check_number,
-                check_bank_id=check_bank_id,
-                check_issue_date=check_issue_date,
-                check_due_date=check_due_date,
-                checkbook_id=checkbook_id,
+                params["order_data"],
+                params["dte_type"],
+                params["payment_method"],
+                transaction_number=params["transaction_number"],
+                is_pending_registration=params["is_pending_registration"],
+                payment_is_pending=params["payment_is_pending"],
+                amount=params["amount"],
+                installments=params["installments"],
+                treasury_account_id=params["treasury_account_id"],
+                document_number=params["document_number"],
+                document_date=params["document_date"],
+                document_attachment=params["document_attachment"],
+                delivery_type=params["delivery_type"],
+                delivery_date=params["delivery_date"],
+                immediate_lines=params["immediate_lines"],
+                payment_type=params["payment_type"],
+                line_files=params["line_files"],
+                pos_session_id=params["pos_session_id"],
+                payment_method_id=params["payment_method_id"],
+                user=params["user"],
+                credit_approval_task_id=params["credit_approval_task_id"],
+                draft_id=params["draft_id"],
+                direct_credit_approval=params["direct_credit_approval"],
+                check_number=params["check_number"],
+                check_bank_id=params["check_bank_id"],
+                check_issue_date=params["check_issue_date"],
+                check_due_date=params["check_due_date"],
+                checkbook_id=params["checkbook_id"],
             )
             return Response(InvoiceSerializer(invoice).data, status=status.HTTP_201_CREATED)
         except ValidationError as e:
             msg = e.messages[0] if hasattr(e, "messages") and e.messages else str(e)
-            print(f"DEBUG: pos_checkout ValidationError: {msg}")
             return Response({"error": msg}, status=status.HTTP_400_BAD_REQUEST)
         except Exception as e:
             import traceback
