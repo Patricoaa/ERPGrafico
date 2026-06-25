@@ -431,16 +431,8 @@ class ProductSerializer(serializers.ModelSerializer):
         if hasattr(obj, "annotated_last_purchase_price"):
             v = obj.annotated_last_purchase_price
             return float(v) if v is not None else 0.0
+        return 0.0
 
-        # Fallback para detalle único (retrieve) — 1 sola query aceptable
-        from purchasing.models import PurchaseLine
-        last_line = (
-            PurchaseLine.objects.filter(product=obj)
-            .order_by("-order__date", "-id")
-            .values("unit_cost")
-            .first()
-        )
-        return float(last_line["unit_cost"]) if last_line else 0.0
 
     def get_manufacturable_quantity(self, obj):
         """Return the calculated manufacturable quantity for MANUFACTURABLE products."""

@@ -228,17 +228,8 @@ class WorkOrderSerializer(serializers.ModelSerializer):
         
         uom_id = obj.stage_data.get("uom_id") if obj.stage_data else None
         if uom_id:
-            from functools import lru_cache
-            from inventory.models import UoM
-
-            @lru_cache(maxsize=32)
-            def _get_uom_name(uid):
-                try:
-                    return UoM.objects.get(pk=int(uid)).name
-                except (UoM.DoesNotExist, TypeError, ValueError):
-                    return None
-            
-            return _get_uom_name(uom_id)
+            from inventory.services import UoMService
+            return UoMService.get_cached_uom_name(uom_id)
         return None
 
     def get_production_discrepancy(self, obj):
