@@ -13,7 +13,6 @@
  * @contract component-contracts.md §9 — Interaction
  */
 
-import { motion } from "framer-motion"
 import { cn } from "@/lib/utils"
 import React from "react"
 
@@ -138,58 +137,43 @@ export const CropFrame = React.forwardRef<HTMLDivElement, CropFrameProps>(
         gap, 
         color = "var(--primary)" 
     }, ref) => {
-        // Apply variant defaults if specific props are missing
         const finalSize = size ?? (variant === "compact" ? 4 : 6)
         const finalGap = gap ?? (variant === "compact" ? 1 : 2)
 
         return (
-            <motion.div
+            <div
                 ref={ref}
-            className={cn("relative overflow-visible inline-flex", className)}
-            initial="rest"
-            whileHover="hover"
-            animate="rest"
-        >
-            {/* 4 corners × 2 directions = 8 animated ticks */}
-            {CORNERS.map((corner) =>
-                DIRS.map((dir) => {
-                    const style = getTickStyle(corner, dir, finalSize, thickness, finalGap)
-                    const { transformOrigin, ...posStyle } = style
-                    const isH = dir === "h"
+                className={cn("relative overflow-visible inline-flex group", className)}
+            >
+                {/* 4 corners × 2 directions = 8 animated ticks */}
+                {CORNERS.map((corner) =>
+                    DIRS.map((dir) => {
+                        const style = getTickStyle(corner, dir, finalSize, thickness, finalGap)
+                        const { transformOrigin, ...posStyle } = style
+                        const isH = dir === "h"
 
-                    return (
-                        <motion.span
-                            key={`${corner}-${dir}`}
-                            aria-hidden="true"
-                            style={{
-                                position: "absolute",
-                                backgroundColor: color,
-                                transformOrigin,
-                                pointerEvents: "none",
-                                zIndex: 2,
-                                ...posStyle,
-                            }}
-                            variants={{
-                                rest: { scale: 0, opacity: 0 },
-                                hover: {
-                                    scale: 1,
-                                    opacity: 1,
-                                    transition: {
-                                        type: "spring",
-                                        stiffness: 420,
-                                        damping: 24,
-                                        // H ticks appear first, V ticks follow slightly after
-                                        delay: isH ? 0 : 0.035,
-                                    },
-                                },
-                            }}
-                        />
-                    )
-                })
-            )}
+                        return (
+                            <span
+                                key={`${corner}-${dir}`}
+                                aria-hidden="true"
+                                className="opacity-0 scale-0 group-hover:opacity-100 group-hover:scale-100 transition-all duration-200 ease-premium"
+                                style={{
+                                    position: "absolute",
+                                    backgroundColor: color,
+                                    transformOrigin,
+                                    pointerEvents: "none",
+                                    zIndex: 2,
+                                    ...posStyle,
+                                    transitionDelay: isH ? "0ms" : "35ms",
+                                } as React.CSSProperties}
+                            />
+                        )
+                    })
+                )}
 
-            {children}
-        </motion.div>
-    )
-})
+                {children}
+            </div>
+        )
+    }
+)
 CropFrame.displayName = "CropFrame"

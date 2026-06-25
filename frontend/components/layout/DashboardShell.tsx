@@ -9,7 +9,7 @@ import { useHubPanel } from "@/components/providers/HubPanelProvider"
 import { useGlobalModals } from "@/components/providers/GlobalModalProvider"
 import { UserActions } from "@/components/layout/UserActions"
 import { useHeader } from "@/components/providers/HeaderProvider"
-import { motion, AnimatePresence, useReducedMotion } from "framer-motion"
+import { motion, AnimatePresence } from "framer-motion"
 import { Skeleton } from "@/components/ui/skeleton"
 import { HeaderNavDropdowns, PageHeaderSkeleton, ModuleLauncher } from '@/components/shared'
 import { Loader2, Menu } from "lucide-react"
@@ -23,7 +23,6 @@ const TaskInboxSidebar = dynamic(
 
 function DashboardShellInner({ children }: { children: React.ReactNode }) {
     const pathname = usePathname()
-    const shouldReduceMotion = useReducedMotion()
 
     const [isInboxOpen, setIsInboxOpen] = useState(false)
     const [isModuleLauncherOpen, setIsModuleLauncherOpen] = useState(false)
@@ -160,17 +159,15 @@ function DashboardShellInner({ children }: { children: React.ReactNode }) {
                     id="main-content"
                     className="flex-1 flex flex-col overflow-hidden relative canvas-prepress panel-surface"
                 >
-                    <motion.div
-                        initial={shouldReduceMotion ? { opacity: 0 } : { y: 8, opacity: 0 }}
-                        animate={shouldReduceMotion ? { opacity: 1 } : { y: 0, opacity: 1 }}
-                        transition={{
-                            duration: 0.35,
-                            ease: [0.16, 1, 0.3, 1]
-                        }}
-                        className="w-full flex-1 flex flex-col min-h-0"
+                    <div
+                        className="w-full flex-1 flex flex-col min-h-0 animate-in fade-in ease-premium fill-mode-both motion-reduce:animate-none motion-reduce:opacity-100"
+                        style={{
+                            animationDuration: "0.35s",
+                            "--tw-enter-translate-y": "8px",
+                        } as React.CSSProperties}
                     >
                         {children}
-                    </motion.div>
+                    </div>
                 </main>
             </div>
 

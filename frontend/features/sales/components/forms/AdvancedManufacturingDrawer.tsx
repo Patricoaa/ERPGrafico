@@ -6,7 +6,6 @@ import { Button } from "@/components/ui/button"
 import { User, Paintbrush, X } from "lucide-react"
 import { AdvancedContactSelector } from "@/components/selectors/AdvancedContactSelector"
 import { toast } from "sonner"
-import { motion } from "framer-motion"
 import { ManufacturingSpecsEditor,
     emptyManufacturingData,
     type ManufacturingData, } from '@/components/shared'
@@ -112,13 +111,9 @@ export function AdvancedManufacturingDrawer({
             contentClassName="p-0"
             title={
                 <div className="flex items-center gap-6 p-4">
-                    <motion.div
-                        initial={{ rotate: -15, scale: 0.8 }}
-                        animate={{ rotate: 0, scale: 1 }}
-                        className="p-4 rounded-md bg-primary text-primary-foreground shadow-elevated"
-                    >
+                    <div className="p-4 rounded-md bg-primary text-primary-foreground shadow-elevated animate-in spin-in-12 duration-300 fill-mode-both ease-premium">
                         <Paintbrush className="h-8 w-8" />
-                    </motion.div>
+                    </div>
                     <div className="space-y-1">
                         <div className="text-3xl font-black tracking-tighter uppercase font-heading text-foreground">Fabricación</div>
                         <p className="text-xs font-mono uppercase tracking-[0.2em] text-muted-foreground">

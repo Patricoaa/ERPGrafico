@@ -4,7 +4,6 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
 import { z } from "zod"
 import { useState } from "react"
-import { motion } from "framer-motion"
 import { ArrowRight } from "lucide-react"
 
 import { useAuthLogin } from '../hooks/useAuthLogin'
@@ -51,11 +50,8 @@ export function LoginForm() {
     }
 
     return (
-        <motion.div
-            initial={{ opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}
-            className="w-full max-w-sm relative z-10"
+        <div
+            className="w-full max-w-sm relative z-10 animate-in fade-in slide-in-from-bottom-3 ease-premium fill-mode-both duration-[600ms] delay-200"
         >
             {/* Form header */}
             <div className="mb-8 text-center">
@@ -101,15 +97,12 @@ export function LoginForm() {
 
                     {/* Error message */}
                     {error && (
-                        <motion.div
-                            initial={{ opacity: 0, y: -4 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            className="flex items-center gap-2 p-3 rounded-sm bg-destructive/10 border border-destructive/20"
+                        <div className="animate-in fade-in slide-in-from-top-1 duration-200 fill-mode-both flex items-center gap-2 p-3 rounded-sm bg-destructive/10 border border-destructive/20"
                         >
                             <div className="w-1.5 h-1.5 rounded-full bg-destructive shrink-0" />
                             <p className="text-xs font-medium text-destructive">{error}</p>
-                        </motion.div>
-                    )}
+                            </div>
+                        )}
 
                     {/* Submit */}
                     <SubmitButton
@@ -124,6 +117,6 @@ export function LoginForm() {
                 </form>
             </Form>
 
-        </motion.div>
+        </div>
     )
 }

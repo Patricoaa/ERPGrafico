@@ -486,16 +486,15 @@ export function POSClientView() {
                         <Tooltip>
                             <TooltipTrigger asChild>
                                 <DropdownMenuTrigger asChild>
-                                    <motion.button
-                                        whileTap={{ scale: 0.95 }}
-                                        className="relative h-10 w-10 flex items-center justify-center rounded-md text-foreground/50 hover:bg-accent hover:text-accent-foreground transition-all duration-200 bg-transparent border border-border/60"
+                                    <button
+                                        className="relative h-10 w-10 flex items-center justify-center rounded-md text-foreground/50 hover:bg-accent hover:text-accent-foreground transition-all duration-200 active:scale-95 bg-transparent border border-border/60"
                                     >
                                         <Avatar className="h-full w-full rounded-md bg-transparent">
                                             <AvatarFallback className="bg-transparent text-current font-heading font-black text-[10px] rounded-md">
                                                 {user?.username?.substring(0, 2).toUpperCase() || 'US'}
                                             </AvatarFallback>
                                         </Avatar>
-                                    </motion.button>
+                                    </button>
                                 </DropdownMenuTrigger>
                             </TooltipTrigger>
                             <TooltipContent side="bottom">
