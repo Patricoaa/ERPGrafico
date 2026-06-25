@@ -120,41 +120,15 @@ class EmployeeSerializer(serializers.ModelSerializer):
         ]
         read_only_fields = ["id", "code", "display_id", "created_at", "updated_at"]
 
-    def _handle_concept_amounts(self, employee, concept_amounts_data):
-        if concept_amounts_data is not None:
-            # We replace/update the list
-            # For simplicity in this logic, we'll sync the list
-            existing_ids = []
-            for item_data in concept_amounts_data:
-                concept = item_data.get("concept")
-                amount = item_data.get("amount")
-                obj, created = EmployeeConceptAmount.objects.update_or_create(
-                    employee=employee, concept=concept, defaults={"amount": amount}
-                )
-                existing_ids.append(obj.id)
-
-            # Remove those not in the new list
-            EmployeeConceptAmount.objects.filter(employee=employee).exclude(
-                id__in=existing_ids
-            ).delete()
-
     def create(self, validated_data):
-        from django.db import transaction
+        from .services import EmployeeService
 
-        concept_amounts_data = validated_data.pop("concept_amounts", None)
-        with transaction.atomic():
-            employee = super().create(validated_data)
-            self._handle_concept_amounts(employee, concept_amounts_data)
-        return employee
+        return EmployeeService.create_employee(validated_data)
 
     def update(self, instance, validated_data):
-        from django.db import transaction
+        from .services import EmployeeService
 
-        concept_amounts_data = validated_data.pop("concept_amounts", None)
-        with transaction.atomic():
-            employee = super().update(instance, validated_data)
-            self._handle_concept_amounts(employee, concept_amounts_data)
-        return employee
+        return EmployeeService.update_employee(instance, validated_data)
 
 
 class AbsenceSerializer(serializers.ModelSerializer):
@@ -425,32 +399,8 @@ class PayrollDetailSerializer(serializers.ModelSerializer):
         validators = []
 
     def validate(self, data):
-        employee = data.get("employee")
-        period_year = data.get("period_year")
-        period_month = data.get("period_month")
-
-        if self.instance:
-            if not employee:
-                employee = self.instance.employee
-            if not period_year:
-                period_year = self.instance.period_year
-            if not period_month:
-                period_month = self.instance.period_month
-
-        queryset = Payroll.objects.filter(
-            employee=employee, period_year=period_year, period_month=period_month
-        )
-        if self.instance:
-            queryset = queryset.exclude(pk=self.instance.pk)
-
-        if queryset.exists():
-            raise serializers.ValidationError(
-                {
-                    "detail": f"Ya existe una liquidación para el empleado {employee.contact.name} en el período {period_month}/{period_year}."
-                }
-            )
-
-        return data
+        from .validators import PayrollValidator
+        return PayrollValidator.validate_payroll(self.instance, data)
 
 
 class PayrollPaymentSerializer(serializers.ModelSerializer):

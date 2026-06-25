@@ -17,11 +17,67 @@ from workflow.services import WorkflowService
 
 from .models import (
     BillOfMaterials,
+    BillOfMaterialsLine,
     ProductionConsumption,
     WorkOrder,
     WorkOrderHistory,
     WorkOrderMaterial,
 )
+
+
+class BillOfMaterialsService:
+    """
+    Service layer for BillOfMaterials lifecycle operations.
+
+    Owns all write operations that touch both BillOfMaterials and
+    BillOfMaterialsLine in a single atomic transaction. Serializers
+    delegate here instead of managing transaction scope themselves.
+    """
+
+    @staticmethod
+    @transaction.atomic
+    def create_bom(validated_data: dict) -> BillOfMaterials:
+        """
+        Create a BillOfMaterials and its lines in one atomic transaction.
+
+        Args:
+            validated_data: Dict from BillOfMaterialsSerializer after validation.
+                            `lines` (if present) is popped and created here.
+
+        Returns:
+            The newly created BillOfMaterials instance.
+        """
+        lines_data = validated_data.pop("lines", [])
+        bom = BillOfMaterials.objects.create(**validated_data)
+        for line_data in lines_data:
+            BillOfMaterialsLine.objects.create(bom=bom, **line_data)
+        return bom
+
+    @staticmethod
+    @transaction.atomic
+    def update_bom(instance: BillOfMaterials, validated_data: dict) -> BillOfMaterials:
+        """
+        Update a BillOfMaterials and replace its lines in one atomic transaction.
+
+        Lines are replaced wholesale (delete + recreate) when `lines` is present
+        in validated_data. When absent, existing lines are left untouched.
+
+        Args:
+            instance: The BillOfMaterials instance to update.
+            validated_data: Dict from BillOfMaterialsSerializer after validation.
+
+        Returns:
+            The updated BillOfMaterials instance.
+        """
+        lines_data = validated_data.pop("lines", None)
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
+        instance.save()
+        if lines_data is not None:
+            instance.lines.all().delete()
+            for line_data in lines_data:
+                BillOfMaterialsLine.objects.create(bom=instance, **line_data)
+        return instance
 
 
 class WorkOrderService:

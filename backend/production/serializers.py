@@ -62,61 +62,8 @@ class WorkOrderMaterialSerializer(serializers.ModelSerializer):
         fields = "__all__"
 
     def get_stock_available(self, obj):
-        component = obj.component
-        if component.product_type == "SERVICE":
-            return 999999
-
-        if (
-            component.product_type == "MANUFACTURABLE"
-            and not component.requires_advanced_manufacturing
-        ):
-            return component.get_manufacturable_quantity() or 0.0
-
-        warehouse = obj.work_order.warehouse
-        if not warehouse:
-            return 0.0
-
-        # 1. Pre-computed dict injected by WorkOrderViewSet.retrieve() — zero extra queries
-        stocks_by_product = self.context.get("stocks_by_product")
-        if stocks_by_product is not None:
-            stock = stocks_by_product.get(component.id, 0.0)
-        else:
-            # 2. Fallback for list() or other actions: request-level cache
-            from django.db.models import Sum
-
-            request = self.context.get("request")
-            if request:
-                if not hasattr(request, "_stock_cache"):
-                    request._stock_cache = {}
-                cache_key = (warehouse.id, component.id)
-                if cache_key in request._stock_cache:
-                    stock = request._stock_cache[cache_key]
-                else:
-                    stock = (
-                        component.stock_moves.filter(warehouse=warehouse).aggregate(
-                            total=Sum("quantity")
-                        )["total"]
-                        or 0.0
-                    )
-                    request._stock_cache[cache_key] = stock
-            else:
-                stock = (
-                    component.stock_moves.filter(warehouse=warehouse).aggregate(
-                        total=Sum("quantity")
-                    )["total"]
-                    or 0.0
-                )
-
-        # Convert from component base UoM to line UoM for display consistency
-        from inventory.services import UoMService
-
-        try:
-            if component.uom and obj.uom and component.uom != obj.uom:
-                stock = UoMService.convert_quantity(stock, component.uom, obj.uom)
-        except Exception:
-            pass
-
-        return float(stock)
+        from .selectors import ProductionSelectorExt
+        return ProductionSelectorExt.get_stock_available(obj, self.context)
 
     def get_is_available(self, obj):
         quantity_planned = float(obj.quantity_planned)
@@ -182,29 +129,8 @@ class WorkOrderInitialMaterialSerializer(serializers.Serializer):
     uom_id = serializers.IntegerField(required=False, allow_null=True)
 
     def validate(self, data):
-        try:
-            Product.objects.get(pk=data["component_id"])
-        except Product.DoesNotExist:
-            raise serializers.ValidationError({"component_id": "El componente no existe."})
-
-        if data.get("is_outsourced") and not data.get("supplier_id"):
-            raise serializers.ValidationError("Material tercerizado requiere supplier_id.")
-
-        if data.get("supplier_id"):
-            from contacts.models import Contact
-
-            try:
-                Contact.objects.get(pk=data["supplier_id"])
-            except Contact.DoesNotExist:
-                raise serializers.ValidationError({"supplier_id": "El proveedor no existe."})
-
-        if data.get("uom_id"):
-            try:
-                UoM.objects.get(pk=data["uom_id"])
-            except UoM.DoesNotExist:
-                raise serializers.ValidationError({"uom_id": "La unidad de medida no existe."})
-
-        return data
+        from .validators import ProductionValidator
+        return ProductionValidator.validate_initial_material(data)
 
 
 class WorkOrderSerializer(serializers.ModelSerializer):
@@ -501,52 +427,8 @@ class BillOfMaterialsLineSerializer(serializers.ModelSerializer):
         return float(obj.component.qty_on_hand)
 
     def validate(self, data):
-        component = data.get("component")
-        uom = data.get("uom")
-        is_outsourced = data.get("is_outsourced", False)
-
-        # Validate component has base UoM
-        if component and not component.uom:
-            raise serializers.ValidationError(
-                f"El componente '{component.name}' debe tener una UoM base asignada."
-            )
-
-        # Outsourced service validation
-        if is_outsourced:
-            if component and component.product_type != "SERVICE":
-                raise serializers.ValidationError(
-                    {
-                        "component": f"Las líneas tercerizadas solo pueden usar productos de tipo Servicio. "
-                        f"'{component.name}' es de tipo '{component.get_product_type_display()}'."
-                    }
-                )
-            supplier = data.get("supplier")
-            if not supplier:
-                raise serializers.ValidationError(
-                    {"supplier": "Debe seleccionar un proveedor para el servicio tercerizado."}
-                )
-            unit_price = data.get("unit_price", 0)
-            if not unit_price or float(unit_price) <= 0:
-                raise serializers.ValidationError(
-                    {
-                        "unit_price": "El precio unitario debe ser mayor a 0 para servicios tercerizados."
-                    }
-                )
-
-        # Validate compatibility if both present - BOM allows full category flexibility
-        if component and uom and not is_outsourced:
-            from inventory.services import UoMService
-
-            if not UoMService.validate_uom_compatibility(component.uom, uom):
-                raise serializers.ValidationError(
-                    {
-                        "uom": f"La unidad '{uom.name}' no es compatible con la categoría "
-                        f"del componente ('{component.uom.category.name}'). "
-                        f"Puede usar cualquier unidad de la misma categoría para mayor flexibilidad."
-                    }
-                )
-
-        return data
+        from .validators import ProductionValidator
+        return ProductionValidator.validate_bom_line(data)
 
 
 class BillOfMaterialsSerializer(serializers.ModelSerializer):
@@ -572,33 +454,8 @@ class BillOfMaterialsSerializer(serializers.ModelSerializer):
         return len(obj.lines.all())
 
     def get_total_cost(self, obj):
-        from decimal import Decimal
-
-        from inventory.services import UoMService
-
-        total = Decimal("0.00")
-        for line in obj.lines.all():
-            qty = line.quantity
-
-            if line.is_outsourced:
-                # Outsourced services: use the configured unit_price (net)
-                total += qty * line.unit_price
-            else:
-                # Stock components: convert UoM and use component cost_price
-                if line.uom and line.component.uom and line.uom != line.component.uom:
-                    try:
-                        qty = UoMService.convert_quantity(
-                            line.quantity, line.uom, line.component.uom
-                        )
-                    except Exception:
-                        pass
-                total += qty * line.component.cost_price
-
-        # Divide by yield quantity to get cost per produced unit
-        if obj.yield_quantity and obj.yield_quantity > 0:
-            total = total / obj.yield_quantity
-
-        return float(total)
+        from .selectors import ProductionSelectorExt
+        return ProductionSelectorExt.get_total_cost(obj)
 
     def validate(self, data):
         product = data.get("product")
@@ -615,26 +472,11 @@ class BillOfMaterialsSerializer(serializers.ModelSerializer):
         return data
 
     def create(self, validated_data):
-        from django.db import transaction
+        from .services import BillOfMaterialsService
 
-        lines_data = validated_data.pop("lines", [])
-        with transaction.atomic():
-            bom = BillOfMaterials.objects.create(**validated_data)
-            for line_data in lines_data:
-                BillOfMaterialsLine.objects.create(bom=bom, **line_data)
-        return bom
+        return BillOfMaterialsService.create_bom(validated_data)
 
     def update(self, instance, validated_data):
-        from django.db import transaction
+        from .services import BillOfMaterialsService
 
-        lines_data = validated_data.pop("lines", None)
-        with transaction.atomic():
-            for attr, value in validated_data.items():
-                setattr(instance, attr, value)
-            instance.save()
-
-            if lines_data is not None:
-                instance.lines.all().delete()
-                for line_data in lines_data:
-                    BillOfMaterialsLine.objects.create(bom=instance, **line_data)
-        return instance
+        return BillOfMaterialsService.update_bom(instance, validated_data)
