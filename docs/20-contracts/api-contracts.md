@@ -157,7 +157,7 @@ Response key fields:
 ### journal-entries/
 
 ```
-GET    /api/accounting/journal-entries/          list
+GET    /api/accounting/journal-entries/          list (filtros: user, action_type, etc vía JournalEntryFilterSet)
 POST   /api/accounting/journal-entries/          create (manual entries)
 GET    /api/accounting/journal-entries/{id}/     detail
 PATCH  /api/accounting/journal-entries/{id}/     update
@@ -198,7 +198,7 @@ Base: `/api/billing/`
 ### invoices/
 
 ```
-GET    /api/billing/invoices/          list, paginated
+GET    /api/billing/invoices/          list, paginated (filtros vía InvoiceFilterSet)
 POST   /api/billing/invoices/          create
 GET    /api/billing/invoices/{id}/     detail
 PATCH  /api/billing/invoices/{id}/     update (limited — use actions for status)
@@ -327,7 +327,7 @@ Base: `/api/inventory/`
 ### products/
 
 ```
-GET    /api/inventory/products/          list, paginated
+GET    /api/inventory/products/          list, paginated (filtros: active, category, product, supplier, uom)
 POST   /api/inventory/products/          create (multipart/form-data for image)
 GET    /api/inventory/products/{id}/     detail
 PATCH  /api/inventory/products/{id}/     update
@@ -392,7 +392,7 @@ PATCH  /api/inventory/warehouses/{id}/  update
 ### stock-moves/
 
 ```
-GET    /api/inventory/stock-moves/       list, paginated
+GET    /api/inventory/stock-moves/       list, paginated (filtros vía StockMoveFilter)
 POST   /api/inventory/stock-moves/       create (manual adjustment)
 GET    /api/inventory/stock-moves/{id}/  detail
 ```
@@ -424,7 +424,7 @@ Base: `/api/purchasing/`
 ### purchase-orders/
 
 ```
-GET    /api/purchasing/purchase-orders/          list, paginated
+GET    /api/purchasing/purchase-orders/          list, paginated (filtros vía PurchaseOrderFilterSet)
 POST   /api/purchasing/purchase-orders/          create
 GET    /api/purchasing/purchase-orders/{id}/     detail
 PATCH  /api/purchasing/purchase-orders/{id}/     update
@@ -496,7 +496,7 @@ Base: `/api/treasury/`
 ### accounts/ (TreasuryAccount)
 
 ```
-GET    /api/treasury/accounts/          list
+GET    /api/treasury/accounts/          list (filtros vía TreasuryAccountFilterSet)
 POST   /api/treasury/accounts/          create
 GET    /api/treasury/accounts/{id}/     detail
 PATCH  /api/treasury/accounts/{id}/     update
@@ -524,7 +524,7 @@ Response key fields:
 ### movements/ (TreasuryMovement / payments)
 
 ```
-GET    /api/treasury/movements/          list, paginated
+GET    /api/treasury/movements/          list, paginated (filtros: status, provider, sales_date, user, treasury_account)
 POST   /api/treasury/movements/          create payment or cash movement
 GET    /api/treasury/movements/{id}/     detail
 PATCH  /api/treasury/movements/{id}/     update (limited)
@@ -624,7 +624,7 @@ Base: `/api/production/`
 ### work-orders/
 
 ```
-GET    /api/production/work-orders/          list, paginated
+GET    /api/production/work-orders/          list, paginated (filtros: active, vía WorkOrderFilterSet)
 POST   /api/production/work-orders/          create
 GET    /api/production/work-orders/{id}/     detail
 PATCH  /api/production/work-orders/{id}/     update
@@ -724,11 +724,80 @@ Response key fields:
 ### payrolls/
 
 ```
-GET    /api/hr/payrolls/           list
-POST   /api/hr/payrolls/           create
-GET    /api/hr/payrolls/{id}/      detail
-POST   /api/hr/payrolls/{id}/calculate/   action
-POST   /api/hr/payrolls/{id}/close/       action
+GET    /api/hr/payrolls/                    list, paginated (filtros: employee, period_year, period_month, status)
+POST   /api/hr/payrolls/                    create (llama initialize_after_create interno)
+GET    /api/hr/payrolls/{id}/               detail
+PATCH  /api/hr/payrolls/{id}/               update
+DELETE /api/hr/payrolls/{id}/               delete
+
+# Actions
+POST   /api/hr/payrolls/{id}/post_payroll/  Contabiliza (crea JournalEntry)
+POST   /api/hr/payrolls/{id}/recalculate/   Recalcula haberes/descuentos/totales
+POST   /api/hr/payrolls/{id}/pay_previred/  Registra pago Previred → 201 PayrollPaymentSerializer
+POST   /api/hr/payrolls/{id}/pay_salary/    Registra pago salario → 201 PayrollPaymentSerializer
+GET    /api/hr/payrolls/{id}/download_pdf/  Descarga PDF liquidación → application/pdf
+POST   /api/hr/payrolls/create_draft_payrolls/  Async (Celery): crea borradores del mes
+POST   /api/hr/payrolls/generate_proforma/      Genera preview sin guardar (body: employee, year, month)
+```
+
+Response key fields (detail — `PayrollDetailSerializer`):
+
+```json
+{
+  "id": "number",
+  "number": "string",
+  "display_id": "string",
+  "employee": "number",
+  "employee_detail": "object (EmployeeSerializer)",
+  "period_year": "number",
+  "period_month": "number",
+  "period_label": "string",
+  "status": "DRAFT|CONFIRMED|PAID",
+  "status_display": "string",
+  "base_salary": "decimal",
+  "agreed_days": "number",
+  "absent_days": "number",
+  "worked_days": "number",
+  "total_haberes": "decimal (computed)",
+  "total_descuentos": "decimal (computed)",
+  "net_salary": "decimal (computed)",
+  "journal_entry": "number | null",
+  "previred_journal_entry": "number | null",
+  "items": "array (PayrollItemSerializer)",
+  "advances": "array (SalaryAdvanceSerializer)"
+}
+```
+
+### payroll-items/ (Nested)
+
+Manejados como sub-recurso o directo en la misma app para ítems individuales. Filtrar por `?payroll=id`.
+
+```json
+{
+  "id": "number",
+  "payroll": "number",
+  "concept": "number",
+  "concept_detail": "object",
+  "description": "string",
+  "amount": "decimal",
+  "is_previred": "boolean (read_only)"
+}
+```
+
+### payments/ (PayrollPayment)
+
+Filtros: `?payroll=id`, `?payment_type=SALARIO|PREVIRED`
+
+```json
+{
+  "id": "number",
+  "payroll": "number",
+  "payment_type": "SALARIO|PREVIRED",
+  "amount": "decimal",
+  "date": "YYYY-MM-DD",
+  "notes": "string",
+  "journal_entry": "number | null"
+}
 ```
 
 ---
@@ -791,7 +860,7 @@ Base: `/api/workflow/`
 ### tasks/
 
 ```
-GET    /api/workflow/tasks/          list, paginated
+GET    /api/workflow/tasks/          list, paginated (filtros: status, priority, task_type, assigned_to, category)
 POST   /api/workflow/tasks/          create
 GET    /api/workflow/tasks/{id}/     detail
 PATCH  /api/workflow/tasks/{id}/     update
@@ -845,24 +914,43 @@ PATCH  /api/workflow/notifications/{id}/    mark read
 
 Base: `/api/finances/`
 
-This app exposes report views only (no CRUD resources). All endpoints are `GET`.
+Esta app expone únicamente reportes (sin CRUD). Todos los endpoints son `GET` (excepto por el parámetro `is_async` que lanza un proceso de fondo).
+
+### Reportes disponibles
 
 ```
-GET    /api/finances/balance-sheet/     ?end_date=YYYY-MM-DD&start_date=YYYY-MM-DD&comp_end_date=...
-GET    /api/finances/income-statement/  ?start_date=...&end_date=...
-GET    /api/finances/cash-flow/         ?start_date=...&end_date=...
-GET    /api/finances/report-status/{task_id}/   poll async report generation
+GET /api/finances/balance-sheet/     Balance general
+GET /api/finances/trial-balance/     Balance de comprobación
+GET /api/finances/income-statement/  Estado de resultados
+GET /api/finances/cash-flow/         Flujo de caja
+GET /api/finances/analysis/          Análisis financiero (ratios)
+GET /api/finances/bi-analytics/      BI Analytics
+GET /api/finances/report-status/{task_id}/  Polling de reportes async
 ```
 
-All report endpoints support `?is_async=true` to return `{ task_id, status: "PENDING" }` for long-running reports (polled via `report-status/`).
+**Query params comunes (todos los reportes):**
+- `start_date` (YYYY-MM-DD): Fecha de inicio
+- `end_date` o `date` (YYYY-MM-DD): Fecha de fin
+- `comp_start_date` / `comp_end_date`: Fechas para columna de comparación
+- `is_async=true`: Dispara ejecución en Celery y devuelve `{ "task_id": "...", "status": "PENDING" }`
 
-Response shape (balance-sheet / income-statement): tree of `ReportNode` objects — same shape consumed by `ReportTable` component.
+**Comportamiento Sync:**
+Devuelve el JSON del reporte directamente. Los reportes se cachean 90 segundos vía `core.cache.cache_report`. No usan serializers DRF, devuelven el diccionario construido por `FinanceService`.
+
+Response shape (balance-sheet / income-statement / cash-flow):
+Árbol jerárquico de nodos (consumido por `ReportTable`).
 
 ```json
 {
   "data": [
-    { "id": "number", "code": "string", "name": "string", "balance": "decimal",
-      "comp_balance": "decimal | null", "children": [...] }
+    { 
+      "id": "number", 
+      "code": "string", 
+      "name": "string", 
+      "balance": "decimal",
+      "comp_balance": "decimal | null", 
+      "children": [...] 
+    }
   ]
 }
 ```
