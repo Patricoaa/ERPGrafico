@@ -214,3 +214,177 @@ def get_stock_report_data() -> list[dict]:
             }
         )
     return report
+
+
+class ProductSelector:
+    @staticmethod
+    def get_insights(instance: Product) -> dict:
+        product_ids = [instance.id]
+        if instance.has_variants:
+            product_ids += list(instance.variants.values_list("id", flat=True))
+
+        history = instance.history.select_related("history_user").all().order_by("history_date")
+        price_history = []
+        last_sale = None
+        last_cost = None
+        for h in history:
+            if h.sale_price != last_sale or h.cost_price != last_cost:
+                price_history.append(
+                    {
+                        "date": h.history_date,
+                        "sale_price": float(h.sale_price),
+                        "cost_price": float(h.cost_price),
+                        "user": h.history_user.username if h.history_user else "System",
+                    }
+                )
+                last_sale = h.sale_price
+                last_cost = h.cost_price
+        price_history.reverse()
+
+        from inventory.models import StockMove
+
+        moves = (
+            StockMove.objects.filter(product_id__in=product_ids)
+            .select_related("warehouse", "uom", "product")
+            .prefetch_related(
+                "sale_delivery_line",
+                "purchase_receipt_line",
+                "sale_return_line",
+                "purchase_return_line",
+            )
+            .all()
+            .order_by("-date", "-id")[:100]
+        )
+
+        kardex = []
+        for m in moves:
+            unit_price = float(m.unit_cost or 0)
+
+            if unit_price == 0 or m.move_type == "OUT":
+                if hasattr(m, "purchase_receipt_line") and m.purchase_receipt_line:
+                    unit_price = float(m.purchase_receipt_line.unit_cost)
+                elif hasattr(m, "sale_delivery_line") and m.sale_delivery_line:
+                    unit_price = float(m.sale_delivery_line.unit_price)
+                elif hasattr(m, "sale_return_line") and m.sale_return_line:
+                    unit_price = float(m.sale_return_line.unit_price)
+                elif hasattr(m, "purchase_return_line") and m.purchase_return_line:
+                    unit_price = float(m.purchase_return_line.unit_cost)
+
+            if unit_price == 0 and m.unit_cost:
+                unit_price = float(m.unit_cost)
+
+            if unit_price == 0:
+                unit_price = float(m.product.cost_price)
+
+            description = m.description
+            if instance.has_variants and m.product_id != instance.id:
+                variant_name = m.product.variant_display_name or m.product.name
+                description = f"[{variant_name}] {description}"
+
+            display_id = m.display_id
+            related_id = m.id
+            related_type = "inventory"
+
+            if hasattr(m, "sale_delivery_line") and m.sale_delivery_line:
+                display_id = m.sale_delivery_line.delivery.display_id
+                related_id = m.sale_delivery_line.delivery.id
+                related_type = "sale_delivery"
+            elif hasattr(m, "purchase_receipt_line") and m.purchase_receipt_line:
+                display_id = m.purchase_receipt_line.receipt.display_id
+                related_id = m.purchase_receipt_line.receipt.id
+                related_type = "purchase_receipt"
+            elif hasattr(m, "sale_return_line") and m.sale_return_line:
+                display_id = f"REC-{m.sale_return_line.return_doc.number}"
+                related_id = m.sale_return_line.return_doc.id
+                related_type = "sale_return"
+            elif hasattr(m, "purchase_return_line") and m.purchase_return_line:
+                display_id = f"DES-{m.purchase_return_line.return_doc.number}"
+                related_id = m.purchase_return_line.return_doc.id
+                related_type = "purchase_return"
+
+            kardex.append(
+                {
+                    "id": m.id,
+                    "display_id": display_id,
+                    "related_id": related_id,
+                    "related_type": related_type,
+                    "date": m.date,
+                    "type": m.move_type,
+                    "quantity": float(m.quantity),
+                    "unit_price": unit_price,
+                    "total_price": abs(float(m.quantity) * unit_price),
+                    "warehouse": m.warehouse.name,
+                    "description": description,
+                    "uom": m.uom.name if m.uom else "",
+                }
+            )
+
+        from django.db import models
+        from django.db.models import Avg, F, Sum
+        from sales.models import SaleDeliveryLine, SaleReturnLine
+
+        delivery_stats = SaleDeliveryLine.objects.filter(
+            product_id__in=product_ids, delivery__status="CONFIRMED"
+        ).aggregate(
+            avg_price=Avg("unit_price", filter=models.Q(unit_price__gt=0)),
+            avg_cost=Avg("unit_cost", filter=models.Q(unit_cost__gt=0)),
+            total_qty=Sum("quantity"),
+            total_revenue=Sum(F("quantity") * F("unit_price")),
+            total_cost_basis=Sum(F("quantity") * F("unit_cost")),
+        )
+
+        return_stats = SaleReturnLine.objects.filter(
+            product_id__in=product_ids, return_doc__status="CONFIRMED"
+        ).aggregate(
+            total_qty=Sum("quantity"),
+            total_revenue=Sum(F("quantity") * F("unit_price")),
+            total_cost_basis=Sum(F("quantity") * F("unit_cost")),
+        )
+
+        net_qty = (delivery_stats["total_qty"] or 0) - (return_stats["total_qty"] or 0)
+        net_revenue = (delivery_stats["total_revenue"] or 0) - (return_stats["total_revenue"] or 0)
+        net_cost_basis = (delivery_stats["total_cost_basis"] or 0) - (
+            return_stats["total_cost_basis"] or 0
+        )
+
+        avg_price = float(delivery_stats["avg_price"] or 0)
+        avg_cost = float(delivery_stats["avg_cost"] or 0)
+
+        from production.models import ProductionConsumption
+
+        consumptions = (
+            ProductionConsumption.objects.filter(product_id__in=product_ids)
+            .select_related("work_order", "product")
+            .all()
+            .order_by("-date")[:20]
+        )
+
+        production_usage = []
+        for c in consumptions:
+            desc = f"Consumo en OT-{c.work_order.number}"
+            if instance.has_variants and c.product_id != instance.id:
+                variant_name = c.product.variant_display_name or c.product.name
+                desc = f"[{variant_name}] {desc}"
+
+            production_usage.append(
+                {
+                    "date": c.date,
+                    "ot_id": c.work_order.id,
+                    "ot_number": c.work_order.number,
+                    "quantity": float(c.quantity),
+                    "description": desc,
+                }
+            )
+
+        return {
+            "price_history": price_history,
+            "kardex": kardex,
+            "sales_analysis": {
+                "avg_price": avg_price,
+                "avg_cost": avg_cost,
+                "total_sold": float(net_qty),
+                "total_revenue": float(net_revenue),
+                "total_cost_basis": float(net_cost_basis),
+            },
+            "production_usage": production_usage,
+        }
