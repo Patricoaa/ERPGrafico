@@ -244,13 +244,14 @@ class ProfitDistributionLineSerializer(serializers.ModelSerializer):
 
     def get_paid_dividend_amount(self, obj):
         from decimal import Decimal
-
-        from django.db.models import Sum
-
-        payments = obj.resolution.payments.filter(partner=obj.partner).aggregate(
-            total=Sum("amount")
+        # Avoid DB hit by using prefetched data
+        payments = obj.resolution.payments.all()
+        total = sum(
+            (p.amount or Decimal("0"))
+            for p in payments
+            if p.partner_id == obj.partner_id
         )
-        return payments["total"] or Decimal("0")
+        return total or Decimal("0")
 
 
 class ProfitDistributionResolutionSerializer(serializers.ModelSerializer):

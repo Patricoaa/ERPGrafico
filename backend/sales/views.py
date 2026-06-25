@@ -11,7 +11,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
 from core.api.search import DistinctSearchFilter
-from core.mixins import AuditHistoryMixin
+from core.mixins import AuditHistoryMixin, NoDestroyModelMixin
 from inventory.models import Warehouse
 
 from .models import SaleDelivery, SaleOrder, SaleReturn, SalesSettings
@@ -37,29 +37,11 @@ class SalesSettingsViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
     @action(detail=False, methods=["get", "put", "patch"])
     def current(self, request):
         obj, _ = SalesSettings.objects.get_or_create(pk=1)
-
         from .services import SalesSettingsService
 
-        if request.method == "GET":
-            serializer = self.get_serializer(obj)
-            data = serializer.data
-            data.update(SalesSettingsService.get_accounting_settings_data())
-            return Response(data)
-
-        sales_fields = {k: v for k, v in request.data.items() if k not in SalesSettingsService.ACCOUNTING_SETTINGS_FIELDS}
-        accounting_fields = {k: v for k, v in request.data.items() if k in SalesSettingsService.ACCOUNTING_SETTINGS_FIELDS}
-
-        if sales_fields:
-            serializer = self.get_serializer(obj, data=sales_fields, partial=True)
-            serializer.is_valid(raise_exception=True)
-            serializer.save()
-
-        if accounting_fields:
-            SalesSettingsService.update_accounting_settings(accounting_fields)
-
-        serializer = self.get_serializer(obj)
-        data = serializer.data
-        data.update(SalesSettingsService.get_accounting_settings_data())
+        data = SalesSettingsService.get_or_update_current_settings(
+            obj, request.data, request.method, self.get_serializer
+        )
         return Response(data)
 
 
@@ -151,8 +133,18 @@ class SaleOrderFilterSet(django_filters.FilterSet):
         return queryset
 
 
-class SaleOrderViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
-    queryset = SaleOrder.objects.all().order_by("-date", "-id")
+class SaleOrderViewSet(NoDestroyModelMixin, viewsets.ModelViewSet, AuditHistoryMixin):
+    def get_queryset(self):
+        return SaleOrder.objects.select_related(
+            "customer", "credit_approval_task", "pos_session"
+        ).prefetch_related(
+            "lines", 
+            "lines__product", 
+            "lines__work_orders", 
+            "invoices", 
+            "deliveries", 
+            "payments"
+        ).order_by("-date", "-id")
     permission_classes = [StandardizedModelPermissions]
     filter_backends = [DjangoFilterBackend, DistinctSearchFilter]
     filterset_class = SaleOrderFilterSet
@@ -270,25 +262,9 @@ class SaleOrderViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
 
     @action(detail=True, methods=["post"])
     def partial_dispatch(self, request, pk=None):
-        """Dispatch specific quantities of products"""
-
         order = self.get_object()
         try:
-            warehouse_id = request.data.get("warehouse_id")
-            delivery_date = request.data.get("delivery_date")
-            # Support both old and new format for safer transition
-            line_quantities = request.data.get("line_quantities")
-            if line_quantities and isinstance(line_quantities, dict):
-                line_data = [{"line_id": int(k), "quantity": v} for k, v in line_quantities.items()]
-            else:
-                line_data = request.data.get("line_data", [])
-
-            warehouse = Warehouse.objects.get(pk=warehouse_id)
-
-            delivery = SalesService.partial_dispatch(
-                order=order, warehouse=warehouse, line_data=line_data, delivery_date=delivery_date
-            )
-
+            delivery = SalesService.partial_dispatch_from_request(order, request.data)
             return Response(SaleDeliverySerializer(delivery).data, status=status.HTTP_201_CREATED)
         except ValidationError as e:
             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
@@ -318,36 +294,11 @@ class SaleOrderViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
 
     @action(detail=True, methods=["post"])
     def register_merchandise_return(self, request, pk=None):
-        """
-        Register merchandise return for a sale order.
-        Only available for DRAFT invoices.
-        """
         order = self.get_object()
-
-        return_items = request.data.get("return_items", [])
-        warehouse_id = request.data.get("warehouse_id")
-        notes = request.data.get("notes", "")
-
-        if not warehouse_id:
-            return Response(
-                {"error": "Se requiere especificar la bodega."}, status=status.HTTP_400_BAD_REQUEST
-            )
-
-        if not return_items:
-            return Response(
-                {"error": "Debe especificar al menos un producto a devolver."},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-
         try:
             from sales.return_services import SalesReturnService
 
-            warehouse = Warehouse.objects.get(id=warehouse_id)
-
-            return_delivery = SalesReturnService.register_merchandise_return(
-                order, return_items, warehouse, notes
-            )
-
+            return_delivery = SalesReturnService.register_merchandise_return_from_request(request, order)
             return Response(
                 {
                     "message": "Devolución registrada exitosamente",
@@ -359,9 +310,6 @@ class SaleOrderViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
         except ValidationError as e:
             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
         except Exception as e:
-            import traceback
-
-            traceback.print_exc()
             return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
     @action(detail=False, methods=["get"], url_path="filter-suggestions")
@@ -436,45 +384,18 @@ class SaleOrderViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
 
     @action(detail=True, methods=["get", "post"], url_path="comments")
     def comments(self, request, pk=None):
-        """TASK-307: Unified comment feed for an NV (includes linked OT comments)."""
-        from django.contrib.contenttypes.models import ContentType
-
-        from production.models import WorkOrder
-        from workflow.models import Comment
         from workflow.serializers import CommentSerializer
-
         order = self.get_object()
-        so_ct = ContentType.objects.get_for_model(SaleOrder)
-
         if request.method == "GET":
-            qs = Comment.objects.filter(content_type=so_ct, object_id=order.pk)
-
-            # Fetch comments from all related WorkOrders
-            production_orders = order.production_orders.all()
-            if production_orders.exists():
-                wo_ct = ContentType.objects.get_for_model(WorkOrder)
-                wo_qs = Comment.objects.filter(
-                    content_type=wo_ct, object_id__in=production_orders.values_list("pk", flat=True)
-                )
-                qs = (qs | wo_qs).order_by("created_at")
-            else:
-                qs = qs.order_by("created_at")
-
-            serializer = CommentSerializer(qs, many=True)
-            return Response(serializer.data)
-
-        text = (request.data.get("text") or "").strip()
-        if not text:
-            return Response({"error": "text es requerido"}, status=status.HTTP_400_BAD_REQUEST)
-
-        from workflow.services import WorkflowService
-
-        comment = WorkflowService.add_comment(
-            content_object=order,
-            user=request.user,
-            text=text,
-        )
-        return Response(CommentSerializer(comment).data, status=status.HTTP_201_CREATED)
+            qs = SalesService.get_comments_queryset(order)
+            return Response(CommentSerializer(qs, many=True).data)
+        try:
+            comment = SalesService.add_comment_from_request(order, request)
+            return Response(CommentSerializer(comment).data, status=status.HTTP_201_CREATED)
+        except ValidationError as e:
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
 
 class SaleDeliveryViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
