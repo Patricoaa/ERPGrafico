@@ -145,35 +145,9 @@ class PurchaseOrderViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
     @action(detail=True, methods=["get"])
     def cancel_impact(self, request, pk=None):
         """Preview what will happen when cancelling this purchase order."""
-        order = self.get_object()
-        action_kind = "soft_cancel" if order.status == "DRAFT" else "full_annul"
-        impact = {
-            "order_status": order.status,
-            "invoices": [
-                {"id": inv.id, "display_id": inv.display_id, "status": inv.status}
-                for inv in order.invoices.all()
-            ],
-            "receipts": [{"id": r.id, "status": r.status} for r in order.receipts.all()],
-            "payments": [
-                {
-                    "id": p.id,
-                    "amount": str(p.amount),
-                    "status": p.status if hasattr(p, "status") else "POSTED",
-                }
-                for p in order.payments.all()
-            ],
-            "has_confirmed_receipts": order.receipts.filter(status="CONFIRMED").exists(),
-            "has_posted_payments": order.payments.filter(journal_entry__status="POSTED").exists(),
-            "requires_reason": action_kind == "full_annul",
-            "action": action_kind,
-        }
-        from tax.services import AccountingPeriodService, TaxPeriodService
+        from .selectors import PurchaseOrderSelector
 
-        today = timezone.now().date()
-        impact["period_open"] = not (
-            TaxPeriodService.is_period_closed(today)
-            or AccountingPeriodService.is_period_closed(today)
-        )
+        impact = PurchaseOrderSelector.get_cancel_impact(self.get_object())
         return Response(impact)
 
     @action(detail=True, methods=["post"])
@@ -228,23 +202,18 @@ class PurchaseOrderViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
     def partial_receive(self, request, pk=None):
         order = self.get_object()
         try:
-            warehouse_id = request.data.get("warehouse_id")
-            receipt_date = request.data.get("receipt_date")
-            line_data = request.data.get("line_data", [])  # List of dicts
-
             warehouse = order.warehouse
-            if warehouse_id:
+            if warehouse_id := request.data.get("warehouse_id"):
                 warehouse = Warehouse.objects.get(pk=warehouse_id)
 
             receipt = PurchasingService.partial_receive(
                 order=order,
                 warehouse=warehouse,
-                line_data=line_data,
-                receipt_date=receipt_date,
+                line_data=request.data.get("line_data", []),
+                receipt_date=request.data.get("receipt_date"),
                 delivery_reference=request.data.get("delivery_reference", ""),
                 notes=request.data.get("notes", ""),
             )
-
             return Response(PurchaseReceiptSerializer(receipt).data, status=status.HTTP_201_CREATED)
         except ValidationError as e:
             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
@@ -280,144 +249,120 @@ class PurchaseOrderViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
         except Exception as e:
             return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-    @action(detail=True, methods=["post"])
-    def register_note(self, request, pk=None):
-        order = self.get_object()
-
-        # Manually handle multipart/form-data requiring json parsing for complex fields
+    @staticmethod
+    def _parse_register_note(request):
         data = request.data.dict() if hasattr(request.data, "dict") else request.data.copy()
-
-        # If accessing via multipart, lists might be strings
         if "return_items" in data and isinstance(data["return_items"], str):
             import json
-
             try:
                 data["return_items"] = json.loads(data["return_items"])
             except Exception:
                 pass
+        return data
 
+    @action(detail=True, methods=["post"])
+    def register_note(self, request, pk=None):
+        order = self.get_object()
+        data = self._parse_register_note(request)
         from .serializers import NoteCreationSerializer
-
         serializer = NoteCreationSerializer(data=data)
 
-        if serializer.is_valid():
-            try:
-                val = serializer.validated_data
-                invoice = PurchasingService.create_note(
-                    order=order,
-                    note_type=val["note_type"],
-                    amount_net=val["amount_net"],
-                    amount_tax=val["amount_tax"],
-                    document_number=val["document_number"],
-                    document_attachment=request.FILES.get("document_attachment"),
-                    return_items=val.get("return_items"),
-                    original_invoice_id=val.get("original_invoice_id"),
-                    date=val.get("document_date"),
-                )
-
-                from billing.serializers import InvoiceSerializer
-
-                return Response(InvoiceSerializer(invoice).data, status=status.HTTP_201_CREATED)
-            except ValidationError as e:
-                return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
-            except Exception as e:
-                import traceback
-
-                traceback.print_exc()
-                return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-        else:
+        if not serializer.is_valid():
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            val = serializer.validated_data
+            invoice = PurchasingService.create_note(
+                order=order,
+                note_type=val["note_type"],
+                amount_net=val["amount_net"],
+                amount_tax=val["amount_tax"],
+                document_number=val["document_number"],
+                document_attachment=request.FILES.get("document_attachment"),
+                return_items=val.get("return_items"),
+                original_invoice_id=val.get("original_invoice_id"),
+                date=val.get("document_date"),
+            )
+            from billing.serializers import InvoiceSerializer
+            return Response(InvoiceSerializer(invoice).data, status=status.HTTP_201_CREATED)
+        except ValidationError as e:
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            import traceback
+            traceback.print_exc()
+            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+    @staticmethod
+    def _parse_purchase_checkout(request):
+        import json
+        
+        data = request.data
+        order_data = data.get("order_data")
+        if isinstance(order_data, str):
+            order_data = json.loads(order_data)
+
+        receipt_data = data.get("receipt_data")
+        if isinstance(receipt_data, str):
+            receipt_data = json.loads(receipt_data)
+
+        check_bank_id = data.get("check_bank_id")
+        if check_bank_id:
+            check_bank_id = int(check_bank_id)
+
+        installments_raw = data.get("installments", 1)
+        try:
+            installments = int(installments_raw) if installments_raw is not None else 1
+        except (ValueError, TypeError):
+            installments = 1
+
+        return {
+            "order_data": order_data,
+            "dte_type": data.get("dte_type", "FACTURA"),
+            "document_number": data.get("document_number", ""),
+            "document_date": data.get("document_date"),
+            "document_attachment": request.FILES.get("document_attachment"),
+            "payment_method": data.get("payment_method", "CREDIT"),
+            "amount": data.get("amount"),
+            "installments": installments,
+            "treasury_account_id": data.get("treasury_account_id"),
+            "transaction_number": data.get("transaction_number"),
+            "payment_is_pending": data.get("payment_is_pending", "false").lower() == "true",
+            "payment_method_id": data.get("payment_method_id"),
+            "check_number": data.get("check_number") or data.get("transaction_number"),
+            "check_bank_id": check_bank_id,
+            "check_issue_date": data.get("check_issue_date"),
+            "check_due_date": data.get("check_due_date"),
+            "checkbook_id": data.get("checkbook_id"),
+            "receipt_type": data.get("receipt_type", "IMMEDIATE"),
+            "receipt_data": receipt_data,
+        }
 
     @action(detail=False, methods=["post"])
     def purchase_checkout(self, request):
-        """
-        Unified purchase checkout endpoint.
-        Handles: Order creation/confirmation -> Bill registration -> Payment -> Receipt
-        """
+        """Unified purchase checkout endpoint."""
         try:
-            # Extract data from request
-            order_data = request.data.get("order_data")
-            if isinstance(order_data, str):
-                import json
+            params = self._parse_purchase_checkout(request)
+            params["user"] = request.user
+            result = PurchasingService.purchase_checkout(**params)
 
-                order_data = json.loads(order_data)
-
-            # Parse receipt_data if it's a string
-            receipt_data = request.data.get("receipt_data")
-            if isinstance(receipt_data, str):
-                import json
-
-                receipt_data = json.loads(receipt_data)
-
-            # Check-specific params (paymentMethodCardSelector sends check# as transaction_number)
-            check_number = request.data.get("check_number") or request.data.get(
-                "transaction_number"
-            )
-            check_bank_id = request.data.get("check_bank_id")
-            if check_bank_id:
-                check_bank_id = int(check_bank_id)
-            check_issue_date = request.data.get("check_issue_date")
-            check_due_date = request.data.get("check_due_date")
-            checkbook_id = request.data.get("checkbook_id")
-
-            installments_raw = request.data.get("installments", 1)
-            try:
-                installments = int(installments_raw) if installments_raw is not None else 1
-            except (ValueError, TypeError):
-                installments = 1
-
-            result = PurchasingService.purchase_checkout(
-                order_data=order_data,
-                dte_type=request.data.get("dte_type", "FACTURA"),
-                document_number=request.data.get("document_number", ""),
-                document_date=request.data.get("document_date"),
-                document_attachment=request.FILES.get("document_attachment"),
-                payment_method=request.data.get("payment_method", "CREDIT"),
-                amount=request.data.get("amount"),
-                installments=installments,
-                treasury_account_id=request.data.get("treasury_account_id"),
-                transaction_number=request.data.get("transaction_number"),
-                payment_is_pending=request.data.get("payment_is_pending", "false").lower()
-                == "true",
-                payment_method_id=request.data.get("payment_method_id"),
-                check_number=check_number,
-                check_bank_id=check_bank_id,
-                check_issue_date=check_issue_date,
-                check_due_date=check_due_date,
-                checkbook_id=checkbook_id,
-                user=request.user,
-                receipt_type=request.data.get("receipt_type", "IMMEDIATE"),
-                receipt_data=receipt_data,
-            )
-
-            # Create HUB tasks for the completed purchase order
             from workflow.services import WorkflowService
-
             WorkflowService.sync_hub_tasks(result["order"])
 
-            # Serialize response
             from billing.serializers import InvoiceSerializer
             from treasury.serializers import TreasuryMovementSerializer
-
             from .serializers import PurchaseReceiptSerializer
 
             response_data = {
                 "order": PurchaseOrderSerializer(result["order"]).data,
                 "invoice": InvoiceSerializer(result["invoice"]).data if result["invoice"] else None,
-                "payment": TreasuryMovementSerializer(result["payment"]).data
-                if result["payment"]
-                else None,
-                "receipt": PurchaseReceiptSerializer(result["receipt"]).data
-                if result["receipt"]
-                else None,
+                "payment": TreasuryMovementSerializer(result["payment"]).data if result["payment"] else None,
+                "receipt": PurchaseReceiptSerializer(result["receipt"]).data if result["receipt"] else None,
             }
-
             return Response(response_data, status=status.HTTP_201_CREATED)
         except ValidationError as e:
             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
         except Exception as e:
             import traceback
-
             traceback.print_exc()
             return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 

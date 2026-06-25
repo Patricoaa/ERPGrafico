@@ -74,111 +74,23 @@ class TaskViewSet(viewsets.ModelViewSet):
                 updated_task.completed_at = timezone.now()
                 updated_task.save(update_fields=["completed_by", "completed_at"])
 
-            if (
-                updated_task.status == Task.Status.COMPLETED
-                and updated_task.category == Task.Category.APPROVAL
-                and updated_task.created_by
-                and updated_task.task_type == "CREDIT_POS_REQUEST"
-            ):
-                draft_id = updated_task.data.get("request_data", {}).get("draft_id")
-                link = f"/sales/pos?draftId={draft_id}" if draft_id else "/sales/pos"
-                WorkflowService.send_notification(
-                    notification_type="POS_CREDIT_APPROVAL",
-                    title=f"Aprobación de Crédito Completada: {updated_task.title}",
-                    message="La solicitud de crédito ha sido aprobada y está lista para ser procesada en el POS.",
-                    link=link,
-                    creator=updated_task.created_by,
-                    level=Notification.Type.SUCCESS,
-                )
-            elif (
-                updated_task.status == Task.Status.REJECTED
-                and updated_task.category == Task.Category.APPROVAL
-                and updated_task.created_by
-                and updated_task.task_type == "CREDIT_POS_REQUEST"
-            ):
-                WorkflowService.send_notification(
-                    notification_type="POS_CREDIT_APPROVAL",
-                    title=f"Aprobación de Crédito Rechazada: {updated_task.title}",
-                    message="La solicitud de crédito para el POS ha sido rechazada.",
-                    link="/sales/pos",
-                    creator=updated_task.created_by,
-                    level=Notification.Type.ERROR,
-                )
+            WorkflowService.handle_task_update(updated_task, old_status)
 
     @action(detail=True, methods=["post"])
     def complete(self, request, pk=None):
         task = self.get_object()
-
-        # HUB stage tasks can only be auto-completed by the system
-        if task.category == Task.Category.TASK and task.task_type.startswith("HUB_"):
-            return Response(
-                {
-                    "error": "Las tareas de etapa del HUB se completan automáticamente al finalizar la etapa correspondiente."
-                },
-                status=status.HTTP_400_BAD_REQUEST,
+        try:
+            WorkflowService.complete_task(
+                task=task,
+                user=request.user,
+                notes=request.data.get("notes"),
+                files=request.FILES.getlist("attachments"),
             )
-
-        # Security Check: Can this user complete this task?
-        if not request.user.is_superuser:
-            if task.assigned_to and task.assigned_to != request.user:
-                raise PermissionDenied(
-                    "No tienes permisos para completar esta tarea asignada a otro usuario."
-                )
-
-            if (
-                task.assigned_group
-                and not request.user.groups.filter(id=task.assigned_group.id).exists()
-            ):
-                raise PermissionDenied(
-                    f"No tienes permisos para completar esta tarea. Debes pertenecer al grupo '{task.assigned_group.name}'."
-                )
-
-        task.status = Task.Status.COMPLETED
-        task.completed_at = timezone.now()
-        task.completed_by = request.user
-
-        # Save notes if provided
-        notes = request.data.get("notes")
-        if notes:
-            task.notes = notes
-
-        task.save()
-
-        # Handle attachments if provided
-        files = request.FILES.getlist("attachments")
-        if files:
-            from django.contrib.contenttypes.models import ContentType
-
-            from core.models import Attachment
-
-            task_ct = ContentType.objects.get_for_model(Task)
-            for f in files:
-                Attachment.objects.create(
-                    file=f,
-                    original_filename=f.name,
-                    content_type=task_ct,
-                    object_id=task.id,
-                    user=request.user,
-                )
-        # Create notification if it's an approval task related to POS credit and has a creator
-        if (
-            task.category == Task.Category.APPROVAL
-            and task.created_by
-            and task.task_type == "CREDIT_POS_REQUEST"
-        ):
-            # Para las solicitudes de crédito desde POS, el draft_id puede venir en data (si se guardó) o no haber link
-            draft_id = task.data.get("request_data", {}).get("draft_id")
-            link = f"/sales/pos?draftId={draft_id}" if draft_id else "/sales/pos"
-            WorkflowService.send_notification(
-                notification_type="POS_CREDIT_APPROVAL",
-                user=task.created_by,
-                title=f"Aprobación de Crédito Completada: {task.title}",
-                message="La solicitud de crédito ha sido aprobada y está lista para ser procesada en el POS.",
-                level=Notification.Type.SUCCESS,
-                link=link,
-            )
-
-        return Response({"status": "completed"})
+            return Response({"status": "completed"})
+        except PermissionDenied as e:
+            return Response({"error": str(e)}, status=status.HTTP_403_FORBIDDEN)
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
 
 class NotificationViewSet(viewsets.ModelViewSet):

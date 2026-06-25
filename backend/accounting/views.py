@@ -198,33 +198,21 @@ class JournalEntryViewSet(viewsets.ModelViewSet, AuditHistory):
                 {"error": "Solo se pueden editar asientos en estado Borrador."},
                 status=status.HTTP_400_BAD_REQUEST,
             )
-        # This is a basic implementation that wipes items and re-creates them
+        
         data = request.data.copy()
         items_data = data.pop("items", None)
 
         try:
-            # Standard update for Entry fields
+            # We use the serializer just to validate the main data
             serializer = self.get_serializer(
                 instance, data=data, partial=kwargs.get("partial", False)
             )
             serializer.is_valid(raise_exception=True)
-            self.perform_update(serializer)
 
-            if items_data is not None:
-                # Replace items
-                instance.items.all().delete()
-                from .models import JournalItem
+            JournalEntryService.update_entry(instance, serializer.validated_data, items_data)
 
-                for item in items_data:
-                    account_val = item.pop("account", None)
-                    if account_val:
-                        # Coerce empty string FK values to None
-                        for fk_field in ("partner",):
-                            if fk_field in item and not item[fk_field]:
-                                item[fk_field] = None
-                        JournalItem.objects.create(entry=instance, account_id=account_val, **item)
-
-            return Response(serializer.data)
+            # Re-serialize updated instance
+            return Response(self.get_serializer(instance).data)
         except Exception as e:
             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 

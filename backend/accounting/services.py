@@ -111,6 +111,28 @@ class JournalEntryService:
                         JournalItem.objects.create(entry=entry, account_id=account_val, **item)
             return entry
 
+    @staticmethod
+    @transaction.atomic
+    def update_entry(entry, data, items_data=None):
+        from .models import JournalItem
+
+        for key, value in data.items():
+            setattr(entry, key, value)
+        entry.save()
+
+        if items_data is not None:
+            entry.items.all().delete()
+            for item in items_data:
+                account_val = item.pop("account", None)
+                if account_val:
+                    for fk_field in ("partner",):
+                        if fk_field in item and not item[fk_field]:
+                            item[fk_field] = None
+                    if hasattr(account_val, "id"):
+                        JournalItem.objects.create(entry=entry, account=account_val, **item)
+                    else:
+                        JournalItem.objects.create(entry=entry, account_id=account_val, **item)
+        return entry
 
 class AccountingService:
     @staticmethod
