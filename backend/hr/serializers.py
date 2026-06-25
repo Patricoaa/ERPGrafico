@@ -139,15 +139,21 @@ class EmployeeSerializer(serializers.ModelSerializer):
             ).delete()
 
     def create(self, validated_data):
+        from django.db import transaction
+
         concept_amounts_data = validated_data.pop("concept_amounts", None)
-        employee = super().create(validated_data)
-        self._handle_concept_amounts(employee, concept_amounts_data)
+        with transaction.atomic():
+            employee = super().create(validated_data)
+            self._handle_concept_amounts(employee, concept_amounts_data)
         return employee
 
     def update(self, instance, validated_data):
+        from django.db import transaction
+
         concept_amounts_data = validated_data.pop("concept_amounts", None)
-        employee = super().update(instance, validated_data)
-        self._handle_concept_amounts(employee, concept_amounts_data)
+        with transaction.atomic():
+            employee = super().update(instance, validated_data)
+            self._handle_concept_amounts(employee, concept_amounts_data)
         return employee
 
 
@@ -214,78 +220,55 @@ class PayrollListSerializer(serializers.ModelSerializer):
     total_previred = serializers.SerializerMethodField()
 
     def get_legal_deductions_worker(self, obj):
-        from django.db.models import Sum
-
-        return (
-            obj.items.filter(concept__category="DESCUENTO_LEGAL_TRABAJADOR").aggregate(
-                Sum("amount")
-            )["amount__sum"]
-            or 0
-        )
+        return sum(
+            item.amount
+            for item in obj.items.all()
+            if item.concept.category == "DESCUENTO_LEGAL_TRABAJADOR"
+        ) or 0
 
     def get_employer_contribution(self, obj):
-        from django.db.models import Sum
-
-        return (
-            obj.items.filter(concept__category="DESCUENTO_LEGAL_EMPLEADOR").aggregate(
-                Sum("amount")
-            )["amount__sum"]
-            or 0
-        )
+        return sum(
+            item.amount
+            for item in obj.items.all()
+            if item.concept.category == "DESCUENTO_LEGAL_EMPLEADOR"
+        ) or 0
 
     def get_other_deductions(self, obj):
-        from django.db.models import Sum
-
-        return (
-            obj.items.filter(concept__category="OTRO_DESCUENTO").aggregate(Sum("amount"))[
-                "amount__sum"
-            ]
-            or 0
-        )
+        return sum(
+            item.amount
+            for item in obj.items.all()
+            if item.concept.category == "OTRO_DESCUENTO"
+        ) or 0
 
     def get_advances_total(self, obj):
-        from django.db.models import Sum
-
-        return obj.advances.aggregate(Sum("amount"))["amount__sum"] or 0
+        return sum(a.amount for a in obj.advances.all()) or 0
 
     def get_previred_paid_amount(self, obj):
-        from django.db.models import Sum
-
         from .models import PayrollPayment
-
-        return (
-            obj.payments.filter(payment_type=PayrollPayment.PaymentType.PREVIRED).aggregate(
-                Sum("amount")
-            )["amount__sum"]
-            or 0
-        )
+        return sum(
+            p.amount
+            for p in obj.payments.all()
+            if p.payment_type == PayrollPayment.PaymentType.PREVIRED
+        ) or 0
 
     def get_remuneration_paid_amount(self, obj):
-        from django.db.models import Sum
-
         from .models import PayrollPayment
-
-        return (
-            obj.payments.filter(payment_type=PayrollPayment.PaymentType.SALARIO).aggregate(
-                Sum("amount")
-            )["amount__sum"]
-            or 0
-        )
+        return sum(
+            p.amount
+            for p in obj.payments.all()
+            if p.payment_type == PayrollPayment.PaymentType.SALARIO
+        ) or 0
 
     def get_total_previred(self, obj):
-        from django.db.models import Sum
-
         from .models import PayrollConcept
-
-        return (
-            obj.items.filter(
-                concept__category__in=[
-                    PayrollConcept.Category.DESCUENTO_LEGAL_TRABAJADOR,
-                    PayrollConcept.Category.DESCUENTO_LEGAL_EMPLEADOR,
-                ]
-            ).aggregate(total=Sum("amount"))["total"]
-            or 0
-        )
+        return sum(
+            item.amount
+            for item in obj.items.all()
+            if item.concept.category in [
+                PayrollConcept.Category.DESCUENTO_LEGAL_TRABAJADOR,
+                PayrollConcept.Category.DESCUENTO_LEGAL_EMPLEADOR,
+            ]
+        ) or 0
 
     def _get_payment_status(self, obj, paid, total):
         if obj.status == "DRAFT":
@@ -560,16 +543,18 @@ class EmployeePayrollPreviewSerializer(serializers.ModelSerializer):
 
     def get_is_salary_paid(self, obj):
         try:
-            return obj.payments.filter(
-                payment_type=PayrollPayment.PaymentType.SALARIO.value
-            ).exists()
+            return any(
+                p.payment_type == PayrollPayment.PaymentType.SALARIO.value
+                for p in obj.payments.all()
+            )
         except Exception:
             return False
 
     def get_is_previred_paid(self, obj):
         try:
-            return obj.payments.filter(
-                payment_type=PayrollPayment.PaymentType.PREVIRED.value
-            ).exists()
+            return any(
+                p.payment_type == PayrollPayment.PaymentType.PREVIRED.value
+                for p in obj.payments.all()
+            )
         except Exception:
             return False
