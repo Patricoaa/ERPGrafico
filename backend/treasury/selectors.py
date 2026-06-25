@@ -603,3 +603,82 @@ class CardSelector:
             "forecast": forecast,
         }
 
+    @staticmethod
+    def get_statement_charges(stmt) -> dict:
+        """
+        Retorna cargos facturados en un statement específico
+        (movimientos + cuotas + pendientes).
+        """
+        from django.db.models import CharField, IntegerField, OuterRef, Subquery
+
+        from .models import CardPendingCharge, CardPurchaseInstallment, TreasuryMovement
+        from .serializers import CardPendingChargeSerializer, TreasuryMovementSerializer
+
+        movements = (
+            TreasuryMovement.objects.filter(
+                billed_in_statement=stmt,
+            )
+            .select_related("card_purchase_group", "card_purchase_group__partner")
+            .order_by("-date", "-id")
+        )
+        pending = CardPendingCharge.objects.filter(
+            billed_in_statement=stmt,
+        ).order_by("-date", "-id")
+        installments = (
+            CardPurchaseInstallment.objects.filter(
+                billed_in_statement=stmt,
+            )
+            .select_related("card_purchase_group", "card_purchase_group__partner")
+            .order_by("-due_date", "-id")
+        )
+
+        po_subq = Subquery(
+            TreasuryMovement.objects.filter(
+                card_purchase_group=OuterRef("card_purchase_group"),
+                movement_type=TreasuryMovement.Type.OUTBOUND,
+            ).values("purchase_order_id")[:1],
+            output_field=IntegerField(),
+        )
+        po_number_subq = Subquery(
+            TreasuryMovement.objects.filter(
+                card_purchase_group=OuterRef("card_purchase_group"),
+                movement_type=TreasuryMovement.Type.OUTBOUND,
+            ).values("purchase_order__number")[:1],
+            output_field=CharField(max_length=20),
+        )
+        installments = installments.annotate(po_id=po_subq, po_display_number=po_number_subq)
+
+        installments_data = [
+            {
+                "id": inst.id,
+                "number": inst.number,
+                "due_date": inst.due_date.isoformat(),
+                "principal_amount": str(inst.principal_amount),
+                "group_uuid": str(inst.card_purchase_group.uuid)
+                if inst.card_purchase_group
+                else None,
+                "group_display_id": inst.card_purchase_group.display_id
+                if inst.card_purchase_group
+                else None,
+                "partner_name": (
+                    inst.card_purchase_group.partner.name
+                    if inst.card_purchase_group and inst.card_purchase_group.partner
+                    else None
+                ),
+                "total_installments": inst.card_purchase_group.installments
+                if inst.card_purchase_group
+                else None,
+                "purchase_order_id": inst.po_id,
+                "purchase_order_display_id": f"OCS-{inst.po_display_number}"
+                if inst.po_display_number
+                else None,
+            }
+            for inst in installments
+        ]
+        return {
+            "movements": TreasuryMovementSerializer(movements, many=True).data,
+            "installments": installments_data,
+            "pending_charges": CardPendingChargeSerializer(pending, many=True).data,
+        }
+
+
