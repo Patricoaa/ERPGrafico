@@ -524,13 +524,15 @@ Response key fields:
 ### movements/ (TreasuryMovement / payments)
 
 ```
-GET    /api/treasury/movements/          list, paginated (filtros: status, provider, sales_date, user, treasury_account)
+GET    /api/treasury/movements/          list, paginated
 POST   /api/treasury/movements/          create payment or cash movement
 GET    /api/treasury/movements/{id}/     detail
 PATCH  /api/treasury/movements/{id}/     update (limited)
 DELETE /api/treasury/movements/{id}/     delete
 POST   /api/treasury/movements/{id}/reconcile/  action — reconcile with bank statement line
 ```
+
+Filter params: `?is_reconciled=true|false`, `?movement_type=INBOUND|OUTBOUND|TRANSFER`, `?payment_method=<id>`, `?contact=<id>`, `?bank=<id>`, `?treasury_account=<id>`, `?date=YYYY-MM-DD`, `?date_from=YYYY-MM-DD`, `?date_to=YYYY-MM-DD`, `?amount_min=<num>`, `?amount_max=<num>`, `?direction=IN|OUT`, `?search=<text>`
 
 Response key fields (`TreasuryMovementSerializer`):
 
@@ -624,7 +626,7 @@ Base: `/api/production/`
 ### work-orders/
 
 ```
-GET    /api/production/work-orders/          list, paginated (filtros: active, vía WorkOrderFilterSet)
+GET    /api/production/work-orders/          list, paginated
 POST   /api/production/work-orders/          create
 GET    /api/production/work-orders/{id}/     detail
 PATCH  /api/production/work-orders/{id}/     update
@@ -633,6 +635,8 @@ POST   /api/production/work-orders/{id}/advance/      action — advance to next
 POST   /api/production/work-orders/{id}/consume/      action — register material consumption
 POST   /api/production/work-orders/{id}/finish/       action — mark finished
 ```
+
+Filter params: `?status=DRAFT|IN_PROGRESS|DONE`, `?product=<id>`, `?search=<text>`, `?active=true|false`
 
 Response key fields (`WorkOrderSerializer` — partial; see serializer for full schema):
 
@@ -724,7 +728,7 @@ Response key fields:
 ### payrolls/
 
 ```
-GET    /api/hr/payrolls/                    list, paginated (filtros: employee, period_year, period_month, status)
+GET    /api/hr/payrolls/                    list, paginated
 POST   /api/hr/payrolls/                    create (llama initialize_after_create interno)
 GET    /api/hr/payrolls/{id}/               detail
 PATCH  /api/hr/payrolls/{id}/               update
@@ -739,6 +743,8 @@ GET    /api/hr/payrolls/{id}/download_pdf/  Descarga PDF liquidación → applic
 POST   /api/hr/payrolls/create_draft_payrolls/  Async (Celery): crea borradores del mes
 POST   /api/hr/payrolls/generate_proforma/      Genera preview sin guardar (body: employee, year, month)
 ```
+
+Filter params: `?employee=<id>`, `?period_year=<YYYY>`, `?period_month=<1-12>`, `?status=DRAFT|CONFIRMED|PAID`, `?search=<name>`
 
 Response key fields (detail — `PayrollDetailSerializer`):
 
@@ -1027,6 +1033,14 @@ instead of creating a generic `TreasuryMovement`.
 | Anonymous | 60 req/min |
 | Authenticated | 600 req/min |
 | `/api/token/` | 5 req/min per IP |
+
+**Action Endpoints (Throttled limits):**
+| Endpoint pattern | Limit |
+|---|---|
+| `POST /{id}/transition/` | 30 req/min per user |
+| `POST /billing/invoices/{id}/issue/` | 5 req/min per user |
+| `POST /treasury/loans/{id}/disburse/` | 3 req/min per user |
+| `POST /production/work-orders/{id}/finish/` | 3 req/min per user |
 
 Headers: `X-RateLimit-Remaining`, `X-RateLimit-Reset`.
 
