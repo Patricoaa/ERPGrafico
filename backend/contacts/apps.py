@@ -76,3 +76,6 @@ class ContactsConfig(AppConfig):
             )
         except Exception:
             pass
+
+        # Conectar los signals de contacts
+        import contacts.signals
