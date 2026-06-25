@@ -101,24 +101,19 @@ class InvoiceSerializer(serializers.ModelSerializer):
         ]
 
     def get_serialized_payments(self, obj):
-        from treasury.models import PaymentAllocation
-
         payments_data = []
 
-        # 1. Direct payments (Legacy or Full Payments)
-        direct_payments = obj.payments.all()
-        if direct_payments.exists():
+        # 1. Direct payments (Legacy or Full Payments) — prefetcheados en RAM
+        direct_payments = list(obj.payments.all())
+        if direct_payments:
             direct_data = TreasuryMovementSerializer(direct_payments, many=True).data
             for p in direct_data:
                 p["is_partial_allocation"] = False
                 p["allocated_amount"] = p["amount"]
             payments_data.extend(direct_data)
 
-        # 2. Add Allocations (S5)
-        allocations = PaymentAllocation.objects.filter(invoice=obj).select_related(
-            "treasury_movement"
-        )
-        for alloc in allocations:
+        # 2. Allocaciones parciales — prefetcheadas en RAM (related_name='payment_allocations')
+        for alloc in obj.payment_allocations.all():
             p_data = TreasuryMovementSerializer(alloc.treasury_movement).data
             p_data["is_partial_allocation"] = True
             p_data["allocated_amount"] = alloc.amount
@@ -128,10 +123,9 @@ class InvoiceSerializer(serializers.ModelSerializer):
         return payments_data
 
     def get_pending_amount(self, obj):
-        from treasury.models import PaymentAllocation
-
+        # Leer de RAM: payments y payment_allocations ya están prefetcheados
         total_paid = sum(p.amount for p in obj.payments.all())
-        total_allocated = sum(a.amount for a in PaymentAllocation.objects.filter(invoice=obj))
+        total_allocated = sum(a.amount for a in obj.payment_allocations.all())
         return obj.total - (total_paid + total_allocated)
 
     def get_lines(self, obj):
@@ -221,19 +215,17 @@ class InvoiceSerializer(serializers.ModelSerializer):
                 print(f"DEBUG: Error augmenting NC lines: {e}")
                 pass
 
-        # 2. Fallback to order lines
+        # 2. Fallback to order lines — use prefetched data with Python filter
         if obj.sale_order:
             from sales.serializers import SaleLineSerializer
 
-            return SaleLineSerializer(
-                obj.sale_order.lines.filter(related_note__isnull=True), many=True
-            ).data
+            lines = [l for l in obj.sale_order.lines.all() if getattr(l, "related_note_id", None) is None]
+            return SaleLineSerializer(lines, many=True).data
         if obj.purchase_order:
             from purchasing.serializers import PurchaseLineSerializer
 
-            return PurchaseLineSerializer(
-                obj.purchase_order.lines.filter(related_note__isnull=True), many=True
-            ).data
+            lines = [l for l in obj.purchase_order.lines.all() if getattr(l, "related_note_id", None) is None]
+            return PurchaseLineSerializer(lines, many=True).data
         return []
 
     def get_related_documents(self, obj):
@@ -282,11 +274,11 @@ class InvoiceSerializer(serializers.ModelSerializer):
                             }
                         )
 
-            # Add supplemental work orders
+            # Add supplemental work orders — use prefetched data
             from production.serializers import WorkOrderSerializer
 
-            note_ots = obj.work_orders.all()
-            if note_ots.exists():
+            note_ots = list(obj.work_orders.all())
+            if note_ots:
                 for ot in note_ots:
                     if not any(
                         d["id"] == ot.id and d["docType"] == "work_order"
@@ -317,53 +309,37 @@ class InvoiceSerializer(serializers.ModelSerializer):
     def get_related_stock_moves(self, obj):
         moves = []
 
-        # 1. Moves linked to the Note's JE (Direct)
+        # 1. Moves vinculados al JE de la factura — precargados con to_attr
         if obj.journal_entry:
-            from inventory.models import StockMove
+            je_moves = getattr(obj.journal_entry, "prefetched_stock_moves", None)
+            if je_moves is not None:
+                moves.extend(je_moves)
 
-            moves.extend(list(StockMove.objects.filter(journal_entry=obj.journal_entry)))
+        # 2. Moves de devoluciones de venta — prefetcheados
+        for ret in obj.sale_returns.all():
+            for line in ret.lines.all():
+                if line.stock_move:
+                    moves.append(line.stock_move)
 
-        # 2. Moves linked to related Logistics Documents (Indirect)
-        # Credit Notes -> Returns
-        if hasattr(obj, "sale_returns"):
-            for ret in obj.sale_returns.all():
-                for line in ret.lines.all():
-                    if line.stock_move:
-                        moves.append(line.stock_move)
+        # 3. Moves de devoluciones de compra — prefetcheados
+        for ret in obj.purchase_returns.all():
+            for line in ret.lines.all():
+                if line.stock_move:
+                    moves.append(line.stock_move)
 
-        if hasattr(obj, "purchase_returns"):
-            for ret in obj.purchase_returns.all():
-                for line in ret.lines.all():
-                    if line.stock_move:
-                        moves.append(line.stock_move)
+        # 4. Moves de entregas suplementarias (ND venta) — prefetcheados
+        for dele in obj.sale_deliveries.all():
+            for line in dele.lines.all():
+                if line.stock_move:
+                    moves.append(line.stock_move)
 
-        # Debit Notes -> Supplemental Deliveries/Receipts
-        if hasattr(
-            obj, "sale_deliveries"
-        ):  # related_name='sale_deliveries' on SaleDelivery.related_note
-            for dele in obj.sale_deliveries.all():
-                for line in dele.lines.all():
-                    if line.stock_move:
-                        moves.append(line.stock_move)
+        # 5. Moves de recepciones suplementarias (ND compra) — prefetcheados
+        for rec in obj.purchase_receipts.all():
+            for line in rec.lines.all():
+                if line.stock_move:
+                    moves.append(line.stock_move)
 
-        if hasattr(
-            obj, "purchase_receipts"
-        ):  # Check if PurchaseReceipt has related_note logic implemented
-            # Assuming related_name='purchase_receipts' or similar if implemented
-            # If not explicitly on model, we might skip or need to check model def.
-            # Based on previous file reads, PurchasingService.create_receipt_from_note was mentioned.
-            # Let's check if PurchaseReceipt has 'related_note'.
-            # For safety, use getattr or filter if possible, but object iteration is safer if attribute exists.
-            if hasattr(obj, "purchase_receipts"):
-                for rec in obj.purchase_receipts.all():
-                    for line in rec.lines.all():
-                        if line.stock_move:
-                            moves.append(line.stock_move)
-
-        # Build response
-        # Eliminate duplicates just in case
         unique_moves = {m.id: m for m in moves}.values()
-
         return [
             {
                 "id": m.id,
