@@ -150,205 +150,17 @@ class ProductViewSet(BulkImportMixin, AuditHistory, viewsets.ModelViewSet):
         3. Sales Performance (Avg Price, Cost, Margin)
         4. Production Usage (OTs)
         """
+        from .selectors import ProductSelector
+        
         instance = self.get_object()
-
-        # Get all relevant product IDs (self + variants)
-        # This ensures that insights for a "Template" product aggregate its variants.
-        product_ids = [instance.id]
-        if instance.has_variants:
-            product_ids += list(instance.variants.values_list("id", flat=True))
-
-        # 1. Price History (Calculated from HistoricalRecords)
-        history = instance.history.select_related("history_user").all().order_by("history_date")
-        price_history = []
-        last_sale = None
-        last_cost = None
-        for h in history:
-            if h.sale_price != last_sale or h.cost_price != last_cost:
-                price_history.append(
-                    {
-                        "date": h.history_date,
-                        "sale_price": float(h.sale_price),
-                        "cost_price": float(h.cost_price),
-                        "user": h.history_user.username if h.history_user else "System",
-                    }
-                )
-                last_sale = h.sale_price
-                last_cost = h.cost_price
-        price_history.reverse()
-
-        # 2. Kardex (Recent Stock Moves) - Including variants
-        from inventory.models import StockMove
-
-        moves = (
-            StockMove.objects.filter(product_id__in=product_ids)
-            .select_related("warehouse", "uom", "product")
-            .prefetch_related(
-                "sale_delivery_line",
-                "purchase_receipt_line",
-                "sale_return_line",
-                "purchase_return_line",
-            )
-            .all()
-            .order_by("-date", "-id")[:100]
-        )
-
-        kardex = []
-        for m in moves:
-            # Priority 1: StockMove's own unit_cost (represents the actual capitalized valuation)
-            # We prioritize this for IN moves to show the gross cost for Boletas.
-            unit_price = float(m.unit_cost or 0)
-
-            # Priority 2: Transaction-linked price if move cost is 0 or it's an OUT move
-            # For OUT moves, we usually want the Sale Price, not the COGS.
-            if unit_price == 0 or m.move_type == "OUT":
-                if hasattr(m, "purchase_receipt_line") and m.purchase_receipt_line:
-                    unit_price = float(m.purchase_receipt_line.unit_cost)
-                elif hasattr(m, "sale_delivery_line") and m.sale_delivery_line:
-                    unit_price = float(m.sale_delivery_line.unit_price)
-                elif hasattr(m, "sale_return_line") and m.sale_return_line:
-                    unit_price = float(m.sale_return_line.unit_price)
-                elif hasattr(m, "purchase_return_line") and m.purchase_return_line:
-                    unit_price = float(m.purchase_return_line.unit_cost)
-
-            # Fallback to StockMove cost if still 0 (e.g. legacy data)
-            if unit_price == 0 and m.unit_cost:
-                unit_price = float(m.unit_cost)
-
-            # Priority 3: Current product cost as last resort
-            if unit_price == 0:
-                unit_price = float(m.product.cost_price)
-
-            description = m.description
-            if instance.has_variants and m.product_id != instance.id:
-                variant_name = m.product.variant_display_name or m.product.name
-                description = f"[{variant_name}] {description}"
-
-            # Determine related document info and custom display_id based on prefixes
-            display_id = m.display_id  # Default MOV-XXXX
-            related_id = m.id
-            related_type = "inventory"
-
-            if hasattr(m, "sale_delivery_line") and m.sale_delivery_line:
-                # Already DES-
-                display_id = m.sale_delivery_line.delivery.display_id
-                related_id = m.sale_delivery_line.delivery.id
-                related_type = "sale_delivery"
-            elif hasattr(m, "purchase_receipt_line") and m.purchase_receipt_line:
-                # Already REC-
-                display_id = m.purchase_receipt_line.receipt.display_id
-                related_id = m.purchase_receipt_line.receipt.id
-                related_type = "purchase_receipt"
-            elif hasattr(m, "sale_return_line") and m.sale_return_line:
-                # Return from customer = Stock Input -> REC
-                display_id = f"REC-{m.sale_return_line.return_doc.number}"
-                related_id = m.sale_return_line.return_doc.id
-                related_type = "sale_return"
-            elif hasattr(m, "purchase_return_line") and m.purchase_return_line:
-                # Return to supplier = Stock Output -> DES
-                display_id = f"DES-{m.purchase_return_line.return_doc.number}"
-                related_id = m.purchase_return_line.return_doc.id
-                related_type = "purchase_return"
-
-            kardex.append(
-                {
-                    "id": m.id,
-                    "display_id": display_id,
-                    "related_id": related_id,
-                    "related_type": related_type,
-                    "date": m.date,
-                    "type": m.move_type,
-                    "quantity": float(m.quantity),
-                    "unit_price": unit_price,
-                    "total_price": abs(float(m.quantity) * unit_price),
-                    "warehouse": m.warehouse.name,
-                    "description": description,
-                    "uom": m.uom.name if m.uom else "",
-                }
-            )
-
-        # 3. Sales Analysis (from CONFIRMED deliveries and returns) - Including variants
-        from django.db import models
-        from django.db.models import Avg, F, Sum
-
-        from sales.models import SaleDeliveryLine, SaleReturnLine
-
-        # Aggregate Deliveries
-        delivery_stats = SaleDeliveryLine.objects.filter(
-            product_id__in=product_ids, delivery__status="CONFIRMED"
-        ).aggregate(
-            avg_price=Avg("unit_price", filter=models.Q(unit_price__gt=0)),
-            avg_cost=Avg("unit_cost", filter=models.Q(unit_cost__gt=0)),
-            total_qty=Sum("quantity"),
-            total_revenue=Sum(F("quantity") * F("unit_price")),
-            total_cost_basis=Sum(F("quantity") * F("unit_cost")),
-        )
-
-        # Aggregate Returns (Subtraction)
-        return_stats = SaleReturnLine.objects.filter(
-            product_id__in=product_ids, return_doc__status="CONFIRMED"
-        ).aggregate(
-            total_qty=Sum("quantity"),
-            total_revenue=Sum(F("quantity") * F("unit_price")),
-            total_cost_basis=Sum(F("quantity") * F("unit_cost")),
-        )
-
-        # Calculate NET totals
-        net_qty = (delivery_stats["total_qty"] or 0) - (return_stats["total_qty"] or 0)
-        net_revenue = (delivery_stats["total_revenue"] or 0) - (return_stats["total_revenue"] or 0)
-        net_cost_basis = (delivery_stats["total_cost_basis"] or 0) - (
-            return_stats["total_cost_basis"] or 0
-        )
-
-        # Effective averages (weighted by volume to be more accurate if mixed data exists)
-        # However, for simplicity and matching old UI, we use the delivery averages but Net totals for the cards
-        avg_price = float(delivery_stats["avg_price"] or 0)
-        avg_cost = float(delivery_stats["avg_cost"] or 0)
-
-        # 4. Production Analysis (Consumption in OTs) - Including variants
-        from production.models import ProductionConsumption
-
-        consumptions = (
-            ProductionConsumption.objects.filter(product_id__in=product_ids)
-            .select_related("work_order", "product")
-            .all()
-            .order_by("-date")[:20]
-        )
-
-        production_usage = []
-        for c in consumptions:
-            desc = f"Consumo en OT-{c.work_order.number}"
-            if instance.has_variants and c.product_id != instance.id:
-                variant_name = c.product.variant_display_name or c.product.name
-                desc = f"[{variant_name}] {desc}"
-
-            production_usage.append(
-                {
-                    "date": c.date,
-                    "ot_id": c.work_order.id,
-                    "ot_number": c.work_order.number,
-                    "quantity": float(c.quantity),
-                    "description": desc,
-                }
-            )
-
-        return Response(
-            {
-                "price_history": price_history,
-                "kardex": kardex,
-                "sales_analysis": {
-                    "avg_price": avg_price,
-                    "avg_cost": avg_cost,
-                    "total_sold": float(net_qty),
-                    "total_revenue": float(net_revenue),
-                    "total_cost_basis": float(net_cost_basis),
-                },
-                "production_usage": production_usage,
-            }
-        )
+        data = ProductSelector.get_insights(instance)
+        return Response(data)
 
     @action(detail=True, methods=["post"])
     def generate_variants(self, request, pk=None):
+        from .services import ProductService
+        from django.core.exceptions import ValidationError
+
         template = self.get_object()
         selection = request.data.get("selection", [])  # List of {attribute: id, values: [ids]}
 
@@ -358,85 +170,13 @@ class ProductViewSet(BulkImportMixin, AuditHistory, viewsets.ModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        import itertools
-
-        from django.db import transaction
-
-        # Prepare lists of values for each attribute
-        attr_values_lists = []
-        for item in selection:
-            attr_id = item.get("attribute")
-            val_ids = item.get("values", [])
-            if val_ids:
-                attr_values_lists.append(
-                    list(ProductAttributeValue.objects.filter(id__in=val_ids, attribute_id=attr_id))
-                )
-
-        if not attr_values_lists:
-            return Response(
-                {"error": "Debe seleccionar valores de atributos."},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-
-        # Cartesian product of attribute values
-        combinations = list(itertools.product(*attr_values_lists))
-
-        created_count = 0
-        skipped_count = 0
-
-        with transaction.atomic():
-            for combo in combinations:
-                # Check if variant already exists
-                existing_variants = Product.objects.filter(parent_template=template)
-                for val in combo:
-                    existing_variants = existing_variants.filter(attribute_values=val)
-
-                # Ensure it has exactly the same number of attributes to avoid partial matches
-                existing_variants = [
-                    v for v in existing_variants if v.attribute_values.count() == len(combo)
-                ]
-
-                if existing_variants:
-                    skipped_count += 1
-                    continue
-
-                # Create the variant
-                variant = Product.objects.create(
-                    name=template.name,
-                    category=template.category,
-                    product_type=template.product_type,
-                    uom=template.uom,
-                    sale_uom=template.sale_uom,
-                    purchase_uom=template.purchase_uom,
-                    receiving_warehouse=template.receiving_warehouse,
-                    track_inventory=template.track_inventory,
-                    can_be_sold=template.can_be_sold,
-                    can_be_purchased=template.can_be_purchased,
-                    parent_template=template,
-                    sale_price=template.sale_price,
-                    cost_price=template.cost_price,
-                    requires_advanced_manufacturing=template.requires_advanced_manufacturing,
-                )
-                variant.attribute_values.set(combo)
-                variant.save()  # Triggers display name generation
-
-                if getattr(template, "manufacturing_profile", None):
-                    from inventory.models import ProductManufacturingProfile
-
-                    profile = ProductManufacturingProfile.objects.get(product=template)
-                    profile.pk = None
-                    profile.product = variant
-                    profile.save()
-
-                created_count += 1
-
-        return Response(
-            {
-                "message": f"Se han creado {created_count} variantes. {skipped_count} ya existían.",
-                "created": created_count,
-                "skipped": skipped_count,
-            }
-        )
+        try:
+            result = ProductService.generate_variants(template, selection)
+            return Response(result)
+        except ValidationError as e:
+            return Response({"error": str(e.message if hasattr(e, "message") else e)}, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            return Response({"error": f"Error interno: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
     @action(detail=True, methods=["post"], url_path="sync-variant-prices")
     def sync_variant_prices(self, request, pk=None):
@@ -459,6 +199,9 @@ class ProductViewSet(BulkImportMixin, AuditHistory, viewsets.ModelViewSet):
         Clona la BOM activa del template a las variantes indicadas.
         Si variant_ids está vacío, aplica a todas las variantes activas.
         """
+        from django.core.exceptions import ValidationError
+        from .services import ProductService
+
         template = self.get_object()
         variant_ids = request.data.get("variant_ids", [])  # [] = todas
 
@@ -468,56 +211,14 @@ class ProductViewSet(BulkImportMixin, AuditHistory, viewsets.ModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        from django.db import transaction
-
-        from production.models import BillOfMaterials, BillOfMaterialsLine
-
-        source_bom = template.boms.filter(active=True).first()
-        if not source_bom:
+        try:
+            result = ProductService.bulk_clone_bom(template, variant_ids or None)
+            return Response(result)
+        except ValidationError as e:
             return Response(
-                {"error": "El template no tiene una Lista de Materiales activa para clonar."},
+                {"error": str(e.message if hasattr(e, "message") else e)},
                 status=status.HTTP_400_BAD_REQUEST,
             )
-
-        variants_qs = template.variants.filter(is_active=True)
-        if variant_ids:
-            variants_qs = variants_qs.filter(id__in=variant_ids)
-
-        cloned_count = 0
-        with transaction.atomic():
-            for variant in variants_qs:
-                # Remove existing BOMs on this variant before cloning
-                variant.boms.all().delete()
-
-                new_bom = BillOfMaterials.objects.create(
-                    product=variant,
-                    name=source_bom.name,
-                    active=True,
-                    yield_quantity=source_bom.yield_quantity,
-                    yield_uom=source_bom.yield_uom,
-                )
-                for line in source_bom.lines.all():
-                    BillOfMaterialsLine.objects.create(
-                        bom=new_bom,
-                        component=line.component,
-                        quantity=line.quantity,
-                        uom=line.uom,
-                        is_outsourced=line.is_outsourced,
-                        supplier=line.supplier,
-                        unit_price=line.unit_price,
-                        document_type=line.document_type,
-                    )
-                variant.has_bom = True
-                variant.product_type = Product.Type.MANUFACTURABLE
-                variant.save(update_fields=["has_bom", "product_type"])
-                cloned_count += 1
-
-        return Response(
-            {
-                "message": f"BOM clonada en {cloned_count} variante(s).",
-                "cloned": cloned_count,
-            }
-        )
 
     @action(detail=True, methods=["post"], url_path="bulk-set-surcharge")
     def bulk_set_surcharge(self, request, pk=None):
@@ -593,120 +294,15 @@ class ProductViewSet(BulkImportMixin, AuditHistory, viewsets.ModelViewSet):
         """
         Validates stock availability for multiple product lines.
         Checks both storable products and manufacturable products (including components).
-
-        Request body:
-        {
-            "lines": [
-                {"product_id": 123, "quantity": 10, "uom_id": 5},
-                ...
-            ]
-        }
-
-        Response:
-        {
-            "available": true/false,
-            "details": [
-                {
-                    "product_id": 123,
-                    "product_name": "Product A",
-                    "requested_qty": 10,
-                    "available_qty": 15,
-                    "is_available": true,
-                    "product_type": "STORABLE",
-                    "missing_components": []
-                },
-                ...
-            ]
-        }
         """
+        from .services import ProductService
+
         lines = request.data.get("lines", [])
         if not lines:
             return Response({"error": "No lines provided"}, status=status.HTTP_400_BAD_REQUEST)
 
-        details = []
-        all_available = True
-
-        for line in lines:
-            product_id = line.get("product_id")
-            requested_qty = Decimal(str(line.get("quantity", 0)))
-            uom_id = line.get("uom_id")
-
-            try:
-                product = Product.objects.get(pk=product_id)
-            except Product.DoesNotExist:
-                continue
-
-            # Convert quantity to base UoM if needed
-            if uom_id and product.uom_id != uom_id:
-                try:
-                    uom = UoM.objects.get(pk=uom_id)
-                    # Convert to base UoM
-                    requested_qty = requested_qty * uom.ratio
-                except UoM.DoesNotExist:
-                    pass
-
-            line_detail = {
-                "product_id": product.id,
-                "product_name": product.name,
-                "requested_qty": float(requested_qty),
-                "product_type": product.product_type,
-                "missing_components": [],
-            }
-
-            # Check availability based on product type
-            if product.product_type == Product.Type.STORABLE:
-                available_qty = product.qty_available
-                line_detail["available_qty"] = float(available_qty)
-                line_detail["is_available"] = requested_qty <= available_qty
-
-                if not line_detail["is_available"]:
-                    all_available = False
-
-            elif product.product_type == Product.Type.MANUFACTURABLE:
-                if product.has_bom:
-                    # Check if we can manufacture the requested quantity
-                    manufacturable_qty = product.manufacturable_quantity or 0
-                    line_detail["manufacturable_qty"] = float(manufacturable_qty)
-                    line_detail["is_available"] = requested_qty <= manufacturable_qty
-
-                    if not line_detail["is_available"]:
-                        all_available = False
-
-                        # Get missing components details
-                        from production.models import BillOfMaterials
-
-                        try:
-                            bom = BillOfMaterials.objects.get(product=product, active=True)
-                            for component in bom.components.all():
-                                comp_product = component.component
-                                required_qty = component.quantity * requested_qty
-                                available_qty = comp_product.qty_available
-
-                                if required_qty > available_qty:
-                                    line_detail["missing_components"].append(
-                                        {
-                                            "component_id": comp_product.id,
-                                            "component_name": comp_product.name,
-                                            "required_qty": float(required_qty),
-                                            "available_qty": float(available_qty),
-                                            "missing_qty": float(required_qty - available_qty),
-                                        }
-                                    )
-                        except BillOfMaterials.DoesNotExist:
-                            pass
-                else:
-                    # No BOM = Express manufacturing, always available
-                    line_detail["is_available"] = True
-                    line_detail["manufacturable_qty"] = float("inf")
-
-            else:
-                # SERVICE, CONSUMABLE, etc. - always available
-                line_detail["is_available"] = True
-                line_detail["available_qty"] = float("inf")
-
-            details.append(line_detail)
-
-        return Response({"available": all_available, "details": details})
+        result = ProductService.check_availability(lines)
+        return Response(result)
 
 
 class ProductAttributeViewSet(viewsets.ModelViewSet, AuditHistory):

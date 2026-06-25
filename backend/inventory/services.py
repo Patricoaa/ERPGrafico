@@ -865,6 +865,88 @@ class ProductService:
         return restrictions
 
     @staticmethod
+    def check_availability(lines: list) -> dict:
+        from decimal import Decimal
+        from inventory.models import Product, UoM
+
+        details = []
+        all_available = True
+
+        for line in lines:
+            product_id = line.get("product_id")
+            requested_qty = Decimal(str(line.get("quantity", 0)))
+            uom_id = line.get("uom_id")
+
+            try:
+                product = Product.objects.get(pk=product_id)
+            except Product.DoesNotExist:
+                continue
+
+            if uom_id and product.uom_id != uom_id:
+                try:
+                    uom = UoM.objects.get(pk=uom_id)
+                    requested_qty = requested_qty * uom.ratio
+                except UoM.DoesNotExist:
+                    pass
+
+            line_detail = {
+                "product_id": product.id,
+                "product_name": product.name,
+                "requested_qty": float(requested_qty),
+                "product_type": product.product_type,
+                "missing_components": [],
+            }
+
+            if product.product_type == Product.Type.STORABLE:
+                available_qty = product.qty_available
+                line_detail["available_qty"] = float(available_qty)
+                line_detail["is_available"] = requested_qty <= available_qty
+
+                if not line_detail["is_available"]:
+                    all_available = False
+
+            elif product.product_type == Product.Type.MANUFACTURABLE:
+                if product.has_bom:
+                    manufacturable_qty = product.manufacturable_quantity or 0
+                    line_detail["manufacturable_qty"] = float(manufacturable_qty)
+                    line_detail["is_available"] = requested_qty <= manufacturable_qty
+
+                    if not line_detail["is_available"]:
+                        all_available = False
+
+                        from production.models import BillOfMaterials
+                        try:
+                            bom = BillOfMaterials.objects.get(product=product, active=True)
+                            for component in bom.components.all():
+                                comp_product = component.component
+                                required_qty = component.quantity * requested_qty
+                                available_qty = comp_product.qty_available
+
+                                if required_qty > available_qty:
+                                    line_detail["missing_components"].append(
+                                        {
+                                            "component_id": comp_product.id,
+                                            "component_name": comp_product.name,
+                                            "required_qty": float(required_qty),
+                                            "available_qty": float(available_qty),
+                                            "missing_qty": float(required_qty - available_qty),
+                                        }
+                                    )
+                        except BillOfMaterials.DoesNotExist:
+                            pass
+                else:
+                    line_detail["is_available"] = True
+                    line_detail["manufacturable_qty"] = float("inf")
+
+            else:
+                line_detail["is_available"] = True
+                line_detail["available_qty"] = float("inf")
+
+            details.append(line_detail)
+
+        return {"available": all_available, "details": details}
+
+    @staticmethod
     def generate_variants(template: Product, selection: list) -> dict:
         """
         Generates product variants for a given template and attribute selection.
@@ -947,3 +1029,54 @@ class ProductService:
                 created_count += 1
 
         return {"success": True, "created": created_count, "skipped": skipped_count}
+
+    @staticmethod
+    @transaction.atomic
+    def bulk_clone_bom(template: Product, variant_ids: list = None) -> dict:
+        """
+        Clones the active BOM from a template product onto the specified variants
+        (or all active variants if variant_ids is empty).
+        """
+        from production.models import BillOfMaterials, BillOfMaterialsLine
+
+        source_bom = template.boms.filter(active=True).first()
+        if not source_bom:
+            raise ValidationError(
+                "El template no tiene una Lista de Materiales activa para clonar."
+            )
+
+        variants_qs = template.variants.filter(is_active=True)
+        if variant_ids:
+            variants_qs = variants_qs.filter(id__in=variant_ids)
+
+        cloned_count = 0
+        for variant in variants_qs:
+            variant.boms.all().delete()
+
+            new_bom = BillOfMaterials.objects.create(
+                product=variant,
+                name=source_bom.name,
+                active=True,
+                yield_quantity=source_bom.yield_quantity,
+                yield_uom=source_bom.yield_uom,
+            )
+            for line in source_bom.lines.all():
+                BillOfMaterialsLine.objects.create(
+                    bom=new_bom,
+                    component=line.component,
+                    quantity=line.quantity,
+                    uom=line.uom,
+                    is_outsourced=line.is_outsourced,
+                    supplier=line.supplier,
+                    unit_price=line.unit_price,
+                    document_type=line.document_type,
+                )
+            variant.has_bom = True
+            variant.product_type = Product.Type.MANUFACTURABLE
+            variant.save(update_fields=["has_bom", "product_type"])
+            cloned_count += 1
+
+        return {
+            "message": f"BOM clonada en {cloned_count} variante(s).",
+            "cloned": cloned_count,
+        }
