@@ -47,7 +47,8 @@ export function useDrafts(options: UseDraftsOptions = {}) {
         setIsLoading(true)
         try {
             const data = await posApi.getDrafts({ pos_session_id: currentSession.id })
-            const list = Array.isArray(data) ? data : ((data as { results?: DraftCart[] })?.results ?? [])
+            const raw = data as { results?: DraftCart[] } | DraftCart[]
+            const list = Array.isArray(raw) ? raw : (raw?.results ?? [])
             setDrafts(list)
 
             // Sync currentDraftId: if it's set but not in the list, it's stale

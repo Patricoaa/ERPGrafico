@@ -31,7 +31,12 @@ export function UsersSettingsView({ activeTab }: UsersSettingsViewProps) {
     const { filters: segFilters, isFiltered: isSegFiltered, clearAll: clearSeg } = useSegmentation(userSegDef)
     const isFiltered = isTextFiltered || isSegFiltered
     const allFilters = { ...textFilters, ...segFilters }
-    const { users, isLoading, refetch } = useUsers(allFilters)
+    const [pageState, setPageState] = useState({ pageIndex: 0, pageSize: 20 })
+    const { page, users, isLoading, refetch } = useUsers({
+        ...(allFilters as any),
+        page: pageState.pageIndex + 1,
+        page_size: pageState.pageSize,
+    })
     const [isGroupModalOpen, setIsGroupModalOpen] = useState(false)
     const searchParams = useSearchParams()
     const router = useRouter()
@@ -181,6 +186,11 @@ export function UsersSettingsView({ activeTab }: UsersSettingsViewProps) {
                                 onReset={() => { clearText(); clearSeg() }}
                                 isFiltered={isFiltered}
                                 createAction={usersCreateAction}
+                                manualPagination
+                                pageCount={page ? Math.ceil(page.count / page.pageSize) : 0}
+                                rowCount={page?.count ?? 0}
+                                pagination={pageState}
+                                onPaginationChange={setPageState as any}
                                 renderCard={(user: AppUser) => {
                                     const groups = (user.groups || []).map(g => typeof g === 'string' ? g : g.name)
                                     const roles = ['ADMIN', 'MANAGER', 'OPERATOR', 'READ_ONLY']

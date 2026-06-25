@@ -37,7 +37,12 @@ export default function EntriesPage({ externalOpen, onExternalOpenChange, create
     const { filters: segFilters, isFiltered: isSegFiltered, clearAll: clearSeg } = useSegmentation(journalEntrySegDef, basePeriod)
     const isFiltered = isTextFiltered || isSegFiltered
     const allFilters = { ...textFilters, ...segFilters }
-    const { entries, isLoading, refetch } = useJournalEntries(allFilters)
+    const [pageState, setPageState] = useState({ pageIndex: 0, pageSize: 20 })
+    const { page, entries, isLoading, refetch } = useJournalEntries({
+        ...(allFilters as any),
+        page: pageState.pageIndex + 1,
+        page_size: pageState.pageSize,
+    })
     const { accounts } = useAccountingAccounts({ filters: { is_leaf: true } })
     const [viewingTransaction, setViewingTransaction] = useState<{ type: 'journal_entry', id: number | string } | null>(null)
     const [isFormOpen, setIsFormOpen] = useState(false)
@@ -227,6 +232,11 @@ export default function EntriesPage({ externalOpen, onExternalOpenChange, create
                     showReset={isFiltered}
                     onReset={() => { clearText(); clearSeg() }}
                     defaultPageSize={20}
+                    manualPagination
+                    pageCount={page ? Math.ceil(page.count / page.pageSize) : 0}
+                    rowCount={page?.count ?? 0}
+                    pagination={pageState}
+                    onPaginationChange={setPageState as any}
                     createAction={createAction}
                     isFiltered={isFiltered}
                     emptyState={{

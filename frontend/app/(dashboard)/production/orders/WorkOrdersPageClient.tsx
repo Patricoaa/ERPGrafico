@@ -57,9 +57,12 @@ export default function WorkOrdersPageClient({ initialOrders }: WorkOrdersPageCl
     const { filters: segFilters, isFiltered: isSegFiltered, clearAll: clearSeg } = useSegmentation(workOrderSegDef, basePeriod)
     const isFiltered = isTextFiltered || isSegFiltered
     const allFilters = { ...textFilters, ...segFilters }
-    const { orders, isLoading: loading, isRefetching, refetch: refetchOrders } = useWorkOrders({
+    const [pageState, setPageState] = useState({ pageIndex: 0, pageSize: 50 })
+    const { page, orders, isLoading: loading, isRefetching, refetch: refetchOrders } = useWorkOrders({
         ...(allFilters as any),
-        my_tasks: myTasks
+        my_tasks: myTasks,
+        page: pageState.pageIndex + 1,
+        page_size: pageState.pageSize,
     }, initialOrders)
 
     const { deleteOrder, annulOrder, duplicateOrder, bulkPrint, isBulkPrinting } = useWorkOrderListActions({ onSuccess: refetchOrders })
@@ -299,6 +302,11 @@ export default function WorkOrdersPageClient({ initialOrders }: WorkOrdersPageCl
                         isRefetching={isRefetching}
                         variant="embedded"
                         defaultPageSize={50}
+                        manualPagination
+                        pageCount={page ? Math.ceil(page.count / page.pageSize) : 0}
+                        rowCount={page?.count ?? 0}
+                        pagination={pageState}
+                        onPaginationChange={setPageState as any}
                         isFiltered={isFiltered || myTasks}
                         emptyState={{
                             context: "production",

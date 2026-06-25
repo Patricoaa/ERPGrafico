@@ -9,19 +9,22 @@ import { SALES_KEYS } from './queryKeys'
 
 export { SALES_KEYS }
 
-export function useSalesOrders({ filters, initialData }: { filters?: SaleOrderFilters, initialData?: SaleOrder[] } = {}) {
+export function useSalesOrders({ filters, initialData }: { filters?: SaleOrderFilters, initialData?: any } = {}) {
     const queryClient = useQueryClient()
     const { markLocalMutation } = useRealtime()
 
+    const { page = 1, page_size = 50, ...restFilters } = filters || {}
+    const activeFilters = { page, page_size, ...restFilters }
+
     const query = useQuery({
-        queryKey: SALES_KEYS.orders(filters || {}),
-        queryFn: () => salesApi.getOrders(filters),
+        queryKey: SALES_KEYS.orders(activeFilters),
+        queryFn: () => salesApi.getOrders(activeFilters),
         staleTime: 2 * 60 * 1000, // 2 min
         initialData,
         placeholderData: (prev) => prev,
     })
 
-    const orders = query.data ?? []
+    const orders = query.data?.results ?? []
     const showSkeleton = query.isLoading && !orders.length
     const isRefetching = query.isFetching && !showSkeleton
     const refetch = query.refetch
@@ -100,6 +103,7 @@ export function useSalesOrders({ filters, initialData }: { filters?: SaleOrderFi
     })
 
     return {
+        page: query.data,
         orders,
         isLoading: showSkeleton,
         isRefetching,

@@ -11,21 +11,25 @@ export { PRODUCTS_QUERY_KEY, PRODUCTS_KEYS }
 
 interface UseProductsProps {
     filters?: ProductFilters
-    initialData?: Product[]
+    initialData?: any
+    page?: number
+    page_size?: number
 }
 
-export function useProducts({ filters, initialData }: UseProductsProps = {}) {
+export function useProducts({ filters, initialData, page = 1, page_size = 50 }: UseProductsProps = {}) {
     const queryClient = useQueryClient()
     const { markLocalMutation } = useRealtime()
 
+    const activeFilters = { ...filters, page, page_size }
+
     const query = useQuery({
-        queryKey: PRODUCTS_KEYS.list(filters),
-        queryFn: () => inventoryApi.getProducts(filters),
+        queryKey: PRODUCTS_KEYS.list(activeFilters),
+        queryFn: () => inventoryApi.getProducts(activeFilters),
         initialData,
         placeholderData: (prev) => prev,
     })
 
-    const products = query.data ?? []
+    const products = query.data?.results ?? []
     const showSkeleton = query.isLoading && !products.length
     const isRefetching = query.isFetching && !showSkeleton
     const refetch = query.refetch
@@ -99,6 +103,7 @@ export function useProducts({ filters, initialData }: UseProductsProps = {}) {
         })
 
     return {
+        page: query.data,
         products,
         isLoading: showSkeleton,
         isRefetching,

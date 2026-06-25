@@ -9,18 +9,21 @@ import { PURCHASING_KEYS } from './queryKeys'
 
 export { PURCHASING_KEYS }
 
-export function usePurchasingOrders(filters?: FilterState, initialData?: PurchaseOrderAPI[]) {
+export function usePurchasingOrders(filters?: FilterState & { page?: number, page_size?: number }, initialData?: any) {
     const queryClient = useQueryClient()
 
+    const { page = 1, page_size = 50, ...restFilters } = filters || {}
+    const activeFilters = { page, page_size, ...restFilters }
+
     const query = useQuery({
-        queryKey: [...PURCHASING_KEYS.orders(), filters],
-        queryFn: () => purchasingApi.getOrders(filters),
+        queryKey: [...PURCHASING_KEYS.orders(), activeFilters],
+        queryFn: () => purchasingApi.getOrders(activeFilters),
         staleTime: 2 * 60 * 1000,
         initialData,
         placeholderData: (prev) => prev,
     })
 
-    const orders = query.data ?? []
+    const orders = query.data?.results ?? []
     const showSkeleton = query.isLoading && !orders.length
     const isRefetching = query.isFetching && !showSkeleton
     const refetch = query.refetch
@@ -34,6 +37,7 @@ export function usePurchasingOrders(filters?: FilterState, initialData?: Purchas
     })
 
     return {
+        page: query.data,
         orders,
         isLoading: showSkeleton,
         isRefetching,

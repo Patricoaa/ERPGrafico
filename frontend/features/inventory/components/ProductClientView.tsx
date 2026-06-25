@@ -81,14 +81,20 @@ export function ProductClientView({ externalOpen, onExternalOpenChange, createAc
 
         return {
             parent_template__isnull: true,
-            page_size: 1000,
             ...textFilters as Partial<ProductFilters>,
             ...segs as unknown as Partial<ProductFilters>,
             ...(categoryValue ? { category: Number(categoryValue) } as Partial<ProductFilters> : {}),
         }
     }, [textFilters, segFilters, categoryValue])
 
-    const { products, isLoading, refetch, updateProduct } = useProducts({ filters, initialData: initialProducts })
+    const [pageState, setPageState] = useState({ pageIndex: 0, pageSize: 50 })
+
+    const { page, products, isLoading, refetch, updateProduct } = useProducts({
+        filters,
+        page: pageState.pageIndex + 1,
+        page_size: pageState.pageSize,
+        initialData: initialProducts,
+    })
     const [editingProduct, setEditingProduct] = useState<Product | null>(null)
     const [isFormOpen, setIsFormOpen] = useState(false)
 
@@ -135,10 +141,10 @@ export function ProductClientView({ externalOpen, onExternalOpenChange, createAc
 
     const displayProducts = React.useMemo(() => {
         const result: Product[] = []
-        products.forEach(p => {
+        products.forEach((p: Product) => {
             result.push(p)
             if (p.has_variants && expandedTemplates.has(p.id) && p.variants) {
-                p.variants.forEach(v => {
+                p.variants.forEach((v: Product) => {
                     result.push({ ...v, is_child_variant: true })
                 })
             }
@@ -480,6 +486,11 @@ export function ProductClientView({ externalOpen, onExternalOpenChange, createAc
                     data={displayProducts}
                     isLoading={isLoading}
                     variant="embedded"
+                    manualPagination
+                    pageCount={page ? Math.ceil(page.count / page.pageSize) : 0}
+                    rowCount={page?.count ?? 0}
+                    pagination={pageState}
+                    onPaginationChange={setPageState as any}
                     smartSearch={<SmartSearchBar searchDef={productSearchDef} placeholder="Buscar producto..." className="w-full" />}
                     segmentation={<SegmentationBar def={productSegDef} />}
                     customFilters={
