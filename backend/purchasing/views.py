@@ -11,7 +11,7 @@ from rest_framework.response import Response
 from core.api.permissions import StandardizedModelPermissions
 from core.api.search import DistinctSearchFilter
 from core.idempotency import idempotent_endpoint
-from core.mixins import AuditHistoryMixin
+from core.mixins import AuditHistoryMixin, NoDestroyModelMixin
 from inventory.models import Warehouse
 
 from .models import PurchaseOrder, PurchaseReceipt, PurchaseReturn
@@ -104,8 +104,18 @@ class PurchaseOrderFilterSet(FilterSet):
         return queryset
 
 
-class PurchaseOrderViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
-    queryset = PurchaseOrder.objects.all()
+class PurchaseOrderViewSet(NoDestroyModelMixin, viewsets.ModelViewSet, AuditHistoryMixin):
+    def get_queryset(self):
+        return PurchaseOrder.objects.select_related(
+            "supplier", "warehouse", "work_order", "payment_method_ref"
+        ).prefetch_related(
+            "payments__invoice",
+            "invoices",
+            "lines__product",
+            "lines__uom",
+            "receipts__lines__stock_move__product",
+            "receipts__lines__product"
+        ).all()
     filter_backends = [DjangoFilterBackend, filters.SearchFilter]
     filterset_class = PurchaseOrderFilterSet
     search_fields = ["supplier__name", "supplier__tax_id", "number", "lines__product__name"]
@@ -182,21 +192,7 @@ class PurchaseOrderViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
     def receive(self, request, pk=None):
         order = self.get_object()
         try:
-            warehouse_id = request.data.get("warehouse_id")
-            receipt_date = request.data.get("receipt_date")
-
-            warehouse = order.warehouse
-            if warehouse_id:
-                warehouse = Warehouse.objects.get(pk=warehouse_id)
-
-            receipt = PurchasingService.receive_order(
-                order=order,
-                warehouse=warehouse,
-                receipt_date=receipt_date,
-                delivery_reference=request.data.get("delivery_reference", ""),
-                notes=request.data.get("notes", ""),
-            )
-
+            receipt = PurchasingService.receive_order_from_request(order, request.data)
             return Response(PurchaseReceiptSerializer(receipt).data, status=status.HTTP_201_CREATED)
         except ValidationError as e:
             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
@@ -208,18 +204,7 @@ class PurchaseOrderViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
     def partial_receive(self, request, pk=None):
         order = self.get_object()
         try:
-            warehouse = order.warehouse
-            if warehouse_id := request.data.get("warehouse_id"):
-                warehouse = Warehouse.objects.get(pk=warehouse_id)
-
-            receipt = PurchasingService.partial_receive(
-                order=order,
-                warehouse=warehouse,
-                line_data=request.data.get("line_data", []),
-                receipt_date=request.data.get("receipt_date"),
-                delivery_reference=request.data.get("delivery_reference", ""),
-                notes=request.data.get("notes", ""),
-            )
+            receipt = PurchasingService.partial_receive_from_request(order, request.data)
             return Response(PurchaseReceiptSerializer(receipt).data, status=status.HTTP_201_CREATED)
         except ValidationError as e:
             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
@@ -232,23 +217,7 @@ class PurchaseOrderViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
     def partial_return(self, request, pk=None):
         order = self.get_object()
         try:
-            warehouse_id = request.data.get("warehouse_id")
-            receipt_date = request.data.get("receipt_date")
-            line_data = request.data.get("line_data", [])
-
-            warehouse = order.warehouse
-            if warehouse_id:
-                warehouse = Warehouse.objects.get(pk=warehouse_id)
-
-            receipt = PurchasingService.partial_return(
-                order=order,
-                warehouse=warehouse,
-                line_data=line_data,
-                receipt_date=receipt_date,
-                delivery_reference=request.data.get("delivery_reference", ""),
-                notes=request.data.get("notes", ""),
-            )
-
+            receipt = PurchasingService.partial_return_from_request(order, request.data)
             return Response(PurchaseReceiptSerializer(receipt).data, status=status.HTTP_201_CREATED)
         except ValidationError as e:
             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
@@ -272,29 +241,24 @@ class PurchaseOrderViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
     @idempotent_endpoint(scope="purchasing.order.checkout")
     @action(detail=False, methods=["post"])
     def purchase_checkout(self, request):
-        """Unified purchase checkout endpoint."""
         try:
             result = PurchasingService.purchase_checkout_from_request(request)
-
             from workflow.services import WorkflowService
             WorkflowService.sync_hub_tasks(result["order"])
-
             from billing.serializers import InvoiceSerializer
             from treasury.serializers import TreasuryMovementSerializer
             from .serializers import PurchaseReceiptSerializer
 
-            response_data = {
+            res = {
                 "order": PurchaseOrderSerializer(result["order"]).data,
                 "invoice": InvoiceSerializer(result["invoice"]).data if result["invoice"] else None,
                 "payment": TreasuryMovementSerializer(result["payment"]).data if result["payment"] else None,
                 "receipt": PurchaseReceiptSerializer(result["receipt"]).data if result["receipt"] else None,
             }
-            return Response(response_data, status=status.HTTP_201_CREATED)
+            return Response(res, status=status.HTTP_201_CREATED)
         except ValidationError as e:
             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
         except Exception as e:
-            import traceback
-            traceback.print_exc()
             return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
     @action(detail=True, methods=["post"])
@@ -316,7 +280,12 @@ class PurchaseOrderViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
 
 
 class PurchaseReceiptViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
-    queryset = PurchaseReceipt.objects.all()
+    def get_queryset(self):
+        return PurchaseReceipt.objects.select_related(
+            "purchase_order__supplier", "warehouse"
+        ).prefetch_related(
+            "lines__product"
+        ).all()
     serializer_class = PurchaseReceiptSerializer
 
     @action(detail=True, methods=["post"])
@@ -333,7 +302,12 @@ class PurchaseReceiptViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
 
 
 class PurchaseReturnViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
-    queryset = PurchaseReturn.objects.all()
+    def get_queryset(self):
+        return PurchaseReturn.objects.select_related(
+            "purchase_order__supplier", "warehouse"
+        ).prefetch_related(
+            "lines__product", "lines__uom"
+        ).all()
     serializer_class = PurchaseReturnSerializer
 
     @action(detail=True, methods=["post"])
