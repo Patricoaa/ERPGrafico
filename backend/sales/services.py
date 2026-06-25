@@ -15,6 +15,128 @@ from .models import SaleDelivery, SaleDeliveryLine, SaleOrder
 
 class SalesService:
     @staticmethod
+    def create_sale_order_from_pos(user, data, files, serializer):
+        """
+        Validates POS session and PIN, then saves the serializer and confirms the sale.
+        """
+        pos_session_id = data.get("pos_session_id")
+        from treasury.models import POSSession
+
+        session = None
+        if pos_session_id:
+            session = POSSession.objects.filter(id=pos_session_id, status="OPEN").first()
+            if not session:
+                raise ValidationError("La sesión de caja especificada no es válida o está cerrada.")
+        else:
+            session = POSSession.objects.filter(user=user, status="OPEN").last()
+            if not session:
+                raise ValidationError("Debe tener una sesión de caja activa para crear ventas (o seleccionar una compartida).")
+
+        pos_pin = data.get("pos_pin")
+        from core.services import PINService
+        from rest_framework.exceptions import PermissionDenied
+
+        salesperson = user
+
+        if pos_pin:
+            pin_user = PINService.validate_pin(pos_pin)
+            if not pin_user:
+                raise PermissionDenied("PIN de seguridad incorrecto.")
+            salesperson = pin_user
+        else:
+            if user == session.user:
+                raise PermissionDenied("Se requiere PIN de autorización para confirmar la venta en este terminal.")
+            salesperson = user
+
+        serializer.is_valid(raise_exception=True)
+        order = serializer.save(pos_session=session, salesperson=salesperson)
+
+        line_files = {}
+        if files:
+            for key, file_obj in files.items():
+                parts = key.split("_")
+                if len(parts) >= 3 and parts[0] == "line":
+                    try:
+                        line_idx = int(parts[1])
+                        file_type = parts[2]
+                        if line_idx not in line_files:
+                            line_files[line_idx] = {"design": [], "approval": None}
+                        if file_type == "design":
+                            line_files[line_idx]["design"].append(file_obj)
+                        elif file_type == "approval":
+                            line_files[line_idx]["approval"] = file_obj
+                    except ValueError:
+                        continue
+
+        SalesService.confirm_sale(order, line_files=line_files)
+        return order
+
+    @staticmethod
+    def write_off(order):
+        from accounting.models import AccountingSettings, JournalEntry, JournalItem
+        from treasury.models import TreasuryMovement
+
+        payments = order.payments.filter(is_pending_registration=False)
+        paid_in = sum((p.amount for p in payments if p.movement_type in ["INBOUND", "ADJUSTMENT"]), Decimal("0"))
+        paid_out = sum((p.amount for p in payments if p.movement_type == "OUTBOUND"), Decimal("0"))
+        balance = order.effective_total - (paid_in - paid_out)
+
+        if balance <= 0:
+            raise ValidationError("Esta orden no tiene saldo pendiente para castigar.")
+
+        settings = AccountingSettings.get_solo()
+        if not settings or not settings.default_uncollectible_expense_account:
+            raise ValidationError("No hay una cuenta de gasto por incobrabilidad configurada.")
+
+        contact = order.customer
+        receivable_account = settings.default_receivable_account
+        if not receivable_account:
+            raise ValidationError("No se encontró una cuenta por cobrar configurada.")
+
+        with transaction.atomic():
+            entry = JournalEntry.objects.create(
+                description=f"Castigo de documento {order.number}: {contact.name}",
+                reference=f"CASTIGO-{order.number}",
+                status="POSTED",
+                source_content_type=ContentType.objects.get_for_model(order.__class__),
+                source_object_id=order.id,
+            )
+            JournalItem.objects.create(
+                entry=entry,
+                account=settings.default_uncollectible_expense_account,
+                label=f"Pérdida por incobrabilidad {order.number}",
+                debit=balance,
+                credit=0,
+            )
+            JournalItem.objects.create(
+                entry=entry,
+                account=receivable_account,
+                partner=contact,
+                partner_name=contact.name,
+                label=f"Cierre de deuda {order.number}",
+                debit=0,
+                credit=balance,
+            )
+            TreasuryMovement.objects.create(
+                movement_type="ADJUSTMENT",
+                payment_method="WRITE_OFF",
+                amount=balance,
+                contact=contact,
+                sale_order=order,
+                journal_entry=entry,
+                reference="CASTIGO-DOC",
+                notes=f"Castigo individual de documento (Asiento {entry.display_id})",
+                is_pending_registration=False,
+            )
+
+            if not contact.is_default_customer:
+                contact.credit_blocked = True
+                contact.credit_auto_blocked = False
+                contact.credit_risk_level = "CRITICAL"
+                contact.save()
+            return entry, balance
+
+    @staticmethod
     def confirm_sale(order: SaleOrder, line_files=None):
         """Deprecated: Use SaleOrderService().confirm() instead."""
         from core.services.document import DocumentRegistry

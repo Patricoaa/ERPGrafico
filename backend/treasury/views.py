@@ -15,6 +15,7 @@ from accounting.models import Account
 from contacts.models import Contact
 from core.api.pagination import StandardResultsSetPagination
 from core.mixins import AuditHistoryMixin
+from core.idempotency import idempotent_endpoint
 
 from .deletion_service import BankDeletionService
 
@@ -75,269 +76,9 @@ class BankViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
     @action(detail=True, methods=["get"])
     def overview(self, request, pk=None):
         """Centro de Bancos: vista unificada por banco (F5.2)."""
-        from datetime import timedelta
-
-        from django.db.models import Q, Sum
-
+        from .selectors import BankSelector
         bank = self.get_object()
-
-        # Cuentas de tesorería del banco
-        accounts = TreasuryAccount.objects.filter(bank=bank).order_by("account_type", "name")
-        accounts_data = []
-        for acc in accounts:
-            try:
-                credit_line_credit_limit = float(acc.credit_line.credit_limit)
-            except TreasuryAccount.credit_line.RelatedObjectDoesNotExist:
-                credit_line_credit_limit = None
-
-            accounts_data.append(
-                {
-                    "id": acc.id,
-                    "name": acc.name,
-                    "code": acc.code,
-                    "account_number": acc.account_number,
-                    "card_number": acc.card_number,
-                    "account_type": acc.account_type,
-                    "account_type_display": acc.get_account_type_display(),
-                    "current_balance": float(acc.current_balance),
-                    "currency": acc.currency,
-                    "credit_limit": float(acc.credit_limit) if acc.credit_limit else None,
-                    "credit_line_credit_limit": credit_line_credit_limit,
-                }
-            )
-
-        # Tarjetas de crédito del banco (cuentas CREDIT_CARD)
-        card_accounts = accounts.filter(account_type=TreasuryAccount.Type.CREDIT_CARD)
-        from .models import CreditCardStatement
-
-        open_statements = CreditCardStatement.objects.filter(
-            card_account__in=card_accounts,
-            status__in=[CreditCardStatement.Status.OPEN, CreditCardStatement.Status.OVERDUE],
-        ).order_by("due_date")
-        card_debt = sum(
-            (s.total_to_pay for s in open_statements),
-            __import__("decimal").Decimal("0"),
-        )
-
-        # Cheques en cartera y propios girados
-        from .models import Check
-
-        portfolio_checks = (
-            Check.objects.filter(
-                bank=bank,
-                direction=Check.Direction.RECEIVED,
-                status=Check.Status.IN_PORTFOLIO,
-            ).aggregate(total=Sum("amount"))["total"]
-            or 0
-        )
-        issued_checks_qs = Check.objects.filter(
-            bank=bank,
-            direction=Check.Direction.ISSUED,
-            status=Check.Status.ISSUED,
-        )
-        issued_checks = issued_checks_qs.aggregate(total=Sum("amount"))["total"] or 0
-
-        # Créditos activos
-        from .models import BankLoan, LoanInstallment
-
-        active_loans = BankLoan.objects.filter(
-            lender=bank,
-            status=BankLoan.Status.ACTIVE,
-        )
-        # `outstanding_balance` no es un campo de `BankLoan`: se computa como
-        # la suma del `principal_amount` de las cuotas no pagadas ni anuladas
-        # (mismo criterio que `BankLoanSerializer.get_outstanding_balance`).
-        # Hacemos un único aggregate para evitar N+1.
-        total_loan_debt = LoanInstallment.objects.filter(
-            loan__in=active_loans,
-        ).exclude(
-            status__in=[LoanInstallment.Status.PAID, LoanInstallment.Status.CANCELED]
-        ).aggregate(
-            s=Sum("principal_amount"),
-        )["s"] or __import__("decimal").Decimal("0")
-
-        # Préstamos activos (hasta 10 items para el dashboard)
-        active_loans_data = []
-        for loan in active_loans[:10].select_related("lender"):
-            next_inst = (
-                loan.installments.filter(
-                    status=LoanInstallment.Status.PENDING,
-                )
-                .order_by("due_date")
-                .first()
-            )
-            active_loans_data.append(
-                {
-                    "id": loan.id,
-                    "display_id": loan.display_id,
-                    "loan_number": loan.loan_number,
-                    "principal": float(loan.principal),
-                    "outstanding_balance": float(loan.outstanding_balance),
-                    "next_due_date": next_inst.due_date.isoformat() if next_inst else None,
-                    "next_installment_amount": float(next_inst.total_amount) if next_inst else None,
-                    "installments_count": loan.installments.count(),
-                    "paid_installments_count": loan.installments.filter(
-                        status=LoanInstallment.Status.PAID
-                    ).count(),
-                }
-            )
-
-        # Cheques girados (hasta 10 items para el dashboard)
-        issued_checks_list_data = []
-        for chk in issued_checks_qs[:10].select_related("counterparty"):
-            issued_checks_list_data.append(
-                {
-                    "id": chk.id,
-                    "display_id": chk.display_id,
-                    "check_number": chk.check_number,
-                    "amount": float(chk.amount),
-                    "issue_date": chk.issue_date.isoformat(),
-                    "due_date": chk.due_date.isoformat(),
-                    "counterparty_name": chk.counterparty.name if chk.counterparty else None,
-                    "drawer_name": chk.drawer_name,
-                }
-            )
-
-        # Próximos vencimientos (cuotas, cheques, tarjetas) — horizonte 30 días
-        today = timezone.now().date()
-        horizon = today + timedelta(days=30)
-        upcoming = []
-
-        # Cuotas de préstamo
-        upcoming_installments = (
-            LoanInstallment.objects.filter(
-                loan__lender=bank,
-                loan__status=BankLoan.Status.ACTIVE,
-                status__in=[LoanInstallment.Status.PENDING, LoanInstallment.Status.OVERDUE],
-                due_date__lte=horizon,
-            )
-            .select_related("loan")
-            .order_by("due_date")[:20]
-        )
-        for inst in upcoming_installments:
-            upcoming.append(
-                {
-                    "type": "LOAN_INSTALLMENT",
-                    "label": f"Cuota #{inst.number} — {inst.loan.display_id}",
-                    "due_date": inst.due_date.isoformat(),
-                    "amount": float(inst.total_amount),
-                    "entity_id": inst.loan.id,
-                    "display_id": inst.loan.display_id,
-                }
-            )
-
-        # Cheques recibidos por vencer
-        expiring_checks = Check.objects.filter(
-            bank=bank,
-            direction=Check.Direction.RECEIVED,
-            status=Check.Status.IN_PORTFOLIO,
-            due_date__lte=horizon,
-        ).order_by("due_date")[:20]
-        for ch in expiring_checks:
-            upcoming.append(
-                {
-                    "type": "CHECK",
-                    "label": f"Cheque {ch.check_number}",
-                    "due_date": ch.due_date.isoformat(),
-                    "amount": float(ch.amount),
-                    "entity_id": ch.id,
-                    "display_id": ch.display_id,
-                }
-            )
-
-        # Estados de cuenta de tarjeta por vencer
-        upcoming_statements = CreditCardStatement.objects.filter(
-            card_account__in=card_accounts,
-            status__in=[CreditCardStatement.Status.OPEN, CreditCardStatement.Status.OVERDUE],
-            due_date__lte=horizon,
-        ).order_by("due_date")[:20]
-        for stmt in upcoming_statements:
-            upcoming.append(
-                {
-                    "type": "CARD_STATEMENT",
-                    "label": f"Estado {stmt.period_month:02d}/{stmt.period_year}",
-                    "due_date": stmt.due_date.isoformat(),
-                    "amount": float(stmt.total_to_pay),
-                    "entity_id": stmt.id,
-                    "display_id": stmt.display_id,
-                }
-            )
-
-        upcoming.sort(key=lambda x: x["due_date"])
-
-        # Conciliación: último estado de cuenta y líneas sin reconciliar
-        latest_statement = (
-            BankStatement.objects.filter(
-                treasury_account__bank=bank,
-            )
-            .order_by("-statement_date")
-            .first()
-        )
-        reconciliation_summary = None
-        if latest_statement:
-            unreconciled_lines = BankStatementLine.objects.filter(
-                statement__treasury_account__bank=bank,
-                reconciliation_status=BankStatementLine.ReconciliationStatus.UNRECONCILED,
-            ).count()
-            reconciliation_summary = {
-                "latest_statement_id": latest_statement.id,
-                "latest_statement_date": latest_statement.statement_date.isoformat(),
-                "latest_statement_status": latest_statement.status,
-                "unreconciled_lines": unreconciled_lines,
-            }
-
-        # Movimientos recientes (últimos 5) de las cuentas del banco
-        from .models import TreasuryMovement
-
-        account_ids = accounts.values_list("id", flat=True)
-        recent_movements_list = (
-            TreasuryMovement.objects.filter(
-                Q(from_account_id__in=account_ids) | Q(to_account_id__in=account_ids),
-            )
-            .select_related(
-                "from_account",
-                "to_account",
-            )
-            .order_by("-date")[:5]
-        )
-        recent_movements = [
-            {
-                "id": m.id,
-                "display_id": m.display_id,
-                "movement_type": m.movement_type,
-                "movement_type_display": m.get_movement_type_display(),
-                "amount": float(m.amount),
-                "date": m.date.isoformat(),
-                "from_account_id": m.from_account_id,
-                "from_account_name": m.from_account.name if m.from_account else None,
-                "to_account_id": m.to_account_id,
-                "to_account_name": m.to_account.name if m.to_account else None,
-                "payment_method": m.payment_method,
-                "payment_method_display": m.get_payment_method_display(),
-            }
-            for m in recent_movements_list
-        ]
-
-        return Response(
-            {
-                "bank": BankSerializer(bank).data,
-                "accounts": accounts_data,
-                "summary": {
-                    "total_accounts": len(accounts_data),
-                    "card_count": card_accounts.count(),
-                    "card_debt": float(card_debt),
-                    "portfolio_checks": float(portfolio_checks),
-                    "issued_checks": float(issued_checks),
-                    "active_loan_count": active_loans.count(),
-                    "total_loan_debt": float(total_loan_debt),
-                    "reconciliation": reconciliation_summary,
-                },
-                "upcoming_maturities": upcoming,
-                "recent_movements": recent_movements,
-                "active_loans": active_loans_data,
-                "issued_checks_list": issued_checks_list_data,
-            }
-        )
+        return Response(BankSelector.get_overview(bank))
 
     @action(detail=True, methods=["post"])
     def archive(self, request, pk=None):
@@ -766,6 +507,7 @@ class TreasuryMovementViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
         # Trigger status update on related documents
         TreasuryService.update_related_document_status(instance)
 
+    @idempotent_endpoint(scope="treasury.movement.create")
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -824,108 +566,13 @@ class TreasuryMovementViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
     def card_purchase(self, request):
         """
         Crea una compra con tarjeta en N cuotas con interés
-        explícito opcional (Onda 2, ADR-0043). Si el payload trae
-        `installments > 1` o `monthly_rate > 0` y
-        `from_account.account_type == CREDIT_CARD`, delega a
-        `TreasuryService.create_card_purchase`; en cualquier otro
-        caso, 400 con instrucción de usar POST regular.
-
-        Body esperado:
-          {
-            "amount": "150000.00",
-            "from_account": <id de cuenta CREDIT_CARD>,
-            "installments": 3,
-            "monthly_rate": "0.015",  # opcional
-            "date": "2026-06-15",     # opcional, default hoy
-            "partner": <id contacto>, # opcional
-            "client_reference": "...", # opcional, idempotencia
-            "notes": "..."            # opcional
-          }
-
-        Devuelve el `CardPurchaseGroup` con sus cuotas (lazy en
-        `installments`).
+        explícito opcional (Onda 2, ADR-0043).
         """
-
-        data = request.data
         try:
-            from_account_id = data.get("from_account")
-            if not from_account_id:
-                return Response(
-                    {"error": "from_account es requerido."},
-                    status=status.HTTP_400_BAD_REQUEST,
-                )
-            try:
-                from_account = TreasuryAccount.objects.get(pk=from_account_id)
-            except TreasuryAccount.DoesNotExist:
-                return Response(
-                    {"error": "from_account no existe."},
-                    status=status.HTTP_400_BAD_REQUEST,
-                )
-            if from_account.account_type != TreasuryAccount.Type.CREDIT_CARD:
-                return Response(
-                    {"error": "card-purchase requiere from_account de tipo CREDIT_CARD."},
-                    status=status.HTTP_400_BAD_REQUEST,
-                )
-
-            partner = None
-            partner_id = data.get("partner")
-            if partner_id:
-                try:
-                    partner = Contact.objects.get(pk=partner_id)
-                except Contact.DoesNotExist:
-                    return Response(
-                        {"error": "partner no existe."},
-                        status=status.HTTP_400_BAD_REQUEST,
-                    )
-
-            installments = int(data.get("installments", 1))
-            monthly_rate = data.get("monthly_rate", "0") or "0"
-            amount = data.get("amount", "0")
-            date_value = data.get("date")
-            if date_value and isinstance(date_value, str):
-                from datetime import date as _date
-
-                date_value = _date.fromisoformat(date_value)
-
-            # Resolve invoice / sale_order / purchase_order for accounting entries
-            invoice = None
-            invoice_id = data.get("invoice")
-            if invoice_id:
-                from billing.models import Invoice
-
-                invoice = Invoice.objects.filter(pk=invoice_id).first()
-
-            sale_order = None
-            sale_order_id = data.get("sale_order")
-            if sale_order_id:
-                from sales.models import SaleOrder
-
-                sale_order = SaleOrder.objects.filter(pk=sale_order_id).first()
-
-            purchase_order = None
-            purchase_order_id = data.get("purchase_order")
-            if purchase_order_id:
-                from purchasing.models import PurchaseOrder
-
-                purchase_order = PurchaseOrder.objects.filter(pk=purchase_order_id).first()
-
-            group = TreasuryService.create_card_purchase(
-                amount=amount,
-                card_account=from_account,
-                installments=installments,
-                monthly_rate=monthly_rate,
-                date=date_value,
-                partner=partner,
-                invoice=invoice,
-                sale_order=sale_order,
-                purchase_order=purchase_order,
-                client_reference=data.get("client_reference", "") or "",
-                notes=data.get("notes", "") or "",
-                created_by=request.user,
+            group, from_account = TreasuryService.create_card_purchase_from_payload(
+                request.data, request.user
             )
-            # Devolver el grupo + el movimiento del uso + el cronograma
-            # de cuotas (ADR-0046). `installments` es ahora el cronograma
-            # (filas planas), no N movimientos.
+
             schedule_data = [
                 {
                     "number": inst.number,
@@ -1641,96 +1288,11 @@ class POSSessionViewSet(viewsets.ModelViewSet):
     def summary(self, request, pk=None):
         """Get detailed summary of sales in this session (X/Z Report data)"""
         try:
+            from .selectors import POSSelector
+
             session = self.get_object()
-
-            # Basic totals from the session model (denormalized for performance)
-            totals = {
-                "session_id": session.id,
-                "treasury_account_id": session.treasury_account_id
-                or (session.terminal.default_treasury_account_id if session.terminal else None),
-                "opening_balance": session.opening_balance,
-                "total_cash_sales": session.total_cash_sales,
-                "total_card_sales": session.total_card_sales,
-                "total_transfer_sales": session.total_transfer_sales,
-                "total_credit_sales": session.total_credit_sales,
-                "expected_cash": session.expected_cash,
-                "total_sales": (
-                    session.total_cash_sales
-                    + session.total_card_sales
-                    + session.total_transfer_sales
-                    + session.total_credit_sales
-                ),
-            }
-
-            # Advanced Stats: Sales by Category
-            # We traverse: Session -> Payments -> Invoices -> Lines -> Product -> Category
-            # Note: This assumes 1 Payment ~= 1 Sale. For split payments, this might overcount or need weighting.
-            # For POS, typically 1 Invoice = 1 Payment, so reliable enough for X Report.
-
-            sales_by_category = {}
-
-            # Get all movements in this session that have an invoice
-            # We filter movements in this session that have an invoice
-            movements_with_invoice = session.movements.filter(invoice__isnull=False).select_related(
-                "invoice"
-            )
-            invoices = {m.invoice for m in movements_with_invoice}
-
-            for invoice in invoices:
-                # Get lines for this invoice
-                # POS Invoices are always linked to a SaleOrder
-                lines = []
-                if invoice.sale_order:
-                    lines = invoice.sale_order.lines.all().select_related(
-                        "product", "product__category"
-                    )
-
-                for line in lines:
-                    category_name = "Sin Categoría"
-                    if line.product and line.product.category:
-                        # category can be an ID or object depending on how it's serialized/mapped,
-                        # but ORM gives object.
-                        category_name = line.product.category.name
-
-                    if category_name not in sales_by_category:
-                        sales_by_category[category_name] = 0
-
-                    # Add line total (price * quantity)
-                    # We should use line.total (net) or total (gross). POS usually shows Gross sales.
-                    # SaleLine has 'total' (net) and tax calculation is on Order level usually.
-                    # Let's check SaleLine model if needed, but 'total' is usually there.
-                    # For X report, Gross is often better. SaleLine usually stores unit_price * qty.
-                    # Let's use whatever 'total' is available or calculate it.
-                    # Assuming line.total is net, and we want gross... this might be complex without tax info on line.
-                    # For now, let's just use line.total (Net) as a proxy or if it includes tax.
-                    # Actually, for POS X report, typically you want GROSS sales.
-                    # If SaleLine has tax included price...
-
-                    # Safe fallback
-                    amount = (
-                        line.total if hasattr(line, "total") else (line.quantity * line.unit_price)
-                    )
-                    sales_by_category[category_name] += amount or 0
-
-            # Format category data for frontend
-            category_data = [{"name": k, "value": v} for k, v in sales_by_category.items()]
-            category_data.sort(key=lambda x: x["value"], reverse=True)
-
-            # Manual Movements
-            manual_movements = session.movements.filter(
-                invoice__isnull=True, sale_order__isnull=True, purchase_order__isnull=True
-            ).order_by("-created_at")
-            manual_movements_data = TreasuryMovementSerializer(manual_movements, many=True).data
-
-            return Response(
-                {
-                    **totals,
-                    "total_manual_inflow": session.total_other_cash_inflow,
-                    "total_manual_outflow": session.total_other_cash_outflow,
-                    "manual_movements": manual_movements_data,
-                    "sales_by_category": category_data,
-                }
-            )
+            data = POSSelector.get_summary(session)
+            return Response(data)
         except Exception as e:
             import traceback
 
@@ -1745,160 +1307,31 @@ class POSSessionViewSet(viewsets.ModelViewSet):
         """
         try:
             from decimal import Decimal
-
-            from django.db import transaction
-
-            from accounting.models import AccountingSettings
+            from .pos_service import POSService
 
             session = self.get_object()
-            if session.status != "OPEN":
-                return Response(
-                    {"error": "La sesión no está abierta"}, status=status.HTTP_400_BAD_REQUEST
-                )
 
             move_type = request.data.get("type")  # PARTNER_WITHDRAWAL, THEFT, OTHER_IN, OTHER_OUT
             amount = Decimal(str(request.data.get("amount", "0")))
             notes = request.data.get("notes", "")
 
-            if amount <= 0:
-                return Response(
-                    {"error": "El monto debe ser mayor a cero"}, status=status.HTTP_400_BAD_REQUEST
-                )
-
-            settings = AccountingSettings.get_solo()
-            if not settings:
-                return Response(
-                    {"error": "Configuración contable no encontrada"},
-                    status=status.HTTP_400_BAD_REQUEST,
-                )
-
-            # Added TRANSFER support
             is_inflow = request.data.get("is_inflow", False)
             if isinstance(is_inflow, str):
                 is_inflow = is_inflow.lower() == "true"
             else:
                 is_inflow = bool(is_inflow)
 
-            direction = "IN" if is_inflow else "OUT"
+            target_account_id = request.data.get("target_account_id")
 
-            if move_type == "TRANSFER":
-                target_account_id = request.data.get("target_account_id")
-                if not target_account_id:
-                    return Response(
-                        {"error": "Debe especificar la cuenta para traspasos"},
-                        status=status.HTTP_400_BAD_REQUEST,
-                    )
-
-                try:
-                    target_obj = TreasuryAccount.objects.get(id=target_account_id)
-                except TreasuryAccount.DoesNotExist:
-                    return Response(
-                        {"error": "Cuenta no encontrada"}, status=status.HTTP_400_BAD_REQUEST
-                    )
-
-                # Verify self transfer
-                treasury_account_obj = session.treasury_account or (
-                    session.terminal.default_treasury_account if session.terminal else None
-                )
-
-                if treasury_account_obj == target_obj:
-                    return Response(
-                        {"error": "No puede transferir a la misma cuenta de origen"},
-                        status=status.HTTP_400_BAD_REQUEST,
-                    )
-
-            else:
-                # Use unified TreasuryService matching logic
-                target_account = TreasuryService._get_reason_account(settings, move_type, direction)
-                if not target_account:
-                    # Provide a generic label or try to get a mapping label mapping if needed for the error message
-                    labels = {
-                        "PARTNER_WITHDRAWAL": "Retiro Socio",
-                        "THEFT": "Robo / Pérdida",
-                        "TIP": "Propina",
-                        "ROUNDING": "Redondeo",
-                        "OTHER_IN": "Otro Ingreso",
-                        "OTHER_OUT": "Otro Egreso",
-                        "COUNTING_ERROR": "Error de Conteo",
-                        "SYSTEM_ERROR": "Error de Sistema",
-                        "CASHBACK": "Vuelto Incorrecto",
-                    }
-                    lbl = labels.get(move_type, move_type)
-                    return Response(
-                        {"error": f"Cuenta contable no configurada para {lbl}"},
-                        status=status.HTTP_400_BAD_REQUEST,
-                    )
-
-            # Restriction: Cannot withdraw more than what is available in cash
-            if not is_inflow and amount > session.expected_cash:
-                return Response(
-                    {
-                        "error": f"Saldo insuficiente en efectivo. Máximo disponible para retiro: ${session.expected_cash:,.0f}"
-                    },
-                    status=status.HTTP_400_BAD_REQUEST,
-                )
-
-            # Treasury account for the session
-            treasury_account = (
-                session.treasury_account.account
-                if session.treasury_account
-                else (
-                    session.terminal.default_treasury_account.account if session.terminal else None
-                )
+            movement = POSService.register_manual_movement(
+                session=session,
+                move_type=move_type,
+                amount=amount,
+                is_inflow=is_inflow,
+                notes=notes,
+                target_account_id=target_account_id,
+                user=request.user,
             )
-
-            if not treasury_account:
-                return Response(
-                    {"error": "No se pudo determinar la cuenta de tesorería para esta sesión"},
-                    status=status.HTTP_400_BAD_REQUEST,
-                )
-
-            with transaction.atomic():
-                session_treasury_obj = (
-                    session.treasury_account or session.terminal.default_treasury_account
-                )
-                from_account = None
-                to_account = None
-
-                if move_type == "TRANSFER":
-                    if is_inflow:
-                        from_account = TreasuryAccount.objects.get(
-                            id=request.data.get("target_account_id")
-                        )
-                        to_account = session_treasury_obj
-                    else:
-                        from_account = session_treasury_obj
-                        to_account = TreasuryAccount.objects.get(
-                            id=request.data.get("target_account_id")
-                        )
-                elif is_inflow:
-                    to_account = session_treasury_obj
-                else:  # Outflow
-                    from_account = session_treasury_obj
-
-                movement = TreasuryService.create_movement(
-                    amount=amount,
-                    movement_type=TreasuryMovement.Type.TRANSFER
-                    if move_type == "TRANSFER"
-                    else (
-                        TreasuryMovement.Type.INBOUND
-                        if is_inflow
-                        else TreasuryMovement.Type.OUTBOUND
-                    ),
-                    created_by=request.user,
-                    from_account=from_account,
-                    to_account=to_account,
-                    pos_session=session,
-                    notes=notes,
-                    justify_reason=move_type,
-                )
-                movement.reference = f"POS-MANUAL-{movement.id}"
-                movement.save(update_fields=["reference"])
-
-                # Session totals are updated via _update_pos_session in create_movement
-                session.refresh_from_db()
-
-            from .serializers import POSSessionSerializer
 
             return Response(
                 {
@@ -2064,126 +1497,15 @@ class TreasuryDashboardViewSet(viewsets.ViewSet):
         Vencimientos futuros para proyección de flujo de caja (F5.3).
         Query params: days_ahead (default 90), treasury_account (optional).
         """
-        from datetime import timedelta
+        from .selectors import TreasuryDashboardSelector
 
         days = int(request.query_params.get("days_ahead", 90))
-        today = timezone.now().date()
-        horizon = today + timedelta(days=days)
         treasury_account_id = request.query_params.get("treasury_account")
 
-        items = []
-
-        # Cuotas de préstamo pendientes
-        installments_qs = LoanInstallment.objects.filter(
-            status__in=[LoanInstallment.Status.PENDING, LoanInstallment.Status.OVERDUE],
-            due_date__gte=today,
-            due_date__lte=horizon,
-        ).select_related("loan", "loan__lender")
-        if treasury_account_id:
-            installments_qs = installments_qs.filter(
-                loan__disbursement_account_id=treasury_account_id
-            )
-        for inst in installments_qs:
-            items.append(
-                {
-                    "type": "LOAN_INSTALLMENT",
-                    "direction": "OUTBOUND",
-                    "label": f"Cuota #{inst.number} — {inst.loan.display_id}",
-                    "due_date": inst.due_date.isoformat(),
-                    "amount": float(inst.total_amount),
-                    "account_id": inst.loan.disbursement_account_id,
-                }
-            )
-
-        # Cheques recibidos en cartera por vencer
-        checks_qs = Check.objects.filter(
-            direction=Check.Direction.RECEIVED,
-            status=Check.Status.IN_PORTFOLIO,
-            due_date__gte=today,
-            due_date__lte=horizon,
+        data = TreasuryDashboardSelector.get_future_maturities(
+            days=days, treasury_account_id=treasury_account_id
         )
-        if treasury_account_id:
-            checks_qs = checks_qs.filter(deposit_account_id=treasury_account_id)
-        for ch in checks_qs:
-            items.append(
-                {
-                    "type": "CHECK_RECEIVED",
-                    "direction": "INBOUND",
-                    "label": f"Cheque {ch.check_number} — {ch.display_id}",
-                    "due_date": ch.due_date.isoformat(),
-                    "amount": float(ch.amount),
-                    "account_id": ch.deposit_account_id,
-                }
-            )
-
-        # Cheques propios girados por vencer
-        issued_checks_qs = Check.objects.filter(
-            direction=Check.Direction.ISSUED,
-            status=Check.Status.ISSUED,
-            due_date__gte=today,
-            due_date__lte=horizon,
-        )
-        if treasury_account_id:
-            issued_checks_qs = issued_checks_qs.filter(payment_account_id=treasury_account_id)
-        for ch in issued_checks_qs:
-            items.append(
-                {
-                    "type": "CHECK_ISSUED",
-                    "direction": "OUTBOUND",
-                    "label": f"Cheque propio {ch.check_number} — {ch.display_id}",
-                    "due_date": ch.due_date.isoformat(),
-                    "amount": float(ch.amount),
-                    "account_id": ch.payment_account_id,
-                }
-            )
-
-        # Estados de cuenta de tarjeta por vencer
-        statements_qs = CreditCardStatement.objects.filter(
-            status__in=[CreditCardStatement.Status.OPEN, CreditCardStatement.Status.OVERDUE],
-            due_date__gte=today,
-            due_date__lte=horizon,
-        ).select_related("card_account")
-        if treasury_account_id:
-            statements_qs = statements_qs.filter(card_account_id=treasury_account_id)
-        for stmt in statements_qs:
-            items.append(
-                {
-                    "type": "CARD_STATEMENT",
-                    "direction": "OUTBOUND",
-                    "label": f"Estado tarjeta {stmt.period_month:02d}/{stmt.period_year} — {stmt.display_id}",
-                    "due_date": stmt.due_date.isoformat(),
-                    "amount": float(stmt.total_to_pay),
-                    "account_id": stmt.card_account_id,
-                }
-            )
-
-        items.sort(key=lambda x: x["due_date"])
-
-        # Aggregate by month for the projection
-        from collections import defaultdict
-
-        monthly = defaultdict(lambda: {"inbound": 0, "outbound": 0})
-        for item in items:
-            month_key = item["due_date"][:7]  # YYYY-MM
-            if item["direction"] == "INBOUND":
-                monthly[month_key]["inbound"] += item["amount"]
-            else:
-                monthly[month_key]["outbound"] += item["amount"]
-
-        return Response(
-            {
-                "items": items,
-                "monthly_summary": [
-                    {
-                        "month": k,
-                        "inbound": v["inbound"],
-                        "outbound": v["outbound"],
-                        "net": v["inbound"] - v["outbound"],
-                    }
-                    for k, v in sorted(monthly.items())
-                ],
-            }
-        )
+        return Response(data)
 
     def list(self, request):
         """
@@ -2193,9 +1515,7 @@ class TreasuryDashboardViewSet(viewsets.ViewSet):
         - date_from, date_to, treasury_account
         """
         from datetime import datetime
-
-        from django.db.models import Q
-
+        from .selectors import TreasuryDashboardSelector
         from .serializers import CashFlowSerializer
 
         flow_type = request.query_params.get("flow_type", "all")
@@ -2206,74 +1526,12 @@ class TreasuryDashboardViewSet(viewsets.ViewSet):
         date_from = datetime.fromisoformat(date_from_str).date() if date_from_str else None
         date_to = datetime.fromisoformat(date_to_str).date() if date_to_str else None
 
-        # Build Query
-        query = TreasuryMovement.objects.select_related(
-            "treasury_account", "from_account", "to_account", "contact", "invoice__contact"
-        ).exclude(journal_entry__status="CANCELLED")
-
-        if date_from:
-            query = query.filter(date__gte=date_from)
-        if date_to:
-            query = query.filter(date__lte=date_to)
-
-        if treasury_account_id:
-            query = query.filter(
-                Q(treasury_account_id=treasury_account_id)
-                | Q(from_account_id=treasury_account_id)
-                | Q(to_account_id=treasury_account_id)
-            )
-
-        if flow_type == "third_party":
-            # Strictly Inbound/Outbound moves with partners or invoices
-            query = query.filter(movement_type__in=["INBOUND", "OUTBOUND"])
-        elif flow_type == "internal":
-            # Transfers, adjustments, etc.
-            query = query.filter(movement_type__in=["TRANSFER", "ADJUSTMENT"])
-
-        results = []
-        for mv in query:
-            # Determine partner name
-            partner_name = None
-            if mv.contact:
-                partner_name = mv.contact.name
-            elif mv.invoice and mv.invoice.contact:
-                partner_name = mv.invoice.contact.name
-
-            # Determine account name for display
-            acc_name = "N/A"
-            if mv.treasury_account:
-                acc_name = mv.treasury_account.name
-            elif mv.from_account and mv.to_account:
-                acc_name = f"{mv.from_account.name} -> {mv.to_account.name}"
-            elif mv.from_account:
-                acc_name = mv.from_account.name
-            elif mv.to_account:
-                acc_name = mv.to_account.name
-
-            # Map source as 'PAYMENT' if it has partner/invoice, else 'CASH_MOVEMENT'
-            source = (
-                "PAYMENT"
-                if (mv.contact or mv.invoice or mv.sale_order or mv.purchase_order)
-                else "CASH_MOVEMENT"
-            )
-
-            results.append(
-                {
-                    "id": mv.id,
-                    "source": source,
-                    "type": mv.get_movement_type_display(),
-                    "date": mv.date,
-                    "amount": mv.amount,
-                    "description": mv.notes or mv.reference or f"Movimiento {mv.display_id}",
-                    "treasury_account_name": acc_name,
-                    "partner_name": partner_name,
-                    "reference": mv.display_id,
-                    "is_internal": mv.movement_type in ["TRANSFER", "ADJUSTMENT"],
-                }
-            )
-
-        results.sort(key=lambda x: x["date"], reverse=True)
-        results = results[:50]
+        results = TreasuryDashboardSelector.get_cash_flows(
+            flow_type=flow_type,
+            date_from=date_from,
+            date_to=date_to,
+            treasury_account_id=treasury_account_id,
+        )
 
         serializer = CashFlowSerializer(results, many=True)
         return Response(serializer.data)
@@ -2985,11 +2243,8 @@ class CreditCardStatementViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
     def unbilled_charges(self, request):
         """Lista cargos no facturados de una tarjeta de crédito."""
         from datetime import date as _date_type
-
-        from django.db.models import CharField, IntegerField, OuterRef, Subquery
-
-        from .card_service import CardService
-        from .models import TreasuryAccount, TreasuryMovement
+        from .models import TreasuryAccount
+        from .selectors import CardSelector
 
         card_account_id = request.query_params.get("card_account")
         if not card_account_id:
@@ -3013,159 +2268,18 @@ class CreditCardStatementViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
         cut_off_date_str = request.query_params.get("cut_off_date")
         cut_off_date = _date_type.fromisoformat(cut_off_date_str) if cut_off_date_str else None
 
-        pending = CardService.get_pending_charges(card_account, cut_off_date=cut_off_date)
-        summary = CardService.get_unbilled_summary(card_account, cut_off_date=cut_off_date)
-        installments = CardService.get_unbilled_installments(
-            card_account, cut_off_date=cut_off_date
-        )
-
-        # Anotar purchase_order_id y display_id desde el TreasuryMovement OUTBOUND asociado.
-        po_subq = Subquery(
-            TreasuryMovement.objects.filter(
-                card_purchase_group=OuterRef("card_purchase_group"),
-                movement_type=TreasuryMovement.Type.OUTBOUND,
-            ).values("purchase_order_id")[:1],
-            output_field=IntegerField(),
-        )
-        po_number_subq = Subquery(
-            TreasuryMovement.objects.filter(
-                card_purchase_group=OuterRef("card_purchase_group"),
-                movement_type=TreasuryMovement.Type.OUTBOUND,
-            ).values("purchase_order__number")[:1],
-            output_field=CharField(max_length=20),
-        )
-        installments = installments.annotate(po_id=po_subq, po_display_number=po_number_subq)
-
-        # Próximas cuotas del cronograma (ADR-0046): filas planas.
-        installments_data = [
-            {
-                "id": inst.id,
-                "number": inst.number,
-                "due_date": inst.due_date.isoformat(),
-                "principal_amount": str(inst.principal_amount),
-                "group_id": inst.card_purchase_group_id,
-                "group_uuid": str(inst.card_purchase_group.uuid),
-                "group_display_id": inst.card_purchase_group.display_id,
-                "purchase_order_id": inst.po_id,
-                "purchase_order_display_id": f"OCS-{inst.po_display_number}"
-                if inst.po_display_number
-                else None,
-                "partner_name": (
-                    inst.card_purchase_group.partner.name
-                    if inst.card_purchase_group.partner
-                    else None
-                ),
-                "total_installments": inst.card_purchase_group.installments,
-            }
-            for inst in installments
-        ]
-
-        # Cargos pendientes (CardPendingCharge) serializados.
-        from .serializers import CardPendingChargeSerializer
-
-        charges_data = []
-
-        for p in CardPendingChargeSerializer(pending, many=True).data:
-            charges_data.append(
-                {
-                    "id": p["id"],
-                    "amount": str(p["amount"]),
-                    "date": p["date"].isoformat() if hasattr(p["date"], "isoformat") else p["date"],
-                    "charge_type": p["charge_type"],
-                    "charge_type_display": p["charge_type_display"],
-                    "description": p.get("description", ""),
-                    "reference": "",
-                    "source": "pending",
-                    "from_account_name": None,
-                    "partner_name": None,
-                }
-            )
-
-        forecast = CardService.get_forecast(card_account, cut_off_date=cut_off_date)
-
-        return Response(
-            {
-                "charges": charges_data,
-                "upcoming_installments": installments_data,
-                "summary": summary,
-                "forecast": forecast,
-            }
-        )
+        data = CardSelector.get_unbilled_charges_data(card_account, cut_off_date)
+        return Response(data)
 
     @action(detail=False, methods=["post"], url_path="add-charge")
     def add_charge(self, request):
         """Agrega un cargo no facturado a una tarjeta de crédito."""
-
         from .card_service import CardService
-        from .models import TreasuryAccount
-
-        card_account_id = request.data.get("card_account")
-        amount = request.data.get("amount")
-        charge_type = request.data.get("charge_type", "OTHER")
-        description = request.data.get("description", "")
-        date_str = request.data.get("date")
-
-        if not card_account_id:
-            return Response(
-                {"detail": "card_account es requerido."},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-        if not amount:
-            return Response(
-                {"detail": "amount es requerido."},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-
         try:
-            card_account = TreasuryAccount.objects.get(pk=card_account_id)
-        except TreasuryAccount.DoesNotExist:
-            return Response(
-                {"detail": "card_account no existe."},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-
-        charge_date = None
-        if date_str:
-            from datetime import date as _date_type
-
-            try:
-                charge_date = _date_type.fromisoformat(date_str)
-            except ValueError:
-                return Response(
-                    {"detail": "Formato de fecha inválido. Use YYYY-MM-DD."},
-                    status=status.HTTP_400_BAD_REQUEST,
-                )
-
-        try:
-            movement = CardService.add_unbilled_charge(
-                card_account=card_account,
-                amount=Decimal(str(amount)),
-                charge_type=charge_type,
-                description=description,
-                date=charge_date,
-                created_by=request.user,
-            )
+            data = CardService.add_unbilled_charge_from_payload(request.data, request.user)
+            return Response(data, status=status.HTTP_201_CREATED)
         except ValidationError as e:
             return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
-
-        from .serializers import CardPendingChargeSerializer
-
-        p = CardPendingChargeSerializer(movement).data
-        return Response(
-            {
-                "id": p["id"],
-                "amount": str(p["amount"]),
-                "date": p["date"].isoformat() if hasattr(p["date"], "isoformat") else p["date"],
-                "charge_type": p["charge_type"],
-                "charge_type_display": p["charge_type_display"],
-                "description": p.get("description", ""),
-                "reference": "",
-                "source": "pending",
-                "from_account_name": None,
-                "partner_name": None,
-            },
-            status=status.HTTP_201_CREATED,
-        )
 
     @action(detail=False, methods=["post"], url_path="update-charge")
     def update_charge(self, request):
@@ -3241,77 +2355,12 @@ class CreditCardStatementViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
     @action(detail=False, methods=["post"], url_path="bill-charges")
     def bill_charges(self, request):
         """Factura los cargos no facturados de una tarjeta de crédito."""
-        from datetime import date as _date_type
-
         from .card_service import CardService
-        from .models import TreasuryAccount
-
-        card_account_id = request.data.get("card_account")
-        period_year = request.data.get("period_year")
-        period_month = request.data.get("period_month")
-        cut_off_date_str = request.data.get("cut_off_date")
-        due_date_str = request.data.get("due_date")
-        minimum_payment = request.data.get("minimum_payment", "0")
-        notes = request.data.get("notes", "")
-
-        if not card_account_id:
-            return Response(
-                {"detail": "card_account es requerido."},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-        if not period_year or not period_month:
-            return Response(
-                {"detail": "period_year y period_month son requeridos."},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-        if not cut_off_date_str or not due_date_str:
-            return Response(
-                {"detail": "cut_off_date y due_date son requeridos."},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-
         try:
-            card_account = TreasuryAccount.objects.get(pk=card_account_id)
-        except TreasuryAccount.DoesNotExist:
-            return Response(
-                {"detail": "card_account no existe."},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-
-        try:
-            cut_off_date = _date_type.fromisoformat(cut_off_date_str)
-            due_date = _date_type.fromisoformat(due_date_str)
-        except ValueError:
-            return Response(
-                {"detail": "Formato de fecha inválido. Use YYYY-MM-DD."},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-
-        try:
-            statement = CardService.bill_unbilled_charges(
-                card_account=card_account,
-                period_year=int(period_year),
-                period_month=int(period_month),
-                cut_off_date=cut_off_date,
-                due_date=due_date,
-                minimum_payment=Decimal(str(minimum_payment)),
-                notes=notes,
-                created_by=request.user,
-            )
+            result = CardService.bill_charges_from_payload(request.data, request.user)
+            return Response(result, status=status.HTTP_201_CREATED)
         except ValidationError as e:
             return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
-
-        from .serializers import CreditCardStatementSerializer
-
-        result = CreditCardStatementSerializer(statement).data
-        # Incluir desglose por grupo de compra si está disponible
-        breakdown = getattr(statement, "_purchase_group_breakdown", None)
-        if breakdown:
-            result["purchase_group_breakdown"] = breakdown
-        return Response(
-            result,
-            status=status.HTTP_201_CREATED,
-        )
 
     @action(detail=False, methods=["get"], url_path="analytics")
     def analytics(self, request):

@@ -27,7 +27,7 @@ class DomainError(ERPGraficoError):
     def __init__(
         self, message: str, code: str = "DOMAIN_ERROR", details: Optional[Dict[str, Any]] = None
     ):
-        super().__init__(message, code, details, status_code=400)
+        super().__init__(message, code, details, status_code=422)
 
 
 class ValidationError(DomainError):

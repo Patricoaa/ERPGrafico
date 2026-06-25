@@ -28,6 +28,7 @@ from django.core.exceptions import ValidationError
 from rest_framework.permissions import IsAuthenticated
 
 from core.mixins import AuditHistoryMixin as AuditHistory
+from core.idempotency import idempotent_endpoint
 from core.mixins import BulkImportMixin
 
 from .fiscal_year_service import FiscalYearClosingService
@@ -176,6 +177,7 @@ class JournalEntryViewSet(viewsets.ModelViewSet, AuditHistory):
         except ValidationError as e:
             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
+    @idempotent_endpoint(scope="accounting.entry.create")
     def create(self, request, *args, **kwargs):
         print("DEBUG: CUSTOM CREATE CALLED")
         data = request.data.copy()
