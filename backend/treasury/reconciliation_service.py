@@ -23,6 +23,49 @@ class ReconciliationService:
     """
 
     @staticmethod
+    def _parse_import_request(request):
+        file = request.FILES.get("file")
+        treasury_account_id = request.data.get("treasury_account_id")
+        bank_format = request.data.get("bank_format", "GENERIC_CSV")
+        custom_config = request.data.get("custom_config")
+
+        if custom_config and isinstance(custom_config, str):
+            import json
+            try:
+                custom_config = json.loads(custom_config)
+            except Exception:
+                pass
+
+        if not file:
+            raise ValueError("Archivo es requerido")
+
+        if not treasury_account_id:
+            raise ValueError("Cuenta de tesorería es requerida")
+
+        return file, treasury_account_id, bank_format, custom_config
+
+    @staticmethod
+    def import_statement_from_request(request):
+        file, treasury_account_id, bank_format, custom_config = ReconciliationService._parse_import_request(request)
+        return ReconciliationService.import_statement(
+            file=file,
+            treasury_account_id=treasury_account_id,
+            bank_format=bank_format,
+            user=request.user,
+            custom_config=custom_config,
+        )
+
+    @staticmethod
+    def dry_run_from_request(request):
+        file, treasury_account_id, bank_format, custom_config = ReconciliationService._parse_import_request(request)
+        return ReconciliationService.dry_run_import(
+            file=file,
+            treasury_account_id=treasury_account_id,
+            bank_format=bank_format,
+            custom_config=custom_config,
+        )
+
+    @staticmethod
     @transaction.atomic
     def import_statement(
         file,

@@ -25,6 +25,21 @@ class AllocationService:
     # ── Public API ───────────────────────────────────────────────────────────
 
     @staticmethod
+    def allocate_from_request(request, movement: TreasuryMovement) -> list[PaymentAllocation]:
+        allocations_data = request.data.get("allocations")
+        validate_sum = request.query_params.get("validate_sum", "false").lower() == "true"
+
+        if not allocations_data or not isinstance(allocations_data, list):
+            raise ValidationError('Debe proveer una lista de "allocations"')
+
+        return AllocationService.allocate(
+            movement=movement,
+            allocations=allocations_data,
+            user=request.user,
+            validate_sum=validate_sum,
+        )
+
+    @staticmethod
     def allocate(
         movement: TreasuryMovement,
         allocations: list[dict],

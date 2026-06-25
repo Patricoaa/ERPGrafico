@@ -19,7 +19,33 @@ from .models import (
     StockMove,
     UoM,
     Warehouse,
+    Subscription,
 )
+
+
+class SubscriptionService:
+    @staticmethod
+    def pause_subscription(subscription: Subscription) -> Subscription:
+        if subscription.status != Subscription.Status.ACTIVE:
+            raise ValidationError("Solo se pueden pausar suscripciones activas")
+        subscription.status = Subscription.Status.PAUSED
+        subscription.save()
+        return subscription
+
+    @staticmethod
+    def cancel_subscription(subscription: Subscription) -> Subscription:
+        subscription.status = Subscription.Status.CANCELLED
+        subscription.end_date = timezone.now().date()
+        subscription.save()
+        return subscription
+
+    @staticmethod
+    def resume_subscription(subscription: Subscription) -> Subscription:
+        if subscription.status != Subscription.Status.PAUSED:
+            raise ValidationError("Solo se pueden reanudar suscripciones pausadas")
+        subscription.status = Subscription.Status.ACTIVE
+        subscription.save()
+        return subscription
 
 
 class StockService:

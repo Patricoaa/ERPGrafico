@@ -877,6 +877,33 @@ class SalesService:
         return delivery
 
     @staticmethod
+    def register_note_from_request(request, order: SaleOrder):
+        import json
+        from purchasing.serializers import NoteCreationSerializer
+        
+        data = request.data.dict() if hasattr(request.data, "dict") else request.data.copy()
+        if "return_items" in data and isinstance(data["return_items"], str):
+            try:
+                data["return_items"] = json.loads(data["return_items"])
+            except Exception:
+                pass
+
+        serializer = NoteCreationSerializer(data=data)
+        serializer.is_valid(raise_exception=True)
+        val = serializer.validated_data
+        return SalesService.create_note(
+            order=order,
+            note_type=val["note_type"],
+            amount_net=val["amount_net"],
+            amount_tax=val["amount_tax"],
+            document_number=val["document_number"],
+            document_attachment=request.FILES.get("document_attachment"),
+            return_items=val.get("return_items"),
+            original_invoice_id=val.get("original_invoice_id"),
+            date=val.get("document_date"),
+        )
+
+    @staticmethod
     @transaction.atomic
     def create_note(
         order: SaleOrder,

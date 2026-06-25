@@ -571,46 +571,12 @@ class TreasuryMovementViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
         explícito opcional (Onda 2, ADR-0043).
         """
         try:
-            group, from_account = TreasuryService.create_card_purchase_from_payload(
-                request.data, request.user
-            )
-
-            schedule_data = [
-                {
-                    "number": inst.number,
-                    "due_date": inst.due_date.isoformat(),
-                    "principal_amount": str(inst.principal_amount),
-                    "is_billed": inst.is_billed,
-                }
-                for inst in group.schedule.all().order_by("number")
-            ]
-            use_movement = group.movements.order_by("id").first()
-            return Response(
-                {
-                    "group": {
-                        "uuid": str(group.uuid),
-                        "display_id": group.display_id,
-                        "card_account": from_account.id,
-                        "total_amount": str(group.total_amount),
-                        "installments": group.installments,
-                        "monthly_rate": str(group.monthly_rate),
-                        "first_installment_date": group.first_installment_date.isoformat(),
-                        "client_reference": group.client_reference,
-                        "total_interest": str(group.total_interest),
-                        "total_payable": str(group.total_payable),
-                    },
-                    "movement": (
-                        TreasuryMovementSerializer(use_movement).data if use_movement else None
-                    ),
-                    "installments": schedule_data,
-                },
-                status=status.HTTP_201_CREATED,
-            )
+            result = TreasuryService.process_card_purchase_request(request.data, request.user)
+            return Response(result, status=status.HTTP_201_CREATED)
         except ValidationError as e:
             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
         except Exception as e:
             import traceback
-
             traceback.print_exc()
             return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
@@ -672,24 +638,9 @@ class TreasuryMovementViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
         """
         payment = self.get_object()
 
-        amount = request.data.get("amount")
-        reason = request.data.get("reason", "")
-        treasury_account_id = request.data.get("treasury_account_id")
-
-        if not amount:
-            return Response(
-                {"error": "Debe especificar el monto a devolver."},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-
         try:
             from treasury.return_services import TreasuryReturnService
-
-            amount_decimal = Decimal(str(amount))
-
-            return_payment = TreasuryReturnService.register_payment_return(
-                payment, amount_decimal, reason=reason, treasury_account_id=treasury_account_id
-            )
+            return_payment = TreasuryReturnService.register_payment_return_from_request(request, payment)
 
             return Response(
                 {
@@ -718,34 +669,14 @@ class TreasuryMovementViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
     def allocate(self, request, pk=None):
         """S5.2: Set partial allocations for a payment"""
         movement = self.get_object()
-        allocations_data = request.data.get("allocations")
-
-        # Determine if we should validate the sum. For S5, the rule is to allow draft state
-        # in some contexts, but usually we validate strict sum. We'll allow a query param.
-        # Although the roadmap says 'permisivo', let's default to permissive during the dialog,
-        # but the frontend sends them incrementally. Wait, the frontend dialog sends all splits at once.
-        validate_sum = request.query_params.get("validate_sum", "false").lower() == "true"
-
-        if not allocations_data or not isinstance(allocations_data, list):
-            return Response(
-                {"error": 'Debe proveer una lista de "allocations"'},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
 
         try:
             from treasury.allocation_service import AllocationService
-
-            created = AllocationService.allocate(
-                movement=movement,
-                allocations=allocations_data,
-                user=request.user,
-                validate_sum=validate_sum,
-            )
+            created = AllocationService.allocate_from_request(request, movement)
             return Response(
                 PaymentAllocationSerializer(created, many=True).data, status=status.HTTP_201_CREATED
             )
         except ValidationError as e:
-            # e.messages is a list if it comes from django ValidationError
             err = e.message if hasattr(e, "message") else str(e)
             return Response({"error": err}, status=status.HTTP_400_BAD_REQUEST)
         except Exception as e:
@@ -787,35 +718,8 @@ class BankStatementViewSet(viewsets.ModelViewSet):
         Optional fields:
         - custom_config: Custom parser configuration (JSON)
         """
-        file = request.FILES.get("file")
-        treasury_account_id = request.data.get("treasury_account_id")
-        bank_format = request.data.get("bank_format", "GENERIC_CSV")
-        custom_config = request.data.get("custom_config")  # Optional JSON
-
-        if custom_config and isinstance(custom_config, str):
-            try:
-                import json
-
-                custom_config = json.loads(custom_config)
-            except Exception:
-                pass
-
-        if not file:
-            return Response({"error": "Archivo es requerido"}, status=status.HTTP_400_BAD_REQUEST)
-
-        if not treasury_account_id:
-            return Response(
-                {"error": "Cuenta de tesorería es requerida"}, status=status.HTTP_400_BAD_REQUEST
-            )
-
         try:
-            result = ReconciliationService.import_statement(
-                file=file,
-                treasury_account_id=treasury_account_id,
-                bank_format=bank_format,
-                user=request.user,
-                custom_config=custom_config,
-            )
+            result = ReconciliationService.import_statement_from_request(request)
 
             return Response(
                 {
@@ -831,7 +735,6 @@ class BankStatementViewSet(viewsets.ModelViewSet):
             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
         except Exception as e:
             import traceback
-
             traceback.print_exc()
             return Response(
                 {"error": f"Error al importar cartola: {str(e)}"},
@@ -843,40 +746,13 @@ class BankStatementViewSet(viewsets.ModelViewSet):
         """
         Validate and parse a bank statement without persisting.
         """
-        file = request.FILES.get("file")
-        treasury_account_id = request.data.get("treasury_account_id")
-        bank_format = request.data.get("bank_format", "GENERIC_CSV")
-        custom_config = request.data.get("custom_config")
-
-        if custom_config and isinstance(custom_config, str):
-            try:
-                import json
-
-                custom_config = json.loads(custom_config)
-            except Exception:
-                pass
-
-        if not file:
-            return Response({"error": "Archivo es requerido"}, status=status.HTTP_400_BAD_REQUEST)
-
-        if not treasury_account_id:
-            return Response(
-                {"error": "Cuenta de tesorería es requerida"}, status=status.HTTP_400_BAD_REQUEST
-            )
-
         try:
-            result = ReconciliationService.dry_run_import(
-                file=file,
-                treasury_account_id=treasury_account_id,
-                bank_format=bank_format,
-                custom_config=custom_config,
-            )
+            result = ReconciliationService.dry_run_from_request(request)
             return Response(result)
         except ValueError as e:
             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
         except Exception as e:
             import traceback
-
             traceback.print_exc()
             return Response(
                 {"error": f"Error al validar cartola: {str(e)}"},
@@ -1080,29 +956,11 @@ class BankStatementLineViewSet(viewsets.ModelViewSet):
     def bulk_exclude(self, request):
         """Exclude multiple lines from reconciliation"""
         try:
-            line_ids = request.data.get("line_ids", [])
-            exclusion_reason = request.data.get("exclusion_reason")
-            exclusion_notes = request.data.get("exclusion_notes", "")
-
-            if not line_ids:
-                return Response({"error": "line_ids requerido"}, status=status.HTTP_400_BAD_REQUEST)
-
-            # Check if statement is confirmed
-            lines = BankStatementLine.objects.filter(id__in=line_ids).select_related("statement")
-            if any(line.statement.status == "CONFIRMED" for line in lines):
-                return Response(
-                    {"error": "No se pueden excluir movimientos de una cartola confirmada"},
-                    status=status.HTTP_400_BAD_REQUEST,
-                )
-
-            # Update state
-            BankStatementLine.objects.filter(id__in=line_ids).update(
-                reconciliation_status="EXCLUDED",
-                exclusion_reason=exclusion_reason,
-                exclusion_notes=exclusion_notes,
-            )
-
-            return Response({"message": f"{len(line_ids)} movimientos excluidos"})
+            from treasury.services import BankStatementService
+            count = BankStatementService.bulk_exclude_from_request(request)
+            return Response({"message": f"{count} movimientos excluidos"})
+        except ValueError as e:
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
         except Exception as e:
             return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
@@ -1295,32 +1153,10 @@ class POSSessionViewSet(viewsets.ModelViewSet):
         Supporting hardcoded types: PARTNER_WITHDRAWAL, THEFT, OTHER_IN, OTHER_OUT
         """
         try:
-            from decimal import Decimal
             from .pos_service import POSService
 
             session = self.get_object()
-
-            move_type = request.data.get("type")  # PARTNER_WITHDRAWAL, THEFT, OTHER_IN, OTHER_OUT
-            amount = Decimal(str(request.data.get("amount", "0")))
-            notes = request.data.get("notes", "")
-
-            is_inflow = request.data.get("is_inflow", False)
-            if isinstance(is_inflow, str):
-                is_inflow = is_inflow.lower() == "true"
-            else:
-                is_inflow = bool(is_inflow)
-
-            target_account_id = request.data.get("target_account_id")
-
-            movement = POSService.register_manual_movement(
-                session=session,
-                move_type=move_type,
-                amount=amount,
-                is_inflow=is_inflow,
-                notes=notes,
-                target_account_id=target_account_id,
-                user=request.user,
-            )
+            POSService.register_manual_movement_from_request(request, session)
 
             return Response(
                 {
@@ -1531,6 +1367,8 @@ class TreasuryDashboardViewSet(viewsets.ViewSet):
         """
         Registra un traspaso interno entre cuentas.
         """
+        from datetime import datetime
+
         from_acc_id = request.data.get("from_account_id")
         to_acc_id = request.data.get("to_account_id")
         amount = Decimal(str(request.data.get("amount", 0)))
@@ -1586,48 +1424,14 @@ class TerminalBatchViewSet(viewsets.ModelViewSet):
         Custom create to use TerminalBatchService.
         """
         try:
-            data = request.data
-            provider_id = data.get("provider")
-            payment_method_id = data.get("payment_method")
-            sales_date = data.get("sales_date")
-            sales_date_end = data.get("sales_date_end")
-            gross_amount = Decimal(str(data.get("gross_amount")))
-            commission_base = Decimal(str(data.get("commission_base", 0)))
-            commission_tax = Decimal(str(data.get("commission_tax", 0)))
-            net_amount = Decimal(str(data.get("net_amount")))
-            terminal_reference = data.get("terminal_reference", "")
-
-            provider = PaymentTerminalProvider.objects.get(pk=provider_id)
-            payment_method = None
-            if payment_method_id:
-                payment_method = PaymentMethod.objects.get(pk=payment_method_id)
-            movement_ids = data.get("movement_ids", None)
-
-            batch = TerminalBatchService.create_batch(
-                provider=provider,
-                payment_method=payment_method,
-                sales_date=sales_date,
-                sales_date_end=sales_date_end,
-                gross_amount=gross_amount,
-                commission_base=commission_base,
-                commission_tax=commission_tax,
-                net_amount=net_amount,
-                terminal_reference=terminal_reference,
-                user=request.user,
-                movement_ids=movement_ids,
-            )
-
+            batch = TerminalBatchService.create_batch_from_request(request)
             return Response(TerminalBatchSerializer(batch).data, status=status.HTTP_201_CREATED)
 
         except ValidationError as e:
-            import traceback
-
-            print(f"TERMINAL BATCH VALIDATION ERROR: {str(e)}")
             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
         except Exception as e:
             import traceback
 
-            print(f"TERMINAL BATCH INTERNAL ERROR: {str(e)}")
             traceback.print_exc()
             return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
@@ -1640,7 +1444,6 @@ class TerminalBatchViewSet(viewsets.ModelViewSet):
             provider_id = request.data.get("provider_id")
             year = int(request.data.get("year"))
             month = int(request.data.get("month"))
-
             provider = PaymentTerminalProvider.objects.get(pk=provider_id)
 
             invoice = TerminalBatchService.generate_monthly_invoice(
@@ -1934,52 +1737,10 @@ class LoanInstallmentViewSet(viewsets.ModelViewSet):
     @action(detail=True, methods=["post"])
     def pay(self, request, pk=None):
         from .loan_service import LoanService
-        from .models import TreasuryAccount
 
         installment = self.get_object()
-        payload = PayInstallmentActionSerializer(data=request.data)
-        payload.is_valid(raise_exception=True)
-        v = payload.validated_data
         try:
-            payment_account = TreasuryAccount.objects.get(pk=v["payment_account"])
-        except TreasuryAccount.DoesNotExist:
-            return Response(
-                {"detail": "payment_account no existe."},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-        interest_exp = None
-        insurance_exp = None
-        if v.get("interest_expense_account"):
-            try:
-                interest_exp = Account.objects.get(pk=v["interest_expense_account"])
-            except Account.DoesNotExist:
-                return Response(
-                    {"detail": "interest_expense_account no existe."},
-                    status=status.HTTP_400_BAD_REQUEST,
-                )
-        if v.get("insurance_expense_account"):
-            try:
-                insurance_exp = Account.objects.get(pk=v["insurance_expense_account"])
-            except Account.DoesNotExist:
-                return Response(
-                    {"detail": "insurance_expense_account no existe."},
-                    status=status.HTTP_400_BAD_REQUEST,
-                )
-        try:
-            installment = LoanService.pay_installment(
-                installment.loan,
-                installment,
-                payment_account=payment_account,
-                interest_expense_account=interest_exp,
-                insurance_expense_account=insurance_exp,
-                date=v.get("date"),
-                created_by=request.user,
-                principal_amount=v.get("principal_amount"),
-                interest_amount=v.get("interest_amount"),
-                insurance_amount=v.get("insurance_amount"),
-                tax_amount=v.get("tax_amount"),
-                penalty_amount=v.get("penalty_amount"),
-            )
+            installment = LoanService.pay_installment_from_request(request, installment)
         except ValidationError as e:
             return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
         return Response(self.get_serializer(installment).data)

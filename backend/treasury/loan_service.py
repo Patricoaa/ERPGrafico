@@ -419,6 +419,50 @@ class LoanService:
         loan.save(update_fields=["status", "updated_at"])
         return loan
 
+    @staticmethod
+    def pay_installment_from_request(request, installment: LoanInstallment) -> LoanInstallment:
+        from .serializers import PayInstallmentActionSerializer
+        from .models import TreasuryAccount
+        from accounting.models import Account
+
+        payload = PayInstallmentActionSerializer(data=request.data)
+        payload.is_valid(raise_exception=True)
+        v = payload.validated_data
+
+        try:
+            payment_account = TreasuryAccount.objects.get(pk=v["payment_account"])
+        except TreasuryAccount.DoesNotExist:
+            raise ValidationError("payment_account no existe.")
+
+        interest_exp = None
+        if v.get("interest_expense_account"):
+            try:
+                interest_exp = Account.objects.get(pk=v["interest_expense_account"])
+            except Account.DoesNotExist:
+                raise ValidationError("interest_expense_account no existe.")
+
+        insurance_exp = None
+        if v.get("insurance_expense_account"):
+            try:
+                insurance_exp = Account.objects.get(pk=v["insurance_expense_account"])
+            except Account.DoesNotExist:
+                raise ValidationError("insurance_expense_account no existe.")
+
+        return LoanService.pay_installment(
+            installment.loan,
+            installment,
+            payment_account=payment_account,
+            interest_expense_account=interest_exp,
+            insurance_expense_account=insurance_exp,
+            date=v.get("date"),
+            created_by=request.user,
+            principal_amount=v.get("principal_amount"),
+            interest_amount=v.get("interest_amount"),
+            insurance_amount=v.get("insurance_amount"),
+            tax_amount=v.get("tax_amount"),
+            penalty_amount=v.get("penalty_amount"),
+        )
+
     # ── Pago de cuota (F2.6 / F2.7) ────────────────────────────────────────
 
     @staticmethod

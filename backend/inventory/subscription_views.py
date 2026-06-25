@@ -54,18 +54,15 @@ class SubscriptionViewSet(viewsets.ModelViewSet):
         Pause an active subscription.
         """
         subscription = self.get_object()
+        from .services import SubscriptionService
+        from django.core.exceptions import ValidationError
 
-        if subscription.status != Subscription.Status.ACTIVE:
-            return Response(
-                {"error": "Solo se pueden pausar suscripciones activas"},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-
-        subscription.status = Subscription.Status.PAUSED
-        subscription.save()
-
-        serializer = self.get_serializer(subscription)
-        return Response(serializer.data)
+        try:
+            subscription = SubscriptionService.pause_subscription(subscription)
+            serializer = self.get_serializer(subscription)
+            return Response(serializer.data)
+        except ValidationError as e:
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
     @action(detail=True, methods=["post"])
     def cancel(self, request, pk=None):
@@ -73,11 +70,9 @@ class SubscriptionViewSet(viewsets.ModelViewSet):
         Cancel a subscription permanently.
         """
         subscription = self.get_object()
+        from .services import SubscriptionService
 
-        subscription.status = Subscription.Status.CANCELLED
-        subscription.end_date = timezone.now().date()
-        subscription.save()
-
+        subscription = SubscriptionService.cancel_subscription(subscription)
         serializer = self.get_serializer(subscription)
         return Response(serializer.data)
 
@@ -87,17 +82,15 @@ class SubscriptionViewSet(viewsets.ModelViewSet):
         Resume a paused subscription.
         """
         subscription = self.get_object()
+        from .services import SubscriptionService
+        from django.core.exceptions import ValidationError
 
-        if subscription.status != Subscription.Status.PAUSED:
-            return Response(
-                {"error": "Solo se pueden reanudar suscripciones pausadas"},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-
-        subscription.status = Subscription.Status.ACTIVE
-        subscription.save()
-
-        serializer = self.get_serializer(subscription)
+        try:
+            subscription = SubscriptionService.resume_subscription(subscription)
+            serializer = self.get_serializer(subscription)
+            return Response(serializer.data)
+        except ValidationError as e:
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
         return Response(serializer.data)
 
     @action(detail=False, methods=["get"])

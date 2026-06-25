@@ -541,6 +541,37 @@ class TreasuryService:
     # ── Compras en tarjeta en cuotas (Onda 2, ADR-0043) ─────────────
 
     @staticmethod
+    def process_card_purchase_request(data: dict, user) -> dict:
+        group, from_account = TreasuryService.create_card_purchase_from_payload(data, user)
+        schedule_data = [
+            {
+                "number": inst.number,
+                "due_date": inst.due_date.isoformat(),
+                "principal_amount": str(inst.principal_amount),
+                "is_billed": inst.is_billed,
+            }
+            for inst in group.schedule.all().order_by("number")
+        ]
+        use_movement = group.movements.order_by("id").first()
+        from .serializers import TreasuryMovementSerializer
+        return {
+            "group": {
+                "uuid": str(group.uuid),
+                "display_id": group.display_id,
+                "card_account": from_account.id,
+                "total_amount": str(group.total_amount),
+                "installments": group.installments,
+                "monthly_rate": str(group.monthly_rate),
+                "first_installment_date": group.first_installment_date.isoformat(),
+                "client_reference": group.client_reference,
+                "total_interest": str(group.total_interest),
+                "total_payable": str(group.total_payable),
+            },
+            "schedule": schedule_data,
+            "movement": TreasuryMovementSerializer(use_movement).data if use_movement else None,
+        }
+
+    @staticmethod
     @transaction.atomic
     def create_card_purchase_from_payload(data: dict, user) -> tuple:
         """Parses API payload and creates a card purchase."""
@@ -1150,6 +1181,32 @@ class TreasuryService:
 
 class TerminalBatchService:
     @staticmethod
+    def create_batch_from_request(request) -> "TerminalBatch":
+        data = request.data
+        from .models import PaymentTerminalProvider, PaymentMethod
+
+        provider_id = data.get("provider")
+        payment_method_id = data.get("payment_method")
+        provider = PaymentTerminalProvider.objects.get(pk=provider_id)
+        payment_method = None
+        if payment_method_id:
+            payment_method = PaymentMethod.objects.get(pk=payment_method_id)
+
+        return TerminalBatchService.create_batch(
+            provider=provider,
+            payment_method=payment_method,
+            sales_date=data.get("sales_date"),
+            sales_date_end=data.get("sales_date_end"),
+            gross_amount=Decimal(str(data.get("gross_amount"))),
+            commission_base=Decimal(str(data.get("commission_base", 0))),
+            commission_tax=Decimal(str(data.get("commission_tax", 0))),
+            net_amount=Decimal(str(data.get("net_amount"))),
+            terminal_reference=data.get("terminal_reference", ""),
+            user=request.user,
+            movement_ids=data.get("movement_ids", None),
+        )
+
+    @staticmethod
     @transaction.atomic
     def create_batch(
         provider,
@@ -1545,3 +1602,29 @@ class BankStatementService:
         statement.status = "CONFIRMED"
         statement.save(update_fields=["status"])
         return statement
+
+    @staticmethod
+    def bulk_exclude_from_request(request) -> int:
+        """
+        Exclude multiple lines from reconciliation, processing the request payload.
+        """
+        from .models import BankStatementLine
+
+        line_ids = request.data.get("line_ids", [])
+        exclusion_reason = request.data.get("exclusion_reason")
+        exclusion_notes = request.data.get("exclusion_notes", "")
+
+        if not line_ids:
+            raise ValueError("line_ids requerido")
+
+        # Check if statement is confirmed
+        lines = BankStatementLine.objects.filter(id__in=line_ids).select_related("statement")
+        if any(line.statement.status == "CONFIRMED" for line in lines):
+            raise ValueError("No se pueden excluir movimientos de una cartola confirmada")
+
+        # Update state
+        return BankStatementLine.objects.filter(id__in=line_ids).update(
+            reconciliation_status="EXCLUDED",
+            exclusion_reason=exclusion_reason,
+            exclusion_notes=exclusion_notes,
+        )
