@@ -1846,58 +1846,16 @@ class BankLoanViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
     @action(detail=True, methods=["get"])
     def schedule(self, request, pk=None):
         """Preview de la tabla de amortización SIN persistir."""
-        from decimal import Decimal
-
-        from .loan_service import _add_months
-
         loan = self.get_object()
         if loan.installments.exists():
             return Response(
                 {"detail": "El crédito ya tiene una tabla generada. Use GET amortization_table."},
                 status=status.HTTP_400_BAD_REQUEST,
             )
-        # Calcular in-memory (mismo algoritmo que generate_schedule).
-        if loan.rate_basis == loan.RateBasis.MONTHLY:
-            i = loan.interest_rate / Decimal("100")
-        else:
-            i = (loan.interest_rate / Decimal("100")) / Decimal("12")
-        if i <= 0:
-            i = Decimal("0")
-        n = loan.term_months
-        P = loan.principal
-        ins = loan.insurance_monthly or Decimal("0")
-        # Calcular cuota francesa fija.
-        if i == 0:
-            C = P / Decimal(n)
-        else:
-            C = P * i / (Decimal(1) - (Decimal(1) + i) ** (-n))
-        rows = []
-        balance = P
-        for k in range(1, n + 1):
-            interest = (balance * i).quantize(Decimal("0.01"))
-            principal = (C - interest).quantize(Decimal("0.01"))
-            if k == n:  # última cuota: ajuste de redondeo
-                principal = balance
-            total = principal + interest + ins
-            balance = (balance - principal).quantize(Decimal("0.01"))
-            rows.append(
-                {
-                    "number": k,
-                    "due_date": _add_months(loan.first_due_date, k - 1).isoformat(),
-                    "principal_amount": str(principal),
-                    "interest_amount": str(interest),
-                    "insurance_amount": str(ins),
-                    "total_amount": str(total),
-                    "outstanding_balance": str(balance),
-                }
-            )
-        return Response(
-            {
-                "currency": loan.currency,
-                "monthly_rate": str(i),
-                "installments": rows,
-            }
-        )
+
+        from .loan_service import LoanService
+        data = LoanService.preview_schedule(loan=loan)
+        return Response(data)
 
     @action(detail=True, methods=["get"])
     def amortization_table(self, request, pk=None):

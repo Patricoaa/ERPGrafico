@@ -370,3 +370,67 @@ class ContactSelector:
             "contacts": contact_list,
             "summary": summary,
         }
+
+    @staticmethod
+    def get_credit_ledger(contact: Contact, include_all: bool = False) -> list:
+        """
+        Retorna la lista de órdenes a crédito pendientes o castigadas para el contacto,
+        enriquecida con fechas de vencimiento y clasificación de riesgo (aging buckets).
+        """
+        from datetime import timedelta
+        from decimal import Decimal
+        from django.utils import timezone
+        from sales.serializers import SaleOrderSerializer
+
+        today = timezone.now().date()
+        payment_term = contact.credit_days or 30
+
+        orders = contact.sale_orders.exclude(status__in=["DRAFT", "CANCELLED"]).order_by("-date")
+
+        ledger_data = []
+        for order in orders:
+            payments = order.payments.filter(is_pending_registration=False)
+            paid_in = sum(
+                (p.amount for p in payments if p.movement_type in ["INBOUND", "ADJUSTMENT"]),
+                Decimal("0"),
+            )
+            paid_out = sum(
+                (p.amount for p in payments if p.movement_type == "OUTBOUND"), Decimal("0")
+            )
+            payments_net = paid_in - paid_out
+            balance = order.effective_total - payments_net
+
+            is_written_off = payments.filter(payment_method="WRITE_OFF").exists()
+
+            if balance > 0 or (is_written_off and include_all):
+                order_date = order.date
+                if hasattr(order_date, "date"):
+                    order_date = order_date.date()
+                due_date = order_date + timedelta(days=payment_term)
+                days_overdue = (today - due_date).days
+
+                if balance <= 0 and is_written_off:
+                    aging_bucket = "written_off"
+                elif days_overdue <= 0:
+                    aging_bucket = "current"
+                elif days_overdue <= 30:
+                    aging_bucket = "overdue_30"
+                elif days_overdue <= 60:
+                    aging_bucket = "overdue_60"
+                elif days_overdue <= 90:
+                    aging_bucket = "overdue_90"
+                else:
+                    aging_bucket = "overdue_90plus"
+
+                ledger_data.append(
+                    {
+                        **SaleOrderSerializer(order).data,
+                        "due_date": due_date,
+                        "days_overdue": max(0, days_overdue),
+                        "aging_bucket": aging_bucket,
+                        "balance": str(balance),
+                        "paid_amount": str(payments_net),
+                    }
+                )
+
+        return ledger_data

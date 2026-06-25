@@ -127,69 +127,12 @@ class ContactViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
         Returns a list of unpaid credit orders for the contact,
         enriched with due_date and aging_bucket.
         """
-        from datetime import timedelta
-        from decimal import Decimal
-
-        from django.utils import timezone
-
-        from sales.serializers import SaleOrderSerializer
-
         contact = self.get_object()
+        include_all = request.query_params.get("include_all", "false") == "true"
 
-        today = timezone.now().date()
-        payment_term = contact.credit_days or 30
+        from .selectors import ContactSelector
 
-        # Get all non-draft, non-cancelled orders
-        orders = contact.sale_orders.exclude(status__in=["DRAFT", "CANCELLED"]).order_by("-date")
-
-        ledger_data = []
-        for order in orders:
-            payments = order.payments.filter(is_pending_registration=False)
-            paid_in = sum(
-                (p.amount for p in payments if p.movement_type in ["INBOUND", "ADJUSTMENT"]),
-                Decimal("0"),
-            )
-            paid_out = sum(
-                (p.amount for p in payments if p.movement_type == "OUTBOUND"), Decimal("0")
-            )
-            payments_net = paid_in - paid_out
-            balance = order.effective_total - payments_net
-
-            # Include if balance > 0 OR if specifically written off (Blacklist case)
-            is_written_off = payments.filter(payment_method="WRITE_OFF").exists()
-            include_all = request.query_params.get("include_all", "false") == "true"
-
-            if balance > 0 or (is_written_off and include_all):
-                order_date = order.date
-                if hasattr(order_date, "date"):
-                    order_date = order_date.date()
-                due_date = order_date + timedelta(days=payment_term)
-                days_overdue = (today - due_date).days
-
-                if balance <= 0 and is_written_off:
-                    aging_bucket = "written_off"  # Special bucket for blacklist view
-                elif days_overdue <= 0:
-                    aging_bucket = "current"
-                elif days_overdue <= 30:
-                    aging_bucket = "overdue_30"
-                elif days_overdue <= 60:
-                    aging_bucket = "overdue_60"
-                elif days_overdue <= 90:
-                    aging_bucket = "overdue_90"
-                else:
-                    aging_bucket = "overdue_90plus"
-
-                ledger_data.append(
-                    {
-                        **SaleOrderSerializer(order).data,
-                        "due_date": due_date,
-                        "days_overdue": max(0, days_overdue),
-                        "aging_bucket": aging_bucket,
-                        "balance": str(balance),
-                        "paid_amount": str(payments_net),
-                    }
-                )
-
+        ledger_data = ContactSelector.get_credit_ledger(contact=contact, include_all=include_all)
         return Response(ledger_data)
 
     @action(detail=False, methods=["get"])
