@@ -27,6 +27,7 @@ import type { Contact } from "@/features/contacts/types";
 import { useWizardStore } from "../WorkOrderWizardStore";
 import type { ManufacturingData } from "@/components/shared";
 import { ManufacturingSpecsEditor, emptyManufacturingData } from '@/components/shared';
+import type { Contact as EntityContact } from "@/types/entities";
 import { AdvancedContactSelector } from "@/components/selectors/AdvancedContactSelector";
 import { UoMSelector } from "@/components/selectors/UoMSelector";
 import { LabeledInput, LabeledContainer, PeriodValidationDateInput, SkeletonShell } from "@/components/shared";
@@ -537,7 +538,7 @@ export function ManufacturingConfigStep({
                 ) : (
                   <AdvancedContactSelector
                     // Safe: handleContactSelect only uses fields common to both Contact types (id, name, tax_id)
-                    onSelectContact={handleContactSelect as unknown as (contact: import("@/types/entities").Contact) => void}
+                    onSelectContact={handleContactSelect as unknown as (contact: EntityContact) => void}
                     onChange={() => { }}
                     placeholder="Buscar contacto..."
                     variant="inline"

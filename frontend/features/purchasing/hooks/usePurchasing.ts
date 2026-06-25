@@ -70,7 +70,7 @@ export function usePurchasingOrder(id: number) {
 export function usePurchaseReceipt(id: number | null, enabled = true) {
     const { data: receipt, isLoading } = useQuery({
         queryKey: [...PURCHASING_KEYS.all, 'receipt', id],
-        queryFn: () => purchasingApi.getReceipt(id!),
+        queryFn: () => purchasingApi.getReceipt(id as number),
         enabled: !!id && enabled,
     })
 
@@ -80,7 +80,7 @@ export function usePurchaseReceipt(id: number | null, enabled = true) {
 export function usePurchaseReturn(id: number | null, enabled = true) {
     const { data: returnData, isLoading } = useQuery({
         queryKey: [...PURCHASING_KEYS.all, 'return', id],
-        queryFn: () => purchasingApi.getReturn(id!),
+        queryFn: () => purchasingApi.getReturn(id as number),
         enabled: !!id && enabled,
     })
 

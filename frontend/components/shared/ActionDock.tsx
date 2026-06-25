@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { motion, AnimatePresence } from "framer-motion"
+
 import { cn } from "@/lib/utils"
 
 interface ActionDockProps {
@@ -46,24 +46,17 @@ export function ActionDock({ isVisible, children, className }: ActionDockProps) 
         return "left-1/2 -translate-x-1/2"
     }
 
-    return (
-        <AnimatePresence>
-            {isVisible && (
-                <motion.div
-                    initial={{ y: 100, opacity: 0 }}
-                    animate={{ y: 0, opacity: 1 }}
-                    exit={{ y: 100, opacity: 0 }}
-                    transition={{ type: "spring", stiffness: 300, damping: 30 }}
-                    className={cn(
-                        "fixed bottom-6 z-[100] bg-card border shadow-elevated rounded-full px-6 py-3 flex items-center gap-8 transition-all duration-500 ease-[var(--ease-premium)]",
-                        getPositionClass(),
-                        className
-                    )}
-                >
-                    {children}
-                </motion.div>
+    return isVisible && (
+        <div
+            className={cn(
+                "fixed bottom-6 z-[100] bg-card border shadow-elevated rounded-full px-6 py-3 flex items-center gap-8 transition-all duration-500 ease-[var(--ease-premium)]",
+                "animate-in fade-in slide-in-from-bottom-4 ease-[cubic-bezier(0.34,1.56,0.64,1)] duration-500 fill-mode-both",
+                getPositionClass(),
+                className
             )}
-        </AnimatePresence>
+        >
+            {children}
+        </div>
     )
 }
 

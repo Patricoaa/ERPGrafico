@@ -31,6 +31,8 @@ import type {
     PendingChargeRow,
     UnbilledForecast,
 } from '../types'
+import type { BillChargesResponse } from '@/features/treasury/card-statements/types'
+import type { TcHubAnalyticsResponse } from '@/features/treasury/card-statements/analyticsTypes'
 
 export const treasuryApi = {
     // ========== Terminals ==========
@@ -356,7 +358,7 @@ export const treasuryApi = {
         due_date: string
         minimum_payment?: number | string
         notes?: string
-    }): Promise<import('@/features/treasury/card-statements/types').BillChargesResponse> => {
+    }): Promise<BillChargesResponse> => {
         const { data } = await api.post('/treasury/card-statements/bill-charges/', payload)
         return data
     },
@@ -365,7 +367,7 @@ export const treasuryApi = {
 
     getCardAnalytics: async (
         params?: { card_account?: number; months?: number; granularity?: string },
-    ): Promise<import('@/features/treasury/card-statements/analyticsTypes').TcHubAnalyticsResponse> => {
+    ): Promise<TcHubAnalyticsResponse> => {
         const { data } = await api.get('/treasury/card-statements/analytics/', { params })
         return data
     },

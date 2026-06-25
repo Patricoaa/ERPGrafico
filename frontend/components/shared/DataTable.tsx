@@ -23,7 +23,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFoo
 
 import { cn } from "@/lib/utils"
 
-import { motion, AnimatePresence } from "framer-motion"
+
 import { Skeleton } from "@/components/ui/skeleton"
 import { type LucideIcon } from "lucide-react"
 import { ScrollArea } from "@/components/ui/scroll-area"
@@ -639,22 +639,13 @@ export function DataTable<TData, TValue>({
                                 ))}
                             </TableRow>
                         )}
-                        <AnimatePresence>
-                            {row.getIsExpanded() && renderSubComponent && (
-                                <motion.tr
-                                    key={`exp-${row.id}`}
-                                    initial={{ height: 0, opacity: 0 }}
-                                    animate={{ height: "auto", opacity: 1 }}
-                                    exit={{ height: 0, opacity: 0 }}
-                                    transition={{ duration: 0.2, ease: "easeInOut" }}
-                                    className="overflow-hidden"
-                                >
-                                    <TableCell colSpan={row.getVisibleCells().length} className="p-0" style={{ backgroundColor: 'var(--table-expanded-bg)' }}>
-                                        {renderSubComponent(row)}
-                                    </TableCell>
-                                </motion.tr>
-                            )}
-                        </AnimatePresence>
+                        {row.getIsExpanded() && renderSubComponent && (
+                            <tr key={`exp-${row.id}`} className="animate-in fade-in slide-in-from-top-2 duration-200 ease-in-out fill-mode-both">
+                                <TableCell colSpan={row.getVisibleCells().length} className="p-0" style={{ backgroundColor: 'var(--table-expanded-bg)' }}>
+                                    {renderSubComponent(row)}
+                                </TableCell>
+                            </tr>
+                        )}
                     </React.Fragment>
                 ))
             ) : (
@@ -803,17 +794,14 @@ export function DataTable<TData, TValue>({
                 renderCustomView(table)
             ) : (
                 <div className={cn("relative", !noBorder && "rounded-md border")}>
-                    <AnimatePresence>
-                        {isRefetching && (
-                            <motion.div
-                                initial={{ scaleX: 0 }}
-                                animate={{ scaleX: 1 }}
-                                exit={{ scaleX: 0 }}
-                                transition={{ duration: 0.3, ease: "easeInOut" }}
-                                className="absolute top-0 left-0 right-0 h-0.5 bg-primary origin-left"
-                            />
-                        )}
-                    </AnimatePresence>
+                    <div className="absolute top-0 left-0 right-0 h-0.5 overflow-hidden pointer-events-none">
+                        <div
+                            className={cn(
+                                "h-full bg-primary origin-left transition-transform duration-300 ease-in-out",
+                                isRefetching ? "scale-x-100" : "scale-x-0"
+                            )}
+                        />
+                    </div>
                     <Table containerClassName={cn(
                         !isInModal && "max-h-[calc(100vh-260px)] overflow-y-auto custom-scrollbar"
                     )}>
@@ -878,22 +866,13 @@ export function DataTable<TData, TValue>({
                                                 ))}
                                             </TableRow>
                                         )}
-                                        <AnimatePresence>
-                                            {row.getIsExpanded() && renderSubComponent && (
-                                                <motion.tr
-                                                    key={`exp-${row.id}`}
-                                                    initial={{ height: 0, opacity: 0 }}
-                                                    animate={{ height: "auto", opacity: 1 }}
-                                                    exit={{ height: 0, opacity: 0 }}
-                                                    transition={{ duration: 0.2, ease: "easeInOut" }}
-                                                    className="overflow-hidden"
-                                                >
-                                                    <TableCell colSpan={row.getVisibleCells().length} className="p-0 border-b border-border/50">
-                                                        {renderSubComponent(row)}
-                                                    </TableCell>
-                                                </motion.tr>
-                                            )}
-                                        </AnimatePresence>
+                                        {row.getIsExpanded() && renderSubComponent && (
+                                            <tr key={`exp-${row.id}`} className="animate-in fade-in slide-in-from-top-2 duration-200 ease-in-out fill-mode-both">
+                                                <TableCell colSpan={row.getVisibleCells().length} className="p-0 border-b border-border/50">
+                                                    {renderSubComponent(row)}
+                                                </TableCell>
+                                            </tr>
+                                        )}
                                     </React.Fragment>
                                 ))
                             ) : (

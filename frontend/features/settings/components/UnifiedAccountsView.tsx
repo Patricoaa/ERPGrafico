@@ -46,7 +46,7 @@ export function UnifiedAccountsView() {
     const router = useRouter()
     const tabParam = searchParams.get('tab')
     const [activeTab, setActiveTab] = useState(
-        TABS.some(t => t.value === tabParam) ? tabParam! : "ventas"
+        TABS.some(t => t.value === tabParam) ? (tabParam as string) : "ventas"
     )
     const isFirstRender = useRef(true)
 

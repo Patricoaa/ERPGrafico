@@ -192,7 +192,7 @@ export function PurchaseOrderModal({ onSuccess, initialData, open: openProp, onO
 
         setLoading(true)
         try {
-            await purchasingApi.updateOrder(initialData.id!, data)
+            await purchasingApi.updateOrder(initialData.id as number, data)
             toast.success("Orden de Compra actualizada correctamente")
             form.reset()
             setOpen(false)

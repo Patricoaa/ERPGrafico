@@ -276,7 +276,7 @@ export function ProfitDistributionsTab({ initialFlowOpen = false, createAction }
                 <MassPaymentModal
                     open={state.isMassPaymentOpen}
                     onOpenChange={(v) => setState(prev => ({ ...prev, isMassPaymentOpen: v }))}
-                    resolution={state.selectedResolution!}
+                    resolution={state.selectedResolution as ProfitDistribution}
                     onSuccess={fetchDistributions}
                 />
             )}

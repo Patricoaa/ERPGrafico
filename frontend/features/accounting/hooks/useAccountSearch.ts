@@ -31,7 +31,7 @@ export function useAccountSearch(search: string = "", isLeaf: boolean = false, e
 
 export function useSingleAccount(id: string | number | null) {
     const query = useQuery({
-        queryKey: ACCOUNT_KEYS.detail(id!),
+        queryKey: id ? ACCOUNT_KEYS.detail(id) : ['accounts', 'detail', 'noop'],
         queryFn: async ({ signal }) => {
             const res = await api.get(`/accounting/accounts/${id}/`, { signal })
             return res.data as Account

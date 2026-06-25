@@ -250,7 +250,7 @@ export const ReportTable: React.FC<ReportTableProps> = ({
                                         <MoneyDisplay amount={isLoading ? 0 : totalValueComp} showColor={false} className="text-xl text-muted-foreground font-bold opacity-70" />
                                     </TableCell>
                                     <TableCell className="text-right p-5">
-                                        <MoneyDisplay amount={isLoading ? 0 : (totalValue! - totalValueComp!)} className="text-xl font-black" />
+                                        <MoneyDisplay amount={isLoading ? 0 : (totalValue ?? 0) - (totalValueComp ?? 0)} className="text-xl font-black" />
                                     </TableCell>
                                 </>
                             )}

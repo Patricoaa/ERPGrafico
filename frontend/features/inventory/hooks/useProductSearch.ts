@@ -74,7 +74,7 @@ export function useProductSearch(params: ProductSearchParams = {}, enabled: bool
 
 export function useSingleProduct(id: string | number | null) {
     const query = useQuery({
-        queryKey: PRODUCT_KEYS.detail(id!),
+        queryKey: id ? PRODUCT_KEYS.detail(id) : ['products', 'detail', 'noop'],
         queryFn: async ({ signal }) => {
             const res = await api.get(`/inventory/products/${id}/`, { signal })
             return res.data as Product

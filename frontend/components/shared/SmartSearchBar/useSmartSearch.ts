@@ -72,7 +72,7 @@ export function useSmartSearch(def: SearchDefinition) {
         .map(([param, value]) => ({
           key: param,
           label: getFieldLabelForParam(def, param),
-          valueLabel: getValueLabel(def, param, value!),
+          valueLabel: getValueLabel(def, param, value as string),
           isGlobalSearch: param === 'search',
         })),
     [paramValues, def, dismissedDefaults],

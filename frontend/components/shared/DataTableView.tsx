@@ -8,6 +8,7 @@ import { createDomainCardView, createEntityCardView, createCardLoadingView, crea
 import { type AggregatorDef } from "@/lib/group-utils"
 import { DataTable, type DataTableProps } from "./DataTable"
 import { DomainCard } from "./DomainCard"
+import type { EntityCardSkeletonProps } from "./EntityCard"
 
 interface DataTableViewProps<TData, TValue>
   extends Omit<DataTableProps<TData, TValue>,
@@ -26,7 +27,7 @@ interface DataTableViewProps<TData, TValue>
     defaultLabel?: string
     aggregators?: AggregatorDef[]
   }
-  cardSkeleton?: Pick<import("./EntityCard").EntityCardSkeletonProps, 'showHeader' | 'showBody' | 'showFooter'>
+  cardSkeleton?: Pick<EntityCardSkeletonProps, 'showHeader' | 'showBody' | 'showFooter'>
 }
 
 export function DataTableView<TData, TValue>({

@@ -12,7 +12,7 @@ interface CheckboxProps extends Omit<React.InputHTMLAttributes<HTMLInputElement>
 const Checkbox = React.forwardRef<HTMLInputElement, CheckboxProps>(
     ({ className, checked, onCheckedChange, ...props }, ref) => {
         const inputRef = React.useRef<HTMLInputElement>(null)
-        React.useImperativeHandle(ref, () => inputRef.current!)
+        React.useImperativeHandle(ref, () => inputRef.current as HTMLInputElement)
 
         const isIndeterminate = checked === "indeterminate"
 

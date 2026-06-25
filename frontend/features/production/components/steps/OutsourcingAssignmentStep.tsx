@@ -45,6 +45,8 @@ export function OutsourcingAssignmentStep({
   const handleSave = async () => {
     if (!formData.productId || parseFloat(formData.qty) <= 0 || !formData.supplierId || parseFloat(formData.grossPrice) <= 0) return
     try {
+      const productId = formData.productId
+      if (!productId) return
       if (editingId) {
         await updateMaterial({
           materialId: editingId, quantity: formData.qty, uomId: formData.uomId,
@@ -52,7 +54,7 @@ export function OutsourcingAssignmentStep({
         })
       } else {
         await addMaterial({
-          productId: formData.productId!, quantity: formData.qty, uomId: formData.uomId,
+          productId, quantity: formData.qty, uomId: formData.uomId,
           isOutsourced: true, supplierId: formData.supplierId, unitPrice: formData.netPrice, documentType: formData.documentType,
         })
       }

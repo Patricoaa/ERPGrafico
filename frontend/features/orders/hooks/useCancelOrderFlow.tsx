@@ -88,11 +88,13 @@ export function useCancelOrderFlow(
 
     const { data: impact } = useQuery({
         queryKey: ['cancel-impact', orderType, options?.orderId],
-        queryFn: () => options?.orderId
-            ? (orderType === 'sale'
-                ? ordersApi.getCancelSaleImpact(options.orderId!)
-                : ordersApi.getCancelPurchaseImpact(options.orderId!))
-            : Promise.resolve(null),
+        queryFn: () => {
+            const orderId = options?.orderId
+            if (!orderId) return Promise.resolve(null)
+            return orderType === 'sale'
+                ? ordersApi.getCancelSaleImpact(orderId)
+                : ordersApi.getCancelPurchaseImpact(orderId)
+        },
         enabled: !!options?.orderId,
         staleTime: 30_000,
     })

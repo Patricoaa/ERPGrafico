@@ -89,7 +89,7 @@ export function useWarehouse(id: number | null | undefined) {
     return useQuery({
         queryKey: id ? WAREHOUSES_KEYS.detail(id) : ['warehouses', 'detail', 'noop'],
         queryFn: async (): Promise<Warehouse> => {
-            const res = await api.get<Warehouse>(`/inventory/warehouses/${id!}/`)
+            const res = await api.get<Warehouse>(`/inventory/warehouses/${id as number}/`)
             return res.data
         },
         enabled: !!id,

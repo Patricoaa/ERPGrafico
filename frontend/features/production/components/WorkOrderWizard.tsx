@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
-import { motion, AnimatePresence } from 'framer-motion'
+
 import { AlertTriangle, Package, FileText, Plus, CheckCircle2, Keyboard, Printer } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 
@@ -342,7 +342,10 @@ export function WorkOrderWizard({ mode, open, onOpenChange, onSuccess }: WorkOrd
       if (isMovingForward) {
         const toApprove = pendingTasks.filter(canUserCompleteTask)
         if (toApprove.length > 0) {
-          await Promise.all(toApprove.map((t) => completeTask(t.id as number, taskNotes[t.id], taskFiles[t.id] ? [taskFiles[t.id]!] : undefined)))
+          await Promise.all(toApprove.map((t) => {
+            const file = taskFiles[t.id]
+            return completeTask(t.id as number, taskNotes[t.id], file ? [file] : undefined)
+          }))
         }
       }
       await mutations.transition({ nextStageId, data })
@@ -604,15 +607,11 @@ export function WorkOrderWizard({ mode, open, onOpenChange, onSuccess }: WorkOrd
                 />
               </div>
 
-              <AnimatePresence mode="wait">
-                <motion.div
+              <div
                   key={viewingStepIndex}
-                  initial={{ opacity: 0, x: 20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: -20 }}
-                  transition={{ duration: 0.2 }}
                   className={cn(
                     'flex flex-col flex-1 min-h-0 overflow-y-auto space-y-6 pb-6',
+                    'animate-in fade-in slide-in-from-right-2 ease-premium duration-200 fill-mode-both',
                     // Lock creation steps (other than MFG_CONFIG which has its own summary)
                     // once the OT has been created — they become read-only history.
                     !isCreating && (
@@ -771,8 +770,7 @@ export function WorkOrderWizard({ mode, open, onOpenChange, onSuccess }: WorkOrd
                       isDuplicating={mutations.isDuplicating}
                     />
                   )}
-                </motion.div>
-              </AnimatePresence>
+                </div>
             </div>
           </div>
 

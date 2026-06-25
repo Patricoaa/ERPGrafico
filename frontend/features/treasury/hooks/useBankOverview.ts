@@ -88,7 +88,7 @@ export interface BankOverviewData {
 export function useBankOverview(bankId: number | null) {
     return useQuery({
         queryKey: [...BANKS_KEYS.all, 'overview', bankId],
-        queryFn: () => treasuryApi.getBankOverview(bankId!),
+        queryFn: () => treasuryApi.getBankOverview(bankId as number),
         enabled: bankId != null,
         staleTime: 2 * 60 * 1000,
     })

@@ -226,7 +226,7 @@ export const getInvoiceHubStatuses = (invoice: InvoiceBase) => {
             }, 0)
             logisticsProgress = Math.min(100, Math.round((totalProcessed / totalOrdered) * 100))
         } else if ((invoice.related_stock_moves?.length ?? 0) > 0) {
-            const anyCompleted = invoice.related_stock_moves!.some((m) => m.state === 'done')
+            const anyCompleted = invoice.related_stock_moves?.some((m) => m.state === 'done') ?? false
             if (anyCompleted) logisticsProgress = 100
         }
 

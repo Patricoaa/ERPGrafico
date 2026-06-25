@@ -37,8 +37,8 @@ function KanbanCard({ order, onManage, onDuplicate, onAnnul, onDelete }: { order
     const canDelete = !!onDelete && EDITABLE_STAGES.includes(order.current_stage)
     const canAnnul = !!onAnnul && !NON_ANNULLABLE_STATUSES.includes(order.status)
     const overflowItems = [
-        ...(canAnnul ? [{ action: 'annul' as const, onClick: () => onAnnul!(order.id) }] : []),
-        ...(canDelete ? [{ action: 'delete' as const, onClick: () => onDelete!(order.id) }] : []),
+        ...(canAnnul ? [{ action: 'annul' as const, onClick: () => onAnnul?.(order.id) }] : []),
+        ...(canDelete ? [{ action: 'delete' as const, onClick: () => onDelete?.(order.id) }] : []),
     ]
 
     return (

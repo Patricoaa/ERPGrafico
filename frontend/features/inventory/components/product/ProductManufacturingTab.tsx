@@ -234,8 +234,8 @@ export function ProductManufacturingTab({ form, products, uoms, variantMode = fa
                                                     checked={bom.active}
                                                     disabled={bom.active}
                                                     onCheckedChange={(checked) => {
-                                                        if (checked) {
-                                                            toggleActive(bom.id!)
+                                                        if (checked && bom.id != null) {
+                                                            toggleActive(bom.id)
                                                         }
                                                     }}
                                                 />
@@ -260,7 +260,7 @@ export function ProductManufacturingTab({ form, products, uoms, variantMode = fa
                                                     variant="ghost"
                                                     size="icon"
                                                     className="h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
-                                                    onClick={() => setConfirmDeleteBomId(bom.id!)}
+                                                    onClick={() => bom.id != null && setConfirmDeleteBomId(bom.id)}
                                                 >
                                                     <Trash2 className="h-4 w-4" />
                                                 </Button>

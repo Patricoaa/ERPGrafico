@@ -146,7 +146,7 @@ export function useSalesNotes({ filters }: { filters?: SaleNoteFilters } = {}) {
 export function useSaleOrder(id: number | null | undefined) {
     return useQuery({
         queryKey: id ? SALES_KEYS.order(id) : ['sales', 'order', 'noop'],
-        queryFn: () => salesApi.getOrder(id!),
+        queryFn: () => salesApi.getOrder(id as number),
         enabled: !!id,
     })
 }

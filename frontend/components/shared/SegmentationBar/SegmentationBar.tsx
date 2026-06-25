@@ -358,7 +358,7 @@ function BasePeriodSegment({ serverParamFrom, serverParamTo, filters, apply, rem
   }, [serverParamFrom, serverParamTo, apply, remove])
 
   const customLabel = hasCustomRange
-    ? `${format(parseDateLocal(fromVal!), 'dd/MM/yy', { locale: es })} — ${toVal ? format(parseDateLocal(toVal), 'dd/MM/yy', { locale: es }) : '...'}`
+    ? `${format(parseDateLocal(fromVal as string), 'dd/MM/yy', { locale: es })} — ${toVal ? format(parseDateLocal(toVal), 'dd/MM/yy', { locale: es }) : '...'}`
     : null
 
   const btnClass = (isActive: boolean) =>

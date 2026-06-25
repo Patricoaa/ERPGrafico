@@ -189,7 +189,7 @@ export function usePurchasingAnalyticsData(
             && o.receipt_date
             && o.actual_receipt_date
         )
-        const onTimeCount = receivedWithDates.filter((o) => o.actual_receipt_date! <= o.receipt_date!).length
+        const onTimeCount = receivedWithDates.filter((o) => (o.actual_receipt_date as string) <= (o.receipt_date as string)).length
         const lateCount = receivedWithDates.length - onTimeCount
         const onTimeDeliveryRate = receivedWithDates.length > 0 ? Math.round((onTimeCount / receivedWithDates.length) * 100) : 0
 
@@ -319,9 +319,9 @@ export function usePurchasingAnalyticsData(
             .sort((a, b) => (a.receipt_date || "").localeCompare(b.receipt_date || ""))
             .slice(0, 15)
             .map((o) => {
-                const isOverdue = o.receipt_date! < now
+                const isOverdue = (o.receipt_date as string) < now
                 return {
-                    date: o.receipt_date!,
+                    date: o.receipt_date as string,
                     label: o.supplier_name || "Proveedor",
                     description: `${o.display_id || o.number} - ${Number(o.total).toLocaleString("es-CL")}`,
                     status: isOverdue ? ("destructive" as const) : ("warning" as const),

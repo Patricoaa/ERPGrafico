@@ -47,7 +47,7 @@ export function useContactSearch(params: ContactSearchParams = {}, enabled: bool
 
 export function useSingleContact(id: string | number | null) {
     const query = useQuery({
-        queryKey: CONTACT_KEYS.detail(id!),
+        queryKey: id ? CONTACT_KEYS.detail(id) : ['contacts', 'detail', 'noop'],
         queryFn: async ({ signal }) => {
             const res = await api.get(`/contacts/${id}/`, { signal })
             return res.data as Contact

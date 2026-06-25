@@ -14,7 +14,7 @@ export function useTaxPeriods() {
 export function useTaxPeriod(id: number | string | undefined) {
   return useQuery({
     queryKey: TAX_KEYS.periods.detail(Number(id)),
-    queryFn: () => taxApi.getPeriod(id!),
+    queryFn: () => taxApi.getPeriod(id as number | string),
     enabled: !!id,
   })
 }
@@ -31,7 +31,7 @@ export function useTaxDeclarations(params: Record<string, unknown>) {
 export function useF29Detail(id: number | string | undefined) {
   return useQuery({
     queryKey: TAX_KEYS.f29.detail(Number(id)),
-    queryFn: () => taxApi.getF29Detail(id!),
+    queryFn: () => taxApi.getF29Detail(id as number | string),
     enabled: !!id,
   })
 }
