@@ -62,6 +62,20 @@ class ProductViewSet(BulkImportMixin, AuditHistory, viewsets.ModelViewSet):
             return get_product_base_queryset(user=user)
         return list_products(user=user, params=self.request.query_params)
 
+    def list(self, request, *args, **kwargs):
+        queryset = self.filter_queryset(self.get_queryset())
+        page = self.paginate_queryset(queryset)
+        
+        objects = page if page is not None else queryset
+        
+        from .services import ProductService
+        ProductService.bulk_annotate_reserved_qty(objects)
+        
+        serializer = self.get_serializer(objects, many=True)
+        if page is not None:
+            return self.get_paginated_response(serializer.data)
+        return Response(serializer.data)
+
     @action(detail=False, methods=["get"], url_path="filter-suggestions")
     def filter_suggestions(self, request):
         q = request.query_params.get("q", "").strip()
@@ -115,30 +129,21 @@ class ProductViewSet(BulkImportMixin, AuditHistory, viewsets.ModelViewSet):
 
     @action(detail=False, methods=["get"])
     def stock_report(self, request):
-        """
-        Returns a summary of stock per product.
-        Cached in Redis for 60s — invalidated by StockMove signal.
-        """
         from core.api.throttles import HeavyReportThrottle
         from core.cache import cache_report
 
-        # Apply heavy report throttle manually
-        throttle = HeavyReportThrottle()
-        if not throttle.allow_request(request, self):
+        if not HeavyReportThrottle().allow_request(request, self):
             from rest_framework.exceptions import Throttled
 
             raise Throttled(
                 detail="Demasiadas solicitudes al reporte de stock. Intente en un momento."
             )
 
-        def _generate():
-            return get_stock_report_data()
-
         data = cache_report(
             module="inventory",
             endpoint="stock_report",
             timeout=60,
-            generator=_generate,
+            generator=get_stock_report_data,
         )
         return Response(data)
 
@@ -196,41 +201,26 @@ class ProductViewSet(BulkImportMixin, AuditHistory, viewsets.ModelViewSet):
 
     @action(detail=True, methods=["post"], url_path="bulk-clone-bom")
     def bulk_clone_bom(self, request, pk=None):
-        """
-        Clona la BOM activa del template a las variantes indicadas.
-        Si variant_ids está vacío, aplica a todas las variantes activas.
-        """
-        from django.core.exceptions import ValidationError
-        from .services import ProductService
-
         template = self.get_object()
-        variant_ids = request.data.get("variant_ids", [])  # [] = todas
-
+        variant_ids = request.data.get("variant_ids", [])
         if not template.has_variants:
             return Response(
                 {"error": "Este producto no es un template de variantes."},
                 status=status.HTTP_400_BAD_REQUEST,
             )
-
         try:
+            from .services import ProductService
+
             result = ProductService.bulk_clone_bom(template, variant_ids or None)
             return Response(result)
-        except ValidationError as e:
-            return Response(
-                {"error": str(e.message if hasattr(e, "message") else e)},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
+        except Exception as e:
+            msg = e.message if hasattr(e, "message") else str(e)
+            return Response({"error": msg}, status=status.HTTP_400_BAD_REQUEST)
 
     @action(detail=True, methods=["post"], url_path="bulk-set-surcharge")
     def bulk_set_surcharge(self, request, pk=None):
-        """
-        Asigna un sobrecargo a las variantes indicadas (o todas si variant_ids está vacío).
-        Cambia el price_inheritance_mode a SURCHARGE y aplica el valor.
-        """
         template = self.get_object()
-        variant_ids = request.data.get("variant_ids", [])
         surcharge = request.data.get("surcharge")
-
         if surcharge is None:
             return Response(
                 {"error": "Debe proporcionar el campo 'surcharge'."},
@@ -241,16 +231,10 @@ class ProductViewSet(BulkImportMixin, AuditHistory, viewsets.ModelViewSet):
                 {"error": "Este producto no es un template de variantes."},
                 status=status.HTTP_400_BAD_REQUEST,
             )
+        from .services import ProductService
 
-        from decimal import Decimal
-
-        variants_qs = template.variants.filter(is_active=True)
-        if variant_ids:
-            variants_qs = variants_qs.filter(id__in=variant_ids)
-
-        updated = variants_qs.update(
-            price_inheritance_mode=Product.PriceInheritance.SURCHARGE,
-            price_surcharge=Decimal(str(surcharge)),
+        updated = ProductService.bulk_set_surcharge(
+            template, request.data.get("variant_ids", []), surcharge
         )
         return Response({"updated": updated})
 
@@ -264,31 +248,12 @@ class ProductViewSet(BulkImportMixin, AuditHistory, viewsets.ModelViewSet):
     @action(detail=True, methods=["get"])
     def effective_price(self, request, pk=None):
         product = self.get_object()
-        quantity = Decimal(request.query_params.get("quantity", 1))
+        quantity = request.query_params.get("quantity", 1)
         uom_id = request.query_params.get("uom_id")
-        uom = None
-        if uom_id:
-            try:
-                uom = UoM.objects.get(pk=uom_id)
-            except UoM.DoesNotExist:
-                pass
-
         from .services import PricingService
 
-        price_gross = PricingService.get_product_price(product, quantity, uom=uom)
-        from accounting.utils import get_vat_multiplier
-
-        price_net = (price_gross / get_vat_multiplier()).quantize(
-            Decimal("1"), rounding="ROUND_HALF_UP"
-        )
-
-        return Response(
-            {
-                "price": float(price_net),
-                "price_gross": float(price_gross),
-                "price_net": float(price_net),
-            }
-        )
+        data = PricingService.get_effective_price(product, quantity, uom_id)
+        return Response(data)
 
     @action(detail=False, methods=["post"])
     def check_availability(self, request):
@@ -364,7 +329,15 @@ class UoMCategoryViewSet(viewsets.ModelViewSet, AuditHistory):
 
 
 class StockMoveViewSet(viewsets.ReadOnlyModelViewSet, AuditHistory):
-    queryset = StockMove.objects.all()
+    def get_queryset(self):
+        return StockMove.objects.select_related(
+            "product",
+            "product__uom",
+            "product__category",
+            "uom",
+            "warehouse",
+            "journal_entry",
+        ).all()
     serializer_class = StockMoveSerializer
     pagination_class = StandardResultsSetPagination
     filter_backends = [DjangoFilterBackend]
@@ -372,13 +345,6 @@ class StockMoveViewSet(viewsets.ReadOnlyModelViewSet, AuditHistory):
 
     @action(detail=False, methods=["get"], url_path="stock-level")
     def stock_level(self, request):
-        """
-        Aggregated stock for (product, warehouse) computed at DB level.
-        Replaces the previous client-side pattern of fetching all moves and
-        summing in JS — that pattern silently truncated to one page (≤50
-        rows) once the viewset adopted pagination, producing wrong stock
-        figures for any product with a long move history.
-        """
         from django.db.models import Sum
 
         product_id = request.query_params.get("product_id")
