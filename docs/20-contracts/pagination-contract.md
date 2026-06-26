@@ -74,9 +74,7 @@ class StandardResultsSetPagination(PageNumberPagination):
     max_page_size = 200          # ver §1.4
 ```
 
-Hoy los viewsets de `inventory` y `treasury` la usan vía `pagination_class = StandardResultsSetPagination`. **`DEFAULT_PAGINATION_CLASS` global en `settings.py` NO está activado todavía** — su activación es el último paso del rollout y está bloqueado por la migración pendiente de los hooks listados en §5 (los 5 archivos del refactor en curso del usuario). Activarla antes truncaría silenciosamente esos endpoints.
-
-Patrón objetivo (a aplicar cuando todos los consumidores estén migrados — vía ADR):
+Hoy los viewsets de `inventory` y `treasury` la usan vía `pagination_class = StandardResultsSetPagination`. **`DEFAULT_PAGINATION_CLASS` global en `settings.py` SÍ está activado** desde la auditoría 2026-06-25:
 
 ```python
 # backend/config/settings.py
@@ -86,7 +84,13 @@ REST_FRAMEWORK = {
 }
 ```
 
-Mientras tanto: todo viewset nuevo MUST opt-in explícitamente con `pagination_class = StandardResultsSetPagination`, y todo endpoint listable nuevo MUST cumplir el contrato desde el principio.
+Consecuencias de tener el default activo:
+
+- **Transactional endpoints** (pedidos, facturas, movimientos, etc.): heredan el default automáticamente. Los que ya tenían `pagination_class = StandardResultsSetPagination` explícito no cambian.
+- **Master data endpoints** (categorías, cuentas, almacenes, etc.): **deben** declarar `pagination_class = None` explícitamente para devolver `T[]` plano (§1.5). Ver lista completa en §8.
+- **Nuevos viewsets**: paganizan por defecto — no es posible olvidar la paginación. Si un nuevo endpoint es master data, debe opt-out explícito.
+
+Regla para implementación: todo viewset nuevo que NO sea master data ya cumple automáticamente. Todo viewset de master data debe agregar `pagination_class = None`.
 
 ### 1.4 `max_page_size` (MUST)
 

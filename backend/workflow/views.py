@@ -111,6 +111,7 @@ class TaskAssignmentRuleViewSet(viewsets.ModelViewSet):
 
     queryset = TaskAssignmentRule.objects.all()
     serializer_class = TaskAssignmentRuleSerializer
+    pagination_class = None  # Master data
     permission_classes = [IsAuthenticated]  # Should refine to specific permission later
 
 
@@ -149,4 +150,5 @@ class NotificationRuleViewSet(viewsets.ModelViewSet):
 
     queryset = NotificationRule.objects.all()
     serializer_class = NotificationRuleSerializer
+    pagination_class = None  # Master data
     permission_classes = [IsAuthenticated]  # Should refine to specific permission later

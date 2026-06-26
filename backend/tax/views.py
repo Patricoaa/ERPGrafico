@@ -162,6 +162,7 @@ class F29PaymentViewSet(viewsets.ModelViewSet):
 class AccountingPeriodViewSet(viewsets.ModelViewSet):
     queryset = AccountingPeriod.objects.all()
     serializer_class = AccountingPeriodSerializer
+    pagination_class = None  # Master data
     permission_classes = [IsAuthenticated]
     filterset_fields = ["year", "month", "status"]
     ordering_fields = ["year", "month", "status"]

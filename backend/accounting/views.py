@@ -87,6 +87,7 @@ class AccountingSettingsViewSet(viewsets.ModelViewSet):
 class AccountViewSet(BulkImportMixin, AuditHistory, viewsets.ModelViewSet):
     queryset = Account.objects.all()
     serializer_class = AccountSerializer
+    pagination_class = None  # Master data
 
     def get_queryset(self):
         return list_accounts(params=self.request.query_params)
@@ -301,6 +302,7 @@ class FiscalYearViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         return FiscalYear.objects.select_related("closing_entry", "opening_entry", "closed_by").all()
     serializer_class = FiscalYearSerializer
+    pagination_class = None  # Master data
 
     @action(detail=False, methods=["get"], url_path="(?P<year>[0-9]{4})/preview-closing")
     def preview_closing(self, request, year=None):
