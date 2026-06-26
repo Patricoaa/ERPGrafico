@@ -20,7 +20,24 @@ import {
  * Sale Order Action Registry
  * Defines all available actions for sale orders with permission requirements
  */
-export const saleOrderActions: ActionRegistry<any> = {
+interface ActionDoc {
+    dte_type?: string
+    status?: string
+    number?: string
+    pending_amount?: string | number
+    delivery_status?: string
+    order_delivery_status?: string
+    lines?: Array<Record<string, unknown>>
+    items?: Array<Record<string, unknown>>
+    invoices?: Array<Record<string, unknown>>
+    related_documents?: { invoices?: Array<Record<string, unknown>>; deliveries?: Array<Record<string, unknown>>; payments?: Array<Record<string, unknown>> }
+    work_orders?: Array<Record<string, unknown>>
+    serialized_payments?: Array<Record<string, unknown>>
+    product?: { track_inventory?: boolean }
+    [key: string]: unknown
+}
+
+export const saleOrderActions: ActionRegistry<ActionDoc> = {
     documents: {
         id: 'documents',
         label: 'Documentos',
@@ -38,7 +55,7 @@ export const saleOrderActions: ActionRegistry<any> = {
                         return activeDoc.status === 'DRAFT' || activeDoc.number === 'Draft' || !activeDoc.number
                     }
                     const invoices = activeDoc.related_documents?.invoices || activeDoc.invoices || []
-                    return invoices.some((inv: any) => inv.status === 'DRAFT' || inv.number === 'Draft')
+                    return invoices.some((inv) => inv.status === 'DRAFT' || inv.number === 'Draft')
                 },
                 badge: { type: 'warning', label: 'Pendiente' },
                 excludedStatus: ['CANCELLED']
@@ -57,7 +74,7 @@ export const saleOrderActions: ActionRegistry<any> = {
                 requiredPermissions: ['billing.add_invoice'],
                 checkAvailability: (order) => {
                     const invoices = order.related_documents?.invoices || order.invoices || []
-                    return invoices.length > 0 && invoices.every((inv: any) =>
+                    return invoices.length > 0 && invoices.every((inv: Record<string, unknown>) =>
                         inv.status === 'CANCELLED'
                     )
                 },
@@ -79,7 +96,7 @@ export const saleOrderActions: ActionRegistry<any> = {
                 checkAvailability: (order) => {
                     // Show if there is at least one line with advanced manufacturing pending
                     const lines = order.lines || order.items || []
-                    return lines.some((l: any) =>
+                    return lines.some((l: Record<string, unknown>) =>
                         l.product_type === 'MANUFACTURABLE' &&
                         l.requires_advanced_manufacturing &&
                         !l.work_order_summary
@@ -105,15 +122,15 @@ export const saleOrderActions: ActionRegistry<any> = {
 
                     // Hide for service-only orders — use confirm-service-delivery instead
                     const lines = activeDoc.lines || activeDoc.items || []
-                    const allServices = lines.every((l: any) => l.product_type === 'SERVICE')
+                    const allServices = lines.every((l: Record<string, unknown>) => l.product_type === 'SERVICE')
                     if (allServices) return false
 
                     const isInvoiced = !!activeDoc.dte_type
 
                     if (isInvoiced) {
                         if (activeDoc.dte_type === 'NOTA_DEBITO') {
-                            const totalOrdered = lines.reduce((acc: number, line: any) => acc + (parseFloat(line.quantity) || 0), 0)
-                            const totalDelivered = lines.reduce((acc: number, line: any) => acc + (parseFloat(line.quantity_delivered || 0) || 0), 0)
+                            const totalOrdered = lines.reduce((acc: number, line) => acc + (Number(line.quantity ?? 0) || 0), 0)
+                            const totalDelivered = lines.reduce((acc: number, line) => acc + (Number(line.quantity_delivered ?? 0) || 0), 0)
                             return totalDelivered < totalOrdered
                         }
                         return activeDoc.order_delivery_status !== 'DELIVERED'
@@ -132,15 +149,15 @@ export const saleOrderActions: ActionRegistry<any> = {
                 checkAvailability: (activeDoc) => {
                     if (!activeDoc) return false
                     const lines = activeDoc.lines || activeDoc.items || []
-                    const hasServices = lines.some((l: any) => l.product_type === 'SERVICE')
+                    const hasServices = lines.some((l: Record<string, unknown>) => l.product_type === 'SERVICE')
                     if (!hasServices) return false
 
-                    const hasPending = lines.some((l: any) => {
+                    const hasPending = lines.some((l: Record<string, unknown>) => {
                         if (l.quantity_pending !== undefined) {
-                            return parseFloat(l.quantity_pending) > 0
+                        return Number(l.quantity_pending ?? 0) > 0
                         }
-                        const total = parseFloat(l.quantity) || 0
-                        const delivered = parseFloat(l.quantity_delivered ?? l.delivered_quantity ?? 0)
+                        const total = Number(l.quantity ?? 0) || 0
+                        const delivered = Number(l.quantity_delivered ?? l.delivered_quantity ?? 0) || 0
                         return delivered < total
                     })
 
@@ -161,8 +178,8 @@ export const saleOrderActions: ActionRegistry<any> = {
                         // For Credit Note, "Deolver Mercadería" is a primary action if pending
                         if (activeDoc.dte_type === 'NOTA_CREDITO') {
                             const lines = activeDoc.lines || []
-                            const totalOrdered = lines.reduce((acc: number, line: any) => acc + (parseFloat(line.quantity) || 0), 0)
-                            const totalDelivered = lines.reduce((acc: number, line: any) => acc + (parseFloat(line.quantity_delivered || 0) || 0), 0)
+                            const totalOrdered = lines.reduce((acc: number, line) => acc + (Number(line.quantity ?? 0) || 0), 0)
+                            const totalDelivered = lines.reduce((acc: number, line) => acc + (Number(line.quantity_delivered ?? 0) || 0), 0)
                             return totalDelivered < totalOrdered
                         }
                         return false
@@ -170,13 +187,13 @@ export const saleOrderActions: ActionRegistry<any> = {
 
                     // Only if invoice is DRAFT
                     const hasDraftInvoice = activeDoc.related_documents?.invoices?.some(
-                        (inv: any) => inv.status === 'DRAFT'
-                    )
+                        (inv: Record<string, unknown>) => inv.status === 'DRAFT'
+                    ) ?? false
 
                     // Only if has delivered stockable products
                     const lines = activeDoc.lines || activeDoc.items || []
-                    const hasStockableDelivered = lines.some((line: any) =>
-                        (line.quantity_delivered || 0) > 0 && line.product?.track_inventory
+                    const hasStockableDelivered = lines.some((line: Record<string, unknown>) =>
+                        (Number(line.quantity_delivered ?? 0) || 0) > 0 && (line.product as Record<string, unknown> | undefined)?.track_inventory
                     )
 
                     return hasDraftInvoice && hasStockableDelivered
@@ -211,13 +228,13 @@ export const saleOrderActions: ActionRegistry<any> = {
 
                     if (isInvoiced) {
                         // Allow registration for any posted document with pending balance
-                        const hasPendingAmount = (parseFloat(activeDoc.pending_amount || "0") ?? 0) > 0
+                        const hasPendingAmount = (Number(activeDoc.pending_amount ?? 0) || 0) > 0
                         // For ND, also allow in DRAFT if it corrections/additions are being paid early
                         return hasPendingAmount && activeDoc.status !== 'CANCELLED' && activeDoc.dte_type !== 'NOTA_CREDITO'
                     }
 
                     // Show if there's a pending amount
-                    const hasPendingAmount = (parseFloat(activeDoc.pending_amount || "0") || 0) > 0
+                    const hasPendingAmount = (Number(activeDoc.pending_amount ?? 0) || 0) > 0
                     return hasPendingAmount && activeDoc.status !== 'CANCELLED'
                 },
                 badge: { type: 'pending' },
@@ -235,7 +252,7 @@ export const saleOrderActions: ActionRegistry<any> = {
                     if (isInvoiced) {
                         // For Credit Note, this IS the primary treasury action
                         if (activeDoc.dte_type === 'NOTA_CREDITO') {
-                            const hasPendingAmount = (parseFloat(activeDoc.pending_amount || "0") ?? 0) > 0
+                            const hasPendingAmount = (Number(activeDoc.pending_amount ?? 0) || 0) > 0
                             return hasPendingAmount && activeDoc.status !== 'CANCELLED'
                         }
                         return false
@@ -243,13 +260,13 @@ export const saleOrderActions: ActionRegistry<any> = {
 
                     // Only if invoice is DRAFT
                     const hasDraftInvoice = activeDoc.related_documents?.invoices?.some(
-                        (inv: any) => inv.status === 'DRAFT'
-                    )
+                        (inv: Record<string, unknown>) => inv.status === 'DRAFT'
+                    ) ?? false
 
                     // Only if has posted payments
                     const payments = activeDoc.related_documents?.payments || []
                     const hasPostedPayments = payments.some(
-                        (pay: any) => pay.journal_entry?.state === 'POSTED'
+                        (pay: Record<string, unknown>) => (pay.journal_entry as Record<string, unknown> | undefined)?.state === 'POSTED'
                     )
 
                     return hasDraftInvoice && hasPostedPayments
@@ -286,12 +303,12 @@ export const saleOrderActions: ActionRegistry<any> = {
                     // Show if there is any DTE associated with the order
                     const invoices = order.related_documents?.invoices || order.invoices || []
                     const validDTEs = ['FACTURA', 'FACTURA_EXENTA', 'BOLETA', 'BOLETA_EXENTA']
-                    return invoices.some((inv: any) => validDTEs.includes(inv.dte_type))
+                    return invoices.some((inv: Record<string, unknown>) => validDTEs.includes(inv.dte_type as string))
                 },
                 isDisabled: (order) => {
                     const invoices = order.related_documents?.invoices || order.invoices || []
 
-                    const hasIssuedDTEWithFolio = invoices.some((inv: any) =>
+                    const hasIssuedDTEWithFolio = invoices.some((inv: Record<string, unknown>) =>
                         inv.status !== 'DRAFT' &&
                         inv.number &&
                         inv.number !== 'Draft'
@@ -317,12 +334,12 @@ export const saleOrderActions: ActionRegistry<any> = {
                     // Show if there is any DTE associated with the order
                     const invoices = order.related_documents?.invoices || order.invoices || []
                     const validDTEs = ['FACTURA', 'FACTURA_EXENTA', 'BOLETA', 'BOLETA_EXENTA']
-                    return invoices.some((inv: any) => validDTEs.includes(inv.dte_type))
+                    return invoices.some((inv: Record<string, unknown>) => validDTEs.includes(inv.dte_type as string))
                 },
                 isDisabled: (order) => {
                     const invoices = order.related_documents?.invoices || order.invoices || []
 
-                    const hasIssuedDTEWithFolio = invoices.some((inv: any) =>
+                    const hasIssuedDTEWithFolio = invoices.some((inv: Record<string, unknown>) =>
                         inv.status !== 'DRAFT' &&
                         inv.number &&
                         inv.number !== 'Draft'
@@ -353,13 +370,13 @@ export const saleOrderActions: ActionRegistry<any> = {
                 checkAvailability: (order) => {
                     // Only if invoice is DRAFT
                     const hasDraftInvoice = order.related_documents?.invoices?.some(
-                        (inv: any) => inv.status === 'DRAFT'
-                    )
+                        (inv: Record<string, unknown>) => inv.status === 'DRAFT'
+                    ) ?? false
 
                     // Only if has delivered stockable products
-                    const hasStockableDelivered = order.lines?.some((line: any) =>
-                        (line.quantity_delivered || 0) > 0 && line.product?.track_inventory
-                    )
+                    const hasStockableDelivered = order.lines?.some((line: Record<string, unknown>) =>
+                        (Number(line.quantity_delivered ?? 0) || 0) > 0 && (line.product as Record<string, unknown> | undefined)?.track_inventory
+                    ) ?? false
 
                     return hasDraftInvoice && hasStockableDelivered
                 },
@@ -370,16 +387,16 @@ export const saleOrderActions: ActionRegistry<any> = {
                 label: 'Devolver Pago',
                 icon: DollarSign,
                 requiredPermissions: ['treasury.add_treasurymovement'],
-                checkAvailability: (order) => {
+                 checkAvailability: (order) => {
                     // Only if invoice is DRAFT
                     const hasDraftInvoice = order.related_documents?.invoices?.some(
-                        (inv: any) => inv.status === 'DRAFT'
-                    )
+                        (inv: Record<string, unknown>) => inv.status === 'DRAFT'
+                    ) ?? false
 
                     // Only if has posted payments
                     const hasPostedPayments = order.related_documents?.payments?.some(
-                        (pay: any) => pay.journal_entry?.state === 'POSTED'
-                    )
+                        (pay: Record<string, unknown>) => (pay.journal_entry as Record<string, unknown> | undefined)?.state === 'POSTED'
+                    ) ?? false
 
                     return hasDraftInvoice && hasPostedPayments
                 },
