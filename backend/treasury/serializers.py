@@ -402,12 +402,39 @@ class TreasuryMovementSerializer(serializers.ModelSerializer):
         return None
 
     def get_partner_name(self, obj):
-        from .selectors import TreasuryMovementSelector
-        return TreasuryMovementSelector.get_partner_name(obj)
+        if obj.terminal_batch:
+            contact_prefix = obj.contact.name if obj.contact else "Liquidación"
+            return f"{contact_prefix} (Lote: {obj.terminal_batch.display_id})"
+        if obj.contact:
+            return obj.contact.name
+        if obj.invoice:
+            if obj.invoice.contact:
+                return obj.invoice.contact.name
+            if obj.invoice.sale_order and obj.invoice.sale_order.customer:
+                return obj.invoice.sale_order.customer.name
+            if obj.invoice.purchase_order and obj.invoice.purchase_order.supplier:
+                return obj.invoice.purchase_order.supplier.name
+        if obj.sale_order and obj.sale_order.customer:
+            return obj.sale_order.customer.name
+        if obj.purchase_order and obj.purchase_order.supplier:
+            return obj.purchase_order.supplier.name
+        return "Particular"
 
     def get_partner_id(self, obj):
-        from .selectors import TreasuryMovementSelector
-        return TreasuryMovementSelector.get_partner_id(obj)
+        if obj.contact:
+            return obj.contact.id
+        if obj.invoice:
+            if obj.invoice.contact:
+                return obj.invoice.contact.id
+            if obj.invoice.sale_order and obj.invoice.sale_order.customer:
+                return obj.invoice.sale_order.customer.id
+            if obj.invoice.purchase_order and obj.invoice.purchase_order.supplier:
+                return obj.invoice.purchase_order.supplier.id
+        if obj.sale_order and obj.sale_order.customer:
+            return obj.sale_order.customer.id
+        if obj.purchase_order and obj.purchase_order.supplier:
+            return obj.purchase_order.supplier.id
+        return None
 
     def get_journal_entry(self, obj):
         if obj.journal_entry:
