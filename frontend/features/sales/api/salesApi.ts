@@ -97,15 +97,22 @@ export const salesApi = {
     /**
      * Fetch sales notes (credit/debit notes associated with orders)
      */
-    getSalesNotes: async (filters?: SaleNoteFilters): Promise<SaleNote[]> => {
-        const { data } = await api.get<Invoice[]>('/billing/invoices/', {
-            params: {
-                dte_type__in: 'NOTA_CREDITO,NOTA_DEBITO',
-                sale_order__isnull: false,
-                ...filters
-            }
-        })
+    getSalesNotes: async (filters?: SaleNoteFilters): Promise<Page<SaleNote>> => {
+        const params = new URLSearchParams()
+        if (filters?.page) params.append('page', String(filters.page))
+        if (filters?.page_size) params.append('page_size', String(filters.page_size))
+        if (filters?.customer_name) params.append('customer_name', filters.customer_name)
+        if (filters?.date_after) params.append('date_after', filters.date_after)
+        if (filters?.date_before) params.append('date_before', filters.date_before)
+        if (filters?.total_min) params.append('total_min', filters.total_min)
+        if (filters?.total_max) params.append('total_max', filters.total_max)
+        if (filters?.number) params.append('number', filters.number)
+        if (filters?.status) params.append('status', filters.status)
+        params.append('dte_type__in', 'NOTA_CREDITO,NOTA_DEBITO')
+        params.append('sale_order__isnull', 'false')
 
-        return data
+        const { data } = await api.get<{ results: Invoice[] }>('/billing/invoices/', { params })
+
+        return toPage<SaleNote>(data, filters?.page ?? 1, filters?.page_size ?? 50)
     }
 }
