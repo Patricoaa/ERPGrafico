@@ -60,6 +60,7 @@ export function SalesOrdersView({ viewMode, posSessionId, onActionSuccess, hideS
     const isFiltered = isTextFiltered || isSegFiltered
 
     const [pageState, setPageState] = useState({ pageIndex: 0, pageSize: 20 })
+    const [pageStateNotes, setPageStateNotes] = useState({ pageIndex: 0, pageSize: 20 })
 
     const { page, orders, isLoading: isLoadingOrders, isRefetching, refetch: refetchOrders } = useSalesOrders({
         filters: {
@@ -70,25 +71,20 @@ export function SalesOrdersView({ viewMode, posSessionId, onActionSuccess, hideS
             page_size: pageState.pageSize,
         },
     })
-    // TODO: migrate sales notes to Page<T>
-    const { notes, isLoading: isLoadingNotes, refetch: refetchNotes } = useSalesNotes({
+    const { page: pageNotes, notes, isLoading: isLoadingNotes, isRefetching: isRefetchingNotes, refetch: refetchNotes } = useSalesNotes({
         filters: {
             ...(textFilters as Record<string, string>),
             ...(segFilters as Record<string, string>),
+            page: pageStateNotes.pageIndex + 1,
+            page_size: pageStateNotes.pageSize,
         }
     })
 
     const handleActionSuccess = () => {
-        // Refetch both to ensure cards background update
         refetchOrders()
         refetchNotes()
-        // Call the parent success (e.g. closing modal or custom logic)
         if (onActionSuccess) onActionSuccess()
     }
-
-    const filteredNotes = (notes || []).filter(note =>
-        ['NOTA_CREDITO', 'NOTA_DEBITO'].includes(note.dte_type) && !!note.sale_order
-    )
 
     const columns: ColumnDef<SaleOrder>[] = [
         {
@@ -222,16 +218,19 @@ export function SalesOrdersView({ viewMode, posSessionId, onActionSuccess, hideS
                 <DataTableView
                     entityLabel={entityLabel}
                     columns={(viewMode === 'orders' ? columns : noteColumns) as any}
-                    data={(viewMode === 'orders' ? orders : filteredNotes) as any}
+                    data={(viewMode === 'orders' ? orders : notes) as any}
                     onRowClick={(row: any) => toggleSelection(row.id)}
                     variant="embedded"
                     isLoading={viewMode === 'orders' ? isLoadingOrders : isLoadingNotes}
-                    isRefetching={viewMode === 'orders' ? isRefetching : undefined}
-                    manualPagination={viewMode === 'orders'}
-                    pageCount={viewMode === 'orders' ? (page ? Math.ceil(page.count / page.pageSize) : 0) : undefined}
-                    rowCount={viewMode === 'orders' ? (page?.count ?? 0) : undefined}
-                    pagination={viewMode === 'orders' ? pageState : undefined}
-                    onPaginationChange={viewMode === 'orders' ? setPageState as any : undefined}
+                    isRefetching={viewMode === 'orders' ? isRefetching : isRefetchingNotes}
+                    manualPagination
+                    pageCount={viewMode === 'orders'
+                        ? (page ? Math.ceil(page.count / page.pageSize) : 0)
+                        : (pageNotes ? Math.ceil(pageNotes.count / pageNotes.pageSize) : 0)
+                    }
+                    rowCount={viewMode === 'orders' ? (page?.count ?? 0) : (pageNotes?.count ?? 0)}
+                    pagination={viewMode === 'orders' ? pageState : pageStateNotes}
+                    onPaginationChange={(viewMode === 'orders' ? setPageState : setPageStateNotes) as any}
                     smartSearch={viewMode === 'orders'
                         ? <SmartSearchBar searchDef={salesOrderSearchDef} placeholder="Buscar órdenes..." />
                         : <SmartSearchBar searchDef={salesNoteSearchDef} placeholder="Buscar notas..." />

@@ -123,6 +123,8 @@ export function useSalesOrders({ filters, initialData }: { filters?: SaleOrderFi
 }
 
 export interface SaleNoteFilters {
+    page?: number
+    page_size?: number
     date_after?: string
     date_before?: string
     customer_name?: string
@@ -133,12 +135,26 @@ export interface SaleNoteFilters {
 }
 
 export function useSalesNotes({ filters }: { filters?: SaleNoteFilters } = {}) {
-    const { data, isLoading, refetch } = useQuery({
-        queryKey: SALES_KEYS.notes(filters || {}),
-        queryFn: () => salesApi.getSalesNotes(filters),
+    const { page = 1, page_size = 50, ...restFilters } = filters || {}
+    const activeFilters = { page, page_size, ...restFilters }
+
+    const query = useQuery({
+        queryKey: SALES_KEYS.notes(activeFilters),
+        queryFn: () => salesApi.getSalesNotes(activeFilters),
+        placeholderData: (prev) => prev,
     })
 
-    return { notes: data ?? [], isLoading, refetch }
+    const notes = query.data?.results ?? []
+    const showSkeleton = query.isLoading && !notes.length
+    const isRefetching = query.isFetching && !showSkeleton
+
+    return {
+        page: query.data,
+        notes,
+        isLoading: showSkeleton,
+        isRefetching,
+        refetch: query.refetch,
+    }
 }
 
 /**
