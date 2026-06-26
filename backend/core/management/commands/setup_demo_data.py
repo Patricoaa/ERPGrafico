@@ -22,7 +22,8 @@ from accounting.models import (
 )
 from accounting.services import AccountingService
 from accounting.utils import get_default_vat_rate
-from billing.models import Invoice, NoteWorkflow
+from billing.models import Invoice
+from billing.note_workflow import NoteWorkflow
 from contacts.models import Contact
 from contacts.partner_models import PartnerEquityStake, PartnerTransaction
 from core.models import Attachment, CompanySettings, GlobalSearchIndex, IdempotencyRecord, User
