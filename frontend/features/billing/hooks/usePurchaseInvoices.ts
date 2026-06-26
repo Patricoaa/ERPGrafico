@@ -3,6 +3,7 @@ import { billingApi } from '../api/billingApi'
 import { toast } from 'sonner'
 import type { Invoice, InvoiceFilters } from '../types'
 import { PURCHASING_KEYS } from '@/features/purchasing'
+import { useRealtime } from '@/features/realtime'
 
 import { PURCHASE_INVOICES_QUERY_KEY } from './queryKeys'
 
@@ -15,6 +16,7 @@ interface UsePurchaseInvoicesProps {
 
 export function usePurchaseInvoices({ filters, initialData }: UsePurchaseInvoicesProps = {}) {
     const queryClient = useQueryClient()
+    const { markLocalMutation } = useRealtime()
 
     const query = useQuery({
         queryKey: [...PURCHASE_INVOICES_QUERY_KEY, filters],
@@ -39,6 +41,7 @@ export function usePurchaseInvoices({ filters, initialData }: UsePurchaseInvoice
             return billingApi.annulInvoice(id, { force, reason })
         },
         onSuccess: () => {
+            markLocalMutation()
             toast.success('Documento anulado correctamente')
             invalidate()
         },
@@ -51,6 +54,7 @@ export function usePurchaseInvoices({ filters, initialData }: UsePurchaseInvoice
         mutationFn: async ({ id, reason }: { id: number, reason?: string }) =>
             billingApi.cancelInvoice(id, reason ?? ''),
         onSuccess: () => {
+            markLocalMutation()
             toast.success('Documento cancelado correctamente')
             invalidate()
         },
@@ -60,6 +64,7 @@ export function usePurchaseInvoices({ filters, initialData }: UsePurchaseInvoice
         mutationFn: async ({ id, payload }: { id: number; payload: FormData | Record<string, unknown> }) =>
             billingApi.confirmInvoice(id, payload),
         onSuccess: () => {
+            markLocalMutation()
             invalidate()
         },
     })
@@ -67,6 +72,7 @@ export function usePurchaseInvoices({ filters, initialData }: UsePurchaseInvoice
     const payMutation = useMutation({
         mutationFn: async (formData: FormData) => billingApi.createPayment(formData),
         onSuccess: () => {
+            markLocalMutation()
             toast.success('Operación registrada correctamente')
             invalidate()
         },

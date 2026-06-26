@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import type { FilterState } from '@/components/shared'
 import type { Invoice } from '@/features/billing/types'
+import { useRealtime } from '@/features/realtime'
 
 import { purchasingApi } from '../api/purchasingApi'
 import type { PurchaseOrderAPI } from '../types'
@@ -11,6 +12,7 @@ export { PURCHASING_KEYS }
 
 export function usePurchasingOrders(filters?: FilterState & { page?: number, page_size?: number }, initialData?: any) {
     const queryClient = useQueryClient()
+    const { markLocalMutation } = useRealtime()
 
     const { page = 1, page_size = 50, ...restFilters } = filters || {}
     const activeFilters = { page, page_size, ...restFilters }
@@ -31,6 +33,7 @@ export function usePurchasingOrders(filters?: FilterState & { page?: number, pag
     const deleteMutation = useMutation({
         mutationFn: (id: number) => purchasingApi.deleteOrder(id),
         onSuccess: () => {
+            markLocalMutation()
             queryClient.invalidateQueries({ queryKey: PURCHASING_KEYS.lists() })
             toast.success('Orden de Compra eliminada')
         },
