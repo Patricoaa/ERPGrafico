@@ -56,7 +56,7 @@ export function ProductClientView({ externalOpen, onExternalOpenChange, createAc
     const { categories: categoryOptions } = useCategories()
     const categoryIconMap = useMemo(() => {
         const map = new Map<number, string | undefined>()
-        for (const cat of categoryOptions) map.set(cat.id, cat.icon)
+        for (const cat of (categoryOptions ?? [])) map.set(cat.id, cat.icon)
         return map
     }, [categoryOptions])
     const { filters: textFilters, isFiltered: isTextFiltered, clearAll: clearText } = useSmartSearch(productSearchDef)

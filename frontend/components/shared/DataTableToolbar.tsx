@@ -186,7 +186,7 @@ export function DataTableToolbar<TData>(props: DataTableToolbarProps<TData>) {
                             </DropdownMenu>
                         )}
 
-                        {createAction}
+                        {createAction && <React.Fragment key="toolbar-create">{createAction}</React.Fragment>}
                     </div>
                 </div>
 
