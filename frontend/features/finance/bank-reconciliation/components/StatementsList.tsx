@@ -217,31 +217,6 @@ export function StatementsList({ externalOpen = false, createAction, bankId, acc
         statementActions.column(actionsCtx)
     ]
 
-    const accountFilter = accounts !== undefined ? (
-        accounts.length > 0 ? (
-            <Select
-                value={selectedAccountId?.toString() || 'all'}
-                onValueChange={(v) => setSelectedAccountId(v === 'all' ? null : Number(v))}
-            >
-                <SelectTrigger className="h-7 w-[180px] shrink-0 text-[10px] font-black uppercase tracking-widest">
-                    <SelectValue placeholder="Todas las cuentas" />
-                </SelectTrigger>
-                <SelectContent>
-                    <SelectItem value="all" className="text-[10px] font-bold uppercase">Todas las cuentas</SelectItem>
-                    {accounts.map(acc => (
-                        <SelectItem key={acc.id} value={acc.id.toString()} className="text-[10px] font-bold uppercase">
-                            {acc.name}
-                        </SelectItem>
-                    ))}
-                </SelectContent>
-            </Select>
-        ) : (
-            <div className="h-7 flex items-center px-3 rounded-md border border-border/50 bg-muted/20 shrink-0 gap-2">
-                <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/50">Sin cuentas bancarias</span>
-            </div>
-        )
-    ) : null
-
     const internalImportButton = accounts !== undefined ? (
         <Button
             className="h-9 px-4 rounded-md text-[10px] font-black uppercase tracking-widest shadow-card bg-primary text-primary-foreground hover:bg-primary/90"
@@ -262,9 +237,43 @@ export function StatementsList({ externalOpen = false, createAction, bankId, acc
                     variant="embedded"
                     isLoading={isLoading}
                     isFiltered={isFiltered}
-                    customFilters={accountFilter}
-                    smartSearch={<SmartSearchBar searchDef={statementsSearchDef} placeholder="Buscar por ID o cuenta..." className="flex-1" />}
-                    segmentation={<SegmentationBar def={statementsSegDef} />}
+                    segmentation={
+                        <SegmentationBar def={{
+                            ...statementsSegDef,
+                            segments: [
+                                ...statementsSegDef.segments,
+                                {
+                                    key: 'account',
+                                    label: 'Cuenta',
+                                    type: 'custom',
+                                    render: () => accounts !== undefined ? (
+                                        accounts.length > 0 ? (
+                                            <Select
+                                                value={selectedAccountId?.toString() || 'all'}
+                                                onValueChange={(v) => setSelectedAccountId(v === 'all' ? null : Number(v))}
+                                            >
+                                                <SelectTrigger className="h-7 w-[180px] shrink-0 text-[10px] font-black uppercase tracking-widest">
+                                                    <SelectValue placeholder="Todas las cuentas" />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    <SelectItem value="all" className="text-[10px] font-bold uppercase">Todas las cuentas</SelectItem>
+                                                    {accounts.map(acc => (
+                                                        <SelectItem key={acc.id} value={acc.id.toString()} className="text-[10px] font-bold uppercase">
+                                                            {acc.name}
+                                                        </SelectItem>
+                                                    ))}
+                                                </SelectContent>
+                                            </Select>
+                                        ) : (
+                                            <div className="h-7 flex items-center px-3 rounded-md border border-border/50 bg-muted/20 shrink-0 gap-2">
+                                                <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/50">Sin cuentas bancarias</span>
+                                            </div>
+                                        )
+                                    ) : null,
+                                },
+                            ],
+                        }} />
+                    }
                     createAction={internalImportButton ?? createAction}
                     defaultPageSize={10}
                     renderCard={(stmt: BankStatement) => (

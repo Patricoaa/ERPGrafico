@@ -492,13 +492,20 @@ export function ProductClientView({ externalOpen, onExternalOpenChange, createAc
                     pagination={pageState}
                     onPaginationChange={setPageState as any}
                     smartSearch={<SmartSearchBar searchDef={productSearchDef} placeholder="Buscar producto..." className="w-full" />}
-                    segmentation={<SegmentationBar def={productSegDef} />}
-                    customFilters={
-                        <CategoryFilter
-                            categories={categoryOptions}
-                            value={categoryValue}
-                            onChange={setCategoryValue}
-                        />
+                    segmentation={
+                        <SegmentationBar def={{
+                            ...productSegDef,
+                            segments: [
+                                ...productSegDef.segments,
+                                { key: 'category', label: 'Categoría', type: 'custom', render: () => (
+                                    <CategoryFilter
+                                        categories={categoryOptions}
+                                        value={categoryValue}
+                                        onChange={setCategoryValue}
+                                    />
+                                )},
+                            ],
+                        }} />
                     }
                     showReset={isFiltered}
                     onReset={() => { clearText(); clearSeg(); setCategoryValue(null) }}

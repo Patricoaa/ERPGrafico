@@ -5,6 +5,7 @@ import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
 import { Calendar as CalendarIcon, X, ChevronDown, Check } from 'lucide-react'
 import type { DateRange } from 'react-day-picker'
+import type { Table } from '@tanstack/react-table'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -18,18 +19,22 @@ import {
   DropdownMenuRadioGroup,
   DropdownMenuRadioItem,
 } from '@/components/ui/dropdown-menu'
-import type { SegmentationDefinition, TabSegmentDef, DateSegmentDef, PeriodSegmentDef, RangeSegmentDef, MultiSelectSegmentDef, SegmentDef } from '@/types/segmentation'
+import type { SegmentationDefinition, TabSegmentDef, DateSegmentDef, PeriodSegmentDef, RangeSegmentDef, MultiSelectSegmentDef, CustomSegmentDef, SegmentDef } from '@/types/segmentation'
 import { useSegmentation } from './useSegmentation'
+import { useSegmentationTable } from './context'
 
-interface SegmentationBarProps {
+interface SegmentationBarProps<TData> {
   def: SegmentationDefinition
   basePeriod?: {
     serverParamFrom: string
     serverParamTo: string
   }
+  table?: Table<TData>
 }
 
-export function SegmentationBar({ def, basePeriod }: SegmentationBarProps) {
+export function SegmentationBar<TData>({ def, basePeriod, table: explicitTable }: SegmentationBarProps<TData>) {
+  const contextTable = useSegmentationTable<TData>()
+  const table = explicitTable ?? contextTable ?? undefined
   const effectiveDef = useMemo(() => {
     if (!basePeriod) return def
     return {
@@ -62,6 +67,7 @@ export function SegmentationBar({ def, basePeriod }: SegmentationBarProps) {
             filters={filters}
             apply={apply}
             remove={remove}
+            table={table}
           />
         </div>
       ))}
@@ -71,14 +77,15 @@ export function SegmentationBar({ def, basePeriod }: SegmentationBarProps) {
 
 /* ─── SegmentItem ─── */
 
-interface SegmentItemProps {
+interface SegmentItemProps<TData> {
   segment: SegmentDef
   filters: Record<string, string>
   apply: (param: string, value: string) => Promise<void>
   remove: (param: string) => Promise<void>
+  table?: Table<TData>
 }
 
-function SegmentItem({ segment, filters, apply, remove }: SegmentItemProps) {
+function SegmentItem<TData>({ segment, filters, apply, remove, table }: SegmentItemProps<TData>) {
   if (segment.type === 'period') {
     return <PeriodSegment def={segment} filters={filters} apply={apply} remove={remove} />
   }
@@ -93,7 +100,13 @@ function SegmentItem({ segment, filters, apply, remove }: SegmentItemProps) {
     return <TabsSegment def={segment} filters={filters} apply={apply} remove={remove} />
   }
   if (segment.type === 'multiselect') {
+    if (segment.dynamic && table && segment.columnId) {
+      return <DynamicMultiSelectSegment def={segment} filters={filters} apply={apply} remove={remove} table={table} />
+    }
     return <MultiSelectSegment def={segment} filters={filters} apply={apply} remove={remove} />
+  }
+  if (segment.type === 'custom') {
+    return <CustomSegment def={segment} apply={apply} remove={remove} filters={filters} />
   }
   return <DateSegment def={segment} filters={filters} apply={apply} remove={remove} />
 }
@@ -189,15 +202,19 @@ function DropdownSegment({ def, filters, apply, remove }: DropdownSegmentProps) 
           <DropdownMenuRadioItem value="" className="text-[9px] uppercase font-black tracking-widest">
             Todos
           </DropdownMenuRadioItem>
-          {def.options.map((opt) => (
-            <DropdownMenuRadioItem
-              key={opt.value}
-              value={opt.value}
-              className="text-[9px] uppercase font-black tracking-widest"
-            >
-              {opt.label}
-            </DropdownMenuRadioItem>
-          ))}
+          {def.options.map((opt) => {
+            const Icon = opt.icon
+            return (
+              <DropdownMenuRadioItem
+                key={opt.value}
+                value={opt.value}
+                className="text-[9px] uppercase font-black tracking-widest"
+              >
+                {Icon && <Icon className="mr-2 h-3.5 w-3.5 opacity-70 shrink-0" />}
+                {opt.label}
+              </DropdownMenuRadioItem>
+            )
+          })}
         </DropdownMenuRadioGroup>
       </DropdownMenuContent>
     </DropdownMenu>
@@ -660,6 +677,7 @@ function MultiSelectSegment({ def, filters, apply, remove }: MultiSelectSegmentP
         <div className="flex flex-col">
           {def.options.map((opt) => {
             const isSelected = selectedValues.includes(opt.value)
+            const Icon = opt.icon
             return (
               <div
                 key={opt.value}
@@ -677,6 +695,7 @@ function MultiSelectSegment({ def, filters, apply, remove }: MultiSelectSegmentP
                 )}>
                   {isSelected && <Check className="h-2.5 w-2.5" />}
                 </div>
+                {Icon && <Icon className="mr-2 h-3.5 w-3.5 opacity-70 shrink-0" />}
                 <span className="flex-1">{opt.label}</span>
               </div>
             )
@@ -694,6 +713,147 @@ function MultiSelectSegment({ def, filters, apply, remove }: MultiSelectSegmentP
       </PopoverContent>
     </Popover>
   )
+}
+
+/* ─── DynamicMultiSelectSegment ─── */
+
+interface DynamicMultiSelectSegmentProps<TData> {
+  def: MultiSelectSegmentDef
+  filters: Record<string, string>
+  apply: (param: string, value: string) => Promise<void>
+  remove: (param: string) => Promise<void>
+  table: Table<TData>
+}
+
+function DynamicMultiSelectSegment<TData>({ def, filters, apply, remove, table }: DynamicMultiSelectSegmentProps<TData>) {
+  const [open, setOpen] = useState(false)
+
+  const column = table.getColumn(def.columnId!)
+
+  const dynamicOptions = useMemo(() => {
+    if (!column) return def.options ?? []
+    const uniqueValues = column.getFacetedUniqueValues()
+    return Array.from(uniqueValues.keys())
+      .filter(val => val !== undefined && val !== null && val !== '')
+      .map(val => ({
+        label: String(val),
+        value: String(val),
+        icon: undefined as React.ComponentType<{ className?: string }> | undefined,
+      }))
+      .sort((a, b) => a.label.localeCompare(b.label))
+  }, [column, def.options])
+
+  const options = dynamicOptions.length > 0 ? dynamicOptions : (def.options ?? [])
+
+  const rawValue = filters[def.serverParam] ?? ''
+  const selectedValues = rawValue ? rawValue.split(',').filter(Boolean) : []
+
+  const currentLabel = selectedValues.length > 0
+    ? selectedValues.map(v => options.find(o => o.value === v)?.label).filter(Boolean).join(', ')
+    : null
+
+  const syncColumn = useCallback((values: string[]) => {
+    if (column) {
+      column.setFilterValue(values.length > 0 ? values : undefined)
+    }
+  }, [column])
+
+  const toggleOption = useCallback(async (optionValue: string) => {
+    const next = selectedValues.includes(optionValue)
+      ? selectedValues.filter(v => v !== optionValue)
+      : [...selectedValues, optionValue]
+    syncColumn(next)
+    if (next.length === 0) {
+      await remove(def.serverParam)
+    } else {
+      await apply(def.serverParam, next.join(','))
+    }
+  }, [selectedValues, syncColumn, def.serverParam, apply, remove])
+
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <Button
+          variant="ghost"
+          size="sm"
+          className={cn(
+            'h-7 px-2 text-[9px] uppercase font-black tracking-widest gap-1 rounded-sm shrink-0',
+            selectedValues.length > 0
+              ? 'bg-accent/50 text-foreground'
+              : 'text-muted-foreground hover:text-foreground',
+          )}
+        >
+          <span className="truncate max-w-[120px]">{currentLabel ?? def.label}</span>
+          <ChevronDown className="h-3 w-3 shrink-0" />
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent align="start" className="w-[200px] p-1" sideOffset={4}>
+        <div className="flex flex-col">
+          {options.map((opt) => {
+            const isSelected = selectedValues.includes(opt.value)
+            const Icon = opt.icon
+            return (
+              <div
+                key={opt.value}
+                role="option"
+                aria-selected={isSelected}
+                className={cn(
+                  'relative flex cursor-pointer select-none items-center rounded-sm px-2 py-1.5 text-[9px] uppercase font-black tracking-tight outline-none hover:bg-accent hover:text-accent-foreground transition-colors',
+                  isSelected ? 'bg-primary/5 text-primary' : 'text-muted-foreground',
+                )}
+                onClick={() => toggleOption(opt.value)}
+              >
+                <div className={cn(
+                  'mr-2 flex h-3.5 w-3.5 items-center justify-center rounded-sm border transition-all',
+                  isSelected ? 'bg-primary text-primary-foreground border-primary' : 'bg-background border-border',
+                )}>
+                  {isSelected && <Check className="h-2.5 w-2.5" />}
+                </div>
+                {Icon && <Icon className="mr-2 h-3.5 w-3.5 opacity-70 shrink-0" />}
+                <span className="flex-1">{opt.label}</span>
+              </div>
+            )
+          })}
+        </div>
+        {selectedValues.length > 0 && (
+          <div
+            role="button"
+            className="w-full flex items-center justify-center text-[9px] font-black uppercase tracking-[0.1em] h-7 mt-1 hover:bg-destructive/10 hover:text-destructive transition-colors rounded-sm text-muted-foreground/60 cursor-pointer"
+            onClick={async () => { syncColumn([]); await remove(def.serverParam); setOpen(false) }}
+          >
+            Limpiar
+          </div>
+        )}
+      </PopoverContent>
+    </Popover>
+  )
+}
+
+/* ─── CustomSegment ─── */
+
+interface CustomSegmentProps {
+  def: CustomSegmentDef
+  apply: (param: string, value: string) => Promise<void>
+  remove: (param: string) => Promise<void>
+  filters: Record<string, string>
+}
+
+function CustomSegment({ def, apply, remove, filters }: CustomSegmentProps) {
+  const isActive = def.serverParam ? !!filters[def.serverParam] : false
+
+  const wrappedApply = useCallback(async (value: string) => {
+    if (def.serverParam) {
+      await apply(def.serverParam, value)
+    }
+  }, [def.serverParam, apply])
+
+  const wrappedRemove = useCallback(async () => {
+    if (def.serverParam) {
+      await remove(def.serverParam)
+    }
+  }, [def.serverParam, remove])
+
+  return <>{def.render({ apply: wrappedApply, remove: wrappedRemove, isActive })}</>
 }
 
 /* ─── DateSegment ─── */

@@ -11,7 +11,7 @@ import {
     Calendar, Banknote, TrendingUp, TrendingDown,
     Info, AlertCircle, ExternalLink, Activity
 } from "lucide-react"
-import { ActionConfirmModal, DataTable, DataTableColumnHeader, DataCell, SkeletonShell } from '@/components/shared'
+import { ActionConfirmModal, DataTable, DataTableColumnHeader, DataCell, SkeletonShell, SegmentationBar } from '@/components/shared'
 import { statementLineUnmatchActions, BankPageHeader, type StatementLineUnmatchActionsCtx } from "@/features/treasury"
 import { format } from "date-fns"
 import { es } from "date-fns/locale"
@@ -325,19 +325,19 @@ export default function BankStatementDetailPage({
                     columns={columns}
                     data={statement.lines}
                     variant="embedded"
-                    facetedFilters={[
-                        {
-                            column: "reconciliation_state",
-                            title: "Estado Reconciliación",
-                            options: [
-                                { label: "Sin Conciliar", value: "UNRECONCILED" },
-                                { label: "Conciliado", value: "RECONCILED" },
-                                { label: "Sugerencia (Match)", value: "MATCHED" },
-                                { label: "Excluido", value: "EXCLUDED" },
-                                { label: "En Disputa", value: "DISPUTED" },
-                            ]
-                        }
-                    ]}
+                    segmentation={
+                        <SegmentationBar def={{
+                            segments: [
+                                { key: 'reconciliation_state', label: 'Estado Reconciliación', type: 'multiselect', serverParam: 'reconciliation_state', columnId: 'reconciliation_state', options: [
+                                    { label: "Sin Conciliar", value: "UNRECONCILED" },
+                                    { label: "Conciliado", value: "RECONCILED" },
+                                    { label: "Sugerencia (Match)", value: "MATCHED" },
+                                    { label: "Excluido", value: "EXCLUDED" },
+                                    { label: "En Disputa", value: "DISPUTED" },
+                                ] },
+                            ],
+                        }} />
+                    }
                     defaultPageSize={20}
                     createAction={
                         statement.state !== 'CONFIRMED' && statement.reconciliation_progress < 100 ? (

@@ -26,7 +26,7 @@ import {
     Download, Clock, CheckCircle2, FileText,
     ChevronDown, ChevronRight, Sun, Moon, Monitor
 } from "lucide-react"
-import { EmptyState, LabeledInput } from "@/components/shared"
+import { EmptyState, LabeledInput, SegmentationBar } from "@/components/shared"
 import { EmployeePayrollPreview } from "./EmployeePayrollPreview"
 import { PartnerProfileTab } from "./PartnerProfileTab"
 import { DataCell } from '@/components/shared'
@@ -609,11 +609,13 @@ function PersonalTab({
                                         variant="standalone"
                                         noBorder={true}
                                         toolbarClassName="px-6 pt-6 pb-2 pl-14"
-                                        facetedFilters={[{
-                                            column: "period_label",
-                                            title: "Período",
-                                            options: Array.from(new Set(payrolls.map(p => p.period_label))).map(label => ({ label, value: label }))
-                                        }]}
+                                        segmentation={
+                                            <SegmentationBar def={{
+                                                segments: [
+                                                    { key: 'period_label', label: 'Período', type: 'multiselect', serverParam: 'period_label', columnId: 'period_label', dynamic: true, options: [] },
+                                                ],
+                                            }} />
+                                        }
                                         renderSubComponent={(row) => {
                                             const relatedPayments = unifiedPayments.filter(p => p.payroll_display_id === row.original.display_id)
                                             return (

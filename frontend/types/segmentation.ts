@@ -1,9 +1,11 @@
+import type { ComponentType } from 'react'
+
 export type TabSegmentDef = {
   key: string
   label: string
   type: 'tabs'
   serverParam: string
-  options: { label: string; value: string }[]
+  options: { label: string; value: string; icon?: ComponentType<{ className?: string }> }[]
   defaultValue?: string
   variant?: 'tabs' | 'dropdown'
 }
@@ -40,10 +42,24 @@ export type MultiSelectSegmentDef = {
   label: string
   type: 'multiselect'
   serverParam: string
-  options: { label: string; value: string }[]
+  options: { label: string; value: string; icon?: ComponentType<{ className?: string }> }[]
+  dynamic?: boolean
+  columnId?: string
 }
 
-export type SegmentDef = TabSegmentDef | DateSegmentDef | PeriodSegmentDef | RangeSegmentDef | MultiSelectSegmentDef
+export type CustomSegmentDef = {
+  key: string
+  label: string
+  type: 'custom'
+  serverParam?: string
+  render: (helpers: {
+    apply: (value: string) => Promise<void>
+    remove: () => Promise<void>
+    isActive: boolean
+  }) => React.ReactNode
+}
+
+export type SegmentDef = TabSegmentDef | DateSegmentDef | PeriodSegmentDef | RangeSegmentDef | MultiSelectSegmentDef | CustomSegmentDef
 
 export type SegmentationDefinition = {
   segments: SegmentDef[]

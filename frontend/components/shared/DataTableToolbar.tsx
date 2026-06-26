@@ -16,9 +16,11 @@ import { AnalyticsPanel, type AnalyticsTab, type Granularity } from "./Analytics
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 import { DataTableFacetedFilter } from "./DataTableFacetedFilter"
 import { DataTableColumnToggle, translateColumnId } from "./DataTableColumnToggle"
+import { SegmentationTableContext } from "./SegmentationBar/context"
 
 interface DataTableToolbarProps<TData> {
     table: Table<TData>
+    /** @deprecated Migrar a SegmentationBar con type:'multiselect' + dynamic:true */
     facetedFilters?: {
         column: string
         title: string
@@ -35,8 +37,14 @@ interface DataTableToolbarProps<TData> {
     currentView?: string
     onViewChange?: (view: string) => void
     columnToggle?: boolean
+    /** @deprecated Usar CustomSegmentDef en SegmentationBar */
     customFilters?: React.ReactNode
     smartSearch?: React.ReactNode
+    /**
+     * Barra de segmentación unificada.
+     * Renderiza SegmentationBar, FacetedFilters (backward compat) y
+     * customFilters (backward compat) en la Fila 1.
+     */
     segmentation?: React.ReactNode
     showReset?: boolean
     analyticsPanel?: AnalyticsPanelConfig
@@ -108,7 +116,7 @@ export function DataTableToolbar<TData>(props: DataTableToolbarProps<TData>) {
     }, [table, globalFilter])
 
     return (
-        <>
+        <SegmentationTableContext.Provider value={table}>
             <div className="w-full space-y-4">
                 {/* ── ROW 1: Vistas + Segmentación + Acciones ── */}
                 <div className="flex items-center h-9 w-full">
@@ -117,7 +125,7 @@ export function DataTableToolbar<TData>(props: DataTableToolbarProps<TData>) {
                         {/* Segmentation filters (status tabs, date picker, etc.) */}
                         {segmentation}
 
-                        {/* Faceted filters — inline popover per filter */}
+                        {/* @deprecated Faceted filters — migrar a multiselect con dynamic:true */}
                         {facetedFilters.map((filter) => {
                             const column = table.getColumn(filter.column)
                             if (!column) return null
@@ -307,6 +315,6 @@ export function DataTableToolbar<TData>(props: DataTableToolbarProps<TData>) {
                     onScopeChange={analyticsPanel.screen.onScopeChange}
                 />
             )}
-        </>
+        </SegmentationTableContext.Provider>
     )
 }

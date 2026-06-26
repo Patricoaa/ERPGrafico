@@ -5,7 +5,7 @@ import { useRouter, usePathname, useSearchParams } from "next/navigation"
 import { useServerDate } from "@/hooks/useServerDate"
 import { Book, ArrowUpRight, ArrowDownRight, Scale, Calculator } from "lucide-react"
 import { getEntityIcon } from "@/lib/entity-registry"
-import { ActionConfirmModal, DataCell, DataTable, DataTableColumnHeader, DateRangeFilter, Drawer, IconButton, MoneyDisplay, SkeletonShell } from '@/components/shared'
+import { ActionConfirmModal, DataCell, DataTable, DataTableColumnHeader, DateRangeFilter, Drawer, IconButton, MoneyDisplay, SkeletonShell, SegmentationBar } from '@/components/shared'
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 import { type ColumnDef } from "@tanstack/react-table"
 import { Card, CardContent } from "@/components/ui/card"
@@ -310,17 +310,28 @@ function LedgerContent({
                 isLoading={isLoading}
                 variant="embedded"
                 defaultPageSize={100}
-                customFilters={
-                    <div className="px-1 py-1">
-                        <DateRangeFilter
-                            onDateChange={(range) => {
-                                if (range?.from && range?.to) {
-                                    setDateRange({ from: range.from, to: range.to })
-                                }
-                            }}
-                            defaultRange={dateRange || undefined}
-                        />
-                    </div>
+                segmentation={
+                    <SegmentationBar def={{
+                        segments: [
+                            {
+                                key: 'date_range',
+                                label: 'Fecha',
+                                type: 'custom',
+                                render: () => (
+                                    <div className="px-1 py-1">
+                                        <DateRangeFilter
+                                            onDateChange={(range) => {
+                                                if (range?.from && range?.to) {
+                                                    setDateRange({ from: range.from, to: range.to })
+                                                }
+                                            }}
+                                            defaultRange={dateRange || undefined}
+                                        />
+                                    </div>
+                                ),
+                            },
+                        ],
+                    }} />
                 }
                 onReset={() => {
                     if (serverDate) {

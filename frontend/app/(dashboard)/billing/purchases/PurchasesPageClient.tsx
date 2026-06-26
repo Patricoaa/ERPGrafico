@@ -17,7 +17,7 @@ import { PaymentModal } from "@/features/treasury"
 import { ReceiptModal, PurchaseNoteModal } from "@/features/purchasing"
 
 import { Progress } from "@/components/ui/progress"
-import { DataTableView, DataCell, DataTableColumnHeader } from '@/components/shared'
+import { DataTableView, DataCell, DataTableColumnHeader, SegmentationBar } from '@/components/shared'
 import { formatPlainDate } from "@/lib/utils"
 import { useSmartSearch, SmartSearchBar, StatusBadge } from "@/components/shared"
 import { getDtePrefix } from "@/lib/entity-registry"
@@ -404,18 +404,13 @@ export default function PurchasesPageClient({ initialInvoices }: PurchasesPageCl
                             onActionSuccess: refetch,
                         })
                     }}
-                    facetedFilters={[
-                        {
-                            column: "status",
-                            title: "Estado",
-                            options: [
-                                { label: "Folio Pendiente", value: "DRAFT" },
-                                { label: "Publicado", value: "POSTED" },
-                                { label: "Pagado", value: "PAID" },
-                                { label: "Anulado", value: "CANCELLED" },
+                    segmentation={
+                        <SegmentationBar def={{
+                            segments: [
+                                { key: 'status', label: 'Estado', type: 'multiselect', serverParam: 'status', columnId: 'status', dynamic: true, options: [] },
                             ],
-                        },
-                    ]}
+                        }} />
+                    }
                     defaultPageSize={20}
                     cardGroupBy={{ field: 'date', sort: 'desc', aggregators: [{ key: 'total', label: 'Total', field: 'total', fn: 'sum', format: 'money' }, { key: 'count', label: 'Items', fn: 'count', format: 'integer' }] }}
                 />
