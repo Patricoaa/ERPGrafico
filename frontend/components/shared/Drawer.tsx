@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState, useRef, useEffect, useCallback, useId, useMemo } from "react"
+import React, { useState, useRef, useEffect, useCallback, useId, useSyncExternalStore } from "react"
 import {
     Sheet,
     SheetContent,
@@ -102,15 +102,18 @@ export function Drawer({
     const uniqueId = useId()
     const contentId = `drawer-content-${uniqueId.replace(/:/g, '')}`
 
-    const containerElement = useMemo<HTMLElement | null>(() => {
-        if (typeof document === "undefined") return null
-        if (boundary === "screen") return document.body
-        return (
-            document.getElementById("main-content") ??
-            document.getElementById("module-sheets-portal-container") ??
-            document.body
-        )
-    }, [boundary])
+    const containerElement = useSyncExternalStore(
+        () => () => {},
+        () => {
+            if (typeof document === "undefined") return null
+            if (boundary === "screen") return document.body
+            return (
+                document.getElementById("main-content") ??
+                document.getElementById("module-sheets-portal-container") ??
+                document.body
+            )
+        }
+    )
 
     // Resizing logic
     const isResizing = useRef(false)

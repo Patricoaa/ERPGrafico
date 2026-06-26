@@ -47,7 +47,7 @@ export default function RootLayout({
                     {children}
                     <GlobalHubPanel />
                     {/* Target portal container for module sheets to avoid containing blocks inside the transitioning container */}
-                    <div id="module-sheets-portal-container" />
+                    <div id="module-sheets-portal-container" className="relative" />
                   </GlobalModalProvider>
                 </HubPanelProvider>
               </HeaderProvider>
