@@ -15,7 +15,6 @@ import { ChevronDown, Plus, AlertTriangle, Layers, ChevronDown as ChevronDownIco
 import type { LucideIcon } from "lucide-react"
 import * as LucideIcons from "lucide-react"
 import { toast } from "sonner"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { cn, translateProductType } from "@/lib/utils"
 import { resolveMediaUrl } from "@/features/inventory/api/inventoryApi"
 import { useVatRate } from '@/hooks/useVatRate'
@@ -288,12 +287,7 @@ export function ProductClientView({ externalOpen, onExternalOpenChange, createAc
                 return (
                     <div className={cn("w-full flex items-center justify-center gap-2", isChild && "pl-8")}>
                         {isChild && <div className="h-4 w-4 border-l-2 border-b-2 border-muted-foreground/30 rounded-bl-lg -mt-2" />}
-                        {product.image_thumbnail && !isChild && (
-                            <Avatar className="h-7 w-7 rounded border bg-muted shrink-0">
-                                <AvatarImage src={resolveMediaUrl(product.image_thumbnail) || undefined} alt={product.name} className="object-cover" />
-                                <AvatarFallback className="rounded bg-muted text-[8px]"></AvatarFallback>
-                            </Avatar>
-                        )}
+
                         <div className="flex flex-col">
                             <div className="flex items-center gap-2">
                                 <DataCell.Text>
