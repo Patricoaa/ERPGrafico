@@ -71,8 +71,8 @@ function ProductGridComponent({
     return (
         <VirtuosoGrid
             totalCount={products.length}
-            listClassName={cn("grid gap-4", gridCols)}
-            style={{ height: '105%' }}
+            listClassName={cn("grid gap-4 pb-2", gridCols)}
+            style={{ height: '100%' }}
             overscan={400}
             itemContent={(index) => {
                 const product = products[index]
