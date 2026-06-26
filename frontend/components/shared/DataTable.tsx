@@ -127,7 +127,7 @@ export interface DataTableProps<TData, TValue> {
      */
     rowCount?: number
     pagination?: { pageIndex: number; pageSize: number }
-    onPaginationChange?: (updater: any) => void
+    onPaginationChange?: React.Dispatch<React.SetStateAction<{ pageIndex: number; pageSize: number }>>
     rowSelection?: RowSelectionState
     renderLoadingView?: () => React.ReactNode
     kpiCards?: KpiCardDef[]
@@ -144,7 +144,7 @@ export interface KpiCardDef {
 }
 
 const DEFAULT_COLUMN_VISIBILITY: VisibilityState = {}
-const EMPTY_ARRAY: any[] = []
+const EMPTY_ARRAY: never[] = []
 const DEFAULT_PAGE_SIZE_OPTIONS = [10, 20, 50, 100, 500]
 function getSkeletonCellContent(columnIndex: number, totalColumns: number): { width: string; height: string; shape: 'bar' | 'pill' | 'icon' | 'code' } {
     if (columnIndex === totalColumns - 1) {

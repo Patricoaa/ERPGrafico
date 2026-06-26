@@ -130,7 +130,7 @@ export function DataTableToolbar<TData>(props: DataTableToolbarProps<TData>) {
     }, [table, globalFilter])
 
     return (
-        <SegmentationTableContext.Provider value={table}>
+        <SegmentationTableContext.Provider value={table as Table<unknown>}>
             <div className="w-full space-y-4">
                 {/* ── ROW 1: Vistas + Segmentación + Acciones ── */}
                 <div className="flex items-center h-9 w-full">
@@ -316,7 +316,7 @@ export function DataTableToolbar<TData>(props: DataTableToolbarProps<TData>) {
                             <TabBar
                                 value={currentView ?? ''}
                                 onValueChange={(v) => onViewChange?.(v)}
-                                items={viewOptions.map(o => ({ value: o.value, label: o.label, icon: o.icon as any }))}
+                                items={viewOptions.map(o => ({ value: o.value, label: o.label, icon: o.icon as LucideIcon }))}
                                 className="w-auto shrink-0"
                             >
                                 <div className="hidden" />

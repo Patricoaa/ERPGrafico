@@ -11,7 +11,7 @@ import { useHubPanel } from "@/components/providers/HubPanelProvider"
 
 interface DomainCardProps {
     label: string
-    data: any
+    data: object
     onClick?: () => void
     onActionClick?: () => void
     isSelected?: boolean
@@ -51,12 +51,13 @@ export function DomainCard({
     const Icon = useMemo(() => iconOverride ?? getEntityIcon(label), [label, iconOverride])
     
     // ─── Identity ─────────────────────────────────────────────────────────────
-    const partnerName = getPartnerName(label, data)
-    const displayId = data.display_id || formatEntityDisplay(label, data)
+    const d = data as { display_id?: string; total?: number; effective_total?: number; balance?: number; pending_amount?: number; date?: string; pos_session?: number; dte_type?: string; lines?: Array<Record<string, unknown>>; items?: Array<Record<string, unknown>>; adjustments?: Array<Record<string, unknown>>; work_orders?: Array<Record<string, unknown>>; [key: string]: unknown }
+    const partnerName = getPartnerName(label, d)
+    const displayId = d.display_id || formatEntityDisplay(label, d)
     
     // ─── Values ───────────────────────────────────────────────────────────────
-    const total = parseFloat(String(data.total || data.effective_total || data.balance || 0))
-    const pending = parseFloat(String(data.pending_amount || 0))
+    const total = parseFloat(String(d.total || d.effective_total || d.balance || 0))
+    const pending = parseFloat(String(d.pending_amount || 0))
     const hasPending = total > 0 && pending > 0
 
     // ─── Aesthetics ───────────────────────────────────────────────────────────
@@ -64,7 +65,7 @@ export function DomainCard({
 
     if (label === 'purchasing.purchaseorder' || label === 'inventory.product') {
         iconClassName = "text-info bg-info/10"
-    } else if (label === 'billing.invoice' && ['NOTA_CREDITO', 'NOTA_DEBITO'].includes(data.dte_type)) {
+    } else if (label === 'billing.invoice' && ['NOTA_CREDITO', 'NOTA_DEBITO'].includes(d.dte_type ?? '')) {
         iconClassName = "text-warning bg-warning/10"
     }
 
@@ -98,13 +99,13 @@ export function DomainCard({
                         {visibleColumns?.date !== false && (
                             <span className="flex items-center gap-1">
                                 <Calendar className="h-3 w-3 opacity-50" />
-                                {formatPlainDate(data.date)}
+                                {formatPlainDate(d.date)}
                             </span>
                         )}
-                        {label === 'sales.saleorder' && data.pos_session && (
+                        {label === 'sales.saleorder' && d.pos_session && (
                             <span className="flex items-center gap-1 text-primary bg-primary/5 px-1.5 py-0.5 rounded-md">
                                 <Monitor className="h-3 w-3" />
-                                #{data.pos_session}
+                                #{d.pos_session}
                             </span>
                         )}
                     </span>
@@ -113,24 +114,27 @@ export function DomainCard({
                     <div className="flex items-center gap-4">
                         {visibleColumns?.status !== false && (
                             <div className="hidden sm:flex items-center gap-3">
-                                {label === 'billing.invoice' && data.adjustments && data.adjustments.length > 0 && (
+                                {label === 'billing.invoice' && d.adjustments && d.adjustments.length > 0 && (
                                     <div className="flex items-center gap-1.5">
-                                        {data.adjustments.map((adj: any) => (
+                                        {d.adjustments?.map((adj) => {
+                                            const adjId = adj.id as number | undefined
+                                            return (
                                             <span 
-                                                key={adj.id}
+                                                key={adjId}
                                                 className="flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold bg-primary/5 text-primary border border-primary/10 cursor-pointer hover:bg-primary/10"
                                                 onClick={(e) => {
                                                     e.stopPropagation()
-                                                    openHub({ invoiceId: adj.id, type: 'sale' })
+                                                    openHub({ invoiceId: adjId, type: 'sale' })
                                                 }}
                                             >
                                                 <GitBranch className="h-3 w-3" />
                                                 {formatEntityDisplay(label, adj)}
                                             </span>
-                                        ))}
+                                        )
+                                    })}
                                     </div>
                                 )}
-                                <DomainHubStatus label={label} data={data} />
+                                <DomainHubStatus label={label} data={d} />
                             </div>
                         )}
 
@@ -146,20 +150,23 @@ export function DomainCard({
             />
 
             {/* ROW 2: Product Lines & Totals */}
-            {(data.lines || data.items || []).length > 0 && (
+            {(d.lines || d.items || []).length > 0 && (
                 <EntityCard.Body className="flex items-start justify-between gap-4 pt-2 border-t border-border/30 mt-1">
                     <div className="flex flex-wrap gap-x-6 gap-y-1 flex-1">
-                        {(data.lines || data.items || []).map((line: any, idx: number) => (
+                        {(d.lines || d.items || []).map((raw, idx: number) => {
+                            const line = raw as { quantity?: number | string; product_name?: string; description?: string }
+                            return (
                             <span key={idx} className="text-sm text-foreground/70 flex items-center gap-1.5">
                                 <span className="font-medium text-foreground">
-                                    {Math.round(parseFloat(line.quantity || 0))}
+                                    {Math.round(parseFloat(String(line.quantity || 0)))}
                                 </span>
                                 <span className="text-muted-foreground/40">×</span>
                                 <span className="text-foreground/70 truncate max-w-[240px]">
                                     {line.product_name || line.description || 'Producto'}
                                 </span>
                             </span>
-                        ))}
+                            )
+                        })}
                     </div>
 
                     {visibleColumns?.total !== false && (

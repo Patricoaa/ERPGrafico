@@ -1,6 +1,6 @@
 "use client"
 
-import { useFieldArray, useWatch, type Control } from "react-hook-form"
+import { useFieldArray, useWatch, type Control, type FieldValues } from "react-hook-form"
 import { Trash2 } from "lucide-react"
 import { TableBody, TableCell, TableRow } from "@/components/ui/table"
 import {
@@ -20,11 +20,11 @@ const tableInputClass = "h-8 w-full bg-background border border-border/80 rounde
 // Balance footer
 // ─────────────────────────────────────────────────────────
 
-const TotalBalance = ({ control, name }: { control: Control<any>; name: string }) => {
-    const items = useWatch({ control, name })
+const TotalBalance = ({ control, name }: { control: Control<FieldValues>; name: string }) => {
+    const items = useWatch({ control, name }) as Array<Record<string, unknown>> | undefined
 
-    const totalDebit = items?.reduce((sum: number, item: any) => sum + (Number(item.debit) || 0), 0) || 0
-    const totalCredit = items?.reduce((sum: number, item: any) => sum + (Number(item.credit) || 0), 0) || 0
+    const totalDebit = items?.reduce((sum: number, item) => sum + (Number((item as Record<string, unknown>).debit) || 0), 0) || 0
+    const totalCredit = items?.reduce((sum: number, item) => sum + (Number((item as Record<string, unknown>).credit) || 0), 0) || 0
     const diff = totalDebit - totalCredit
     const isBalanced = Math.abs(diff) < 0.01
 
@@ -45,7 +45,7 @@ const TotalBalance = ({ control, name }: { control: Control<any>; name: string }
 
 interface AccountingLinesTableProps {
     /** Control from react-hook-form */
-    control: Control<any>
+    control: Control<FieldValues>
     /** Name of the field array in the form schema */
     name: string
     /** Loading state */

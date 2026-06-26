@@ -626,39 +626,43 @@ Migrar a exports explícitos progresivamente: primero los features más problem�
 
 Contrato de referencia: `docs/90-governance/zero-any-policy.md`.
 
-### 3.1 `any` types (253 violaciones)
+### 3.1 `any` types (777 violaciones + 433 casts `as any`)
+
+> **Nota:** El conteo original del audit (253) usaba `grep` sobre patrones textuales (`: any`). El conteo real detectado por ESLint (`@typescript-eslint/no-explicit-any` a nivel `warn`) es **777 violaciones**, más **433 casts `as any`** (detectados por `grep`). `as any` es igual de dañino que `any` explícito — desactiva el type-checker. El plan de resolución considera ambos.
 
 #### Explicación del error
 
 El invariante #1 (`GOVERNANCE.md:15-16`) prohíbe `any` en TypeScript. Se debe usar Zod-derived types o `unknown` + type guard. `any` desactiva completamente el type-checker para esa variable, permitiendo errores en runtime que el compilador podría atrapar.
 
-#### Distribución por área
+#### Distribución por área (conteo ESLint real)
 
-| Área | Count | % |
-|------|-------|---|
-| `features/` (total) | 206 | 81% |
-| ├ `purchasing/` | 41 | 16% |
-| ├ `sales/` | 35 | 14% |
-| ├ `treasury/` | 34 | 13% |
-| ├ `production/` | 15 | 6% |
-| ├ `finance/` | 13 | 5% |
-| ├ `inventory/` | 12 | 5% |
-| ├ `billing/` | 12 | 5% |
-| ├ `orders/` | 8 | 3% |
-| ├ `hr/` | 8 | 3% |
-| ├ `accounting/` | 6 | 2% |
-| ├ `contacts/` | 5 | 2% |
-| ├ `settings/` | 5 | 2% |
-| ├ `users/` | 4 | 2% |
-| ├ `pos/` | 4 | 2% |
-| └ resto | 4 | 2% |
-| `components/` | 34 | 13% |
-| `hooks/` | 10 | 4% |
-| `app/` | 2 | 1% |
+| Área | Archivos con `any` | % archivos |
+|------|-------------------|-----------|
+| `features/` (total) | 151 | 81% |
+| ├ `inventory/` | 17 | 9% |
+| ├ `treasury/` | 16 | 9% |
+| ├ `finance/` | 16 | 9% |
+| ├ `purchasing/` | 14 | 7% |
+| ├ `sales/` | 13 | 7% |
+| ├ `production/` | 12 | 6% |
+| ├ `pos/` | 11 | 6% |
+| ├ `settings/` | 10 | 5% |
+| ├ `orders/` | 10 | 5% |
+| ├ `billing/` | 9 | 5% |
+| ├ `accounting/` | 6 | 3% |
+| ├ `hr/` | 5 | 3% |
+| ├ `users/` | 3 | 2% |
+| ├ `contacts/` | 2 | 1% |
+| ├ `workflow/`, `tax/`, `_shared/`, `profile/`, `notifications/`, `credits/`, `auth/` | 1 c/u | <1% |
+| `components/` | 25 | 13% |
+| `hooks/` | 4 | 2% |
+| `app/` | 6 | 3% |
 | `contexts/` | 1 | <1% |
-| **TOTAL** | **253** | 100% |
+| **TOTAL (archivos)** | **187** | 100% |
 
-#### Patrones comunes de `any`
+> **777 violaciones `no-explicit-any`** distribuidas en 187 archivos. El archivo más ofensor es `features/contacts/components/ContactDrawer.tsx` (31 any), seguido de `features/sales/actions.tsx` (23) y `features/purchasing/actions.tsx` (21).
+
+#### Patrones comunes de `any` (5 del audit original + 3 adicionales)
 
 **1. Callback/event handlers:**
 ```ts
@@ -692,30 +696,55 @@ EMPTY_ARRAY: any[]
 data: any
 ```
 
+**6. 🆕 `as any` casts:**
+```ts
+data as any
+colors as any
+{ ...(rest as any) }
+```
+Común en componentes de chart (Nivo) y DynamicIcon.
+
+**7. 🆕 `Control<any>` en react-hook-form:**
+```ts
+control: Control<any>
+```
+Común en componentes de tabla editables como `AccountingLinesTable`.
+
+**8. 🆕 Tipos de librerías externas (Nivo charts, lazy imports):**
+```ts
+ComponentType<any>
+Table<any>
+```
+Requiere tipos wrapper o cast controlado.
+
 #### Principales archivos ofensores
 
-| Archivo | Líneas con `any` | Patrón |
-|---------|-----------------|--------|
-| `features/purchasing/hooks/usePurchasing.ts:12` | 1 | `initialData?: any` |
-| `features/sales/hooks/useSalesOrders.ts:12` | 1 | `initialData?: any` |
-| `features/inventory/hooks/useProducts.ts:14` | 1 | `initialData?: any` |
-| `features/production/hooks/useWorkOrders.ts:22` | 1 | `initialData?: any` |
-| `features/treasury/api/treasuryApi.ts:112` | 1 | `api.get<{ results: any[] }>` |
-| `features/users/api/usersApi.ts:11-23` | 4 | `payload: any` en todas las funciones |
-| `features/hr/api/hrApi.ts:174,179` | 2 | `data: any` |
-| `features/profile/api/profileApi.ts:10` | 1 | `value: any` |
-| `components/shared/DataTable.tsx:130,147` | 2 | `updater: any`, `EMPTY_ARRAY: any[]` |
-| `components/shared/DomainCard.tsx:14` | 1 | `data: any` |
-| `components/shared/HubStatus.tsx:97,108-109` | 3 | `data: any`, `statuses: any` |
-| `features/pos/hooks/usePOSProducts.ts` | múltiples | callbacks sin tipo |
+| Archivo | `any` | Patrón dominante |
+|---------|-------|------------------|
+| `features/contacts/components/ContactDrawer.tsx` | 31 | `(x as any).prop` repetido ~15 veces + `data: any[]` |
+| `features/sales/actions.tsx` | 23 | `ActionRegistry<any>` + callbacks inline |
+| `features/purchasing/actions.tsx` | 21 | `ActionRegistry<any>` + callbacks inline |
+| `features/finance/bank-reconciliation/components/ReconciliationPanel.tsx` | 20 | callbacks + datos dinámicos |
+| `features/hr/components/PayrollCard.tsx` | 16 | `data: any` + cálculos |
+| `features/production/components/BOMDrawer.tsx` | 15 | `any` en lógica de negocio |
+| `features/pos/components/POSClientView.tsx` | 15 | event handlers + datos dinámicos |
+| `features/orders/components/ActionCategory.tsx` | 14 | `Action<any>` inline |
+| `features/billing/components/checkout/Step2_Logistics.tsx` | 14 | form state + callbacks |
+| `components/selectors/ProductSelector.tsx` | 11 | `as any` + callbacks |
 
-#### Solución
+#### Solución (plan en 6 fases)
 
-1. **API payloads**: derivar tipos desde Zod schemas existentes. Si no hay schema, crear `z.object({...})` e inferir `z.infer<typeof Schema>`.
-2. **Hooks**: reemplazar `initialData?: any` con `initialData?: EntityType`.
-3. **DataTable**: usar genéricos correctamente (`DataTable<T extends Record<string, unknown>>`).
-4. **Callbacks**: tipar con tipos específicos o `unknown` + type guard.
-5. **Priorizar features con más violaciones**: `purchasing` (41), `sales` (35), `treasury` (34), `components/` (34).
+**Fase 1 — Shared components** (high leverage, ~25 files): tipar `data: any` con genéricos, corregir `Control<any>`, `as any` en charts, DynamicIcon, SegmentationBar.
+
+**Fase 2 — ContactDrawer + useContactDefaults**: Fix root cause en `useContactDefaults.ts` (retorna `any`) — cascada a ~15 violaciones en ContactDrawer.
+
+**Fase 3 — Actions registries**: `ActionRegistry<any>` → `ActionRegistry` (default `unknown`) + interfaces locales.
+
+**Fase 4 — API files + hooks**: Zod schemas para payloads, `initialData?: EntityType`.
+
+**Fase 5 — Feature components por volumen**: inventory → treasury → finance → purchasing → sales → production → pos → settings → orders → billing → accounting → hr → resto.
+
+**Fase 6 — ESLint rule promotion**: `no-explicit-any` de `warn` → `error`. Actualizar audit doc.
 
 ---
 

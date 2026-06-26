@@ -3,6 +3,7 @@
 import React, { useMemo } from "react"
 import dynamic from "next/dynamic"
 import { Skeleton } from "@/components/ui/skeleton"
+import type { BarDatum, BarLegendProps, ComputedDatum } from "@nivo/bar"
 import {
     nivoTheme,
     barDefaults,
@@ -59,20 +60,20 @@ export function BarChart({
     return (
         <LazyBar
             {...barDefaults}
-            data={data as any}
+            data={data as unknown as readonly BarDatum[]}
             keys={keys}
             indexBy={indexBy}
-            colors={(colors ?? chartColors) as any}
+            colors={(colors ?? chartColors) as string | string[]}
             padding={padding ?? barDefaults.padding}
             borderRadius={borderRadius ?? barDefaults.borderRadius}
             enableGridX={enableGridX ?? barDefaults.enableGridX}
             enableGridY={enableGridY ?? barDefaults.enableGridY}
             groupMode={groupMode}
             layout={layout}
-            legends={legends as any}
+            legends={legends as unknown as readonly BarLegendProps[] | undefined}
             margin={margin}
             theme={nivoTheme}
-            tooltip={({ id, value, indexValue, color }: any) => (
+            tooltip={({ id, value, indexValue, color }: { id: string | number; value: number; indexValue: string | number; color: string }) => (
                 <div className={premiumTooltipClass}>
                     {renderTooltip ? (
                         renderTooltip({ id, value, indexValue, color })
@@ -86,7 +87,7 @@ export function BarChart({
                     )}
                 </div>
             )}
-            {...(rest as any)}
+            {...rest as Record<string, unknown>}
         />
     )
 }

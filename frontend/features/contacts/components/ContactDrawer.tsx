@@ -841,7 +841,7 @@ function CreditLedgerTable({ data, loading, onActionSuccess }: { data: any[], lo
         {
             accessorKey: "number",
             header: "Número",
-            cell: ({ row }) => <DataCell.Entity label="sales.saleorder" data={row.original as unknown} />,
+            cell: ({ row }) => <DataCell.Entity label="sales.saleorder" data={row.original as object} />,
         },
         {
             accessorKey: "balance",

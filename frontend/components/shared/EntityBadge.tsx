@@ -27,8 +27,7 @@ export interface EntityBadgeProps {
     /** The entity registry key (e.g. "order", "invoice", "payment") */
     label: string
     /** The entity data object (must contain at least 'id' for link generation) */
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    data: any
+    data: object
     /** Whether to show the entity's icon. Default: true */
     showIcon?: boolean
     /** Whether to wrap the badge in a Link to the entity's detail view. Default: true */
@@ -61,7 +60,7 @@ export const EntityBadge: React.FC<EntityBadgeProps> = ({
 
     if (!data) return null
 
-    const { displayCode, icon: ResolvedIcon, href } = resolveEntity(label, data)
+    const { displayCode, icon: ResolvedIcon, href } = resolveEntity(label, data as Record<string, unknown>)
     const Icon = showIcon ? (ResolvedIcon ?? Package) : undefined
 
     const customStyle = "bg-secondary/30 text-secondary-foreground border-secondary/50 hover:bg-secondary/50 hover:border-secondary"
@@ -82,7 +81,7 @@ export const EntityBadge: React.FC<EntityBadgeProps> = ({
     if (!link) return badgeEl
 
     // Prefer in-context drawer when registered. Fallback to navigation.
-    const entityId = data?.id
+    const entityId = (data as Record<string, unknown>).id as number | undefined
     if (hasEntityDrawer(label) && entityId !== undefined && entityId !== null) {
         return (
             <button

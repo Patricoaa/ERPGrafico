@@ -181,11 +181,11 @@ export function Drawer({
     }
 
     const iconElement: React.ReactNode = icon
-        ? (typeof icon === "function" || (typeof icon === "object" && "render" in (icon as any)))
+        ? (typeof icon === "function" || (typeof icon === "object" && "render" in icon))
             ? React.createElement(icon as React.ComponentType<{ className?: string }>, {
                 className: "h-8 w-8 text-primary flex-shrink-0"
             })
-            : icon as React.ReactNode
+            : icon
         : null
 
     return (

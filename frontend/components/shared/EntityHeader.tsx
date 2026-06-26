@@ -21,7 +21,7 @@ export interface EntityHeaderProps {
    * Optional data record. Used to format the document number (e.g. NV-1234)
    * if editing or viewing an existing record.
    */
-  data?: any;
+  data?: object;
   
   /**
    * The action context for the header.
@@ -83,7 +83,7 @@ export function EntityHeader({
     }
   }
 
-  const subTitle = data ? formatEntityDisplay(entityLabel, data) : undefined;
+  const subTitle = data ? formatEntityDisplay(entityLabel, data as Record<string, unknown>) : undefined;
 
   return (
     <div className={cn("border-b p-6 flex flex-col md:flex-row md:items-center justify-between gap-6 shrink-0 print:hidden bg-background", className)}>
