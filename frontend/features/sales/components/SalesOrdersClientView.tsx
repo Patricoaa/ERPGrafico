@@ -20,10 +20,9 @@ const SaleNoteModal = lazy(() => import("./SaleNoteModal"))
 
 interface SalesOrdersClientViewProps {
     viewMode: 'orders' | 'notes'
-    initialOrders?: SaleOrder[]
 }
 
-export function SalesOrdersClientView({ viewMode, initialOrders }: SalesOrdersClientViewProps) {
+export function SalesOrdersClientView({ viewMode }: SalesOrdersClientViewProps) {
     const { multiplier: vatMultiplier } = useVatRate()
     const { confirmInvoice } = useInvoices()
 
@@ -39,7 +38,7 @@ export function SalesOrdersClientView({ viewMode, initialOrders }: SalesOrdersCl
     return (
         <>
             <FadeIn key={viewMode} className="h-full">
-                <SalesOrdersView viewMode={viewMode} initialOrders={initialOrders} />
+                <SalesOrdersView viewMode={viewMode} />
             </FadeIn>
 
             {/* Modals & Forms */}
