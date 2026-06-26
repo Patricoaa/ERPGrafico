@@ -347,6 +347,8 @@ class TreasuryMovementViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
     filter_backends = [DjangoFilterBackend]
 
     def get_queryset(self):
+        from .selectors import TreasuryMovementSelector
+
         return TreasuryMovementSelector.list_treasury_movements(self.queryset, self.request.query_params)
     def destroy(self, request, *args, **kwargs):
         instance = self.get_object()
