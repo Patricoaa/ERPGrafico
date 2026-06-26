@@ -3,6 +3,7 @@ import { toast } from 'sonner'
 import { settingsApi } from '../api/settingsApi'
 import { ACCOUNTING_SETTINGS_QUERY_KEY } from './useAccountingSettings'
 import type { InventorySettings, InventorySettingsUpdatePayload } from '../types'
+import { useRealtime } from '@/features/realtime'
 
 interface UseInventorySettingsReturn {
     settings: InventorySettings
@@ -17,6 +18,7 @@ interface UseInventorySettingsReturn {
  */
 export function useInventorySettings(): UseInventorySettingsReturn {
     const queryClient = useQueryClient()
+    const { markLocalMutation } = useRealtime()
 
     const { data: settings, isLoading, refetch } = useQuery({
         queryKey: ACCOUNTING_SETTINGS_QUERY_KEY,
@@ -29,6 +31,7 @@ export function useInventorySettings(): UseInventorySettingsReturn {
             return settingsApi.updateInventorySettings(payload)
         },
         onSuccess: () => {
+            markLocalMutation()
             toast.success('Configuración de inventario aplicada')
             queryClient.invalidateQueries({ queryKey: ACCOUNTING_SETTINGS_QUERY_KEY })
         },
@@ -37,9 +40,7 @@ export function useInventorySettings(): UseInventorySettingsReturn {
         }
     })
 
-    const updateSettings = async (payload: InventorySettingsUpdatePayload) => {
-        await updateMutation.mutateAsync(payload)
-    }
+    const updateSettings = updateMutation.mutateAsync
 
     return {
         settings: settings as InventorySettings,

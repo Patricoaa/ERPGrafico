@@ -1,4 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useRealtime } from '@/features/realtime'
 import { toast } from 'sonner'
 import { showApiError } from '@/lib/errors'
 import { treasuryApi } from '../api/treasuryApi'
@@ -11,6 +12,7 @@ export type { TreasuryMovement, TreasuryMovementFilters }
 
 export function useTreasuryMovements(filters: TreasuryMovementFilters = {}) {
     const queryClient = useQueryClient()
+    const { markLocalMutation } = useRealtime()
     const { page_size = 50, page = 1, ...rest } = filters
 
     const params: Record<string, string | number | boolean> = { page, page_size }
@@ -39,6 +41,7 @@ export function useTreasuryMovements(filters: TreasuryMovementFilters = {}) {
     const createMovement = useMutation({
         mutationFn: (payload: MovementCreatePayload) => treasuryApi.createMovement(payload),
         onSuccess: () => {
+            markLocalMutation()
             queryClient.invalidateQueries({ queryKey: MOVEMENTS_KEYS.all })
             toast.success('Movimiento registrado correctamente')
         },

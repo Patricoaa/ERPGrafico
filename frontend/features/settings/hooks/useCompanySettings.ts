@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import { settingsApi } from '../api/settingsApi'
 import type { CompanySettings, CompanySettingsUpdatePayload } from '../types'
+import { useRealtime } from '@/features/realtime'
 
 export const COMPANY_SETTINGS_QUERY_KEY = ['settings-company']
 
@@ -18,6 +19,7 @@ interface UseCompanySettingsReturn {
  */
 export function useCompanySettings(): UseCompanySettingsReturn {
     const queryClient = useQueryClient()
+    const { markLocalMutation } = useRealtime()
 
     const { data: settings, refetch, isLoading } = useQuery({
         queryKey: COMPANY_SETTINGS_QUERY_KEY,
@@ -30,6 +32,7 @@ export function useCompanySettings(): UseCompanySettingsReturn {
             return settingsApi.updateCompanySettings(payload)
         },
         onSuccess: () => {
+            markLocalMutation()
             toast.success('Configuración de empresa aplicada')
             queryClient.invalidateQueries({ queryKey: COMPANY_SETTINGS_QUERY_KEY })
         },
@@ -38,9 +41,7 @@ export function useCompanySettings(): UseCompanySettingsReturn {
         }
     })
 
-    const updateSettings = async (payload: CompanySettingsUpdatePayload) => {
-        await updateMutation.mutateAsync(payload)
-    }
+    const updateSettings = updateMutation.mutateAsync
 
     return {
         settings,

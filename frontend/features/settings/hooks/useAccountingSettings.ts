@@ -2,6 +2,7 @@ import { useMemo } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import { settingsApi } from '../api/settingsApi'
+import { useRealtime } from '@/features/realtime'
 import { structureSchema, type StructureFormValues } from "@/features/settings/schemas/structure"
 import { defaultsSchema, type DefaultsFormValues } from "@/features/settings/schemas/defaults"
 import { taxSchema, type TaxFormValues } from "@/features/settings/schemas/tax"
@@ -12,6 +13,7 @@ export const ACCOUNTING_SETTINGS_QUERY_KEY = ['accounting-settings']
 
 export function useAccountingSettings() {
     const queryClient = useQueryClient()
+    const { markLocalMutation } = useRealtime()
 
     const { data: rawUntyped, isLoading, refetch } = useQuery({
         queryKey: ACCOUNTING_SETTINGS_QUERY_KEY,
@@ -88,6 +90,7 @@ export function useAccountingSettings() {
     const updateMutation = useMutation({
         mutationFn: (payload: Record<string, unknown>) => settingsApi.updateCurrentSettings(payload),
         onSuccess: () => {
+            markLocalMutation()
             toast.success('Configuración contable aplicada')
             queryClient.invalidateQueries({ queryKey: ACCOUNTING_SETTINGS_QUERY_KEY })
         },
@@ -95,10 +98,6 @@ export function useAccountingSettings() {
             toast.error('Error al guardar cambios contables')
         }
     })
-
-    const updateSettings = async (payload: Record<string, unknown>) => {
-        await updateMutation.mutateAsync(payload)
-    }
 
     return {
         structure,
@@ -109,6 +108,6 @@ export function useAccountingSettings() {
         refetch,
         isLoading,
         saving: updateMutation.isPending,
-        updateSettings,
+        updateSettings: updateMutation.mutateAsync,
     }
 }

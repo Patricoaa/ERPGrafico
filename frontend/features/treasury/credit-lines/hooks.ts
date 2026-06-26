@@ -1,4 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useRealtime } from '@/features/realtime'
 import { creditLinesApi } from './api'
 import { CREDIT_LINES_KEYS } from '@/features/treasury/hooks/queryKeys'
 import type { CreditLineCreatePayload } from './types'
@@ -31,10 +32,12 @@ export function useCreditLineOverview(id: number | null) {
 
 export function useCreditLineMutations() {
     const qc = useQueryClient()
+    const { markLocalMutation } = useRealtime()
 
     const create = useMutation({
         mutationFn: (data: CreditLineCreatePayload) => creditLinesApi.create(data),
         onSuccess: () => {
+            markLocalMutation()
             qc.invalidateQueries({ queryKey: CREDIT_LINES_KEYS.all })
         },
     })
@@ -43,6 +46,7 @@ export function useCreditLineMutations() {
         mutationFn: ({ id, data }: { id: number; data: Partial<CreditLineCreatePayload> }) =>
             creditLinesApi.update(id, data),
         onSuccess: () => {
+            markLocalMutation()
             qc.invalidateQueries({ queryKey: CREDIT_LINES_KEYS.all })
         },
     })
@@ -50,6 +54,7 @@ export function useCreditLineMutations() {
     const remove = useMutation({
         mutationFn: (id: number) => creditLinesApi.delete(id),
         onSuccess: () => {
+            markLocalMutation()
             qc.invalidateQueries({ queryKey: CREDIT_LINES_KEYS.all })
         },
     })

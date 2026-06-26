@@ -3,6 +3,7 @@ import api from '@/lib/api';
 import { toast } from 'sonner';
 import { type AccountingPeriod } from '../types';
 import { showApiError } from '@/lib/errors';
+import { useRealtime } from '@/features/realtime';
 
 import { ACCOUNTING_PERIODS_QUERY_KEY } from './queryKeys'
 
@@ -10,6 +11,7 @@ export { ACCOUNTING_PERIODS_QUERY_KEY }
 
 export function useAccountingPeriods() {
     const queryClient = useQueryClient();
+    const { markLocalMutation } = useRealtime();
 
     const { data, isLoading, refetch } = useQuery({
         queryKey: ACCOUNTING_PERIODS_QUERY_KEY,
@@ -23,6 +25,7 @@ export function useAccountingPeriods() {
     const closeMutation = useMutation({
         mutationFn: (periodId: number) => api.post(`/tax/accounting-periods/${periodId}/close/`),
         onSuccess: () => {
+            markLocalMutation();
             queryClient.invalidateQueries({ queryKey: ACCOUNTING_PERIODS_QUERY_KEY });
             toast.success('Periodo contable cerrado exitosamente');
         },
@@ -32,6 +35,7 @@ export function useAccountingPeriods() {
     const reopenMutation = useMutation({
         mutationFn: (periodId: number) => api.post(`/tax/accounting-periods/${periodId}/reopen/`),
         onSuccess: () => {
+            markLocalMutation();
             queryClient.invalidateQueries({ queryKey: ACCOUNTING_PERIODS_QUERY_KEY });
             toast.success('Periodo contable reabierto exitosamente');
         },
@@ -41,6 +45,7 @@ export function useAccountingPeriods() {
     const createMutation = useMutation({
         mutationFn: ({ year, month }: { year: number, month: number }) => api.post('/tax/accounting-periods/', { year, month }),
         onSuccess: (_, { year, month }) => {
+            markLocalMutation();
             queryClient.invalidateQueries({ queryKey: ACCOUNTING_PERIODS_QUERY_KEY });
             toast.success(`Periodo ${month}/${year} inicializado correctamente`);
         },

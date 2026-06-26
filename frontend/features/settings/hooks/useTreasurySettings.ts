@@ -3,9 +3,11 @@ import { toast } from 'sonner'
 import { settingsApi } from '../api/settingsApi'
 import { ACCOUNTING_SETTINGS_QUERY_KEY } from './useAccountingSettings'
 import { treasurySchema, type TreasuryFormValues } from "@/features/settings/schemas/treasury"
+import { useRealtime } from '@/features/realtime'
 
 export function useTreasurySettings() {
     const queryClient = useQueryClient()
+    const { markLocalMutation } = useRealtime()
 
     const { data: settings, isLoading, refetch } = useQuery({
         queryKey: ACCOUNTING_SETTINGS_QUERY_KEY,
@@ -28,6 +30,7 @@ export function useTreasurySettings() {
     const updateMutation = useMutation({
         mutationFn: (payload: TreasuryFormValues) => settingsApi.updateCurrentSettings(payload as unknown as Record<string, unknown>),
         onSuccess: () => {
+            markLocalMutation()
             toast.success('Configuración de tesorería aplicada')
             queryClient.invalidateQueries({ queryKey: ACCOUNTING_SETTINGS_QUERY_KEY })
         },
@@ -36,9 +39,7 @@ export function useTreasurySettings() {
         }
     })
 
-    const updateSettings = async (payload: TreasuryFormValues) => {
-        await updateMutation.mutateAsync(payload)
-    }
+    const updateSettings = updateMutation.mutateAsync
 
     return {
         settings,

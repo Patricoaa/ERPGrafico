@@ -1,4 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useRealtime } from '@/features/realtime'
 import { toast } from 'sonner'
 import { treasuryApi } from '../api/treasuryApi'
 import { BANKS_KEYS, PAYMENT_METHODS_KEYS } from './queryKeys'
@@ -12,6 +13,7 @@ export { BANKS_KEYS, PAYMENT_METHODS_KEYS }
 
 export function useBanks() {
     const queryClient = useQueryClient()
+    const { markLocalMutation } = useRealtime()
 
     const { data: banks, isLoading, refetch } = useQuery<Bank[]>({
         queryKey: BANKS_KEYS.list(),
@@ -26,6 +28,7 @@ export function useBanks() {
     const createMutation = useMutation({
         mutationFn: (payload: BankCreatePayload) => treasuryApi.createBank(payload),
         onSuccess: () => {
+            markLocalMutation()
             invalidate()
             toast.success('Banco creado')
         },
@@ -36,6 +39,7 @@ export function useBanks() {
         mutationFn: ({ id, payload }: { id: number; payload: BankUpdatePayload }) =>
             treasuryApi.updateBank(id, payload),
         onSuccess: () => {
+            markLocalMutation()
             invalidate()
             toast.success('Banco actualizado')
         },
@@ -45,6 +49,7 @@ export function useBanks() {
     const archiveMutation = useMutation({
         mutationFn: (id: number) => treasuryApi.archiveBank(id),
         onSuccess: () => {
+            markLocalMutation()
             invalidate()
             toast.success('Banco archivado')
         },
@@ -54,6 +59,7 @@ export function useBanks() {
     const restoreMutation = useMutation({
         mutationFn: (id: number) => treasuryApi.restoreBank(id),
         onSuccess: () => {
+            markLocalMutation()
             invalidate()
             toast.success('Banco restaurado')
         },
@@ -63,6 +69,7 @@ export function useBanks() {
     const deleteMutation = useMutation({
         mutationFn: (id: number) => treasuryApi.deleteBank(id),
         onSuccess: () => {
+            markLocalMutation()
             invalidate()
             toast.success('Banco eliminado')
         },
@@ -87,6 +94,7 @@ export function useBanks() {
 
 export function usePaymentMethods() {
     const queryClient = useQueryClient()
+    const { markLocalMutation } = useRealtime()
 
     const { data: methods, isLoading, refetch } = useQuery<PaymentMethod[]>({
         queryKey: PAYMENT_METHODS_KEYS.list(),
@@ -102,6 +110,7 @@ export function usePaymentMethods() {
     const createMutation = useMutation({
         mutationFn: (payload: PaymentMethodCreatePayload) => treasuryApi.createPaymentMethod(payload),
         onSuccess: () => {
+            markLocalMutation()
             invalidate()
             toast.success('Método creado')
         },
@@ -112,6 +121,7 @@ export function usePaymentMethods() {
         mutationFn: ({ id, payload }: { id: number; payload: PaymentMethodUpdatePayload }) =>
             treasuryApi.updatePaymentMethod(id, payload),
         onSuccess: () => {
+            markLocalMutation()
             invalidate()
             toast.success('Método actualizado')
         },
@@ -121,6 +131,7 @@ export function usePaymentMethods() {
     const deleteMutation = useMutation({
         mutationFn: (id: number) => treasuryApi.deletePaymentMethod(id),
         onSuccess: () => {
+            markLocalMutation()
             invalidate()
             toast.success('Método eliminado')
         },
