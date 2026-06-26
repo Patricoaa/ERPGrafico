@@ -28,7 +28,7 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { type LucideIcon } from "lucide-react"
 import { ScrollArea } from "@/components/ui/scroll-area"
 
-import { BulkActionButtons, BulkActionDock, DataTablePagination, DataTableToolbar, EmptyState, SkeletonShell, StatCard, type BulkAction, type AnalyticsPanelConfig } from '@/components/shared'
+import { BulkActionButtons, BulkActionDock, DataTablePagination, DataTableToolbar, EmptyState, SkeletonShell, StatCard, type BulkAction, type AnalyticsPanelConfig, type ToolbarActionItem } from '@/components/shared'
 import { resolveEmptyState, type DataTableEmptyState } from './emptyStateResolver'
 
 export interface DataTableProps<TData, TValue> {
@@ -47,6 +47,8 @@ export interface DataTableProps<TData, TValue> {
         }[]
     }[]
     toolbarAction?: React.ReactNode
+    /** Items de acciones secundarias agrupadas en dropdown "Acciones". */
+    toolbarActions?: ToolbarActionItem[]
     onRowSelectionChange?: (selection: RowSelectionState) => void
     initialColumnVisibility?: VisibilityState
     hiddenColumns?: string[]
@@ -166,6 +168,7 @@ export function DataTable<TData, TValue>({
     hideToolbar = false,
     facetedFilters,
     toolbarAction,
+    toolbarActions,
     onRowSelectionChange,
     initialColumnVisibility = DEFAULT_COLUMN_VISIBILITY,
     hiddenColumns = EMPTY_ARRAY,
@@ -324,6 +327,7 @@ export function DataTable<TData, TValue>({
         (facetedFilters && facetedFilters.length > 0) ||
         customFilters ||
         toolbarAction ||
+        (toolbarActions && toolbarActions.length > 0) ||
         createAction ||
         (viewOptions && viewOptions.length > 0) ||
         sortOptions ||
@@ -371,6 +375,7 @@ export function DataTable<TData, TValue>({
                         table={table}
                         facetedFilters={facetedFilters}
                         toolbarAction={toolbarAction}
+                        toolbarActions={toolbarActions}
                         onReset={onReset}
                         sortOptions={sortOptions}
                         viewOptions={viewOptions}
@@ -687,6 +692,7 @@ export function DataTable<TData, TValue>({
                             table={table}
                             facetedFilters={facetedFilters}
                             toolbarAction={toolbarAction}
+                            toolbarActions={toolbarActions}
                             onReset={onReset}
                             sortOptions={sortOptions}
                             viewOptions={viewOptions}
@@ -775,6 +781,7 @@ export function DataTable<TData, TValue>({
                         table={table}
                         facetedFilters={facetedFilters}
                         toolbarAction={toolbarAction}
+                        toolbarActions={toolbarActions}
                         onReset={onReset}
                         sortOptions={sortOptions}
                         viewOptions={viewOptions}

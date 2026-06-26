@@ -299,9 +299,7 @@ export function BankMovementsClientView({ bankId }: BankMovementsClientViewProps
                     pagination={pageState}
                     onPaginationChange={setPageState}
                     smartSearch={
-                        <div className="flex items-center gap-2 w-full">
-                            <SmartSearchBar searchDef={treasuryMovementsSearchDef} placeholder="Buscar movimiento..." className="w-full" />
-                        </div>
+                        <SmartSearchBar searchDef={treasuryMovementsSearchDef} placeholder="Buscar movimiento..." className="w-full" />
                     }
                     segmentation={<SegmentationBar def={treasuryMovementsSegDef} basePeriod={basePeriod} />}
                     showReset={isFiltered}

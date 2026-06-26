@@ -574,6 +574,214 @@ function createCardGroupView<TData>(options: {
 └────────────────────────────────────────────────────────┘
 ```
 
+---
+
+## 12. Analytics Panel — `analyticsPanel` prop
+
+El `DataTable` soporta un botón de análisis en la Fila 2 (entre Sort y Column Toggle) que abre un `Drawer` con gráficos y métricas.
+
+### 12.1 API
+
+```tsx
+<DataTable
+  analyticsPanel={{
+    screen: {
+      entityName: "Órdenes de Compra",
+      granularity,
+      onGranularityChange: setGranularity,
+      dateRange,
+      onDateRangeChange: setDateRange,
+      tabs: [
+        {
+          value: "financiero",
+          label: "Financiero",
+          icon: BarChart3,
+          columns: [
+            {
+              id: "col-main",
+              weight: 2,
+              sections: [
+                {
+                  id: "combo-chart",
+                  content: {
+                    type: "stat-card",
+                    config: {
+                      label: "Volumen",
+                      variant: "chart",
+                      chart: {
+                        type: "line-chart",
+                        data: lineData,
+                        enableArea: true,
+                      },
+                    },
+                  },
+                },
+              ],
+            },
+          ],
+        },
+      ],
+    },
+  }}
+/>
+```
+
+- `onClick?`: callback cuando se presiona el botón (útil para tracking)
+- `screen`: cuando está presente, renderiza un `AnalyticsPanel` dentro de un `Drawer` con `side="bottom"` y `defaultSize="70vh"`
+- Cada tab tiene `columns` con `sections` que pueden ser `StatCard`, `Custom`, o chart directo (bar/line/pie)
+
+### 12.2 Data flow
+
+```
+Consumer → AnalyticsPanelConfig (useMemo) → DataTable → DataTableToolbar
+  → botón LayoutDashboard → Drawer → TabBar → AnalyticsLayout → StatCard/Chart
+  → AnalyticsSegmentation (granularity, date range, card account)
+```
+
+### 12.3 Reglas
+
+- Los datos de analytics deben venir de un hook dedicado (ej. `usePurchasingAnalyticsData`)
+- `AnalyticsPanelConfig` se importa desde `@/components/shared`
+- No abusar: reservar para entidades con volumen de datos que justifique análisis visual
+
+---
+
+## 13. Footer de Totales — `renderFooter` prop
+
+Slot opcional para renderizar una fila de totales/sumario al final de la tabla.
+
+```tsx
+<DataTable
+  renderFooter={(table) => {
+    const rows = table.getFilteredRowModel().rows
+    const total = rows.reduce((sum, r) => sum + r.original.amount, 0)
+    return (
+      <TableRow className="bg-muted/10 font-bold">
+        <TableCell colSpan={3}>Total</TableCell>
+        <TableCell className="text-right">{formatCurrency(total)}</TableCell>
+      </TableRow>
+    )
+  }}
+/>
+```
+
+**Reglas:**
+- Recibe la instancia `table` de TanStack — usar `getFilteredRowModel().rows` para respetar filtros activos
+- Renderizar dentro de `<TableRow>` nativo (no DataTable row)
+- Útil para tablas financieras (libro mayor, movimientos de socio)
+
+---
+
+## 14. Bulk Actions
+
+El DataTable soporta dos mecanismos para acciones sobre filas seleccionadas, ambos renderizados en un `BulkActionDock` flotante.
+
+### 14.1 `bulkActions` — Declarativo (preferido)
+
+```tsx
+const bulkActions = useMemo<BulkAction<Product>[]>(() => [
+  {
+    key: 'delete',
+    label: 'Eliminar',
+    icon: Trash2,
+    intent: 'destructive',
+    onClick: (items) => handleBulkDelete(items),
+    disabled: (items) => items.some(item => !item.can_delete),
+  },
+], [])
+
+<DataTable bulkActions={bulkActions} />
+```
+
+### 14.2 `bulkDock` — Escape hatch
+
+Para UI de bulk action que no encaja en el modelo declarativo (selects, múltiples controles):
+
+```tsx
+<DataTable
+  bulkDock={(items, clear) => (
+    <BulkActionDock selectedCount={items.length} onClear={clear}>
+      <Select onValueChange={(value) => handleBulkUpdate(items, value, clear)}>
+        <SelectTrigger>Asignar Categoría</SelectTrigger>
+        <SelectContent>
+          <SelectItem value="cat-a">Categoría A</SelectItem>
+        </SelectContent>
+      </Select>
+    </BulkActionDock>
+  )}
+/>
+```
+
+### 14.3 Reglas
+
+- `bulkActions` declarativo para acciones simples (eliminar, cambiar estado)
+- `bulkDock` escape hatch reservado para UIs complejas (selects, formularios inline)
+- Ambos reciben envoltura consistente de `BulkActionDock` (floating dock, pill de conteo, botón limpiar)
+
+---
+
+## 15. Toolbar — Slot de Acciones Secundarias
+
+El toolbar tiene dos mecanismos para el dropdown "Acciones" en la esquina superior derecha:
+
+### 15.1 `toolbarActions` — Typed (preferido)
+
+```tsx
+import type { ToolbarActionItem } from '@/components/shared'
+
+const actions: ToolbarActionItem[] = [
+  {
+    key: 'deposit',
+    label: 'Registrar Aporte',
+    icon: Wallet,
+    onClick: () => openDeposit(),
+    intent: 'success',
+  },
+  {
+    key: 'withdraw',
+    label: 'Registrar Retiro',
+    icon: LogOut,
+    onClick: () => openWithdraw(),
+    intent: 'destructive',
+  },
+]
+
+<DataTable toolbarActions={actions} />
+```
+
+### 15.2 `toolbarAction` — Legacy (deprecado)
+
+Acepta `ReactNode` de `<DropdownMenuItem>`. Migrar a `toolbarActions`.
+
+### 15.3 Intent → Color mapping
+
+| Intent      | Color     |
+|-------------|-----------|
+| `default`   | primary   |
+| `primary`   | primary   |
+| `success`   | success   |
+| `destructive` | destructive |
+
+---
+
+## 16. SmartSearchBar — `prefix` slot
+
+El `SmartSearchBar` acepta un slot `prefix?: ReactNode` renderizado antes del ícono de búsqueda. Útil para badges de contexto (cuenta activa, filtro permanente).
+
+```tsx
+<SmartSearchBar
+  searchDef={mySearchDef}
+  prefix={isFiltered ? (
+    <span className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-info/10 text-info border border-info/20 text-[10px] font-black uppercase tracking-wider font-mono shrink-0">
+      Cta. #123
+      <button onClick={handleClear}>×</button>
+    </span>
+  ) : undefined}
+/>
+```
+
+---
+
 ## Checklist de PR
 
 Cada PR que toque `DataTable` o sus consumidores debe verificar:
@@ -600,3 +808,9 @@ Cada PR que toque `DataTable` o sus consumidores debe verificar:
 - [ ] Items sin fecha se agrupan al final bajo "Sin fecha"
 - [ ] La agrupación visual (`cardGroupBy`) es ortogonal al filtrado del toolbar (`SegmentationBar`) — uno filtra, el otro organiza
 - [ ] Usar `groupByDate` desde `@/lib/group-by-date` si se necesita agrupación fuera del factory
+- [ ] `analyticsPanel` usado solo si hay hook de datos dedicado (no construir inline en el componente)
+- [ ] `renderFooter` usado solo para tablas financieras que requieren fila de totales
+- [ ] `bulkActions` preferido sobre `bulkDock` para acciones declarativas
+- [ ] `toolbarActions` preferido sobre `toolbarAction` legacy
+- [ ] `toolbarActions` usa `intent` semántico (no className inline)
+- [ ] `SmartSearchBar` con `prefix` para decoraciones contextuales (no wrapper divs)

@@ -118,7 +118,6 @@ export * from './emptyStateResolver';
 export * from './DataTable';
 export * from './DataTableView';
 export * from './DataTableToolbar';
-export * from './DataTableFilters';
 export * from './DataTablePagination';
 export * from './DataTableColumnHeader';
 export * from './DataTableFacetedFilter';

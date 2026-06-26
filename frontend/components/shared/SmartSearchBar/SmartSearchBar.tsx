@@ -12,6 +12,8 @@ interface SmartSearchBarProps {
   searchDef: SearchDefinition
   placeholder?: string
   className?: string
+  /** Contenido opcional renderizado antes del ícono de búsqueda. Útil para badges de filtro contextual (ej. cuenta de tesorería activa). */
+  prefix?: React.ReactNode
 }
 
 type DropdownStage =
@@ -22,7 +24,7 @@ function isTextField(field: FieldDef): field is TextFieldDef {
   return field.type === 'text'
 }
 
-export function SmartSearchBar({ searchDef, placeholder = 'Buscar...', className }: SmartSearchBarProps) {
+export function SmartSearchBar({ searchDef, placeholder = 'Buscar...', className, prefix }: SmartSearchBarProps) {
   const { filters, chips, inputValue, setInputValue, applyFilter, removeFilter, clearAll } = useSmartSearch(searchDef)
 
   const [stage, setStage] = useState<DropdownStage>({ type: 'closed' })
@@ -207,6 +209,7 @@ export function SmartSearchBar({ searchDef, placeholder = 'Buscar...', className
           }
         }}
       >
+        {prefix}
         <Search className="h-3.5 w-3.5 text-muted-foreground/50 shrink-0 transition-colors group-hover:text-foreground" />
 
         {chips.map((chip) => (

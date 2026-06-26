@@ -10,13 +10,23 @@ import {
     DropdownMenu,
     DropdownMenuContent,
     DropdownMenuTrigger,
+    DropdownMenuItem,
 } from "@/components/ui/dropdown-menu"
+import type { LucideIcon } from "lucide-react"
 import { TabBar } from "@/components/shared"
 import { AnalyticsPanel, type AnalyticsTab, type Granularity } from "./AnalyticsPanel"
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 import { DataTableFacetedFilter } from "./DataTableFacetedFilter"
 import { DataTableColumnToggle, translateColumnId } from "./DataTableColumnToggle"
 import { SegmentationTableContext } from "./SegmentationBar/context"
+
+export interface ToolbarActionItem {
+    key: string
+    label: string
+    icon?: LucideIcon
+    onClick: () => void
+    intent?: 'default' | 'success' | 'destructive' | 'primary'
+}
 
 interface DataTableToolbarProps<TData> {
     table: Table<TData>
@@ -30,7 +40,10 @@ interface DataTableToolbarProps<TData> {
             icon?: React.ComponentType<{ className?: string }>
         }[]
     }[]
+    /** @deprecated Usar toolbarActions (typed) en lugar de ReactNode. */
     toolbarAction?: React.ReactNode
+    /** Items de acciones secundarias agrupadas en dropdown "Acciones". */
+    toolbarActions?: ToolbarActionItem[]
     onReset?: () => void
     sortOptions?: boolean
     viewOptions?: { label: string; value: string; icon: React.ComponentType<{ className?: string }> }[]
@@ -75,6 +88,7 @@ export function DataTableToolbar<TData>(props: DataTableToolbarProps<TData>) {
         table,
         facetedFilters = [],
         toolbarAction,
+        toolbarActions,
         onReset,
         sortOptions,
         viewOptions,
@@ -174,7 +188,7 @@ export function DataTableToolbar<TData>(props: DataTableToolbarProps<TData>) {
 
                     {/* Right: Acciones + Create */}
                     <div className="flex items-center gap-1 shrink-0">
-                        {toolbarAction && (
+                        {(toolbarAction || (toolbarActions && toolbarActions.length > 0)) && (
                             <DropdownMenu>
                                 <DropdownMenuTrigger asChild>
                                     <Button
@@ -189,7 +203,23 @@ export function DataTableToolbar<TData>(props: DataTableToolbarProps<TData>) {
                                     align="end"
                                     className="w-[200px] p-1 border-border/80 shadow-floating"
                                 >
-                                    {toolbarAction}
+                                    {toolbarActions
+                                        ? toolbarActions.map((action) => (
+                                            <DropdownMenuItem
+                                                key={action.key}
+                                                onClick={action.onClick}
+                                                className={cn(
+                                                    "flex items-center px-3 py-2 text-[10px] font-black uppercase tracking-widest cursor-pointer transition-colors",
+                                                    action.intent === 'success' && "text-success focus:bg-success/10 focus:text-success",
+                                                    action.intent === 'destructive' && "text-destructive focus:bg-destructive/10 focus:text-destructive",
+                                                    (!action.intent || action.intent === 'default' || action.intent === 'primary') && "text-primary focus:bg-primary/10 focus:text-primary",
+                                                )}
+                                            >
+                                                {action.icon && <action.icon className="h-4 w-4 mr-2" />}
+                                                {action.label}
+                                            </DropdownMenuItem>
+                                        ))
+                                        : toolbarAction}
                                 </DropdownMenuContent>
                             </DropdownMenu>
                         )}

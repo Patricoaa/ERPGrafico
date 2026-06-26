@@ -16,7 +16,7 @@ import { useStockReport } from "@/features/inventory/hooks/useStockReport"
 
 export function StockReport() {
     const { report, isLoading, refetch } = useStockReport()
-    const { filters: smartFilters, isFiltered } = useSmartSearch(stockReportSearchDef)
+    const { filters: smartFilters, isFiltered, clearAll } = useSmartSearch(stockReportSearchDef)
     const [adjustingProduct, setAdjustingProduct] = useState<any | null>(null)
     const [insightsProduct, setInsightsProduct] = useState<any | null>(null)
     const [isFormLoading, setIsFormLoading] = useState(false)
@@ -164,6 +164,8 @@ export function StockReport() {
                     isLoading={isLoading}
                     variant="embedded"
                     smartSearch={<SmartSearchBar searchDef={stockReportSearchDef} placeholder="Buscar por producto, SKU o categoría..." className="w-full" />}
+                    showReset={isFiltered}
+                    onReset={clearAll}
                     defaultPageSize={50}
                     isFiltered={isFiltered}
                     emptyState={{

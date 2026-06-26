@@ -17,9 +17,6 @@ import { partnersApi } from "@/features/contacts/api/partnersApi"
 import { type Partner, type PartnerTransaction } from "@/features/contacts/types/partner"
 import { toast } from "sonner"
 import {formatPlainDate as formatDate, parseDateOnly} from "@/lib/utils"
-import {
-    DropdownMenuItem,
-} from "@/components/ui/dropdown-menu"
 import { PartnerContributionWizard } from "@/features/settings/components/partners/PartnerContributionWizard"
 import { PartnerWithdrawalWizard } from "@/features/settings/components/partners/PartnerWithdrawalWizard"
 import { DataTable, SegmentationBar, useSegmentation } from '@/components/shared'
@@ -246,24 +243,10 @@ export function PartnerLedgerTab() {
                 segmentation={<SegmentationBar def={partnerSegDef} />}
                 showReset={isSegFiltered}
                 onReset={clearSeg}
-                toolbarAction={
-                    <>
-                        <DropdownMenuItem
-                            className="flex items-center px-3 py-2 text-[10px] font-black uppercase tracking-widest text-success focus:bg-success/10 focus:text-success cursor-pointer transition-colors"
-                            onClick={() => setIsContributionOpen(true)}
-                        >
-                            <Wallet className="h-4 w-4 mr-2" />
-                            Registrar Aporte
-                        </DropdownMenuItem>
-                        <DropdownMenuItem
-                            className="flex items-center px-3 py-2 text-[10px] font-black uppercase tracking-widest text-destructive focus:bg-destructive/10 focus:text-destructive cursor-pointer transition-colors"
-                            onClick={() => setIsWithdrawalOpen(true)}
-                        >
-                            <LogOut className="h-4 w-4 mr-2" />
-                            Registrar Retiro
-                        </DropdownMenuItem>
-                    </>
-                }
+                toolbarActions={[
+                    { key: 'contribution', label: 'Registrar Aporte', icon: Wallet, onClick: () => setIsContributionOpen(true), intent: 'success' },
+                    { key: 'withdrawal', label: 'Registrar Retiro', icon: LogOut, onClick: () => setIsWithdrawalOpen(true), intent: 'destructive' },
+                ]}
                 renderFooter={(table) => {
                     const rows = table.getFilteredRowModel().rows
                     const totals = rows.reduce((acc, row) => {
