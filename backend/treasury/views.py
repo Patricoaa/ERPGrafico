@@ -763,6 +763,8 @@ class ReconciliationSettingsViewSet(viewsets.ModelViewSet):
 
 
 class POSSessionViewSet(viewsets.ModelViewSet):
+    from rest_framework.permissions import IsAuthenticated
+    permission_classes = [IsAuthenticated]
     pagination_class = StandardResultsSetPagination
     """ViewSet for POS Session Management (Apertura/Cierre de Caja)"""
 
@@ -781,16 +783,12 @@ class POSSessionViewSet(viewsets.ModelViewSet):
     @action(detail=False, methods=["get"])
     def current(self, request):
         """Get the current open session for the requesting user"""
-        try:
-            session = POSSession.objects.filter(user=request.user, status="OPEN").first()
-            if session:
-                return Response(POSSessionSerializer(session).data)
-            return Response({"session": None})
-        except Exception as e:
-            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        session = POSSession.objects.filter(user=request.user, status="OPEN").first()
+        if session:
+            return Response(POSSessionSerializer(session).data)
+        return Response({"session": None})
 
     @action(detail=False, methods=["post"])
-    @action(detail=False, methods=['post'])
     def open_session(self, request):
         try:
             from .pos_service import POSService
