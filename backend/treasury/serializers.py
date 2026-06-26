@@ -455,7 +455,16 @@ class TreasuryMovementSerializer(serializers.ModelSerializer):
         return obj.justify_reason
 
     def get_document_info(self, obj):
-        return TreasuryMovementSelector.get_document_info(obj)
+        info = {"type": None, "id": None, "number": None, "label": None, "display_id": None}
+        if obj.invoice:
+            info.update({"type": "invoice", "id": obj.invoice.id, "number": obj.invoice.number, "display_id": obj.invoice.display_id, "label": obj.invoice.display_id})
+        elif obj.purchase_order:
+            info.update({"type": "purchase_order", "id": obj.purchase_order.id, "number": obj.purchase_order.number, "display_id": obj.purchase_order.display_id, "label": obj.purchase_order.display_id})
+        elif obj.sale_order:
+            info.update({"type": "sale_order", "id": obj.sale_order.id, "number": obj.sale_order.number, "display_id": obj.sale_order.display_id, "label": obj.sale_order.display_id})
+        elif obj.journal_entry:
+            info.update({"type": "journal_entry", "id": obj.journal_entry.id, "number": obj.journal_entry.number, "display_id": obj.journal_entry.display_id, "label": obj.journal_entry.display_id})
+        return info if info["type"] else None
 
     def get_bank_statement_info(self, obj):
         if obj.bank_statement_line:
