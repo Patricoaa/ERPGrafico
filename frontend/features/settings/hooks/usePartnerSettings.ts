@@ -3,6 +3,7 @@ import { toast } from 'sonner'
 import { settingsApi } from '../api/settingsApi'
 import { ACCOUNTING_SETTINGS_QUERY_KEY } from './useAccountingSettings'
 import type { PartnerSettings, PartnerSettingsUpdatePayload } from '../types'
+import { useRealtime } from '@/features/realtime'
 
 interface UsePartnerSettingsReturn {
     settings: PartnerSettings
@@ -17,6 +18,7 @@ interface UsePartnerSettingsReturn {
  */
 export function usePartnerSettings(): UsePartnerSettingsReturn {
     const queryClient = useQueryClient()
+    const { markLocalMutation } = useRealtime()
 
     const { data: settings, isLoading, refetch } = useQuery({
         queryKey: ACCOUNTING_SETTINGS_QUERY_KEY,
@@ -29,6 +31,7 @@ export function usePartnerSettings(): UsePartnerSettingsReturn {
             return settingsApi.updatePartnerSettings(payload)
         },
         onSuccess: () => {
+            markLocalMutation()
             toast.success('Configuración de capital aplicada')
             queryClient.invalidateQueries({ queryKey: ACCOUNTING_SETTINGS_QUERY_KEY })
         },
@@ -37,9 +40,7 @@ export function usePartnerSettings(): UsePartnerSettingsReturn {
         }
     })
 
-    const updateSettings = async (payload: PartnerSettingsUpdatePayload) => {
-        await updateMutation.mutateAsync(payload)
-    }
+    const updateSettings = updateMutation.mutateAsync
 
     return {
         settings: settings as PartnerSettings,

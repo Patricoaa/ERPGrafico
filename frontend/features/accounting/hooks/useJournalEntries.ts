@@ -4,6 +4,7 @@ import { showApiError } from '@/lib/errors'
 import { accountingApi } from '../api/accountingApi'
 import { LEDGER_QUERY_KEY } from './useLedger'
 import { ACCOUNTS_QUERY_KEY } from './useAccounts'
+import { useRealtime } from '@/features/realtime'
 import type { FilterState } from '@/components/shared'
 
 import { JOURNAL_ENTRIES_QUERY_KEY } from './queryKeys'
@@ -82,9 +83,11 @@ export function useJournalEntries(filters?: FilterState & { page?: number; page_
 
 export function useDeleteJournalEntry(options?: { onSuccess?: () => void }) {
     const queryClient = useQueryClient()
+    const { markLocalMutation } = useRealtime()
     return useMutation({
         mutationFn: (id: number) => accountingApi.deleteEntry(id),
         onSuccess: () => {
+            markLocalMutation()
             // A deleted entry changes the ledger view, the journal list, AND account balances
             queryClient.invalidateQueries({ queryKey: [LEDGER_QUERY_KEY] })
             queryClient.invalidateQueries({ queryKey: JOURNAL_ENTRIES_QUERY_KEY })

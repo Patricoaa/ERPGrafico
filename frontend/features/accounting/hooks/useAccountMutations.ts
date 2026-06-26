@@ -5,15 +5,18 @@ import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { accountingApi } from '../api/accountingApi'
 import type { AccountPayload } from '../types'
 import { toast } from 'sonner'
+import { useRealtime } from '@/features/realtime'
 
 import { ACCOUNTS_QUERY_KEY } from './queryKeys'
 
 export function useAccountMutations() {
     const queryClient = useQueryClient()
+    const { markLocalMutation } = useRealtime()
 
     const createAccount = useMutation({
         mutationFn: (payload: AccountPayload) => accountingApi.createAccount(payload),
         onSuccess: () => {
+            markLocalMutation()
             queryClient.invalidateQueries({ queryKey: ACCOUNTS_QUERY_KEY })
             toast.success('Cuenta creada exitosamente')
         },
@@ -26,6 +29,7 @@ export function useAccountMutations() {
         mutationFn: ({ id, payload }: { id: number, payload: Partial<AccountPayload> }) =>
             accountingApi.updateAccount(id, payload),
         onSuccess: () => {
+            markLocalMutation()
             queryClient.invalidateQueries({ queryKey: ACCOUNTS_QUERY_KEY })
             toast.success('Cuenta actualizada exitosamente')
         },
@@ -37,6 +41,7 @@ export function useAccountMutations() {
     const deleteAccount = useMutation({
         mutationFn: (id: number) => accountingApi.deleteAccount(id),
         onSuccess: () => {
+            markLocalMutation()
             queryClient.invalidateQueries({ queryKey: ACCOUNTS_QUERY_KEY })
             toast.success('Cuenta eliminada exitosamente')
         },

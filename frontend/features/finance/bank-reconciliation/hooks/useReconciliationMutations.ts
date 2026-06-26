@@ -3,6 +3,7 @@ import { financeApi } from '../../api/financeApi'
 import { toast } from 'sonner'
 import { showApiError } from '@/lib/errors'
 import { reconciliationKeys } from './queryKeys'
+import { useRealtime } from '@/features/realtime'
 
 export function useMatchMutation(statementId: number, treasuryAccountId: number) {
     const queryClient = useQueryClient()
@@ -105,6 +106,7 @@ export function useGroupMatchMutation(statementId: number, treasuryAccountId: nu
 
 export function useExcludeMutation(statementId: number) {
     const queryClient = useQueryClient()
+    const { markLocalMutation } = useRealtime()
 
     return useMutation({
         mutationFn: async ({ lineId, reason, notes }: { lineId: number; reason: string; notes: string }) => {
@@ -118,6 +120,7 @@ export function useExcludeMutation(statementId: number) {
             showApiError(err, 'Error al excluir')
         },
         onSuccess: () => {
+            markLocalMutation()
             toast.success("Movimiento excluido correctamente")
         },
         onSettled: () => {
@@ -129,6 +132,7 @@ export function useExcludeMutation(statementId: number) {
 
 export function useBulkExcludeMutation(statementId: number) {
     const queryClient = useQueryClient()
+    const { markLocalMutation } = useRealtime()
 
     return useMutation({
         mutationFn: async ({ lineIds, reason, notes }: { lineIds: number[]; reason: string; notes: string }) => {
@@ -142,6 +146,7 @@ export function useBulkExcludeMutation(statementId: number) {
             showApiError(err, 'Error al excluir masivamente')
         },
         onSuccess: () => {
+            markLocalMutation()
             toast.success("Movimientos excluidos correctamente")
         },
         onSettled: () => {
@@ -153,6 +158,7 @@ export function useBulkExcludeMutation(statementId: number) {
 
 export function useRestoreMutation(statementId: number) {
     const queryClient = useQueryClient()
+    const { markLocalMutation } = useRealtime()
 
     return useMutation({
         mutationFn: async (lineId: number) => {
@@ -163,6 +169,7 @@ export function useRestoreMutation(statementId: number) {
             })
         },
         onSuccess: () => {
+            markLocalMutation()
             toast.success("Movimiento restaurado")
         },
         onError: (err) => {
@@ -177,12 +184,14 @@ export function useRestoreMutation(statementId: number) {
 
 export function useAutoMatchMutation(statementId: number) {
     const queryClient = useQueryClient()
+    const { markLocalMutation } = useRealtime()
 
     return useMutation({
         mutationFn: async ({ confidenceThreshold }: { confidenceThreshold: number }) => {
             return financeApi.autoMatch(statementId, { confidence_threshold: confidenceThreshold })
         },
         onSuccess: (data) => {
+            markLocalMutation()
             toast.success(`Conciliación Finalizada`, {
                 description: `${data.matched_count} de ${data.total_unreconciled} líneas conciliadas automáticamente.`
             })
@@ -202,6 +211,7 @@ export function useAutoMatchMutation(statementId: number) {
 
 export function useUpdateReconciliationSettingsMutation(accountId?: number | string) {
     const queryClient = useQueryClient()
+    const { markLocalMutation } = useRealtime()
 
     return useMutation({
         mutationFn: async (settings: Record<string, unknown> & { id: number }) => {
@@ -209,6 +219,7 @@ export function useUpdateReconciliationSettingsMutation(accountId?: number | str
             return financeApi.updateReconciliationSettings(id, rest)
         },
         onSuccess: () => {
+            markLocalMutation()
             toast.success('Configuración de inteligencia actualizada')
             if (accountId) {
                 queryClient.invalidateQueries({ queryKey: reconciliationKeys.settings(Number(accountId)) })
@@ -227,6 +238,7 @@ export function useUpdateReconciliationSettingsMutation(accountId?: number | str
  */
 export function useCreateAndMatchMutation(statementId: number, treasuryAccountId: number) {
     const queryClient = useQueryClient()
+    const { markLocalMutation } = useRealtime()
 
     return useMutation({
         mutationFn: async ({ lineId, movementData }: { lineId: number, movementData: Record<string, unknown> }) => {
@@ -236,6 +248,7 @@ export function useCreateAndMatchMutation(statementId: number, treasuryAccountId
             return { lineId, paymentId }
         },
         onSuccess: () => {
+            markLocalMutation()
             toast.success("Pago registrado y conciliado correctamente")
         },
         onError: (err) => {
@@ -254,12 +267,14 @@ export function useCreateAndMatchMutation(statementId: number, treasuryAccountId
  */
 export function useUnmatchMutation(statementId: number, treasuryAccountId: number) {
     const queryClient = useQueryClient()
+    const { markLocalMutation } = useRealtime()
 
     return useMutation({
         mutationFn: async (lineId: number) => {
             return financeApi.unmatchLine(lineId)
         },
         onSuccess: () => {
+            markLocalMutation()
             toast.success("Conciliación revertida")
         },
         onError: (err) => {
@@ -278,12 +293,14 @@ export function useUnmatchMutation(statementId: number, treasuryAccountId: numbe
  */
 export function useAllocateMutation(movementId: number, treasuryAccountId?: number) {
     const queryClient = useQueryClient()
+    const { markLocalMutation } = useRealtime()
 
     return useMutation({
         mutationFn: async ({ allocations, validateSum = false }: { allocations: Record<string, unknown>[], validateSum?: boolean }) => {
             return financeApi.allocateMovement(movementId, { allocations, validate_sum: validateSum })
         },
         onSuccess: () => {
+            markLocalMutation()
             toast.success("Distribución guardada correctamente")
         },
         onError: (err) => {
@@ -303,12 +320,14 @@ export function useAllocateMutation(movementId: number, treasuryAccountId?: numb
  */
 export function useCreateMovementMutation(treasuryAccountId: number) {
     const queryClient = useQueryClient()
+    const { markLocalMutation } = useRealtime()
 
     return useMutation({
         mutationFn: async (movementData: Record<string, unknown>) => {
             return financeApi.createMovement(movementData)
         },
         onSuccess: () => {
+            markLocalMutation()
             toast.success("Movimiento creado correctamente")
         },
         onError: (err) => {

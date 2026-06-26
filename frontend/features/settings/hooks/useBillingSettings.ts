@@ -3,6 +3,7 @@ import { toast } from 'sonner'
 import { settingsApi } from '../api/settingsApi'
 import { ACCOUNTING_SETTINGS_QUERY_KEY } from './useAccountingSettings'
 import type { BillingSettings, BillingSettingsUpdatePayload } from '../types'
+import { useRealtime } from '@/features/realtime'
 
 interface UseBillingSettingsReturn {
     settings: BillingSettings
@@ -27,6 +28,7 @@ export function useBillingSettingsQuery() {
  */
 export function useBillingSettings(): UseBillingSettingsReturn {
     const queryClient = useQueryClient()
+    const { markLocalMutation } = useRealtime()
 
     const { data: settings, isLoading, refetch } = useQuery({
         queryKey: ACCOUNTING_SETTINGS_QUERY_KEY,
@@ -39,6 +41,7 @@ export function useBillingSettings(): UseBillingSettingsReturn {
             return settingsApi.updateBillingSettings(payload)
         },
         onSuccess: () => {
+            markLocalMutation()
             toast.success('Configuración de facturación aplicada')
             queryClient.invalidateQueries({ queryKey: ACCOUNTING_SETTINGS_QUERY_KEY })
         },
@@ -47,9 +50,7 @@ export function useBillingSettings(): UseBillingSettingsReturn {
         }
     })
 
-    const updateSettings = async (payload: BillingSettingsUpdatePayload) => {
-        await updateMutation.mutateAsync(payload)
-    }
+    const updateSettings = updateMutation.mutateAsync
 
     return {
         settings: settings as BillingSettings,

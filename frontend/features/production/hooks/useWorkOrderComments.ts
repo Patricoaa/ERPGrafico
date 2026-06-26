@@ -3,6 +3,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import api from '@/lib/api'
 import { showApiError } from '@/lib/errors'
+import { useRealtime } from '@/features/realtime'
 
 export interface WorkOrderComment {
     id: number
@@ -17,6 +18,7 @@ const COMMENTS_KEY = 'work-order-comments'
 
 export function useWorkOrderComments(orderId: number) {
     const queryClient = useQueryClient()
+    const { markLocalMutation } = useRealtime()
 
     const { data: comments = [], isLoading } = useQuery<WorkOrderComment[]>({
         queryKey: [COMMENTS_KEY, orderId],
@@ -34,6 +36,7 @@ export function useWorkOrderComments(orderId: number) {
             return res.data as WorkOrderComment
         },
         onSuccess: () => {
+            markLocalMutation()
             queryClient.invalidateQueries({ queryKey: [COMMENTS_KEY, orderId] })
         },
         onError: (err) => showApiError(err, 'Error al agregar comentario'),

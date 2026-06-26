@@ -3,6 +3,7 @@ import api from '@/lib/api';
 import { toast } from 'sonner';
 import { type FiscalYear, type FiscalYearPreviewResult } from '../types';
 import { showApiError } from '@/lib/errors';
+import { useRealtime } from '@/features/realtime';
 import { ACCOUNTING_PERIODS_QUERY_KEY } from './queryKeys';
 import { FISCAL_YEARS_QUERY_KEY } from './queryKeys';
 
@@ -10,6 +11,7 @@ export { FISCAL_YEARS_QUERY_KEY };
 
 export function useFiscalYears() {
     const queryClient = useQueryClient();
+    const { markLocalMutation } = useRealtime();
 
     const { data, isLoading, refetch } = useQuery({
         queryKey: FISCAL_YEARS_QUERY_KEY,
@@ -23,6 +25,7 @@ export function useFiscalYears() {
     const closeMutation = useMutation({
         mutationFn: (year: number) => api.post(`/accounting/fiscal-years/${year}/close/`),
         onSuccess: (_, year) => {
+            markLocalMutation();
             queryClient.invalidateQueries({ queryKey: FISCAL_YEARS_QUERY_KEY });
             // Closing a year changes period states within it
             queryClient.invalidateQueries({ queryKey: ACCOUNTING_PERIODS_QUERY_KEY });
@@ -34,6 +37,7 @@ export function useFiscalYears() {
     const reopenMutation = useMutation({
         mutationFn: (year: number) => api.post(`/accounting/fiscal-years/${year}/reopen/`),
         onSuccess: (_, year) => {
+            markLocalMutation();
             queryClient.invalidateQueries({ queryKey: FISCAL_YEARS_QUERY_KEY });
             // Reopening a year also changes period states
             queryClient.invalidateQueries({ queryKey: ACCOUNTING_PERIODS_QUERY_KEY });
@@ -45,6 +49,7 @@ export function useFiscalYears() {
     const generateOpeningMutation = useMutation({
         mutationFn: (year: number) => api.post(`/accounting/fiscal-years/${year}/generate-opening/`),
         onSuccess: (_, year) => {
+            markLocalMutation();
             queryClient.invalidateQueries({ queryKey: FISCAL_YEARS_QUERY_KEY });
             toast.success(`Asiento de apertura para el año ${year + 1} generado exitosamente.`);
         },

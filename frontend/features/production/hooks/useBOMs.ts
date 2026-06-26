@@ -3,6 +3,7 @@ import api from '@/lib/api'
 import { toast } from 'sonner'
 import { type BOM, type ProductMinimal } from '../types'
 import { BOMS_QUERY_KEY, PRODUCTS_QUERY_KEY } from '@/features/inventory/hooks/queryKeys'
+import { useRealtime } from '@/features/realtime'
 import type { FilterState } from '@/components/shared'
 
 export const ALL_BOMS_QUERY_KEY = ['all-boms']
@@ -13,6 +14,7 @@ export const VARIANTS_QUERY_KEY = ['product-variants']
 
 export function useBOMs(params: { product_id?: string | number, parent_id?: string | number }) {
     const queryClient = useQueryClient()
+    const { markLocalMutation } = useRealtime()
 
     const { data: boms, isLoading: isBOMsLoading, refetch } = useQuery({
         queryKey: [...BOMS_QUERY_KEY, params],
@@ -26,6 +28,7 @@ export function useBOMs(params: { product_id?: string | number, parent_id?: stri
     const deleteMutation = useMutation({
         mutationFn: (id: number) => api.delete(`/production/boms/${id}/`),
         onSuccess: () => {
+            markLocalMutation()
             queryClient.invalidateQueries({ queryKey: BOMS_QUERY_KEY })
             // Deleting a BOM updates has_bom on the product
             queryClient.invalidateQueries({ queryKey: PRODUCTS_QUERY_KEY })
@@ -37,6 +40,7 @@ export function useBOMs(params: { product_id?: string | number, parent_id?: stri
     const toggleActiveMutation = useMutation({
         mutationFn: (id: number) => api.patch(`/production/boms/${id}/`, { active: true }),
         onSuccess: () => {
+            markLocalMutation()
             queryClient.invalidateQueries({ queryKey: BOMS_QUERY_KEY })
             // Toggling active BOM affects product's active BOM reference
             queryClient.invalidateQueries({ queryKey: PRODUCTS_QUERY_KEY })

@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { accountingApi } from '../api/accountingApi'
 import type { AccountFilters, AccountPayload, Account } from '../types'
 import { toast } from 'sonner'
+import { useRealtime } from '@/features/realtime'
 
 import { ACCOUNTS_QUERY_KEY, ACCOUNTS_MAPPINGS_QUERY_KEY } from './queryKeys'
 
@@ -17,6 +18,7 @@ const EMPTY_ARRAY: Account[] = []
 
 export function useAccounts({ filters }: UseAccountsProps = {}) {
     const queryClient = useQueryClient()
+    const { markLocalMutation } = useRealtime()
 
     const { data: accounts, isLoading, refetch } = useQuery({
         queryKey: [...ACCOUNTS_QUERY_KEY, filters],
@@ -27,6 +29,7 @@ export function useAccounts({ filters }: UseAccountsProps = {}) {
     const createMutation = useMutation({
         mutationFn: (payload: AccountPayload) => accountingApi.createAccount(payload),
         onSuccess: () => {
+            markLocalMutation()
             // Accounts QUERY_KEY prefix invalidation covers mappings slice too
             queryClient.invalidateQueries({ queryKey: ACCOUNTS_QUERY_KEY })
             toast.success('Cuenta creada exitosamente')
@@ -40,6 +43,7 @@ export function useAccounts({ filters }: UseAccountsProps = {}) {
         mutationFn: ({ id, payload }: { id: number, payload: Partial<AccountPayload> }) =>
             accountingApi.updateAccount(id, payload),
         onSuccess: () => {
+            markLocalMutation()
             // Prefix match: invalidates both ['accounts', ...filters] AND ['accounts', 'mappings']
             queryClient.invalidateQueries({ queryKey: ACCOUNTS_QUERY_KEY })
             toast.success('Cuenta actualizada exitosamente')
@@ -52,6 +56,7 @@ export function useAccounts({ filters }: UseAccountsProps = {}) {
     const deleteMutation = useMutation({
         mutationFn: (id: number) => accountingApi.deleteAccount(id),
         onSuccess: () => {
+            markLocalMutation()
             // Prefix match: invalidates list + mappings slice
             queryClient.invalidateQueries({ queryKey: ACCOUNTS_QUERY_KEY })
             toast.success('Cuenta eliminada exitosamente')
