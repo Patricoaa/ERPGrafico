@@ -3,6 +3,7 @@
 import React, { createContext, useContext, useEffect, useState, useCallback, useRef } from "react";
 import {useRouter} from "next/navigation";
 import axios from "axios";
+import { toast } from "sonner";
 import api from "@/lib/api";
 import { useTheme } from "next-themes";
 import { setClientToken, removeClientTokens, getClientToken } from "@/lib/client-token";
@@ -88,6 +89,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         // eslint-disable-next-line react-hooks/set-state-in-effect
         void fetchUser();
     }, [fetchUser]);
+
+    // Listen for forced logout from outside React (e.g., token refresh failure
+    // in the Axios interceptor). When the interceptor determines the session
+    // is unrecoverable it dispatches a window event to bridge the gap between
+    // its non-React scope and our React state.
+    useEffect(() => {
+        const handleUnauthorized = () => {
+            toast.error("Tu sesión ha expirado. Inicia sesión nuevamente.");
+            setUser(null);
+            setIsAuthenticated(false);
+            router.push("/login");
+        };
+        window.addEventListener("auth:unauthorized", handleUnauthorized);
+        return () => window.removeEventListener("auth:unauthorized", handleUnauthorized);
+    }, [router]);
 
     const login = async (token: string) => {
         setClientToken(token);
