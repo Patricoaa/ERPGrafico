@@ -111,6 +111,7 @@ export function useInvoice(id: number | null | undefined) {
     return useQuery({
         queryKey: id ? [...INVOICES_QUERY_KEY, 'detail', id] : [...INVOICES_QUERY_KEY, 'detail', 'noop'],
         queryFn: () => billingApi.getInvoice(id as number),
+        staleTime: 2 * 60 * 1000,
         enabled: !!id,
     })
 }

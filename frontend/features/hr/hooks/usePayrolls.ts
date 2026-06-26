@@ -44,6 +44,7 @@ export type EmployeeBasic = {
 export function usePayrollDetail(payrollId: number, viewMode: 'admin' | 'employee' = 'admin', employee?: EmployeeBasic) {
     return useQuery({
         queryKey: [...PAYROLLS_QUERY_KEY, 'detail', payrollId, viewMode],
+        staleTime: 2 * 60 * 1000,
         queryFn: async () => {
             if (viewMode === 'employee') {
                 const pData = await getEmployeePayrollPreview(payrollId)

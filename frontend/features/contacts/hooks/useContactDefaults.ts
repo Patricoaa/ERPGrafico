@@ -8,6 +8,7 @@ export function useDefaultCustomer(enabled: boolean) {
             const data = await contactsApi.getContacts({ is_default_customer: true })
             return (data as any)?.[0] || null
         },
+        staleTime: 10 * 60 * 1000,
         enabled
     })
 }
@@ -19,6 +20,7 @@ export function useDefaultVendor(enabled: boolean) {
             const data = await contactsApi.getContacts({ is_default_vendor: true })
             return (data as any)?.[0] || null
         },
+        staleTime: 10 * 60 * 1000,
         enabled
     })
 }

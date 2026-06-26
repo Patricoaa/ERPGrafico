@@ -50,6 +50,7 @@ export function useJournalEntry(id: string | number | undefined) {
             const data = await accountingApi.getEntry(id as string | number)
             return data
         },
+        staleTime: 2 * 60 * 1000,
         enabled: !!id,
     })
 }

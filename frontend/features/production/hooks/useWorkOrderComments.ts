@@ -24,6 +24,7 @@ export function useWorkOrderComments(orderId: number) {
             const res = await api.get(`/production/orders/${orderId}/comments/`)
             return res.data
         },
+        staleTime: 30 * 1000,
         enabled: !!orderId,
     })
 

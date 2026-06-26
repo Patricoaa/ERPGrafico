@@ -36,6 +36,7 @@ export function useEmployee(id: number | string | undefined) {
     return useQuery({
         queryKey: [...EMPLOYEES_QUERY_KEY, 'detail', id],
         queryFn: () => getEmployee(Number(id)),
+        staleTime: 5 * 60 * 1000,
         enabled: !!id,
     })
 }
@@ -53,6 +54,7 @@ export function useEmployeeFormDeps(enabled: boolean) {
                 concepts: conceptsData.filter((c: PayrollConcept) => c.formula_type === 'EMPLOYEE_SPECIFIC')
             }
         },
+        staleTime: 10 * 60 * 1000,
         enabled
     })
 }

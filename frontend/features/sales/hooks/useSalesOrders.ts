@@ -141,6 +141,7 @@ export function useSalesNotes({ filters }: { filters?: SaleNoteFilters } = {}) {
     const query = useQuery({
         queryKey: SALES_KEYS.notes(activeFilters),
         queryFn: () => salesApi.getSalesNotes(activeFilters),
+        staleTime: 2 * 60 * 1000,
         placeholderData: (prev) => prev,
     })
 
@@ -167,6 +168,7 @@ export function useSaleOrder(id: number | null | undefined) {
     return useQuery({
         queryKey: id ? SALES_KEYS.order(id) : ['sales', 'order', 'noop'],
         queryFn: () => salesApi.getOrder(id as number),
+        staleTime: 2 * 60 * 1000,
         enabled: !!id,
     })
 }

@@ -50,6 +50,7 @@ export function usePurchasingNotes(initialData?: Invoice[]) {
     const query = useQuery({
         queryKey: PURCHASING_KEYS.notes(),
         queryFn: () => purchasingApi.getNotes(),
+        staleTime: 2 * 60 * 1000,
         initialData,
         placeholderData: (prev) => prev,
     })
@@ -66,6 +67,7 @@ export function usePurchasingOrder(id: number) {
     const { data: order, isLoading } = useQuery({
         queryKey: PURCHASING_KEYS.detail(id),
         queryFn: () => purchasingApi.getOrder(id),
+        staleTime: 2 * 60 * 1000,
     })
 
     return { order, isLoading }
@@ -75,6 +77,7 @@ export function usePurchaseReceipt(id: number | null, enabled = true) {
     const { data: receipt, isLoading } = useQuery({
         queryKey: [...PURCHASING_KEYS.all, 'receipt', id],
         queryFn: () => purchasingApi.getReceipt(id as number),
+        staleTime: 2 * 60 * 1000,
         enabled: !!id && enabled,
     })
 
@@ -85,6 +88,7 @@ export function usePurchaseReturn(id: number | null, enabled = true) {
     const { data: returnData, isLoading } = useQuery({
         queryKey: [...PURCHASING_KEYS.all, 'return', id],
         queryFn: () => purchasingApi.getReturn(id as number),
+        staleTime: 2 * 60 * 1000,
         enabled: !!id && enabled,
     })
 

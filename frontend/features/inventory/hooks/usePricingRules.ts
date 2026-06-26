@@ -45,6 +45,7 @@ export function usePricingRules(filters?: FilterState) {
             // eslint-disable-next-line pagination/no-raw-response-data -- master data, no pagination
             return response.data
         },
+        staleTime: 5 * 60 * 1000,
     })
 
     const invalidate = () => {
@@ -105,6 +106,7 @@ export function useProductPricingRules(productId: number | null | undefined) {
             // eslint-disable-next-line pagination/no-raw-response-data -- master data, no pagination
             return response.data
         },
+        staleTime: 5 * 60 * 1000,
         enabled: !!productId,
     })
 

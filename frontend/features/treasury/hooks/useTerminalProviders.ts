@@ -65,6 +65,7 @@ export function useTerminalDevices(filters?: Record<string, string>) {
     const { data: devices, isLoading, error, refetch } = useQuery<PaymentTerminalDevice[]>({
         queryKey: [...TERMINAL_DEVICES_KEYS.lists(), filters],
         queryFn: () => treasuryApi.getTerminalDevices(filters),
+        staleTime: 15 * 60 * 1000,
     })
 
     const invalidate = () => {

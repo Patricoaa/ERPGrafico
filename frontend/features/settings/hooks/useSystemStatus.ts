@@ -12,6 +12,7 @@ export function useSystemStatus(): UseSystemStatusReturn {
     const { data: status, isLoading, refetch } = useQuery({
         queryKey: ["system-status"],
         queryFn: () => settingsApi.getSystemStatus(),
+        staleTime: 30 * 1000,
         refetchInterval: 30000,
     })
 

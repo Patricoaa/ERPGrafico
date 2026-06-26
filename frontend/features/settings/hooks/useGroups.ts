@@ -13,6 +13,7 @@ export function useGroups() {
     const { data: groups = [], isLoading } = useQuery({
         queryKey: GROUPS_QUERY_KEY,
         queryFn: settingsApi.getGroups,
+        staleTime: 10 * 60 * 1000,
     })
 
     const deleteMutation = useMutation({
