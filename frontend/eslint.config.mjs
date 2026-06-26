@@ -13,6 +13,7 @@ import noRawTailwindColors from "./eslint-rules/no-raw-tailwind-colors.mjs";
 import formsMustUseHook from "./eslint-rules/forms-must-use-hook.mjs";
 import componentNamingSuffix from "./eslint-rules/component-naming-suffix.mjs";
 import statusMustUseStatusbadge from "./eslint-rules/status-must-use-statusbadge.mjs";
+import mutationMustMarkLocal from "./eslint-rules/mutation-must-mark-local.mjs";
 
 const eslintConfig = defineConfig([...nextVitals, ...nextTs, globalIgnores([
   ".next/**",
@@ -296,6 +297,15 @@ const eslintConfig = defineConfig([...nextVitals, ...nextTs, globalIgnores([
   },
   rules: {
     "status/must-use-statusbadge": "warn",
+  },
+}, // Mutation hooks must call markLocalMutation() — docs/20-contracts/hook-contracts.md Rule 2
+{
+  files: ["features/*/hooks/**/*.ts"],
+  plugins: {
+    mutation: { rules: { "must-mark-local": mutationMustMarkLocal } },
+  },
+  rules: {
+    "mutation/must-mark-local": "warn",
   },
 }, ...storybook.configs["flat/recommended"]]);
 
