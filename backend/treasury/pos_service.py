@@ -190,6 +190,36 @@ class POSService:
         return session, audit
 
     # ------------------------------------------------------------------ #
+    # Request wrappers                                                    #
+    # ------------------------------------------------------------------ #
+
+    @staticmethod
+    def open_session_from_request(request):
+        return POSService.open_session(
+            user=request.user,
+            terminal_id=request.data.get("terminal_id"),
+            treasury_account_id=request.data.get("treasury_account_id"),
+            opening_balance=Decimal(str(request.data.get("opening_balance", "0"))),
+            fund_source_id=request.data.get("fund_source_id"),
+            justify_reason=request.data.get("justify_reason"),
+            justify_target_id=request.data.get("justify_target_id"),
+            notes=request.data.get("notes", ""),
+        )
+
+    @staticmethod
+    def close_session_from_request(request, session: POSSession):
+        return POSService.close_session(
+            session=session,
+            actual_cash=Decimal(str(request.data.get("actual_cash", "0"))),
+            notes=request.data.get("notes", ""),
+            justify_reason=request.data.get("justify_reason", "UNKNOWN"),
+            justify_target_id=request.data.get("justify_target_id"),
+            withdrawal_amount=Decimal(str(request.data.get("withdrawal_amount", "0"))),
+            cash_destination_id=request.data.get("cash_destination_id"),
+            user=request.user,
+        )
+
+    # ------------------------------------------------------------------ #
     # Manual Movement                                                      #
     # ------------------------------------------------------------------ #
 
