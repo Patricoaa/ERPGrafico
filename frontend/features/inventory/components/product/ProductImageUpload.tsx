@@ -1,9 +1,32 @@
+import { useCallback } from "react"
 import Image from "next/image"
 import { FormField } from "@/components/ui/form"
 import { Button } from "@/components/ui/button"
 import { Plus, X } from "lucide-react"
 import { type UseFormReturn } from "react-hook-form"
 import { type ProductFormValues } from "./schema"
+import { toast } from "sonner"
+
+const ALLOWED_IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp"]
+const ALLOWED_IMAGE_EXTENSIONS = [".jpg", ".jpeg", ".png", ".webp"]
+
+function validateImageFile(file: File): boolean {
+    const ext = "." + file.name.split(".").pop()?.toLowerCase()
+    if (!ALLOWED_IMAGE_EXTENSIONS.includes(ext)) {
+        toast.error("Formato no permitido. Usa JPG, PNG o WEBP.")
+        return false
+    }
+    if (!ALLOWED_IMAGE_TYPES.includes(file.type)) {
+        toast.error("Tipo MIME inválido. Usa JPG, PNG o WEBP.")
+        return false
+    }
+    const maxSize = 10 * 1024 * 1024
+    if (file.size > maxSize) {
+        toast.error("La imagen supera los 10MB.")
+        return false
+    }
+    return true
+}
 
 interface ProductImageUploadProps {
     form: UseFormReturn<ProductFormValues>
@@ -12,6 +35,19 @@ interface ProductImageUploadProps {
 }
 
 export function ProductImageUpload({ form, imagePreview, setImagePreview }: ProductImageUploadProps) {
+    const handleFileSelect = useCallback((e: React.ChangeEvent<HTMLInputElement>, field: any) => {
+        const file = e.target.files?.[0]
+        if (!file) return
+        if (!validateImageFile(file)) {
+            e.target.value = ""
+            return
+        }
+        field.onChange(file)
+        const reader = new FileReader()
+        reader.onloadend = () => setImagePreview(reader.result as string)
+        reader.readAsDataURL(file)
+    }, [setImagePreview])
+
     return (
         <div className="h-full">
             <FormField<ProductFormValues>
@@ -27,7 +63,7 @@ export function ProductImageUpload({ form, imagePreview, setImagePreview }: Prod
                                         alt="Preview"
                                         fill
                                         className="object-cover"
-                                        unoptimized={imagePreview.startsWith('data:')}
+                                        unoptimized={imagePreview.startsWith("data:")}
                                     />
                                     <div className="absolute inset-0 bg-overlay/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
                                         <Button
@@ -51,16 +87,8 @@ export function ProductImageUpload({ form, imagePreview, setImagePreview }: Prod
                                     <input
                                         type="file"
                                         className="hidden"
-                                        accept="image/*"
-                                        onChange={(e) => {
-                                            const file = e.target.files?.[0]
-                                            if (file) {
-                                                field.onChange(file)
-                                                const reader = new FileReader()
-                                                reader.onloadend = () => setImagePreview(reader.result as string)
-                                                reader.readAsDataURL(file)
-                                            }
-                                        }}
+                                        accept=".jpg,.jpeg,.png,.webp"
+                                        onChange={(e) => handleFileSelect(e, field)}
                                     />
                                 </label>
                             )}
