@@ -14,7 +14,11 @@ class InvoiceSelectorExt:
             is_boleta = request.query_params.get('is_boleta')
             if d_type: qs = qs.filter(document_type=d_type)
             if inv_type: qs = qs.filter(invoice_type=inv_type)
-            if is_purch: qs = qs.filter(is_purchase=is_purch.lower() == 'true')
+            if is_purch:
+                if is_purch.lower() == 'true':
+                    qs = qs.filter(purchase_order__isnull=False)
+                else:
+                    qs = qs.filter(sale_order__isnull=False)
             if stat: qs = qs.filter(status=stat)
             if part: qs = qs.filter(partner_id=part)
             if df: qs = qs.filter(date__gte=df)
@@ -41,14 +45,14 @@ class InvoiceSelectorExt:
     @staticmethod
     def get_related_documents(invoice):
         docs = []
-        if invoice.is_purchase and hasattr(invoice, 'purchase_order') and invoice.purchase_order:
+        if invoice.purchase_order_id and hasattr(invoice, 'purchase_order') and invoice.purchase_order:
             docs.append({'type': 'purchase_order', 'id': invoice.purchase_order.id, 'name': invoice.purchase_order.name, 'url': f'/purchasing/orders/{invoice.purchase_order.id}'})
-        if not invoice.is_purchase and hasattr(invoice, 'sale_order') and invoice.sale_order:
+        if invoice.sale_order_id and hasattr(invoice, 'sale_order') and invoice.sale_order:
             docs.append({'type': 'sale_order', 'id': invoice.sale_order.id, 'name': invoice.sale_order.name, 'url': f'/sales/orders/{invoice.sale_order.id}'})
         for inv in invoice.related_invoices.all():
-            if inv != invoice: docs.append({'type': 'invoice', 'id': inv.id, 'name': str(inv), 'url': f'/billing/{"purchases" if inv.is_purchase else "sales"}/{inv.id}'})
-        for dn in invoice.debit_notes.all(): docs.append({'type': 'debit_note', 'id': dn.id, 'name': str(dn), 'url': f'/billing/{"purchases" if dn.is_purchase else "sales"}/{dn.id}'})
-        for cn in invoice.credit_notes.all(): docs.append({'type': 'credit_note', 'id': cn.id, 'name': str(cn), 'url': f'/billing/{"purchases" if cn.is_purchase else "sales"}/{cn.id}'})
+            if inv != invoice: docs.append({'type': 'invoice', 'id': inv.id, 'name': str(inv), 'url': f'/billing/{"purchases" if inv.purchase_order_id else "sales"}/{inv.id}'})
+        for dn in invoice.debit_notes.all(): docs.append({'type': 'debit_note', 'id': dn.id, 'name': str(dn), 'url': f'/billing/{"purchases" if dn.purchase_order_id else "sales"}/{dn.id}'})
+        for cn in invoice.credit_notes.all(): docs.append({'type': 'credit_note', 'id': cn.id, 'name': str(cn), 'url': f'/billing/{"purchases" if cn.purchase_order_id else "sales"}/{cn.id}'})
         return docs
 
     @staticmethod
@@ -67,7 +71,7 @@ class InvoiceSelectorExt:
         from sales.models import SaleReturn
         from purchasing.models import PurchaseReturn
         returns = []
-        if invoice.is_purchase:
+        if invoice.purchase_order_id:
             for r in PurchaseReturn.objects.filter(invoice=invoice):
                 returns.append({'id': r.id, 'name': str(r), 'status': r.status})
         else:
