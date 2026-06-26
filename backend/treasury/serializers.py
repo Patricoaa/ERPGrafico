@@ -402,9 +402,11 @@ class TreasuryMovementSerializer(serializers.ModelSerializer):
         return None
 
     def get_partner_name(self, obj):
+        from .selectors import TreasuryMovementSelector
         return TreasuryMovementSelector.get_partner_name(obj)
 
     def get_partner_id(self, obj):
+        from .selectors import TreasuryMovementSelector
         return TreasuryMovementSelector.get_partner_id(obj)
 
     def get_journal_entry(self, obj):
