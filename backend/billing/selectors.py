@@ -46,9 +46,11 @@ class InvoiceSelectorExt:
     def get_related_documents(invoice):
         docs = []
         if invoice.purchase_order_id and hasattr(invoice, 'purchase_order') and invoice.purchase_order:
-            docs.append({'type': 'purchase_order', 'id': invoice.purchase_order.id, 'name': invoice.purchase_order.name, 'url': f'/purchasing/orders/{invoice.purchase_order.id}'})
+            po = invoice.purchase_order
+            docs.append({'type': 'purchase_order', 'id': po.id, 'name': str(po), 'url': f'/purchasing/orders/{po.id}'})
         if invoice.sale_order_id and hasattr(invoice, 'sale_order') and invoice.sale_order:
-            docs.append({'type': 'sale_order', 'id': invoice.sale_order.id, 'name': invoice.sale_order.name, 'url': f'/sales/orders/{invoice.sale_order.id}'})
+            so = invoice.sale_order
+            docs.append({'type': 'sale_order', 'id': so.id, 'name': str(so), 'url': f'/sales/orders/{so.id}'})
         for inv in invoice.related_invoices.all():
             if inv != invoice: docs.append({'type': 'invoice', 'id': inv.id, 'name': str(inv), 'url': f'/billing/{"purchases" if inv.purchase_order_id else "sales"}/{inv.id}'})
         for dn in invoice.debit_notes.all(): docs.append({'type': 'debit_note', 'id': dn.id, 'name': str(dn), 'url': f'/billing/{"purchases" if dn.purchase_order_id else "sales"}/{dn.id}'})
