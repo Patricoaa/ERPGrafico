@@ -63,7 +63,7 @@ export function ProductImageUpload({ form, imagePreview, setImagePreview }: Prod
                                         alt="Preview"
                                         fill
                                         className="object-cover"
-                                        unoptimized={imagePreview.startsWith("data:")}
+                                        unoptimized
                                     />
                                     <div className="absolute inset-0 bg-overlay/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
                                         <Button
