@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { setClientToken, removeClientTokens } from './client-token';
 
 const rawBaseURL = process.env.NEXT_PUBLIC_API_URL || '';
 const baseURL = rawBaseURL.endsWith('/') ? rawBaseURL : `${rawBaseURL}/`;
@@ -78,7 +79,7 @@ api.interceptors.response.use(
                 if (response.status === 200) {
                     if (isBrowser) {
                         try {
-                            localStorage.setItem('access_token', response.data.access);
+                            setClientToken(response.data.access);
                         } catch {}
                     }
                     api.defaults.headers.common['Authorization'] = 'Bearer ' + response.data.access;
@@ -90,8 +91,7 @@ api.interceptors.response.use(
                 // race condition that window.location.href causes with React).
                 if (isBrowser) {
                     try {
-                        localStorage.removeItem('access_token');
-                        localStorage.removeItem('refresh_token');
+                        removeClientTokens();
                     } catch {}
                 }
             }

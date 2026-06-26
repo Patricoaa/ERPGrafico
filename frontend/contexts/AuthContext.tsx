@@ -5,6 +5,7 @@ import {useRouter} from "next/navigation";
 import axios from "axios";
 import api from "@/lib/api";
 import { useTheme } from "next-themes";
+import { setClientToken, removeClientTokens, getClientToken } from "@/lib/client-token";
 
 interface User {
     id: number;
@@ -50,7 +51,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // endpoint avoids the divergence that previously called a non-existent /core/me/.
     const fetchUser = useCallback(async () => {
         try {
-            const token = typeof window !== 'undefined' ? localStorage.getItem("access_token") : null;
+            const token = getClientToken();
             if (!token) {
                 setUser(null);
                 setIsAuthenticated(false);
@@ -73,11 +74,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             // Only discard credentials when the server explicitly rejects them.
             // A transient network failure or 5xx must not log the user out.
             const status = axios.isAxiosError(error) ? error.response?.status : undefined;
-            if ((status === 401 || status === 403) && typeof window !== 'undefined') {
-                try {
-                    localStorage.removeItem("access_token");
-                    localStorage.removeItem("refresh_token");
-                } catch {}
+            if (status === 401 || status === 403) {
+                removeClientTokens();
             }
         } finally {
             setIsLoading(false);
@@ -92,7 +90,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }, [fetchUser]);
 
     const login = async (token: string) => {
-        localStorage.setItem("access_token", token);
+        setClientToken(token);
         setIsLoading(true);
         await fetchUser();
     };
@@ -102,8 +100,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         api.post('/logout/').catch(() => {
             // Best-effort: cookie also expires after max-age
         });
-        localStorage.removeItem("access_token");
-        localStorage.removeItem("refresh_token");
+        removeClientTokens();
         setUser(null);
         setIsAuthenticated(false);
         router.push("/login");
