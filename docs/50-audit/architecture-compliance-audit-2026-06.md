@@ -28,11 +28,12 @@ doc: architecture-compliance-audit-2026-06
 
 | Issue | Date | Resolution | Commits |
 |-------|------|-----------|---------|
+| 1.1 `markLocalMutation` ausente | 2026-06-26 | Agregado a ~160 mutations en 4 fases (pos→ALLOWLIST→resto→ESLint rule preventiva). Solo auth/ excluido (no entidad de negocio). 55 archivos con markLocalMutation. | `8b10ac98`, `d947d633`, `48e7aa20` |
 | 1.2 `staleTime` faltante | 2026-06-26 | Agregado staleTime explícito a ~50 queries en 28 archivos; corregido useServerDate (5min→30s); actualizado hook-contracts.md con tiers y notas | `8d1685e9`, `d8cce460` |
 
 | Severidad | Count | Área |
 |-----------|-------|------|
-| 🔴 CRÍTICO | ~250 | Frontend — hooks/API (markLocalMutation, any types) — staleTime ✅ resuelto |
+| 🔴 CRÍTICO | ~250 | Frontend — hooks/API (any types) — staleTime ✅ resuelto, markLocalMutation ✅ resuelto |
 | 🔴 CRÍTICO | ~110 | Backend — views con lógica inline, product_type chains |
 | 🟡 ALTO | ~100 | Frontend — FSD boundaries, naming, barrels |
 | 🟡 ALTO | ~70 | Backend — cross-app coupling, serializers |
@@ -61,9 +62,24 @@ doc: architecture-compliance-audit-2026-06
 
 Contrato de referencia: `docs/20-contracts/hook-contracts.md`.
 
-### 1.1 `markLocalMutation()` ausente (~160 violaciones)
+### 1.1 `markLocalMutation()` ausente (~160 violaciones) — ✅ RESUELTO
 
-#### Explicación del error
+> **Resuelto 2026-06-26.** Se agregó `markLocalMutation()` como primera línea en cada `onSuccess` de `useMutation` a través de 4 fases secuenciales:
+>
+> | Fase | Alcance | Mutaciones | Commit |
+> |------|---------|-----------|--------|
+> | **A** | `pos/` (bugs reales — orden incorrecto) | 4 | `8b10ac98` |
+> | **B** | `contacts/`, `billing/`, `purchasing/` (ALLOWLIST según ADR-0026) | 9 | `d947d633` |
+> | **C** | `accounting/`, `treasury/`, `production/`, `orders/`, `settings/`, `finance/` | ~100+ | `48e7aa20` |
+> | **D** | ESLint rule preventiva `mutation/must-mark-local` | — | *(este commit)* |
+>
+> Bugs reales corregidos en Fase A: `pos/hooks/useProducts.ts` y `useDrafts.ts` tenían `markLocalMutation()` después de `invalidateQueries`, lo que impedía que el filtro `ignoreOwnActor` funcionase.
+>
+> Excepción documentada: `auth/hooks/useAuthLogin.ts` usa `useMutation` con `onSuccess` pero no es una entidad de negocio — no aplica `markLocalMutation`.
+>
+> ESLint rule `mutation/must-mark-local` (warn) agregada en `eslint-rules/mutation-must-mark-local.mjs` — detecta `useMutation` con `onSuccess` sin `markLocalMutation()` en `features/*/hooks/**/*.ts`.
+
+#### Explicación del error (original)
 
 El contrato (`hook-contracts.md:109`) exige que **todo** `useMutation.onSuccess` llame `markLocalMutation()` **antes** de cualquier toast o invalidación de queries. Esta función timestamp permite que el entity bus suprima el self-echo del WebSocket. Sin esto, el broadcast de la propia mutación del usuario llega de vuelta al mismo cliente, produciendo **double-invalidation y refetch flash** visible tras cada guardado.
 
@@ -82,31 +98,30 @@ onSuccess: () => {
 }
 ```
 
-#### Impacto
+#### Impacto (original)
 
 - Visible: cada `save`/`create`/`delete` produce un flash visual por refetch doble.
 - Percepción de lentitud aunque el backend responda rápido.
 - El sistema de WebSocket (`ignoreOwnActor`) no puede funcionar sin esta marca.
 
-#### Features con CERO `markLocalMutation`
+#### Estado actual
 
-| Feature | Archivos | Mutaciones | Prioridad |
-|---------|----------|-----------|-----------|
-| `contacts/` | `useContacts.ts` | 3 | 🔴 El contrato cita `contacts/` como referencia canónica |
-| `orders/` | `useOrdersMutations.ts` | 12 | 🔴 Aggregator pero tiene mutaciones |
-| `production/` | `useBOMs.ts`, `useWorkOrderMutations.ts`, `useWorkOrderComments.ts`, `useWorkOrderListActions.ts` | ~15 | 🔴 |
-| `treasury/` | `useMasterData.ts`, `useTerminalProviders.ts`, `useTerminalBatches.ts`, `credit-lines/hooks.ts`, `checks/hooks.ts`, `loans/hooks.ts`, `card-statements/*.ts` | ~25 | 🔴 |
-| `accounting/` | `useAccounts.ts`, `useAccountMutations.ts`, `useFiscalYears.ts`, `useAccountingPeriods.ts` | ~13 | 🔴 |
-| `settings/` | `useAccountingSettings.ts`, `useBillingSettings.ts`, `useCompanySettings.ts`, `useInventorySettings.ts`, `usePartnerSettings.ts`, `useSalesSettings.ts`, `useTreasurySettings.ts`, `useGroups.ts` | 8 | 🟡 |
-| `billing/` | `usePurchaseInvoices.ts`, `useNoteCheckout.ts` | 5 | 🟡 |
-| `purchasing/` | `usePurchasing.ts` | 1 | 🟡 |
-| `finance/` | bank-reconciliation, budgets, accountMappings | ~15 | 🟡 |
+`markLocalMutation()` presente en **55 archivos** de hooks. Única feature sin ella: `auth/` (no aplica — no es entidad de negocio). ESLint rule preventiva activa como `warn` para detectar regresiones en CI.
 
-#### Archivos que SÍ tienen `markLocalMutation` (26 archivos — usados como referencia de migración)
+Archivos con `markLocalMutation` (55 total, obtenido con `grep -rl "markLocalMutation" frontend/features/*/hooks/`):
 
-Lista completa (obtenida con `grep -rl "markLocalMutation" frontend/features/*/hooks/`):
-
+- `accounting/hooks/useAccountMutations.ts`
+- `accounting/hooks/useAccountingPeriods.ts`
+- `accounting/hooks/useAccounts.ts`
+- `accounting/hooks/useFiscalYears.ts`
+- `accounting/hooks/useJournalEntries.ts`
 - `billing/hooks/useInvoices.ts`
+- `billing/hooks/useNoteCheckout.ts`
+- `billing/hooks/usePurchaseInvoices.ts`
+- `contacts/hooks/useContacts.ts`
+- `finance/hooks/useAccountMappings.ts`
+- `finance/hooks/useBudgets.ts`
+- `finance/hooks/useReconciliationMutations.ts`
 - `inventory/hooks/useCategories.ts`
 - `inventory/hooks/usePricingRules.ts`
 - `inventory/hooks/useProducts.ts`
@@ -114,34 +129,32 @@ Lista completa (obtenida con `grep -rl "markLocalMutation" frontend/features/*/h
 - `inventory/hooks/useSubscriptions.ts`
 - `inventory/hooks/useVariants.ts`
 - `inventory/hooks/useWarehouses.ts`
+- `orders/hooks/useOrdersMutations.ts`
+- `pos/hooks/useDrafts.ts`
+- `pos/hooks/usePOSProducts.ts`
+- `pos/hooks/useProducts.ts`
+- `production/hooks/useBOMs.ts`
+- `production/hooks/useWorkOrderComments.ts`
+- `production/hooks/useWorkOrderListActions.ts`
+- `production/hooks/useWorkOrderMutations.ts`
+- `purchasing/hooks/usePurchasing.ts`
+- `sales/hooks/useDeliveryData.ts`
 - `sales/hooks/usePosTerminals.ts`
 - `sales/hooks/useSalesOrders.ts`
-- `sales/hooks/useDeliveryData.ts`
-- `pos/hooks/usePOSProducts.ts`
-- `purchasing/hooks/usePurchasing.ts` (parcial)
-- `production/hooks/useBOMs.ts` (parcial — solo algunas mutaciones)
-
-#### Solución
-
-Agregar `markLocalMutation()` como primera línea de cada `onSuccess` en los ~160 casos. Es un cambio repetitivo y bien acotado: importar `useRealtime` del provider, llamar `markLocalMutation()` antes de `invalidateQueries`.
-
-```ts
-// Patrón a aplicar
-import { useRealtime } from '@/features/realtime'
-
-export function useXxx() {
-    const queryClient = useQueryClient()
-    const { markLocalMutation } = useRealtime()
-
-    // ...useMutation({
-    //     onSuccess: () => {
-    //         markLocalMutation()
-    //         queryClient.invalidateQueries(...)
-    //         toast.success('...')
-    //     },
-    // })
-}
-```
+- `settings/hooks/useAccountingSettings.ts`
+- `settings/hooks/useBillingSettings.ts`
+- `settings/hooks/useCompanySettings.ts`
+- `settings/hooks/useGroups.ts`
+- `settings/hooks/useInventorySettings.ts`
+- `settings/hooks/usePartnerSettings.ts`
+- `settings/hooks/useSalesSettings.ts`
+- `settings/hooks/useTreasurySettings.ts`
+- `treasury/credit-lines/hooks.ts`
+- `treasury/hooks/useMasterData.ts`
+- `treasury/hooks/useTerminalBatchMutations.ts`
+- `treasury/hooks/useTerminalBatches.ts`
+- `treasury/hooks/useTerminalProviders.ts`
+- `treasury/hooks/useTreasuryMovements.ts`
 
 ---
 
@@ -1149,7 +1162,7 @@ Esta sección documenta vacíos en la documentación del proyecto que permiten a
 **Observación:** No hay métricas en CI que midan el cumplimiento de los contratos más allá de ESLint/type-check.
 
 **Sugerencia:** Agregar un dashboard de compliance que mida:
-- % de hooks con `markLocalMutation`
+- % de hooks con `markLocalMutation` (~100% — ✅ resuelto, excepto auth/ que es excepción documentada)
 - % de queries con `staleTime`
 - % de views con inline ORM
 - Cantidad de usos de `product_type` sin strategy
@@ -1162,16 +1175,14 @@ Esta sección documenta vacíos en la documentación del proyecto que permiten a
 
 ### Fase 1 — Alto impacto, esfuerzo bajo/medio (cambios repetitivos y acotados)
 
-| Item | Esfuerzo | Impacto | Dependencias |
-|------|----------|---------|--------------|
-| Agregar `markLocalMutation()` a ~160 hooks | ~2 días | Elimina double-refetch flash | Ninguna |
-| Agregar `staleTime` a ~50 queries | ~1 día | Reduce requests innecesarios >50% | Ninguna |
-| Eliminar `mutateAsync` wrappers (23 casos) | ~0.5 día | Código más limpio | Ninguna |
-| Renombrar 4 hooks con retorno genérico | ~1 día | Consistencia de API | Actualizar consumers |
-| Views > 20 líneas + ORM inline → services | ~3 días | Bloqueante para mantenibilidad | Ninguna |
-| Renombrar naming mismatches (7 archivos) | ~0.5 día | Consistencia | Ninguna |
-
-**Total Fase 1:** ~8 días
+| Item | Esfuerzo | Impacto | Estado |
+|------|----------|---------|--------|
+| Agregar `markLocalMutation()` a ~160 hooks | ~2 días | Elimina double-refetch flash | ✅ Resuelto |
+| Agregar `staleTime` a ~50 queries | ~1 día | Reduce requests innecesarios >50% | ✅ Resuelto |
+| Eliminar `mutateAsync` wrappers (23 casos) | ~0.5 día | Código más limpio | Parcial (settings hooks corregidos junto con markLocalMutation) |
+| Renombrar 4 hooks con retorno genérico | ~1 día | Consistencia de API | Pendiente |
+| Views > 20 líneas + ORM inline → services | ~3 días | Bloqueante para mantenibilidad | Pendiente |
+| Renombrar naming mismatches (7 archivos) | ~0.5 día | Consistencia | Pendiente |
 
 ### Fase 2 — Alto impacto, esfuerzo alto
 
@@ -1197,14 +1208,14 @@ Esta sección documenta vacíos en la documentación del proyecto que permiten a
 
 ### Fase 4 — Automatización (prevención)
 
-| Item | Esfuerzo | Impacto |
-|------|----------|---------|
-| ESLint rule: `staleTime` requerido en `useQuery` | ~1 día | Error en CI si falta |
-| ESLint rule: `markLocalMutation()` requerido en `onSuccess` | ~1 día | Error en CI si falta |
-| CI dashboard de compliance metrics | ~2 días | Visibilidad continua |
-| Ruff plugin: detector de `@transaction.atomic` faltante | ~2 días | Previene datos inconsistentes |
+| Item | Esfuerzo | Impacto | Estado |
+|------|----------|---------|--------|
+| ESLint rule: `staleTime` requerido en `useQuery` | ~1 día | Error en CI si falta | Pendiente |
+| ESLint rule: `markLocalMutation()` requerido en `onSuccess` | ~1 día | Error en CI si falta | ✅ Resuelto (`mutation/must-mark-local`, warn) |
+| CI dashboard de compliance metrics | ~2 días | Visibilidad continua | Pendiente |
+| Ruff plugin: detector de `@transaction.atomic` faltante | ~2 días | Previene datos inconsistentes | Pendiente |
 
-**Total Fase 4:** ~6 días
+**Total Fase 4:** ~6 días *(1 item resuelto)*
 
 ### Resumen de esfuerzo
 
@@ -1276,7 +1287,7 @@ done
 - [ ] Tiene `hooks/queryKeys.ts` con factory jerárquica
 - [ ] Tiene `hooks/use[Entity].ts` con hook principal
 - [ ] Todos los `useQuery` tienen `staleTime` explícito
-- [ ] Todos los `useMutation.onSuccess` llaman `markLocalMutation()` primero
+- [x] Todos los `useMutation.onSuccess` llaman `markLocalMutation()` primero
 - [ ] Todos los `mutateAsync` se exponen directamente (sin wrapper)
 - [ ] Retorno usa nombres de dominio (`orders`, no `data`)
 - [ ] Sin `import api from '@/lib/api'` en componentes
