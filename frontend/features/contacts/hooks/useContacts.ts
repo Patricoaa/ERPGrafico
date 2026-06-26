@@ -5,6 +5,7 @@ import { toast } from 'sonner'
 import { type ContactFilters, type ContactPayload, type Contact } from '../types'
 import { SALES_KEYS } from '@/features/sales/hooks/useSalesOrders'
 import { PURCHASING_KEYS } from '@/features/purchasing/hooks/usePurchasing'
+import { useRealtime } from '@/features/realtime'
 
 import { CONTACTS_KEYS } from './queryKeys'
 
@@ -37,10 +38,12 @@ export function useContacts({ filters, initialData }: { filters?: ContactFilters
 
 export function useContactMutations() {
     const queryClient = useQueryClient()
+    const { markLocalMutation } = useRealtime()
 
     const createMutation = useMutation({
         mutationFn: contactsApi.createContact,
         onSuccess: () => {
+            markLocalMutation()
             toast.success('Contacto creado exitosamente')
             queryClient.invalidateQueries({ queryKey: CONTACTS_KEYS.lists() })
             // A new contact might appear in order/purchase contact filter dropdowns
@@ -56,6 +59,7 @@ export function useContactMutations() {
         mutationFn: ({ id, payload }: { id: number, payload: Partial<ContactPayload> }) =>
             contactsApi.updateContact(id, payload),
         onSuccess: (data) => {
+            markLocalMutation()
             toast.success('Contacto actualizado exitosamente')
             queryClient.invalidateQueries({ queryKey: CONTACTS_KEYS.lists() })
             queryClient.invalidateQueries({ queryKey: CONTACTS_KEYS.detail(data.id) })
@@ -71,6 +75,7 @@ export function useContactMutations() {
     const deleteMutation = useMutation({
         mutationFn: contactsApi.deleteContact,
         onSuccess: () => {
+            markLocalMutation()
             toast.success('Contacto eliminado exitosamente')
             queryClient.invalidateQueries({ queryKey: CONTACTS_KEYS.lists() })
         },
