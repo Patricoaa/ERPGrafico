@@ -79,9 +79,9 @@ class InvoiceSelectorExt:
         from purchasing.models import PurchaseReturn
         returns = []
         if invoice.purchase_order_id:
-            for r in PurchaseReturn.objects.filter(invoice=invoice):
+            for r in PurchaseReturn.objects.filter(credit_note=invoice):
                 returns.append({'id': r.id, 'name': str(r), 'status': r.status})
         else:
-            for r in SaleReturn.objects.filter(invoice=invoice):
+            for r in SaleReturn.objects.filter(credit_note=invoice):
                 returns.append({'id': r.id, 'name': str(r), 'status': r.status})
         return returns
