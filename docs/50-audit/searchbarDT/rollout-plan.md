@@ -45,7 +45,7 @@ El patrón canónico completo:
 2. Hook: acepta filters?: TypedFilters; filters en queryKey; API fn los pasa como params
 3. searchDef: features/[app]/searchDef.ts — campos declarados
 4. Vista: useSmartSearch(searchDef) → hook → DataTable leftAction
-5. Eliminar: filterColumn, searchPlaceholder, facetedFilters del DataTable
+5. Eliminar: filterColumn, searchPlaceholder, facetedFilters del DataTable (migrados a SegmentationBar con dynamic:true - ver Phase 6 del rollout unificado)
 ```
 
 ---

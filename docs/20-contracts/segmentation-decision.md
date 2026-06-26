@@ -45,6 +45,12 @@ del DataTable.
     │   └── SÍ → TabSegment (Tabs, `variant: 'tabs'`)
     │           Ej: estado (Borrador/Publicado/Anulado), tipo contacto (Cliente/Proveedor)
     │
+    ├── ¿Selección múltiple (checkboxes) o filtro dinámico desde datos?
+    │   │
+    │   └── SÍ → MultiSelectSegment (Popover + checkboxes)
+    │           Usar `dynamic: true` + `columnId` para valores desde TanStack
+    │           Ej: estado reconciliación, período, origen (action_log/history)
+    │
     └── ¿Son muchas opciones (>6) o secundarias?
         │
         └── SÍ → DropdownSegment (DropdownMenu, `variant: 'dropdown'`)
@@ -65,7 +71,7 @@ type TabSegmentDef = {
   serverParam: string
   variant?: 'tabs' | 'dropdown'  // default 'tabs'
   defaultValue?: string           // valor inicial; isFiltered lo ignora
-  options: { label: string; value: string }[]
+  options: { label: string; value: string; icon?: LucideIcon }[]
 }
 
 type DateSegmentDef = {
@@ -77,7 +83,23 @@ type DateSegmentDef = {
   serverParamTo: string      // server param for range end
 }
 
-type SegmentDef = TabSegmentDef | DateSegmentDef
+type MultiSelectSegmentDef = {
+  key: string
+  label: string
+  type: 'multiselect'
+  serverParam: string
+  columnId?: string            // TanStack column id (requerido si dynamic:true)
+  dynamic?: boolean            // si true, obtiene opciones de TanStack getFacetedUniqueValues
+  options?: { label: string; value: string; icon?: LucideIcon }[]
+}
+
+type CustomSegmentDef = {
+  key: string
+  type: 'custom'
+  render: (helpers: { apply: (key: string, value: string) => void; remove: (key: string) => void }) => React.ReactNode
+}
+
+type SegmentDef = TabSegmentDef | DateSegmentDef | MultiSelectSegmentDef | CustomSegmentDef
 
 type SegmentationDefinition = {
   segments: SegmentDef[]
@@ -184,4 +206,8 @@ Los valores persisten en la URL y soportan deeplinks y navegación con historial
 | DateSegment importa `DateRange` de `react-day-picker` como type-only | Evita bundling innecesario |
 | Un segmento `date` sin `serverParamDate` oculta el modo "Fecha única" | El modo "Todos" y "Rango" siempre están disponibles |
 | Si un segmento tiene `defaultValue`, `isFiltered` no lo cuenta como filtro activo | El valor default es el estado "neutro"; solo filtros distintos del default se consideran activos |
-| `customFilters` está deprecado desde 2026-06 | Los filtros de entidad (card, scope) y estado van en SegmentationBar. No crear nuevos customFilters. |
+ | `customFilters` está deprecado desde 2026-06 | Los filtros de entidad (card, scope) y estado van en SegmentationBar. No crear nuevos customFilters. |
+| `facetedFilters` está deprecado desde 2026-06 | Migrar a `MultiSelectSegmentDef` con `dynamic: true` + `columnId`. Ver Phase 6 del rollout. |
+| `MultiSelectSegmentDef.dynamic: true` requiere `columnId` | `columnId` debe coincidir con `accessorKey` de la columna TanStack para sincronizar filtro client-side. |
+| `CustomSegmentDef` no sincroniza URL automáticamente | El consumer decide si usa `serverParam` via `apply`/`remove` para persistir en URL. |
+| `icon` en opciones solo se muestra en MultiSelectSegment | TabSegment y DropdownSegment ignoran `icon` visualmente en este release. |

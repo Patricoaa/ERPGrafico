@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { DataTable } from '@/components/shared';
+import { DataTable, SegmentationBar } from '@/components/shared';
 import { Card, CardContent } from "@/components/ui/card";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
@@ -182,46 +182,29 @@ export default function AuditPageClient({ initialLogs }: AuditPageClientProps) {
         }
     ];
 
-    const facetedFilters = [
-        {
-            column: "source",
-            title: "Origen",
-            options: [
-                { label: "Sistema", value: "action_log" },
-                { label: "Datos", value: "history" },
-            ],
-        },
-        {
-            column: "entity_label",
-            title: "Entidad",
-            options: Array.from(new Set(logs.map(l => l.entity_label))).filter(Boolean).map(label => ({
-                label: label as string,
-                value: label as string
-            }))
-        },
-        {
-            column: "action_type_label",
-            title: "Acción",
-            options: Array.from(new Set(logs.map(l => {
-                const hType = l.history_type;
-                if (l.source === 'action_log') return l.action_type || 'Unknown';
-                if (l.source === 'history') {
-                    if (hType === '+') return 'Creación';
-                    if (hType === '~') return 'Edición';
-                    if (hType === '-') return 'Eliminación';
-                }
-                return 'Cambio';
-            }))).filter(Boolean).map(val => ({
-                label: (val === 'LOGIN' ? 'Inicio de Sesión' :
-                    val === 'LOGOUT' ? 'Cierre de Sesión' :
-                        val === 'SETTINGS_CHANGE' ? 'Configuración' :
-                            val === 'SECURITY' ? 'Seguridad' :
-                                val === 'EXPORT' ? 'Exportación' :
-                                    val === 'PRINT' ? 'Impresión' : val) as string,
-                value: val as string
-            }))
+    const actionTypeOptions = Array.from(new Set(logs.map(l => {
+        const hType = l.history_type;
+        if (l.source === 'action_log') return l.action_type || 'Unknown';
+        if (l.source === 'history') {
+            if (hType === '+') return 'Creación';
+            if (hType === '~') return 'Edición';
+            if (hType === '-') return 'Eliminación';
         }
-    ];
+        return 'Cambio';
+    }))).filter(Boolean).map(val => ({
+        label: (val === 'LOGIN' ? 'Inicio de Sesión' :
+            val === 'LOGOUT' ? 'Cierre de Sesión' :
+                val === 'SETTINGS_CHANGE' ? 'Configuración' :
+                    val === 'SECURITY' ? 'Seguridad' :
+                        val === 'EXPORT' ? 'Exportación' :
+                            val === 'PRINT' ? 'Impresión' : val) as string,
+        value: val as string
+    }));
+
+    const entityOptions = Array.from(new Set(logs.map(l => l.entity_label))).filter(Boolean).map(label => ({
+        label: label as string,
+        value: label as string
+    }));
 
     return (
         <div className="h-full flex flex-col">
@@ -231,7 +214,15 @@ export default function AuditPageClient({ initialLogs }: AuditPageClientProps) {
                     data={logs}
                     isLoading={loading}
                     variant="embedded"
-                    facetedFilters={facetedFilters}
+                    segmentation={
+                        <SegmentationBar def={{
+                            segments: [
+                                { key: 'source', label: 'Origen', type: 'multiselect', serverParam: 'source', columnId: 'source', options: [{ label: "Sistema", value: "action_log" }, { label: "Datos", value: "history" }] },
+                                { key: 'entity_label', label: 'Entidad', type: 'multiselect', serverParam: 'entity_label', columnId: 'entity_label', dynamic: true, options: entityOptions },
+                                { key: 'action_type_label', label: 'Acción', type: 'multiselect', serverParam: 'action_type_label', columnId: 'action_type_label', options: actionTypeOptions },
+                            ],
+                        }} />
+                    }
                     hiddenColumns={["source"]}
                     defaultPageSize={50}
                 />

@@ -201,8 +201,15 @@ export function ChecksClientView({ bankId, direction }: ChecksClientViewProps = 
                             : { context: 'treasury', title: 'Sin cheques en cartera', description: 'Los cheques recibidos en ventas o registro de pagos aparecerán aquí.' }
                     }
                     smartSearch={<SmartSearchBar searchDef={checkSearchDef} placeholder="Buscar por N° cheque, girador o monto..." />}
-                    segmentation={<SegmentationBar def={checkSegDef} />}
-                    customFilters={<BankFilter />}
+                    segmentation={
+                        <SegmentationBar def={{
+                            ...checkSegDef,
+                            segments: [
+                                ...checkSegDef.segments,
+                                { key: 'bank', label: 'Banco', type: 'custom', render: () => <BankFilter /> },
+                            ],
+                        }} />
+                    }
                     isFiltered={isFiltered}
                     showReset={isFiltered}
                     onReset={handleReset}

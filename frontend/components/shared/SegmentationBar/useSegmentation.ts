@@ -13,6 +13,9 @@ function getSegmentParams(segment: SegmentDef): string[] {
     if (segment.serverParamTo) params.push(segment.serverParamTo)
     return params
   }
+  if (segment.type === 'custom') {
+    return segment.serverParam ? [segment.serverParam] : []
+  }
   const params: string[] = []
   if (segment.serverParamDate) params.push(segment.serverParamDate)
   if (segment.serverParamFrom) params.push(segment.serverParamFrom)

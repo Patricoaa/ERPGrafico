@@ -316,27 +316,34 @@ export default function WorkOrdersPageClient({ initialOrders }: WorkOrdersPageCl
                         smartSearch={
                             <SmartSearchBar searchDef={workOrderSearchDef} placeholder="Buscar OTs..." className="w-full" />
                         }
-                        segmentation={<SegmentationBar def={workOrderSegDef} basePeriod={basePeriod} />}
+                        segmentation={
+                            <SegmentationBar def={{
+                                ...workOrderSegDef,
+                                segments: [
+                                    ...workOrderSegDef.segments,
+                                    { key: 'my_tasks', label: 'Mis OTs', type: 'custom', render: () => (
+                                        <div
+                                            className={cn(
+                                                "relative flex cursor-pointer select-none items-center rounded-sm px-3 py-1.5 text-xs uppercase font-bold font-heading tracking-wider outline-none transition-colors",
+                                                myTasks ? "bg-primary/10 text-primary" : "text-foreground/70 hover:bg-muted/50 hover:text-foreground"
+                                            )}
+                                            onClick={() => handleMyTasksChange(!myTasks)}
+                                        >
+                                            <div className={cn(
+                                                "mr-3 flex h-3.5 w-3.5 items-center justify-center rounded-sm border border-primary/50 transition-all",
+                                                myTasks ? "bg-primary text-primary-foreground border-primary" : "opacity-50 [&_svg]:invisible"
+                                            )}>
+                                                <Check className="h-3 w-3" />
+                                            </div>
+                                            <User className={cn("h-3.5 w-3.5 mr-2", myTasks ? "text-primary" : "opacity-60")} />
+                                            Mis OTs
+                                        </div>
+                                    )},
+                                ],
+                            }} basePeriod={basePeriod} />
+                        }
                         showReset={isFiltered}
                         onReset={() => { clearText(); clearSeg() }}
-                        customFilters={
-                            <div
-                                className={cn(
-                                    "relative flex cursor-pointer select-none items-center rounded-sm px-3 py-1.5 text-xs uppercase font-bold font-heading tracking-wider outline-none transition-colors",
-                                    myTasks ? "bg-primary/10 text-primary" : "text-foreground/70 hover:bg-muted/50 hover:text-foreground"
-                                )}
-                                onClick={() => handleMyTasksChange(!myTasks)}
-                            >
-                                <div className={cn(
-                                    "mr-3 flex h-3.5 w-3.5 items-center justify-center rounded-sm border border-primary/50 transition-all",
-                                    myTasks ? "bg-primary text-primary-foreground border-primary" : "opacity-50 [&_svg]:invisible"
-                                )}>
-                                    <Check className="h-3 w-3" />
-                                </div>
-                                <User className={cn("h-3.5 w-3.5 mr-2", myTasks ? "text-primary" : "opacity-60")} />
-                                Mis OTs
-                            </div>
-                        }
                         viewOptions={viewOptions}
                         currentView={currentView}
                         onViewChange={handleViewChange}
