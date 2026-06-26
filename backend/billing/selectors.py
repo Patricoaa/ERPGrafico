@@ -51,10 +51,9 @@ class InvoiceSelectorExt:
         if invoice.sale_order_id and hasattr(invoice, 'sale_order') and invoice.sale_order:
             so = invoice.sale_order
             docs.append({'type': 'sale_order', 'id': so.id, 'name': str(so), 'url': f'/sales/orders/{so.id}'})
-        for inv in invoice.related_invoices.all():
-            if inv != invoice: docs.append({'type': 'invoice', 'id': inv.id, 'name': str(inv), 'url': f'/billing/{"purchases" if inv.purchase_order_id else "sales"}/{inv.id}'})
-        for dn in invoice.debit_notes.all(): docs.append({'type': 'debit_note', 'id': dn.id, 'name': str(dn), 'url': f'/billing/{"purchases" if dn.purchase_order_id else "sales"}/{dn.id}'})
-        for cn in invoice.credit_notes.all(): docs.append({'type': 'credit_note', 'id': cn.id, 'name': str(cn), 'url': f'/billing/{"purchases" if cn.purchase_order_id else "sales"}/{cn.id}'})
+        for adj in invoice.adjustments.filter(dte_type__in=['NOTA_DEBITO', 'NOTA_CREDITO']):
+            doc_type = 'debit_note' if adj.dte_type == 'NOTA_DEBITO' else 'credit_note'
+            docs.append({'type': doc_type, 'id': adj.id, 'name': str(adj), 'url': f'/billing/{"purchases" if adj.purchase_order_id else "sales"}/{adj.id}'})
         return docs
 
     @staticmethod
