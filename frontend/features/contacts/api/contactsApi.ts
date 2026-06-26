@@ -16,8 +16,8 @@ export const contactsApi = {
         if (filters?.is_default_customer !== undefined) params.append('is_default_customer', String(filters.is_default_customer))
         if (filters?.is_default_vendor !== undefined) params.append('is_default_vendor', String(filters.is_default_vendor))
 
-        const { data } = await api.get<Contact[]>('/contacts/', { params })
-        return data
+        const { data } = await api.get<{ results: Contact[] }>('/contacts/', { params })
+        return data.results
     },
 
     /**

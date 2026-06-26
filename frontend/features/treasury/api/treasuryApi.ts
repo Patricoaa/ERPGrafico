@@ -39,6 +39,7 @@ export const treasuryApi = {
 
     getTerminals: async (): Promise<Terminal[]> => {
         const response = await api.get<Terminal[]>('/treasury/pos-terminals/')
+        // eslint-disable-next-line pagination/no-raw-response-data -- master data, no pagination
         return response.data
     },
 
@@ -60,6 +61,7 @@ export const treasuryApi = {
 
     getTerminalProviders: async (): Promise<PaymentTerminalProvider[]> => {
         const response = await api.get<PaymentTerminalProvider[]>('/treasury/terminal-providers/')
+        // eslint-disable-next-line pagination/no-raw-response-data -- master data, no pagination
         return response.data
     },
 
@@ -81,6 +83,7 @@ export const treasuryApi = {
 
     getTerminalDevices: async (params?: Record<string, string>): Promise<PaymentTerminalDevice[]> => {
         const response = await api.get<PaymentTerminalDevice[]>('/treasury/terminal-devices/', { params })
+        // eslint-disable-next-line pagination/no-raw-response-data -- master data, no pagination
         return response.data
     },
 
@@ -106,8 +109,8 @@ export const treasuryApi = {
     // ========== Terminal Batches ==========
 
     getTerminalBatches: async (params?: Record<string, string>): Promise<any[]> => {
-        const response = await api.get<any[]>('/treasury/terminal-batches/', { params })
-        return response.data
+        const response = await api.get<{ results: any[] }>('/treasury/terminal-batches/', { params })
+        return response.data.results
     },
 
     createTerminalBatch: async (payload: TerminalBatchCreatePayload): Promise<any> => {
@@ -282,15 +285,15 @@ export const treasuryApi = {
     },
 
     getSuppliers: async (params?: Record<string, string | boolean>): Promise<ContactBrief[]> => {
-        const response = await api.get<ContactBrief[]>('/contacts/', { params })
-        return response.data
+        const response = await api.get<{ results: ContactBrief[] }>('/contacts/', { params })
+        return response.data.results
     },
 
     // ========== Bank Statements ==========
 
-    getStatements: async (filters?: Record<string, unknown>): Promise<Record<string, unknown>> => {
+    getStatements: async (filters?: Record<string, unknown>): Promise<Record<string, unknown>[]> => {
         const response = await api.get('/treasury/statements/', { params: filters })
-        return response.data
+        return response.data.results
     },
 
     getStatement: async (id: number): Promise<Record<string, unknown>> => {
@@ -321,6 +324,7 @@ export const treasuryApi = {
             params.cut_off_date = cutOffDate
         }
         const response = await api.get('/treasury/card-statements/unbilled-charges/', { params })
+        // eslint-disable-next-line pagination/no-raw-response-data -- custom @action, not paginated
         return response.data
     },
 

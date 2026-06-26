@@ -44,6 +44,7 @@ export function useVariants({ productId, enabled = true, activeOnly = true, extr
                 return res.data.results
             }
             if (Array.isArray(res.data)) {
+                // eslint-disable-next-line pagination/no-raw-response-data -- guarded by Array.isArray
                 return res.data
             }
             return []

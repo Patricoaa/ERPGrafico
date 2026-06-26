@@ -261,7 +261,6 @@ class ProductViewSet(NoDestroyModelMixin, BulkImportMixin, AuditHistory, viewset
 
 
 class ProductAttributeViewSet(NoDestroyModelMixin, viewsets.ModelViewSet, AuditHistory):
-    pagination_class = StandardResultsSetPagination
     queryset = ProductAttribute.objects.all()
     serializer_class = ProductAttributeSerializer
     filter_backends = [filters.SearchFilter]
@@ -269,7 +268,6 @@ class ProductAttributeViewSet(NoDestroyModelMixin, viewsets.ModelViewSet, AuditH
 
 
 class ProductAttributeValueViewSet(NoDestroyModelMixin, viewsets.ModelViewSet, AuditHistory):
-    pagination_class = StandardResultsSetPagination
     queryset = ProductAttributeValue.objects.all()
     serializer_class = ProductAttributeValueSerializer
     filterset_fields = ["attribute"]
@@ -278,19 +276,16 @@ class ProductAttributeValueViewSet(NoDestroyModelMixin, viewsets.ModelViewSet, A
 class CategoryViewSet(NoDestroyModelMixin, viewsets.ModelViewSet, AuditHistory):
     queryset = ProductCategory.objects.all()
     serializer_class = ProductCategorySerializer
-    pagination_class = StandardResultsSetPagination
 
 
 class WarehouseViewSet(NoDestroyModelMixin, viewsets.ModelViewSet, AuditHistory):
     queryset = Warehouse.objects.all()
     serializer_class = WarehouseSerializer
-    pagination_class = StandardResultsSetPagination
 
 
 class UoMViewSet(NoDestroyModelMixin, viewsets.ModelViewSet, AuditHistory):
     queryset = UoM.objects.all()
     serializer_class = UoMSerializer
-    pagination_class = StandardResultsSetPagination
     filter_backends = [DjangoFilterBackend, filters.SearchFilter]
     filterset_class = UoMFilter
     search_fields = ["name", "abbreviation"]
@@ -318,7 +313,6 @@ class UoMViewSet(NoDestroyModelMixin, viewsets.ModelViewSet, AuditHistory):
 
 
 class UoMCategoryViewSet(NoDestroyModelMixin, viewsets.ModelViewSet, AuditHistory):
-    pagination_class = StandardResultsSetPagination
     queryset = UoMCategory.objects.all()
     serializer_class = UoMCategorySerializer
 
@@ -376,42 +370,9 @@ class StockMoveViewSet(viewsets.ReadOnlyModelViewSet, AuditHistory):
 class PricingRuleViewSet(NoDestroyModelMixin, AuditHistory, viewsets.ModelViewSet):
     queryset = PricingRule.objects.all()
     serializer_class = PricingRuleSerializer
-    pagination_class = StandardResultsSetPagination
     filter_backends = [DjangoFilterBackend, filters.SearchFilter]
     filterset_fields = ["product", "category", "active"]
     search_fields = ["name"]
-
-
-class SubscriptionViewSet(NoDestroyModelMixin, viewsets.ModelViewSet):
-    queryset = Subscription.objects.all()
-    serializer_class = SubscriptionSerializer
-    pagination_class = StandardResultsSetPagination
-    filter_backends = [DjangoFilterBackend, filters.SearchFilter]
-    filterset_fields = ["status", "product", "supplier"]
-    search_fields = ["product__name", "supplier__name", "supplier__tax_id"]
-
-    def get_queryset(self):
-        """
-        Only show subscriptions for products that are currently active (not archived).
-        """
-        return super().get_queryset().filter(product__is_active=True)
-
-    @action(detail=True, methods=["post"])
-    def pause(self, request, pk=None):
-        from .services import SubscriptionService
-
-        sub = self.get_object()
-        SubscriptionService.pause_subscription(sub)
-        return Response({"status": "paused"})
-
-    @action(detail=True, methods=["post"])
-    def resume(self, request, pk=None):
-        from .services import SubscriptionService
-
-        sub = self.get_object()
-        SubscriptionService.resume_subscription(sub)
-        return Response({"status": "active"})
-
 
 class ProductUoMPriceViewSet(NoDestroyModelMixin, viewsets.ModelViewSet):
     pagination_class = StandardResultsSetPagination

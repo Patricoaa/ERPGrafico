@@ -38,8 +38,8 @@ export const billingApi = {
         if (filters?.partner_name) params.append('search', filters.partner_name)
         if (filters?.search) params.append('search', filters.search)
 
-        const { data } = await api.get<Invoice[]>('/billing/invoices/', { params })
-        return data
+        const { data } = await api.get<{ results: Invoice[] }>('/billing/invoices/', { params })
+        return data.results
     },
 
     /**
@@ -121,11 +121,13 @@ export const billingApi = {
 
     getWarehouses: async (): Promise<Record<string, unknown>[]> => {
         const res = await api.get<Record<string, unknown>[]>('/inventory/warehouses/')
+        // eslint-disable-next-line pagination/no-raw-response-data -- master data, no pagination
         return res.data
     },
 
     getAllowedUoms: async (productId: string | number, context: string): Promise<Record<string, unknown>[]> => {
         const res = await api.get(`/inventory/uoms/allowed/?product_id=${productId}&context=${context}`)
+        // eslint-disable-next-line pagination/no-raw-response-data -- custom @action, not paginated
         return res.data
     },
 }

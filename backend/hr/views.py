@@ -80,7 +80,6 @@ class GlobalHRSettingsViewSet(viewsets.ViewSet):
 
 
 class AFPViewSet(viewsets.ModelViewSet):
-    pagination_class = StandardResultsSetPagination
     queryset = AFP.objects.all()
     serializer_class = AFPSerializer
     lookup_field = "id"
@@ -99,7 +98,6 @@ class PayrollConceptFilter(django_filters.FilterSet):
 
 
 class PayrollConceptViewSet(viewsets.ModelViewSet):
-    pagination_class = StandardResultsSetPagination
     queryset = PayrollConcept.objects.select_related("account").all()
     serializer_class = PayrollConceptSerializer
     filter_backends = [DjangoFilterBackend]
@@ -119,7 +117,6 @@ class EmployeeFilter(django_filters.FilterSet):
 
 
 class EmployeeViewSet(AuditHistory, viewsets.ModelViewSet):
-    pagination_class = StandardResultsSetPagination
     queryset = Employee.objects.select_related("contact", "afp").all()
     serializer_class = EmployeeSerializer
     filter_backends = [DjangoFilterBackend, filters.SearchFilter]

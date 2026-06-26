@@ -8,8 +8,8 @@ export function useUoMs(options: { enabled?: boolean } = {}) {
   return useQuery<UoM[]>({
     queryKey: UOMS_QUERY_KEY,
     queryFn: async () => {
-      const res = await api.get<UoM[]>('/inventory/uoms/')
-      return res.data
+      const res = await api.get<{ results: UoM[] }>('/inventory/uoms/')
+      return res.data.results
     },
     enabled: options.enabled ?? true,
     staleTime: 60 * 60 * 1000,

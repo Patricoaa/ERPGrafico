@@ -7,6 +7,7 @@ import nextTs from "eslint-config-next/typescript";
 import boundaries from "eslint-plugin-boundaries";
 import fsdNoApiInComponent from "./eslint-rules/fsd-no-api-in-component.mjs";
 import paginationNoEnvelopeDiscard from "./eslint-rules/pagination-no-envelope-discard.mjs";
+import paginationNoRawResponseData from "./eslint-rules/pagination-no-raw-response-data.mjs";
 import paginationDatatableNeedsRowcount from "./eslint-rules/pagination-datatable-needs-rowcount.mjs";
 import noRawTailwindColors from "./eslint-rules/no-raw-tailwind-colors.mjs";
 import formsMustUseHook from "./eslint-rules/forms-must-use-hook.mjs";
@@ -187,10 +188,16 @@ const eslintConfig = defineConfig([...nextVitals, ...nextTs, globalIgnores([
 {
   files: ["features/*/api/**/*.ts", "features/*/hooks/**/*.ts"],
   plugins: {
-    pagination: { rules: { "no-envelope-discard": paginationNoEnvelopeDiscard } },
+    pagination: {
+      rules: {
+        "no-envelope-discard": paginationNoEnvelopeDiscard,
+        "no-raw-response-data": paginationNoRawResponseData,
+      },
+    },
   },
   rules: {
     "pagination/no-envelope-discard": "error",
+    "pagination/no-raw-response-data": "error",
   },
 },
 // 2. datatable-needs-rowcount: any <DataTable manualPagination /> without

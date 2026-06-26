@@ -103,7 +103,6 @@ class NotificationViewSet(viewsets.ModelViewSet):
 
 
 class TaskAssignmentRuleViewSet(viewsets.ModelViewSet):
-    pagination_class = StandardResultsSetPagination
     """
     Manage assignment rules.
     Only admins should edit this, but authenticated users might need to read?
@@ -143,7 +142,6 @@ class WorkflowSettingsViewSet(viewsets.ModelViewSet):
 
 
 class NotificationRuleViewSet(viewsets.ModelViewSet):
-    pagination_class = StandardResultsSetPagination
     """
     Manage notification rules.
     Only admins should edit this.

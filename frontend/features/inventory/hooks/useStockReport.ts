@@ -6,6 +6,7 @@ export function useStockReport() {
         queryKey: ['stockReport'],
         queryFn: async (): Promise<any[]> => {
             const response = await api.get('/inventory/products/stock_report/')
+            // eslint-disable-next-line pagination/no-raw-response-data -- custom @action, not paginated
             return response.data
         },
         staleTime: 5 * 60 * 1000, // 5 min — reporte costoso

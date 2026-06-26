@@ -2,8 +2,10 @@ import api from '@/lib/api'
 
 export const posApi = {
     // ── Drafts ──
-    getDrafts: (params?: Record<string, unknown>) =>
-        api.get('/sales/pos-drafts/', { params }).then(r => r.data),
+    getDrafts: async (params?: Record<string, unknown>) => {
+        const { data } = await api.get<{ results: Record<string, unknown>[] }>('/sales/pos-drafts/', { params })
+        return data.results
+    },
     getDraft: (id: number, params?: Record<string, unknown>) =>
         api.get(`/sales/pos-drafts/${id}/`, { params }).then(r => r.data),
     createDraft: (payload: Record<string, unknown>) =>
@@ -36,8 +38,10 @@ export const posApi = {
         api.get('/inventory/uoms/', { params }).then(r => r.data),
 
     // ── POS Sessions ──
-    getSessions: (params?: Record<string, unknown>) =>
-        api.get('/treasury/pos-sessions/', { params }).then(r => r.data),
+    getSessions: async (params?: Record<string, unknown>) => {
+        const { data } = await api.get<{ results: Record<string, unknown>[] }>('/treasury/pos-sessions/', { params })
+        return data.results
+    },
     getCurrentSession: () =>
         api.get('/treasury/pos-sessions/current/').then(r => r.data),
     getSession: (id: number) =>

@@ -85,7 +85,6 @@ class AccountingSettingsViewSet(viewsets.ModelViewSet):
 
 
 class AccountViewSet(BulkImportMixin, AuditHistory, viewsets.ModelViewSet):
-    pagination_class = StandardResultsSetPagination
     queryset = Account.objects.all()
     serializer_class = AccountSerializer
 
@@ -295,7 +294,6 @@ class BudgetItemViewSet(viewsets.ModelViewSet):
 
 
 class FiscalYearViewSet(viewsets.ModelViewSet):
-    pagination_class = StandardResultsSetPagination
     """
     CRUD + custom actions for Fiscal Year management and annual closing.
     """
