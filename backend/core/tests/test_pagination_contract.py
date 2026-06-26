@@ -13,6 +13,7 @@ def test_all_list_viewsets_have_pagination():
     """
     
     WHITELIST = [
+        # Settings / system viewsets (singletons or admin-only, no pagination)
         "AccountingSettingsViewSet",
         "SalesSettingsViewSet",
         "ReconciliationSettingsViewSet",
@@ -23,6 +24,29 @@ def test_all_list_viewsets_have_pagination():
         "BackgroundJobViewSet",
         "PricingViewSet",
         "TreasuryDashboardViewSet",
+        # Master data viewsets — see pagination-contract.md §8
+        "AccountViewSet",
+        "AccountingPeriodViewSet",
+        "AFPViewSet",
+        "BankViewSet",
+        "CategoryViewSet",
+        "EmployeeViewSet",
+        "FiscalYearViewSet",
+        "GroupViewSet",
+        "NotificationRuleViewSet",
+        "PaymentMethodViewSet",
+        "PaymentTerminalDeviceViewSet",
+        "PaymentTerminalProviderViewSet",
+        "PayrollConceptViewSet",
+        "POSTerminalViewSet",
+        "PricingRuleViewSet",
+        "ProductAttributeViewSet",
+        "ProductAttributeValueViewSet",
+        "TaskAssignmentRuleViewSet",
+        "TreasuryAccountViewSet",
+        "UoMCategoryViewSet",
+        "UoMViewSet",
+        "WarehouseViewSet",
     ]
     
     violating_viewsets = []

@@ -72,6 +72,7 @@ from .services import TerminalBatchService, TreasuryService
 class BankViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
     queryset = Bank.objects.all().order_by("name")
     serializer_class = BankSerializer
+    pagination_class = None  # Master data
 
     @action(detail=True, methods=["get"])
     def overview(self, request, pk=None):
@@ -128,6 +129,7 @@ class BankViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
 class PaymentMethodViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
     queryset = PaymentMethod.objects.all().order_by("name")
     serializer_class = PaymentMethodSerializer
+    pagination_class = None  # Master data
 
     def get_queryset(self):
         qs = super().get_queryset()
@@ -203,6 +205,7 @@ class TreasuryAccountFilterSet(FilterSet):
 class TreasuryAccountViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
     queryset = TreasuryAccount.objects.all().order_by("account_type", "name")
     serializer_class = TreasuryAccountSerializer
+    pagination_class = None  # Master data
     filter_backends = [DjangoFilterBackend, drf_filters.SearchFilter]
     filterset_class = TreasuryAccountFilterSet
     search_fields = ["name"]
@@ -270,11 +273,13 @@ class TreasuryAccountViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
 class PaymentTerminalProviderViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
     queryset = PaymentTerminalProvider.objects.all().order_by("name")
     serializer_class = PaymentTerminalProviderSerializer
+    pagination_class = None  # Master data
 
 
 class PaymentTerminalDeviceViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
     queryset = PaymentTerminalDevice.objects.all().order_by("name")
     serializer_class = PaymentTerminalDeviceSerializer
+    pagination_class = None  # Master data
     filterset_fields = ["provider", "status"]
 
 
@@ -290,6 +295,7 @@ class POSTerminalViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
         .all()
     )
     serializer_class = POSTerminalSerializer
+    pagination_class = None  # Master data
 
     def get_queryset(self):
         qs = super().get_queryset()
