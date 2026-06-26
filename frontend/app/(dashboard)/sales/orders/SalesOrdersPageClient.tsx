@@ -4,13 +4,8 @@ import { useEffect, useRef } from "react"
 import { useSearchParams, useRouter, usePathname } from "next/navigation"
 import { useHubPanel } from "@/components/providers/HubPanelProvider"
 import { SalesOrdersClientView } from "@/features/sales"
-import type { SaleOrder } from "@/features/sales"
 
-interface SalesOrdersPageClientProps {
-    initialOrders?: SaleOrder[]
-}
-
-export default function SalesOrdersPageClient({ initialOrders }: SalesOrdersPageClientProps) {
+export default function SalesOrdersPageClient() {
     const searchParams = useSearchParams()
     const router = useRouter()
     const pathname = usePathname()
@@ -57,7 +52,7 @@ export default function SalesOrdersPageClient({ initialOrders }: SalesOrdersPage
     return (
         <div className="h-full flex flex-col">
             <div className="flex-1 min-h-0">
-                <SalesOrdersClientView viewMode="orders" initialOrders={initialOrders} />
+                <SalesOrdersClientView viewMode="orders" />
             </div>
         </div>
     )

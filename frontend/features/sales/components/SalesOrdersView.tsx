@@ -24,10 +24,9 @@ interface SalesOrdersViewProps {
     hideStatusInCards?: boolean
     onSelectOrder?: (id: number | null) => void
     selectedId?: number | null
-    initialOrders?: SaleOrder[]
 }
 
-export function SalesOrdersView({ viewMode, posSessionId, onActionSuccess, hideStatusInCards, onSelectOrder, selectedId, initialOrders }: SalesOrdersViewProps) {
+export function SalesOrdersView({ viewMode, posSessionId, onActionSuccess, hideStatusInCards, onSelectOrder, selectedId }: SalesOrdersViewProps) {
     const { openHub, closeHub, hubConfig, isHubOpen } = useHubPanel()
     const router = useRouter()
     const searchParams = useSearchParams()
