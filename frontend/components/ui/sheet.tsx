@@ -30,7 +30,11 @@ function SheetPortal({
 
   React.useEffect(() => {
     requestAnimationFrame(() => {
-      setTarget(document.getElementById("module-sheets-portal-container") || document.body)
+      setTarget(
+        document.getElementById("main-content") ??
+        document.getElementById("module-sheets-portal-container") ??
+        document.body
+      )
     })
   }, [])
 
