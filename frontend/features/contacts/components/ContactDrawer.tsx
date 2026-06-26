@@ -184,16 +184,16 @@ export default function ContactDrawer({ open, onOpenChange, contact, onSuccess, 
     }
 
     const onSubmit = async (values: z.infer<typeof contactSchema>) => {
-        if (values.is_default_customer && defaultCustomer && (defaultCustomer as any).id !== c?.id) {
+        if (values.is_default_customer && defaultCustomer && defaultCustomer.id !== c?.id) {
             setPendingValues(values)
-            setConfirmReplacement({ type: 'customer', name: (defaultCustomer as any).name })
+            setConfirmReplacement({ type: 'customer', name: defaultCustomer.name })
             setIsConfirmModalOpen(true)
             return
         }
 
-        if (values.is_default_vendor && defaultVendor && (defaultVendor as any).id !== c?.id) {
+        if (values.is_default_vendor && defaultVendor && defaultVendor.id !== c?.id) {
             setPendingValues(values)
-            setConfirmReplacement({ type: 'vendor', name: (defaultVendor as any).name })
+            setConfirmReplacement({ type: 'vendor', name: defaultVendor.name })
             setIsConfirmModalOpen(true)
             return
         }
@@ -340,9 +340,9 @@ export default function ContactDrawer({ open, onOpenChange, contact, onSuccess, 
                                                                         Cliente por defecto
                                                                     </span>
                                                                 </div>
-                                                                {defaultCustomer && (defaultCustomer as any).id !== c?.id && (
+                                                                {defaultCustomer && defaultCustomer.id !== c?.id && (
                                                                     <span className="text-xs text-muted-foreground pl-9 pb-1">
-                                                                        Actual: <strong>{(defaultCustomer as any).name}</strong>
+                                                                        Actual: <strong>{defaultCustomer.name}</strong>
                                                                     </span>
                                                                 )}
                                                             </div>
@@ -369,9 +369,9 @@ export default function ContactDrawer({ open, onOpenChange, contact, onSuccess, 
                                                                         Proveedor por defecto
                                                                     </span>
                                                                 </div>
-                                                                {defaultVendor && (defaultVendor as any).id !== c?.id && (
+                                                                {defaultVendor && defaultVendor.id !== c?.id && (
                                                                     <span className="text-xs text-muted-foreground pl-9 pb-1">
-                                                                        Actual: <strong>{(defaultVendor as any).name}</strong>
+                                                                        Actual: <strong>{defaultVendor.name}</strong>
                                                                     </span>
                                                                 )}
                                                             </div>

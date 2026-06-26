@@ -6,7 +6,7 @@ export function useDefaultCustomer(enabled: boolean) {
         queryKey: ['contacts', 'defaultCustomer'],
         queryFn: async () => {
             const data = await contactsApi.getContacts({ is_default_customer: true })
-            return (data as any)?.[0] || null
+            return data?.[0] ?? null
         },
         staleTime: 10 * 60 * 1000,
         enabled
@@ -18,7 +18,7 @@ export function useDefaultVendor(enabled: boolean) {
         queryKey: ['contacts', 'defaultVendor'],
         queryFn: async () => {
             const data = await contactsApi.getContacts({ is_default_vendor: true })
-            return (data as any)?.[0] || null
+            return data?.[0] ?? null
         },
         staleTime: 10 * 60 * 1000,
         enabled
