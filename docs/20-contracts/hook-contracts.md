@@ -52,6 +52,8 @@ useQuery({
 
 ### staleTime tiers
 
+The global default is **5 min** (configured in `lib/react-query.ts`). Every `useQuery` MUST declare `staleTime` when the value differs from the global default, or when the data category needs explicit documentation.
+
 | Data category | staleTime | Examples |
 |---|---|---|
 | Static master data | 60 min | UoMs, banks, payment methods |
@@ -61,6 +63,12 @@ useQuery({
 | Transactional | 2 min | Orders, invoices, journal entries, movements |
 | Reports / aggregates | 5 min | Trial balance, budgets, statements |
 | Real-time (POS) | 1 min | POS sessions |
+| Realtime-sensitive | 0 | Panel-bound detail queries (drawer/modal close → force refetch) |
+| Server date | 30 s | `useServerDate` — used for folios, fiscal periods, time-sensitive ops |
+
+- **Polling sync**: when a query uses `refetchInterval`, set `staleTime` to match the interval (or less) to avoid extra refetches between polls.
+- **WebSocket + staleTime**: entity-bus `invalidateQueries` bypasses staleTime. staleTime only applies between invalidations or on component remount.
+- **`useSelectedEntity`** uses `staleTime: 0 + gcTime: 0` intentionally (panel close → discard cache). Do not copy this pattern unless the same panel-lifecycle semantics are needed.
 
 ### Forbidden patterns
 
