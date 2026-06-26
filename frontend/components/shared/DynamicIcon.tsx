@@ -11,17 +11,17 @@ interface DynamicIconProps extends LucideProps {
   name: string
 }
 
-const iconCache = new Map<string, React.LazyExoticComponent<React.ComponentType<any>>>()
+const iconCache = new Map<string, React.ComponentType<LucideProps>>()
 
 const LoadingFallback = () => <div className="animate-pulse bg-muted rounded-full" style={{ width: 24, height: 24 }} />
 
 const getIconComponent = (iconName: keyof typeof dynamicIconImports) => {
   if (!iconCache.has(iconName)) {
-    iconCache.set(iconName, dynamic(dynamicIconImports[iconName], {
+    iconCache.set(iconName, dynamic<LucideProps>(dynamicIconImports[iconName] as () => Promise<{ default: React.ComponentType<LucideProps> }>, {
       loading: LoadingFallback
-    }) as any)
+    }))
   }
-  return iconCache.get(iconName) as React.LazyExoticComponent<React.ComponentType<any>>
+  return iconCache.get(iconName)!
 }
 
 export const DynamicIcon = ({ name, ...props }: DynamicIconProps) => {

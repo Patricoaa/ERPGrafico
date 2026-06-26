@@ -96,11 +96,11 @@ export const DataCell = {
     ),
 
     /** Standardized Entity ID with prefix and padding (Uses EntityBadge, matches Status badge typography/size) */
-    Entity: ({ entityLabel, type, number, label, data, className, size = "sm", ...props }: { entityLabel?: string, type?: string, number?: string | number | null | undefined, label?: string, data?: any, className?: string, size?: 'sm' | 'md' | 'lg' | 'xl' }) => {
+    Entity: ({ entityLabel, type, number, label, data, className, size = "sm", ...props }: { entityLabel?: string, type?: string, number?: string | number | null | undefined, label?: string, data?: object, className?: string, size?: 'sm' | 'md' | 'lg' | 'xl' }) => {
         // Resolve label: prefer entityLabel > label > legacy type mapping (see entity-registry.ts)
         const resolvedLabel = entityLabel || label || (type ? findEntityLabel(type) : undefined);
 
-        const finalData = data || { id: number, number, display_id: number };
+        const finalData: Record<string, unknown> = (data as Record<string, unknown>) || { id: number, number, display_id: number };
 
         return (
             <div className={cn("flex justify-center items-center w-full", className)} {...props}>

@@ -70,8 +70,8 @@ export const ActionSlideButton = React.forwardRef<HTMLButtonElement, ActionSlide
                     ) : (
                         (() => {
                             if (!icon) return null;
-                            if (typeof icon === 'function' || (typeof icon === 'object' && 'render' in (icon as any))) {
-                                const Icon = icon as any;
+                            if (typeof icon === 'function' || (typeof icon === 'object' && 'render' in icon)) {
+                                const Icon = icon as React.ComponentType<{ className?: string }>;
                                 return <Icon className="h-3.5 w-3.5" />;
                             }
                             return icon;

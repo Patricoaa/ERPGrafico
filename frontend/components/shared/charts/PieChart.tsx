@@ -3,6 +3,8 @@
 import React, { useMemo } from "react"
 import dynamic from "next/dynamic"
 import { Skeleton } from "@/components/ui/skeleton"
+import type { MayHaveLabel } from "@nivo/pie"
+import type { LegendProps } from "@nivo/legends"
 import {
     nivoTheme,
     pieDefaults,
@@ -19,7 +21,7 @@ export interface PieChartProps {
     data: { id?: string | number; name?: string | number; value: number; [key: string]: unknown }[]
     renderTooltip?: (datum: {
         id: string | number
-        label?: string
+        label?: string | number
         value: number
         color: string
     }) => React.ReactNode
@@ -49,26 +51,26 @@ export function PieChart({
     ...rest
 }: PieChartProps) {
     const chartColors = useMemo(() => getCssChartColors(), [])
-    const data = useMemo(
+    const chartData = useMemo(
         () =>
             rawData.map((d, i) => ({
                 ...d,
                 id: d.id ?? d.name,
                 color: d.color ?? chartColors[i % chartColors.length],
-            })),
+            })) as unknown as readonly MayHaveLabel[],
         [rawData, chartColors],
     )
 
     return (
         <LazyPie
             {...pieDefaults}
-            data={data}
-            colors={colors ?? ({ datum: "data.color" } as any)}
+            data={chartData}
+            colors={(colors ?? { datum: "data.color" }) as unknown as string | string[] | { datum: string }}
             enableArcLabels={enableArcLabels ?? pieDefaults.enableArcLabels}
             theme={nivoTheme}
-            legends={legends as any}
+            legends={legends as unknown as readonly LegendProps[] | undefined}
             margin={margin}
-            tooltip={({ datum }: any) => (
+            tooltip={({ datum }: { datum: { id: string | number; label?: string | number; value: number; color: string } }) => (
                 <div className={premiumTooltipClass}>
                     {renderTooltip ? (
                         renderTooltip(datum)
@@ -82,7 +84,7 @@ export function PieChart({
                     )}
                 </div>
             )}
-            {...(rest as any)}
+            {...rest as Record<string, unknown>}
         />
     )
 }

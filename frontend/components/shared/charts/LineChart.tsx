@@ -19,7 +19,7 @@ const LazyLine = dynamic(
 )
 
 export interface LineChartProps {
-    data: { id: string | number; data: { x: unknown; y: unknown }[] }[]
+    data: { id: string | number; data: { x: number | string | Date | null; y: number | string | Date | null }[] }[]
     renderTooltip?: (point: {
         serieId: string | number
         data: { x: unknown; y: unknown; xFormatted?: unknown; yFormatted?: unknown }
@@ -38,13 +38,13 @@ export function LineChart({ data, renderTooltip, colors, ...rest }: LineChartPro
     return (
         <LazyLine
             {...lineDefaults}
-            data={data as any}
-            colors={(colors ?? chartColors) as any}
+            data={data}
+            colors={(colors ?? chartColors) as string | string[]}
             theme={nivoTheme}
-            tooltip={({ point }: any) => (
+            tooltip={({ point }: { point: { seriesId: string | number; data: { x: unknown; y: unknown; xFormatted?: unknown; yFormatted?: unknown } } }) => (
                 <div className={premiumTooltipClass}>
                     {renderTooltip ? (
-                        renderTooltip({ serieId: point.serieId, data: point.data })
+                        renderTooltip({ serieId: point.seriesId, data: point.data })
                     ) : (
                         <>
                             <span className="font-medium">
@@ -57,7 +57,7 @@ export function LineChart({ data, renderTooltip, colors, ...rest }: LineChartPro
                     )}
                 </div>
             )}
-            {...(rest as any)}
+            {...rest as Record<string, unknown>}
         />
     )
 }

@@ -94,8 +94,32 @@ export function HubStatus({ statuses, className }: HubStatusProps) {
 
 interface DomainHubStatusProps {
     label: string
-    data: any
+    data: object
     className?: string
+}
+
+type HubOrderShape = {
+    pending_amount?: number | string
+    total?: number | string
+    work_orders?: Array<{ status: string; production_progress?: number }>
+    lines?: Array<{ is_manufacturable?: boolean; quantity?: number | string; quantity_delivered?: number | string; quantity_received?: number | string }>
+    items?: Array<{ is_manufacturable?: boolean; quantity?: number | string; quantity_delivered?: number | string; quantity_received?: number | string }>
+    production_progress?: number
+    status?: string
+    payment_status?: string
+    [key: string]: unknown
+}
+
+type HubInvoiceShape = {
+    dte_type?: string
+    number?: string
+    status?: string
+    corrected_invoice?: { display_id?: string; number?: string }
+    sale_order_number?: string
+    purchase_order_number?: string
+    pending_amount?: number | string
+    payment_status?: string
+    [key: string]: unknown
 }
 
 /**
@@ -105,70 +129,75 @@ export function DomainHubStatus({ label, data, className }: DomainHubStatusProps
     const meta = getEntityMetadata(label)
     if (!meta?.workflowType) return null
 
-    let statuses: any
-    let tooltips: any = {}
+    let statuses: HubStatusData | undefined
+    let tooltips: Record<string, string | undefined> = {}
 
     if (meta.workflowType === 'order') {
-        const s = getHubStatuses(data)
+        const d = data as HubOrderShape
+        const s = getHubStatuses(d)
         statuses = s
 
-        // Tooltip logic (moved from OrderHubStatus)
-        const pendingAmount = parseFloat(String(data.pending_amount || 0))
-        const total = parseFloat(String(data.total || 0))
+        const pendingAmount = parseFloat(String(d.pending_amount || 0))
+        const total = parseFloat(String(d.total || 0))
         const paidPct = total > 0 ? ((1 - (pendingAmount / total)) * 100).toFixed(0) : "0"
 
-        const showProduction = (data.work_orders?.length || 0) > 0 || (data.lines || data.items || []).some((l: any) => l.is_manufacturable)
-        const totalOTProgress = data.production_progress || 0
+        const showProduction = (d.work_orders?.length || 0) > 0 || (d.lines || d.items || []).some((l) => l.is_manufacturable ?? false)
+        const totalOTProgress = d.production_progress || 0
 
-        const lines = data.lines || data.items || []
-        const totalOrdered = lines.reduce((acc: number, line: any) => acc + (parseFloat(line.quantity as string) || 0), 0)
+        const lines = d.lines || d.items || []
+        const totalOrdered = lines.reduce((acc: number, line) => acc + (parseFloat(String(line.quantity)) || 0), 0)
         let logisticsProgress = 0
         if (totalOrdered > 0) {
-            const totalProcessed = lines.reduce((acc: number, line: any) => acc + (parseFloat(line.quantity_delivered || line.quantity_received || 0) || 0), 0)
+            const totalProcessed = lines.reduce((acc: number, line) => acc + (parseFloat(String(line.quantity_delivered || line.quantity_received || 0)) || 0), 0)
             logisticsProgress = Math.min(100, Math.round((totalProcessed / totalOrdered) * 100))
         }
 
         tooltips = {
-            origin: `Origen: ${translateStatus(data.status)}`,
+            origin: `Origen: ${translateStatus(d.status)}`,
             billing: s.billing === 'success' ? "Facturado" : "Pendiente de Facturación",
             treasury: `Tesorería: ${paidPct}% Pagado${s.hasPendingTransactions ? ' - falta N° de transacción' : ''}`,
             production: showProduction ? `Producción: ${totalOTProgress}%` : undefined,
             logistics: `Logística: ${logisticsProgress}%`
         }
     } else if (meta.workflowType === 'invoice') {
-        const isNote = ['NOTA_CREDITO', 'NOTA_DEBITO'].includes(data.dte_type)
-        const s = isNote ? getNoteHubStatuses(data) : getInvoiceHubStatuses(data)
+        const d = data as HubInvoiceShape
+        const isNote = ['NOTA_CREDITO', 'NOTA_DEBITO'].includes(d.dte_type ?? '')
+        const s = isNote ? getNoteHubStatuses(d) : getInvoiceHubStatuses(d)
         statuses = s
 
         tooltips = {
             origin: (() => {
                 if (isNote) {
-                    const source = data.corrected_invoice?.display_id || data.corrected_invoice?.number || "Factura"
-                    const order = data.sale_order_number || data.purchase_order_number || ""
+                    const source = d.corrected_invoice?.display_id || d.corrected_invoice?.number || "Factura"
+                    const order = d.sale_order_number || d.purchase_order_number || ""
                     return `Origen: ${source}${order ? ` (${order})` : ''}`
                 }
-                return `Documento: ${translateStatus(data.status)}`
+                return `Documento: ${translateStatus(d.status)}`
             })(),
             logistics: (() => {
                 if (isNote) {
-                    const docs = data.related_documents || {}
-                    if ((docs.deliveries?.length || 0) > 0) return `Logística (${docs.deliveries.length} despachos)`
-                    if ((docs.receipts?.length || 0) > 0) return `Logística (${docs.receipts.length} recepciones)`
-                    if ((data.related_stock_moves?.length || 0) > 0) return `Logística (${data.related_stock_moves.length} movimientos)`
+                    const raw = data as { related_documents?: { deliveries?: Array<unknown>; receipts?: Array<unknown> }; related_stock_moves?: Array<unknown> }
+                    const docs = raw.related_documents || {}
+                    const deliveries = docs.deliveries || []
+                    const receipts = docs.receipts || []
+                    const stockMoves = raw.related_stock_moves || []
+                    if (deliveries.length > 0) return `Logística (${deliveries.length} despachos)`
+                    if (receipts.length > 0) return `Logística (${receipts.length} recepciones)`
+                    if (stockMoves.length > 0) return `Logística (${stockMoves.length} movimientos)`
                     return "Sin movimientos"
                 }
-                return s.logistics === 'success' ? "Logística: Completada" : s.logistics === 'active' ? `Logística: ${s.logisticsProgress}%` : "Logística: Pendiente"
+                return (s.logistics === 'success' ? "Logística: Completada" : s.logistics === 'active' ? `Logística: ${s.logisticsProgress}%` : "Logística: Pendiente")
             })(),
             billing: (() => {
-                if (isNote && data.number && data.number !== 'Draft') {
-                    const prefix = getDtePrefix(data.dte_type)
-                    const num = data.number.toString().includes(prefix) ? data.number : `${prefix}-${data.number}`
+                if (isNote && d.number && d.number !== 'Draft') {
+                    const prefix = getDtePrefix(d.dte_type ?? '')
+                    const num = d.number.toString().includes(prefix) ? d.number : `${prefix}-${d.number}`
                     return `Facturación: ${num}`
                 }
                 return s.billing === 'success' ? "Folio Generado" : "Pendiente de Folio"
             })(),
             treasury: isNote
-                ? `Tesorería: ${translateStatus(String(data.payment_status || data.status))}`
+                ? `Tesorería: ${translateStatus(String(d.payment_status || d.status))}`
                 : (s.treasury === 'success' ? "Pagado" : s.treasury === 'active' ? "Pago Parcial / Pendiente TR" : "Pendiente de Pago")
         }
     }
