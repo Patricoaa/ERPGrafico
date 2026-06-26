@@ -237,7 +237,6 @@ export function StatementDetailModal({ statementId, open, onOpenChange }: Statem
                                         data={mergedRows}
                                         isLoading={chargesLoading}
                                         variant="embedded"
-                                        hideToolbar
                                         emptyState={{
                                             context: 'treasury',
                                             icon: ShoppingCart,

@@ -330,8 +330,11 @@ export function TreasuryMovementsClientView({ externalOpen, createAction }: Trea
                     pagination={pageState}
                     onPaginationChange={setPageState}
                     smartSearch={
-                        <div className="flex items-center gap-2 w-full">
-                            {isAccountFiltered && (
+                        <SmartSearchBar
+                            searchDef={treasuryMovementsSearchDef}
+                            placeholder="Buscar movimiento..."
+                            className="w-full"
+                            prefix={isAccountFiltered ? (
                                 <span className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-info/10 text-info border border-info/20 text-[10px] font-black uppercase tracking-wider font-mono shrink-0">
                                     Cta. #{treasuryAccountFromUrl}
                                     <button
@@ -341,9 +344,8 @@ export function TreasuryMovementsClientView({ externalOpen, createAction }: Trea
                                         ×
                                     </button>
                                 </span>
-                            )}
-                            <SmartSearchBar searchDef={treasuryMovementsSearchDef} placeholder="Buscar movimiento..." className="w-full" />
-                        </div>
+                            ) : undefined}
+                        />
                     }
                     segmentation={<SegmentationBar def={treasuryMovementsSegDef} basePeriod={basePeriod} />}
                     showReset={isFiltered}
