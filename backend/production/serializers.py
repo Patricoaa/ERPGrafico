@@ -185,6 +185,9 @@ class WorkOrderSerializer(serializers.ModelSerializer):
     uom_id = serializers.SerializerMethodField()
     uom_name = serializers.SerializerMethodField()
 
+    def get_checkout_files(self, obj):
+        return []
+
     def get_display_id(self, obj):
         return obj.display_id
 
