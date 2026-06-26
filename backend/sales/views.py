@@ -142,7 +142,7 @@ class SaleOrderViewSet(NoDestroyModelMixin, viewsets.ModelViewSet, AuditHistoryM
         ).prefetch_related(
             "lines", 
             "lines__product", 
-            "lines__product__mfg_profile",
+            "lines__product__manufacturing_profile",
             "lines__work_orders", 
             "invoices", 
             "deliveries", 
