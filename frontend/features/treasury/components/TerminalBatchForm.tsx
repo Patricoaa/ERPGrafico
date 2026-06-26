@@ -39,9 +39,10 @@ type TerminalBatchFormValues = z.infer<typeof terminalBatchSchema>
 interface TerminalBatchFormProps {
     onSuccess: () => void
     onCancel: () => void
+    onFooterStateChange?: (state: { isValid: boolean; isCreating: boolean; providerId: string; depositMethodId: string }) => void
 }
 
-export function TerminalBatchForm({ onSuccess, onCancel }: TerminalBatchFormProps) {
+export function TerminalBatchForm({ onSuccess, onCancel, onFooterStateChange }: TerminalBatchFormProps) {
     const { providers, isLoading: isProvidersLoading } = useTerminalProviders()
     const { methods, isLoading: isMethodsLoading } = usePaymentMethods()
     const { createBatch, isCreating } = useTerminalBatchMutations()
@@ -104,6 +105,9 @@ export function TerminalBatchForm({ onSuccess, onCancel }: TerminalBatchFormProp
     const netDeposit = calculatedNet.toString()
     const isValid = gross > 0 && calculatedNet >= 0
 
+    const footerState = useMemo(() => ({ isValid, isCreating, providerId, depositMethodId }), [isValid, isCreating, providerId, depositMethodId])
+    useEffect(() => { onFooterStateChange?.(footerState) }, [footerState, onFooterStateChange])
+
     const handleAutoCalculate = () => {
         if (!providerId || !dateRange?.from) {
             toast.error("Seleccione proveedor y fecha")
@@ -139,7 +143,7 @@ export function TerminalBatchForm({ onSuccess, onCancel }: TerminalBatchFormProp
 
     return (
         <SkeletonShell isLoading={isFetchingInitialData} ariaLabel="Cargando formulario de liquidación de lote">
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 py-4">
+            <form id="terminal-batch-form" onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 py-4">
                 <div className="grid grid-cols-2 gap-8">
                     <div className="space-y-6">
                         <FormSection title="Configuración de Lote" icon={Landmark} className="pt-0" />
@@ -332,17 +336,6 @@ export function TerminalBatchForm({ onSuccess, onCancel }: TerminalBatchFormProp
                         </div>
                     </div>
                 </div>
-
-                <FormFooter
-                    actions={
-                        <>
-                            <CancelButton onClick={onCancel} />
-                            <ActionSlideButton type="submit" loading={isCreating} disabled={isCreating || !isValid || !providerId || !depositMethodId}>
-                                Registrar Liquidación
-                            </ActionSlideButton>
-                        </>
-                    }
-                />
 
                 <SaleSelectionModal
                     open={openSelection}

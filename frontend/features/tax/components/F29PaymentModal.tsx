@@ -49,6 +49,19 @@ export function F29PaymentModal({
                     </div>
                 }
                 size="lg"
+                footer={
+                    !isFullyPaid ? (
+                        <div className="flex justify-end w-full">
+                            <Button
+                                onClick={() => setIsRegisteringPayment(true)}
+                                className="bg-success hover:bg-success/90"
+                            >
+                                <Plus className="h-4 w-4 mr-2" />
+                                Registrar Abono
+                            </Button>
+                        </div>
+                    ) : undefined
+                }
             >
                 <div className="space-y-6">
                     {/* Summary Cards */}
@@ -84,18 +97,9 @@ export function F29PaymentModal({
                             <p className="text-sm font-medium">Esta declaración ha sido pagada en su totalidad.</p>
                         </div>
                     ) : (
-                        <div className="flex items-center justify-between p-4 rounded-md bg-primary/5 border border-primary/10">
-                            <div className="flex items-center gap-3">
-                                <AlertCircle className="h-5 w-5 text-primary" />
-                                <p className="text-sm font-medium">Hay un saldo pendiente por pagar.</p>
-                            </div>
-                            <Button
-                                onClick={() => setIsRegisteringPayment(true)}
-                                className="bg-success hover:bg-success/90"
-                            >
-                                <Plus className="h-4 w-4 mr-2" />
-                                Registrar Abono
-                            </Button>
+                        <div className="flex items-center gap-3 p-4 rounded-md bg-primary/5 border border-primary/10">
+                            <AlertCircle className="h-5 w-5 text-primary" />
+                            <p className="text-sm font-medium">Hay un saldo pendiente por pagar.</p>
                         </div>
                     )}
 

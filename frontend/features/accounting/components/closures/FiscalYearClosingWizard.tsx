@@ -227,18 +227,8 @@ export function FiscalYearClosingWizard({
                 hideScrollArea={true}
                 contentClassName="p-0"
                 title=""
-            >
-                <div className="flex flex-col items-center justify-center p-12 text-center space-y-6 animate-in zoom-in-95 duration-500">
-                    <ShieldCheck className="w-10 h-10 text-muted-foreground" />
-                    <div>
-                        <h3 className="text-2xl font-heading font-black uppercase tracking-tighter">¡Ejercicio {year} Cerrado!</h3>
-                        <p className="text-sm text-muted-foreground mt-1 px-10">
-                            La contabilidad ha sido sellada y el asiento de cierre ha sido generado con éxito. 
-                            Ahora puedes proceder con la distribución de utilidades a los socios.
-                        </p>
-                    </div>
-
-                    <div className="flex flex-col gap-3 w-full max-w-sm pt-4">
+                footer={
+                    <div className="flex flex-col gap-3 w-full">
                         <SubmitButton 
                             className="bg-primary hover:bg-primary/90 text-primary-foreground font-bold uppercase tracking-widest text-[11px] h-11"
                             onClick={() => {
@@ -255,6 +245,17 @@ export function FiscalYearClosingWizard({
                         >
                             Finalizar Proceso
                         </CancelButton>
+                    </div>
+                }
+            >
+                <div className="flex flex-col items-center justify-center p-12 text-center space-y-6 animate-in zoom-in-95 duration-500">
+                    <ShieldCheck className="w-10 h-10 text-muted-foreground" />
+                    <div>
+                        <h3 className="text-2xl font-heading font-black uppercase tracking-tighter">¡Ejercicio {year} Cerrado!</h3>
+                        <p className="text-sm text-muted-foreground mt-1 px-10">
+                            La contabilidad ha sido sellada y el asiento de cierre ha sido generado con éxito. 
+                            Ahora puedes proceder con la distribución de utilidades a los socios.
+                        </p>
                     </div>
                 </div>
             </BaseModal>

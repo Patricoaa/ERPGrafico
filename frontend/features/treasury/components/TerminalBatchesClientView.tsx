@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, lazy, Suspense, useMemo, useCallback } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
-import { BaseModal, DataTableView, EntityCard, StatusBadge } from '@/components/shared'
+import { BaseModal, DataTableView, EntityCard, StatusBadge, FormFooter, CancelButton, ActionSlideButton } from '@/components/shared'
 import { DataTableColumnHeader } from '@/components/shared'
 import type { ColumnDef } from "@tanstack/react-table"
 import { Plus, Building2 } from "lucide-react"
@@ -207,6 +207,8 @@ export function TerminalBatchesClientView({
 }
 
 function TerminalBatchModal({ open, onOpenChange, onSuccess }: { open: boolean, onOpenChange: (open: boolean) => void, onSuccess: () => void }) {
+    const [footerState, setFooterState] = useState({ isValid: false, isCreating: false, providerId: '', depositMethodId: '' })
+
     return (
         <BaseModal
             open={open}
@@ -219,13 +221,25 @@ function TerminalBatchModal({ open, onOpenChange, onSuccess }: { open: boolean, 
                 </div>
             }
             description="Ingrese los datos de la liquidación diaria informada por el proveedor del terminal de cobro."
+            footer={
+                <FormFooter
+                    actions={
+                        <>
+                            <CancelButton onClick={() => onOpenChange(false)} />
+                            <ActionSlideButton type="submit" form="terminal-batch-form" loading={footerState.isCreating} disabled={footerState.isCreating || !footerState.isValid || !footerState.providerId || !footerState.depositMethodId}>
+                                Registrar Liquidación
+                            </ActionSlideButton>
+                        </>
+                    }
+                />
+            }
          >
-             <SkeletonShell isLoading={false} ariaLabel="Cargando formulario de lote de terminal">
-                 <Suspense fallback={<div />}>
-                     <LazyTerminalBatchForm onSuccess={onSuccess} onCancel={() => onOpenChange(false)} />
-                 </Suspense>
-             </SkeletonShell>
-         </BaseModal>
+            <SkeletonShell isLoading={false} ariaLabel="Cargando formulario de lote de terminal">
+                <Suspense fallback={<div />}>
+                    <LazyTerminalBatchForm onSuccess={onSuccess} onCancel={() => onOpenChange(false)} onFooterStateChange={setFooterState} />
+                </Suspense>
+            </SkeletonShell>
+        </BaseModal>
     )
 }
 

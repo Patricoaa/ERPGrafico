@@ -92,6 +92,35 @@ export function SplitAllocationDialog({ open, onOpenChange, payment, treasuryAcc
             icon={Plus}
             title="Distribuir Movimiento"
             description={`Distribuir monto del pago ${payment.display_id || payment.code || 'PEND'} entre múltiples documentos.`}
+            footer={
+                <FormFooter
+                    leftActions={
+                        <CancelButton onClick={() => onOpenChange(false)} type="button">Cancelar</CancelButton>
+                    }
+                    actions={
+                        <>
+                            <Button
+                                variant="secondary"
+                                onClick={() => handleSave(false)}
+                                disabled={allocateMutation.isPending || fields.length === 0}
+                                type="button"
+                                className="h-9 px-5 text-[10px] font-black tracking-widest uppercase rounded-sm shadow-card"
+                            >
+                                Guardar Borrador
+                            </Button>
+                            <SubmitButton
+                                onClick={() => handleSave(true)}
+                                disabled={allocateMutation.isPending || !isZeroTolerance(remaining) || fields.length === 0}
+                                loading={allocateMutation.isPending}
+                                icon={<CheckCircle2 className="h-3.5 w-3.5" />}
+                                type="button"
+                            >
+                                Finalizar Distribución
+                            </SubmitButton>
+                        </>
+                    }
+                />
+            }
         >
             <Form {...form}>
                 <div className="space-y-6 max-w-3xl mx-auto">
@@ -215,35 +244,6 @@ export function SplitAllocationDialog({ open, onOpenChange, payment, treasuryAcc
                     >
                         <Plus className="mr-2 h-4 w-4" /> Agregar Distribución
                     </Button>
-
-                    <FormFooter
-                        className="pt-4 border-t"
-                        leftActions={
-                            <CancelButton onClick={() => onOpenChange(false)} type="button">Cancelar</CancelButton>
-                        }
-                        actions={
-                            <>
-                                <Button
-                                    variant="secondary"
-                                    onClick={() => handleSave(false)}
-                                    disabled={allocateMutation.isPending || fields.length === 0}
-                                    type="button"
-                                    className="h-9 px-5 text-[10px] font-black tracking-widest uppercase rounded-sm shadow-card"
-                                >
-                                    Guardar Borrador
-                                </Button>
-                                <SubmitButton
-                                    onClick={() => handleSave(true)}
-                                    disabled={allocateMutation.isPending || !isZeroTolerance(remaining) || fields.length === 0}
-                                    loading={allocateMutation.isPending}
-                                    icon={<CheckCircle2 className="h-3.5 w-3.5" />}
-                                    type="button"
-                                >
-                                    Finalizar Distribución
-                                </SubmitButton>
-                            </>
-                        }
-                    />
                 </div>
             </Form>
         </BaseModal>
