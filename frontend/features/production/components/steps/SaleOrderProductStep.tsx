@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { cn, parseDateOnly } from "@/lib/utils";
 import { formatCurrency } from "@/lib/money";
 import type { SaleOrderLine } from "@/features/sales/types";
+import { resolveMediaUrl } from "@/lib/api";
 
 type ExpandedProduct = { id: number; name: string; code: string; image_thumbnail?: string; requires_advanced_manufacturing?: boolean };
 
@@ -267,7 +268,7 @@ export function SaleOrderProductStep({
                             <div className="flex-shrink-0">
                               {prod?.image_thumbnail ? (
                                 <img
-                                  src={prod.image_thumbnail}
+                                  src={resolveMediaUrl(prod.image_thumbnail) ?? ""}
                                   alt={prod?.name || ""}
                                   className="h-10 w-10 rounded object-cover"
                                 />

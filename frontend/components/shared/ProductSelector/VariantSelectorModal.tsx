@@ -11,6 +11,7 @@ import { formatCurrency } from "@/lib/money"
 import { PricingUtils } from '@/features/inventory/utils/pricing'
 import { cn } from "@/lib/utils"
 import { BaseModal, Chip } from '@/components/shared'
+import { resolveMediaUrl } from '@/lib/api'
 import type { BaseProduct } from '@/features/inventory/types'
 import { useVariants } from '@/features/inventory/hooks/useVariants'
 
@@ -111,7 +112,7 @@ export function VariantSelectorModal({
                                         <div className="w-16 h-16 rounded-md bg-muted flex items-center justify-center overflow-hidden flex-shrink-0">
                                             {v.image || product.image ? (
                                                 <img
-                                                    src={v.image || product.image || ""}
+                                                    src={resolveMediaUrl(v.image || product.image) ?? ""}
                                                     alt={v.variant_display_name || v.name}
                                                     className="w-full h-full object-cover"
                                                 />

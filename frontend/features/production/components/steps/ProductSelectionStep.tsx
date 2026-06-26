@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import {FileText, X} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { BaseProduct } from "@/features/inventory/types";
+import { resolveMediaUrl } from '@/lib/api';
 import { ProductSelector } from '@/components/shared';
 import { useWorkOrderProducts } from "../../hooks/useWorkOrderProducts";
 
@@ -109,7 +110,7 @@ export function ProductSelectionStep({
               <div className="flex items-center space-x-3">
                 {selectedProduct.image ? (
                   <img
-                    src={selectedProduct.image}
+                    src={resolveMediaUrl(selectedProduct.image) ?? ""}
                     alt={selectedProduct.name || ""}
                     className="h-8 w-8 rounded object-cover"
                   />
