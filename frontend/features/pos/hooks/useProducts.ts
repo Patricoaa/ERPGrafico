@@ -36,12 +36,15 @@ export function useProducts() {
     // 1. Fetch Products with React Query (Shared Cache)
     const { data: products = EMPTY_ARRAY, isLoading: loadingProducts } = useQuery({
         queryKey: ['products', { is_active: true, can_be_sold: true }],
-        queryFn: () => inventoryApi.getProducts({
-            is_active: true,
-            can_be_sold: true,
-            page_size: 2000, // Ensure we get all sellable items in one go for instant search
-            fields: 'id,name,sale_price,sale_price_gross,image,uom_name,internal_code,barcode,product_type,track_inventory,requires_advanced_manufacturing,category,uom,available_uoms,is_favorite,has_bom'
-        }) as unknown as Promise<Product[]>,
+        queryFn: async () => {
+            const page = await inventoryApi.getProducts({
+                is_active: true,
+                can_be_sold: true,
+                page_size: 2000, // Ensure we get all sellable items in one go for instant search
+                fields: 'id,name,sale_price,sale_price_gross,image,uom_name,internal_code,barcode,product_type,track_inventory,requires_advanced_manufacturing,category,uom,available_uoms,is_favorite,has_bom'
+            })
+            return (page.results ?? []) as unknown as Product[]
+        },
         staleTime: 1000 * 60 * 5, 
     })
 
@@ -53,7 +56,10 @@ export function useProducts() {
     // 2. Fetch Categories
     const { data: categories = [], isLoading: loadingCategories } = useQuery({
         queryKey: ['categories'],
-        queryFn: () => inventoryApi.getCategories(),
+        queryFn: async () => {
+            const data = await inventoryApi.getCategories()
+            return (Array.isArray(data) ? data : ((data as any).results ?? [])) as any[]
+        },
         staleTime: 1000 * 60 * 60,
     })
 
@@ -82,15 +88,18 @@ export function useProducts() {
 
         // 1. Sort by favorite status first (Frontend fallback for optimistic updates)
         filtered.sort((a, b) => {
-            if (a.is_favorite && !b.is_favorite) return -1
-            if (!a.is_favorite && b.is_favorite) return 1
+            const aFav = (a as any).is_favorite
+            const bFav = (b as any).is_favorite
+            if (aFav && !bFav) return -1
+            if (!aFav && bFav) return 1
             return 0
         })
 
         // 2. Filter by category
         if (selectedCategoryId !== null) {
             filtered = filtered.filter(p => {
-                const catId = typeof p.category === 'object' ? p.category?.id : p.category
+                const pCat = (p as any).category
+                const catId = typeof pCat === 'object' ? pCat?.id : pCat
                 return catId === selectedCategoryId
             })
         }
