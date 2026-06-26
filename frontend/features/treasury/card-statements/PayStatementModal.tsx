@@ -41,6 +41,20 @@ export function PayStatementModal({ statement, open, onOpenChange }: PayStatemen
             onOpenChange={onOpenChange}
             title={`Pagar ${statement.display_id}`}
             size="sm"
+            footer={
+                <div className="flex justify-end gap-2 w-full">
+                    <Button variant="outline" onClick={() => onOpenChange(false)}>
+                        Cancelar
+                    </Button>
+                    <Button
+                        onClick={handlePay}
+                        disabled={!paymentAccountId || isPaying}
+                    >
+                        <CheckCircle className="h-4 w-4 mr-1" />
+                        {isPaying ? 'Pagando...' : 'Confirmar Pago'}
+                    </Button>
+                </div>
+            }
         >
             <div className="space-y-4">
                 <div className="rounded-md border p-4">
@@ -64,19 +78,6 @@ export function PayStatementModal({ statement, open, onOpenChange }: PayStatemen
                             </option>
                         ))}
                     </select>
-                </div>
-
-                <div className="flex justify-end gap-2">
-                    <Button variant="outline" onClick={() => onOpenChange(false)}>
-                        Cancelar
-                    </Button>
-                    <Button
-                        onClick={handlePay}
-                        disabled={!paymentAccountId || isPaying}
-                    >
-                        <CheckCircle className="h-4 w-4 mr-1" />
-                        {isPaying ? 'Pagando...' : 'Confirmar Pago'}
-                    </Button>
                 </div>
             </div>
         </BaseModal>
