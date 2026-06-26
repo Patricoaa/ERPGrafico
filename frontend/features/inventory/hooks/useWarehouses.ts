@@ -35,6 +35,7 @@ export function useWarehouses() {
         queryKey: WAREHOUSES_KEYS.list(),
         queryFn: async (): Promise<Warehouse[]> => {
             const response = await api.get<Warehouse[]>('/inventory/warehouses/')
+            // eslint-disable-next-line pagination/no-raw-response-data -- master data, no pagination
             return response.data
         },
         staleTime: 15 * 60 * 1000, // 15 min — datos de configuración

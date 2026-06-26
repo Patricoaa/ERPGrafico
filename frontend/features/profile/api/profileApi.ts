@@ -3,6 +3,7 @@ import type { MyProfile, ChangePasswordPayload, ChangePinPayload } from "@/types
 
 export async function getUserPreferences(): Promise<Record<string, any>> {
   const res = await api.get('/core/preferences/')
+  // eslint-disable-next-line pagination/no-raw-response-data
   return res.data
 }
 

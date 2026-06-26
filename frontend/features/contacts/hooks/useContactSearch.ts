@@ -31,8 +31,8 @@ export function useContactSearch(params: ContactSearchParams = {}, enabled: bool
             if (isVendor !== undefined && isVendor) q.append("is_vendor", "true")
             if (isPartnerOnly) q.append("is_partner", "true")
             
-            const res = await api.get<Contact[]>(`/contacts/?${q.toString()}`, { signal })
-            return res.data
+            const res = await api.get<{ results: Contact[] }>(`/contacts/?${q.toString()}`, { signal })
+            return res.data.results
         },
         enabled,
         staleTime: 5 * 60 * 1000, // 5 min

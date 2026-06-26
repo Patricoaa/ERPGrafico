@@ -25,6 +25,7 @@ export async function updateGlobalHRSettings(data: Partial<GlobalHRSettings>): P
 // ---- AFPs ----
 export async function getAFPs(): Promise<AFP[]> {
   const res = await api.get<AFP[]>('/hr/afps/')
+  // eslint-disable-next-line pagination/no-raw-response-data -- master data, no pagination
   return res.data
 }
 
@@ -45,6 +46,7 @@ export async function deleteAFP(id: number): Promise<void> {
 // ---- Payroll Concepts ----
 export async function getPayrollConcepts(params?: Record<string, string>): Promise<PayrollConcept[]> {
   const res = await api.get<PayrollConcept[]>('/hr/concepts/', { params })
+  // eslint-disable-next-line pagination/no-raw-response-data -- master data, no pagination
   return res.data
 }
 
@@ -65,6 +67,7 @@ export async function deletePayrollConcept(id: number): Promise<void> {
 // ---- Employees ----
 export async function getEmployees(params?: Record<string, string>): Promise<Employee[]> {
   const res = await api.get<Employee[]>('/hr/employees/', { params })
+  // eslint-disable-next-line pagination/no-raw-response-data -- master data, no pagination
   return res.data
 }
 
@@ -89,8 +92,8 @@ export async function deleteEmployee(id: number): Promise<void> {
 
 // ---- Absences ----
 export async function getAbsences(params?: Record<string, string>): Promise<Absence[]> {
-  const res = await api.get<Absence[]>('/hr/absences/', { params })
-  return res.data
+  const res = await api.get<{ results: Absence[] }>('/hr/absences/', { params })
+  return res.data.results
 }
 
 export async function createAbsence(data: Partial<Absence>): Promise<Absence> {
@@ -109,8 +112,8 @@ export async function deleteAbsence(id: number): Promise<void> {
 
 // ---- Payrolls ----
 export async function getPayrolls(params?: Record<string, string>): Promise<Payroll[]> {
-  const res = await api.get<Payroll[]>('/hr/payrolls/', { params })
-  return res.data
+  const res = await api.get<{ results: Payroll[] }>('/hr/payrolls/', { params })
+  return res.data.results
 }
 
 export async function getPayroll(id: number): Promise<Payroll> {
@@ -179,14 +182,14 @@ export async function paySalary(payrollId: number, data: any): Promise<PayrollPa
 }
 
 export async function getPayrollPayments(params?: Record<string, string>): Promise<PayrollPayment[]> {
-  const res = await api.get<PayrollPayment[]>('/hr/payroll-payments/', { params })
-  return res.data
+  const res = await api.get<{ results: PayrollPayment[] }>('/hr/payroll-payments/', { params })
+  return res.data.results
 }
 
 // ---- Salary Advances ----
 export async function getAdvances(params?: Record<string, string>): Promise<SalaryAdvance[]> {
-  const res = await api.get<SalaryAdvance[]>('/hr/advances/', { params })
-  return res.data
+  const res = await api.get<{ results: SalaryAdvance[] }>('/hr/advances/', { params })
+  return res.data.results
 }
 
 export async function createAdvance(data: Partial<SalaryAdvance>): Promise<SalaryAdvance> {

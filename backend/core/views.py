@@ -198,7 +198,6 @@ class UserViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
 
 
 class GroupViewSet(viewsets.ModelViewSet):
-    pagination_class = StandardResultsSetPagination
     """
     Expose user groups (roles) with full CRUD.
     """

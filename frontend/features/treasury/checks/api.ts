@@ -3,8 +3,8 @@ import type { Check, CheckCreatePayload, CheckDepositPayload, CheckPortfolioSumm
 
 export const checksApi = {
     list: async (params?: Record<string, string>): Promise<Check[]> => {
-        const { data } = await api.get<Check[]>('/treasury/checks/', { params })
-        return data
+        const { data } = await api.get<{ results: Check[] }>('/treasury/checks/', { params })
+        return data.results
     },
 
     get: async (id: number): Promise<Check> => {

@@ -160,7 +160,6 @@ class F29PaymentViewSet(viewsets.ModelViewSet):
 
 
 class AccountingPeriodViewSet(viewsets.ModelViewSet):
-    pagination_class = StandardResultsSetPagination
     queryset = AccountingPeriod.objects.all()
     serializer_class = AccountingPeriodSerializer
     permission_classes = [IsAuthenticated]

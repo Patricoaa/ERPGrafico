@@ -40,8 +40,8 @@ export function useSubscriptions(filters?: FilterState) {
             const params = new URLSearchParams()
             if (filters?.status) params.append('status', filters.status)
             if (filters?.search) params.append('search', filters.search)
-            const response = await api.get<Subscription[]>('/inventory/subscriptions/', { params })
-            return response.data
+            const response = await api.get<{ results: Subscription[] }>('/inventory/subscriptions/', { params })
+            return response.data.results
         },
         staleTime: 2 * 60 * 1000,
     })
@@ -85,6 +85,7 @@ export function useSubscriptionStats<T = SubscriptionStats>() {
         queryKey: [...SUBSCRIPTIONS_QUERY_KEY, 'stats'],
         queryFn: async () => {
             const response = await api.get<T>('/inventory/subscriptions/stats/')
+            // eslint-disable-next-line pagination/no-raw-response-data -- custom @action, not paginated
             return response.data
         },
         staleTime: 5 * 60 * 1000,

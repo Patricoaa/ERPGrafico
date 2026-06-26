@@ -6,7 +6,7 @@ import { reconciliationKeys } from './queryKeys'
 export function useStatementsQuery(params?: Record<string, string>) {
     return useQuery({
         queryKey: reconciliationKeys.statements(),
-        queryFn: () => financeApi.getStatements(params) as Promise<BankStatement[]>,
+        queryFn: () => financeApi.getStatements(params) as unknown as Promise<BankStatement[]>,
     })
 }
 

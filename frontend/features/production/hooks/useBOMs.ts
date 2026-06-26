@@ -18,7 +18,7 @@ export function useBOMs(params: { product_id?: string | number, parent_id?: stri
         queryKey: [...BOMS_QUERY_KEY, params],
         queryFn: async (): Promise<BOM[]> => {
             const res = await api.get('/production/boms/', { params })
-            return res.data
+            return res.data.results
         },
         staleTime: 5 * 60 * 1000, // 5 min
     })
@@ -61,8 +61,8 @@ export function useAllBOMs(filters?: FilterState, initialData?: BOM[]) {
             const params = new URLSearchParams()
             if (filters?.search) params.append('search', filters.search)
             if (filters?.active !== undefined) params.append('active', filters.active)
-            const res = await api.get<BOM[]>('/production/boms/', { params })
-            return res.data
+            const res = await api.get<{ results: BOM[] }>('/production/boms/', { params })
+            return res.data.results
         },
         staleTime: 5 * 60 * 1000,
         initialData,
@@ -82,8 +82,8 @@ export function useProductionVariants(parentId: number | string | undefined) {
         queryKey: [...VARIANTS_QUERY_KEY, parentId],
         queryFn: async (): Promise<ProductMinimal[]> => {
             if (!parentId) return []
-            const res = await api.get<ProductMinimal[]>(`/inventory/products/?parent_template=${parentId}&show_technical_variants=true`)
-            return res.data
+            const res = await api.get<{ results: ProductMinimal[] }>(`/inventory/products/?parent_template=${parentId}&show_technical_variants=true`)
+            return res.data.results
         },
     })
 

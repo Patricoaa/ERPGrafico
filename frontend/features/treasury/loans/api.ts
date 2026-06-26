@@ -6,8 +6,8 @@ import type {
 
 export const loansApi = {
     list: async (params?: Record<string, string>): Promise<BankLoan[]> => {
-        const { data } = await api.get<BankLoan[]>('/treasury/loans/', { params })
-        return data
+        const { data } = await api.get<{ results: BankLoan[] }>('/treasury/loans/', { params })
+        return data.results
     },
 
     get: async (id: number): Promise<BankLoan> => {
@@ -58,8 +58,8 @@ export const loansApi = {
     },
 
     listInstallments: async (params?: Record<string, string>): Promise<LoanInstallment[]> => {
-        const { data } = await api.get<LoanInstallment[]>('/treasury/loan-installments/', { params })
-        return data
+        const { data } = await api.get<{ results: LoanInstallment[] }>('/treasury/loan-installments/', { params })
+        return data.results
     },
 
     payInstallment: async (id: number, payload: PayInstallmentPayload): Promise<LoanInstallment> => {

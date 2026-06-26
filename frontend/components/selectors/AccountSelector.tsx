@@ -68,7 +68,7 @@ export function AccountSelector({ value, onChange, placeholder = "Seleccionar cu
 
     // 1. Filter base accounts (leaf vs parent)
     const selectableAccounts = useMemo(() => {
-        if (!allAccounts) return []
+        if (!Array.isArray(allAccounts)) return []
         return allAccounts.filter((a: Account) => {
             const isReconcilableMatch = isReconcilable !== undefined ? a.is_reconcilable === isReconcilable : true;
 
@@ -106,7 +106,7 @@ export function AccountSelector({ value, onChange, placeholder = "Seleccionar cu
         if (singleAccount && singleAccount.id.toString() === value.toString()) {
             return singleAccount
         }
-        if (allAccounts) {
+        if (Array.isArray(allAccounts)) {
             return allAccounts.find((a: Account) => a.id.toString() === value.toString()) || null
         }
         return null

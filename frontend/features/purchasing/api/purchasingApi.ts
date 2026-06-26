@@ -102,13 +102,13 @@ export const purchasingApi = {
     // ========== Billing ==========
 
     getNotes: async (): Promise<Invoice[]> => {
-        const response = await api.get<Invoice[]>('/billing/invoices/', {
+        const response = await api.get<{ results: Invoice[] }>('/billing/invoices/', {
             params: {
                 dte_type__in: 'NOTA_CREDITO,NOTA_DEBITO',
                 purchase_order__isnull: false
             }
         })
-        return response.data
+        return response.data.results
     },
 
     getInvoice: async (id: number): Promise<Invoice> => {
@@ -125,18 +125,18 @@ export const purchasingApi = {
     // ========== Inventory ==========
 
     getPurchasableProducts: async (): Promise<Record<string, unknown>[]> => {
-        const res = await api.get<Record<string, unknown>[]>('/inventory/products/?can_be_purchased=true')
-        return res.data
+        const res = await api.get<{ results: Record<string, unknown>[] }>('/inventory/products/?can_be_purchased=true')
+        return res.data.results
     },
 
     getUoms: async (): Promise<Record<string, unknown>[]> => {
-        const res = await api.get<Record<string, unknown>[]>('/inventory/uoms/')
-        return res.data
+        const res = await api.get<{ results: Record<string, unknown>[] }>('/inventory/uoms/')
+        return res.data.results
     },
 
     getWarehouses: async (): Promise<Record<string, unknown>[]> => {
-        const res = await api.get<Record<string, unknown>[]>('/inventory/warehouses/')
-        return res.data
+        const res = await api.get<{ results: Record<string, unknown>[] }>('/inventory/warehouses/')
+        return res.data.results
     },
 
     getWarehouse: async (id: string): Promise<Record<string, unknown>> => {
@@ -147,16 +147,16 @@ export const purchasingApi = {
     // ========== Contacts ==========
 
     getDefaultSupplier: async (): Promise<Record<string, unknown>[]> => {
-        const res = await api.get<Record<string, unknown>[]>('/contacts/?is_default_vendor=true')
-        return res.data
+        const res = await api.get<{ results: Record<string, unknown>[] }>('/contacts/?is_default_vendor=true')
+        return res.data.results
     },
 
     // ========== Receipts ==========
 
-    getReceipts: async (orderId?: number): Promise<Record<string, unknown>> => {
+    getReceipts: async (orderId?: number): Promise<Record<string, unknown>[]> => {
         const params = orderId ? { purchase_order: orderId } : {}
         const res = await api.get('/purchasing/receipts/', { params })
-        return res.data
+        return res.data.results
     },
 
     getReceipt: async (id: number): Promise<Record<string, unknown>> => {
@@ -166,10 +166,10 @@ export const purchasingApi = {
 
     // ========== Returns ==========
 
-    getReturns: async (orderId?: number): Promise<Record<string, unknown>> => {
+    getReturns: async (orderId?: number): Promise<Record<string, unknown>[]> => {
         const params = orderId ? { purchase_order: orderId } : {}
         const res = await api.get('/purchasing/returns/', { params })
-        return res.data
+        return res.data.results
     },
 
     getReturn: async (id: number): Promise<Record<string, unknown>> => {

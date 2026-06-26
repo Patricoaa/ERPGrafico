@@ -22,8 +22,8 @@ export function useWorkflowRulesQuery() {
     return useQuery({
         queryKey: workflowKeys.rules(),
         queryFn: async () => {
-            const res = await api.get<WorkflowRule[]>("/workflow/assignment-rules/")
-            return res.data
+            const res = await api.get<{ results: WorkflowRule[] }>("/workflow/assignment-rules/")
+            return res.data.results
         },
         staleTime: 10 * 60 * 1000, // 10 min — datos de configuración
     })
@@ -33,8 +33,8 @@ export function useNotificationRulesQuery() {
     return useQuery({
         queryKey: workflowKeys.notificationRules(),
         queryFn: async () => {
-            const res = await api.get<NotificationRule[]>("/workflow/notification-rules/")
-            return res.data
+            const res = await api.get<{ results: NotificationRule[] }>("/workflow/notification-rules/")
+            return res.data.results
         },
         staleTime: 10 * 60 * 1000, // 10 min — datos de configuración
     })

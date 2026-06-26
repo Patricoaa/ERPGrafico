@@ -70,7 +70,6 @@ from .services import TerminalBatchService, TreasuryService
 
 
 class BankViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
-    pagination_class = StandardResultsSetPagination
     queryset = Bank.objects.all().order_by("name")
     serializer_class = BankSerializer
 
@@ -127,7 +126,6 @@ class BankViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
 
 
 class PaymentMethodViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
-    pagination_class = StandardResultsSetPagination
     queryset = PaymentMethod.objects.all().order_by("name")
     serializer_class = PaymentMethodSerializer
 
@@ -203,7 +201,6 @@ class TreasuryAccountFilterSet(FilterSet):
 
 
 class TreasuryAccountViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
-    pagination_class = StandardResultsSetPagination
     queryset = TreasuryAccount.objects.all().order_by("account_type", "name")
     serializer_class = TreasuryAccountSerializer
     filter_backends = [DjangoFilterBackend, drf_filters.SearchFilter]
@@ -271,20 +268,17 @@ class TreasuryAccountViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
 
 
 class PaymentTerminalProviderViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
-    pagination_class = StandardResultsSetPagination
     queryset = PaymentTerminalProvider.objects.all().order_by("name")
     serializer_class = PaymentTerminalProviderSerializer
 
 
 class PaymentTerminalDeviceViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
-    pagination_class = StandardResultsSetPagination
     queryset = PaymentTerminalDevice.objects.all().order_by("name")
     serializer_class = PaymentTerminalDeviceSerializer
     filterset_fields = ["provider", "status"]
 
 
 class POSTerminalViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
-    pagination_class = StandardResultsSetPagination
     """
     ViewSet for managing POS Terminals.
     Supports filtering by active status via `?active_only=true` query param.

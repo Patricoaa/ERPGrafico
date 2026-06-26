@@ -3,8 +3,8 @@ import type { CreditLine, CreditLineCreatePayload } from './types'
 
 export const creditLinesApi = {
     list: async (params?: { treasury_account_id?: number; bank_id?: number; status?: string }): Promise<CreditLine[]> => {
-        const { data } = await api.get<CreditLine[]>('/treasury/credit-lines/', { params })
-        return data
+        const { data } = await api.get<{ results: CreditLine[] }>('/treasury/credit-lines/', { params })
+        return data.results
     },
 
     get: async (id: number): Promise<CreditLine> => {

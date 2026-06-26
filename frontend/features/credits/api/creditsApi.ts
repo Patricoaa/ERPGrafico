@@ -101,11 +101,13 @@ export interface CreditHistoryEntry {
 
 export async function getCreditPortfolio(): Promise<CreditPortfolioResponse> {
     const res = await api.get("/contacts/credit_portfolio/")
+    // eslint-disable-next-line pagination/no-raw-response-data
     return res.data
 }
 
 export async function getBlacklistedPortfolio(): Promise<CreditPortfolioResponse> {
     const res = await api.get("/contacts/credit_portfolio/?blacklist=true")
+    // eslint-disable-next-line pagination/no-raw-response-data
     return res.data
 }
 
@@ -121,7 +123,7 @@ export async function getContactCreditHistory(contactId: number): Promise<Credit
 
 export async function getGlobalCreditHistory(): Promise<CreditHistoryEntry[]> {
     const res = await api.get("/sales/credit_history/")
-    return res.data
+    return res.data.results
 }
 
 export async function writeOffDebt(contactId: number): Promise<{ message: string, journal_entry: string, amount: string }> {

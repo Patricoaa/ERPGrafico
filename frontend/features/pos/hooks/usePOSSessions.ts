@@ -34,7 +34,7 @@ export function usePOSSessions(filters?: FilterState) {
             const params: Record<string, unknown> = {}
             if (filters?.status) params.status = filters.status
             if (filters?.search) params.search = filters.search
-            const data = await posApi.getSessions(params)
+            const data = await posApi.getSessions(params) as unknown as POSSession[]
             return data
         },
         staleTime: 60 * 1000, // 1 min — datos operativos activos
