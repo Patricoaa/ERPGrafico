@@ -92,6 +92,7 @@ api.interceptors.response.use(
                 if (isBrowser) {
                     try {
                         removeClientTokens();
+                        window.dispatchEvent(new CustomEvent('auth:unauthorized'));
                     } catch {}
                 }
             }
