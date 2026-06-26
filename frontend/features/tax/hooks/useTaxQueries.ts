@@ -15,6 +15,7 @@ export function useTaxPeriod(id: number | string | undefined) {
   return useQuery({
     queryKey: TAX_KEYS.periods.detail(Number(id)),
     queryFn: () => taxApi.getPeriod(id as number | string),
+    staleTime: 2 * 60 * 1000,
     enabled: !!id,
   })
 }
@@ -32,6 +33,7 @@ export function useF29Detail(id: number | string | undefined) {
   return useQuery({
     queryKey: TAX_KEYS.f29.detail(Number(id)),
     queryFn: () => taxApi.getF29Detail(id as number | string),
+    staleTime: 2 * 60 * 1000,
     enabled: !!id,
   })
 }

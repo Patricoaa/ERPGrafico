@@ -85,6 +85,7 @@ export function useProductionVariants(parentId: number | string | undefined) {
             const res = await api.get<{ results: ProductMinimal[] }>(`/inventory/products/?parent_template=${parentId}&show_technical_variants=true`)
             return res.data.results
         },
+        staleTime: 5 * 60 * 1000,
     })
 
     return { variants: variants ?? [], isVariantsLoading }

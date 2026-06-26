@@ -31,6 +31,7 @@ export function useBillingSettings(): UseBillingSettingsReturn {
     const { data: settings, isLoading, refetch } = useQuery({
         queryKey: ACCOUNTING_SETTINGS_QUERY_KEY,
         queryFn: settingsApi.getBillingSettings,
+        staleTime: 10 * 60 * 1000,
     })
 
     const updateMutation = useMutation({

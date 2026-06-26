@@ -104,6 +104,7 @@ export function useContact(id: number | null | undefined) {
     return useQuery({
         queryKey: id ? CONTACTS_KEYS.detail(id) : ['contacts', 'detail', 'noop'],
         queryFn: () => contactsApi.getContact(id as number),
+        staleTime: 5 * 60 * 1000,
         enabled: !!id,
     })
 }
@@ -126,6 +127,7 @@ export function useContactCreditLedger(contactId: number | null | undefined) {
             const data = await contactsApi.getCreditLedger(contactId as number)
             return data.filter(d => Number(d.balance) > 0)
         },
+        staleTime: 2 * 60 * 1000,
         enabled: !!contactId,
     })
 }

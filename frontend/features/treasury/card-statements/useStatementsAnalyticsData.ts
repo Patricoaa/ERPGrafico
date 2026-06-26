@@ -35,6 +35,7 @@ export function useStatementsAnalyticsData(
             months,
             granularity,
         }),
+        staleTime: 5 * 60 * 1000,
         enabled: cardAccountId != null,
     })
 

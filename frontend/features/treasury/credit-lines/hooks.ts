@@ -7,6 +7,7 @@ export function useCreditLines(params?: { treasury_account_id?: number; bank_id?
     return useQuery({
         queryKey: [...CREDIT_LINES_KEYS.lists(), params],
         queryFn: () => creditLinesApi.list(params),
+        staleTime: 2 * 60 * 1000,
     })
 }
 
@@ -14,6 +15,7 @@ export function useCreditLine(id: number | null) {
     return useQuery({
         queryKey: CREDIT_LINES_KEYS.detail(id as number),
         queryFn: () => creditLinesApi.get(id as number),
+        staleTime: 2 * 60 * 1000,
         enabled: !!id,
     })
 }
@@ -22,6 +24,7 @@ export function useCreditLineOverview(id: number | null) {
     return useQuery({
         queryKey: [...CREDIT_LINES_KEYS.detail(id as number), 'overview'],
         queryFn: () => creditLinesApi.overview(id as number),
+        staleTime: 2 * 60 * 1000,
         enabled: !!id,
     })
 }

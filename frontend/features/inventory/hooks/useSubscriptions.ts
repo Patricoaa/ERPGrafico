@@ -106,6 +106,7 @@ export function useSubscriptionHistory<T = unknown>(subscriptionId: number | nul
             const response = await api.get<T>(`/inventory/subscriptions/${subscriptionId}/history/`)
             return response.data
         },
+        staleTime: 2 * 60 * 1000,
         enabled: !!subscriptionId,
     })
 }

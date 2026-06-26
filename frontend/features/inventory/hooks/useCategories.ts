@@ -107,6 +107,7 @@ export function useCategory(id: number | null | undefined) {
             const res = await api.get<Category>(`/inventory/categories/${id as number}/`)
             return res.data
         },
+        staleTime: 15 * 60 * 1000,
         enabled: !!id,
     })
 }

@@ -25,6 +25,7 @@ export function useProducts({ filters, initialData, page = 1, page_size = 50 }: 
     const query = useQuery({
         queryKey: PRODUCTS_KEYS.list(activeFilters),
         queryFn: () => inventoryApi.getProducts(activeFilters),
+        staleTime: 5 * 60 * 1000,
         initialData,
         placeholderData: (prev) => prev,
     })
@@ -128,6 +129,7 @@ export function useProduct(id: number | null | undefined) {
     return useQuery({
         queryKey: id ? PRODUCTS_KEYS.detail(id) : ['products', 'detail', 'noop'],
         queryFn: () => inventoryApi.getProduct(id as number),
+        staleTime: 5 * 60 * 1000,
         enabled: !!id,
     })
 }
@@ -148,6 +150,7 @@ export function useProductInsights<T = unknown>(id: number | null | undefined) {
             if (!id) return null
             return inventoryApi.getProductInsights<T>(id)
         },
+        staleTime: 5 * 60 * 1000,
         enabled: !!id,
     })
 }

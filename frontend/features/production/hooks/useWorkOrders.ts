@@ -64,6 +64,7 @@ export function useWorkOrder(id: string | number) {
             const res = await api.get(`/production/orders/${id}/`)
             return res.data
         },
+        staleTime: 2 * 60 * 1000,
         enabled: !!id,
     })
     return { order: data, isLoading, error, refetch }

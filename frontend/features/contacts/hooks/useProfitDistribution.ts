@@ -9,6 +9,7 @@ export function useProfitDistribution(id: number | null) {
       const res = await api.get(`/contacts/profit-distributions/${id}/`)
       return res.data
     },
+    staleTime: 2 * 60 * 1000,
     enabled: !!id,
   })
 }

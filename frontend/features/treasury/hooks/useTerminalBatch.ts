@@ -8,6 +8,7 @@ export function useTerminalBatch(id: number | null) {
       const res = await api.get(`/treasury/terminal-batches/${id}/`)
       return res.data
     },
+    staleTime: 2 * 60 * 1000,
     enabled: !!id,
   })
 }
