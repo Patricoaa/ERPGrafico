@@ -59,12 +59,18 @@ class InvoiceSelectorExt:
     @staticmethod
     def get_related_stock_moves(invoice):
         moves = []
-        if hasattr(invoice, 'sale_order') and invoice.sale_order:
-            for m in invoice.sale_order.stock_moves.all():
-                moves.append({'id': m.id, 'reference': m.reference, 'date': m.date, 'status': m.status})
-        if hasattr(invoice, 'purchase_order') and invoice.purchase_order:
-            for m in invoice.purchase_order.stock_moves.all():
-                moves.append({'id': m.id, 'reference': m.reference, 'date': m.date, 'status': m.status})
+        if invoice.sale_order_id:
+            for delivery in invoice.sale_order.deliveries.all():
+                for line in delivery.lines.select_related('stock_move'):
+                    if line.stock_move_id:
+                        m = line.stock_move
+                        moves.append({'id': m.id, 'reference': str(m), 'date': m.date, 'status': m.move_type})
+        if invoice.purchase_order_id:
+            for receipt in invoice.purchase_order.receipts.all():
+                for line in receipt.lines.select_related('stock_move'):
+                    if line.stock_move_id:
+                        m = line.stock_move
+                        moves.append({'id': m.id, 'reference': str(m), 'date': m.date, 'status': m.move_type})
         return moves
 
     @staticmethod
