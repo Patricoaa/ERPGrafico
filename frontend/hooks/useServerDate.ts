@@ -33,7 +33,7 @@ export function useServerDate() {
                 } as ServerDateResponse
             }
         },
-        staleTime: 5 * 60 * 1000, 
+        staleTime: 30 * 1000, 
         refetchOnWindowFocus: false,
     })
 
