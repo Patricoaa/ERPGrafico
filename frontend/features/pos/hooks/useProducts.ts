@@ -136,15 +136,14 @@ export function useProducts() {
     const toggleFavoriteMutation = useMutation({
         mutationFn: posApi.toggleFavorite,
         onSuccess: (data, variables) => {
+            markLocalMutation()
             const isFavorite = (data as any).is_favorite
-            toast.success(isFavorite ? "Añadido a favoritos" : "Eliminado de favoritos")
             
             // Standard FSD invalidation
             queryClient.invalidateQueries({ queryKey: POS_KEYS.products.lists() })
             queryClient.invalidateQueries({ queryKey: POS_KEYS.products.details() })
             
-            // Realtime integration
-            markLocalMutation()
+            toast.success(isFavorite ? "Añadido a favoritos" : "Eliminado de favoritos")
         },
         onError: (error: Error) => {
             console.error("Error toggling favorite:", error)
