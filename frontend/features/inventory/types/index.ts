@@ -85,6 +85,7 @@ export interface Product {
     track_inventory: boolean
     can_be_sold: boolean
     can_be_purchased: boolean
+    image?: string | null
     image_thumbnail?: string
     image_catalog?: string
     is_active: boolean
