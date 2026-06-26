@@ -578,7 +578,7 @@ export function POSClientView() {
                                         />
                                     )}
                                 </div>
-                                <div className="flex-1 px-1.5 pt-1.5 pb-0"><ProductGrid products={filteredProducts} categories={categories} limits={stockLimits} isProductDisabled={(p) => isPOSProductDisabled(p as unknown as Product)} onProductClick={(p) => handleProductClick(p as unknown as Product)} onToggleFavorite={toggleFavorite} /></div>
+                                <div className="flex-1 px-1.5 pt-1.5 pb-1"><ProductGrid products={filteredProducts} categories={categories} limits={stockLimits} isProductDisabled={(p) => isPOSProductDisabled(p as unknown as Product)} onProductClick={(p) => handleProductClick(p as unknown as Product)} onToggleFavorite={toggleFavorite} /></div>
                             </Card>
                         </div>
                     ) : (
