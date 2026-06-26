@@ -15,7 +15,16 @@ export const productSchema = z.object({
     allowed_sale_uoms: z.array(z.string()).default([]),
     receiving_warehouse: z.string().optional().or(z.literal("")),
     preferred_supplier: z.string().optional().or(z.literal("")).nullable(),
-    image: z.any().optional(),
+    image: z.union([
+        z.instanceof(File).refine((f) => {
+            const ext = "." + f.name.split(".").pop()?.toLowerCase()
+            return [".jpg", ".jpeg", ".png", ".webp"].includes(ext)
+        }, "Formato no permitido. Usa JPG, PNG o WEBP.").refine((f) => {
+            return f.size <= 10 * 1024 * 1024
+        }, "La imagen supera los 10MB."),
+        z.null(),
+        z.undefined(),
+    ]).optional(),
     track_inventory: z.boolean(),
     can_be_sold: z.boolean().default(true),
     can_be_purchased: z.boolean().default(true),

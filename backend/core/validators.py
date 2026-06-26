@@ -2,6 +2,11 @@ import os
 
 from django.core.exceptions import ValidationError
 from django.utils.translation import gettext_lazy as _
+from PIL import Image
+
+
+ALLOWED_IMAGE_FORMATS = {"JPEG", "PNG", "WEBP"}
+ALLOWED_IMAGE_EXTENSIONS = {".jpg", ".jpeg", ".png", ".webp"}
 
 
 def validate_file_size(value):
@@ -42,11 +47,27 @@ def validate_file_extension(value):
 
 def validate_image_extension(value):
     """
-    Validates that the file is an image with an allowed extension.
+    Validates that the file is an image with an allowed extension,
+    checking both the file extension and the actual content (MIME via PIL).
     """
     ext = os.path.splitext(value.name)[1].lower()
-    valid_extensions = [".jpg", ".jpeg", ".png", ".webp"]
-    if ext not in valid_extensions:
+    if ext not in ALLOWED_IMAGE_EXTENSIONS:
         raise ValidationError(
-            _("Extensión de imagen no permitida. Permitidos: ") + ", ".join(valid_extensions)
+            _("Extensión de imagen no permitida. Permitidos: ") + ", ".join(sorted(ALLOWED_IMAGE_EXTENSIONS))
+        )
+
+    # Verify actual image content using PIL (reads header bytes)
+    try:
+        value.seek(0)
+        img = Image.open(value)
+        image_format = img.format
+        img.verify()
+        value.seek(0)
+        if image_format not in ALLOWED_IMAGE_FORMATS:
+            raise ValidationError(
+                _("Formato de imagen inválido. Solo se permiten JPEG, PNG y WEBP.")
+            )
+    except (OSError, ValueError, Exception):
+        raise ValidationError(
+            _("El archivo no es una imagen válida o está corrupto.")
         )
