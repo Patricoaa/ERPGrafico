@@ -73,12 +73,12 @@ export function useDrafts(options: UseDraftsOptions = {}) {
         mutationFn: ({ draftId, draftData }: { draftId: number; draftData: Partial<DraftCart> }) =>
             posApi.updateDraft(draftId, draftData),
         onSuccess: (data, variables) => {
-            toast.success('Borrador actualizado')
+            markLocalMutation()
             // Invalidate draft lists and details
             queryClient.invalidateQueries({ queryKey: POS_KEYS.drafts.lists() })
             queryClient.invalidateQueries({ queryKey: POS_KEYS.drafts.detail() })
             queryClient.invalidateQueries({ queryKey: POS_KEYS.drafts.detailById(variables.draftId) })
-            markLocalMutation()
+            toast.success('Borrador actualizado')
         },
         onError: (error: Error) => {
             showApiError(error, 'Error al actualizar borrador')
@@ -88,10 +88,10 @@ export function useDrafts(options: UseDraftsOptions = {}) {
     const createDraftMutation = useMutation({
         mutationFn: (draftData: Partial<DraftCart>) => posApi.createDraft(draftData),
         onSuccess: (data, variables) => {
-            toast.success('Borrador creado')
+            markLocalMutation()
             // Invalidate draft lists
             queryClient.invalidateQueries({ queryKey: POS_KEYS.drafts.lists() })
-            markLocalMutation()
+            toast.success('Borrador creado')
         },
         onError: (error: Error) => {
             showApiError(error, 'Error al crear borrador')
@@ -101,11 +101,11 @@ export function useDrafts(options: UseDraftsOptions = {}) {
     const deleteDraftMutation = useMutation({
         mutationFn: (draftId: number) => posApi.deleteDraft(draftId),
         onSuccess: (data, variables) => {
-            toast.success('Borrador eliminado')
+            markLocalMutation()
             // Invalidate draft lists and details
             queryClient.invalidateQueries({ queryKey: POS_KEYS.drafts.lists() })
             queryClient.invalidateQueries({ queryKey: POS_KEYS.drafts.detail() })
-            markLocalMutation()
+            toast.success('Borrador eliminado')
         },
         onError: (error: Error) => {
             showApiError(error, 'Error al eliminar borrador')
