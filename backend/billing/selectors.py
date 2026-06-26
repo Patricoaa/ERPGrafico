@@ -2,7 +2,7 @@ class InvoiceSelectorExt:
     @staticmethod
     def get_queryset_from_request(view, request):
         from .models import Invoice
-        qs = Invoice.objects.select_related('contact', 'journal_entry').prefetch_related('lines__product', 'lines__taxes', 'taxes')
+        qs = Invoice.objects.select_related('contact', 'journal_entry')
         if view.action in ['list', 'debit_notes_list', 'credit_notes_list', 'unpaid_invoices', 'dashboard_stats']:
             d_type = request.query_params.get('document_type')
             inv_type = request.query_params.get('invoice_type')
@@ -24,15 +24,19 @@ class InvoiceSelectorExt:
 
     @staticmethod
     def get_serialized_payments(invoice):
-        from .serializers_common import InvoicePaymentLineSerializer
-        from .models import InvoicePaymentLine
-        lines = InvoicePaymentLine.objects.filter(invoice=invoice).select_related('payment_record', 'payment_record__account', 'payment_record__journal_entry').order_by('payment_record__date')
-        return InvoicePaymentLineSerializer(lines, many=True).data
+        from treasury.serializers import TreasuryMovementSerializer
+        payments = invoice.payments.select_related('journal_entry', 'account').order_by('date')
+        return TreasuryMovementSerializer(payments, many=True).data
 
     @staticmethod
     def get_lines(invoice):
-        from .serializers_common import InvoiceLineSerializer
-        return InvoiceLineSerializer(invoice.lines.all(), many=True).data
+        if invoice.sale_order_id:
+            from sales.serializers import SaleLineSerializer
+            return SaleLineSerializer(invoice.sale_order.lines.all(), many=True).data
+        if invoice.purchase_order_id:
+            from purchasing.serializers import PurchaseLineSerializer
+            return PurchaseLineSerializer(invoice.purchase_order.lines.all(), many=True).data
+        return []
 
     @staticmethod
     def get_related_documents(invoice):
