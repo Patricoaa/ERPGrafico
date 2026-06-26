@@ -515,7 +515,7 @@ export function ProductClientView({ externalOpen, onExternalOpenChange, createAc
                         const fallbackIcon = iconName
                             ? (LucideIcons as unknown as Record<string, LucideIcon | undefined>)[iconName]
                             : undefined
-                        const imageUrl = product.image_thumbnail ? resolveMediaUrl(product.image_thumbnail) ?? undefined : undefined
+                        const imageUrl = (product.image ?? product.image_thumbnail) ? resolveMediaUrl(product.image ?? product.image_thumbnail) ?? undefined : undefined
 
                         return (
                             <EntityCard key={product.id} onClick={() => {
