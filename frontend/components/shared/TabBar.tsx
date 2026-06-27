@@ -67,11 +67,10 @@ export function TabBar({
         )
         : isUnderline
             ? cn(
-                "group relative w-auto transition-all duration-200 bg-transparent rounded-none",
+                "group relative w-auto transition-all duration-200 bg-transparent rounded-none tab-underline-cmyk",
                 dense ? "h-8" : "h-12",
-                "border-b-2 border-transparent",
-                "hover:border-muted-foreground/30",
-                "data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:text-foreground data-[state=active]:font-bold data-[state=active]:bg-transparent data-[state=active]:shadow-none",
+                "hover:after:content-[''] hover:after:absolute hover:after:bottom-0 hover:after:inset-x-0 hover:after:h-[2px] hover:after:bg-muted-foreground/20",
+                "data-[state=active]:text-foreground data-[state=active]:font-bold data-[state=active]:bg-transparent data-[state=active]:shadow-none",
                 "data-[state=inactive]:text-foreground/60 data-[state=inactive]:font-bold hover:text-foreground",
                 "focus-visible:outline-none focus-visible:ring-0 focus-visible:ring-offset-0 disabled:opacity-40 disabled:pointer-events-none px-1 flex items-center justify-center gap-2"
             )
