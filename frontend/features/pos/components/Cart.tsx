@@ -102,10 +102,10 @@ export function Cart({
     }
 
     return (
-        <Card className="py-2 flex-1 flex flex-col overflow-hidden border bg-background/50 shadow-card rounded-md">
+        <Card className="py-2 flex-1 flex flex-col overflow-hidden border bg-card dot-grid-surface shadow-card rounded-md">
             <CardContent className="p-0 flex-1 flex flex-col overflow-hidden">
                 {/* Header */}
-                <div className="px-4 py-1.5 border-b bg-background/50 shrink-0">
+                <div className="px-4 py-1.5 border-b bg-muted/50 shrink-0">
                     <div className={cn("flex justify-between items-center gap-2", isTouchPOS ? "h-12" : "h-9")}>
                         <div className="flex items-center gap-2 min-w-0">
                             <span className="font-bold text-lg tracking-tight whitespace-nowrap">Resumen de Venta</span>
@@ -126,7 +126,7 @@ export function Cart({
                 </div>
 
                 {/* Items List */}
-                <div className="flex-1 overflow-auto bg-background/50 rounded-b-md relative scrollbar-thin">
+                <div className="flex-1 overflow-auto bg-muted/50 rounded-b-md relative scrollbar-thin">
                     {items.length === 0 ? (
                         /* Empty State ... */
                         <div className="absolute inset-0 flex flex-col items-center justify-center p-8 text-center text-muted-foreground/60 gap-4 animate-in fade-in zoom-in duration-500">

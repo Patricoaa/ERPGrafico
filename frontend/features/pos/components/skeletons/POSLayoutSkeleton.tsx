@@ -27,7 +27,7 @@ export function POSCartItemsSkeleton({ count = 4 }: { count?: number }) {
     return (
         <div className="flex flex-col gap-2 p-3">
             {Array.from({ length: count }).map((_, i) => (
-                <div key={i} className="flex flex-col gap-2 p-3 rounded-sm border border-border/40 bg-card">
+                <div key={i} className="flex flex-col gap-2 p-3 rounded-sm border border-border/40 bg-background">
                     <div className="flex justify-between items-start">
                         <Skeleton className="h-3 w-32" />
                         <Skeleton className="h-4 w-16" />
@@ -71,7 +71,7 @@ export function POSLayoutSkeleton() {
 
             <div className="relative grid grid-cols-1 md:grid-cols-12 gap-3 flex-1 min-h-0 overflow-hidden">
                 <div className="md:col-span-12 lg:col-span-6 flex flex-col min-h-0">
-                    <Card className="flex-1 flex flex-col overflow-hidden bg-muted/10 border py-1.5">
+                    <Card className="flex-1 flex flex-col overflow-hidden bg-card dot-grid-surface border py-1.5">
                         <POSSearchSkeleton />
                         <div className="flex-1 px-1.5 pt-1.5 pb-0">
                             <POSGridSkeleton count={12} />
@@ -80,9 +80,9 @@ export function POSLayoutSkeleton() {
                 </div>
 
                 <div className="md:col-span-12 lg:col-span-6 flex flex-col min-h-0">
-                    <Card className="py-2 flex-1 flex flex-col overflow-hidden border bg-background/50 shadow-card rounded-md">
+                    <Card className="py-2 flex-1 flex flex-col overflow-hidden border bg-card dot-grid-surface shadow-card rounded-md">
                         <CardContent className="p-0 flex-1 flex flex-col overflow-hidden">
-                            <div className="px-4 py-1.5 border-b bg-background/50 shrink-0">
+                            <div className="px-4 py-1.5 border-b bg-muted/50 shrink-0">
                                 <div className="flex justify-between items-center h-10">
                                     <div className="flex items-center gap-2">
                                         <Skeleton className="h-5 w-40" />
@@ -92,7 +92,7 @@ export function POSLayoutSkeleton() {
                                 </div>
                             </div>
 
-                            <div className="flex-1 overflow-auto bg-background/50">
+                            <div className="flex-1 overflow-auto bg-muted/50">
                                 <POSCartItemsSkeleton count={3} />
                             </div>
 
