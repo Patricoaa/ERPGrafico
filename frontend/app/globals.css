@@ -476,9 +476,7 @@
 @utility card-accent-cmyk {
   @apply relative overflow-hidden;
 
-  &:focus::before,
-  &:hover::before,
-  &.accent-visible::before {
+  &::before {
     content: '';
     position: absolute;
     top: 0;
@@ -496,6 +494,17 @@
     z-index: 1;
     pointer-events: none;
     border-radius: var(--radius-sm) 0 0 var(--radius-sm);
+    opacity: 0;
+    transition: opacity 200ms ease;
+  }
+
+  &:focus::before,
+  &:hover::before {
+    opacity: 1;
+  }
+
+  &.accent-visible::before {
+    opacity: 1;
   }
 }
 
