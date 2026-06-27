@@ -61,7 +61,7 @@ export function DomainCard({
     const hasPending = total > 0 && pending > 0
 
     // ─── Aesthetics ───────────────────────────────────────────────────────────
-    let iconClassName = "bg-muted text-muted-foreground"
+    let iconClassName = "bg-accent text-muted-foreground"
 
     if (label === 'purchasing.purchaseorder' || label === 'inventory.product') {
         iconClassName = "text-info bg-info/10"
