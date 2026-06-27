@@ -468,6 +468,22 @@
 }
 
 /*
+ * TAB UNDERLINE CMY — Active tab bottom border with gradient
+ * Applied via className="tab-underline-cmyk" on TabsTrigger when variant="underline"
+ * Replaces border-b-2 border-primary with the CMY gradient pseudo-element.
+ */
+.tab-underline-cmyk[data-state="active"]::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: var(--gradient-cmyk);
+  pointer-events: none;
+}
+
+/*
  * TABLE SYSTEM — Shared utility classes
  * All table variants (DataTable, FormLineItemsTable, ReportTable)
  * should use these instead of ad-hoc padding/height values.
