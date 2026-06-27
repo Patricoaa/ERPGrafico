@@ -36,12 +36,12 @@ function EntityCardRoot({
                 }
             }}
             className={cn(
-                "group relative flex flex-col rounded-md border transition-all duration-200 card-accent-cmyk",
-                "bg-background text-foreground shadow-card",
+                "card-interactive card-accent-cmyk group flex flex-col rounded-md",
+                "bg-background text-foreground",
                 variant === "compact" ? "gap-1.5 p-3" : "gap-3 p-4",
                 isSelected
-                    ? "border-primary/60 bg-accent ring-1 ring-primary/20 shadow-primary/10"
-                    : "border-border/50 hover:border-border hover:shadow-elevated",
+                    ? "border-primary/60 bg-accent ring-1 ring-primary/20 shadow-primary/10 hover:border-primary/60"
+                    : "hover:border-border/50",
                 onClick && "cursor-pointer select-none",
                 className
             )}
