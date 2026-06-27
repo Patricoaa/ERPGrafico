@@ -252,9 +252,9 @@ export const TreasuryAccountsClientView: React.FC<TreasuryAccountsClientViewProp
 
     return (
         <>
-        <Tabs value={activeTab} className="h-full flex flex-col">
+        <Tabs value={activeTab} className="flex-1 min-h-0 flex flex-col">
             <TabsContent value="accounts" className="space-y-6 flex-1 min-h-0">
-                <div className="h-full flex flex-col">
+                <div className="flex-1 min-h-0 flex flex-col">
                     <div className="flex-1 min-h-0">
                         <DataTableView
                             entityLabel="treasury.treasuryaccount"
@@ -342,7 +342,7 @@ export const TreasuryAccountsClientView: React.FC<TreasuryAccountsClientViewProp
                 </div>
             </TabsContent>
 
-            <TabsContent value="banks" className="flex-1 min-h-0">
+            <TabsContent value="banks" className="flex-1 min-h-0 flex flex-col">
                 <FadeIn className="h-full">
                     <BankManagement
                         externalOpen={isBankModalOpen || (activeTab === "banks" && !!externalOpen)}
@@ -358,7 +358,7 @@ export const TreasuryAccountsClientView: React.FC<TreasuryAccountsClientViewProp
                 </FadeIn>
             </TabsContent>
 
-            <TabsContent value="methods" className="flex-1 min-h-0">
+            <TabsContent value="methods" className="flex-1 min-h-0 flex flex-col">
                 <FadeIn className="h-full">
                     <PaymentMethodManagement
                         externalOpen={isMethodModalOpen || (activeTab === "methods" && !!externalOpen)}

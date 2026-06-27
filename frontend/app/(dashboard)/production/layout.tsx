@@ -11,7 +11,7 @@ export default function ProductionLayout({ children }: { children: React.ReactNo
     return (
         <PageContainer className="flex flex-col">
             <ProductionHeader />
-            <div className="h-full flex flex-col">
+            <div className="flex-1 min-h-0 flex flex-col">
                 {children}
             </div>
         </PageContainer>

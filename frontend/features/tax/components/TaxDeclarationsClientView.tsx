@@ -236,7 +236,7 @@ export function TaxDeclarationsClientView({ externalOpen, onExternalOpenChange, 
     ]
 
     return (
-        <div className="h-full flex flex-col">
+        <div className="flex-1 min-h-0 flex flex-col">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6 shrink-0">
                 <SkeletonShell isLoading={isLoading} ariaLabel="Cargando períodos tributarios">
                     <Card className="bg-gradient-to-br from-primary/5 to-transparent border-primary/10">

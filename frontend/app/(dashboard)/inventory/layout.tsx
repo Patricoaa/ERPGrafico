@@ -11,7 +11,7 @@ export default function InventoryLayout({ children }: { children: React.ReactNod
     return (
         <PageContainer className="flex flex-col">
             <InventoryHeader />
-            <div className="h-full flex flex-col">
+            <div className="flex-1 min-h-0 flex flex-col">
                 {children}
             </div>
         </PageContainer>

@@ -170,7 +170,7 @@ export const POSSessionsClientView = ({ hideHeader = false }: POSSessionsClientV
     ]
 
     return (
-        <div className="h-full flex flex-col">
+        <div className="flex-1 min-h-0 flex flex-col">
             <div className="flex-1 min-h-0">
                 <DataTableView
                     columns={columns}

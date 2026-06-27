@@ -37,7 +37,7 @@ export function SalesOrdersClientView({ viewMode }: SalesOrdersClientViewProps) 
 
     return (
         <>
-            <FadeIn key={viewMode} className="h-full">
+            <FadeIn key={viewMode}>
                 <SalesOrdersView viewMode={viewMode} />
             </FadeIn>
 

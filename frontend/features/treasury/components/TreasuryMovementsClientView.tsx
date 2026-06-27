@@ -308,7 +308,7 @@ export function TreasuryMovementsClientView({ externalOpen, createAction }: Trea
     ], [openEntity, handleViewDetails])
 
     return (
-        <div className="h-full flex flex-col">
+        <div className="flex-1 min-h-0 flex flex-col">
             <Suspense fallback={<div />}>
                 <CashMovementModal
                     open={openModal}
