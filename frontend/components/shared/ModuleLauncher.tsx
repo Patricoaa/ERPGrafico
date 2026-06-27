@@ -104,6 +104,7 @@ export function ModuleLauncher({ open, onClose }: ModuleLauncherProps) {
                                                 onClick={onClose}
                                                 className={cn(
                                                     "card-interactive card-accent-cmyk group relative flex flex-col items-center justify-center gap-2 p-[clamp(0.75rem,2vw,1.25rem)] rounded-md",
+                                                    isActive && "accent-visible",
                                                     isActive
                                                         ? "bg-primary/5 border-primary/20"
                                                         : "bg-card hover:bg-muted/30"
@@ -123,9 +124,6 @@ export function ModuleLauncher({ open, onClose }: ModuleLauncherProps) {
                                                 )}>
                                                     {mod.label}
                                                 </span>
-                                                {isActive && (
-                                                    <span className="absolute top-2 right-2 w-2 h-2 rounded-full bg-primary" />
-                                                )}
                                             </Link>
                                         </motion.div>
                                     </PermissionGuard>
