@@ -97,7 +97,7 @@ function ProductGridComponent({
                 return (
                     <Card
                         className={cn(
-                            "group cursor-pointer hover:shadow-elevated transition-all border overflow-hidden flex flex-col h-full rounded-md p-2 bg-card",
+                            "group cursor-pointer hover:shadow-elevated transition-all border overflow-hidden flex flex-col h-full rounded-md p-2 bg-card ribbon-cmyk",
                             isTouchPOS && "active:scale-95",
                             isDisabled && "opacity-50 grayscale cursor-not-allowed"
                         )}

@@ -19,6 +19,8 @@ const buttonVariants = cva(
         ghost:
           "hover:bg-accent hover:text-accent-foreground dark:hover:bg-accent/50",
         link: "text-primary underline-offset-4 hover:underline",
+        "ghost-cmyk":
+          "relative overflow-hidden border border-border/50 bg-transparent text-foreground hover:text-white",
       },
       size: {
         default: "h-10 px-4 py-2 has-[>svg]:px-3",
@@ -46,7 +48,33 @@ function Button({
   VariantProps<typeof buttonVariants> & {
     asChild?: boolean
   }) {
-  const Comp = asChild ? Slot : "button"
+  const isGhostCmyk = variant === "ghost-cmyk"
+  const Comp = isGhostCmyk ? "button" : asChild ? Slot : "button"
+
+  if (isGhostCmyk) {
+    const { children, ...rest } = props
+    return (
+      <Comp
+        data-slot="button"
+        data-variant="ghost-cmyk"
+        data-size={size}
+        className={cn(
+          buttonVariants({ variant, size, className }),
+          "group",
+        )}
+        {...rest}
+      >
+        <span className="relative z-10 flex items-center gap-2 [&_svg]:size-4">
+          {children}
+        </span>
+        <span
+          aria-hidden="true"
+          className="absolute inset-0 -z-10 transition-transform duration-300 ease-out -translate-x-[101%] group-hover:translate-x-0 group-focus-visible:translate-x-0 group-active:translate-x-0"
+          style={{ background: "var(--gradient-cmyk)" }}
+        />
+      </Comp>
+    )
+  }
 
   return (
     <Comp
