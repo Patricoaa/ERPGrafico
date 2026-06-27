@@ -77,11 +77,11 @@ function EntityCardHeader({ title, subtitle, trailing, center, icon: Icon, image
             <div className={cn("grid grid-cols-[1fr_auto_1fr] items-start gap-2", className)}>
                 <div className="flex items-start gap-3 min-w-0">
                     {imageSrc ? (
-                        <div className={cn("flex h-8 w-8 shrink-0 items-center justify-center rounded-md overflow-hidden", iconClassName ?? "bg-muted")}>
+                        <div className={cn("flex h-8 w-8 shrink-0 items-center justify-center rounded-md overflow-hidden", iconClassName ?? "bg-muted text-muted-foreground")}>
                             <img src={imageSrc} alt="" className="h-full w-full object-cover" />
                         </div>
                     ) : Icon ? (
-                        <div className={cn("flex h-8 w-8 shrink-0 items-center justify-center rounded-md", iconClassName ?? "bg-muted")}>
+                        <div className={cn("flex h-8 w-8 shrink-0 items-center justify-center rounded-md", iconClassName ?? "bg-muted text-muted-foreground")}>
                             <Icon className="h-4 w-4" />
                         </div>
                     ) : null}
@@ -110,11 +110,11 @@ function EntityCardHeader({ title, subtitle, trailing, center, icon: Icon, image
         <div className={cn("flex items-start justify-between gap-2", className)}>
             <div className="flex items-start gap-3 min-w-0 flex-1">
                 {imageSrc ? (
-                    <div className={cn("flex h-8 w-8 shrink-0 items-center justify-center rounded-md overflow-hidden", iconClassName ?? "bg-muted")}>
+                    <div className={cn("flex h-8 w-8 shrink-0 items-center justify-center rounded-md overflow-hidden", iconClassName ?? "bg-muted text-muted-foreground")}>
                         <img src={imageSrc} alt="" className="h-full w-full object-cover" />
                     </div>
                 ) : Icon ? (
-                    <div className={cn("flex h-8 w-8 shrink-0 items-center justify-center rounded-md", iconClassName ?? "bg-muted")}>
+                    <div className={cn("flex h-8 w-8 shrink-0 items-center justify-center rounded-md", iconClassName ?? "bg-muted text-muted-foreground")}>
                         <Icon className="h-4 w-4" />
                     </div>
                 ) : null}
