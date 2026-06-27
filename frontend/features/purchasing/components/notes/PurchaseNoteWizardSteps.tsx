@@ -143,14 +143,16 @@ export function Step1_GeneralInfo({
 
 // --- STEP 2: Line Items ---
 
+import type { PurchaseNoteLine } from "../../types"
+
 interface Step2Props {
-    lines: any[]
-    setLines: (lines: any[]) => void
+    lines: PurchaseNoteLine[]
+    setLines: (lines: PurchaseNoteLine[]) => void
     noteType: "NOTA_CREDITO" | "NOTA_DEBITO"
 }
 
 export function Step2_LineItems({ lines, setLines, noteType }: Step2Props) {
-    const handleLineChange = (index: number, field: string, value: string) => {
+    const handleLineChange = (index: number, field: 'note_quantity' | 'note_unit_cost', value: string) => {
         const newLines = [...lines]
         newLines[index][field] = parseFloat(value) || 0
         setLines(newLines)
@@ -298,7 +300,7 @@ interface Step3Props {
     noteType: "NOTA_CREDITO" | "NOTA_DEBITO"
     documentNumber: string
     attachment: File | null
-    lines: any[]
+    lines: PurchaseNoteLine[]
     totals: {
         net: number
         tax: number

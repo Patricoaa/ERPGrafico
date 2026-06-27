@@ -11,7 +11,7 @@ import { PurchaseOrderSummaryCard } from "./checkout/PurchaseOrderSummaryCard"
 import { PurchaseProcessSummarySidebar } from "./checkout/PurchaseProcessSummarySidebar"
 import { toast } from "sonner"
 import { purchasingApi } from "../api/purchasingApi"
-import { type PurchaseOrderAPI, type CheckoutLine, type DTEData, type ReceiptData } from "../types"
+import { type PurchaseOrderAPI, type PurchaseOrderLineAPI, type CheckoutLine, type DTEData, type ReceiptData } from "../types"
 import { type PaymentData } from "@/features/treasury/components/PaymentMethodCardSelector"
 
 import { PricingUtils } from '@/features/inventory/utils/pricing'
@@ -78,22 +78,22 @@ export function PurchaseCheckoutWizard({
                     const data = await purchasingApi.getOrder(orderId)
                     setInternalOrder(data)
 
-                    const mappedLines = (data.lines || []).map((l: any) => ({
+                    const mappedLines = (data.lines || []).map((l: PurchaseOrderLineAPI) => ({
                         id: l.id,
                         product: l.product,
                         product_name: l.product_name,
-                        qty: l.quantity,
-                        quantity: l.quantity,
-                        unit_cost: l.unit_cost,
+                        qty: Number(l.quantity),
+                        quantity: Number(l.quantity),
+                        unit_cost: Number(l.unit_cost),
                         uom: l.uom,
                         uom_name: l.uom_name,
-                        tax_rate: l.tax_rate ?? rate,
+                        tax_rate: Number(l.tax_rate ?? rate),
                         product_type: l.product_type
                     }))
                     setCurrentOrderLines(mappedLines)
                     setCurrentTotal(parseFloat(data.total as string))
-                    setSelectedSupplierId((data.supplier as any)?.toString() || null)
-                    setSelectedWarehouseId((data.warehouse as any)?.toString() || "")
+                    setSelectedSupplierId(typeof data.supplier === 'object' ? String((data.supplier as unknown as Record<string, unknown>).id) : String(data.supplier ?? ""))
+                    setSelectedWarehouseId(data.warehouse ? (typeof data.warehouse === 'object' ? String((data.warehouse as unknown as Record<string, unknown>).id) : String(data.warehouse)) : "")
                 } catch (error) {
                     console.error("Error fetching order in wizard:", error)
                     toast.error("Error al cargar la orden")
@@ -182,7 +182,7 @@ export function PurchaseCheckoutWizard({
             const fetchWarehouseName = async () => {
                 try {
                     const warehouseData = await purchasingApi.getWarehouse(selectedWarehouseId)
-                    setSelectedWarehouseName((warehouseData as any).name)
+                    setSelectedWarehouseName(String((warehouseData as Record<string, unknown>).name ?? ''))
                 } catch (error) {
                     console.error("Failed to fetch warehouse name", error)
                 }
@@ -357,14 +357,14 @@ export function PurchaseCheckoutWizard({
                 }))
             } else {
                 formData.append('receipt_type', receiptData.type)
-                const receiptPayload: any = {
+                const receiptPayload: Record<string, unknown> = {
                     delivery_reference: receiptData.deliveryReference,
                     notes: receiptData.notes
                 }
 
                 // Add partial quantities if applicable
                 if (receiptData.type === 'PARTIAL' && receiptData.partialQuantities) {
-                    receiptPayload.line_data = receiptData.partialQuantities.map((pq: any) => ({
+                    receiptPayload.line_data = receiptData.partialQuantities.map((pq) => ({
                         line_id: pq.lineId,
                         product_id: pq.productId,
                         quantity: pq.receivedQty,
@@ -452,7 +452,7 @@ export function PurchaseCheckoutWizard({
                     warehouseName={selectedWarehouseName}
                     dteType={step > 2 ? dteData.type : undefined}
                     paymentData={step > 3 ? {
-                        method: paymentData.method as any,
+                        method: paymentData.method,
                         amount: paymentData.amount,
                         pendingDebt: currentTotal - paymentData.amount
                     } : undefined}
@@ -496,8 +496,8 @@ export function PurchaseCheckoutWizard({
                                 receiptData={receiptData}
                                 setReceiptData={(data) => {
                                     setReceiptData(data)
-                                    if ((data as any).warehouseId) {
-                                        setSelectedWarehouseId((data as any).warehouseId)
+                                    if (typeof data !== 'function' && data.warehouseId) {
+                                        setSelectedWarehouseId(data.warehouseId)
                                     }
                                 }}
                                 orderLines={currentOrderLines}

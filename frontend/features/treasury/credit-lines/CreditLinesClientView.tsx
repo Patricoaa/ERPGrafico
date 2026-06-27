@@ -11,6 +11,7 @@ import { Button } from '@/components/ui/button'
 import { useCreditLines, useCreditLineMutations } from './hooks'
 import { CreditLineDrawer } from './CreditLineDrawer'
 import type { CreditLine } from './types'
+import type { TreasuryAccount } from '../types'
 import { treasuryApi } from '@/features/treasury'
 
 interface Props {
@@ -22,7 +23,7 @@ export function CreditLinesClientView({ bankId }: Props) {
     const { remove } = useCreditLineMutations()
     const [drawerOpen, setDrawerOpen] = useState(false)
     const [editingLine, setEditingLine] = useState<CreditLine | null>(null)
-    const [bankCheckingAccounts, setBankCheckingAccounts] = useState<any[]>([])
+    const [bankCheckingAccounts, setBankCheckingAccounts] = useState<TreasuryAccount[]>([])
 
     useEffect(() => {
         if (bankId && !editingLine) {

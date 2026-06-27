@@ -118,7 +118,8 @@ export function ProfitDistributionsTab({ initialFlowOpen = false, createAction }
             fetchDistributions()
         } catch (error: unknown) {
             console.error(error)
-            const detail = (error as any).response?.data?.detail || (error as Error).message || "Error al ejecutar la resolución"
+            const errResponse = error as unknown as { response?: { data?: { detail?: string } } }
+            const detail = errResponse.response?.data?.detail || (error instanceof Error ? error.message : "Error al ejecutar la resolución")
             toast.error(detail)
             throw error
         } finally {

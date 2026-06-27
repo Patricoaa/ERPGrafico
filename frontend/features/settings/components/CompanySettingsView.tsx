@@ -1,7 +1,7 @@
 "use client"
 
 import React, { useEffect, useCallback, useState } from "react"
-import { useForm } from "react-hook-form"
+import { useForm, type Resolver, type Control } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { toast } from "sonner"
 import { useCompanySettings } from "@/features/settings"
@@ -33,8 +33,8 @@ export function CompanySettingsView({ activeTab }: { activeTab: string }) {
     const [isEditContactOpen, setIsEditContactOpen] = useState(false)
     const fileInputRef = React.useRef<HTMLInputElement>(null)
 
-    const form = useForm<any>({
-        resolver: zodResolver(companySchema) as any,
+    const form = useForm<CompanyFormValues>({
+        resolver: zodResolver(companySchema) as unknown as Resolver<CompanyFormValues>,
         defaultValues: {
             name: "",
             trade_name: "",
@@ -76,8 +76,8 @@ export function CompanySettingsView({ activeTab }: { activeTab: string }) {
         fetchContacts()
     }, [])
 
-    const onSave = useCallback(async (data: any) => {
-        await updateSettings(data as Partial<CompanySettings>)
+    const onSave = useCallback(async (data: CompanyFormValues) => {
+        await updateSettings(data as unknown as Partial<CompanySettings>)
     }, [updateSettings])
 
     const { status, invalidReason, lastSavedAt, retry } = useAutoSaveForm({ form, onSave, enabled: true })
@@ -170,7 +170,7 @@ export function CompanySettingsView({ activeTab }: { activeTab: string }) {
                                 <CardContent className="space-y-6">
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                         <FormField
-                                            control={form.control as any}
+                                            control={form.control as unknown as Control<CompanyFormValues>}
                                             name="contact"
                                             render={({ field, fieldState }) => (
                                                 <div className="col-span-2 space-y-2">
@@ -238,7 +238,7 @@ export function CompanySettingsView({ activeTab }: { activeTab: string }) {
 
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                         <FormField
-                                            control={form.control as any}
+                                            control={form.control as unknown as Control<CompanyFormValues>}
                                             name="trade_name"
                                             render={({ field }) => (
                                                 <LabeledInput
@@ -249,7 +249,7 @@ export function CompanySettingsView({ activeTab }: { activeTab: string }) {
                                             )}
                                         />
                                         <FormField
-                                            control={form.control as any}
+                                            control={form.control as unknown as Control<CompanyFormValues>}
                                             name="business_activity"
                                             render={({ field }) => (
                                                 <LabeledInput
@@ -263,7 +263,7 @@ export function CompanySettingsView({ activeTab }: { activeTab: string }) {
 
                                     <div className={cn("grid grid-cols-1 md:grid-cols-2 gap-6", isLinked && "hidden")}>
                                         <FormField
-                                            control={form.control as any}
+                                            control={form.control as unknown as Control<CompanyFormValues>}
                                             name="name"
                                             render={({ field }) => (
                                                 <LabeledInput
@@ -274,7 +274,7 @@ export function CompanySettingsView({ activeTab }: { activeTab: string }) {
                                             )}
                                         />
                                         <FormField
-                                            control={form.control as any}
+                                            control={form.control as unknown as Control<CompanyFormValues>}
                                             name="tax_id"
                                             render={({ field }) => (
                                                 <LabeledInput
@@ -290,7 +290,7 @@ export function CompanySettingsView({ activeTab }: { activeTab: string }) {
 
                                     <div className={cn("grid grid-cols-1 md:grid-cols-2 gap-6", isLinked && "hidden")}>
                                         <FormField
-                                            control={form.control as any}
+                                            control={form.control as unknown as Control<CompanyFormValues>}
                                             name="email"
                                             render={({ field }) => (
                                                 <LabeledInput
@@ -305,7 +305,7 @@ export function CompanySettingsView({ activeTab }: { activeTab: string }) {
                                             )}
                                         />
                                         <FormField
-                                            control={form.control as any}
+                                            control={form.control as unknown as Control<CompanyFormValues>}
                                             name="phone"
                                             render={({ field }) => (
                                                 <LabeledInput
@@ -322,7 +322,7 @@ export function CompanySettingsView({ activeTab }: { activeTab: string }) {
 
                                     <div className={cn(isLinked && "hidden")}>
                                         <FormField
-                                            control={form.control as any}
+                                            control={form.control as unknown as Control<CompanyFormValues>}
                                             name="address"
                                             render={({ field }) => (
                                                 <LabeledInput
@@ -340,7 +340,7 @@ export function CompanySettingsView({ activeTab }: { activeTab: string }) {
                                     </div>
 
                                     <FormField
-                                        control={form.control as any}
+                                        control={form.control as unknown as Control<CompanyFormValues>}
                                         name="website"
                                         render={({ field }) => (
                                             <LabeledInput
@@ -425,7 +425,7 @@ export function CompanySettingsView({ activeTab }: { activeTab: string }) {
                                             </div>
                                             <div className="flex-1 space-y-4 w-full">
                                                 <FormField
-                                                    control={form.control as any}
+                                                    control={form.control as unknown as Control<CompanyFormValues>}
                                                     name="logo_url"
                                                     render={({ field }) => (
                                                         <LabeledInput

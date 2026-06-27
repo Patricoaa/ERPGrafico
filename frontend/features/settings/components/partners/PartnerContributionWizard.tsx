@@ -15,7 +15,7 @@ import { partnersApi } from "@/features/contacts/api/partnersApi"
 import { type Partner } from "@/features/contacts/types/partner"
 import { type TreasuryAccount } from "@/features/treasury/types"
 import { type Product } from "@/features/inventory/types"
-import { settingsApi } from "../../hooks"
+import { settingsApi, type Warehouse, type UoM, type ProductMinimal } from "../../hooks"
 import { ProductSelector } from "@/components/selectors/ProductSelector"
 
 import {Alert} from "@/components/ui/alert"
@@ -43,7 +43,7 @@ export function PartnerContributionWizard({
 
     // Data lists
     const [partners, setPartners] = useState<Partner[]>([])
-    const [warehouses, setWarehouses] = useState<any[]>([])
+    const [warehouses, setWarehouses] = useState<Warehouse[]>([])
     const [treasuryAccounts, setTreasuryAccounts] = useState<TreasuryAccount[]>([])
 
     // Form State
@@ -71,7 +71,7 @@ export function PartnerContributionWizard({
 
     // Product details for assets
     const [productDetails, setProductDetails] = useState<Product | null>(null)
-    const [productUoMs, setProductUoMs] = useState<any[]>([])
+    const [productUoMs, setProductUoMs] = useState<UoM[]>([])
 
     // Load initial data
     useEffect(() => {
@@ -84,7 +84,7 @@ export function PartnerContributionWizard({
             ]).then(([pData, warehouses, accounts]) => {
                 setPartners(pData)
                 setWarehouses(warehouses)
-                setTreasuryAccounts(accounts as any)
+                setTreasuryAccounts(accounts as TreasuryAccount[])
 
                 if (initialPartnerId) setPartnerId(initialPartnerId)
             }).catch(err => {
@@ -127,17 +127,17 @@ export function PartnerContributionWizard({
             return
         }
 
-        settingsApi.getProduct(assetData.productId)
-            .then(data => {
-                setProductDetails(data as any)
-                setAssetData(prev => ({ ...prev, unitCost: (data as any).cost_price?.toString() || "0" }))
+            settingsApi.getProduct(assetData.productId)
+            .then((data: ProductMinimal) => {
+                setProductDetails(data as unknown as Product)
+                setAssetData(prev => ({ ...prev, unitCost: data.cost_price?.toString() || "0" }))
 
-                if ((data as any).uom_category) {
-                    settingsApi.getUoms({ category: (data as any).uom_category })
-                        .then(uoms => {
+                if (data.uom_category) {
+                    settingsApi.getUoms({ category: data.uom_category })
+                        .then((uoms) => {
                             setProductUoMs(uoms)
-                            const baseId = typeof (data as any).uom === 'object' ? (data as any).uom.id : (data as any).uom
-                            const base = uoms.find((u: { id: number }) => u.id === baseId)
+                            const baseId = typeof data.uom === 'object' ? data.uom.id : data.uom
+                            const base = uoms.find((u) => u.id === baseId)
                             if (base) setAssetData(prev => ({ ...prev, uomId: base.id.toString() }))
                         })
                 }

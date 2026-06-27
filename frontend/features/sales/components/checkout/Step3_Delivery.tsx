@@ -131,7 +131,7 @@ export function Step3_Delivery({ deliveryData, setDeliveryData, orderLines }: St
         <div className="space-y-6">
             <RadioGroup
                 value={deliveryData.type}
-                onValueChange={(val) => setDeliveryData((prev: CheckoutDeliveryData) => ({ ...prev, type: val as any }))}
+                onValueChange={(val) => setDeliveryData((prev: CheckoutDeliveryData) => ({ ...prev, type: val as 'IMMEDIATE' | 'SCHEDULED' | 'PARTIAL' }))}
                 className="grid grid-cols-3 gap-3"
             >
                 <Label

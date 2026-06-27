@@ -132,7 +132,7 @@ export function OutsourcedServiceForm({
             }}
             disabled={productLocked}
             customFilter={(p) =>
-              p.product_type === 'SERVICE' && !!(p as any).can_be_purchased
+              p.product_type === 'SERVICE' && !!(p as unknown as { can_be_purchased?: boolean }).can_be_purchased
             }
           />
         </div>
@@ -151,7 +151,7 @@ export function OutsourcedServiceForm({
         <div className="w-full md:w-40 space-y-2">
           <label className="text-xs font-bold uppercase">Unidad</label>
           <UoMSelector
-            product={value.productObj as any}
+            product={value.productObj as unknown as Parameters<typeof UoMSelector>[0]['product']}
             context="bom"
             value={value.uomId}
             onChange={(id) => set({ uomId: id })}

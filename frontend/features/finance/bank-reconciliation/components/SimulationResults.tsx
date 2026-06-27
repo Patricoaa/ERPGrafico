@@ -31,13 +31,13 @@ export function SimulationResults({ rule }: { rule: Record<string, unknown> }) {
             setLoading(true)
             setError(false)
             try {
-                // Prepare rule data for backend
+                const treasuryAccount = rule.treasury_account as Record<string, unknown> | undefined
                 const payload = {
-                    ...(rule as any),
-                    treasury_account_id: (rule as any).treasury_account?.id
+                    ...rule,
+                    treasury_account_id: treasuryAccount?.id
                 }
-                const response = await financeApi.simulateRule(payload)
-                setResults((response as any).results)
+                const response = await financeApi.simulateRule(payload) as Record<string, unknown>
+                setResults((response.results as SimulationResult[]))
             } catch (error) {
                 console.error("Simulation error", error)
                 setError(true)

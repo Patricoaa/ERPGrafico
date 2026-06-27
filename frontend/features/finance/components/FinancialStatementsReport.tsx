@@ -16,7 +16,7 @@ import {
     DropdownMenuRadioItem
 } from "@/components/ui/dropdown-menu"
 
-import { CashFlowTable } from "@/features/finance/components/CashFlowTable"
+import { CashFlowTable, type CashFlowData } from "@/features/finance/components/CashFlowTable"
 import { MappingConfigDrawer } from "@/features/finance/components/MappingConfigDrawer"
 import { useMappingDrawer } from "@/features/finance/hooks/useMappingDrawer"
 import { DateRangeFilter } from "@/components/shared"
@@ -104,6 +104,31 @@ interface FinancialStatementsReportProps {
 }
 
 import { useStatements } from "@/features/finance/hooks/useStatements"
+import type { ReportNode } from '@/components/shared'
+
+interface BalanceSheetData {
+    total_assets: number
+    total_liabilities: number
+    total_equity: number
+    assets: ReportNode[]
+    liabilities: ReportNode[]
+    equity: ReportNode[]
+    total_assets_comp?: number
+    total_liabilities_comp?: number
+    total_equity_comp?: number
+}
+
+interface PLSection {
+    name: string
+    is_total: boolean
+    total: number
+    total_comp?: number
+    tree: ReportNode[]
+}
+
+interface PLData {
+    sections: PLSection[]
+}
 
 export function FinancialStatementsReport({ activeTab }: FinancialStatementsReportProps) {
     const [showComparison, setShowComparison] = useState(false)
@@ -200,7 +225,7 @@ export function FinancialStatementsReport({ activeTab }: FinancialStatementsRepo
 
     const renderBSDistribution = () => {
         if (!bsData) return null
-        const d = bsData as any
+        const d = bsData as BalanceSheetData
         const a = d.total_assets || 0
         const p = d.total_liabilities || 0
         const e = d.total_equity || 0
@@ -324,7 +349,7 @@ export function FinancialStatementsReport({ activeTab }: FinancialStatementsRepo
                                         <div className="space-y-8">
                                             <div className="space-y-8">
                                                 {(() => {
-                                                    const d = bsData as any;
+                                                    const d = bsData as BalanceSheetData;
                                                     return (
                                                         <>
                                                             <ReportTable
@@ -390,8 +415,8 @@ export function FinancialStatementsReport({ activeTab }: FinancialStatementsRepo
                                     {plData ? (
                                         <div className="space-y-8">
                                             {(() => {
-                                                const d = plData as any;
-                                                return (d.sections || []).map((section: any, idx: number) => (
+                                                const d = plData as PLData;
+                                                return (d.sections || []).map((section: PLSection, idx: number) => (
                                                     section.is_total ? (
                                                         <div key={idx} className={cn(
                                                             "py-6 px-4 flex justify-between items-center rounded-md my-4 transition-colors",
@@ -454,7 +479,7 @@ export function FinancialStatementsReport({ activeTab }: FinancialStatementsRepo
                                     <ReportHeader title="Estado de Flujo de Efectivo" dateRange={date} compDateRange={compDate} showComparison={showComparison} headerFormat={headerFormat} accent="info" />
                                     {cfData ? (
                                         <CashFlowTable
-                                            data={cfData as any}
+                                            data={cfData as CashFlowData}
                                             embedded
                                             showComparison={showComparison}
                                             periodLabel={periodLabel}

@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
 import { financeApi } from '../../api/financeApi'
-import type { BankStatement, TreasuryAccount, PaginatedResponse, BankStatementLine } from '../types'
+import type { BankStatement, TreasuryAccount, PaginatedResponse, BankStatementLine, ReconciliationSystemItem, QueryPaginationParams } from '../types'
 import { reconciliationKeys } from './queryKeys'
 
 export function useStatementsQuery(params?: Record<string, string>) {
@@ -36,19 +36,6 @@ export function useReconciliationSettingsQuery(accountId?: number | string) {
         enabled: !!accountId
     })
 }
-
-export interface QueryPaginationParams {
-    [key: string]: unknown;
-    page?: number
-    pageSize?: number
-    search?: string
-    date_from?: string
-    date_to?: string
-    amount_min?: number
-    amount_max?: number
-    type?: string
-}
-
 
 export function useUnreconciledLinesQuery(statementId: number, params: QueryPaginationParams = {}) {
     return useQuery({
@@ -88,19 +75,20 @@ export function useUnreconciledPaymentsQuery(treasuryAccountId: number, params: 
                 amount_max: params.amount_max,
                 direction: params.type,
             })
-            const results = Array.isArray(paymentsData) ? paymentsData : ((paymentsData as { results?: unknown[] })?.results ?? [])
-            const payments = Array.isArray(results) ? results.map((p: any) => {
-                let contactName = p.partner_name || 'Particular'
+            const rawResults = (paymentsData as Record<string, unknown>)?.results as unknown[] | undefined
+            const results = Array.isArray(paymentsData) ? paymentsData : (rawResults ?? [])
+            const payments = Array.isArray(results) ? results.map((p: Record<string, unknown>) => {
+                let contactName = (p.partner_name as string) || 'Particular'
                 if (p.movement_type === 'TRANSFER') {
-                    contactName = p.is_inbound ? (p.from_account_name || 'Cuenta Origen') : (p.to_account_name || 'Cuenta Destino')
+                    contactName = p.is_inbound ? ((p.from_account_name as string) || 'Cuenta Origen') : ((p.to_account_name as string) || 'Cuenta Destino')
                 } else if (p.movement_type === 'ADJUSTMENT') {
-                    contactName = p.justify_reason_display || p.notes || 'Ajuste Manual'
+                    contactName = (p.justify_reason_display as string) || (p.notes as string) || 'Ajuste Manual'
                 }
                 return { ...p, contact_name: contactName }
             }) : []
             return {
-                results: payments,
-                count: (paymentsData as any).count || payments.length
+                results: payments as ReconciliationSystemItem[],
+                count: ((paymentsData as Record<string, unknown>).count as number) || payments.length
             }
         },
         staleTime: 2 * 60 * 1000,

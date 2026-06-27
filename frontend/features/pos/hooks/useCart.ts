@@ -73,9 +73,10 @@ export function useCart() {
                 quantity: quantity.toString(),
                 uom_id: uomId.toString()
             })
+            const priceData = data as Record<string, unknown>
             return {
-                net: parseFloat((data as any).price_net),
-                gross: parseFloat((data as any).price_gross)
+                net: parseFloat(priceData.price_net as string),
+                gross: parseFloat(priceData.price_gross as string)
             }
         } catch (error) {
             console.error("Error fetching price:", error)

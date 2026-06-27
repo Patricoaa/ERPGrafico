@@ -77,8 +77,20 @@ import { toast } from "sonner"
 import type {
     BankStatementLine,
     ReconciliationSystemItem,
+    ReconciliationMovement,
+    ReconciliationBatch,
     QueryPaginationParams
 } from "../types"
+
+interface ReconGroupData {
+    id: number
+    movements: ReconciliationMovement[]
+    batches: ReconciliationBatch[]
+    difference_amount: number
+    difference_type: string
+    difference_type_display: string
+    difference_journal_entry?: number
+}
 
 interface PaymentSuggestion {
     is_batch?: boolean
@@ -112,19 +124,19 @@ function DraggablePayment({ id, children, disabled }: { id: number, children: Re
     } : undefined;
 
     if (!React.isValidElement(children)) return <>{children}</>;
-    const child = children as React.ReactElement<any>;
+    const child = children as React.ReactElement<Record<string, unknown>>;
 
     return React.cloneElement(child, {
         ref: setNodeRef,
-        style: { ...style, ...child.props.style },
+        style: { ...style, ...(child.props.style as React.CSSProperties | undefined) },
         className: cn(
-            child.props.className,
+            child.props.className as string,
             "touch-none",
             isDragging && "opacity-50 grayscale-[0.5] scale-95"
         ),
         ...listeners,
         ...attributes
-    });
+    } as Record<string, unknown>);
 }
 
 function DroppableBankLine({ id, children }: { id: number, children: React.ReactNode }) {
@@ -134,12 +146,12 @@ function DroppableBankLine({ id, children }: { id: number, children: React.React
     });
 
     if (!React.isValidElement(children)) return <>{children}</>;
-    const child = children as React.ReactElement<any>;
+    const child = children as React.ReactElement<Record<string, unknown>>;
 
     return React.cloneElement(child, {
         ref: setNodeRef,
         className: cn(
-            child.props.className,
+            child.props.className as string,
             "transition-all duration-200",
             isOver && "bg-primary/20 scale-[1.01] shadow-overlay ring-2 ring-primary ring-inset z-10 relative"
         )
@@ -193,10 +205,10 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
     const pathname = usePathname()
     const searchParams = useSearchParams()
 
-    const [selectedMovement, setSelectedMovement] = useState<{ id: number | string, type: any } | null>(null)
+    const [selectedMovement, setSelectedMovement] = useState<{ id: number | string, type: string } | null>(null)
     const [detailsOpen, setDetailsOpen] = useState(false)
 
-    const openTransactionDetail = (id: number | string, type: any) => {
+    const openTransactionDetail = (id: number | string, type: string) => {
         setSelectedMovement({ id, type })
         setDetailsOpen(true)
     }
@@ -213,15 +225,15 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
 
     const reconciledGroups = useMemo(() => {
         if (!reconciledData?.results) return []
-        const groups: Record<number, { id: number, group: any, lines: BankStatementLine[] }> = {}
+        const groups: Record<number, { id: number; group: ReconGroupData; lines: BankStatementLine[] }> = {} as Record<number, { id: number; group: ReconGroupData; lines: BankStatementLine[] }>
 
         reconciledData.results.forEach(line => {
-            const groupId = line.reconciliation_group_data?.id
-            if (groupId) {
-                if (!groups[groupId]) {
-                    groups[groupId] = { id: groupId, group: line.reconciliation_group_data, lines: [] }
+            const groupData = line.reconciliation_group_data
+            if (groupData) {
+                if (!groups[groupData.id]) {
+                    groups[groupData.id] = { id: groupData.id, group: groupData, lines: [] }
                 }
-                groups[groupId].lines.push(line)
+                groups[groupData.id].lines.push(line)
             }
         })
 
@@ -354,7 +366,7 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                 setDiffDialog({ open: true, lineId, paymentId, amount: diffAmount.toString(), accountingDate: localDate })
                 try {
                     const diffData = await financeApi.getSuggestedDifference(lineId)
-                    setDiffType((diffData as any).suggestion)
+                    setDiffType((diffData as Record<string, unknown>).suggestion as string)
                 } catch { /* ignore */ }
                 return
             }
@@ -799,21 +811,21 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                                             defaultPageSize={50}
                                             renderRow={(row, children) => {
                                                 const line = row.original as BankStatementLine
-                                                const isSuggested = lineSuggestions.some((s: any) => s.line_data?.id === line.id)
-                                                const isExcluded = line.reconciliation_status === 'EXCLUDED' || (line as any).reconciliation_state === 'EXCLUDED'
+                                                const isSuggested = lineSuggestions.some((s: LineSuggestion) => s.line_data?.id === line.id)
+                                                const isExcluded = line.reconciliation_status === 'EXCLUDED' || (line as unknown as Record<string, unknown>).reconciliation_state === 'EXCLUDED'
 
-                                                if (!React.isValidElement(children)) return children as any
+                                                if (!React.isValidElement(children)) return children as unknown as React.ReactElement
 
                                                 return (
                                                     <DroppableBankLine id={line.id}>
-                                                        {React.cloneElement(children as React.ReactElement<any>, {
+                                                        {React.cloneElement(children as React.ReactElement<Record<string, unknown>>, {
                                                             className: cn(
-                                                                (children.props as any).className,
+                                                                (children.props as Record<string, unknown>).className as string,
                                                                 "group transition-all duration-300",
                                                                 isSuggested && "[&_td]:!bg-warning/[0.08] [&_td]:!border-y [&_td]:!border-warning/40 shadow-[inset_0_0_20px_oklch(var(--warning-raw)/0.05)]",
                                                                 isExcluded && "opacity-40 grayscale-[0.5] [&_td]:!bg-muted/30"
                                                             )
-                                                        })}
+                                                        } as Record<string, unknown>)}
                                                     </DroppableBankLine>
                                                 )
                                             }}
@@ -863,23 +875,23 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                                             defaultPageSize={50}
                                             renderRow={(row, children) => {
                                                 const item = row.original as ReconciliationSystemItem
-                                                const isSuggested = suggestions.some((s: any) => {
+                                                const isSuggested = suggestions.some((s: PaymentSuggestion) => {
                                                     if (s.is_batch) {
                                                         return s.batch_data?.id === item.terminal_batch_id
                                                     }
                                                     return s.payment_data?.id === item.id
                                                 })
-                                                if (!React.isValidElement(children)) return children as any
+                                                if (!React.isValidElement(children)) return children as unknown as React.ReactElement
 
                                                 return (
                                                     <DraggablePayment id={item.id}>
-                                                        {React.cloneElement(children as React.ReactElement<any>, {
+                                                        {React.cloneElement(children as React.ReactElement<Record<string, unknown>>, {
                                                             className: cn(
-                                                                (children.props as any).className,
+                                                                (children.props as Record<string, unknown>).className as string,
                                                                 "group transition-all duration-300",
                                                                 isSuggested && "[&_td]:!bg-warning/[0.12] [&_td]:!border-y [&_td]:!border-warning/50 shadow-[inset_0_0_20px_oklch(var(--warning-raw)/0.08)]"
                                                             )
-                                                        })}
+                                                        } as Record<string, unknown>)}
                                                     </DraggablePayment>
                                                 )
                                             }}
@@ -981,7 +993,7 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                                                 </div>
 
                                                 <div className="space-y-1.5">
-                                                    {movements.map((m: any) => (
+                                                    {movements.map((m: ReconciliationMovement) => (
                                                         <div
                                                             key={m.id}
                                                             onClick={() => openTransactionDetail(m.id, 'payment')}
@@ -1006,7 +1018,7 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                                                         </div>
                                                     ))}
 
-                                                    {batches.map((b: any) => (
+                                                    {batches.map((b: ReconciliationBatch) => (
                                                         <div
                                                             key={b.id}
                                                             onClick={() => openTransactionDetail(b.id, 'terminal_batch')}
@@ -1273,9 +1285,9 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                                                     contact_name: s.batch_data.name || "Lote Terminal",
                                                     terminal_batch_id: s.batch_data.id,
                                                     display_id: s.batch_data.id.toString()
-                                                } as any])
+                                                } as ReconciliationSystemItem])
                                             } else if (s.payment_data) {
-                                                setSelectedPayments([s.payment_data as any])
+                                                setSelectedPayments([s.payment_data as ReconciliationSystemItem])
                                             }
                                         }}
                                         className="flex items-center gap-3 bg-warning/10 border border-warning/20 hover:bg-warning/20 transition-all rounded-full py-1 pl-3 pr-1 group shadow-card hover:shadow-elevated"
@@ -1308,7 +1320,7 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                                             if (item) {
                                                 setSelectedLines([item])
                                             } else if (s.line_data) {
-                                                setSelectedLines([s.line_data as any])
+                                                setSelectedLines([s.line_data as BankStatementLine])
                                             }
                                         }}
                                         className="flex items-center gap-3 bg-warning/10 border border-warning/20 hover:bg-warning/20 transition-all rounded-full py-1 pr-3 pl-1 group shadow-card hover:shadow-elevated"

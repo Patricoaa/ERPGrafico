@@ -23,8 +23,13 @@ export function PurchaseOrderDrawer({ id, open, onOpenChange, mode = 'view', pur
   const printRef = useRef<HTMLDivElement>(null)
   const handlePrint = useReactToPrint({ contentRef: printRef })
 
-  const displayId = order?.display_id ?? order?.number ?? `#${entityId}`
-  const contactName = order?.supplier && typeof order.supplier === 'object' ? order.supplier.name : ''
+  const displayId = String(order?.display_id ?? order?.number ?? `#${entityId}`)
+  const supplier = order?.supplier
+  const contactName = supplier && typeof supplier === 'object'
+    ? String((supplier as unknown as Record<string, unknown>).name ?? '')
+    : ''
+
+  const orderLines = (order?.lines as Array<Record<string, unknown>> | undefined)
 
   return (
     <>
@@ -34,17 +39,17 @@ export function PurchaseOrderDrawer({ id, open, onOpenChange, mode = 'view', pur
         displayId={displayId}
         subtitle={contactName}
       >
-        {order?.lines?.map((line: any, idx: number) => (
-          <div key={line.id ?? idx} className="flex justify-between text-[10px]">
-            <span className="flex-1">{line.product_name}</span>
+        {orderLines?.map((line: Record<string, unknown>, idx: number) => (
+          <div key={Number(line.id) || idx} className="flex justify-between text-[10px]">
+            <span className="flex-1">{String(line.product_name)}</span>
             <span className="w-12 text-right">{Math.round(Number(line.quantity))}</span>
             <span className="w-16 text-right">{formatCurrency(Number(line.unit_cost))}</span>
           </div>
         ))}
-        {order?.total && (
+        {Number(order?.total) > 0 && (
           <div className="flex justify-between font-bold border-t mt-2 pt-1 text-xs">
             <span>Total</span>
-            <span>{formatCurrency(Number(order.total))}</span>
+            <span>{formatCurrency(Number(order?.total))}</span>
           </div>
         )}
       </PrintableLayout>
@@ -58,13 +63,13 @@ export function PurchaseOrderDrawer({ id, open, onOpenChange, mode = 'view', pur
         title={<span>{displayId}</span>}
         headerActions={<Button variant="ghost" size="icon" onClick={() => handlePrint()}><Printer className="h-4 w-4" /></Button>}
         subtitle={contactName}
-        description={`${order?.date ? formatPlainDate(order.date) : ''} · ${order?.status_display ?? order?.status ?? ''}`}
+        description={`${order?.date ? formatPlainDate(String(order.date)) : ''} · ${String(order?.status_display ?? order?.status ?? '')}`}
       >
         <FormSplitLayout sidebar={entityId ? <ActivitySidebar entityType="purchase_order" entityId={entityId} /> : undefined} showSidebar={!!entityId}>
           <SkeletonShell isLoading={isLoading} ariaLabel="Cargando orden de compra">
           {order && (
             <div className="p-4 space-y-4">
-              <StatusBadge status={order.status} />
+              <StatusBadge status={String(order.status)} />
 
               <div className="grid grid-cols-2 gap-4 text-sm">
                 <div>
@@ -73,24 +78,24 @@ export function PurchaseOrderDrawer({ id, open, onOpenChange, mode = 'view', pur
                 </div>
                 <div>
                   <span className="text-xs text-muted-foreground">Proveedor</span>
-                  <p className="font-medium">{contactName || `#${order.supplier}`}</p>
+                  <p className="font-medium">{contactName || `#${String(order.supplier)}`}</p>
                 </div>
                 <div>
                   <span className="text-xs text-muted-foreground">Notas</span>
-                  <p className="text-sm">{order.notes || '-'}</p>
+                  <p className="text-sm">{String(order.notes ?? '-')}</p>
                 </div>
               </div>
 
-              {order.lines && order.lines.length > 0 && (
+              {orderLines && orderLines.length > 0 && (
                 <div>
                   <h4 className="text-sm font-bold mb-2">Líneas</h4>
                   <div className="space-y-2">
-                    {order.lines.map((line: any, idx: number) => (
-                      <div key={line.id ?? idx} className="flex justify-between text-sm border-b pb-1">
+                    {orderLines.map((line: Record<string, unknown>, idx: number) => (
+                      <div key={Number(line.id) || idx} className="flex justify-between text-sm border-b pb-1">
                         <div>
-                          <span className="font-medium">{line.product_name}</span>
+                          <span className="font-medium">{String(line.product_name)}</span>
                           <span className="text-xs text-muted-foreground ml-2">
-                            {line.uom_name}
+                            {String(line.uom_name)}
                           </span>
                         </div>
                         <span className="font-mono">

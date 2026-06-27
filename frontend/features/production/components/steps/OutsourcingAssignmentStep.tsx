@@ -11,7 +11,7 @@ import { useWorkOrderMutations, productionApi } from '../../hooks'
 import { useState } from 'react'
 import { useVatRate } from '@/hooks/useVatRate'
 import { OutsourcedServiceForm, type OutsourcedServiceValues, emptyOutsourcedService } from '../shared/OutsourcedServiceForm'
-import type { WorkOrder, WorkOrderMaterial, UoM } from '../../types'
+import type { WorkOrder, WorkOrderMaterial, UoM, ProductMinimal } from '../../types'
 
 interface OutsourcingAssignmentStepProps {
   order: WorkOrder
@@ -77,7 +77,7 @@ export function OutsourcingAssignmentStep({
       documentType: (m.document_type as 'FACTURA' | 'BOLETA') ?? 'FACTURA'
     })
     productionApi.getProduct(m.component).then((data) => {
-      setFormData(prev => ({ ...prev, productObj: data as any }))
+      setFormData(prev => ({ ...prev, productObj: data as unknown as ProductMinimal }))
       setIsAddOpen(true)
     })
   }

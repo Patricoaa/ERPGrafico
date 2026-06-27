@@ -158,7 +158,7 @@ export function SalesOrdersView({ viewMode, posSessionId, onActionSuccess, hideS
         {
             accessorKey: "customer_name",
             header: ({ column }) => <DataTableColumnHeader column={column} title="Cliente" className="justify-center" />,
-            cell: ({ row }) => <DataCell.ContactLink contactId={(row.original as any).customer || row.original.partner}>{(row.original as any).customer_name || row.original.partner_name}</DataCell.ContactLink>,
+            cell: ({ row }) => <DataCell.ContactLink contactId={(row.original as unknown as Record<string, unknown>).customer as number || row.original.partner}>{(row.original as unknown as Record<string, unknown>).customer_name as string || row.original.partner_name}</DataCell.ContactLink>,
             meta: { title: "Cliente" },
         },
         {
@@ -205,7 +205,7 @@ export function SalesOrdersView({ viewMode, posSessionId, onActionSuccess, hideS
     // Determine entity label based on tab
     const entityLabel = viewMode === 'orders' ? 'sales.saleorder' : 'billing.invoice'
 
-    const getSelectionId = (item: any) => {
+    const getSelectionId = (item: SaleOrder | SaleNote) => {
         const id = Number(item.id)
         if (onSelectOrder) return selectedId === id
         return viewMode === 'orders' ? hubConfig?.orderId === id : hubConfig?.invoiceId === id
@@ -216,9 +216,9 @@ export function SalesOrdersView({ viewMode, posSessionId, onActionSuccess, hideS
             <div className="flex-1 min-h-0">
                 <DataTableView
                     entityLabel={entityLabel}
-                    columns={(viewMode === 'orders' ? columns : noteColumns) as any}
-                    data={(viewMode === 'orders' ? orders : notes) as any}
-                    onRowClick={(row: any) => toggleSelection(row.id)}
+                    columns={(viewMode === 'orders' ? columns : noteColumns) as unknown as ColumnDef<SaleOrder | SaleNote, unknown>[]}
+                    data={(viewMode === 'orders' ? orders : notes) as unknown as (SaleOrder | SaleNote)[]}
+                    onRowClick={(row: SaleOrder | SaleNote) => toggleSelection(row.id)}
                     variant="embedded"
                     isLoading={viewMode === 'orders' ? isLoadingOrders : isLoadingNotes}
                     isRefetching={viewMode === 'orders' ? isRefetching : isRefetchingNotes}
@@ -229,7 +229,7 @@ export function SalesOrdersView({ viewMode, posSessionId, onActionSuccess, hideS
                     }
                     rowCount={viewMode === 'orders' ? (page?.count ?? 0) : (pageNotes?.count ?? 0)}
                     pagination={viewMode === 'orders' ? pageState : pageStateNotes}
-                    onPaginationChange={(viewMode === 'orders' ? setPageState : setPageStateNotes) as any}
+                    onPaginationChange={(viewMode === 'orders' ? setPageState : setPageStateNotes) as unknown as React.Dispatch<React.SetStateAction<{ pageIndex: number; pageSize: number }>>}
                     smartSearch={viewMode === 'orders'
                         ? <SmartSearchBar searchDef={salesOrderSearchDef} placeholder="Buscar órdenes..." />
                         : <SmartSearchBar searchDef={salesNoteSearchDef} placeholder="Buscar notas..." />
@@ -241,7 +241,7 @@ export function SalesOrdersView({ viewMode, posSessionId, onActionSuccess, hideS
                     showReset={isFiltered}
                     onReset={() => { clearText(); clearSeg() }}
                     defaultPageSize={20}
-                    isSelected={(data: any) => !!getSelectionId(data)}
+                    isSelected={(data: SaleOrder | SaleNote) => !!getSelectionId(data)}
                     isHubOpen={onSelectOrder ? !!selectedId : isHubOpen}
                     isFiltered={isFiltered}
                     emptyState={{

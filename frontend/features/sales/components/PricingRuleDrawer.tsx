@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/form"
 import { cn } from "@/lib/utils"
 import { useUoMs } from "@/features/inventory/hooks/useUoMs"
+import type { Product } from "@/types/entities"
 import { usePricingRuleMutations } from "@/features/inventory"
 import { showApiError } from "@/lib/errors"
 import { toast } from "sonner"
@@ -70,7 +71,7 @@ export function PricingRuleDrawer({ auditSidebar, initialData, onSuccess, open, 
     const { uoms, isUoMsLoading } = useUoMs()
     const { savePricingRule } = usePricingRuleMutations()
     const isFetchingInitialData = open && isUoMsLoading
-    const [selectedProductObj, setSelectedProductObj] = useState<any>(null)
+    const [selectedProductObj, setSelectedProductObj] = useState<Product | null>(null)
     const { product: loadedProduct } = useSingleProduct(productId ?? null)
     const effectiveProduct = selectedProductObj || loadedProduct || null
 
@@ -167,9 +168,9 @@ export function PricingRuleDrawer({ auditSidebar, initialData, onSuccess, open, 
     async function onSubmit(values: FormValues) {
         try {
             const payload = { ...values }
-            if (payload.product === null) delete (payload as any).product
-            if (payload.uom === null) delete (payload as any).uom
-            if (payload.operator !== "BT") delete (payload as any).max_quantity
+            if (payload.product === null) delete (payload as unknown as Record<string, unknown>).product
+            if (payload.uom === null) delete (payload as unknown as Record<string, unknown>).uom
+            if (payload.operator !== "BT") delete (payload as unknown as Record<string, unknown>).max_quantity
 
             // savePricingRule invalida PRICING_RULES + PRODUCTS_KEYS (los precios
             // computados en la lista de productos cambian) automáticamente.
@@ -218,7 +219,7 @@ export function PricingRuleDrawer({ auditSidebar, initialData, onSuccess, open, 
                             disabled={!!productId}
                             placeholder="Si no se selecciona, aplica a todos"
                             shouldResolveVariants={false}
-                            customFilter={(p: any) => !p.parent_template}
+                            customFilter={(p: Record<string, unknown>) => !p.parent_template}
                         />
                     )}
                 />
@@ -229,7 +230,7 @@ export function PricingRuleDrawer({ auditSidebar, initialData, onSuccess, open, 
                         <UoMSelector
                             label="Unidad (Filtro)"
                             variant="standalone"
-                            product={effectiveProduct}
+                            product={effectiveProduct as unknown as React.ComponentProps<typeof UoMSelector>['product']}
                             context="purchase"
                             uoms={uoms as unknown as UoM[]}
                             value={field.value?.toString() || ""}

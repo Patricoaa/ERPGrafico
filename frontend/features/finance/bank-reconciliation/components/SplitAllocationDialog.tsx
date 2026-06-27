@@ -11,6 +11,12 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { useAllocateMutation } from "../hooks/useReconciliationMutations"
 import { usePendingInvoices } from "../../hooks"
 import type { ReconciliationSystemItem } from "../types"
+interface InvoiceItem {
+    id: number
+    display_id: string
+    contact_name: string
+    total: string
+}
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { z } from "zod"
 import { useForm, useFieldArray } from "react-hook-form"
@@ -170,7 +176,7 @@ export function SplitAllocationDialog({ open, onOpenChange, payment, treasuryAcc
                                                                 </SelectTrigger>
                                                             </FormControl>
                                                             <SelectContent>
-                                                                {invoices.map((inv: any) => (
+                                                                {(invoices as InvoiceItem[]).map((inv: InvoiceItem) => (
                                                                     <SelectItem key={inv.id} value={String(inv.id)}>
                                                                         {inv.display_id} - {inv.contact_name} - {formatCurrency(safeParseFloat(inv.total))}
                                                                     </SelectItem>

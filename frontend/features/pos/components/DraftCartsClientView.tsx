@@ -99,8 +99,8 @@ export function DraftCartsClientView({
         }
         setLoading(true)
         try {
-            const draftsData = await posApi.getDrafts({ pos_session_id: posSessionId })
-            const data = (draftsData as any).results || draftsData
+            const draftsData = await posApi.getDrafts({ pos_session_id: posSessionId }) as { results?: DraftCart[] } | DraftCart[]
+            const data = Array.isArray(draftsData) ? draftsData : (draftsData.results ?? [])
             const newDrafts = Array.isArray(data) ? data : []
             setDrafts(newDrafts)
             setPrevDraftIds(new Set(newDrafts.map((d: DraftCart) => d.id)))

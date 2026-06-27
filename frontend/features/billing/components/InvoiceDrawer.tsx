@@ -38,18 +38,18 @@ export function InvoiceDrawer({ id, open, onOpenChange, mode = 'view', invoiceId
                 <div className="text-[9px] space-y-1 mb-2">
                     <div className="flex justify-between">
                         <span>Folio:</span>
-                        <span>{(invoice as any)?.folio_number ?? (invoice as any)?.folio ?? 'S/N'}</span>
+                        <span>{(invoice as unknown as Record<string, unknown>)?.folio_number as string ?? (invoice as unknown as Record<string, unknown>)?.folio as string ?? 'S/N'}</span>
                     </div>
                     <div className="flex justify-between">
                         <span>Vencimiento:</span>
-                        <span>{formatPlainDate((invoice as any)?.due_date)}</span>
+                        <span>{formatPlainDate((invoice as unknown as Record<string, unknown>)?.due_date as string ?? '')}</span>
                     </div>
                 </div>
                 {invoice?.lines?.map((line, idx) => (
                     <div key={idx} className="flex justify-between text-[10px]">
-                        <span className="flex-1">{'product_name' in line ? (line as any).product_name : line.description ?? '-'}</span>
-                        <span className="w-12 text-right">{Math.round(Number((line as any).quantity ?? 0))}</span>
-                        <span className="w-16 text-right">{formatCurrency(Number((line as any).unit_price ?? 0))}</span>
+                        <span className="flex-1">{line.product_name ?? line.description ?? '-'}</span>
+                        <span className="w-12 text-right">{Math.round(Number(line.quantity ?? 0))}</span>
+                        <span className="w-16 text-right">{formatCurrency(Number((line as Record<string, unknown>).unit_price ?? 0))}</span>
                     </div>
                 ))}
                 {invoice?.total && (
@@ -96,16 +96,16 @@ export function InvoiceDrawer({ id, open, onOpenChange, mode = 'view', invoiceId
                                 <div>
                                     <h4 className="text-sm font-bold mb-2">Líneas</h4>
                                     <div className="space-y-2">
-                                        {invoice.lines.map((line: any, idx: number) => (
-                                            <div key={line.id ?? idx} className="flex justify-between text-sm border-b pb-1">
+                                        {invoice.lines.map((line: Record<string, unknown>, idx: number) => (
+                                            <div key={(line.id as number) ?? idx} className="flex justify-between text-sm border-b pb-1">
                                                 <div>
-                                                    <span className="font-medium">{line.product_name || line.description || '-'}</span>
+                                                    <span className="font-medium">{(line.product_name as string) || (line.description as string) || '-'}</span>
                                                     <span className="text-xs text-muted-foreground ml-2">
-                                                        {(line as any).uom_name || ''}
+                                                        {(line.uom_name as string) || ''}
                                                     </span>
                                                 </div>
                                                 <span className="font-mono">
-                                                    {Math.round(Number((line as any).quantity ?? 0))} × {formatCurrency(Number((line as any).unit_price ?? 0))}
+                                                    {Math.round(Number((line.quantity as number) ?? 0))} × {formatCurrency(Number((line.unit_price as number) ?? 0))}
                                                 </span>
                                             </div>
                                         ))}

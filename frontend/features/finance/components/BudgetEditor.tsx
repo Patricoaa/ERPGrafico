@@ -113,21 +113,23 @@ export function BudgetEditor({ open, onOpenChange, budget, onSave }: BudgetEdito
             const accData = await financeApi.getBudgetableAccounts();
             await financeApi.getBudgetExecution(budget.id);
 
-            const fetchedAccounts = (accData as any).results || accData;
+            const accResult = accData as Record<string, unknown>
+            const fetchedAccounts = (accResult.results as BudgetAccount[]) ?? (accData as BudgetAccount[]);
             setAccounts(fetchedAccounts);
 
             const currItems: Record<number, Record<number, number>> = {};
-            const budgetData = await financeApi.getBudgetDetail(budget.id);
+            const budgetData = await financeApi.getBudgetDetail(budget.id) as Record<string, unknown>;
+            const budgetItems = budgetData.items as BudgetItem[] | undefined;
 
-            if ((budgetData as any).items) {
-                (budgetData as any).items.forEach((item: BudgetItem) => {
+            if (budgetItems) {
+                budgetItems.forEach((item: BudgetItem) => {
                     if (!currItems[item.account]) currItems[item.account] = {};
                     currItems[item.account][item.month] = parseFloat(String(item.amount));
                 });
             }
             setItems(currItems);
 
-        } catch (error) {
+        } catch (error: unknown) {
             console.error(error);
         } finally {
             setLoading(false);
@@ -146,7 +148,7 @@ export function BudgetEditor({ open, onOpenChange, budget, onSave }: BudgetEdito
         if (!budget) return;
         setLoading(true);
         try {
-            const fetchedItems = await financeApi.getBudgetPreviousYearActuals(budget.id);
+            const fetchedItems = await financeApi.getBudgetPreviousYearActuals(budget.id) as BudgetItem[];
             const newItems: Record<number, Record<number, number>> = {};
 
             fetchedItems.forEach((item: BudgetItem) => {
@@ -155,7 +157,7 @@ export function BudgetEditor({ open, onOpenChange, budget, onSave }: BudgetEdito
             });
 
             setItems(prev => ({ ...prev, ...newItems }));
-        } catch (error) {
+        } catch (error: unknown) {
             console.error(error);
         } finally {
             setLoading(false);
@@ -218,7 +220,7 @@ export function BudgetEditor({ open, onOpenChange, budget, onSave }: BudgetEdito
             }
             onOpenChange(false);
             onSave();
-        } catch (error) {
+        } catch (error: unknown) {
             console.error(error);
         }
     };

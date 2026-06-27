@@ -58,7 +58,7 @@ export function SalesOrdersClientView({ viewMode }: SalesOrdersClientViewProps) 
                              id: l.product as number,
                              product_name: l.product_name || l.description,
                              name: l.product_name || l.description,
-                             code: (l as any).product_code || (l as any).code,
+                              code: (l as unknown as Record<string, unknown>).product_code as string || (l as unknown as Record<string, unknown>).code as string,
                              qty: l.quantity,
                              unit_price_net: l.unit_price,
                          }))}
@@ -91,7 +91,7 @@ export function SalesOrdersClientView({ viewMode }: SalesOrdersClientViewProps) 
                          open={!!completingFolio}
                          onOpenChange={(open: boolean) => !open && setCompletingFolio(null)}
                          invoiceId={completingFolio.related_documents?.invoices?.find((inv: Invoice) => inv.number === 'Draft')?.id || completingFolio.related_documents?.invoices?.[0]?.id || 0}
-                         invoiceType={(completingFolio.related_documents?.invoices?.find((inv: Invoice) => inv.number === 'Draft') as any)?.type || "BOLETA"}
+                            invoiceType={(completingFolio.related_documents?.invoices?.find((inv: Invoice) => inv.number === 'Draft') as unknown as Record<string, unknown>)?.type as string || "BOLETA"}
                          contactId={completingFolio?.customer}
                          isPurchase={false}
                          onComplete={async (invoiceId, formData) => {

@@ -16,6 +16,21 @@ export interface BankStatement {
     imported_at: string
 }
 
+export interface ReconciliationMovement {
+    id: number
+    movement_type_display?: string
+    notes?: string
+    reference?: string
+    amount: string
+}
+
+export interface ReconciliationBatch {
+    id: number
+    terminal_name?: string
+    display_id?: string
+    net_amount: string
+}
+
 export interface BankStatementLine {
     id: number
     line_number: number
@@ -31,8 +46,8 @@ export interface BankStatementLine {
     reconciliation_status: string // Legacy or alias for state
     reconciliation_group_data?: {
         id: number
-        movements: any[]
-        batches: any[]
+        movements: ReconciliationMovement[]
+        batches: ReconciliationBatch[]
         difference_amount: number
         difference_type: string
         difference_type_display: string

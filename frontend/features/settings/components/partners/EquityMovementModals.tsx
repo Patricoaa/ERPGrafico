@@ -426,7 +426,7 @@ function useTreasuryAccounts() {
 
     useEffect(() => {
         // Fetch treasury accounts for the dropdowns
-        settingsApi.getTreasuryAccounts().then((accs) => setAccounts(accs as any)).catch((error) => {
+        settingsApi.getTreasuryAccounts().then((accs) => setAccounts(accs as unknown as TreasuryAccount[])).catch((error) => {
             console.error("Error fetching treasury accounts:", error)
         })
     }, [])

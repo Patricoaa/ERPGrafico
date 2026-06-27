@@ -11,13 +11,13 @@ import { getHubStatuses } from '@/features/orders/utils/status'
 import { type Order, type Payment } from "../types"
 import type { LucideIcon } from "lucide-react"
 
-interface OrderHubData {
+export interface OrderHubData {
     order: Order | null
     activeInvoice: Order | null
     activeDoc: Order
     userPermissions: string[]
     isNoteMode: boolean
-    noteStatuses: any
+    noteStatuses: Record<string, string | boolean | number>
     showProduction: boolean
     showLogistics: boolean
     invoices: Order[]
@@ -88,7 +88,7 @@ export function OrderHubIntegrated({
             if (noteStatuses.treasury !== 'success') openSet.add('treasury')
             if (noteStatuses.logistics !== 'success') openSet.add('logistics')
         } else {
-            const hubStatuses = getHubStatuses(activeDoc as any)
+            const hubStatuses = getHubStatuses(activeDoc as unknown as Parameters<typeof getHubStatuses>[0])
             if (hubStatuses.origin !== 'success') openSet.add('origin')
             if (hubStatuses.billing !== 'success') openSet.add('billing')
             if (hubStatuses.treasury !== 'success') openSet.add('treasury')

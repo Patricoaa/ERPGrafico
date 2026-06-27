@@ -18,7 +18,7 @@ import { useLedger } from "@/features/accounting/hooks/useLedger"
 import { useDeleteJournalEntry } from "@/features/accounting/hooks/useJournalEntries"
 import { es } from "date-fns/locale"
 
-import type { LedgerMovement } from "@/features/accounting/types"
+import type { LedgerData, LedgerMovement } from "@/features/accounting/types"
 import { ledgerMovementActions, type LedgerMovementActionsCtx } from './ledgerMovementActions'
 
 interface LedgerDrawerProps {
@@ -75,8 +75,9 @@ export function LedgerDrawer({ accountId, accountName, accountCode, trigger, noT
                         onClick: (e: React.MouseEvent) => {
                             e.stopPropagation();
                             setOpen(true);
-                            if ((trigger as any).props.onClick) {
-                                (trigger as any).props.onClick(e);
+                            const triggerProps = (trigger as React.ReactElement<{ onClick?: (e: React.MouseEvent) => void }>).props
+                            if (triggerProps.onClick) {
+                                triggerProps.onClick(e);
                             }
                         }
                     })
@@ -137,7 +138,7 @@ function LedgerContent({
     endDate: string;
     dateRange: { from: Date; to: Date };
     setDateRange: (range: { from: Date; to: Date } | undefined) => void;
-    data: any;
+    data: LedgerData | undefined;
     isLoading: boolean;
     refetch: () => void;
 }) {

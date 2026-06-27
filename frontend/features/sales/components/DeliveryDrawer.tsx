@@ -227,7 +227,7 @@ export function DeliveryForm({ orderId, order, warehouses, onSuccess, id = "deli
             [lineId]: numValue
         }))
 
-        const line = order?.lines.find((l: any) => l.id === lineId)
+        const line = order?.lines.find((l: SaleOrderLine) => l.id === lineId)
         if (line && numValue < line.quantity_pending) {
             setIsPartialDispatch(true)
         }
@@ -240,7 +240,7 @@ export function DeliveryForm({ orderId, order, warehouses, onSuccess, id = "deli
         }
 
         if (!isServiceMode) {
-            const insufficientStock = visibleLines.some((line: any) => {
+            const insufficientStock = visibleLines.some((line: SaleOrderLine) => {
                 const requestedQty = deliveryQuantities[line.id] || 0
                 if (requestedQty <= 0) return false
 
@@ -267,7 +267,7 @@ export function DeliveryForm({ orderId, order, warehouses, onSuccess, id = "deli
                 return
             }
 
-            const pendingProduction = visibleLines.some((line: any) => {
+            const pendingProduction = visibleLines.some((line: SaleOrderLine) => {
                 const requestedQty = deliveryQuantities[line.id] || 0
                 if (requestedQty <= 0) return false
 
@@ -284,14 +284,14 @@ export function DeliveryForm({ orderId, order, warehouses, onSuccess, id = "deli
         setSubmitting(true)
         if (onLoadingChange) onLoadingChange(true)
         try {
-            const hasPartialQuantities = visibleLines.some((line: any) => {
+            const hasPartialQuantities = visibleLines.some((line: SaleOrderLine) => {
                 const requestedQty = deliveryQuantities[line.id] || 0
                 return requestedQty > 0 && requestedQty < line.quantity_pending
             })
 
             if (hasPartialQuantities || isPartialDispatch) {
                 const lineQuantities: { [key: string]: number } = {}
-                visibleLines.forEach((line: any) => {
+                visibleLines.forEach((line: SaleOrderLine) => {
                     const qty = deliveryQuantities[line.id]
                     if (qty > 0) {
                         lineQuantities[line.id.toString()] = qty
@@ -371,7 +371,7 @@ export function DeliveryForm({ orderId, order, warehouses, onSuccess, id = "deli
         return { type: 'warning', message: 'Despacho parcial', icon: AlertTriangle }
     }
 
-    const canSubmit = (isServiceMode || selectedWarehouse) && !visibleLines.some((line: any) => { const qty = deliveryQuantities[line.id] || 0; if (qty <= 0) return false; const status = getStockStatus(line); return status?.type === 'error'; });
+    const canSubmit = (isServiceMode || selectedWarehouse) && !visibleLines.some((line: SaleOrderLine) => { const qty = deliveryQuantities[line.id] || 0; if (qty <= 0) return false; const status = getStockStatus(line); return status?.type === 'error'; });
 
     return (
         <div id={id} className="space-y-4">
@@ -388,7 +388,7 @@ export function DeliveryForm({ orderId, order, warehouses, onSuccess, id = "deli
                             value={selectedWarehouse?.toString() || ''}
                             onChange={(val) => form.setValue("selectedWarehouse", Number(val))}
                             placeholder="Seleccione bodega"
-                            options={warehouses.map((warehouse: any) => ({
+                            options={warehouses.map((warehouse: Warehouse) => ({
                                 value: warehouse.id.toString(),
                                 label: `${warehouse.name} (${warehouse.code})`,
                             }))}
@@ -436,7 +436,7 @@ export function DeliveryForm({ orderId, order, warehouses, onSuccess, id = "deli
                             </TableRow>
                         </TableHeader>
                         <TableBody>
-                            {visibleLines.map((line: any) => {
+                            {visibleLines.map((line: SaleOrderLine) => {
                                 const stockStatus = getStockStatus(line)
                                 const availableStock = stockLevels[line.product] || 0
 

@@ -11,7 +11,7 @@ import { useAnnulWorkOrder } from "../../hooks/useOrdersMutations"
 import { ActionConfirmModal } from '@/components/shared'
 import { saleOrderActions } from '@/features/sales/actions'
 import { purchaseOrderActions } from '@/features/purchasing/actions'
-import { type Order, type OrderLine, type PhaseDocument, type WorkOrder } from "../../types"
+import { type Order, type OrderLine, type PhaseDocument, type WorkOrder, type InvoiceSummary } from "../../types"
 
 interface ProductionPhaseProps {
     order: Order | null
@@ -112,7 +112,7 @@ export function ProductionPhase({
                         // Only show OT annulment if invoice is DRAFT and stage is pre-impresion or earlier
                         ...((canAnnulWorkOrder &&
                             ot.status !== 'CANCELLED' &&
-                            invoices.some((inv: any) => inv.status === 'DRAFT') &&
+                            invoices.some((inv: InvoiceSummary) => inv.status === 'DRAFT') &&
                             ['MATERIAL_ASSIGNMENT', 'MATERIAL_APPROVAL', 'PREPRESS'].includes(ot.current_stage as string)) ? [{
                                 icon: Ban,
                                 title: 'Anular OT',

@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { useForm } from "react-hook-form"
+import { useForm, type Resolver, type Control } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
 import {
@@ -42,7 +42,7 @@ export default function CreditAssignmentModal({
     const { updateContact, isUpdating } = useContactMutations()
 
     const form = useForm<z.infer<typeof creditSchema>>({
-        resolver: zodResolver(creditSchema) as any,
+        resolver: zodResolver(creditSchema) as unknown as Resolver<z.infer<typeof creditSchema>>,
         defaultValues: {
             credit_limit: null,
         },
@@ -112,7 +112,7 @@ export default function CreditAssignmentModal({
             }
         >
             <Form {...form}>
-                <form id="credit-assignment-form" onSubmit={form.handleSubmit(onSubmit as any)} className="space-y-6 px-6 pb-6 pt-6">
+                <form id="credit-assignment-form" onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 px-6 pb-6 pt-6">
                     <div className="p-6 space-y-6 min-h-[380px]">
                         {!initialContact && (
                             <AdvancedContactSelector
@@ -133,20 +133,20 @@ export default function CreditAssignmentModal({
                                         <TrendingUp className="h-4 w-4 text-success mb-1" />
                                         <span className="text-[10px] uppercase font-bold text-muted-foreground tracking-wider">Disponible</span>
                                         <span className="text-lg font-mono font-black text-success">
-                                            <MoneyDisplay amount={(activeContact as any).credit_available || 0} inline />
+                                            <MoneyDisplay amount={(activeContact as unknown as Record<string, unknown>).credit_available as number || 0} inline />
                                         </span>
                                     </div>
                                     <div className="p-4 rounded-md border bg-muted/30 flex flex-col gap-1 items-center justify-center">
                                         <Banknote className="h-4 w-4 text-destructive mb-1" />
                                         <span className="text-[10px] uppercase font-bold text-muted-foreground tracking-wider">Utilizado</span>
                                         <span className="text-lg font-mono font-black text-destructive">
-                                            <MoneyDisplay amount={(activeContact as any).credit_balance_used || 0} inline />
+                                            <MoneyDisplay amount={(activeContact as unknown as Record<string, unknown>).credit_balance_used as number || 0} inline />
                                         </span>
                                     </div>
                                 </div>
 
                                 <FormField
-                                    control={form.control as any}
+                                    control={form.control as unknown as Control<z.infer<typeof creditSchema>>}
                                     name="credit_limit"
                                     render={({ field }) => (
                                         <FormItem>

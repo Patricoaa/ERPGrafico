@@ -44,7 +44,7 @@ export function createCartItem(
     priceGross: number,
     discountPercentage: number = 0,
     discountAmount: number = 0,
-    manufacturingData?: any
+    manufacturingData?: unknown
 ): CartItem {
     const linePricing = PricingUtils.calculateLineFromGross(qty, priceGross, discountAmount);
 

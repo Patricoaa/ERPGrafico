@@ -2,13 +2,13 @@
 
 import React from "react"
 import { type Employee } from "@/types/hr"
-import { PayrollDetailDrawer } from "@/features/hr"
+import { PayrollDetailDrawer, type EmployeeBasic } from "@/features/hr"
 
 interface EmployeePayrollPreviewProps {
     payrollId: number | null
     open: boolean
     onOpenChange: (open: boolean) => void
-    employee?: Employee | null
+    employee?: EmployeeBasic | null
 }
 
 export function EmployeePayrollPreview({ payrollId, open, onOpenChange, employee }: EmployeePayrollPreviewProps) {

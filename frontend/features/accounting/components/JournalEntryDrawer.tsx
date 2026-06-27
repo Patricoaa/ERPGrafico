@@ -2,7 +2,7 @@
 
 import { showApiError } from "@/lib/errors"
 import { useState, useEffect, useRef } from "react"
-import { useForm } from "react-hook-form"
+import { useForm, type Control, type FieldValues } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { type JournalEntryInitialData } from "@/types/forms"
 import * as z from "zod"
@@ -130,11 +130,11 @@ export function JournalEntryDrawer({
             return {
                 ...initialData,
                 date: toDate(initialData.date),
-                items: initialData.items.map((item: any) => ({
+                items: initialData.items.map((item) => ({
                     ...item,
                     account: item.account.toString(),
-                    debit: parseFloat(item.debit),
-                    credit: parseFloat(item.credit),
+                    debit: parseFloat(item.debit as unknown as string),
+                    credit: parseFloat(item.credit as unknown as string),
                 }))
             }
         } else {
@@ -203,23 +203,23 @@ export function JournalEntryDrawer({
             setSourceDocument(null)
             return
         }
-        const sourceDoc = (initialData as any).source_documents?.[0]
+        const sourceDoc = (initialData as unknown as { source_documents?: Array<Record<string, unknown>> }).source_documents?.[0]
         if (sourceDoc) {
+            const sDoc = sourceDoc
             setSourceDocument({
-                content_type_id: sourceDoc.content_type_id,
-                object_id: sourceDoc.object_id ?? sourceDoc.id,
-                display: sourceDoc.display ?? sourceDoc.name ?? `Documento #${sourceDoc.object_id ?? sourceDoc.id}`,
-                label: sourceDoc.type ?? '',
+                content_type_id: sDoc.content_type_id as number,
+                object_id: (sDoc.object_id ?? sDoc.id) as number,
+                display: (sDoc.display ?? sDoc.name ?? `Documento #${(sDoc.object_id ?? sDoc.id) as number}`) as string,
+                label: (sDoc.type as string) ?? '',
                 icon: '',
             })
         }
     }, [initialData, open])
 
-    // Sync view entry data into form for unified body rendering
-    const viewEntryAccountId = (item: any): string => {
+    const viewEntryAccountId = (item: Record<string, unknown>): string => {
         const acct = item.account
-        if (acct == null) return item.account_code ?? ''
-        if (typeof acct === 'object') return String(acct.id ?? item.account_code ?? '')
+        if (acct == null) return (item.account_code as string) ?? ''
+        if (typeof acct === 'object') return String((acct as Record<string, unknown>).id ?? (item.account_code as string) ?? '')
         return String(acct)
     }
 
@@ -228,10 +228,10 @@ export function JournalEntryDrawer({
             form.reset({
                 date: toDate(viewEntry.date),
                 description: viewEntry.description ?? viewEntry.label ?? '',
-                items: (viewEntry.items ?? []).map((item: any) => ({
+                items: (viewEntry.items ?? []).map((item: Record<string, unknown>) => ({
                     account: viewEntryAccountId(item),
-                    partner: item.partner ?? '',
-                    label: item.label ?? '',
+                    partner: (item.partner as string) ?? '',
+                    label: (item.label as string) ?? '',
                     debit: Number(item.debit ?? 0),
                     credit: Number(item.credit ?? 0),
                 })),
@@ -283,7 +283,7 @@ export function JournalEntryDrawer({
 
     const getStatus = (): string | undefined => {
         if (isViewMode) return viewEntry?.status
-        if (initialData) return (initialData as any).status
+        if (initialData) return (initialData as unknown as { status?: string }).status
         return 'DRAFT'
     }
     const entryStatus = getStatus() || 'DRAFT'
@@ -372,7 +372,7 @@ export function JournalEntryDrawer({
                                     <legend>Documento Origen</legend>
                                     <div className="flex items-center gap-2">
                                         {viewEntry.source_documents.map((doc: { type: string; id: number; display?: string; name?: string; url?: string }) => (
-                                            <SourceDocumentLink key={doc.id} doc={doc as any} />
+                                            <SourceDocumentLink key={doc.id} doc={doc as unknown as { type: string; id: number; display?: string; name?: string; url?: string }} />
                                         ))}
                                     </div>
                                 </fieldset>
@@ -408,7 +408,7 @@ export function JournalEntryDrawer({
 
                     <FormSection title="Líneas del Asiento" className="space-y-2" />
 
-                    <AccountingLinesTable control={form.control as any} name="items" disabled={isViewMode} />
+                    <AccountingLinesTable control={form.control as unknown as Control<FieldValues>} name="items" disabled={isViewMode} />
 
                     {isViewMode && viewEntry?.reversal_of && (
                         <div className="flex justify-end items-center gap-1.5 text-xs text-muted-foreground pt-2">
@@ -499,7 +499,7 @@ export function JournalEntryDrawer({
                             <span className="text-right">Debe</span>
                             <span className="text-right">Haber</span>
                         </div>
-                        {(formValues.items ?? []).map((item: any, idx: number) => (
+                        {(formValues.items ?? []).map((item, idx: number) => (
                             <div key={idx} className="grid grid-cols-[1fr,50px,50px] gap-1 border-b border-dashed py-0.5">
                                 <span>{item.account ? item.account.toString() : '-'}</span>
                                 <span className="text-right">{Number(item.debit) > 0 ? formatCurrency(Number(item.debit)) : '-'}</span>

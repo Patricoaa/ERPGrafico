@@ -37,7 +37,7 @@ export function InitialCapitalModal({ open, onOpenChange, onSuccess }: InitialCa
         })
     }, [entries])
 
-    const handleAddPartner = (contactId: string | null, contact?: any) => {
+    const handleAddPartner = (contactId: string | null, contact?: { id: number; name: string }) => {
         if (!contactId) return
 
         const id = parseInt(contactId)

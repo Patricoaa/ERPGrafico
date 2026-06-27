@@ -30,7 +30,7 @@ export function PaymentHistoryModal({
     onOpenChange,
     order
 }: PaymentHistoryModalProps) {
-    const payments = (order as any).serialized_payments || (order as any).related_documents?.payments || []
+    const orderRec = order as Record<string, unknown>; const payments = (orderRec['serialized_payments'] ?? (orderRec['related_documents'] as Record<string, unknown> | undefined)?.['payments'] ?? []) as Payment[]
 
     const columns: ColumnDef<Payment>[] = [
         {

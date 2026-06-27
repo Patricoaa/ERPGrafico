@@ -82,7 +82,7 @@ export function AccountDrawer({
             code: initialData?.code as string || "",
             name: initialData?.name as string || "",
             account_type: (initialData?.account_type as "ASSET" | "LIABILITY" | "EQUITY" | "INCOME" | "EXPENSE") || "ASSET",
-            parent: (typeof initialData?.parent === 'object' ? (initialData?.parent as any)?.id?.toString() : initialData?.parent?.toString()) || parentId || undefined,
+            parent: (typeof initialData?.parent === 'object' ? String((initialData.parent as Record<string, unknown>).id ?? '') : String(initialData?.parent ?? '')) || parentId || undefined,
         },
     })
 
@@ -104,7 +104,7 @@ export function AccountDrawer({
                     code: initialData.code as string,
                     name: initialData.name as string,
                     account_type: initialData.account_type as "ASSET" | "LIABILITY" | "EQUITY" | "INCOME" | "EXPENSE",
-                    parent: (typeof initialData.parent === 'object' ? (initialData.parent as any)?.id?.toString() : initialData.parent?.toString()) || undefined,
+                    parent: (typeof initialData.parent === 'object' ? String((initialData.parent as Record<string, unknown>).id ?? '') : String(initialData.parent ?? '')) || undefined,
                 })
             } else {
                 form.reset({
@@ -122,10 +122,9 @@ export function AccountDrawer({
     useEffect(() => {
         if (!watchParentId || watchParentId === "__none__" || watchParentId === "none") return;
 
-        const parent = accounts.find((a: any) => a.id.toString() === watchParentId.toString());
+        const parent = accounts.find((a: Record<string, unknown>) => String(a.id) === watchParentId.toString());
         if (parent) {
-            // Force account_type to match parent
-            form.setValue("account_type", (parent as any).account_type);
+            form.setValue("account_type", parent.account_type as "ASSET" | "LIABILITY" | "EQUITY" | "INCOME" | "EXPENSE");
         }
     }, [watchParentId, accounts, form])
 
@@ -258,8 +257,8 @@ export function AccountDrawer({
             : "Editar Cuenta Contable"
 
     const drawerSubtitle = isViewMode
-        ? `${(initialData as any)?.code || ""} • ${form.watch("name") || "Vista de detalle"}`
-        : `${(initialData as any)?.code || ""} • ${form.watch("name") || "Plan de Cuentas • Contabilidad General"}`
+        ? `${(initialData?.code as string) || ""} • ${form.watch("name") || "Vista de detalle"}`
+        : `${(initialData?.code as string) || ""} • ${form.watch("name") || "Plan de Cuentas • Contabilidad General"}`
 
     return (
         <>
@@ -268,20 +267,20 @@ export function AccountDrawer({
                 <PrintableLayout
                     ref={printRef}
                     title="Comprobante Contable"
-                    displayId={(initialData as any)?.code || `#${initialData.id}`}
+                    displayId={(initialData?.code as string) || `#${initialData.id}`}
                 >
                     <div className="text-[9px] space-y-1 mb-2">
                         <div className="flex justify-between">
                             <span>Nombre:</span>
-                            <span>{(initialData as any)?.name ?? '-'}</span>
+                            <span>{(initialData?.name as string) ?? '-'}</span>
                         </div>
                         <div className="flex justify-between">
                             <span>Código:</span>
-                            <span>{(initialData as any)?.code ?? '-'}</span>
+                            <span>{(initialData?.code as string) ?? '-'}</span>
                         </div>
                         <div className="flex justify-between">
                             <span>Tipo:</span>
-                            <span>{(initialData as any)?.account_type ?? '-'}</span>
+                            <span>{(initialData?.account_type as string) ?? '-'}</span>
                         </div>
                     </div>
                 </PrintableLayout>

@@ -67,40 +67,37 @@ export function PurchaseNoteModal({
     const fetchDetails = async () => {
         setLoading(true)
         try {
-            let data: any = {}
-            let fetchedLines: any[] = []
+            let data: Record<string, unknown> = {}
+            let fetchedLines: Record<string, unknown>[] = []
 
             if (orderId) {
                 const orderItem = await purchasingApi.getOrder(orderId)
-                data = orderItem as any
-                fetchedLines = (data as any).lines || []
+                data = orderItem as unknown as Record<string, unknown>
+                fetchedLines = (data.lines as Record<string, unknown>[]) || []
             } else if (invoiceId) {
                 const invoiceData = await purchasingApi.getInvoice(invoiceId)
-                data = invoiceData as any
-                // Map invoice lines to expected structure
-                fetchedLines = (data.lines || []).map((l: any) => ({
+                data = invoiceData as unknown as Record<string, unknown>
+                fetchedLines = ((data.lines || []) as Record<string, unknown>[]).map((l: Record<string, unknown>) => ({
                     ...l,
-                    // If invoice lines differ, map them here. Assuming similar structure:
-                    // product, quantity, unit_price/unit_cost
-                    unit_cost: l.unit_price || l.unit_cost // Invoice usually has unit_price
+                    unit_cost: l.unit_price || l.unit_cost
                 }))
             }
 
-            setOrderDetails(data as PurchaseOrderAPI)
+            setOrderDetails(data as unknown as PurchaseOrderAPI)
 
             // Initializing lines with 0 quantity but original unit cost
-            const initialLines = fetchedLines.map((line: any) => ({
-                id: line.id,
-                product: line.product,
-                product_name: line.product_name || line.description, // Fallback
-                product_code: line.product_code,
-                uom_name: line.uom_name,
-                quantity: line.quantity, // Original qty
-                unit_cost: parseFloat(line.unit_cost || line.unit_price || 0),
+            const initialLines: PurchaseNoteLine[] = fetchedLines.map((line: Record<string, unknown>) => ({
+                id: line.id as number | string | undefined,
+                product: line.product as number | string,
+                product_name: String(line.product_name || line.description || ''),
+                product_code: line.product_code as string | undefined,
+                uom_name: line.uom_name as string | undefined,
+                quantity: Number(line.quantity) || 0,
+                unit_cost: parseFloat(String(line.unit_cost || line.unit_price || '0')),
 
                 // Editable fields for note
                 note_quantity: 0,
-                note_unit_cost: parseFloat(line.unit_cost || line.unit_price || 0)
+                note_unit_cost: parseFloat(String(line.unit_cost || line.unit_price || '0'))
             }))
             setLines(initialLines)
         } catch (error) {
@@ -305,8 +302,8 @@ export function PurchaseNoteModal({
                     totalSteps={totalSteps}
                     orderNumber={orderNumber}
                     referenceText={orderNumber ? undefined : (orderDetails?.number ? `Sobre OCS-${orderDetails.number}` : `Sobre Documento #${invoiceId}`)}
-                    supplierName={(orderDetails as any)?.supplier_name}
-                    warehouseName={(orderDetails as any)?.warehouse_name}
+                    supplierName={orderDetails?.supplier_name}
+                    warehouseName={orderDetails?.warehouse_name ?? undefined}
                     noteType={noteType}
                     totals={{
                         net: amountNet,
@@ -336,7 +333,7 @@ export function PurchaseNoteModal({
                                             setDocumentDate={setDocumentDate}
                                             attachment={attachment}
                                             setAttachment={setAttachment}
-                                            contactId={typeof orderDetails?.supplier === 'object' ? (orderDetails?.supplier as any)?.id : orderDetails?.supplier as number | undefined}
+                                            contactId={typeof orderDetails?.supplier === 'object' ? (orderDetails?.supplier as unknown as Record<string, unknown>)?.id as number : orderDetails?.supplier as number | undefined}
                                             onValidityChange={(isValid) => setIsFolioValid(isValid)}
                                             onPeriodValidityChange={(isValid) => setIsPeriodValid(isValid)}
                                         />

@@ -44,7 +44,7 @@ export function StatementDetailModal({ statementId, open, onOpenChange }: Statem
         }
     }
 
-    const chargesColumns: ColumnDef<StatementChargeRow, any>[] = [
+    const chargesColumns: ColumnDef<StatementChargeRow, unknown>[] = [
         {
             accessorKey: 'date',
             header: ({ column }) => (

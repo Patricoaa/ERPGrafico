@@ -82,7 +82,7 @@ export function MaterialAssignmentStep({
     setUomId(m.uom.toString())
     // Fetch product to populate selector
     productionApi.getProduct(m.component).then((data) => {
-      setProductObj(data as any)
+      setProductObj(data as unknown as ProductMinimal)
       setIsAddOpen(true)
     })
   }
@@ -228,7 +228,7 @@ export function MaterialAssignmentStep({
                         </div>
                         <div className="w-full md:w-40 space-y-2">
                           <label className="text-xs font-bold uppercase">Unidad</label>
-                          <UoMSelector product={productObj as any} context="bom" value={uomId} onChange={setUomId} uoms={[]} />
+                          <UoMSelector product={productObj as unknown as Parameters<typeof UoMSelector>[0]['product']} context="bom" value={uomId} onChange={setUomId} uoms={[]} />
                         </div>
                         <div className="flex gap-2">
                           <Button variant="outline" size="sm" onClick={reset}>Cancelar</Button>

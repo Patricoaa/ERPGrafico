@@ -483,7 +483,7 @@ export function EmployeeDrawer({ open, onOpenChange, employee, onSaved, trigger,
                                                                 { name: "trabajo_pesado", label: "Trabajo Pesado" },
                                                                 { name: "trabajo_agricola", label: "Trabajo Agrícola" }
                                                             ].map((sw) => (
-                                                                <FormField key={sw.name} control={form.control} name={sw.name as any} render={({ field }) => (
+                                                                <FormField key={sw.name} control={form.control} name={sw.name as 'gratificacion' | 'trabajo_pesado' | 'trabajo_agricola'} render={({ field }) => (
                                                                     <div className={cn(
                                                                         "flex items-center justify-between p-3.5 rounded-md border transition-all",
                                                                         field.value ? "bg-primary/5 border-primary/20" : "bg-background border-dashed"

@@ -4,7 +4,7 @@ import React, { useState, useEffect, lazy, Suspense, useMemo, useCallback } from
 import { useRouter, useSearchParams } from "next/navigation"
 import { BaseModal, DataTableView, EntityCard, StatusBadge, FormFooter, CancelButton, ActionSlideButton } from '@/components/shared'
 import { DataTableColumnHeader } from '@/components/shared'
-import type { ColumnDef } from "@tanstack/react-table"
+import type { ColumnDef, Row } from "@tanstack/react-table"
 import { Plus, Building2 } from "lucide-react"
 import { format } from "date-fns"
 
@@ -71,8 +71,8 @@ export function TerminalBatchesClientView({
     const columns = useMemo<ColumnDef<TerminalBatch>[]>(() => [
         {
             accessorKey: "sales_date",
-            header: ({ column }: any) => <DataTableColumnHeader column={column} title="Fecha Ventas" className="justify-center" />,
-            cell: ({ row }: any) => (
+            header: ({ column }) => <DataTableColumnHeader column={column} title="Fecha Ventas" className="justify-center" />,
+            cell: ({ row }: { row: Row<TerminalBatch> }) => (
                 <div className="flex flex-col justify-center w-full items-center text-xs">
                     <DataCell.Date value={row.original.sales_date} />
                     {row.original.sales_date_end && row.original.sales_date_end !== row.original.sales_date && (
@@ -85,8 +85,8 @@ export function TerminalBatchesClientView({
         },
         {
             accessorKey: "provider_name",
-            header: ({ column }: any) => <DataTableColumnHeader column={column} title="Proveedor" className="justify-center" />,
-            cell: ({ row }: any) => (
+            header: ({ column }) => <DataTableColumnHeader column={column} title="Proveedor" className="justify-center" />,
+            cell: ({ row }: { row: Row<TerminalBatch> }) => (
                 <div className="flex flex-col items-center">
                     <span className="font-bold flex items-center justify-center gap-1.5 text-center w-full">
                         <Building2 className="h-3.5 w-3.5 text-primary" />
@@ -100,8 +100,8 @@ export function TerminalBatchesClientView({
         },
         {
             accessorKey: "net_amount",
-            header: ({ column }: any) => <DataTableColumnHeader column={column} title="Depósito Neto" className="justify-center" />,
-            cell: ({ row }: any) => (
+            header: ({ column }) => <DataTableColumnHeader column={column} title="Depósito Neto" className="justify-center" />,
+            cell: ({ row }: { row: Row<TerminalBatch> }) => (
                 <div className="flex justify-center w-full">
                     <DataCell.Currency value={row.getValue("net_amount")} />
                 </div>
@@ -109,8 +109,8 @@ export function TerminalBatchesClientView({
         },
         {
             accessorKey: "commission_total",
-            header: ({ column }: any) => <DataTableColumnHeader column={column} title="Comisión (Total)" className="justify-center" />,
-            cell: ({ row }: any) => {
+            header: ({ column }) => <DataTableColumnHeader column={column} title="Comisión (Total)" className="justify-center" />,
+            cell: ({ row }: { row: Row<TerminalBatch> }) => {
                 const amount = row.original.commission_total
                 return (
                     <div className="flex justify-center w-full">
@@ -123,9 +123,9 @@ export function TerminalBatchesClientView({
         },
         {
             accessorKey: "status",
-            header: ({ column }: any) => <DataTableColumnHeader column={column} title="Estado" className="justify-center" />,
-            cell: ({ row }: any) =>
-                <DataCell.Status status={row.original.status} />,
+            header: ({ column }) => <DataTableColumnHeader column={column} title="Estado" className="justify-center" />,
+            cell: ({ row }: { row: Row<TerminalBatch> }) =>
+                <DataCell.Status status={row.original.status ?? ''} />,
             meta: {
                 title: "Estado"
             }

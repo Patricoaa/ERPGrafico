@@ -36,7 +36,7 @@ export function AccountsClientView({ externalOpen, onExternalOpenChange, createA
     const { filters: segFilters, isFiltered: isSegFiltered, clearAll: clearSeg } = useSegmentation(accountSegDef)
     const isFiltered = isTextFiltered || isSegFiltered
     const allFilters = { ...textFilters, ...segFilters }
-    const { accounts: flatAccounts, isLoading, refetch, deleteAccount } = useAccounts({ filters: allFilters as any })
+    const { accounts: flatAccounts, isLoading, refetch, deleteAccount } = useAccounts({ filters: allFilters as unknown as Record<string, unknown> })
     const [deleteTarget, setDeleteTarget] = useState<number | null>(null)
     const [isFormOpen, setIsFormOpen] = useState(false)
     const [editingAccount, setEditingAccount] = useState<Account | null>(null)
@@ -264,8 +264,8 @@ export function AccountsClientView({ externalOpen, onExternalOpenChange, createA
             </div>
 
             <AccountDrawer
-                accounts={flatAccounts as any}
-                initialData={editingAccount as any}
+                accounts={flatAccounts as unknown as Record<string, unknown>[]}
+                initialData={editingAccount as unknown as Record<string, unknown>}
                 parentId={formParentId || undefined}
                 auditSidebar={
                     editingAccount ? (

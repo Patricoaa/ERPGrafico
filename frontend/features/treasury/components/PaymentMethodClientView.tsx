@@ -12,7 +12,7 @@ import { DataTableView } from '@/components/shared'
 import { paymentMethodActions, type PaymentMethodActionsCtx } from './paymentMethodActions'
 import { ActivitySidebar } from "@/features/audit/components"
 import { useConfirmAction } from "@/hooks/useConfirmAction"
-import { useForm } from "react-hook-form"
+import { useForm, type Resolver } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
 import { Form, FormField } from "@/components/ui/form"
@@ -26,7 +26,7 @@ import { paymentMethodSegDef } from "@/features/treasury/segmentationDef"
 import { TreasuryAccountSelector } from "@/components/selectors/TreasuryAccountSelector"
 import { type Column } from "@tanstack/react-table"
 import { usePaymentMethods } from "@/features/treasury/hooks/useMasterData"
-import type { PaymentMethod } from "@/features/treasury/types"
+import type { PaymentMethod, PaymentMethodCreatePayload, PaymentMethodUpdatePayload } from "@/features/treasury/types"
 import { EntityCard } from "@/components/shared"
 import {
     DropdownMenu,
@@ -317,7 +317,7 @@ function PaymentMethodModal({ open, onOpenChange, method, onSuccess }: PaymentMe
     const [showAdvanced, setShowAdvanced] = useState(false)
 
     const form = useForm<PaymentMethodFormValues>({
-        resolver: zodResolver(paymentMethodSchema) as any,
+        resolver: zodResolver(paymentMethodSchema) as unknown as Resolver<PaymentMethodFormValues>,
         defaultValues: {
             name: "",
             method_type: "DEBIT_CARD",
@@ -333,9 +333,9 @@ function PaymentMethodModal({ open, onOpenChange, method, onSuccess }: PaymentMe
         if (open) {
             setShowAdvanced(false)
             const acc = method?.treasury_account
-            const accountId = acc ? (typeof acc === 'object' ? (acc as any).id.toString() : acc.toString()) : ""
+            const accountId = acc ? (typeof acc === 'object' ? (acc as unknown as { id: number }).id.toString() : acc.toString()) : ""
             const settlementAcc = method?.settlement_account
-            const settlementId = settlementAcc ? (typeof settlementAcc === 'object' ? (settlementAcc as any).id.toString() : settlementAcc.toString()) : null
+            const settlementId = settlementAcc ? (typeof settlementAcc === 'object' ? (settlementAcc as unknown as { id: number }).id.toString() : settlementAcc.toString()) : null
 
             form.reset({
                 name: method?.name || "",
@@ -370,9 +370,9 @@ function PaymentMethodModal({ open, onOpenChange, method, onSuccess }: PaymentMe
     const onSubmit = async (data: PaymentMethodFormValues) => {
         try {
             if (method) {
-                await updateMethod({ id: method.id, payload: data as any })
+                await updateMethod({ id: method.id, payload: data as unknown as PaymentMethodUpdatePayload })
             } else {
-                await createMethod(data as any)
+                await createMethod(data as unknown as PaymentMethodCreatePayload)
             }
             onSuccess()
         } catch {

@@ -95,7 +95,7 @@ export function PaymentDrawer({
         resolver: zodResolver(paymentSchema),
         defaultValues: {
             payment_type: initialData?.payment_type || "INBOUND",
-            payment_method: (initialData?.payment_method as any) || "CASH",
+            payment_method: (initialData?.payment_method as "CASH" | "DEBIT_CARD" | "CREDIT_CARD" | "TRANSFER" | "CHECK") || "CASH",
             treasury_account: initialData?.treasury_account?.toString() || initialData?.treasury_account_id?.toString() || null,
             amount: initialData?.amount ? parseFloat(String(initialData.amount)) : 0,
             customer_id: (initialData?.payment_type === "INBOUND" ? (initialData?.contact?.toString() || initialData?.customer?.toString() || initialData?.customer_id?.toString()) : "") || "",
@@ -122,7 +122,7 @@ export function PaymentDrawer({
 
     const orders: InvoiceOption[] = useMemo(() => {
         if (!allInvoicesData) return []
-        const results: InvoiceOption[] = (allInvoicesData as any).results || allInvoicesData || []
+        const results: InvoiceOption[] = (allInvoicesData as unknown as { results: InvoiceOption[] }).results || (allInvoicesData as unknown as InvoiceOption[]) || []
         if (paymentType === "INBOUND" && customerId) {
             return results.filter((i: InvoiceOption) => i.sale_order && i.sale_order.customer === parseInt(customerId) && i.status === 'POSTED')
         } else if (paymentType === "OUTBOUND" && supplierId) {
@@ -149,7 +149,7 @@ export function PaymentDrawer({
         if (isViewMode && paymentData) {
             form.reset({
                 payment_type: (paymentData.payment_type ?? paymentData.payment_type_new ?? "INBOUND") as "INBOUND" | "OUTBOUND",
-                payment_method: (paymentData.payment_method ?? "CASH") as any,
+                payment_method: (paymentData.payment_method ?? "CASH") as "CASH" | "DEBIT_CARD" | "CREDIT_CARD" | "TRANSFER" | "CHECK",
                 treasury_account: paymentData.treasury_account?.toString() ?? paymentData.treasury_account_id?.toString() ?? null,
                 amount: paymentData.amount ? parseFloat(String(paymentData.amount)) : 0,
                 customer_id: (paymentData.payment_type === "INBOUND" ? (paymentData.contact?.toString() ?? paymentData.customer?.toString() ?? paymentData.customer_id?.toString()) : "") ?? "",
@@ -325,7 +325,7 @@ export function PaymentDrawer({
                                         <div className="space-y-4 transition-opacity">
                                             {mode === 'create' && (
                                                 <FormField
-                                                    control={form.control as any}
+                                                    control={form.control}
                                                     name="payment_type"
                                                     render={({ field, fieldState }) => (
                                                         <LabeledSelect
@@ -343,7 +343,7 @@ export function PaymentDrawer({
                                                 />
                                             )}
                                             <FormField
-                                                control={form.control as any}
+                                                control={form.control}
                                                 name="amount"
                                                 render={({ field, fieldState }) => (
                                                     <LabeledInput
@@ -363,7 +363,7 @@ export function PaymentDrawer({
 
                                         <div className="space-y-4">
                                             <FormField
-                                                control={form.control as any}
+                                                control={form.control}
                                                 name="treasury_account"
                                                 render={({ field, fieldState }) => (
                                                     <TreasuryAccountSelector
@@ -379,7 +379,7 @@ export function PaymentDrawer({
 
                                             {availableMethods.length > 0 && (
                                                 <FormField
-                                                    control={form.control as any}
+                                                    control={form.control}
                                                     name="payment_method_new"
                                                     render={({ field, fieldState }) => (
                                                         <div className="animate-in slide-in-from-top-2 duration-300">
@@ -415,7 +415,7 @@ export function PaymentDrawer({
 
                                             {paymentType === "INBOUND" ? (
                                                 <FormField
-                                                    control={form.control as any}
+                                                    control={form.control}
                                                     name="customer_id"
                                                     render={({ field, fieldState }) => (
                                                         <AdvancedContactSelector
@@ -430,7 +430,7 @@ export function PaymentDrawer({
                                                 />
                                             ) : (
                                                 <FormField
-                                                    control={form.control as any}
+                                                    control={form.control}
                                                     name="supplier_id"
                                                     render={({ field, fieldState }) => (
                                                         <AdvancedContactSelector
@@ -446,7 +446,7 @@ export function PaymentDrawer({
                                             )}
                                             {mode === 'create' && (
                                                 <FormField
-                                                    control={form.control as any}
+                                                    control={form.control}
                                                     name="invoice_id"
                                                     render={({ field, fieldState }) => (
                                                         <LabeledSelect
@@ -469,7 +469,7 @@ export function PaymentDrawer({
                                             )}
 
                                             <FormField
-                                                control={form.control as any}
+                                                control={form.control}
                                                 name="reference"
                                                 render={({ field, fieldState }) => (
                                                     <LabeledInput

@@ -154,8 +154,9 @@ export function SessionCloseModal({
                 justify_target_id: justifyTargetId ? Number(justifyTargetId) : null
             })
 
-            const audit = (closeData as any).audit
-            const difference = parseFloat(audit.difference)
+            const closeResponse = closeData as { audit: POSSessionAudit }
+            const audit = closeResponse.audit
+            const difference = parseFloat(String(audit.difference))
 
             if (difference !== 0) {
                 const diffType = difference > 0 ? "sobrante" : "faltante"

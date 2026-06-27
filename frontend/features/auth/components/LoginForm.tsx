@@ -40,8 +40,9 @@ export function LoginForm() {
         setError("")
         try {
             await loginMutation(values)
-        } catch (err: any) {
-            if (err.response?.status === 401) {
+        } catch (err: unknown) {
+            const axiosErr = err as { response?: { status?: number } }
+            if (axiosErr.response?.status === 401) {
                 setError("Usuario o contraseña incorrectos")
             } else {
                 setError("No se pudo conectar con el servidor. Intente nuevamente.")

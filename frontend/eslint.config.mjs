@@ -93,6 +93,23 @@ const eslintConfig = defineConfig([...nextVitals, ...nextTs, globalIgnores([
       "disallowTypeAnnotations": true,
     }],
   },
+}, // Feature zero-any enforcement (error for clean features, warn for pending migration)
+{
+  files: ["features/**/*.ts", "features/**/*.tsx"],
+  rules: {
+    "@typescript-eslint/no-explicit-any": "error",
+  },
+},
+{
+  files: [
+    "features/inventory/**/*.ts", "features/inventory/**/*.tsx",
+    "features/contacts/**/*.ts", "features/contacts/**/*.tsx",
+    "features/orders/**/*.ts", "features/orders/**/*.tsx",
+    "features/_shared/transaction-drawer/drawerRegistry.tsx",
+  ],
+  rules: {
+    "@typescript-eslint/no-explicit-any": "warn",
+  },
 }, // Test exceptions — override rules that would be too strict in test files
 {
   files: ["**/*.test.ts", "**/*.test.tsx", "**/*.spec.ts", "**/*.spec.tsx"],

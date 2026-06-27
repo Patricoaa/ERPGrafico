@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { useForm } from 'react-hook-form'
+import { useForm, type Resolver } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { useCreditLineMutations } from './hooks'
@@ -18,6 +18,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
 import type { CreditLine, CreditLineCreatePayload } from './types'
+import type { TreasuryAccount } from '../types'
 import { treasuryApi } from '@/features/treasury'
 
 const schema = z.object({
@@ -50,13 +51,13 @@ interface Props {
 
 export function CreditLineDrawer({ open, onOpenChange, creditLine, creditLineId, treasuryAccountId }: Props) {
     const { create, update } = useCreditLineMutations()
-    const [checkingAccounts, setCheckingAccounts] = useState<any[]>([])
+    const [checkingAccounts, setCheckingAccounts] = useState<TreasuryAccount[]>([])
     const [accountName, setAccountName] = useState('')
     const resolvedCreditLine = creditLine ?? null
     const isEditing = !!resolvedCreditLine || !!creditLineId
 
     const form = useForm<FormValues>({
-        resolver: zodResolver(schema) as any,
+        resolver: zodResolver(schema) as unknown as Resolver<FormValues>,
         defaultValues: {
             treasury_account: treasuryAccountId ?? 0,
             code: '',
@@ -86,7 +87,7 @@ export function CreditLineDrawer({ open, onOpenChange, creditLine, creditLineId,
             // If editing, load credit line data
             if (creditLine) {
                 const taId = creditLine.treasury_account
-                const acc = accounts.find((a: any) => a.id === taId)
+                const acc = accounts.find((a: TreasuryAccount) => a.id === taId)
                 setAccountName(acc?.name ?? '')
                 form.reset({
                     treasury_account: taId,
@@ -106,7 +107,7 @@ export function CreditLineDrawer({ open, onOpenChange, creditLine, creditLineId,
                     status: creditLine.status,
                 })
             } else if (treasuryAccountId) {
-                const acc = accounts.find((a: any) => a.id === treasuryAccountId)
+                const acc = accounts.find((a: TreasuryAccount) => a.id === treasuryAccountId)
                 setAccountName(acc?.name ?? '')
                 form.reset({ treasury_account: treasuryAccountId })
             }
@@ -147,7 +148,7 @@ export function CreditLineDrawer({ open, onOpenChange, creditLine, creditLineId,
                                         value={String(field.value)}
                                         onValueChange={(v) => {
                                             field.onChange(Number(v))
-                                            const acc = checkingAccounts.find((a: any) => a.id === Number(v))
+                                            const acc = checkingAccounts.find((a: TreasuryAccount) => a.id === Number(v))
                                             setAccountName(acc?.name ?? '')
                                         }}
                                     >
@@ -157,7 +158,7 @@ export function CreditLineDrawer({ open, onOpenChange, creditLine, creditLineId,
                                             </SelectTrigger>
                                         </FormControl>
                                         <SelectContent>
-                                            {checkingAccounts.map((a: any) => (
+                                            {checkingAccounts.map((a: TreasuryAccount) => (
                                                 <SelectItem key={a.id} value={String(a.id)}>
                                                     {a.name} ({a.bank_name ?? 'Sin banco'})
                                                 </SelectItem>

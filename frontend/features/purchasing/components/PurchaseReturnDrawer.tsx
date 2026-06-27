@@ -68,9 +68,9 @@ export function PurchaseReturnDrawer({ returnId, id, open, onOpenChange }: Purch
                 side="left"
                 boundary="embedded"
                 defaultSize="50%"
-                title={<span>{returnData ? `Devolución ${(returnData as any).number}` : "Devolución de Compra"}</span>}
+                title={<span>{returnData ? `Devolución ${String((returnData as Record<string, unknown>).number)}` : "Devolución de Compra"}</span>}
                 headerActions={<Button variant="ghost" size="icon" onClick={() => handlePrint()}><Printer className="h-4 w-4" /></Button>}
-                subtitle={(returnData as any)?.supplier_name}
+                subtitle={String((returnData as Record<string, unknown>)?.supplier_name ?? '')}
                 icon={getEntityIcon('purchasing.purchasereturn')}
 
             >
@@ -78,32 +78,33 @@ export function PurchaseReturnDrawer({ returnId, id, open, onOpenChange }: Purch
                     <SkeletonShell isLoading={true} ariaLabel="Cargando devolución" />
                 ) : returnData ? (
                     (() => {
-                        const r = returnData as any
+                        const r = returnData as Record<string, unknown>
+                        const lines = r.lines as Array<Record<string, unknown>> | undefined
                         return (
                             <div className="p-4 space-y-4">
                                 <div className="grid grid-cols-2 gap-4 text-sm">
                                     <div>
                                         <span className="text-muted-foreground">Número</span>
-                                        <p className="font-medium">{r.number}</p>
+                                        <p className="font-medium">{String(r.number)}</p>
                                     </div>
                                     <div>
                                         <span className="text-muted-foreground">Estado</span>
-                                        <p><StatusBadge status={r.status} /></p>
+                                        <p><StatusBadge status={String(r.status)} /></p>
                                     </div>
                                     <div>
                                         <span className="text-muted-foreground">Proveedor</span>
-                                        <p className="font-medium">{r.supplier_name}</p>
+                                        <p className="font-medium">{String(r.supplier_name)}</p>
                                     </div>
                                     <div>
                                         <span className="text-muted-foreground">Bodega</span>
-                                        <p className="font-medium">{r.warehouse_name}</p>
+                                        <p className="font-medium">{String(r.warehouse_name)}</p>
                                     </div>
                                     <div>
                                         <span className="text-muted-foreground">Orden de Compra</span>
-                                        <p className="font-medium">{r.purchase_order_number}</p>
+                                        <p className="font-medium">{String(r.purchase_order_number)}</p>
                                     </div>
                                 </div>
-                                {r.lines?.length > 0 && (
+                                {lines && lines.length > 0 && (
                                     <div>
                                         <h4 className="text-sm font-medium mb-2">Líneas</h4>
                                         <div className="border rounded-md overflow-hidden">
@@ -115,7 +116,7 @@ export function PurchaseReturnDrawer({ returnId, id, open, onOpenChange }: Purch
                                                     </tr>
                                                 </thead>
                                                 <tbody>
-                                                    {r.lines.map((line: any, idx: number) => (
+                                                    {lines.map((line: Record<string, unknown>, idx: number) => (
                                                         <tr key={idx} className="border-t">
                                                             <td className="p-2">{String(line.product_name)}</td>
                                                             <td className="p-2 text-right">{String(line.quantity_returned)}</td>

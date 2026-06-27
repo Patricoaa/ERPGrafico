@@ -41,7 +41,7 @@ export type EmployeeBasic = {
     department?: string
 }
 
-export function usePayrollDetail(payrollId: number, viewMode: 'admin' | 'employee' = 'admin', employee?: EmployeeBasic) {
+export function usePayrollDetail(payrollId: number, viewMode: 'admin' | 'employee' = 'admin', employee?: EmployeeBasic | null) {
     return useQuery({
         queryKey: [...PAYROLLS_QUERY_KEY, 'detail', payrollId, viewMode],
         staleTime: 2 * 60 * 1000,

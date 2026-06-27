@@ -102,7 +102,7 @@ export interface WizardState {
     selectedCustomerName?: string
     selectedCustomerId?: string | number | null
     isWaitingPayment?: boolean
-    [key: string]: any // Required for Record<string, unknown> compatibility
+    [key: string]: unknown
 }
 
 export interface CartItem extends Product {

@@ -16,7 +16,7 @@ import { type Order, type OrderLine, type PhaseDocument } from "../../types"
 interface LogisticsPhaseProps {
     activeDoc: Order
     isNoteMode: boolean
-    noteStatuses: Record<string, string>
+    noteStatuses: Record<string, string | boolean | number>
     isSale: boolean
     invoices: Order[]
     isTimeline?: boolean
@@ -102,19 +102,19 @@ export function LogisticsPhase({
 
         // 1. Returns for Notes/Orders
         if (Array.isArray(activeDoc.related_returns) && activeDoc.related_returns.length > 0) {
-            docs.push(...activeDoc.related_returns.map((doc: any) => ({
+            docs.push(...activeDoc.related_returns.map((doc: Record<string, unknown>) => ({
                 type: doc.type as string,
-                number: formatEntity('DEV', doc.number || doc.id, doc.display_id),
+                number: formatEntity('DEV', (doc.number as string | number) || (doc.id as string | number), doc.display_id as string),
                 icon: Package,
-                id: doc.id,
+                id: doc.id as string | number,
                 docType: doc.docType as string,
-                status: doc.status,
+                status: doc.status as string,
                 actions: [
                     ...(canAnnulLogistics && doc.status !== 'CANCELLED' ? [{
                         icon: Ban,
                         title: 'Anular Devolución',
                         color: 'text-warning hover:bg-warning/10',
-                        onClick: () => handleAnnulLogistics(doc.id, doc.docType as string)
+                        onClick: () => handleAnnulLogistics(doc.id as number, doc.docType as string)
                     }] : [])
                 ]
             })))
@@ -176,7 +176,7 @@ export function LogisticsPhase({
             <PhaseCard
                 title={title}
                 icon={Package}
-                variant={(isNoteMode ? noteStatuses.logistics : (logisticsProgress === 100 ? 'success' : logisticsProgress > 0 ? 'active' : 'neutral')) as any}
+                variant={(isNoteMode ? noteStatuses.logistics : (logisticsProgress === 100 ? 'success' : logisticsProgress > 0 ? 'active' : 'neutral')) as 'success' | 'active' | 'neutral' | 'destructive'}
                 documents={logisticsDocs}
                 onViewDetail={openDetails}
                 actions={(isNoteMode ? (registry[isSale ? 'deliveries' : 'receptions']?.actions || registry.returns?.actions || []) : (registry[isSale ? 'deliveries' : 'receptions']?.actions || [])).filter((a: { id: string }) => !a.id.includes('view-'))}

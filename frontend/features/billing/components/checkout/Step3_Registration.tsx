@@ -24,8 +24,8 @@ export function Step3_Registration({
         document_number: "",
         document_date: "",
         is_pending: false,
-        attachment: null
-    }) as any
+        attachment: null as File | null
+    }) as unknown as { document_number: string; document_date: string; is_pending: boolean; attachment: File | null }
 
     // Sync date when server date arrives
     useEffect(() => {

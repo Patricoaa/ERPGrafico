@@ -245,7 +245,7 @@ export const SessionControl = forwardRef<SessionControlHandle, SessionControlPro
     const fetchSharedSession = async (id: number) => {
         try {
             const sessionData = await posApi.getSession(id)
-            if (sessionData && (sessionData as any).status === 'OPEN') {
+            if (sessionData && (sessionData as POSSession).status === 'OPEN') {
                 onSessionChange?.(sessionData)
                 setIsSharedSession(true)
             } else {
@@ -264,7 +264,7 @@ export const SessionControl = forwardRef<SessionControlHandle, SessionControlPro
     const fetchCurrentSession = async () => {
         try {
             const sessionData = await posApi.getCurrentSession()
-            if (sessionData && (sessionData as any).id) {
+            if (sessionData && (sessionData as POSSession).id) {
                 onSessionChange?.(sessionData)
                 setIsSharedSession(false)
             } else {
@@ -281,7 +281,8 @@ export const SessionControl = forwardRef<SessionControlHandle, SessionControlPro
     const fetchTerminals = async () => {
         try {
             const terminalsData = await posApi.getTerminals()
-            const results = (terminalsData as any).results || terminalsData
+            const terminalsResponse = terminalsData as { results?: POSTerminal[] } | POSTerminal[]
+            const results = Array.isArray(terminalsResponse) ? terminalsResponse : (terminalsResponse.results ?? [])
             setTerminals(results)
         } catch (error) {
             console.error("Error fetching terminals:", error)
@@ -292,7 +293,8 @@ export const SessionControl = forwardRef<SessionControlHandle, SessionControlPro
     const fetchAvailableSessions = async () => {
         try {
             const sessionsData = await posApi.getSessions({ status: 'OPEN' })
-            const results = (sessionsData as any).results || sessionsData
+            const sessionsResponse = sessionsData as { results?: POSSession[] } | POSSession[]
+            const results = Array.isArray(sessionsResponse) ? sessionsResponse : (sessionsResponse.results ?? [])
             setAvailableSessions(results)
         } catch (error) {
             console.error("Error fetching available sessions:", error)
@@ -422,9 +424,10 @@ export const SessionControl = forwardRef<SessionControlHandle, SessionControlPro
                 is_inflow: data.impact === 'TRANSFER' ? data.isInflowForce : (data.impact === 'IN')
             })
 
-            onSessionChange?.((moveResult as any).session)
+            const moveResponse = moveResult as { session: POSSession; message: string }
+            onSessionChange?.(moveResponse.session)
             setMoveDialogOpen(false)
-            toast.success((moveResult as any).message)
+            toast.success(moveResponse.message)
         } catch (error: unknown) {
             showApiError(error, "Error al registrar movimiento")
         } finally {

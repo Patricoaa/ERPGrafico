@@ -18,6 +18,7 @@ import { type DateRange } from "react-day-picker"
 
 import { useVatRate } from '@/hooks/useVatRate'
 import { useTerminalProviders, usePaymentMethods, useTerminalMovements, useTerminalBatchMutations } from "@/features/treasury"
+import type { TreasuryMovement } from "@/features/treasury/types"
 
 import { BaseModal, ActionSlideButton, CancelButton, SubmitButton, LabeledContainer, LabeledInput, LabeledCheckboxGroup, FormFooter, FormSection, SkeletonShell } from "@/components/shared"
 
@@ -70,7 +71,7 @@ export function TerminalBatchForm({ onSuccess, onCancel, onFooterStateChange }: 
     const commissionNet = form.watch("commissionNet")
     const commissionTax = form.watch("commissionTax")
 
-    const [selectedMovements, setSelectedMovements] = useState<any[]>([])
+    const [selectedMovements, setSelectedMovements] = useState<TreasuryMovement[]>([])
     const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set())
     const [openSelection, setOpenSelection] = useState(false)
 
@@ -346,7 +347,7 @@ export function TerminalBatchForm({ onSuccess, onCancel, onFooterStateChange }: 
                     onConfirm={(movements, ids) => {
                         setSelectedMovements(movements)
                         setSelectedIds(ids)
-                        const total = movements.reduce((sum, m) => sum + parseFloat(m.amount), 0)
+                        const total = movements.reduce((sum, m) => sum + m.amount, 0)
                         form.setValue("grossAmount", total.toString())
                         setOpenSelection(false)
                     }}
@@ -361,7 +362,7 @@ function SaleSelectionModal({ open, onOpenChange, providerId, dateRange, onConfi
     onOpenChange: (open: boolean) => void,
     providerId: string,
     dateRange: DateRange | undefined,
-    onConfirm: (movements: any[], ids: Set<number>) => void,
+    onConfirm: (movements: TreasuryMovement[], ids: Set<number>) => void,
     initialSelectedIds: Set<number>
 }) {
     const { data: page, isLoading: loading } = useTerminalMovements(providerId, dateRange, open)
@@ -378,7 +379,7 @@ function SaleSelectionModal({ open, onOpenChange, providerId, dateRange, onConfi
             return date >= dateFromStr && date <= dateToStr;
         };
 
-        return [...rawMovements].sort((a: any, b: any) => {
+        return [...rawMovements].sort((a: TreasuryMovement, b: TreasuryMovement) => {
             const aInRange = isDateInRange(a.date);
             const bInRange = isDateInRange(b.date);
             if (aInRange && !bInRange) return -1
@@ -400,12 +401,12 @@ function SaleSelectionModal({ open, onOpenChange, providerId, dateRange, onConfi
 
         const next = new Set<number>()
         if (initialSelectedIds.size === 0) {
-            movements.forEach((m: any) => {
+            movements.forEach((m: TreasuryMovement) => {
                 if (isDateInRange(m.date)) next.add(m.id)
             })
         } else {
             initialSelectedIds.forEach(id => {
-                if (movements.some((m: any) => m.id === id)) next.add(id)
+                if (movements.some((m: TreasuryMovement) => m.id === id)) next.add(id)
             })
         }
         requestAnimationFrame(() => setSelectedIds(next))
@@ -457,7 +458,7 @@ function SaleSelectionModal({ open, onOpenChange, providerId, dateRange, onConfi
             <SkeletonShell isLoading={loading} ariaLabel="Cargando ventas del proveedor">
                 <LabeledCheckboxGroup
                     label="Movimientos Pendientes"
-                    items={movements.map((m: any) => ({
+                    items={movements.map((m: TreasuryMovement) => ({
                         value: m.id,
                         label: m.reference || 'Sin referencia',
                         description: `${m.partner_name || 'Particular'} • ${format(new Date(m.date + 'T12:00:00'), "dd/MM/yyyy")}`,

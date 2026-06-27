@@ -103,27 +103,27 @@ export function BankJournalDrawer({ auditSidebar, onSuccess, initialData, open: 
     }
 
     const drawerTitle = isView
-        ? `Ficha de Caja/Banco${(initialData as any)?.id ? ` #${(initialData as any).id}` : ""}`
+        ? `Ficha de Caja/Banco${initialData?.id ? ` #${initialData.id}` : ""}`
         : mode === 'create'
             ? "Crear Caja o Banco"
             : "Editar Caja/Banco"
 
     return (
         <>
-            {(mode === 'view' || mode === 'edit') && (initialData as any)?.id && (
+            {(mode === 'view' || mode === 'edit') && initialData?.id && (
                 <PrintableLayout
                     ref={printRef}
                     title="BankJournal"
-                    displayId={`#${(initialData as any).id}`}
+                    displayId={`#${initialData.id}`}
                 >
                     <div className="text-[9px] space-y-1 mb-2">
                         <div className="flex justify-between">
                             <span>Nombre:</span>
-                            <span>{(initialData as any)?.name ?? '-'}</span>
+                            <span>{(initialData?.name as string) ?? '-'}</span>
                         </div>
                         <div className="flex justify-between">
                             <span>Código:</span>
-                            <span>{(initialData as any)?.code ?? '-'}</span>
+                            <span>{(initialData?.code as string) ?? '-'}</span>
                         </div>
                     </div>
                 </PrintableLayout>
@@ -136,8 +136,8 @@ export function BankJournalDrawer({ auditSidebar, onSuccess, initialData, open: 
                 mode={mode}
                 icon={getEntityIcon('finance.bankjournal')}
                 title={<span>{drawerTitle}</span>}
-                headerActions={(mode === 'view' || mode === 'edit') && (initialData as any)?.id && <Button variant="ghost" size="icon" onClick={() => handlePrint()}><Printer className="h-4 w-4" /></Button>}
-                subtitle={initialData ? `${(initialData as any).code || ""} • ${form.watch("name") || ""}` : "Tesorería • Configuración de Caja o Banco"}
+                headerActions={(mode === 'view' || mode === 'edit') && !!initialData?.id && <Button variant="ghost" size="icon" onClick={() => handlePrint()}><Printer className="h-4 w-4" /></Button>}
+                subtitle={initialData ? `${(initialData?.code as string) || ""} • ${form.watch("name") || ""}` : "Tesorería • Configuración de Caja o Banco"}
                 footer={isView ? undefined : (
                     <FormFooter
                         actions={
@@ -220,7 +220,7 @@ export function BankJournalDrawer({ auditSidebar, onSuccess, initialData, open: 
                         </Form>
                     </div>
 
-                    {(initialData as any)?.id && (
+                    {!!initialData?.id && (
                         <div className="w-72 border-l bg-muted/5 flex flex-col pt-4 hidden lg:flex">
                             {auditSidebar}
                         </div>
