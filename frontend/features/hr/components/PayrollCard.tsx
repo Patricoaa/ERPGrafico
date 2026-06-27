@@ -12,7 +12,7 @@ import {
 } from "lucide-react"
 
 import { cn, formatPlainDate, parseDateOnly } from "@/lib/utils"
-import type { Payroll, PayrollItem } from "@/types/hr"
+    import type { Payroll, PayrollItem, PayrollPayment } from "@/types/hr"
 import { ActionConfirmModal, DataCell, MoneyDisplay, StatusBadge } from '@/components/shared'
 import { formatEntityDisplay } from "@/lib/entity-registry"
 
@@ -32,7 +32,7 @@ interface PayrollCardProps {
     onEditItem?: (item: PayrollItem) => void
     onDeleteItem?: (item: PayrollItem) => void
     onAddItem?: () => void
-    payments?: any[]
+    payments?: PayrollPayment[]
     className?: string
 }
 
@@ -114,9 +114,8 @@ export function PayrollCard({
 
     const netSalary = parseFloat(payroll.net_salary || "0")
 
-    // Use props if available, otherwise fallback to payroll object fields
-    const isSalaryPaid = isSalaryPaidProp ?? (payroll as any).is_salary_paid ?? (payroll as any).payments?.some((p: any) => p.payment_type === 'SALARIO') ?? false
-    const isPreviredPaid = isPreviredPaidProp ?? (payroll as any).is_previred_paid ?? (payroll as any).payments?.some((p: any) => p.payment_type === 'PREVIRED') ?? false
+    const isSalaryPaid = isSalaryPaidProp ?? (payroll as unknown as Record<string, unknown>).is_salary_paid as boolean ?? payroll.payments?.some((p) => p.payment_type === 'SALARIO') ?? false
+    const isPreviredPaid = isPreviredPaidProp ?? (payroll as unknown as Record<string, unknown>).is_previred_paid as boolean ?? payroll.payments?.some((p) => p.payment_type === 'PREVIRED') ?? false
 
     const unifiedPayments = [
         ...(payroll.advances || []).map(a => ({
@@ -166,17 +165,17 @@ export function PayrollCard({
                                 <p className={LABEL_STYLE}>Datos del Empleado</p>
                                 <div className="flex flex-col">
                                     <span className="text-sm font-bold text-foreground leading-tight">
-                                        {payroll.employee_detail?.contact_detail?.name || payroll.employee_name || (payroll as any).employee?.name || "—"}
+                                        {payroll.employee_detail?.contact_detail?.name || payroll.employee_name || ((payroll as unknown as Record<string, unknown>).employee as Record<string, unknown> | undefined)?.name as string || "—"}
                                     </span>
-                                    {(payroll.employee_detail?.contact_detail?.tax_id || (payroll as any).employee_tax_id || (payroll as any).employee?.tax_id) ? (
+                                    {(payroll.employee_detail?.contact_detail?.tax_id || (payroll as unknown as Record<string, unknown>).employee_tax_id as string || ((payroll as unknown as Record<string, unknown>).employee as Record<string, unknown> | undefined)?.tax_id as string) ? (
                                         <span className="text-[11px] text-muted-foreground font-medium uppercase tracking-wider mt-0.5">
-                                            RUT: <span className="font-bold text-foreground">{payroll.employee_detail?.contact_detail?.tax_id || (payroll as any).employee_tax_id || (payroll as any).employee?.tax_id}</span>
+                                            RUT: <span className="font-bold text-foreground">{payroll.employee_detail?.contact_detail?.tax_id || (payroll as unknown as Record<string, unknown>).employee_tax_id as string || ((payroll as unknown as Record<string, unknown>).employee as Record<string, unknown> | undefined)?.tax_id as string}</span>
                                         </span>
                                     ) : (
                                         <span className="text-[11px] text-muted-foreground font-medium uppercase tracking-wider mt-0.5">RUT: —</span>
                                     )}
                                     <span className="text-[10px] text-primary/70 font-bold uppercase tracking-widest mt-1">
-                                        {payroll.employee_detail?.position || (payroll as any).employee_position || (payroll as any).employee?.position || "Personal"} <span className="opacity-30">|</span> {payroll.employee_detail?.department || (payroll as any).employee_department || (payroll as any).employee?.department || "General"}
+                                        {payroll.employee_detail?.position || (payroll as unknown as Record<string, unknown>).employee_position as string || ((payroll as unknown as Record<string, unknown>).employee as Record<string, unknown> | undefined)?.position as string || "Personal"} <span className="opacity-30">|</span> {payroll.employee_detail?.department || (payroll as unknown as Record<string, unknown>).employee_department as string || ((payroll as unknown as Record<string, unknown>).employee as Record<string, unknown> | undefined)?.department as string || "General"}
                                     </span>
                                 </div>
                             </div>

@@ -149,7 +149,7 @@ export function SaleOrderProductStep({
               <div className="grid gap-4">
                 {orders.map((order) => {
                   // Check if this order has any manufacturable lines without work orders
-                  const hasAvailableLines = order.lines?.some((line: any) =>
+                  const hasAvailableLines = order.lines?.some((line: { product_type?: string; requires_advanced_manufacturing?: boolean; work_order_summary?: unknown }) =>
                     line.product_type === 'MANUFACTURABLE' &&
                     line.requires_advanced_manufacturing &&
                     !line.work_order_summary
@@ -191,13 +191,13 @@ export function SaleOrderProductStep({
 
                           <div className="flex items-center gap-3 text-sm">
                             <span className="font-medium text-foreground">
-                              {order.lines?.reduce((sum: number, line: any) =>
+                              {order.lines?.reduce((sum: number, line: { quantity?: number }) =>
                                 sum + (line.quantity || 0), 0) || 0} productos
                             </span>
                             <span className="text-muted-foreground">•</span>
                             <span className="text-muted-foreground">
                               {formatCurrency(
-                                order.lines?.reduce((sum: number, line: any) =>
+                                order.lines?.reduce((sum: number, line: { quantity?: number; unit_price?: number }) =>
                                   sum + ((line.quantity || 0) * (line.unit_price || 0)), 0) || 0
                               )}
                             </span>

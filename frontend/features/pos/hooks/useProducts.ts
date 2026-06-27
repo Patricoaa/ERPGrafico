@@ -4,7 +4,7 @@
 import { useState, useEffect, useMemo, useCallback } from 'react'
 import { usePOS } from '../contexts/POSContext'
 import { posApi } from '../api/posApi'
-import type { Product, StockLimits } from '@/types/pos'
+import type { Product, StockLimits, Category } from '@/types/pos'
 import { toast } from 'sonner'
 import * as BOMResolver from '@/features/pos/utils/bom-resolver'
 import { useRealtime } from '@/features/realtime'
@@ -58,7 +58,7 @@ export function useProducts() {
         queryKey: ['categories'],
         queryFn: async () => {
             const data = await inventoryApi.getCategories()
-            return (Array.isArray(data) ? data : ((data as any).results ?? [])) as any[]
+            return (Array.isArray(data) ? data : ((data as Record<string, unknown>).results ?? [])) as unknown as Category[]
         },
         staleTime: 1000 * 60 * 60,
     })
@@ -88,8 +88,8 @@ export function useProducts() {
 
         // 1. Sort by favorite status first (Frontend fallback for optimistic updates)
         filtered.sort((a, b) => {
-            const aFav = (a as any).is_favorite
-            const bFav = (b as any).is_favorite
+            const aFav = a.is_favorite
+            const bFav = b.is_favorite
             if (aFav && !bFav) return -1
             if (!aFav && bFav) return 1
             return 0
@@ -98,7 +98,7 @@ export function useProducts() {
         // 2. Filter by category
         if (selectedCategoryId !== null) {
             filtered = filtered.filter(p => {
-                const pCat = (p as any).category
+                const pCat = p.category
                 const catId = typeof pCat === 'object' ? pCat?.id : pCat
                 return catId === selectedCategoryId
             })
@@ -137,7 +137,7 @@ export function useProducts() {
         mutationFn: posApi.toggleFavorite,
         onSuccess: (data, variables) => {
             markLocalMutation()
-            const isFavorite = (data as any).is_favorite
+            const isFavorite = (data as Record<string, unknown>).is_favorite as boolean
             
             // Standard FSD invalidation
             queryClient.invalidateQueries({ queryKey: POS_KEYS.products.lists() })

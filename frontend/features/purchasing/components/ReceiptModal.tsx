@@ -88,14 +88,14 @@ export function ReceiptModal({
         setLoading(true)
         try {
             // Fetch order details
-            const orderData = await purchasingApi.getOrder(orderId)
-            setOrder(orderData as any)
+            const orderData = await purchasingApi.getOrder(orderId) as unknown as PurchaseOrder
+            setOrder(orderData)
 
             // Initialize quantities and costs
             const initialQuantities: { [lineId: number]: number } = {}
             const initialCosts: { [lineId: number]: number } = {}
 
-            ;(orderData as any).lines.forEach((line: PurchaseOrderLine) => {
+            orderData.lines.forEach((line: PurchaseOrderLine) => {
                 initialQuantities[line.id] = Math.ceil(line.quantity_pending)
                 initialCosts[line.id] = Math.ceil(line.unit_cost)
             })
@@ -104,12 +104,12 @@ export function ReceiptModal({
 
             // Fetch warehouses
             const warehousesData = await purchasingApi.getWarehouses()
-            const warehousesList = warehousesData as any[]
+            const warehousesList = warehousesData as unknown as Warehouse[]
             setWarehouses(warehousesList)
 
             // Default to order warehouse
-            if ((orderData as any).warehouse) {
-                setSelectedWarehouse((orderData as any).warehouse)
+            if (orderData.warehouse) {
+                setSelectedWarehouse(orderData.warehouse)
             } else if (warehousesList.length > 0) {
                 setSelectedWarehouse(warehousesList[0].id)
             }

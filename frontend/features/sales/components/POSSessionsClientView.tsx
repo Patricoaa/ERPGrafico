@@ -9,8 +9,9 @@ import { type ColumnDef } from "@tanstack/react-table"
 import { DataCell } from '@/components/shared'
 import { posSessionActions, type POSSessionActionsCtx } from "@/features/sales/posSessionActions"
 import { toast } from "sonner"
-import { POSReport } from "@/features/pos/components/POSReport"
+import { POSReport, type POSReportData } from "@/features/pos/components/POSReport"
 import { SessionCloseModal } from "@/features/pos/components/SessionCloseModal"
+import type { POSSession as POSSessionModal } from "@/types/pos"
 import { fetchPOSSessionSummary } from "@/features/pos/hooks/usePOSSessions"
 
 export interface POSSession {
@@ -218,7 +219,7 @@ export const POSSessionsClientView = ({ hideHeader = false }: POSSessionsClientV
                     <div className="w-full max-w-sm animate-in zoom-in-95 duration-200">
                         {reportData && (
                             <POSReport
-                                data={reportData as any}
+                                data={reportData as unknown as POSReportData}
                                 type={reportType}
                                 title={reportType === 'Z' ? 'Informe de Cierre (Z)' : 'Informe Parcial (X)'}
                                 onClose={() => {
@@ -231,7 +232,7 @@ export const POSSessionsClientView = ({ hideHeader = false }: POSSessionsClientV
                 </div>
             )}
 
-            {selectedSession && <SessionCloseModal open={closeDialogOpen} onOpenChange={setCloseDialogOpen} session={selectedSession as any} onSuccess={handleCloseSuccess} />}
+            {selectedSession && <SessionCloseModal open={closeDialogOpen} onOpenChange={setCloseDialogOpen} session={selectedSession as unknown as POSSessionModal} onSuccess={handleCloseSuccess} />}
         </div>
     )
 }

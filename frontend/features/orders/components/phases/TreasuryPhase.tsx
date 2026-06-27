@@ -20,7 +20,7 @@ import { type Order, type PhaseDocument, type Payment } from "../../types"
 
 interface TreasuryPhaseProps {
     isNoteMode: boolean
-    noteStatuses: Record<string, string>
+    noteStatuses: Record<string, string | boolean | number>
     activeDoc: Order
     payments: Payment[]
     userPermissions: string[]
@@ -133,7 +133,7 @@ export function TreasuryPhase({
                 variant={
                     (isNoteMode ? noteStatuses.treasury :
                         (parseFloat(String(activeDoc.pending_amount || '0')) <= 0 ? 'success' :
-                            (payments.length > 0 ? 'active' : 'neutral'))) as any
+                            (payments.length > 0 ? 'active' : 'neutral'))) as 'success' | 'active' | 'neutral' | 'destructive'
                 }
                 documents={payments.map((p: Payment) => {
                     const isWriteOff = p.payment_method === 'WRITE_OFF'

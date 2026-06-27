@@ -47,11 +47,11 @@ interface PayrollDetailContentProps {
     onUpdate?: () => void
     isSheet?: boolean
     viewMode?: 'admin' | 'employee'
-    employee?: EmployeeBasic
+    employee?: EmployeeBasic | null
     onHeaderDataChange?: (data: {
         title: React.ReactNode | string
         subtitle: React.ReactNode | string
-        icon?: any
+        icon?: React.ElementType
         headerActions?: React.ReactNode
     }) => void
 }

@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useRef } from 'react'
+import React, { useRef, type ReactNode } from 'react'
 import { Drawer, StatusBadge, SkeletonShell } from '@/components/shared'
 import { Button } from '@/components/ui/button'
 import { Printer, ChartPie } from 'lucide-react'
@@ -37,17 +37,17 @@ export function ProfitDistributionDrawer({ id, open, onOpenChange, distributionI
             <span>{formatCurrency(Number(distribution?.net_result ?? 0))}</span>
           </div>
         </div>
-        {distribution?.lines?.map((line: any, idx: number) => (
-          <div key={line.id ?? idx} className="flex justify-between text-[10px]">
-            <span className="flex-1">{line.partner_name}</span>
-            <span className="w-16 text-right">{formatCurrency(Number(line.net_amount))}</span>
+        {distribution?.lines?.map((line: Record<string, unknown>, idx: number) => (
+          <div key={(line.id as number) ?? idx} className="flex justify-between text-[10px]">
+            <span className="flex-1">{line.partner_name as string}</span>
+            <span className="w-16 text-right">{formatCurrency(Number(line.net_amount as string))}</span>
           </div>
         ))}
         <div className="flex justify-between font-bold border-t mt-2 pt-1 text-xs">
           <span>Total Distribuido</span>
           <span>
             {formatCurrency(
-              distribution?.lines?.reduce((s: number, l: any) => s + Number(l.net_amount ?? 0), 0) ?? 0,
+              distribution?.lines?.reduce((s: number, l: Record<string, unknown>) => s + Number(l.net_amount ?? 0), 0) ?? 0,
             )}
           </span>
         </div>
@@ -97,22 +97,22 @@ export function ProfitDistributionDrawer({ id, open, onOpenChange, distributionI
                 <div>
                   <h4 className="text-sm font-bold mb-2">Socios / Accionistas</h4>
                   <div className="space-y-2">
-                    {distribution.lines.map((line: any, idx: number) => (
-                      <div key={line.id ?? idx} className="flex justify-between items-center text-sm border-b pb-2">
+                    {distribution.lines.map((line: Record<string, unknown>, idx: number) => (
+                      <div key={line.id as number ?? idx} className="flex justify-between items-center text-sm border-b pb-2">
                         <div>
-                          <p className="font-medium">{line.partner_name}</p>
+                          <p className="font-medium">{line.partner_name as string}</p>
                           <p className="text-xs text-muted-foreground">
-                            {parseFloat(String(line.percentage_at_date)).toFixed(2)}% ·{' '}
-                            {line.destination === 'DIVIDEND' ? 'Dividendo' :
-                              line.destination === 'REINVEST' ? 'Reinversión' :
-                                line.destination === 'RETAINED' ? 'Retenida' : '-'}
+                            {parseFloat(String(line.percentage_at_date as string)).toFixed(2)}% ·{' '}
+                            {(line.destination as string) === 'DIVIDEND' ? 'Dividendo' :
+                              (line.destination as string) === 'REINVEST' ? 'Reinversión' :
+                                (line.destination as string) === 'RETAINED' ? 'Retenida' : '-'}
                           </p>
                         </div>
                         <div className="text-right">
-                          <p className="font-bold">{formatCurrency(Number(line.net_amount))}</p>
-                          {Number(line.provisional_withdrawals_offset) > 0 && (
+                          <p className="font-bold">{formatCurrency(Number(line.net_amount as string))}</p>
+                          {Number(line.provisional_withdrawals_offset as string) > 0 && (
                             <p className="text-xs text-destructive">
-                              -{formatCurrency(Number(line.provisional_withdrawals_offset))}
+                              -{formatCurrency(Number(line.provisional_withdrawals_offset as string))}
                             </p>
                           )}
                         </div>

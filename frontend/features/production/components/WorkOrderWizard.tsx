@@ -224,21 +224,22 @@ export function WorkOrderWizard({ mode, open, onOpenChange, onSuccess }: WorkOrd
     setLoading(true)
     try {
       const orderData = await productionApi.getWorkOrder(localOrderId)
-      setOrder(orderData as any)
+      const orderRecord = orderData as unknown as Record<string, unknown>
+      setOrder(orderData as unknown as WorkOrder)
 
       // Infer order type from data so STAGES stays consistent
-      const inferredType = orderData.sale_order ? "LINKED" as const : "NONE" as const
+      const inferredType = orderRecord.sale_order ? "LINKED" as const : "NONE" as const
       setChosenOtType(inferredType)
 
       // Resolve index using the same STAGES the component uses
-      const stages = getUnifiedStages(inferredType, orderData as any)
+      const stages = getUnifiedStages(inferredType, orderData as unknown as WorkOrder)
       let resolvedIndex = -1
       const targetStage = mode.kind === 'manage' ? mode.targetStage : undefined
       if (targetStage) {
         resolvedIndex = stages.findIndex((s) => s.id === targetStage)
       }
       if (resolvedIndex === -1) {
-        resolvedIndex = stages.findIndex((s) => s.id === (orderData as any).current_stage)
+        resolvedIndex = stages.findIndex((s) => s.id === (orderData as unknown as WorkOrder).current_stage)
       }
       setViewingStepIndex(resolvedIndex >= 0 ? resolvedIndex : 1)
     } catch {

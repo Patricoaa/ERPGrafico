@@ -103,7 +103,7 @@ function SectionHeader({ icon, title, section, order, editingSection, onEdit }: 
 const mfgConfigSchema = z.object({
     quantity: z.string().optional(),
     uomId: z.string().optional(),
-    contact: z.any().nullable().optional(),
+    contact: z.unknown().nullable().optional(),
     startDate: z.date().nullable().optional(),
     dueDate: z.date().nullable().optional(),
     notes: z.string().optional(),

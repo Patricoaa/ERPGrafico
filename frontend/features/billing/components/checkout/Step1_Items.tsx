@@ -21,7 +21,7 @@ export function Step1_Items({
     setSelectedItems,
     isCreditNote
 }: Step1_ItemsProps) {
-    const inv = originalInvoice as any
+    const inv = originalInvoice as unknown as { lines?: Record<string, unknown>[]; dte_type?: string; purchase_order?: unknown }
     const lines = inv?.lines || []
     const isExempt = inv?.dte_type === 'FACTURA_EXENTA' || inv?.dte_type === 'BOLETA_EXENTA';
 
@@ -38,21 +38,21 @@ export function Step1_Items({
                 ...selectedItems,
                 {
                     line_id: lineId,
-                    product_id: line.product,
-                    product_name: line.product_name,
-                    product_type: line.product_type,
-                    track_inventory: line.track_inventory,
-                    has_bom: line.has_bom,
-                    requires_advanced_manufacturing: line.requires_advanced_manufacturing,
-                    mfg_auto_finalize: line.mfg_auto_finalize,
-                    creates_stock_move: line.track_inventory && (line.product_type !== 'MANUFACTURABLE' || line.requires_advanced_manufacturing === false),
-                    quantity: line.quantity_delivered || line.quantity,
-                    uom_name: line.uom_name,
-                    uom_id: line.uom,
-                    unit_price: line.unit_price || line.unit_cost || 0,
-                    unit_price_gross: line.unit_price_gross || line.unit_price || line.unit_cost || 0,
-                    tax_rate: line.tax_rate ?? (inv?.dte_type === 'FACTURA_EXENTA' || inv?.dte_type === 'BOLETA_EXENTA' ? 0 : 19),
-                    tax_amount: (line.unit_price || line.unit_cost || 0) * ((line.tax_rate ?? (inv?.dte_type === 'FACTURA_EXENTA' || inv?.dte_type === 'BOLETA_EXENTA' ? 0 : 19)) / 100),
+                    product_id: line.product as number,
+                    product_name: line.product_name as string,
+                    product_type: line.product_type as string,
+                    track_inventory: line.track_inventory as boolean,
+                    has_bom: line.has_bom as boolean,
+                    requires_advanced_manufacturing: line.requires_advanced_manufacturing as boolean,
+                    mfg_auto_finalize: line.mfg_auto_finalize as boolean,
+                    creates_stock_move: (line.track_inventory as boolean) && ((line.product_type as string) !== 'MANUFACTURABLE' || (line.requires_advanced_manufacturing as boolean) === false),
+                    quantity: (line.quantity_delivered as number) || (line.quantity as number),
+                    uom_name: line.uom_name as string,
+                    uom_id: line.uom as number,
+                    unit_price: (line.unit_price as number) || (line.unit_cost as number) || 0,
+                    unit_price_gross: (line.unit_price_gross as number) || (line.unit_price as number) || (line.unit_cost as number) || 0,
+                    tax_rate: (line.tax_rate as number) ?? (inv?.dte_type === 'FACTURA_EXENTA' || inv?.dte_type === 'BOLETA_EXENTA' ? 0 : 19),
+                    tax_amount: ((line.unit_price as number) || (line.unit_cost as number) || 0) * (((line.tax_rate as number) ?? (inv?.dte_type === 'FACTURA_EXENTA' || inv?.dte_type === 'BOLETA_EXENTA' ? 0 : 19)) / 100),
                     reason: ""
 
                 }
@@ -62,12 +62,11 @@ export function Step1_Items({
 
     const updateItem = (lineId: number, field: string, value: unknown) => {
         setSelectedItems(selectedItems.map(item => {
-            if (item.line_id === lineId) {
-                const d = item as any
-                const updated = { ...d, [field]: value } as any
+            if ((item.line_id as number) === lineId) {
+                const updated = { ...item, [field]: value }
                 if (field === 'unit_price') {
-                    const rate = parseFloat(updated.tax_rate ?? 0) / 100
-                    updated.tax_amount = (value as any) * rate
+                    const rate = ((updated.tax_rate as number) ?? 0) / 100
+                    updated.tax_amount = (value as number) * rate
                 }
                 return updated
             }
@@ -108,12 +107,12 @@ export function Step1_Items({
                         </TableRow>
                     </TableHeader>
                     <TableBody>
-                        {lines.map((l: any) => {
-                            const line = l as any
+                        {lines.map((l: Record<string, unknown>) => {
+                            const line = l as unknown as { id: number; product: string; product_name: string; product_code: string; product_type: string; quantity: number; quantity_delivered: number; uom_name: string; available_stock: number; manufacturable_quantity: number; mfg_auto_finalize: boolean }
                             const selected = isSelected(line.id)
-                            const itemData = getItem(line.id) as any
+                            const itemData = getItem(line.id) as Record<string, unknown> | undefined
 
-                            const isPurchase = !!inv?.purchase_order || inv?.dte_type === 'PURCHASE_INV';
+                            const isPurchase = !!inv?.purchase_order || (inv?.dte_type as string) === 'PURCHASE_INV';
 
                             const maxQty = isCreditNote
                                 ? Math.floor(line.quantity_delivered || line.quantity)
@@ -170,7 +169,7 @@ export function Step1_Items({
                                                 type="number"
                                                 step="1"
                                                 disabled={!selected}
-                                                value={itemData?.quantity ?? ""}
+                                                value={(itemData?.quantity as number) ?? ""}
                                                 onChange={(e) => {
                                                     const rawValue = e.target.value;
                                                     if (rawValue === "") {
@@ -203,7 +202,7 @@ export function Step1_Items({
                                                 <LabeledInput
                                                     type="number"
                                                     disabled={!selected || isCreditNote}
-                                                    value={itemData?.unit_price ?? ""}
+                                                    value={(itemData?.unit_price as number) ?? ""}
                                                     onChange={(e) => {
                                                         const val = e.target.value === "" ? 0 : parseFloat(e.target.value) || 0;
                                                         updateItem(line.id, 'unit_price', val);
@@ -225,7 +224,7 @@ export function Step1_Items({
                                         <LabeledInput
                                             placeholder="Indique motivo..."
                                             disabled={!selected}
-                                            value={itemData?.reason || ""}
+                                            value={(itemData?.reason as string) || ""}
                                             onChange={(e) => updateItem(line.id, 'reason', e.target.value)}
                                             className={cn(
                                                 "h-10 text-xs font-medium placeholder:italic transition-all",

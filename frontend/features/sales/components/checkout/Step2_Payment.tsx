@@ -21,7 +21,7 @@ export function Step2_Payment({ paymentData, setPaymentData, total, terminalId, 
                 terminalId={terminalId}
                 total={total}
                 paymentData={paymentData as PaymentData}
-                onPaymentDataChange={setPaymentData as any}
+                onPaymentDataChange={setPaymentData as unknown as (data: PaymentData) => void}
                 customerCreditBalance={customerCreditBalance}
                 methodTitle={<FormSection title="Método de Pago" icon={Wallet} />}
                 labels={{

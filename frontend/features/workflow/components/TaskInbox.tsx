@@ -245,7 +245,7 @@ export function TaskInbox() {
         }
     }
 
-    const getTaskEntityData = (task: Task): { label: string, data: any } | null => {
+    const getTaskEntityData = (task: Task): { label: string, data: Record<string, unknown> } | null => {
         if (!task.object_id) return null;
 
         const label = detectEntityLabel(task.task_type || '') || detectEntityLabel(task.title || '');

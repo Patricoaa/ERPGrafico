@@ -278,7 +278,7 @@ export function SalesCheckoutWizardContent({
                 isWaitingApproval,
                 isQuickSale: quickSale,
                 isWaitingPayment: step === totalSteps
-            } as any)
+            } as unknown as CheckoutWizardState)
         }
     }, [step, dteData, paymentData, deliveryData, approvalTaskId, isWaitingApproval, isApproved, loading, quickSale, onStateChange, selectedCustomerId, selectedCustomerName, totalSteps])
 
@@ -342,7 +342,7 @@ export function SalesCheckoutWizardContent({
                 )
             case 'payment':
                 return (
-                    <Step2_Payment paymentData={paymentData} setPaymentData={setPaymentData} total={currentTotal} terminalId={terminalId} customerCreditBalance={Number((selectedCustomer as any)?.credit_balance || 0)} />
+                    <Step2_Payment paymentData={paymentData} setPaymentData={setPaymentData} total={currentTotal} terminalId={terminalId} customerCreditBalance={Number((selectedCustomer as unknown as Record<string, unknown>)?.credit_balance || 0)} />
                 )
             default:
                 return null;
@@ -475,10 +475,10 @@ export function SalesCheckoutWizardContent({
                 lines: currentOrderLines.map((l: SaleOrderLine) => {
                     let cleanMfgData = null
                     if (l.manufacturing_data) {
-                        const { design_files, ...rest } = l.manufacturing_data as any
+                        const { design_files, ...rest } = l.manufacturing_data as unknown as Record<string, unknown>
                         cleanMfgData = {
                             ...rest,
-                            design_filenames: ((design_files as any) || []).map((f: File) => f.name),
+                            design_filenames: ((design_files as unknown as File[]) || []).map((f: File) => f.name),
                         }
                     }
                     return {
@@ -499,8 +499,10 @@ export function SalesCheckoutWizardContent({
 
             currentOrderLines.forEach((l: SaleOrderLine, lineIdx: number) => {
                 if (l.manufacturing_data) {
-                    if ((l.manufacturing_data as any).design_files) {
-                        (l.manufacturing_data as any).design_files.forEach((file: File, fileIdx: number) => {
+                    const mfgData = l.manufacturing_data as unknown as Record<string, unknown>
+                    const designFiles = mfgData.design_files as File[] | undefined
+                    if (designFiles) {
+                        designFiles.forEach((file: File, fileIdx: number) => {
                             formData.append(`line_${lineIdx}_design_${fileIdx}`, file)
                         })
                     }

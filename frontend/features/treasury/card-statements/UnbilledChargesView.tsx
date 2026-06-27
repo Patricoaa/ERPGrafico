@@ -227,7 +227,7 @@ export function UnbilledChargesView({
         toast.success('Cargos facturados exitosamente')
     }
 
-    const columns: ColumnDef<UnbilledItemRow, any>[] = [
+    const columns: ColumnDef<UnbilledItemRow, unknown>[] = [
         {
             accessorKey: 'date',
             header: ({ column }) => (

@@ -179,9 +179,9 @@ function InvoiceDetail({ invoice }: { invoice: NonNullable<ReturnType<typeof use
                     <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/70">Líneas</p>
                     {invoice.lines.map((line, idx) => (
                         <div key={idx} className="flex items-start justify-between text-[11px] gap-2 border-b border-border/30 pb-1 last:border-0">
-                            <span className="flex-1 line-clamp-1">{'product_name' in line ? (line as any).product_name : line.description || '-'}</span>
+                            <span className="flex-1 line-clamp-1">{(line as Record<string, unknown>).product_name as string || line.description || '-'}</span>
                             <span className="shrink-0 text-right">
-                                {Math.round(Number(line.quantity))} × {formatCurrency(Number((line as any).unit_price || 0))}
+                                {Math.round(Number(line.quantity))} × {formatCurrency(Number((line as Record<string, unknown>).unit_price as number || 0))}
                             </span>
                         </div>
                     ))}

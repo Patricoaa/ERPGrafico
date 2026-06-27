@@ -5,7 +5,7 @@ import { useForm, Controller } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
 import { Smartphone, Printer } from "lucide-react"
-import { useTerminalDevices, useTerminalProviders, type PaymentTerminalProvider } from "@/features/treasury"
+import { useTerminalDevices, useTerminalProviders, type PaymentTerminalProvider, type PaymentTerminalDevice } from "@/features/treasury"
 import { Form, FormField } from "@/components/ui/form"
 import { Button } from "@/components/ui/button"
 import { useReactToPrint } from "react-to-print"
@@ -28,7 +28,7 @@ type DeviceFormValues = z.infer<typeof deviceSchema>
 interface DeviceDrawerProps {
     open: boolean
     onOpenChange: (open: boolean) => void
-    device?: any | null
+    device?: PaymentTerminalDevice | null
     providers?: PaymentTerminalProvider[]
     onSuccess?: () => void
     mode?: DrawerMode

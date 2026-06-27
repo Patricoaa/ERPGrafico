@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useCallback } from "react"
 import * as z from "zod"
-import { useForm } from "react-hook-form"
+import { useForm, type Resolver } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { getErrorMessage } from "@/lib/errors"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
@@ -20,8 +20,8 @@ import ImportPreviewStep, { type DryRunResult } from "./ImportPreviewStep"
 const importSchema = z.object({
     treasury_account_id: z.string().min(1, "Debes seleccionar una cuenta"),
     bank_format: z.string().min(1, "Debes seleccionar un formato"),
-    file: z.any().optional(), // Use any to avoid instanceof issues in Turbopack
-    mapping: z.record(z.string(), z.any()).optional()
+    file: z.unknown().optional(),
+    mapping: z.record(z.string(), z.unknown()).optional()
 })
 
 type ImportFormValues = z.infer<typeof importSchema>
@@ -62,7 +62,7 @@ export default function StatementImportModal({ open, onOpenChange, onSuccess, de
     const [error, setError] = useState<string | null>(null)
 
     const form = useForm<ImportFormValues>({
-        resolver: zodResolver(importSchema) as any,
+        resolver: zodResolver(importSchema) as unknown as Resolver<ImportFormValues>,
         defaultValues: {
             treasury_account_id: "",
             bank_format: "GENERIC_CSV",
@@ -112,7 +112,7 @@ export default function StatementImportModal({ open, onOpenChange, onSuccess, de
     const fetchBankFormats = useCallback(async () => {
         try {
             const formatsData = await financeApi.getStatementFormats()
-            setBankFormats((formatsData as any).formats)
+            setBankFormats(((formatsData as Record<string, unknown>).formats as BankFormat))
         } catch (error) {
             console.error('Error fetching bank formats:', error)
             setBankFormats({
@@ -134,7 +134,7 @@ export default function StatementImportModal({ open, onOpenChange, onSuccess, de
             form.setValue("file", selectedFile)
             setError(null)
         } else {
-            form.setValue("file", undefined as any)
+            form.setValue("file", undefined)
         }
     }
 
@@ -144,17 +144,17 @@ export default function StatementImportModal({ open, onOpenChange, onSuccess, de
         setError(null)
         try {
             const fData = new FormData()
-            fData.append('file', file)
+            fData.append('file', file as Blob)
 
             const previewResult = await financeApi.previewStatement(fData)
             setPreviewData(previewResult)
 
             // Update bank format if it's generic and file type matches excel
-            if ((previewResult as any).file_type === 'excel' && bankFormat === 'GENERIC_CSV') {
+            if ((previewResult as Record<string, unknown>).file_type === 'excel' && bankFormat === 'GENERIC_CSV') {
                 form.setValue('bank_format', 'GENERIC_EXCEL')
             }
 
-            const cols = (previewResult as any).columns
+            const cols = (previewResult as Record<string, unknown>).columns as (string | number)[]
             const newMapping = { ...mapping }
             cols.forEach((col: string | number) => {
                 const colStr = String(col).toLowerCase()
@@ -207,7 +207,7 @@ export default function StatementImportModal({ open, onOpenChange, onSuccess, de
         setError(null)
         try {
             const dryRunData = new FormData()
-            dryRunData.append('file', file)
+            dryRunData.append('file', file as Blob)
             dryRunData.append('treasury_account_id', treasuryAccountId)
             dryRunData.append('bank_format', bankFormat)
             
@@ -251,7 +251,7 @@ export default function StatementImportModal({ open, onOpenChange, onSuccess, de
             setLoading(true)
 
             const importData = new FormData()
-            importData.append('file', file)
+            importData.append('file', file as Blob)
             importData.append('treasury_account_id', treasuryAccountId)
             importData.append('bank_format', bankFormat)
 
@@ -322,7 +322,7 @@ export default function StatementImportModal({ open, onOpenChange, onSuccess, de
                     <FormSection title="Archivo de Cartola" icon={FileUp} />
                     <div className="space-y-6">
                         <DocumentAttachmentDropzone
-                            file={file}
+                            file={file as File | null}
                             onFileChange={handleFileChange}
                             accept=".csv,.xls,.xlsx"
                             label="Documento de Cartola"

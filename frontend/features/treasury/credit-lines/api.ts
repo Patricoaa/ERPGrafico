@@ -1,5 +1,6 @@
 import api from '@/lib/api'
 import type { CreditLine, CreditLineCreatePayload } from './types'
+import type { TreasuryMovement } from '../types'
 
 export const creditLinesApi = {
     list: async (params?: { treasury_account_id?: number; bank_id?: number; status?: string }): Promise<CreditLine[]> => {
@@ -26,8 +27,8 @@ export const creditLinesApi = {
         await api.delete(`/treasury/credit-lines/${id}/`)
     },
 
-    overview: async (id: number): Promise<{ credit_line: CreditLine; movements: any[] }> => {
-        const { data } = await api.get<{ credit_line: CreditLine; movements: any[] }>(`/treasury/credit-lines/${id}/overview/`)
+    overview: async (id: number): Promise<{ credit_line: CreditLine; movements: TreasuryMovement[] }> => {
+        const { data } = await api.get<{ credit_line: CreditLine; movements: TreasuryMovement[] }>(`/treasury/credit-lines/${id}/overview/`)
         return data
     },
 }

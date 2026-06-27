@@ -28,6 +28,7 @@ import type {
     ContactBrief,
     PartnerCapitalInfo,
     TreasuryMovement,
+    POSSession,
     UpcomingInstallment,
     PendingChargeRow,
     UnbilledForecast,
@@ -202,9 +203,9 @@ export const treasuryApi = {
         return data
     },
 
-    getBankOverview: async (id: number): Promise<any> => {
+    getBankOverview: async (id: number): Promise<Record<string, unknown>> => {
         const { data } = await api.get(`/treasury/banks/${id}/overview/`)
-        return data
+        return data as Record<string, unknown>
     },
 
     // ========== Movements ==========
@@ -219,25 +220,25 @@ export const treasuryApi = {
         return toPage<TreasuryMovement>(response.data, pageIndex, pageSize)
     },
 
-    createMovement: async (payload: MovementCreatePayload): Promise<any> => {
-        const { data } = await api.post('/treasury/movements/', payload)
+    createMovement: async (payload: MovementCreatePayload): Promise<TreasuryMovement> => {
+        const { data } = await api.post<TreasuryMovement>('/treasury/movements/', payload)
         return data
     },
 
     // ========== Transfers ==========
 
-    registerTransfer: async (payload: TransferPayload): Promise<any> => {
-        const { data } = await api.post('/treasury/dashboard/register_transfer/', payload)
+    registerTransfer: async (payload: TransferPayload): Promise<TreasuryMovement> => {
+        const { data } = await api.post<TreasuryMovement>('/treasury/dashboard/register_transfer/', payload)
         return data
     },
 
     // ========== Payments ==========
 
-    createPayment: async (payload: FormData): Promise<any> => {
+    createPayment: async (payload: FormData): Promise<Record<string, unknown>> => {
         const { data } = await api.post('/treasury/payments/', payload, {
             headers: { 'Content-Type': 'multipart/form-data' },
         })
-        return data
+        return data as Record<string, unknown>
     },
 
     createCardPurchase: async (payload: {
@@ -252,30 +253,30 @@ export const treasuryApi = {
         purchase_order?: number
         client_reference?: string
         notes?: string
-    }): Promise<any> => {
+    }): Promise<Record<string, unknown>> => {
         const { data } = await api.post('/treasury/movements/card-purchase/', payload)
-        return data
+        return data as Record<string, unknown>
     },
 
-    updatePayment: async (id: number, payload: PaymentUpdatePayload): Promise<any> => {
+    updatePayment: async (id: number, payload: PaymentUpdatePayload): Promise<Record<string, unknown>> => {
         const { data } = await api.patch(`/treasury/payments/${id}/`, payload)
-        return data
+        return data as Record<string, unknown>
     },
 
     // ========== POS Sessions ==========
 
-    getPOSSession: async (id: number): Promise<any> => {
-        const response = await api.get(`/treasury/pos-sessions/${id}/`)
+    getPOSSession: async (id: number): Promise<POSSession> => {
+        const response = await api.get<POSSession>(`/treasury/pos-sessions/${id}/`)
         return response.data
     },
 
     // ========== Monthly Invoices ==========
 
-    generateInvoice: async (formData: FormData): Promise<any> => {
+    generateInvoice: async (formData: FormData): Promise<Record<string, unknown>> => {
         const { data } = await api.post('/treasury/terminal-batches/generate_invoice/', formData, {
             headers: { 'Content-Type': 'multipart/form-data' },
         })
-        return data
+        return data as Record<string, unknown>
     },
 
     // ========== Contacts (cross-feature) ==========

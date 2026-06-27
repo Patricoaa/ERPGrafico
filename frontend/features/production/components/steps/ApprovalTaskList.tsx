@@ -2,6 +2,7 @@
 
 import { TaskActionCard } from '@/features/workflow/components/TaskActionCard'
 import type { WorkOrderTask } from '../../types'
+import type { Task } from '@/features/workflow/api/workflowApi'
 
 interface ApprovalTaskListProps {
   tasks: WorkOrderTask[]
@@ -25,7 +26,7 @@ export function ApprovalTaskList({
       {filtered.map((task) => (
         <TaskActionCard
           key={task.id}
-          task={task as any}
+          task={task as unknown as Task}
           canComplete={canComplete(task)}
           notesValue={taskNotes[task.id] ?? ''}
           onNotesChange={(val) => onNoteChange(task.id, val)}

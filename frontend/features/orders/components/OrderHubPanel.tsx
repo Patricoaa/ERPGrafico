@@ -16,7 +16,7 @@ import {
 } from "lucide-react"
 import { LazyDrawer } from "@/features/_shared/transaction-drawer"
 import { useOrderHubData } from "@/hooks/useOrderHubData"
-import { OrderHubIntegrated } from "./OrderHubIntegrated"
+import { OrderHubIntegrated, type OrderHubData } from "./OrderHubIntegrated"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import {
     StatusBadge, PanelHeader
@@ -160,7 +160,22 @@ export function OrderHubPanel({
                 <ScrollArea className="flex-1 w-full ">
                     <div className="px-4 pt-5 pb-4">
                         <OrderHubIntegrated
-                            data={{ ...hubData, globalStatus } as any}
+                            data={{
+                                order: hubData.order,
+                                activeInvoice: hubData.activeInvoice,
+                                activeDoc: hubData.activeDoc,
+                                userPermissions: hubData.userPermissions,
+                                isNoteMode: hubData.isNoteMode,
+                                noteStatuses: hubData.noteStatuses,
+                                showProduction: hubData.showProduction,
+                                showLogistics: hubData.showLogistics,
+                                invoices: hubData.invoices as unknown as import("../types").Order[],
+                                billingIsComplete: hubData.billingIsComplete,
+                                payments: hubData.payments as unknown as import("../types").Payment[],
+                                logisticsProgress: hubData.logisticsProgress,
+                                fetchOrderDetails: hubData.fetchOrderDetails,
+                                globalStatus,
+                            } as OrderHubData}
                             type={type}
                             onActionSuccess={() => { fetchOrderDetails(); onActionSuccess?.() }}
                             openDetails={openDetails}

@@ -7,7 +7,7 @@ import * as z from "zod"
 import { showApiError } from "@/lib/errors"
 import { toast } from "sonner"
 import { MonitorSmartphone, Banknote, CreditCard, Landmark, Smartphone, Printer, FileCheck } from "lucide-react"
-import { usePaymentMethods, useTerminalDevices, type Terminal } from "@/features/treasury"
+import { usePaymentMethods, useTerminalDevices, type Terminal, type TerminalCreatePayload, type TerminalUpdatePayload } from "@/features/treasury"
 import { treasuryApi } from "@/features/treasury/api/treasuryApi"
 import { cn } from "@/lib/utils"
 import { Checkbox } from "@/components/ui/checkbox"
@@ -76,8 +76,8 @@ export function PosTerminalDrawer({ open, onOpenChange, terminal, onSuccess, mod
                         serial_number: terminal.serial_number || "",
                         ip_address: terminal.ip_address || "",
                         device_id: (() => {
-                            const dId = terminal.payment_terminal_device as any;
-                            return dId?.id ? dId.id.toString() : dId?.toString() || "";
+                            const dId = terminal.payment_terminal_device;
+                            return typeof dId === 'object' && dId !== null ? (dId as { id: number }).id.toString() : dId?.toString() || "";
                         })(),
                     })
                     setSelectedMethodIds(terminal.allowed_payment_methods.map(m => m.id))
@@ -138,10 +138,10 @@ export function PosTerminalDrawer({ open, onOpenChange, terminal, onSuccess, mod
             }
 
             if (terminal) {
-                await treasuryApi.updateTerminal(terminal.id, payload as any)
+                await treasuryApi.updateTerminal(terminal.id, payload as unknown as TerminalUpdatePayload)
                 toast.success("Caja POS actualizada correctamente")
             } else {
-                await treasuryApi.createTerminal(payload as any)
+                await treasuryApi.createTerminal(payload as unknown as TerminalCreatePayload)
                 toast.success("Caja POS creada correctamente")
             }
             onSuccess?.()

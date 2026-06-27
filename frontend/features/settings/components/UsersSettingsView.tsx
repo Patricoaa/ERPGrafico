@@ -2,7 +2,7 @@
 
 import {useState, useEffect, useMemo} from "react"
 
-import { DataTableView, SmartSearchBar, ToolbarCreateButton, SegmentationBar, EntityCard, useSegmentation, useSmartSearch } from '@/components/shared'
+import { DataTableView, SmartSearchBar, ToolbarCreateButton, SegmentationBar, EntityCard, useSegmentation, useSmartSearch, type FilterState } from '@/components/shared'
 import { DataTableColumnHeader } from '@/components/shared'
 import { DataCell } from '@/components/shared'
 import { type ColumnDef } from "@tanstack/react-table"
@@ -33,10 +33,10 @@ export function UsersSettingsView({ activeTab }: UsersSettingsViewProps) {
     const allFilters = { ...textFilters, ...segFilters }
     const [pageState, setPageState] = useState({ pageIndex: 0, pageSize: 20 })
     const { page, users, isLoading, refetch } = useUsers({
-        ...(allFilters as any),
+        ...allFilters,
         page: pageState.pageIndex + 1,
         page_size: pageState.pageSize,
-    })
+    } as FilterState & { page?: number; page_size?: number })
     const [isGroupModalOpen, setIsGroupModalOpen] = useState(false)
     const searchParams = useSearchParams()
     const router = useRouter()
@@ -190,7 +190,7 @@ export function UsersSettingsView({ activeTab }: UsersSettingsViewProps) {
                                 pageCount={page ? Math.ceil(page.count / page.pageSize) : 0}
                                 rowCount={page?.count ?? 0}
                                 pagination={pageState}
-                                onPaginationChange={setPageState as any}
+                                onPaginationChange={setPageState as unknown as (updater: ((prev: typeof pageState) => typeof pageState) | typeof pageState) => void}
                                 renderCard={(user: AppUser) => {
                                     const groups = (user.groups || []).map(g => typeof g === 'string' ? g : g.name)
                                     const roles = ['ADMIN', 'MANAGER', 'OPERATOR', 'READ_ONLY']

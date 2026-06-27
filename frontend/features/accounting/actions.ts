@@ -12,9 +12,9 @@ export async function validateAccountingPeriod(date: string) {
     try {
         const response = await api.get(`tax/accounting-periods/check_closed/?date=${date}`)
         return response.data as { is_closed: boolean; date: string; period_name?: string }
-    } catch (error: any) {
+    } catch (error: unknown) {
         console.error('Error validating accounting period:', error)
-        // If there's an error, we don't block by default but report it
-        return { is_closed: false, error: error.response?.data?.error || 'Failed to validate period' }
+        const apiError = error as { response?: { data?: { error?: string } } }
+        return { is_closed: false, error: apiError.response?.data?.error || 'Failed to validate period' }
     }
 }

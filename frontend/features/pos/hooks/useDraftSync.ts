@@ -89,8 +89,11 @@ export function useDraftSync({
         callbacksRef.current = { onNewDraft, onDraftDeleted, onDraftUpdated, onLockChanged, onSessionStateChange }
     }, [onNewDraft, onDraftDeleted, onDraftUpdated, onLockChanged, onSessionStateChange])
 
-    const handleSocketEvent = useCallback((data: any) => {
-        const { event, draft, draft_id, error } = data
+    const handleSocketEvent = useCallback((data: Record<string, unknown>) => {
+        const event = data.event as string
+        const draft = data.draft as SyncDraft
+        const draft_id = data.draft_id as number
+        const error = data.error as string | undefined
         const currentUserId = user?.id
 
         if (event === 'LOCK_LOST') {
@@ -305,11 +308,12 @@ export function useDraftSync({
             await lockDraftMutation.mutateAsync({ draftId, sessionKey: browserSessionKey })
             setActiveLockDraftId(draftId)
             return { acquired: true }
-        } catch (error: any) {
+        } catch (error: unknown) {
+            const lockError = error as { response?: { data?: { error?: string; locked_by_name?: string } } }
             return {
                 acquired: false,
-                error: error.response?.data?.error || 'Error al bloquear',
-                locked_by_name: error.response?.data?.locked_by_name
+                error: lockError.response?.data?.error || 'Error al bloquear',
+                locked_by_name: lockError.response?.data?.locked_by_name
             }
         }
     }, [posSessionId, browserSessionKey, lockDraftMutation])

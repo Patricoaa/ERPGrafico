@@ -7,7 +7,28 @@ import { formatMoney } from "@/lib/money"
 import { useAnalysis } from "../hooks/useAnalysis";
 import { type DateRange } from "react-day-picker";
 import { format } from "date-fns";
-;
+
+interface AnalysisData {
+    liquidity: {
+        current_ratio: number
+        acid_test: number
+        current_assets: number
+        current_liabilities: number
+    }
+    structure: {
+        debt_to_equity: number
+        total_assets: number
+        total_liabilities: number
+        total_equity: number
+    }
+    solvency: {
+        solvency_ratio: number
+    }
+    profitability?: {
+        gross_margin: number
+        net_margin: number
+    }
+}
 
 interface RatiosDashboardProps {
     date?: DateRange;
@@ -34,9 +55,9 @@ export const RatiosDashboard: React.FC<RatiosDashboardProps> = ({ date, showComp
     if (isError) return <EmptyState context="finance" variant="compact" title="Error al cargar ratios" description="No se pudieron cargar los indicadores financieros." />;
     if (!data && !isLoading) return <EmptyState context="finance" variant="compact" description="No hay datos disponibles para el período seleccionado" />;
 
-    const PLACEHOLDER = { liquidity: { current_ratio: 0, acid_test: 0, current_assets: 0, current_liabilities: 0 }, structure: { debt_to_equity: 0, total_assets: 0, total_liabilities: 0, total_equity: 0 }, solvency: { solvency_ratio: 0 }, profitability: { gross_margin: 0, net_margin: 0 } } as const;
-    const d = (data || PLACEHOLDER) as any;
-    const cd = compData as any;
+    const PLACEHOLDER: AnalysisData = { liquidity: { current_ratio: 0, acid_test: 0, current_assets: 0, current_liabilities: 0 }, structure: { debt_to_equity: 0, total_assets: 0, total_liabilities: 0, total_equity: 0 }, solvency: { solvency_ratio: 0 }, profitability: { gross_margin: 0, net_margin: 0 } };
+    const d = (data || PLACEHOLDER) as AnalysisData;
+    const cd = compData as AnalysisData | undefined;
 
     const structureData = [
         { name: 'Pasivos', value: d.structure.total_liabilities },

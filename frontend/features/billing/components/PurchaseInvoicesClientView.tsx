@@ -32,10 +32,10 @@ export function PurchaseInvoicesClientView() {
     const { filters: segFilters, isFiltered: isSegFiltered, clearAll: clearSeg } = useSegmentation(purchaseInvoiceSegDef, basePeriod)
     const isFiltered = isTextFiltered || isSegFiltered
     const { invoices: documents, isLoading, refetch: fetchDocuments } = usePurchaseInvoices({ filters: { ...(textFilters as Omit<InvoiceFilters, 'mode'>), ...(segFilters as Record<string, string>) } })
-    const [payingDoc, setPayingDoc] = useState<any | null>(null)
-    const [receivingDoc, setReceivingDoc] = useState<any | null>(null)
-    const [notingDoc, setNotingDoc] = useState<any | null>(null)
-    const [completingDoc, setCompletingDoc] = useState<any | null>(null)
+    const [payingDoc, setPayingDoc] = useState<Invoice | null>(null)
+    const [receivingDoc, setReceivingDoc] = useState<Invoice | null>(null)
+    const [notingDoc, setNotingDoc] = useState<Invoice | null>(null)
+    const [completingDoc, setCompletingDoc] = useState<Invoice | null>(null)
     const router = useRouter()
     const searchParams = useSearchParams()
     const pathname = usePathname()
@@ -90,7 +90,7 @@ export function PurchaseInvoicesClientView() {
 
     const handlePayment = async (data: Record<string, unknown>) => {
         if (!payingDoc) return
-        const d = data as any
+        const d = data as unknown as { amount: number; paymentMethod: string; transaction_number?: string; is_pending_registration?: boolean; treasury_account_id?: string | number; dteType?: string; document_reference?: string; document_date?: string; document_attachment?: File | Blob }
         try {
             const formData = new FormData()
             formData.append('amount', d.amount.toString())
@@ -101,14 +101,14 @@ export function PurchaseInvoicesClientView() {
 
             formData.append('payment_type', paymentType)
             const prefix = ['NOTA_CREDITO', 'NOTA_DEBITO'].includes(payingDoc.dte_type) ? getDtePrefix(payingDoc.dte_type) : 'PAGO';
-            formData.append('reference', `${prefix}-${payingDoc.number}`)
+            formData.append('reference', `${prefix}-${payingDoc.number ?? ''}`)
             formData.append('purchase_order', payingDoc.purchase_order ? payingDoc.purchase_order.toString() : '')
             formData.append('invoice', payingDoc.id.toString())
             formData.append('payment_method', d.paymentMethod)
 
             if (d.transaction_number) formData.append('transaction_number', d.transaction_number)
             if (d.is_pending_registration !== undefined) formData.append('is_pending_registration', d.is_pending_registration.toString())
-            if (d.treasury_account_id) formData.append('treasury_account_id', d.treasury_account_id)
+            if (d.treasury_account_id) formData.append('treasury_account_id', String(d.treasury_account_id))
             if (d.dteType) formData.append('dte_type', d.dteType)
             if (d.document_reference) formData.append('document_reference', d.document_reference)
             if (d.document_date) formData.append('document_date', d.document_date)
@@ -253,9 +253,9 @@ export function PurchaseInvoicesClientView() {
                     cardGroupBy={{ field: 'date', sort: 'desc', aggregators: [{ key: 'total', label: 'Total', field: 'total', fn: 'sum', format: 'money' }, { key: 'count', label: 'Items', fn: 'count', format: 'integer' }] }}
                 />
             </div>
-            {payingDoc && <PaymentModal open={!!payingDoc} onOpenChange={(open) => !open && setPayingDoc(null)} onConfirm={handlePayment} isPurchase={true} total={parseFloat(payingDoc.total)} pendingAmount={payingDoc.pending_amount ?? parseFloat(payingDoc.total)} hideDteFields={true} isRefund={payingDoc.dte_type === 'NOTA_CREDITO'} existingInvoice={{ dte_type: payingDoc.dte_type, number: payingDoc.number, document_attachment: null }} />}
+            {payingDoc && <PaymentModal open={!!payingDoc} onOpenChange={(open) => !open && setPayingDoc(null)} onConfirm={handlePayment} isPurchase={true} total={parseFloat(payingDoc.total)} pendingAmount={payingDoc.pending_amount ?? parseFloat(payingDoc.total)} hideDteFields={true} isRefund={payingDoc.dte_type === 'NOTA_CREDITO'} existingInvoice={{ dte_type: payingDoc.dte_type, number: payingDoc.number ?? '', document_attachment: null }} />}
             {receivingDoc && receivingDoc.purchase_order && <ReceiptModal open={!!receivingDoc} onOpenChange={(open) => !open && setReceivingDoc(null)} orderId={receivingDoc.purchase_order} onSuccess={fetchDocuments} isRefund={receivingDoc.dte_type === 'NOTA_CREDITO'} />}
-            {notingDoc && <PurchaseNoteModal open={!!notingDoc} onOpenChange={(open) => !open && setNotingDoc(null)} orderId={notingDoc.purchase_order} orderNumber={notingDoc.purchase_order_number || notingDoc.purchase_order?.toString()} invoiceId={notingDoc.id} onSuccess={fetchDocuments} />}
+            {notingDoc && <PurchaseNoteModal open={!!notingDoc} onOpenChange={(open) => !open && setNotingDoc(null)} orderId={notingDoc.purchase_order ?? undefined} orderNumber={(notingDoc.purchase_order_number || notingDoc.purchase_order?.toString()) ?? undefined} invoiceId={notingDoc.id} onSuccess={fetchDocuments} />}
             {completingDoc && <DocumentCompletionModal open={!!completingDoc} onOpenChange={(open) => !open && setCompletingDoc(null)} invoiceId={completingDoc.id} invoiceType={completingDoc.dte_type} contactId={completingDoc.partner || completingDoc.supplier} isPurchase={true} onComplete={async (invoiceId, formData) => { await billingApi.confirmInvoice(invoiceId, formData) }} onSuccess={fetchDocuments} />}
             <ActionConfirmModal open={deleteConfirm.isOpen} onOpenChange={(open) => { if (!open) deleteConfirm.cancel() }} onConfirm={deleteConfirm.confirm} title="Cancelar Documento" description="¿Está seguro de cancelar este documento?" variant="destructive" />
             <ActionConfirmModal open={annulConfirm.isOpen} onOpenChange={(open) => { if (!open) annulConfirm.cancel() }} onConfirm={(reason) => { annulReasonRef.current = reason ?? ''; return annulConfirm.confirm() }} title="Anular Documento" description="¿Está seguro de que desea ANULAR este documento?" variant="destructive" requireReason reasonLabel="Motivo de la anulación" />

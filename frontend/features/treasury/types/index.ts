@@ -165,11 +165,16 @@ export interface TerminalBatch {
     provider: number
     provider_name?: string
     batch_number: string
+    sales_date?: string
+    sales_date_end?: string
+    payment_method_name?: string
     opened_at: string
     closed_at?: string
     is_settled: boolean
+    status?: string
     gross_amount: number
     commission_amount: number
+    commission_total?: string
     net_amount: number
     transaction_count: number
 }

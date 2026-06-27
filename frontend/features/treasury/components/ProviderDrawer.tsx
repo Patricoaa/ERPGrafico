@@ -5,7 +5,7 @@ import { useForm, Controller } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
 import { Building2, Settings, Printer } from "lucide-react"
-import { useTerminalProviders, type PaymentTerminalProvider } from "@/features/treasury"
+import { useTerminalProviders, type PaymentTerminalProvider, type PaymentTerminalProviderCreatePayload, type PaymentTerminalProviderUpdatePayload } from "@/features/treasury"
 import { AccountSelector } from "@/components/selectors/AccountSelector"
 import { TreasuryAccountSelector } from "@/components/selectors/TreasuryAccountSelector"
 import { AdvancedContactSelector } from "@/components/selectors/AdvancedContactSelector"
@@ -103,19 +103,19 @@ export function ProviderDrawer({ open, onOpenChange, provider, onSuccess, mode: 
             const data = {
                 name: values.name,
                 provider_type: values.provider_type as PaymentTerminalProvider['provider_type'],
-                supplier: values.supplier ? Number(values.supplier) : undefined as any,
-                receivable_account: values.receivable_account ? Number(values.receivable_account) : undefined as any,
-                commission_expense_account: values.commission_expense_account ? Number(values.commission_expense_account) : undefined as any,
-                commission_iva_account: values.commission_iva_account ? Number(values.commission_iva_account) : undefined as any,
-                commission_product: values.commission_product ? Number(values.commission_product) : undefined as any,
+                supplier: values.supplier ? Number(values.supplier) : undefined,
+                receivable_account: values.receivable_account ? Number(values.receivable_account) : undefined,
+                commission_expense_account: values.commission_expense_account ? Number(values.commission_expense_account) : undefined,
+                commission_iva_account: values.commission_iva_account ? Number(values.commission_iva_account) : undefined,
+                commission_product: values.commission_product ? Number(values.commission_product) : undefined,
                 default_deposit_account: values.default_deposit_account ? Number(values.default_deposit_account) : null,
                 is_active: true,
             }
 
             if (provider) {
-                await updateProvider({ id: provider.id, data: data as any })
+                await updateProvider({ id: provider.id, data: data as unknown as PaymentTerminalProviderUpdatePayload })
             } else {
-                await createProvider(data as any)
+                await createProvider(data as unknown as PaymentTerminalProviderCreatePayload)
             }
             onSuccess?.()
             onOpenChange(false)

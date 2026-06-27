@@ -4,6 +4,7 @@ import { Drawer } from "@/components/shared"
 import { getEntityIcon } from "@/lib/entity-registry"
 import { useState } from "react"
 import { PayrollDetailContent } from "./PayrollDetailContent"
+import type { EmployeeBasic } from "@/features/hr/hooks/usePayrolls"
 
 interface PayrollDetailDrawerProps {
     payrollId: number | null
@@ -11,14 +12,14 @@ interface PayrollDetailDrawerProps {
     onOpenChange: (open: boolean) => void
     onUpdate?: () => void
     viewMode?: 'admin' | 'employee'
-    employee?: any
+    employee?: EmployeeBasic | null
 }
 
 export function PayrollDetailDrawer({ payrollId, open, onOpenChange, onUpdate, viewMode = 'admin', employee }: PayrollDetailDrawerProps) {
     const [headerData, setHeaderData] = useState<{
         title?: React.ReactNode | string
         subtitle?: React.ReactNode | string
-        icon?: any
+        icon?: React.ElementType
         headerActions?: React.ReactNode
     }>({})
 

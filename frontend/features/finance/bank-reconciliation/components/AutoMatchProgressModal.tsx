@@ -104,7 +104,7 @@ export function AutoMatchProgressModal({
                 const autoMatchResult = await financeApi.autoMatch(statementId, {
                     confidence_threshold: confidenceThreshold,
                 })
-                const id: string = (autoMatchResult as any).task_id
+                const id: string = (autoMatchResult as Record<string, unknown>).task_id as string
                 setTaskId(id)
                 startPolling(id)
             } catch (err) {

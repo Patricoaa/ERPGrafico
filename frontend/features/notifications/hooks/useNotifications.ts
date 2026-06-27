@@ -9,7 +9,7 @@ export interface NotificationPayload {
     type: 'INFO' | 'SUCCESS' | 'WARNING' | 'ERROR';
     notification_type?: string;
     link: string;
-    data: Record<string, any>;
+    data: Record<string, unknown>;
     created_at: string;
     read: boolean;
 }

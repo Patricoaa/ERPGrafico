@@ -60,8 +60,8 @@ export function Step4_Receipt({ receiptData, setReceiptData, orderLines = [] }: 
                     purchasingApi.getUoms(),
                     purchasingApi.getWarehouses()
                 ])
-                setUoMs(uomsData as any)
-                setWarehouses(warehousesData as any)
+                setUoMs(uomsData as unknown as UoM[])
+                setWarehouses(warehousesData as unknown as Warehouse[])
             } catch (error) {
                 console.error("Failed to fetch receipt metadata", error)
             }
@@ -214,7 +214,7 @@ export function Step4_Receipt({ receiptData, setReceiptData, orderLines = [] }: 
             >
                 <RadioGroup
                     value={receiptData.type}
-                    onValueChange={(val) => setReceiptData({ ...receiptData, type: val as any })}
+                    onValueChange={(val) => setReceiptData({ ...receiptData, type: val as ReceiptData['type'] })}
                     className="space-y-3 w-full p-2"
                 >
                     {receiptTypes.map((type) => (
@@ -254,7 +254,7 @@ export function Step4_Receipt({ receiptData, setReceiptData, orderLines = [] }: 
                             <TableBody>
                                 {orderLines.map((line, idx) => {
                                     const pendingQty = line.quantity || line.qty || 0;
-                                    const currentPartial = (receiptData.partialQuantities || []).find((pq: any) => (line.id && pq.lineId === line.id) || (line.product && pq.productId === line.product));
+                                    const currentPartial = (receiptData.partialQuantities || []).find((pq) => (line.id && pq.lineId === line.id) || (line.product && pq.productId === line.product));
                                     const currentReceivedQty = currentPartial?.receivedQty ?? 0;
                                     const currentUom = currentPartial?.uom || line.uom;
 

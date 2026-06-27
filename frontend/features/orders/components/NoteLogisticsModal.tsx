@@ -45,7 +45,7 @@ export function NoteLogisticsModal({ open, onOpenChange, invoice, onSuccess }: N
     const [warehouses, setWarehouses] = useState<Record<string, unknown>[]>([])
     const [selectedWarehouse, setSelectedWarehouse] = useState<number | null>(null)
     const [processQuantities, setProcessQuantities] = useState<{ [pId: number]: number }>({})
-    const [displayLines, setDisplayLines] = useState<InvoiceLine[]>((invoice?.lines as any) || [])
+    const [displayLines, setDisplayLines] = useState<InvoiceLine[]>((invoice?.lines as unknown as InvoiceLine[]) || [])
     const [date, setDate] = useState("")
     const [notes, setNotes] = useState("")
     const [loading, setLoading] = useState(true)
@@ -58,7 +58,7 @@ export function NoteLogisticsModal({ open, onOpenChange, invoice, onSuccess }: N
         }
     }, [dateString])
 
-    const isSale = !!invoice?.sale_order || !!(invoice as any)?.sale_order_number
+    const isSale = !!invoice?.sale_order || !!(invoice as Record<string, unknown>)?.['sale_order_number']
     const isCredit = invoice?.dte_type === 'NOTA_CREDITO'
     // const lines = invoice?.lines || [] // REMOVED: Use displayLines instead
 
@@ -100,7 +100,7 @@ export function NoteLogisticsModal({ open, onOpenChange, invoice, onSuccess }: N
         if (open && invoice) {
             requestAnimationFrame(() => {
                 // Reset display lines to props initially while loading fresh data
-                setDisplayLines((invoice.lines as any) || [])
+                setDisplayLines((invoice.lines as unknown as InvoiceLine[]) || [])
                 fetchData()
             })
         }
@@ -183,7 +183,7 @@ export function NoteLogisticsModal({ open, onOpenChange, invoice, onSuccess }: N
                             label="Bodega"
                             value={selectedWarehouse?.toString() || ""}
                             onChange={(val) => setSelectedWarehouse(Number(val))}
-                            options={warehouses.map((w: any) => ({ value: w.id.toString(), label: `${w.name} (${w.code})` }))}
+                            options={warehouses.map((w: Record<string, unknown>) => ({ value: (w.id as number).toString(), label: `${w.name as string} (${w.code as string})` }))}
                         />
                         <PeriodValidationDateInput
                             label="Fecha"

@@ -78,7 +78,7 @@ export function SalesInvoicesClientView({ initialInvoices }: { initialInvoices?:
 
     const handlePayment = async (data: Record<string, unknown>) => {
         if (!payingInv) return
-        const d = data as any
+        const d = data as unknown as { amount: number; paymentMethod: string; transaction_number?: string; is_pending_registration?: boolean; treasury_account_id?: string | number; dteType?: string; documentReference?: string; documentDate?: string; documentAttachment?: File | Blob }
         try {
             const formData = new FormData()
             formData.append('amount', d.amount.toString())
@@ -92,7 +92,7 @@ export function SalesInvoicesClientView({ initialInvoices }: { initialInvoices?:
             formData.append('payment_method', d.paymentMethod)
             if (d.transaction_number) formData.append('transaction_number', d.transaction_number)
             if (d.is_pending_registration !== undefined) formData.append('is_pending_registration', d.is_pending_registration.toString())
-            if (d.treasury_account_id) formData.append('treasury_account_id', d.treasury_account_id)
+            if (d.treasury_account_id) formData.append('treasury_account_id', String(d.treasury_account_id))
             if (d.dteType) formData.append('dte_type', d.dteType)
             if (d.documentReference) formData.append('document_reference', d.documentReference)
             if (d.documentDate) formData.append('document_date', d.documentDate)
@@ -127,7 +127,7 @@ export function SalesInvoicesClientView({ initialInvoices }: { initialInvoices?:
         {
             accessorKey: "partner_name",
             header: ({ column }) => <DataTableColumnHeader column={column} title="Cliente" className="justify-center" />,
-            cell: ({ row }) => <DataCell.ContactLink contactId={(row.original as any).customer as number || (row.original as any).partner as number}>{row.getValue("partner_name")}</DataCell.ContactLink>
+            cell: ({ row }) => <DataCell.ContactLink contactId={(row.original as unknown as { customer?: number; partner?: number }).customer ?? (row.original as unknown as { customer?: number; partner?: number }).partner ?? 0}>{row.getValue("partner_name")}</DataCell.ContactLink>
         },
         {
             accessorKey: "total",

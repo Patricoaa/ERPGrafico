@@ -18,7 +18,7 @@ import { ProductSelector } from "@/components/selectors/ProductSelector"
 import { toast } from "sonner"
 
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { settingsApi } from "../../hooks"
+import { settingsApi, type ProductMinimal } from "../../hooks"
 import { partnersApi } from "@/features/contacts/api/partnersApi"
 import { cn } from "@/lib/utils"
 import { type Partner } from "@/features/contacts/types/partner"
@@ -101,15 +101,15 @@ export function InventoryContributionModal({
         }
         settingsApi.getProduct(productId)
             .then(data => {
-                setProductDetails(data as any)
-                setUnitCost((data as any).cost_price?.toString() || "0")
+                setProductDetails(data as unknown as Product)
+                setUnitCost(data.cost_price?.toString() || "0")
 
-                if ((data as any).uom_category) {
-                    return settingsApi.getUoms({ category: (data as any).uom_category })
+                if (data.uom_category) {
+                    return settingsApi.getUoms({ category: data.uom_category })
                         .then(uoms => {
-                            setProductUoMs(uoms as any)
-                            const baseId = typeof (data as any).uom === 'object' && (data as any).uom !== null ? (data as any).uom.id : (data as any).uom
-                            const base = uoms.find((u: { id: number }) => u.id === baseId)
+                            setProductUoMs(uoms)
+                            const baseId = typeof data.uom === 'object' && data.uom !== null ? data.uom.id : data.uom
+                            const base = uoms.find((u) => u.id === (baseId as number))
                             if (base) setUomId(base.id.toString())
                         })
                 }

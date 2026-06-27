@@ -145,10 +145,10 @@ export function Step1_ProductSelection({
     useEffect(() => {
         const sub = form.watch((value) => {
             if (value.lines) {
-                const cleanLines = (value.lines as any[]).map(l => ({
+                const cleanLines = (value.lines as CheckoutLine[]).map(l => ({
                     ...l,
                     id: typeof l.id === "number" ? l.id : undefined,
-                })) as CheckoutLine[]
+                }))
                 setOrderLines(cleanLines)
             }
         })
@@ -171,8 +171,8 @@ export function Step1_ProductSelection({
                     purchasingApi.getPurchasableProducts(),
                     purchasingApi.getUoms(),
                 ])
-                setProducts(allProducts as any)
-                setUoMs(uomsData as any)
+                setProducts(allProducts as unknown as ProductMinimal[])
+                setUoMs(uomsData as unknown as UoM[])
             } catch (error) {
                 console.error("Error fetching data:", error)
                 toast.error("Error al cargar productos")
@@ -265,7 +265,7 @@ export function Step1_ProductSelection({
                             </TableCell>
                             <TableCell className="py-2 px-3">
                                 <UoMSelector
-                                    product={product as any}
+                                    product={product as unknown as { id: number; name: string; uom?: number | { id: number } } | null}
                                     context="purchase"
                                     value={lineUom}
                                     onChange={(val) => {

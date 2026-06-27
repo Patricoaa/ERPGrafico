@@ -23,24 +23,22 @@ import {
     SelectValue,
 } from "@/components/ui/select"
 
-function UoMSelector({ line: l, currentUom: cu, onUomChange }: { line: Record<string, unknown>, currentUom: Record<string, unknown>, onUomChange: (uomId: number) => void }) {
-    const line = l as any
-    const currentUom = cu as any
-    const [allowedUoms, setAllowedUoms] = useState<any[]>([])
+function UoMSelector({ line: l, currentUom, onUomChange }: { line: Record<string, unknown>, currentUom: number, onUomChange: (uomId: number) => void }) {
+    const [allowedUoms, setAllowedUoms] = useState<Record<string, unknown>[]>([])
 
     useEffect(() => {
         const fetchAllowed = async () => {
             try {
-                const uoms = await billingApi.getAllowedUoms(line.product_id || line.product, 'sale')
+                const uoms = await billingApi.getAllowedUoms((l.product_id as number) || (l.product as number), 'sale')
                 setAllowedUoms(uoms)
             } catch (err) {
                 console.error("Error fetching allowed UoMs", err)
             }
         }
         fetchAllowed()
-    }, [line.id, line.product_id])
+    }, [l.id, l.product_id])
 
-    if (allowedUoms.length <= 1) return <span className="text-xs text-muted-foreground">{line.uom_name}</span>
+    if (allowedUoms.length <= 1) return <span className="text-xs text-muted-foreground">{l.uom_name as string}</span>
 
     return (
         <Select value={currentUom?.toString()} onValueChange={(val) => onUomChange(parseInt(val))}>
@@ -48,9 +46,9 @@ function UoMSelector({ line: l, currentUom: cu, onUomChange }: { line: Record<st
                 <SelectValue />
             </SelectTrigger>
             <SelectContent>
-                {allowedUoms.map((u: any) => (
-                    <SelectItem key={u.id} value={u.id.toString()} className="text-[10px]">
-                        {u.name}
+                {allowedUoms.map((u: Record<string, unknown>) => (
+                    <SelectItem key={u.id as number} value={(u.id as number).toString()} className="text-[10px]">
+                        {u.name as string}
                     </SelectItem>
                 ))}
             </SelectContent>
@@ -134,9 +132,15 @@ export function Step2_Logistics({
         warehouse_id: "",
         date: dateString || "",
         delivery_type: hasRestrictedItems ? 'SCHEDULED' : 'IMMEDIATE',
-        line_data: [],
+        line_data: [] as Record<string, unknown>[],
         notes: ""
-    }) as any
+    }) as unknown as {
+        warehouse_id: string
+        date: string
+        delivery_type: string
+        line_data: Record<string, unknown>[]
+        notes: string
+    }
 
     // Sync date when server date arrives if not already set
     useEffect(() => {
@@ -277,8 +281,8 @@ export function Step2_Logistics({
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>
-                                    {selectedItems.map((i: any) => {
-                                        const item = i as any;
+                                    {selectedItems.map((i: Record<string, unknown>) => {
+                                        const item = i as unknown as { line_id: number; product_id: number; product_name: string; quantity: number; uom_id: number; product_type: string; has_bom: boolean; mfg_auto_finalize: boolean; creates_stock_move: boolean };
                                         const isRestricted = !isCreditNote &&
                                             (item.product_type === 'MANUFACTURABLE' || item.has_bom) &&
                                             !item.mfg_auto_finalize;
@@ -287,14 +291,14 @@ export function Step2_Logistics({
                                             item.product_type === 'MANUFACTURABLE' ||
                                             item.has_bom) && !isRestricted;
 
-                                        const currentVal = (formData.line_data || [])
-                                            .find((ld: any) => ld.line_id === item.line_id)?.quantity ?? 0;
+                                        const currentVal = ((formData.line_data || []) as Record<string, unknown>[])
+                                            .find((ld: Record<string, unknown>) => (ld.line_id as number) === item.line_id)?.quantity as number ?? 0;
 
                                         return (
                                             <TableRow key={item.line_id} className={cn(!isEligible && "bg-muted/30 opacity-70")}>
                                                 <TableCell>
                                                     <div className="flex flex-col gap-1 py-1">
-                                                        <span className="font-medium text-xs leading-tight">{item.product_name}</span>
+                                                        <span className="font-medium text-xs leading-tight">{item.product_name as string}</span>
                                                         {!isEligible && (
                                                             <span className="text-[10px] text-warning font-bold uppercase tracking-tighter">
                                                                 {isRestricted ? "Requiere Producción" : "Sin control de stock"}
@@ -303,20 +307,21 @@ export function Step2_Logistics({
                                                     </div>
                                                 </TableCell>
                                                 <TableCell className="text-right font-semibold text-xs tabular-nums">
-                                                    {item.quantity.toLocaleString('es-CL')}
+                                                    {item.quantity.toLocaleString('es-CL') as string}
                                                 </TableCell>
                                                 <TableCell>
                                                     <LabeledInput
                                                         type="number"
                                                         step="0.01"
                                                         min="0"
-                                                        max={item.quantity}
+                                                        max={item.quantity as number}
                                                         value={currentVal}
                                                         disabled={!isEligible}
                                                         onChange={(e) => {
                                                             const val = parseFloat(e.target.value) || 0;
-                                                            const lines = [...(formData.line_data as any[] || [])];
-                                                            const idx = lines.findIndex((ld: any) => ld.line_id === item.line_id);
+                                                            const lineData = (formData.line_data || []) as Record<string, unknown>[];
+                                                            const lines = [...lineData];
+                                                            const idx = lines.findIndex((ld: Record<string, unknown>) => (ld.line_id as number) === item.line_id);
                                                             if (idx >= 0) {
                                                                 lines[idx] = { ...lines[idx], quantity: val };
                                                             } else {
@@ -330,14 +335,15 @@ export function Step2_Logistics({
                                                 <TableCell className="text-sm text-muted-foreground font-medium">
                                                     <UoMSelector
                                                         line={item}
-                                                        currentUom={(formData.line_data as any[] || []).find((ld: any) => ld.line_id === item.line_id)?.uom_id || item.uom_id}
+                                                        currentUom={((formData.line_data as Record<string, unknown>[]) || []).find((ld: Record<string, unknown>) => (ld.line_id as number) === item.line_id)?.uom_id as number || item.uom_id}
                                                         onUomChange={(uomId) => {
-                                                            const lines = [...(formData.line_data as any[] || [])];
-                                                            const idx = lines.findIndex((ld: any) => ld.line_id === item.line_id);
+                                                            const lineData = (formData.line_data || []) as Record<string, unknown>[];
+                                                            const lines = [...lineData];
+                                                            const idx = lines.findIndex((ld: Record<string, unknown>) => (ld.line_id as number) === item.line_id);
                                                             if (idx >= 0) {
                                                                 lines[idx] = { ...lines[idx], uom_id: uomId };
                                                             } else {
-                                                                lines.push({ line_id: item.line_id, product_id: item.product_id, quantity: 1, uom_id: uomId });
+                                                                lines.push({ line_id: item.line_id, product_id: item.product_id, quantity: 1, uom_id: item.uom_id });
                                                             }
                                                             setData({ ...formData, line_data: lines });
                                                         }}

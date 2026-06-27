@@ -45,8 +45,8 @@ import {
     useDraftSync,
     type SyncDraft
 } from '@/features/pos/hooks'
-import { type CheckoutResponse } from '@/features/sales/types'
-import type { Product } from '@/types/pos'
+import { type CheckoutResponse, type SaleOrderLine, type CheckoutDTEData, type CheckoutPaymentData, type CheckoutDeliveryData } from '@/features/sales/types'
+import type { Product, WizardState } from '@/types/pos'
 import type { TransactionData } from '@/types/transactions'
 import { type DraftCart } from './DraftCartsClientView'
 import type { CheckoutWizardState } from '@/features/sales/components/checkout/SalesCheckoutWizardContent'
@@ -116,8 +116,8 @@ export function POSClientView() {
     const { user } = useAuth()
 
     // Stable onStateChange for the wizard to break feedback loops
-    const handleWizardStateChange = useCallback((state: any) => {
-        setWizardState(state)
+    const handleWizardStateChange = useCallback((state: CheckoutWizardState) => {
+        setWizardState(state as unknown as WizardState)
     }, [setWizardState])
 
     const { addProductToCart, updateQuantity, removeFromCart, clearCart, canCheckout, fetchEffectivePrice } = useCart()
@@ -201,7 +201,7 @@ export function POSClientView() {
         unit_price: item.unit_price_gross,
         unit_price_net: item.unit_price_net,
         unit_price_gross: item.unit_price_gross,
-        tax_rate: (item as any).tax_rate ?? rate,
+        tax_rate: (item as unknown as Record<string, unknown>).tax_rate as number ?? rate,
         discount_amount: item.discount_amount,
         discount_percentage: item.discount_percentage,
         product_type: item.product_type,
@@ -332,7 +332,7 @@ export function POSClientView() {
                 pos_session_id: currentSession?.id,
                 partner_id: selectedPartnerId,
             })
-            toast.success((data as any).message || "Retiro procesado exitosamente")
+            toast.success((data as Record<string, unknown>).message as string || "Retiro procesado exitosamente")
             setWithdrawDialogOpen(false)
             setSelectedPartnerId(null)
             setSelectedPartnerName("")
@@ -396,7 +396,7 @@ export function POSClientView() {
         if (!selectedCustomerId && defaultCustomerId) setSelectedCustomerId(defaultCustomerId)
         const hasMfg = items.some(line => line.product_type === 'MANUFACTURABLE' && line.requires_advanced_manufacturing)
         const lastStep = 4 + (hasMfg ? 1 : 0)
-        setWizardState({ step: lastStep, isQuickSale: true, dteData: { type: 'BOLETA', number: '', date: dateString || new Date().toISOString().split('T')[0], attachment: null, isPending: false }, deliveryData: { type: 'IMMEDIATE', date: null } } as any)
+        setWizardState({ step: lastStep, isQuickSale: true, dteData: { type: 'BOLETA', number: '', date: dateString || new Date().toISOString().split('T')[0], attachment: null, isPending: false }, deliveryData: { type: 'IMMEDIATE', date: null } } as unknown as WizardState)
         setTimeout(() => setPosMode('CHECKOUT'), 0)
     }
 
@@ -586,21 +586,21 @@ export function POSClientView() {
                             <SalesCheckoutWizardContent
                                 key={currentDraftId || 'checkout-new'}
                                 order={null}
-                                orderLines={currentOrderLines as any}
+                                orderLines={currentOrderLines as unknown as SaleOrderLine[]}
                                 total={totals.total_gross}
                                 totalDiscountAmount={totalDiscountAmount}
-                                onComplete={(data) => handleCheckoutComplete(data as any)}
+                                onComplete={(data) => handleCheckoutComplete(data as unknown as TransactionData | CheckoutResponse)}
                                 onCancel={() => setPosMode('SHOPPING')}
-                                onSuspend={(state) => handleSuspendDraft(state as any)}
+                                onSuspend={(state) => handleSuspendDraft(state)}
                                 initialCustomerId={selectedCustomerId?.toString() || (wizardState?.isQuickSale ? defaultCustomerId?.toString() : undefined)}
                                 posSessionId={currentSession?.id}
                                 terminalId={currentSession?.terminal}
                                 terminalDeviceId={currentSession?.terminal_details?.payment_terminal_device ?? null}
                                 quickSale={wizardState?.isQuickSale}
                                 initialStep={wizardState?.step}
-                                initialDteData={wizardState?.dteData as any}
-                                initialPaymentData={wizardState?.paymentData as any}
-                                initialDeliveryData={wizardState?.deliveryData as any}
+                                initialDteData={wizardState?.dteData as unknown as CheckoutDTEData}
+                                initialPaymentData={wizardState?.paymentData as unknown as CheckoutPaymentData}
+                                initialDeliveryData={wizardState?.deliveryData as unknown as CheckoutDeliveryData}
                                 initialApprovalTaskId={wizardState?.approvalTaskId}
                                 initialIsWaitingApproval={wizardState?.isWaitingApproval}
                                 initialIsApproved={wizardState?.isApproved}
@@ -643,8 +643,8 @@ export function POSClientView() {
                 </div>
             </div>
 
-            <POSVariantSelectorModal open={variantModalOpen} onOpenChange={setVariantModalOpen} product={selectedProductForVariant} onSelect={v => addProductToCart(v as any)} items={items} bomCache={bomCache as any} componentCache={componentCache as any} calculateMaxQty={calculateMaxQty} />
-            <DraftCartsClientView open={draftsListOpen} onOpenChange={setDraftsListOpen} posSessionId={currentSession?.id || null} onLoadDraft={handleLoadDraft} showTrigger={false} syncDrafts={syncDrafts as any} getLockInfo={getLockInfo} />
+            <POSVariantSelectorModal open={variantModalOpen} onOpenChange={setVariantModalOpen} product={selectedProductForVariant} onSelect={v => addProductToCart(v as unknown as Product)} items={items} bomCache={bomCache as unknown as Record<number, Record<string, unknown>>} componentCache={componentCache} calculateMaxQty={calculateMaxQty} />
+            <DraftCartsClientView open={draftsListOpen} onOpenChange={setDraftsListOpen} posSessionId={currentSession?.id || null} onLoadDraft={handleLoadDraft} showTrigger={false} syncDrafts={syncDrafts} getLockInfo={getLockInfo} />
             <NumpadModal open={numpadOpen} onOpenChange={setNumpadOpen} title={numpadConfig?.field === 'qty' ? "Cantidad" : "Precio"} value={numpadValue} onChange={setNumpadValue} onConfirm={() => handleNumpadConfirm(parseFloat(numpadValue))} allowDecimal />
             <ScannerFeedback ref={scannerFeedbackRef} />
             <SalesOrdersDrawer open={ordersModalOpen} onOpenChange={setOrdersModalOpen} posSessionId={currentSession?.id} />
@@ -694,7 +694,7 @@ export function POSClientView() {
                         }}
                         currentType={completedSaleData.sale_order_detail ? "sale_order" : "invoice"}
                         mainTitle="Ticket de Venta"
-                        subTitle={(completedSaleData as any)?.client_name || "Cliente Contado"}
+                        subTitle={(completedSaleData as unknown as Record<string, unknown>)?.client_name as string || "Cliente Contado"}
                     />
                 )}
             </BaseModal>

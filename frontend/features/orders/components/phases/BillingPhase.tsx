@@ -136,7 +136,7 @@ export function BillingPhase({
             <PhaseCard
                 title="Facturación"
                 icon={FileText}
-                variant={(isNoteMode ? noteStatuses.billing : (billingIsComplete ? 'success' : (invoices.length > 0 ? 'active' : 'neutral'))) as any}
+                variant={(isNoteMode ? noteStatuses.billing : (billingIsComplete ? 'success' : (invoices.length > 0 ? 'active' : 'neutral'))) as 'success' | 'active' | 'neutral' | 'destructive'}
                 documents={[
                     ...(isNoteMode ? [{
                         type: activeDoc.dte_type_display || 'Nota',

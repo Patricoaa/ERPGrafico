@@ -217,7 +217,7 @@ export function ManufacturingConfigStep({
           existing_design_files: initialData.stage_data?.design_attachments ?? [],
           folio_enabled: initialData.stage_data?.folio_enabled ?? false,
           folio_start: initialData.stage_data?.folio_start ?? '',
-          print_type: (initialData.stage_data?.print_type as any) ?? null,
+          print_type: (initialData.stage_data?.print_type ?? null) as ManufacturingData['print_type'],
           internal_notes: initialData.stage_data?.internal_notes ?? '',
           product_description: initialData.stage_data?.product_description ?? '',
         });
@@ -226,7 +226,7 @@ export function ManufacturingConfigStep({
           id: Number(initialData.stage_data?.contact_id),
           name: initialData.stage_data?.contact_name || "Contacto",
           tax_id: initialData.stage_data?.contact_tax_id || ""
-        } as any);
+        } as unknown as Contact);
 
         setQuantity(isLinked ? "" : (initialData.stage_data?.quantity?.toString() ?? ""));
         setUomId(isLinked ? "" : (initialData.stage_data?.uom_id?.toString() ?? ""));
@@ -467,8 +467,8 @@ export function ManufacturingConfigStep({
                       <UoMSelector
                         value={uomId}
                         onChange={handleUomChange}
-                        uoms={uoms as any}
-                        product={productForUoM as any}
+                        uoms={uoms as unknown as Parameters<typeof UoMSelector>[0]['uoms']}
+                        product={productForUoM as unknown as Parameters<typeof UoMSelector>[0]['product']}
                         context="sale"
                         variant="standalone"
                       />

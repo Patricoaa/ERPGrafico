@@ -16,6 +16,7 @@ import { formatEntityDisplay } from "@/lib/entity-registry"
 import type { WorkOrderFormValues, WorkOrderInitialData } from "@/types/forms"
 import type { SaleOrder, SaleOrderLine } from "@/features/sales/types"
 import type { Contact } from "@/features/contacts/types"
+import type { Contact as ContactEntity } from "@/types/entities"
 import type { UoM, ProductMinimal } from "../../../types"
 
 interface WorkOrderBasicInfoProps {
@@ -84,12 +85,12 @@ export function WorkOrderBasicInfo({
                                     label="Nota de Venta"
                                     error={fieldState.error?.message}
                                     icon={<FileText className="h-3.5 w-3.5 opacity-50" />}
-                                    customFilter={(order: any) =>
-                                        order.lines?.some((l: any) =>
+                                    customFilter={(order: { lines?: Array<{ product_type?: string; requires_advanced_manufacturing?: boolean; work_order_summary?: unknown }> }) =>
+                                        !!(order.lines?.some((l: { product_type?: string; requires_advanced_manufacturing?: boolean; work_order_summary?: unknown }) =>
                                             l.product_type === 'MANUFACTURABLE' &&
                                             l.requires_advanced_manufacturing &&
                                             !l.work_order_summary
-                                        )
+                                        ))
                                     }
                                 />
                             )}
@@ -184,7 +185,7 @@ export function WorkOrderBasicInfo({
                                                             </div>
                                                             <div>
                                                                 <p className="text-[10px] text-muted-foreground uppercase font-bold">Subtotal</p>
-                                                                <p className="text-sm font-bold text-primary">{formatCurrency(parseFloat(String((l as any).subtotal || 0)))}</p>
+                                                                <p className="text-sm font-bold text-primary">{formatCurrency(parseFloat(String((l as unknown as { subtotal?: number }).subtotal || 0)))}</p>
                                                             </div>
                                                         </>
                                                     )
@@ -326,8 +327,8 @@ export function WorkOrderBasicInfo({
                             </div>
                         ) : (
                             <AdvancedContactSelector
-                                onSelectContact={(c: any) => {
-                                    setSelectedContact(c)
+                                onSelectContact={(c: ContactEntity) => {
+                                    setSelectedContact(c as unknown as Contact)
                                     form.setValue('contact_id' as never, String(c.id) as never)
                                 }}
                                 onChange={() => { }}

@@ -6,7 +6,8 @@ import { EntityCard, SmartSearchBar, useSmartSearch, SegmentationBar, useSegment
 import { treasuryAccountSearchDef } from "../searchDef"
 import { treasuryAccountSegDef } from "../segmentationDef"
 import {
-    type ColumnDef
+    type ColumnDef,
+    type Row,
 } from "@tanstack/react-table"
 import { DataTableView } from '@/components/shared'
 import { DataTableColumnHeader } from '@/components/shared'
@@ -142,10 +143,10 @@ export const TreasuryAccountsClientView: React.FC<TreasuryAccountsClientViewProp
     const columns: ColumnDef<TreasuryAccount>[] = [
         {
             accessorKey: "name",
-            header: ({ column }: { column: any }) => (
+            header: ({ column }) => (
                 <DataTableColumnHeader column={column} title="Nombre de Cuenta" className="justify-center" />
             ),
-            cell: ({ row }: { row: any }) => (
+            cell: ({ row }: { row: Row<TreasuryAccount> }) => (
                 <div className="flex justify-center w-full">
                     <DataCell.Text>
                         {row.original.name}
@@ -155,10 +156,10 @@ export const TreasuryAccountsClientView: React.FC<TreasuryAccountsClientViewProp
         },
         {
             accessorKey: "account_type_display",
-            header: ({ column }: { column: any }) => (
+            header: ({ column }) => (
                 <DataTableColumnHeader column={column} title="Tipología" className="justify-center" />
             ),
-            cell: ({ row }: { row: any }) => (
+            cell: ({ row }: { row: Row<TreasuryAccount> }) => (
                 <div className="flex justify-center w-full">
                     <DataCell.Text>
                         {row.original.account_type_display || typeLabels[row.original.account_type] || row.original.account_type}
@@ -168,10 +169,10 @@ export const TreasuryAccountsClientView: React.FC<TreasuryAccountsClientViewProp
         },
         {
             accessorKey: "account_name",
-            header: ({ column }: { column: any }) => (
+            header: ({ column }) => (
                 <DataTableColumnHeader column={column} title="Cuenta Contable" className="justify-center" />
             ),
-            cell: ({ row }: { row: any }) => {
+            cell: ({ row }: { row: Row<TreasuryAccount> }) => {
                 const name = row.original.account_name
                 if (!name) return <DataCell.Secondary className="italic text-center">No vinculada</DataCell.Secondary>
                 return (
@@ -189,10 +190,10 @@ export const TreasuryAccountsClientView: React.FC<TreasuryAccountsClientViewProp
         },
         {
             accessorKey: "bank",
-            header: ({ column }: { column: any }) => (
+            header: ({ column }) => (
                 <DataTableColumnHeader column={column} title="Entidad Externa" className="justify-center" />
             ),
-            cell: ({ row }: { row: any }) => {
+            cell: ({ row }: { row: Row<TreasuryAccount> }) => {
                 const bankId = row.original.bank
                 const bankName = row.original.bank_name
                 const providers = row.original.terminal_providers ?? []
@@ -230,10 +231,10 @@ export const TreasuryAccountsClientView: React.FC<TreasuryAccountsClientViewProp
         },
         {
             accessorKey: "current_balance",
-            header: ({ column }: { column: any }) => (
+            header: ({ column }) => (
                 <DataTableColumnHeader column={column} title="Saldo" className="justify-center" />
             ),
-            cell: ({ row }: { row: any }) => {
+            cell: ({ row }: { row: Row<TreasuryAccount> }) => {
                 const balance = row.getValue("current_balance")
                 return (
                     <div className="flex justify-center w-full">

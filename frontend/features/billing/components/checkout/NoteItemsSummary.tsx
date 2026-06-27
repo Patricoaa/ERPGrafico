@@ -9,7 +9,7 @@ import { formatCurrency } from "@/lib/money"
 import { cn } from "@/lib/utils"
 
 interface NoteItemsSummaryProps {
-    items: any[]
+    items: Record<string, unknown>[]
     totalNet: number
     totalTax: number
     total: number
@@ -44,24 +44,24 @@ export function NoteItemsSummary({
                                             <Tooltip>
                                                 <TooltipTrigger asChild>
                                                     <p className="font-bold text-[13px] leading-tight text-foreground/90 truncate mr-2">
-                                                        {item.product_name || `Producto ${item.product_id}`}
+                                                        {(item.product_name as string) || `Producto ${item.product_id as number}`}
                                                     </p>
                                                 </TooltipTrigger>
-                                                <TooltipContent side="top">{item.product_name || `Producto ${item.product_id}`}</TooltipContent>
+                                                <TooltipContent side="top">{(item.product_name as string) || `Producto ${item.product_id as number}`}</TooltipContent>
                                             </Tooltip>
                                             <div className="flex flex-wrap items-center gap-1.5 mt-0.5">
                                                 <Chip size="xs" intent="neutral" className="bg-muted">
-                                                    {item.quantity} {item.uom_name || 'un'}
+                                                    {(item.quantity as number)} {(item.uom_name as string) || 'un'}
                                                 </Chip>
-                                                {item.reason && (
+                                                {(item.reason as string) && (
                                                     <Chip size="xs" intent="neutral" className="h-3 px-1 font-normal opacity-70 italic truncate max-w-[120px]">
-                                                        {item.reason}
+                                                        {item.reason as string}
                                                     </Chip>
                                                 )}
                                             </div>
                                         </div>
                                         <p className="font-mono text-xs font-black whitespace-nowrap pt-0.5">
-                                            {formatCurrency((parseFloat(item.unit_price_gross) || (parseFloat(item.unit_price) + parseFloat(item.tax_amount))) * parseFloat(item.quantity))}
+                                            {formatCurrency((parseFloat(item.unit_price_gross as string) || (parseFloat(item.unit_price as string) + parseFloat(item.tax_amount as string))) * parseFloat(item.quantity as string))}
                                         </p>
                                     </div>
                                 ))

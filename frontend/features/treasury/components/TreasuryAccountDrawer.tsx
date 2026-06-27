@@ -14,6 +14,8 @@ import type { DrawerMode } from "@/features/_shared/drawer/types"
 import { AccountSelector } from "@/components/selectors/AccountSelector"
 import { ActivitySidebar } from "@/features/audit/components"
 import { useTreasuryAccounts, treasuryApi, useCreditLines, useCreditLineMutations, CreditLineDrawer } from "@/features/treasury"
+import type { Bank, TreasuryAccount, TreasuryAccountCreatePayload, TreasuryAccountUpdatePayload } from "../types"
+import type { CreditLine } from "../credit-lines/types"
 
 import { CancelButton, LabeledInput, LabeledSelect, FormSection, FormFooter, FormSplitLayout, ActionSlideButton, Drawer, Chip, SkeletonShell, StatusBadge, MoneyDisplay } from "@/components/shared"
 import { formDrawerWidth } from "@/lib/form-widths"
@@ -45,9 +47,9 @@ const SYSTEM_MANAGED_TYPES = new Set(['BRIDGE'])
 export function TreasuryAccountDrawer({ open, onOpenChange, accountId, onSuccess, mode: modeProp }: TreasuryAccountDrawerProps) {
     const { createAccount, updateAccount, isCreating, isUpdating } = useTreasuryAccounts()
     const [loading, setLoading] = useState(false)
-    const [banks, setBanks] = useState<any[]>([])
-    const [entityData, setEntityData] = useState<any>(null)
-    const [creditLineData, setCreditLineData] = useState<any>(null)
+    const [banks, setBanks] = useState<Bank[]>([])
+    const [entityData, setEntityData] = useState<TreasuryAccount | null>(null)
+    const [creditLineData, setCreditLineData] = useState<CreditLine | null>(null)
     const [creditLineDrawerOpen, setCreditLineDrawerOpen] = useState(false)
     const { remove: deleteCreditLine } = useCreditLineMutations()
 
@@ -89,10 +91,10 @@ export function TreasuryAccountDrawer({ open, onOpenChange, accountId, onSuccess
                 // Load credit line if CHECKING account
                 if (accountData?.account_type === 'CHECKING') {
                     try {
-                        const { data: clData } = await import('@/lib/api').then(m =>
-                            m.default.get('/treasury/credit-lines/', { params: { treasury_account_id: accountData.id } })
+                        const response = await import('@/lib/api').then(m =>
+                            m.default.get<CreditLine[]>('/treasury/credit-lines/', { params: { treasury_account_id: accountData.id } })
                         )
-                        setCreditLineData(clData[0] || null)
+                        setCreditLineData(response.data[0] || null)
                     } catch {
                         setCreditLineData(null)
                     }
@@ -158,9 +160,9 @@ export function TreasuryAccountDrawer({ open, onOpenChange, accountId, onSuccess
             }
 
             if (accountId) {
-                await updateAccount({ id: accountId, payload: payload as any })
+                await updateAccount({ id: accountId, payload: payload as unknown as TreasuryAccountUpdatePayload })
             } else {
-                await createAccount(payload as any)
+                await createAccount(payload as unknown as TreasuryAccountCreatePayload)
             }
 
             if (onSuccess) onSuccess()
@@ -373,7 +375,7 @@ export function TreasuryAccountDrawer({ open, onOpenChange, accountId, onSuccess
                                                         onChange={field.onChange}
                                                         disabled={isSystemManaged}
                                                         error={fieldState.error?.message}
-                                                        options={banks.map((b: any) => ({
+                                                        options={banks.map((b: Bank) => ({
                                                             value: b.id.toString(),
                                                             label: b.name
                                                         }))}
@@ -499,7 +501,7 @@ export function TreasuryAccountDrawer({ open, onOpenChange, accountId, onSuccess
                         // Reload credit line data when drawer closes
                         if (accountId && entityData?.account_type === 'CHECKING') {
                             import('@/lib/api').then(m =>
-                                m.default.get('/treasury/credit-lines/', { params: { treasury_account_id: accountId } })
+                                m.default.get<CreditLine[]>('/treasury/credit-lines/', { params: { treasury_account_id: accountId } })
                             ).then(({ data }) => setCreditLineData(data[0] || null))
                                 .catch(() => setCreditLineData(null))
                         }

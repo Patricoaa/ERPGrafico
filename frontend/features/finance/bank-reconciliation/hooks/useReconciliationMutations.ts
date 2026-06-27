@@ -242,8 +242,8 @@ export function useCreateAndMatchMutation(statementId: number, treasuryAccountId
 
     return useMutation({
         mutationFn: async ({ lineId, movementData }: { lineId: number, movementData: Record<string, unknown> }) => {
-            const movement = await financeApi.createMovement(movementData)
-            const paymentId = (movement as any).id
+            const movement = await financeApi.createMovement(movementData) as Record<string, unknown>
+            const paymentId = movement.id as number
             await financeApi.matchStatementLine(lineId, { payment_id: paymentId })
             return { lineId, paymentId }
         },
