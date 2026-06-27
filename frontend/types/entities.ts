@@ -169,6 +169,9 @@ export interface Contact {
     is_default_vendor?: boolean
     credit_blocked?: boolean
     credit_available?: string | number | null
+    credit_balance_used?: string | number | null
+    credit_balance?: string | number | null
+    last_sale_date?: string | null
 }
 
 // ─── Treasury Account ────────────────────────────────────

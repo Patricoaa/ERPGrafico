@@ -1,7 +1,7 @@
 "use client"
 
 import { showApiError, getErrorMessage } from "@/lib/errors"
-import {useState, useEffect, useMemo, useRef} from "react"
+import {useState, useEffect, useMemo, useRef, forwardRef, useImperativeHandle} from "react"
 import { PricingUtils } from '@/features/inventory/utils/pricing'
 import { Button } from "@/components/ui/button"
 import { Step1_Customer } from "./Step1_Customer"
@@ -24,7 +24,7 @@ import { formatMoney } from "@/lib/money"
 
 import {Check, ChevronRight, ChevronLeft, Loader2, ShoppingCart, AlertCircle, ShieldAlert, CheckCircle2, FileWarning, Truck} from "lucide-react"
 import {User} from "lucide-react"
-import {BaseModal, FormSection, SubmitButton} from '@/components/shared'
+import {BaseModal, FormSection} from '@/components/shared'
 import { cn } from "@/lib/utils"
 
 import { useAuth } from "@/contexts/AuthContext"
@@ -79,7 +79,15 @@ export interface SalesCheckoutWizardContentProps {
     touchMode?: boolean
 }
 
-export function SalesCheckoutWizardContent({
+export interface SalesCheckoutWizardContentHandle {
+    goNext: () => Promise<void>
+    goBack: () => void
+    finishCheckout: () => Promise<void>
+    step: number
+    totalSteps: number
+}
+
+export const SalesCheckoutWizardContent = forwardRef<SalesCheckoutWizardContentHandle, SalesCheckoutWizardContentProps>(function SalesCheckoutWizardContent({
     order,
     orderLines: initialOrderLines,
     total: initialTotal,
@@ -106,7 +114,7 @@ export function SalesCheckoutWizardContent({
     isInline = false,
     isSessionHost = false,
     touchMode = false
-}: SalesCheckoutWizardContentProps) {
+}: SalesCheckoutWizardContentProps, ref) {
     const { dateString, serverDate } = useServerDate()
     const { openHub, isHubOpen } = useHubPanel()
     const { hasPermission } = useAuth()
@@ -757,6 +765,14 @@ export function SalesCheckoutWizardContent({
         return () => { if (pollingIntervalRef.current) clearInterval(pollingIntervalRef.current) }
     }, [])
 
+    useImperativeHandle(ref, () => ({
+        goNext: handleNext,
+        goBack: handleBack,
+        finishCheckout: handleFinish,
+        step,
+        totalSteps,
+    }))
+
     return (
         <div className={`flex h-full min-h-0 ${isInline ? 'flex-col' : ''}`}>
             {!isInline && (
@@ -888,67 +904,6 @@ export function SalesCheckoutWizardContent({
                         </div>
                     </>
                 </div>
-
-                {isInline && (
-                    <div className="p-6 border-t bg-background/50 flex justify-between items-center">
-                        <div className="flex gap-2">
-                            <Button variant="outline" onClick={handleBack} disabled={loading} className="font-bold">
-                                <ChevronLeft className="mr-2 h-4 w-4" />
-                                Atrás
-                            </Button>
-                            <Button variant="ghost" onClick={onCancel} disabled={loading} className="text-muted-foreground hover:text-primary transition-colors h-10 px-4">
-                                <ShoppingCart className="mr-2 h-4 w-4" />
-                                Volver al Carrito
-                            </Button>
-                        </div>
-                        <div className="flex gap-4">
-                            {step < totalSteps && (
-                                <Button
-                                    onClick={handleNext}
-                                    className="w-40 font-bold"
-                                >
-                                    Siguiente
-                                    <ChevronRight className="ml-2 h-4 w-4" />
-                                </Button>
-                            )}
-                            {step === totalSteps && (
-                                <>
-                                    <Button
-                                        variant="outline"
-                                        className="hidden sm:flex items-center gap-2"
-                                        onClick={() => {
-                                            const finalState = {
-                                                step: step,
-                                                dteData,
-                                                paymentData,
-                                                deliveryData,
-                                                isApproved,
-                                                isLoading: false,
-                                                selectedCustomerId,
-                                                selectedCustomerName,
-                                                isQuickSale: quickSale,
-                                                isWaitingPayment: true
-                                            };
-                                            onSuspend?.(finalState);
-                                        }}
-                                        disabled={loading}
-                                    >
-                                        Pagar en otro terminal
-                                    </Button>
-                                    <SubmitButton
-                                        onClick={handleFinish}
-                                        loading={loading}
-                                        disabled={loading || isWaitingApproval}
-                                        icon={<Check className="mr-2 h-4 w-4" />}
-                                        className="w-48 bg-success hover:bg-success/90 font-black uppercase tracking-widest text-[10px] text-success-foreground shadow-elevated shadow-success/20"
-                                    >
-                                        Finalizar Venta
-                                    </SubmitButton>
-                                </>
-                            )}
-                        </div>
-                    </div>
-                )}
             </div>
 
             {!isInline && (
@@ -1039,4 +994,4 @@ export function SalesCheckoutWizardContent({
 
         </div>
     )
-}
+})

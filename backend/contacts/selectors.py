@@ -63,6 +63,10 @@ def list_contacts(*, params: dict) -> QuerySet:
     if params.get("has_terminal_payment_method") == "true":
         queryset = queryset.filter(terminal_providers__is_active=True).distinct()
 
+    queryset = queryset.annotate(
+        last_sale_date=models.Max("sale_orders__date")
+    )
+
     return queryset
 
 

@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Check, ChevronDown, Search, User, Building2, Plus } from "lucide-react"
+import { Check, ChevronDown, User, Building2, Plus } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import {
@@ -15,7 +15,7 @@ import { formatRUT } from "@/lib/utils/format"
 import { useContactSearch, useSingleContact } from "@/features/contacts/hooks/useContactSearch"
 
 import { type Contact } from "@/types/entities"
-import { CardSkeleton, EmptyState, LabeledContainer } from '@/components/shared'
+import { CardSkeleton, EmptyState, LabeledContainer, SearchBar } from '@/components/shared'
 import React, { Suspense } from "react"
 
 const ContactDrawer = React.lazy(() => import("@/features/contacts/components/ContactDrawer"))
@@ -143,39 +143,36 @@ export function AdvancedContactSelector({
                 </Button>
             </PopoverTrigger>
             <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0" align="start">
-                {/* ... (popover content remains same) */}
                 <div className="p-2">
                     <div className="flex items-center gap-2 mb-2">
-                        <div className="flex-1 flex items-center px-3 border rounded-md bg-background">
-                            <Search className="mr-2 h-4 w-4 shrink-0 opacity-50" />
-                            <input
-                                className="flex h-10 w-full rounded-md bg-transparent py-3 text-sm outline-none placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50"
-                                placeholder="Buscar por nombre, rut, código..."
-                                value={searchTerm}
-                                onChange={(e) => setSearchTerm(e.target.value)}
-                                autoFocus
-                            />
-                        </div>
-                        <TooltipProvider>
-                            <Tooltip>
-                                <TooltipTrigger asChild>
-                                    <Button
-                                        variant="outline"
-                                        size="icon"
-                                        className="h-10 w-10 shrink-0 border-dashed border-primary/50 text-primary hover:bg-primary/10 hover:border-primary transition-colors"
-                                        onClick={() => {
-                                            setOpen(false)
-                                            setIsCreateModalOpen(true)
-                                        }}
-                                    >
-                                        <Plus className="h-4 w-4" />
-                                    </Button>
-                                </TooltipTrigger>
-                                <TooltipContent>
-                                    <p>Crear nuevo contacto</p>
-                                </TooltipContent>
-                            </Tooltip>
-                        </TooltipProvider>
+                        <SearchBar
+                            placeholder="Buscar por nombre, rut, código..."
+                            value={searchTerm}
+                            onChange={setSearchTerm}
+                            autoFocus
+                            rightAction={
+                                <TooltipProvider>
+                                    <Tooltip>
+                                        <TooltipTrigger asChild>
+                                            <Button
+                                                variant="outline"
+                                                size="icon"
+                                                className="h-9 w-9 shrink-0 border-dashed border-primary/50 text-primary hover:bg-primary/10 hover:border-primary transition-colors"
+                                                onClick={() => {
+                                                    setOpen(false)
+                                                    setIsCreateModalOpen(true)
+                                                }}
+                                            >
+                                                <Plus className="h-4 w-4" />
+                                            </Button>
+                                        </TooltipTrigger>
+                                        <TooltipContent>
+                                            <p>Crear nuevo contacto</p>
+                                        </TooltipContent>
+                                    </Tooltip>
+                                </TooltipProvider>
+                            }
+                        />
                     </div>
                     <div className="max-h-[300px] overflow-y-auto space-y-1">
                         {searchLoading ? (

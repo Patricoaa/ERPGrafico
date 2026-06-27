@@ -147,6 +147,7 @@ class ContactListSerializer(serializers.ModelSerializer):
             "partner_earnings_balance",
             "partner_dividends_payable_balance",
             "partner_net_equity",
+            "last_sale_date",
         ]
 
 
