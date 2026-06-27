@@ -7,10 +7,11 @@ import { useRealtime } from '@/features/realtime'
 import { purchasingApi } from '../api/purchasingApi'
 import type { PurchaseOrderAPI } from '../types'
 import { PURCHASING_KEYS } from './queryKeys'
+import type { Page } from '@/lib/pagination'
 
 export { PURCHASING_KEYS }
 
-export function usePurchasingOrders(filters?: FilterState & { page?: number, page_size?: number }, initialData?: any) {
+export function usePurchasingOrders(filters?: FilterState & { page?: number, page_size?: number }, initialData?: Page<PurchaseOrderAPI>) {
     const queryClient = useQueryClient()
     const { markLocalMutation } = useRealtime()
 

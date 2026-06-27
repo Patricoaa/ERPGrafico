@@ -11,7 +11,7 @@ export function useGroupSearch(search: string = "", enabled: boolean = true) {
             if (search) params.append("search", search)
             params.append("limit", "50")
 
-            const data = await usersApi.getGroups({ params } as any)
+            const data = await usersApi.getGroups({ params: Object.fromEntries(params) })
             return data as AppGroup[]
         },
         enabled,

@@ -4,12 +4,13 @@ import { salesApi } from '../api/salesApi'
 import { toast } from 'sonner'
 import { type SaleOrderFilters, type SaleOrderPayload, type SaleOrder } from '../types'
 import { useRealtime } from '@/features/realtime'
+import type { Page } from '@/lib/pagination'
 
 import { SALES_KEYS } from './queryKeys'
 
 export { SALES_KEYS }
 
-export function useSalesOrders({ filters, initialData }: { filters?: SaleOrderFilters, initialData?: any } = {}) {
+export function useSalesOrders({ filters, initialData }: { filters?: SaleOrderFilters, initialData?: Page<SaleOrder> } = {}) {
     const queryClient = useQueryClient()
     const { markLocalMutation } = useRealtime()
 

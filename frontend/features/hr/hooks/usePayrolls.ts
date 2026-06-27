@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query'
 import { getPayrolls, getPayroll, getPayrollConcepts, getPayrollPayments } from '../api/hrApi'
 import { getEmployeePayrollPreview } from '@/features/profile/api/profileApi'
-import type {Payroll, PayrollConcept} from '@/types/hr'
+import type {Payroll, PayrollConcept, PayrollPayment} from '@/types/hr'
 import type { FilterState } from '@/components/shared'
 
 export const PAYROLLS_QUERY_KEY = ['hr', 'payrolls'] as const
@@ -47,15 +47,15 @@ export function usePayrollDetail(payrollId: number, viewMode: 'admin' | 'employe
         staleTime: 2 * 60 * 1000,
         queryFn: async () => {
             if (viewMode === 'employee') {
-                const pData = await getEmployeePayrollPreview(payrollId)
+                const pData = await getEmployeePayrollPreview(payrollId) as Record<string, unknown>
                 if (employee && pData) {
-                    pData.employee_detail = pData.employee_detail || {
+                    pData.employee_detail = (pData.employee_detail as Record<string, unknown>) || {
                         contact_detail: employee.contact_detail,
                         position: employee.position,
                         department: employee.department
                     }
                 }
-                return { payroll: pData, concepts: [] as PayrollConcept[], payments: pData.payments || [] }
+                return { payroll: pData as unknown as Payroll, concepts: [] as PayrollConcept[], payments: (pData.payments || []) as PayrollPayment[] }
             } else {
                 const [pData, cData, pmtData] = await Promise.all([
                     getPayroll(payrollId),

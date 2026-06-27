@@ -17,7 +17,7 @@ import { formatCurrency } from '@/lib/money'
 import { purchaseOrderActions } from '@/features/purchasing/actions'
 import { saleOrderActions } from '@/features/sales/actions'
 import { ordersApi } from '../hooks/useOrdersMutations'
-import type { UserPermissions } from '@/types/actions'
+import type { UserPermissions, ActionCategory as CategoryType } from '@/types/actions'
 import { type Order } from '../types'
 
 interface OrderActionPanelProps {
@@ -228,7 +228,7 @@ export function OrderActionPanel({
                                 {order && Object.entries(filteredActions).map(([key, category]) => (
                                     <ActionCategory
                                         key={key}
-                                        category={category}
+                                        category={category as unknown as CategoryType}
                                         order={order}
                                         userPermissions={userPermissions?.permissions || []}
                                         onActionSuccess={handleActionComplete}

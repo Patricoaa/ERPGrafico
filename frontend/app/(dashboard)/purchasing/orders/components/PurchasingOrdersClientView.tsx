@@ -13,6 +13,7 @@ import api from "@/lib/api"
 import { PurchaseOrderModal, DocumentRegistrationModal, PurchaseCheckoutWizard, usePurchasingOrders, usePurchasingNotes, purchaseOrderSearchDef, usePurchasingAnalyticsData } from "@/features/purchasing"
 import { purchaseOrderSegDef } from "@/features/purchasing/segmentationDef"
 import type { PurchaseOrderAPI } from "@/features/purchasing"
+import type { Page } from '@/lib/pagination'
 import { toast } from "sonner"
 
 import { useHubPanel } from "@/components/providers/HubPanelProvider"
@@ -54,7 +55,7 @@ export function PurchasingOrdersClientView({ viewMode, externalOpenCheckout, cre
     const isFiltered = isTextFiltered || isSegFiltered
     const [pageState, setPageState] = useState({ pageIndex: 0, pageSize: 20 })
     const allFilters = { ...(textFilters as any), ...(segFilters as any), page: pageState.pageIndex + 1, page_size: pageState.pageSize }
-    const { page, orders, isLoading: isLoadingOrders, isRefetching, refetch: fetchOrders, deleteOrder } = usePurchasingOrders(allFilters, initialOrders)
+    const { page, orders, isLoading: isLoadingOrders, isRefetching, refetch: fetchOrders, deleteOrder } = usePurchasingOrders(allFilters, initialOrders ? { results: initialOrders, count: initialOrders.length } as Page<PurchaseOrderAPI> : undefined)
     // TODO: migrate purchasing notes to Page<T>
     const { notes, isLoading: isLoadingNotes } = usePurchasingNotes(initialNotes)
 

@@ -3,6 +3,7 @@ import { toast } from 'sonner'
 import { inventoryApi } from '../api/inventoryApi'
 import { useRealtime } from '@/features/realtime'
 import type { Product, ProductFilters, ProductUpdatePayload } from '../types'
+import type { Page } from '@/lib/pagination'
 import { BOMS_QUERY_KEY, PRODUCTS_KEYS, PRODUCTS_QUERY_KEY } from './queryKeys'
 
 // Re-export for backward compatibility with external consumers that still
@@ -11,7 +12,7 @@ export { PRODUCTS_QUERY_KEY, PRODUCTS_KEYS }
 
 interface UseProductsProps {
     filters?: ProductFilters
-    initialData?: any
+    initialData?: Page<Product>
     page?: number
     page_size?: number
 }

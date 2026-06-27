@@ -23,6 +23,7 @@ import type {
     TransferPayload,
     MovementCreatePayload,
     TerminalBatchCreatePayload,
+    TerminalBatch,
     PaymentUpdatePayload,
     ContactBrief,
     PartnerCapitalInfo,
@@ -108,12 +109,12 @@ export const treasuryApi = {
 
     // ========== Terminal Batches ==========
 
-    getTerminalBatches: async (params?: Record<string, string>): Promise<any[]> => {
-        const response = await api.get<{ results: any[] }>('/treasury/terminal-batches/', { params })
+    getTerminalBatches: async (params?: Record<string, string>): Promise<TerminalBatch[]> => {
+        const response = await api.get<{ results: TerminalBatch[] }>('/treasury/terminal-batches/', { params })
         return response.data.results
     },
 
-    createTerminalBatch: async (payload: TerminalBatchCreatePayload): Promise<any> => {
+    createTerminalBatch: async (payload: TerminalBatchCreatePayload): Promise<TerminalBatch> => {
         const { data } = await api.post('/treasury/terminal-batches/', payload)
         return data
     },

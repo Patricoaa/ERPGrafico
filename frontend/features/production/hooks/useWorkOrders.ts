@@ -19,7 +19,7 @@ interface WorkOrderFilters {
     [key: string]: string | number | boolean | undefined
 }
 
-export function useWorkOrders(filters?: WorkOrderFilters, initialData?: any) {
+export function useWorkOrders(filters?: WorkOrderFilters, initialData?: Page<WorkOrder>) {
     const queryClient = useQueryClient()
 
     const { page = 1, page_size = 50, my_tasks, ...restFilters } = filters || {}

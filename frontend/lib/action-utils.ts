@@ -3,12 +3,12 @@ import type { ActionRegistry, Action, UserPermissions } from '@/types/actions'
 /**
  * Filter actions based on order state and user permissions
  */
-export function filterAvailableActions(
-    registry: ActionRegistry,
+export function filterAvailableActions<T>(
+    registry: ActionRegistry<T>,
     order: any,
     userPermissions?: UserPermissions
-): ActionRegistry {
-    const filtered: ActionRegistry = {}
+): ActionRegistry<T> {
+    const filtered: ActionRegistry<T> = {}
 
     for (const [categoryKey, category] of Object.entries(registry)) {
         const availableActions = category.actions.filter(action => {
@@ -56,7 +56,7 @@ export function filterAvailableActions(
 /**
  * Calculate dynamic badge count for an action
  */
-export function getActionBadgeCount(action: Action, order: any): number | undefined {
+export function getActionBadgeCount(action: Action<any>, order: any): number | undefined {
     if (!order) return undefined
     switch (action.id) {
         case 'payment-history':

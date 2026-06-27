@@ -10,6 +10,7 @@ import { DataTableColumnHeader } from '@/components/shared'
 import { type ColumnDef } from "@tanstack/react-table"
 
 import type { BulkAction } from "@/components/shared"
+import type { Page } from '@/lib/pagination'
 import { ProductDrawer } from "./ProductDrawer"
 import { ChevronDown, Plus, AlertTriangle, Layers, ChevronDown as ChevronDownIcon } from "lucide-react"
 import type { LucideIcon } from "lucide-react"
@@ -92,7 +93,7 @@ export function ProductClientView({ externalOpen, onExternalOpenChange, createAc
         filters,
         page: pageState.pageIndex + 1,
         page_size: pageState.pageSize,
-        initialData: initialProducts,
+        initialData: initialProducts ? { results: initialProducts, count: initialProducts.length } as Page<Product> : undefined,
     })
     const [editingProduct, setEditingProduct] = useState<Product | null>(null)
     const [isFormOpen, setIsFormOpen] = useState(false)
