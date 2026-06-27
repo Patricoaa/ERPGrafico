@@ -71,7 +71,8 @@ export function useInvoices({ filters, initialData }: UseInvoicesProps = {}) {
     })
 
     const posCheckoutMutation = useMutation({
-        mutationFn: async (payload: FormData) => billingApi.posCheckout(payload),
+        mutationFn: async ({ payload, idempotencyKey }: { payload: FormData; idempotencyKey: string }) =>
+            billingApi.posCheckout(payload, idempotencyKey),
         onSuccess: () => {
             markLocalMutation()
             invalidateBilling()

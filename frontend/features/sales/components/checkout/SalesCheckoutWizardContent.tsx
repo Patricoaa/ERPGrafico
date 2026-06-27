@@ -471,6 +471,7 @@ export const SalesCheckoutWizardContent = forwardRef<SalesCheckoutWizardContentH
     // Checkout handlers
     const executeCheckout = async (pin?: string) => {
         setLoading(true)
+        const idempotencyKey = crypto.randomUUID()
         try {
             const formData = new FormData()
 
@@ -569,7 +570,7 @@ export const SalesCheckoutWizardContent = forwardRef<SalesCheckoutWizardContentH
                 formData.append('pos_pin', pin)
             }
 
-            const data = await posCheckout(formData) as CheckoutResponse
+            const data = await posCheckout({ payload: formData, idempotencyKey }) as CheckoutResponse
             toast.success("Venta procesada correctamente")
             onComplete(data)
         } catch (error: unknown) {
