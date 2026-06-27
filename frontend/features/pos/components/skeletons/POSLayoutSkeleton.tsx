@@ -7,8 +7,10 @@ import { CardSkeleton } from "@/components/shared"
 
 export function POSSearchSkeleton() {
     return (
-        <div className="px-2 pt-1.5 pb-1.5 border-b bg-background/50 space-y-2">
-            <Skeleton className="h-10 w-full rounded-sm" />
+        <div className="px-2 pt-1.5 pb-1.5 border-b space-y-2">
+            <div className="bg-muted/50 rounded-sm p-2">
+                <Skeleton className="h-5 w-full" />
+            </div>
         </div>
     )
 }
@@ -27,7 +29,7 @@ export function POSCartItemsSkeleton({ count = 4 }: { count?: number }) {
     return (
         <div className="flex flex-col gap-2 p-3">
             {Array.from({ length: count }).map((_, i) => (
-                <div key={i} className="flex flex-col gap-2 p-3 rounded-sm border border-border/40 bg-background">
+                <div key={i} className="flex flex-col gap-2 p-2 rounded-md border bg-background">
                     <div className="flex justify-between items-start">
                         <Skeleton className="h-3 w-32" />
                         <Skeleton className="h-4 w-16" />
@@ -82,7 +84,7 @@ export function POSLayoutSkeleton() {
                 <div className="md:col-span-12 lg:col-span-6 flex flex-col min-h-0">
                     <Card className="py-2 flex-1 flex flex-col overflow-hidden border bg-card dot-grid-surface shadow-card rounded-md">
                         <CardContent className="p-0 flex-1 flex flex-col overflow-hidden">
-                            <div className="px-4 py-1.5 border-b bg-muted/50 shrink-0">
+                            <div className="px-4 py-1.5 border-b bg-transparent shrink-0">
                                 <div className="flex justify-between items-center h-10">
                                     <div className="flex items-center gap-2">
                                         <Skeleton className="h-5 w-40" />
@@ -92,7 +94,7 @@ export function POSLayoutSkeleton() {
                                 </div>
                             </div>
 
-                            <div className="flex-1 overflow-auto bg-muted/50">
+                            <div className="flex-1 overflow-auto bg-transparent">
                                 <POSCartItemsSkeleton count={3} />
                             </div>
 

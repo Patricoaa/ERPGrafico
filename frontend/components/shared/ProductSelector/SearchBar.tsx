@@ -19,6 +19,7 @@ export interface SearchBarProps {
     autoFocus?: boolean
     /** Optional element rendered to the right of the input (before clear button) */
     rightAction?: React.ReactNode
+    className?: string
 }
 
 export function SearchBar({
@@ -27,7 +28,8 @@ export function SearchBar({
     onEnter,
     placeholder = "Buscar por nombre, código o código de barras...",
     autoFocus = true,
-    rightAction
+    rightAction,
+    className
 }: SearchBarProps) {
     const inputRef = useRef<HTMLInputElement>(null)
     const { isTouch, isTouchPOS } = useDeviceContext()
@@ -50,7 +52,8 @@ export function SearchBar({
                 'bg-background',
                 'hover:bg-muted/50 hover:text-foreground hover:ring-2 hover:ring-primary/10',
                 'focus-within:bg-muted/50 focus-within:ring-2 focus-within:ring-primary/20',
-                isTouchDevice ? 'h-12 px-3' : 'h-9 px-2'
+                isTouchDevice ? 'h-12 px-3' : 'h-9 px-2',
+                className
             )}
         >
             <Search className={cn(
