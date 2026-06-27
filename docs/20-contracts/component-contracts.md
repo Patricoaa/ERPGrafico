@@ -1047,8 +1047,6 @@ Universal close primitive for Modals, Sheets, and Panels. Standardizes the 32px 
 Componentes de uso estrictamente interno, no consumir directamente en features:
 
 - `ColorBar`: Componente decorativo
-- `CropFrame`: Utilidad visual para recorte de imágenes
-- `IndustryMark`: Marca de agua de la aplicación
 
 ---
 

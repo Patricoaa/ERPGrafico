@@ -69,10 +69,6 @@ export * from './FormSplitLayout';
 export * from './EmptyState';
 export * from './ModuleLauncher';
 
-
-// Industrial Identity
-export * from './CropFrame';
-export * from './IndustryMark';
 export * from './Separators';
 export * from './FormSection';
 
