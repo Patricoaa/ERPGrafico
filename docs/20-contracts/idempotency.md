@@ -38,6 +38,7 @@ Estos endpoints **DEBEN** validar `Idempotency-Key`. Agregar uno requiere ADR.
 | Método | Endpoint | Por qué |
 |--------|----------|---------|
 | `POST` | `/api/billing/invoices/` | Emitir factura asigna folio fiscal — no reversible |
+| `POST` | `/api/billing/invoices/pos_checkout/` | Checkout POS — crea orden + factura + pago en una transacción |
 | `POST` | `/api/billing/invoices/{id}/issue/` | Envío a SII — el provider no acepta retries naive |
 | `POST` | `/api/billing/credit-notes/` | Idem invoice |
 | `POST` | `/api/accounting/entries/` | Asiento manual — descuadra libros si duplica |

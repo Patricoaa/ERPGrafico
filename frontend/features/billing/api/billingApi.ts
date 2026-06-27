@@ -84,10 +84,12 @@ export const billingApi = {
      * Genérico en el response porque la respuesta del backend incluye
      * referencias a múltiples entidades creadas (invoice, order, payment, etc).
      */
-    posCheckout: async <T = unknown>(payload: FormData): Promise<T> => {
-        const { data } = await api.post<T>('/billing/invoices/pos_checkout/', payload, {
-            headers: { 'Content-Type': 'multipart/form-data' as const },
-        })
+    posCheckout: async <T = unknown>(payload: FormData, idempotencyKey?: string): Promise<T> => {
+        const headers: Record<string, string> = { 'Content-Type': 'multipart/form-data' as const }
+        if (idempotencyKey) {
+            headers['Idempotency-Key'] = idempotencyKey
+        }
+        const { data } = await api.post<T>('/billing/invoices/pos_checkout/', payload, { headers })
         return data
     },
 
