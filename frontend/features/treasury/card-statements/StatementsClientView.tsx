@@ -199,7 +199,7 @@ export function StatementsClientView({ bankId }: StatementsClientViewProps) {
     ]
 
     return (
-        <div className="h-full flex flex-col">
+        <div className="flex-1 min-h-0 flex flex-col">
             <div className="flex-1 min-h-0">
                 <DataTableView
                     entityLabel="treasury.creditcardstatement"

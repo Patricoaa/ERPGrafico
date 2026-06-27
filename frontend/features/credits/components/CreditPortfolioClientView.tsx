@@ -88,7 +88,7 @@ export function CreditPortfolioClientView({
     }, [refetch, clearSelection])
 
     return (
-        <div className="h-full flex flex-col">
+        <div className="flex-1 min-h-0 flex flex-col">
             <CreditAssignmentModal
                 open={!!selectedContact || isLoadingSelected || externalOpen}
                 onOpenChange={(open) => { if (!open) clearSelection() }}

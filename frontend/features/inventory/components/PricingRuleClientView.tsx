@@ -222,7 +222,7 @@ export function PricingRuleClientView({ externalOpen, onExternalOpenChange, crea
     ], [actionsCtx])
 
     return (
-        <div className="h-full flex flex-col">
+        <div className="flex-1 min-h-0 flex flex-col">
             <PricingRuleDrawer
                 initialData={isCreateModal ? undefined : (selectedFromUrl ?? undefined)}
                 onSuccess={() => { handleCloseModal(); refetch() }}

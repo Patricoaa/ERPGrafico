@@ -112,7 +112,7 @@ export function BankManagement({ externalOpen, onOpenChange, createAction }: Ban
     }, [banks, segFilters.is_active, filterBanks])
 
     return (
-        <div className="h-full flex flex-col">
+        <div className="flex-1 min-h-0 flex flex-col">
             <DataTableView
                 entityLabel="treasury.bank"
                 columns={columns}
