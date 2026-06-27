@@ -470,7 +470,7 @@
 /*
  * CARD ACCENT CMY — Vertical gradient accent on the left side of cards
  * Apply via className="card-accent-cmyk" on any <EntityCard> or container.
- * Renders a 3px cyan→magenta→yellow gradient bar along the left edge.
+ * Renders a 4px cyan→magenta→yellow vertical gradient bar along the left edge.
  */
 @utility card-accent-cmyk {
   @apply relative overflow-hidden;
@@ -481,8 +481,15 @@
     top: 0;
     left: 0;
     bottom: 0;
-    width: 3px;
-    background: var(--gradient-cmyk);
+    width: 4px;
+    background: linear-gradient(
+      180deg,
+      var(--color-cyan) 0%,
+      var(--color-cyan) 15%,
+      var(--color-magenta) 50%,
+      var(--color-yellow) 85%,
+      var(--color-yellow) 100%
+    );
     z-index: 1;
     pointer-events: none;
     border-radius: var(--radius-sm) 0 0 var(--radius-sm);
