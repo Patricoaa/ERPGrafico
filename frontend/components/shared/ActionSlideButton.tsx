@@ -5,7 +5,7 @@ import { cn } from "@/lib/utils";
 import { Loader2, type LucideIcon } from "lucide-react";
 
 export interface ActionSlideButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
-    variant?: 'primary' | 'destructive' | 'success';
+    variant?: 'primary' | 'destructive' | 'success' | 'cmyk';
     /** Show loading spinner and disable interaction */
     loading?: boolean;
     /** Leading icon (Lucide component or instance) */
@@ -26,10 +26,11 @@ export interface ActionSlideButtonProps extends React.ButtonHTMLAttributes<HTMLB
  * Supports `loading` (spinner + disabled) and `icon` (leading Lucide icon).
  */
 export const ActionSlideButton = React.forwardRef<HTMLButtonElement, ActionSlideButtonProps>(
-    ({ className, variant = 'primary', loading = false, icon, disabled, children, ...props }, ref) => {
+    ({ className, variant = 'cmyk', loading = false, icon, disabled, children, ...props }, ref) => {
         const isPrimary = variant === 'primary';
         const isDestructive = variant === 'destructive';
         const isSuccess = variant === 'success';
+        const isCmyk = variant === 'cmyk';
         const isDisabled = disabled || loading;
 
         return (
@@ -40,9 +41,10 @@ export const ActionSlideButton = React.forwardRef<HTMLButtonElement, ActionSlide
                     "relative inline-flex items-center justify-center overflow-hidden z-10 transition-all duration-300 ease-out",
                     "h-9 px-5 text-[10px] font-black tracking-widest uppercase rounded-sm shadow-card",
                     "border",
-                    isPrimary && "text-primary hover:text-primary-foreground bg-primary/5",
+                    isPrimary && "text-primary hover:text-primary-foreground bg-primary/5 border-primary",
                     isDestructive && "border-destructive text-destructive hover:text-destructive-foreground bg-destructive/5",
                     isSuccess && "border-success text-success hover:text-success-foreground bg-success/5",
+                    isCmyk && "border-border/50 text-foreground hover:text-white bg-transparent",
                     isDisabled && "opacity-50 cursor-not-allowed pointer-events-none",
                     "group",
                     className
@@ -61,6 +63,7 @@ export const ActionSlideButton = React.forwardRef<HTMLButtonElement, ActionSlide
                         isDestructive && "bg-destructive",
                         isSuccess && "bg-success"
                     )}
+                    {...(isCmyk ? { style: { background: 'var(--gradient-cmyk)' } as React.CSSProperties } : {})}
                 />
 
                 {/* Content wrapper to ensure text stays above the animated background */}
