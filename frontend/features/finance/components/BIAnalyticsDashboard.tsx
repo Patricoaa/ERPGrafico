@@ -221,7 +221,7 @@ export const BIAnalyticsDashboard: React.FC<BIAnalyticsDashboardProps> = ({ date
                     </CardContent>
                 </Card>
 
-                <Card className="rounded-none shadow-elevated ring-1 ring-border bg-card hover:shadow-elevated transition-shadow">
+                <Card className="card-interactive card-accent-cmyk rounded-none shadow-elevated ring-1 ring-border bg-card">
                     <CardHeader>
                         <CardTitle className="text-base">Cuentas por Pagar</CardTitle>
                     </CardHeader>

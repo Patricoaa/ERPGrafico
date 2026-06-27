@@ -35,6 +35,8 @@ export interface ProductGridProps {
     onToggleFavorite?: (productId: number) => void
     /** Optional custom renderer for the price section. If not provided, defaults to displaying sale_price */
     priceRenderer?: (product: BaseProduct) => React.ReactNode
+    /** IDs of selected products (in cart, calculator, etc). Shows CMY ribbon on each. */
+    selectedProductIds?: Set<number>
 }
 
 function ProductGridComponent({
@@ -44,7 +46,8 @@ function ProductGridComponent({
     isProductDisabled = () => false,
     onProductClick,
     onToggleFavorite,
-    priceRenderer
+    priceRenderer,
+    selectedProductIds
 }: ProductGridProps) {
     const { isTouchPOS, isSmallScreen } = useDeviceContext()
 
@@ -97,7 +100,8 @@ function ProductGridComponent({
                 return (
                     <Card
                         className={cn(
-                            "group cursor-pointer hover:shadow-elevated transition-all border overflow-hidden flex flex-col h-full rounded-md p-2 bg-card ribbon-cmyk",
+                            "group cursor-pointer hover:shadow-elevated transition-all border overflow-hidden flex flex-col h-full rounded-md p-2 bg-card",
+                            selectedProductIds?.has(product.id) && "ribbon-cmyk",
                             isTouchPOS && "active:scale-95",
                             isDisabled && "opacity-50 grayscale cursor-not-allowed"
                         )}
@@ -252,6 +256,7 @@ export const ProductGrid = memo(ProductGridComponent, (prevProps, nextProps) => 
         prevProps.onProductClick === nextProps.onProductClick &&
         prevProps.onToggleFavorite === nextProps.onToggleFavorite &&
         prevProps.isProductDisabled === nextProps.isProductDisabled &&
-        prevProps.priceRenderer === nextProps.priceRenderer
+        prevProps.priceRenderer === nextProps.priceRenderer &&
+        prevProps.selectedProductIds === nextProps.selectedProductIds
     )
 })

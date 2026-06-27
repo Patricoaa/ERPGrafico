@@ -29,6 +29,8 @@ export interface ProductSelectorProps {
     isProductDisabled?: (product: BaseProduct) => boolean
     limits?: SharedStockLimits
     priceRenderer?: (product: BaseProduct) => React.ReactNode
+    /** IDs of selected products (in cart, calculator, etc). Shows CMY ribbon on each. */
+    selectedProductIds?: Set<number>
 }
 
 export function ProductSelector({
@@ -43,7 +45,8 @@ export function ProductSelector({
     onToggleFavorite,
     isProductDisabled,
     limits,
-    priceRenderer
+    priceRenderer,
+    selectedProductIds
 }: ProductSelectorProps) {
     const { isDesktop } = useDeviceContext()
 
@@ -79,6 +82,7 @@ export function ProductSelector({
                     onProductClick={onProductClick}
                     onToggleFavorite={onToggleFavorite}
                     priceRenderer={priceRenderer}
+                    selectedProductIds={selectedProductIds}
                 />
             </div>
         </Card>

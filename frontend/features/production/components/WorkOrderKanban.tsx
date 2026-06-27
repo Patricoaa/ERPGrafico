@@ -45,8 +45,8 @@ function KanbanCard({ order, onManage, onDuplicate, onAnnul, onDelete }: { order
         <Card
             onClick={() => onManage(order.id)}
             className={cn(
-                "cursor-pointer hover:shadow-elevated transition-all border-none shadow-card rounded-md",
-                "active:scale-95 duration-100"
+                "card-interactive card-accent-cmyk cursor-pointer rounded-md",
+                "active:scale-95"
             )}
         >
             <CardContent className="p-3 space-y-3">
