@@ -82,6 +82,7 @@ export function DomainCard({
             isSelected={isSelected && (isHubOpen || !isDetailView)}
             onClick={isDetailView ? undefined : handleClick}
             className={cn(
+                isHubOpen && isSelected && "accent-visible",
                 !isSelected && isHubOpen && "opacity-40 grayscale-[0.2] blur-[0.2px]",
                 isDetailView && "cursor-default shadow-card",
                 className
@@ -140,7 +141,7 @@ export function DomainCard({
 
                         {!isDetailView && (
                             isHubOpen && isSelected ? (
-                                <ArrowLeft className="h-5 w-5 text-muted-foreground opacity-0 group-hover:opacity-100 group-focus:opacity-100 group-focus-within:opacity-100" />
+                                <ArrowLeft className="h-5 w-5 text-muted-foreground" />
                             ) : (
                                 <ArrowRight className="h-5 w-5 text-muted-foreground opacity-0 group-hover:opacity-100 group-focus:opacity-100 group-focus-within:opacity-100" />
                             )
