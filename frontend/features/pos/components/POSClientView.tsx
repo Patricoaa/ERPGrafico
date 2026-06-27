@@ -57,7 +57,7 @@ import { ProductGrid } from './ProductGrid'
 import { Cart } from './Cart'
 import { POSCheckoutHeader } from './POSCheckoutHeader'
 import { POSLayoutSkeleton } from './skeletons/POSLayoutSkeleton'
-import { SalesCheckoutWizardContent } from '@/features/sales/components/checkout/SalesCheckoutWizardContent'
+import { SalesCheckoutWizardContent, type SalesCheckoutWizardContentHandle } from '@/features/sales/components/checkout/SalesCheckoutWizardContent'
 
 // Shared components
 import { SessionControl, type SessionControlHandle } from '@/features/pos/components/SessionControl'
@@ -190,6 +190,22 @@ export function POSClientView() {
     const [ordersModalOpen, setOrdersModalOpen] = useState(false)
     const [isSharedSession, setIsSharedSession] = useState(false)
     const draftLoadedFromUrl = useRef(false)
+    const checkoutWizardRef = useRef<SalesCheckoutWizardContentHandle>(null)
+
+    const checkoutTotalSteps = 4 + (items.some(i => i.product_type === 'MANUFACTURABLE' && i.requires_advanced_manufacturing) ? 1 : 0)
+    const isCheckoutLastStep = posMode === 'CHECKOUT' && (wizardState?.step ?? 0) >= checkoutTotalSteps
+
+    const handleCheckoutNext = useCallback(() => {
+        checkoutWizardRef.current?.goNext()
+    }, [])
+
+    const handleCheckoutBack = useCallback(() => {
+        checkoutWizardRef.current?.goBack()
+    }, [])
+
+    const handleCheckoutFinish = useCallback(() => {
+        checkoutWizardRef.current?.finishCheckout()
+    }, [])
 
     const currentOrderLines = useMemo(() => items.map(item => ({
         product: item.id,
@@ -583,8 +599,9 @@ export function POSClientView() {
                             </Card>
                         </div>
                     ) : (
-                        <div key={currentDraftId || 'checkout-new'} className="flex-1 flex flex-col min-h-0 bg-background border rounded-md shadow-card overflow-hidden relative border-primary/20 animate-in fade-in slide-in-from-right-2 ease-premium duration-300 fill-mode-both">
+                        <div key={currentDraftId || 'checkout-new'} className="flex-1 flex flex-col min-h-0 bg-card border rounded-md shadow-card overflow-hidden relative border-primary/20 animate-in fade-in slide-in-from-right-2 ease-premium duration-300 fill-mode-both">
                             <SalesCheckoutWizardContent
+                                ref={checkoutWizardRef}
                                 key={currentDraftId || 'checkout-new'}
                                 order={null}
                                 orderLines={currentOrderLines as unknown as SaleOrderLine[]}
@@ -639,7 +656,15 @@ export function POSClientView() {
                         totalDiscountAmount={totalDiscountAmount}
                         onTotalDiscountChange={setTotalDiscountAmount}
                         posMode={posMode}
-                        wizardState={wizardState}
+                        onCheckoutBack={handleCheckoutBack}
+                        onCheckoutNext={handleCheckoutNext}
+                        onCheckoutFinish={handleCheckoutFinish}
+                        onCancel={() => setPosMode('SHOPPING')}
+                        onSuspend={() => {
+                            /* suspend for another terminal — wizard exposes last state via onStateChange */
+                        }}
+                        isLastStep={isCheckoutLastStep}
+                        checkoutLoading={false}
                     />
                 </div>
             </div>

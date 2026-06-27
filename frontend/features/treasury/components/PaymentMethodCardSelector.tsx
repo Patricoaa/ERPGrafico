@@ -313,8 +313,10 @@ export function PaymentMethodCardSelector({
                             <label
                                 htmlFor={`method-${m.id}`}
                                 className={cn(
-                                    "flex flex-col rounded-md border-2 border-muted bg-popover hover:bg-accent hover:text-accent-foreground [&:has([data-state=checked])]:border-primary transition-all h-full cursor-pointer",
-                                    paymentData.method === m.id ? 'border-primary bg-primary/5 shadow-elevated scale-[1.01]' : '',
+                                    "card-accent-cmyk relative overflow-hidden flex flex-col rounded-md border bg-card hover:shadow-elevated transition-all h-full cursor-pointer",
+                                    "focus-visible:border-2 focus-visible:border-primary",
+                                    "[&:has([data-state=checked])]:border-2 [&:has([data-state=checked])]:border-primary",
+                                    paymentData.method === m.id ? 'border-2 border-primary accent-visible' : 'border',
                                     !m.isAllowed ? 'opacity-50 grayscale cursor-not-allowed' : '',
                                     compactMode ? "gap-2 p-3" : "gap-4 p-6"
                                 )}

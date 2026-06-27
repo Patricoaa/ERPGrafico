@@ -1,24 +1,20 @@
 "use client"
-import { formatPlainDate } from "@/lib/utils";
 
 // Cart Component
 // Shopping cart display with totals and actions
 
 import { Card, CardContent } from '@/components/ui/card'
-import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from '@/components/ui/accordion'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
 
-import {ShoppingCart, Zap, Clock, User, FileText, Truck, Calendar} from 'lucide-react'
+import {ShoppingCart, Zap, Clock, ChevronLeft, ChevronRight, Check} from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { CartItem } from './CartItem'
 import { formatCurrency } from "@/lib/money"
 import { useVatRate } from '@/hooks/useVatRate'
 import { useDeviceContext } from '@/hooks/useDeviceContext'
 import { useTouchMode } from '@/hooks/useTouchMode'
-import type { CartItem as CartItemType, Product, UoM, StockLimits, WizardState } from '@/types/pos'
+import type { CartItem as CartItemType, Product, UoM, StockLimits } from '@/types/pos'
 import { useSalesSettings } from '@/features/settings'
-import { getDteLabel } from '@/lib/entity-registry'
 
 interface CartProps {
     items: CartItemType[]
@@ -51,7 +47,14 @@ interface CartProps {
     onWithdrawClick?: () => void
     onConfirmSale: () => void
     posMode?: 'SHOPPING' | 'CHECKOUT'
-    wizardState?: WizardState | null
+    // Checkout mode navigation
+    onCheckoutBack?: () => void
+    onCheckoutNext?: () => void | Promise<void>
+    onCheckoutFinish?: () => void | Promise<void>
+    onCancel?: () => void
+    onSuspend?: () => void
+    isLastStep?: boolean
+    checkoutLoading?: boolean
 }
 
 export function Cart({
@@ -77,7 +80,13 @@ export function Cart({
     totalDiscountAmount = 0,
     onTotalDiscountChange,
     posMode = 'SHOPPING',
-    wizardState
+    onCheckoutBack,
+    onCheckoutNext,
+    onCheckoutFinish,
+    onCancel,
+    onSuspend,
+    isLastStep = false,
+    checkoutLoading = false,
 }: CartProps) {
     const { rate } = useVatRate()
     const { isTouchPOS } = useDeviceContext()
@@ -86,20 +95,6 @@ export function Cart({
 
     const showLineDiscounts = canApplyLineDiscount
     const showTotalDiscounts = canApplyGlobalDiscount
-
-    const customerName = wizardState?.selectedCustomerName || "Cliente General"
-    const dteType = wizardState?.dteData?.type
-    const deliveryType = wizardState?.deliveryData?.type
-    const deliveryDate = wizardState?.deliveryData?.date
-
-    const getDeliveryLabel = (type: string) => {
-        switch (type) {
-            case 'IMMEDIATE': return 'Inmediata'
-            case 'PARTIAL': return 'Parcial'
-            case 'LATER': return 'Programada'
-            default: return type
-        }
-    }
 
     return (
         <Card className="py-2 flex-1 flex flex-col overflow-hidden border bg-card dot-grid-surface shadow-card rounded-md">
@@ -140,7 +135,7 @@ export function Cart({
                         </div>
                     ) : (
                         /* Cards Content */
-                        <div className={cn("flex flex-col p-3", isTouchMode ? "gap-3" : "gap-2")}>
+                        <div className={cn("flex flex-col p-3 bg-card", isTouchMode ? "gap-3" : "gap-2")}>
                             {items.map((item) => {
                                 const originalProduct = products.find(p => p.id === item.id)
                                 const maxQty = limits[`cart_${item.cartItemId}`]
@@ -167,104 +162,11 @@ export function Cart({
                     )}
                 </div>
 
-                {/* Footer with Totals and Actions */}
-                <div className="p-3 bg-muted/20 border-t space-y-3">
-                    {/* Sale Metadata Summary (Collapsible Accordion) */}
-                    {(wizardState?.selectedCustomerName || dteType || deliveryType) && (
-                        <Accordion type="single" collapsible className="border border-border/50 rounded-md">
-                            <AccordionItem value="details" className="border-0">
-                                <AccordionTrigger className="px-2 py-1.5 text-[10px] font-bold uppercase tracking-wider text-muted-foreground hover:no-underline hover:bg-muted/30 [&[data-state=open]>svg]:-rotate-180 gap-2">
-                                    <span>Detalles de Venta</span>
-                                </AccordionTrigger>
-                                <AccordionContent className="px-2 pb-2 pt-0">
-                                    <div className="flex flex-col gap-1.5">
-                                        <div className="flex items-center justify-between text-[11px]">
-                                            <div className="flex items-center gap-1.5 text-muted-foreground uppercase font-bold tracking-tight">
-                                                <User className="h-3 w-3 text-primary" />
-                                                <span>Cliente</span>
-                                            </div>
-                                            <span className="font-bold text-primary truncate max-w-[180px]">{customerName}</span>
-                                        </div>
+                {/* Footer — Mini Boletín + Details + Actions */}
+                <div className="p-3 bg-card border-t space-y-2">
 
-                                        {dteType && (
-                                            <div className="flex items-center justify-between text-[11px]">
-                                                <div className="flex items-center gap-1.5 text-muted-foreground uppercase font-bold tracking-tight">
-                                                    <FileText className="h-3 w-3 text-primary" />
-                                                    <span>Documento</span>
-                                                </div>
-                                                <span className="text-[9px] font-bold uppercase px-1.5 py-0.5 rounded-full border border-primary/20 bg-primary/10 text-primary">
-                                                    {getDteLabel(dteType)}
-                                                </span>
-                                            </div>
-                                        )}
-
-                                        {deliveryType && (
-                                            <div className="flex items-center justify-between text-[11px]">
-                                                <div className="flex items-center gap-1.5 text-muted-foreground uppercase font-bold tracking-tight">
-                                                    <Truck className="h-3 w-3 text-success" />
-                                                    <span>Logística</span>
-                                                </div>
-                                                <div className="flex items-center gap-1">
-                                                    <span className="text-[9px] font-bold uppercase px-1.5 py-0.5 rounded-full border border-success/20 bg-success/10 text-success">
-                                                        {getDeliveryLabel(deliveryType)}
-                                                    </span>
-                                                    <span className="text-[10px] text-muted-foreground flex items-center gap-1 ml-1 font-mono font-medium">
-                                                        <Calendar className="h-3 w-3" />
-                                                        {deliveryDate ? formatPlainDate(deliveryDate) : formatPlainDate(new Date())}
-                                                    </span>
-                                                </div>
-                                            </div>
-                                        )}
-                                    </div>
-                                </AccordionContent>
-                            </AccordionItem>
-                        </Accordion>
-                    )}
-
-                    {/* Status Bar removed from here */}
-
-                    {posMode === 'SHOPPING' && (
-                        <>
-                            {/* Quick Sale Button */}
-                            <Button
-                                variant="outline"
-                                className={cn(
-                                    "w-full font-bold border-primary text-primary hover:bg-primary hover:text-primary-foreground transition-all",
-                                    isTouchPOS ? "h-14 text-base" : "h-10 text-sm"
-                                )}
-                                disabled={loading || items.length === 0 || !canQuickSale.allowed}
-                                onClick={onQuickSale}
-                                title={!canQuickSale.allowed ? canQuickSale.reason : "Venta rápida: Saltar directo a pago con BOLETA"}
-                            >
-                                <Zap className={cn(
-                                    "mr-2",
-                                    isTouchPOS ? "h-6 w-6" : "h-5 w-5"
-                                )} />
-                                {!canQuickSale.allowed ? canQuickSale.reason : "Venta Rápida"}
-                            </Button>
-
-                            {/* Partner Withdrawal */}
-                            {onWithdrawClick && items.length > 0 && items.every(i => i.track_inventory) && (
-                                <Button
-                                    variant="default"
-                                    className={cn(
-                                        "w-full font-bold bg-warning text-warning-foreground hover:bg-warning/90 shadow-card",
-                                        isTouchPOS ? "h-14 text-base" : "h-10 text-sm"
-                                    )}
-                                    onClick={onWithdrawClick}
-                                >
-                                    <ShoppingCart className={cn(
-                                        "mr-2",
-                                        isTouchPOS ? "h-6 w-6" : "h-5 w-5"
-                                    )} />
-                                    Retiro de Socio
-                                </Button>
-                            )}
-                        </>
-                    )}
-
-                    {/* Totals */}
-                    <div className="space-y-0.5">
+                    {/* Mini Boletín — Financial Breakdown inside a card */}
+                    <div className="rounded-lg bg-muted/50 p-2.5 space-y-1">
                         <div className="flex justify-between text-xs text-muted-foreground">
                             <span>Subtotal Neto</span>
                             <span>{formatCurrency(totals.total_net)}</span>
@@ -284,31 +186,20 @@ export function Cart({
 
                         {/* Global Discount (Editable) */}
                         {(showTotalDiscounts || (totals.global_discount_total || 0) > 0) && (
-                            <div className="flex justify-between items-center py-0.5">
-                                <span className={cn(
-                                    "text-xs font-medium",
-                                    (totalDiscountAmount || 0) > 0 ? "text-primary font-bold" : "text-muted-foreground"
-                                )}>
-                                    Descuento Global
-                                </span>
+                            <div className="flex justify-between text-xs text-muted-foreground">
+                                <span>Descuento Global</span>
                                 {showTotalDiscounts ? (
-                                    <button
-                                        className={cn(
-                                            "text-xs font-semibold cursor-pointer underline underline-offset-2 hover:text-primary text-right",
-                                            (totalDiscountAmount || 0) > 0 ? "text-primary font-bold" : "text-muted-foreground"
-                                        )}
+                                    <span
+                                        className="cursor-pointer hover:underline underline-offset-2"
                                         onClick={() => onOpenNumpad('cart', 'discount', totalDiscountAmount || 0)}
-                                        type="button"
+                                        role="button"
+                                        tabIndex={0}
+                                        onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onOpenNumpad('cart', 'discount', totalDiscountAmount || 0); } }}
                                     >
                                         {totalDiscountAmount ? formatCurrency(totalDiscountAmount) : "$0"}
-                                    </button>
-                                ) : (
-                                    <span className={cn(
-                                        "font-medium",
-                                        (totals.global_discount_total || 0) > 0 && "text-primary"
-                                    )}>
-                                        -{formatCurrency(totals.global_discount_total || 0)}
                                     </span>
+                                ) : (
+                                    <span>-{formatCurrency(totals.global_discount_total || 0)}</span>
                                 )}
                             </div>
                         )}
@@ -318,6 +209,40 @@ export function Cart({
                             <span>{formatCurrency(totals.total_gross)}</span>
                         </div>
                     </div>
+
+                    {posMode === 'SHOPPING' && (
+                        /* Quick Sale + Withdraw Row */
+                        <div className="flex gap-2">
+                            <Button
+                                className={cn(
+                                    "flex-1 font-black uppercase tracking-tight border border-primary bg-transparent hover:bg-transparent relative overflow-hidden",
+                                    "after:content-[''] after:absolute after:inset-x-0 after:bottom-0 after:h-0.5 after:opacity-0 hover:after:opacity-100",
+                                    "after:transition-opacity after:bg-gradient-to-r after:from-cyan after:via-magenta after:to-yellow",
+                                    isTouchPOS ? "h-20 text-2xl" : "h-12 text-lg"
+                                )}
+                                size="lg"
+                                disabled={loading || items.length === 0 || !canQuickSale.allowed}
+                                onClick={onQuickSale}
+                                title={!canQuickSale.allowed ? canQuickSale.reason : "Venta rápida: Saltar directo a pago con BOLETA"}
+                            >
+                                <Zap className={cn("mr-2", isTouchPOS ? "h-8 w-8" : "h-6 w-6")} />
+                                {!canQuickSale.allowed ? canQuickSale.reason : "Venta Rápida"}
+                            </Button>
+                            {onWithdrawClick && items.length > 0 && items.every(i => i.track_inventory) && (
+                                <Button
+                                    className={cn(
+                                        "flex-1 font-black uppercase tracking-tight bg-warning text-warning-foreground hover:bg-warning/90 shadow-card",
+                                        isTouchPOS ? "h-20 text-2xl" : "h-12 text-lg"
+                                    )}
+                                    size="lg"
+                                    onClick={onWithdrawClick}
+                                >
+                                    <ShoppingCart className={cn("mr-2", isTouchPOS ? "h-8 w-8" : "h-6 w-6")} />
+                                    Retiro de Socio
+                                </Button>
+                            )}
+                        </div>
+                    )}
 
                     {posMode === 'SHOPPING' && (
                         /* Confirm Sale Button */
@@ -337,6 +262,85 @@ export function Cart({
                             )} />
                             {loading || saving ? "Procesando..." : "Confirmar Venta"}
                         </Button>
+                    )}
+
+                    {posMode === 'CHECKOUT' && (
+                        <>
+                            {/* Row 1: Volver al Carrito | Pagar en otro terminal */}
+                            <div className="flex gap-2">
+                                <Button
+                                    className={cn(
+                                        "flex-1 font-black uppercase tracking-tight border border-primary bg-transparent hover:bg-transparent relative overflow-hidden",
+                                        "after:content-[''] after:absolute after:inset-x-0 after:bottom-0 after:h-0.5 after:opacity-0 hover:after:opacity-100",
+                                        "after:transition-opacity after:bg-gradient-to-r after:from-cyan after:via-magenta after:to-yellow",
+                                        isTouchPOS ? "h-20 text-2xl" : "h-12 text-lg"
+                                    )}
+                                    size="lg"
+                                    onClick={onCancel}
+                                    disabled={checkoutLoading}
+                                >
+                                    <ShoppingCart className={cn("mr-2", isTouchPOS ? "h-8 w-8" : "h-6 w-6")} />
+                                    Volver al Carrito
+                                </Button>
+                                {isLastStep && (
+                                    <Button
+                                        className={cn(
+                                            "flex-1 font-black uppercase tracking-tight bg-warning text-warning-foreground hover:bg-warning/90 shadow-card",
+                                            isTouchPOS ? "h-20 text-2xl" : "h-12 text-lg"
+                                        )}
+                                        size="lg"
+                                        onClick={onSuspend}
+                                        disabled={checkoutLoading}
+                                    >
+                                        Pagar en otro terminal
+                                    </Button>
+                                )}
+                            </div>
+
+                            {/* Row 2: Atrás | Siguiente / Finalizar Venta */}
+                            <div className="flex gap-2">
+                                <Button
+                                    variant="secondary"
+                                    onClick={onCheckoutBack}
+                                    disabled={checkoutLoading}
+                                    className={cn(
+                                        "flex-1 font-black uppercase tracking-tight",
+                                        isTouchPOS ? "h-20 text-2xl" : "h-12 text-lg"
+                                    )}
+                                    size="lg"
+                                >
+                                    <ChevronLeft className={cn("mr-2", isTouchPOS ? "h-8 w-8" : "h-6 w-6")} />
+                                    Atrás
+                                </Button>
+                                {!isLastStep ? (
+                                    <Button
+                                        onClick={onCheckoutNext}
+                                        disabled={checkoutLoading}
+                                        className={cn(
+                                            "flex-1 font-black uppercase tracking-tight",
+                                            isTouchPOS ? "h-20 text-2xl" : "h-12 text-lg"
+                                        )}
+                                        size="lg"
+                                    >
+                                        Siguiente
+                                        <ChevronRight className={cn("ml-2", isTouchPOS ? "h-8 w-8" : "h-6 w-6")} />
+                                    </Button>
+                                ) : (
+                                    <Button
+                                        onClick={onCheckoutFinish}
+                                        disabled={checkoutLoading}
+                                        className={cn(
+                                            "flex-1 font-black uppercase tracking-tight bg-success hover:bg-success/90 text-success-foreground",
+                                            isTouchPOS ? "h-20 text-2xl" : "h-12 text-lg"
+                                        )}
+                                        size="lg"
+                                    >
+                                        <Check className={cn("mr-2", isTouchPOS ? "h-8 w-8" : "h-6 w-6")} />
+                                        Finalizar Venta
+                                    </Button>
+                                )}
+                            </div>
+                        </>
                     )}
                 </div>
             </CardContent>

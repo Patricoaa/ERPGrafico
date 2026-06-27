@@ -84,8 +84,10 @@ export function Step2_DTE({
                         key={opt.id}
                         htmlFor={`type-${opt.id.toLowerCase().replace("_", "-")}`}
                         className={cn(
-                            "flex items-center gap-4 rounded-md border-2 border-muted bg-popover py-4 px-5 hover:bg-accent hover:text-accent-foreground [&:has([data-state=checked])]:border-primary cursor-pointer",
-                            dteData.type === opt.id ? "border-primary" : ""
+                            "card-accent-cmyk relative overflow-hidden flex items-center gap-4 rounded-md border bg-card py-3 px-4 hover:shadow-elevated transition-all cursor-pointer",
+                            "focus-visible:border-2 focus-visible:border-primary",
+                            "[&:has([data-state=checked])]:border-2 [&:has([data-state=checked])]:border-primary",
+                            dteData.type === opt.id ? "border-2 border-primary accent-visible" : "border"
                         )}
                     >
                         <RadioGroupItem

@@ -137,8 +137,9 @@ export function Step3_Delivery({ deliveryData, setDeliveryData, orderLines }: St
                 <Label
                     htmlFor="del-immediate"
                     className={cn(
-                        "flex items-center gap-4 rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent cursor-pointer transition-all",
-                        deliveryData.type === 'IMMEDIATE' && "border-primary bg-primary/5",
+                        "card-accent-cmyk relative overflow-hidden flex items-center gap-4 rounded-md border bg-card p-4 hover:shadow-elevated transition-all cursor-pointer",
+                        "focus-visible:border-2 focus-visible:border-primary",
+                        deliveryData.type === 'IMMEDIATE' ? "border-2 border-primary accent-visible" : "border",
                         hasRestrictedItems && "opacity-50 pointer-events-none grayscale"
                     )}
                 >
@@ -158,8 +159,9 @@ export function Step3_Delivery({ deliveryData, setDeliveryData, orderLines }: St
                 <Label
                     htmlFor="del-scheduled"
                     className={cn(
-                        "flex items-center gap-4 rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent cursor-pointer transition-all",
-                        deliveryData.type === 'SCHEDULED' && "border-primary bg-primary/5"
+                        "card-accent-cmyk relative overflow-hidden flex items-center gap-4 rounded-md border bg-card p-4 hover:shadow-elevated transition-all cursor-pointer",
+                        "focus-visible:border-2 focus-visible:border-primary",
+                        deliveryData.type === 'SCHEDULED' ? "border-2 border-primary accent-visible" : "border"
                     )}
                 >
                     <RadioGroupItem value="SCHEDULED" id="del-scheduled" className="sr-only" />
@@ -180,8 +182,9 @@ export function Step3_Delivery({ deliveryData, setDeliveryData, orderLines }: St
                 <Label
                     htmlFor="del-partial"
                     className={cn(
-                        "flex items-center gap-4 rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent cursor-pointer transition-all",
-                        deliveryData.type === 'PARTIAL' && "border-primary bg-primary/5"
+                        "card-accent-cmyk relative overflow-hidden flex items-center gap-4 rounded-md border bg-card p-4 hover:shadow-elevated transition-all cursor-pointer",
+                        "focus-visible:border-2 focus-visible:border-primary",
+                        deliveryData.type === 'PARTIAL' ? "border-2 border-primary accent-visible" : "border"
                     )}
                 >
                     <RadioGroupItem value="PARTIAL" id="del-partial" className="sr-only" />
