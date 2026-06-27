@@ -90,7 +90,7 @@ Pantone tokens exist for cases where a spot color is needed outside the CMYK gam
 
 ### 2.4 Layer 1 Rules
 
-1. **Never use a Layer 1 token directly for UI state.** Use the corresponding Layer 2 semantic intent instead. Exception: `ColorBar.tsx`, `IndustryMark.tsx`, `CropFrame.tsx`, and other graphic-industry-specific components that need to reference the actual process color.
+1. **Never use a Layer 1 token directly for UI state.** Use the corresponding Layer 2 semantic intent instead. Exception: `ColorBar.tsx` and other graphic-industry-specific components that need to reference the actual process color.
 2. **All Layer 1 values are fixed across light/dark mode** — inks and their overprint mixes do not change with the theme. Perceptual-contrast adaptation is a Layer 2 responsibility.
 3. **Modifying a Layer 1 value requires an ADR.**
 
@@ -347,8 +347,6 @@ The following are authorized to use process colors (Layer 1), the chart palette,
 | Component | Reason | Token/Value |
 |-----------|--------|-------------|
 | `ColorBar.tsx` | CMYK printing process control strip | `var(--color-cyan)`, `var(--color-magenta)`, etc. |
-| `IndustryMark.tsx` | Graphic industry decoration | `var(--mark-color)`, `var(--mark-color-active)` |
-| `CropFrame.tsx` | Image crop overlay | `var(--color-primary)` via inline style |
 | Charts (recharts) | Categorical data-viz series | `var(--chart-1…6)` (§4.4) |
 | Company branding settings | User-configurable brand colors stored as **data** | `primary_color` / `secondary_color` hex defaults |
 | `components/ui/*` overlays | Shadcn base primitives (Dialog/Sheet/AlertDialog) | stock `bg-black/{N}` scrim — do not modify (rule 22) |

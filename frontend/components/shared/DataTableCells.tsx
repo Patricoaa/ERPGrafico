@@ -294,8 +294,8 @@ export const DataCell = {
 
     /**
      * Standardized Row Action
-     * Incorporates CropFrame and a Ghost Button.
-     * - hover:bg-transparent overrides ghost default accent fill; CropFrame is the sole hover feedback.
+     * Ghost Button with hover feedback.
+     * - hover:bg-transparent overrides ghost default accent fill.
      * - Tooltip uses the dark sidebar palette for visual consistency.
      * Tooltip uses rounded-sm (atomic), DropdownMenuContent uses rounded-lg (overlay).
      *
