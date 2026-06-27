@@ -447,6 +447,18 @@
 }
 
 /*
+ * DOT GRID SURFACE — Subtle dot grid pattern for panels and surfaces
+ * Apply via className="dot-grid-surface" on any container.
+ * Renders a faint dot grid background without registration marks (⊕).
+ * Use on bg-card panels for a subtle industrial/prepress texture.
+ */
+@utility dot-grid-surface {
+  background-image: radial-gradient(var(--grid-line-color) 1px, transparent 0);
+  background-size: 24px 24px;
+  background-position: -19px -19px;
+}
+
+/*
  * CMY RIBBON — Gradient top border for cards
  * Apply via className="ribbon-cmyk" on any <Card> or container.
  * Renders a 2px cyan→magenta→yellow smooth gradient bar along the top edge.
