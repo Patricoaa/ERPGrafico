@@ -65,38 +65,38 @@ export function useOrderHubData({ orderId, invoiceId, type, enabled = true }: Us
     const isCreditNote = activeInvoice?.dte_type === 'NOTA_CREDITO'
 
     // Status Calculations
-    const activeOTs = activeDoc?.work_orders?.filter((ot: any) => ot.status !== 'CANCELLED') || []
+    const activeOTs = (activeDoc?.work_orders as Array<Record<string, unknown>> || []).filter((ot) => ot.status !== 'CANCELLED')
     const totalOTs = activeOTs.length
     const totalOTProgress = totalOTs > 0
-        ? activeOTs.reduce((sum: number, ot: any) => sum + (ot.production_progress || 0), 0) / totalOTs
+        ? activeOTs.reduce((sum: number, ot) => sum + ((ot.production_progress as number) || 0), 0) / totalOTs
         : 0
 
-    const invoices = activeDoc?.related_documents?.invoices || []
+    const invoices = (activeDoc?.related_documents as Record<string, unknown>)?.invoices as Array<Record<string, unknown>> || []
     const noteStatuses = getNoteHubStatuses(activeInvoice || {})
 
     const billingIsComplete = (() => {
         if (!activeDoc) return false
         if (isNoteMode) return noteStatuses.billing === 'success'
-        return invoices.length > 0 && !invoices.some((inv: any) =>
+        return invoices.length > 0 && !invoices.some((inv) =>
             inv.status === 'DRAFT' || inv.number === 'Draft' || !inv.number
         )
     })()
 
     const logisticsProgress = isNoteMode ? noteStatuses.logisticsProgress : (() => {
         if (!activeDoc) return 0
-        const lines = activeDoc.lines || activeDoc.items || []
+        const lines = (activeDoc.lines as Array<Record<string, unknown>> || activeDoc.items as Array<Record<string, unknown>> || [])
         if (lines.length === 0) return 0
 
-        const totalOrdered = lines.reduce((acc: number, line: any) => acc + (parseFloat(line.quantity) || 0), 0)
+        const totalOrdered = lines.reduce((acc: number, line) => acc + (Number(line.quantity ?? 0) || 0), 0)
         if (totalOrdered === 0) return 100
 
-        const totalProcessed = lines.reduce((acc: number, line: any) => {
+        const totalProcessed = lines.reduce((acc: number, line) => {
             const processedField = isSale
                 ? (line.quantity_delivered !== undefined ? 'quantity_delivered' : 'delivered_quantity')
                 : (line.quantity_received !== undefined ? 'quantity_received' : 'received_quantity')
 
             const processed = line[processedField] || 0
-            return acc + (parseFloat(processed) || 0)
+            return acc + (Number(processed) || 0)
         }, 0)
 
         return Math.min(100, Math.round((totalProcessed / totalOrdered) * 100))
@@ -104,8 +104,8 @@ export function useOrderHubData({ orderId, invoiceId, type, enabled = true }: Us
 
     const payments = activeDoc?.serialized_payments || activeDoc?.payments_detail || activeDoc?.related_documents?.payments || []
     
-    const showProduction = isSale && !isCreditNote && ((order?.work_orders?.length || 0) > 0 || (activeDoc?.lines || activeDoc?.items || []).some((l: any) => l.is_manufacturable))
-    const showLogistics = (activeDoc?.lines || activeDoc?.items || []).length > 0 && !(activeDoc?.lines || activeDoc?.items || []).every((l: any) => l.product_type === 'SUBSCRIPTION')
+    const showProduction = isSale && !isCreditNote && ((order?.work_orders?.length || 0) > 0 || (activeDoc?.lines as Array<Record<string, unknown>> || activeDoc?.items as Array<Record<string, unknown>> || []).some((l) => l.is_manufacturable))
+    const showLogistics = (activeDoc?.lines as Array<Record<string, unknown>> || activeDoc?.items as Array<Record<string, unknown>> || []).length > 0 && !(activeDoc?.lines as Array<Record<string, unknown>> || activeDoc?.items as Array<Record<string, unknown>> || []).every((l) => l.product_type === 'SUBSCRIPTION')
 
     const hubStatuses = getHubStatuses(activeDoc || {})
 

@@ -1,13 +1,13 @@
 import api from "@/lib/api"
 import type { MyProfile, ChangePasswordPayload, ChangePinPayload } from "@/types/profile"
 
-export async function getUserPreferences(): Promise<Record<string, any>> {
+export async function getUserPreferences(): Promise<Record<string, unknown>> {
   const res = await api.get('/core/preferences/')
   // eslint-disable-next-line pagination/no-raw-response-data
   return res.data
 }
 
-export async function saveUserPreference(key: string, value: any): Promise<void> {
+export async function saveUserPreference(key: string, value: unknown): Promise<void> {
   await api.patch('/core/preferences/', { [key]: value })
 }
 
@@ -21,7 +21,7 @@ export async function updateThemePreference(theme: 'light' | 'dark' | 'system'):
   return res.data
 }
 
-export async function getEmployeePayrollPreview(payrollId: number | string): Promise<any> {
+export async function getEmployeePayrollPreview(payrollId: number | string): Promise<Record<string, unknown>> {
     const res = await api.get(`/core/auth/my-profile/payrolls/${payrollId}/preview/`)
     return res.data
 }

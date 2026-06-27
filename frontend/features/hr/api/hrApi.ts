@@ -171,12 +171,12 @@ export async function deletePayrollItem(payrollId: number, itemId: number): Prom
 }
 
 // ---- Payroll Actions ----
-export async function payPrevired(payrollId: number, data: any): Promise<PayrollPayment> {
+export async function payPrevired(payrollId: number, data: Record<string, unknown>): Promise<PayrollPayment> {
   const res = await api.post(`/hr/payrolls/${payrollId}/pay_previred/`, data)
   return res.data
 }
 
-export async function paySalary(payrollId: number, data: any): Promise<PayrollPayment> {
+export async function paySalary(payrollId: number, data: Record<string, unknown>): Promise<PayrollPayment> {
   const res = await api.post(`/hr/payrolls/${payrollId}/pay_salary/`, data)
   return res.data
 }

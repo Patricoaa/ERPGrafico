@@ -8,6 +8,7 @@ import { DataTableColumnHeader } from '@/components/shared'
 import { DataCell } from '@/components/shared'
 import { workOrderActions, type WorkOrderActionsCtx } from './workOrderActions'
 import { type ColumnDef, type Row, type Table } from "@tanstack/react-table"
+import type { Page } from '@/lib/pagination'
 import { Printer, User, Check } from "lucide-react"
 import { useViewMode } from "@/hooks/useViewMode"
 import {
@@ -63,7 +64,7 @@ export default function WorkOrdersPageClient({ initialOrders }: WorkOrdersPageCl
         my_tasks: myTasks,
         page: pageState.pageIndex + 1,
         page_size: pageState.pageSize,
-    }, initialOrders)
+    }, initialOrders ? { results: initialOrders, count: initialOrders?.length ?? 0 } as Page<WorkOrder> : undefined)
 
     const { deleteOrder, annulOrder, duplicateOrder, bulkPrint, isBulkPrinting } = useWorkOrderListActions({ onSuccess: refetchOrders })
 

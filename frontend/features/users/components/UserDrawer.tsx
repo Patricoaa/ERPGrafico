@@ -158,10 +158,10 @@ export function UserDrawer({ initialData, onSuccess, trigger, open: controlledOp
             if (data.password) payload.password = data.password
 
             if (initialData?.id) {
-                await usersApi.updateUser(initialData.id, payload)
+                await usersApi.updateUser(initialData.id, payload as unknown as Record<string, unknown>)
                 toast.success("Usuario actualizado")
             } else {
-                await usersApi.createUser(payload)
+                await usersApi.createUser(payload as unknown as Record<string, unknown>)
                 toast.success("Usuario creado")
             }
             setOpen(false)

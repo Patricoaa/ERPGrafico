@@ -60,7 +60,7 @@ export const ActionCategory = forwardRef(({
     showBadge = true,
     posSessionId = null,
     headless = false
-}: ActionCategoryProps, ref) => {
+}: ActionCategoryProps, ref: React.ForwardedRef<{ handleActionClick: (actionId: string) => void }>) => {
     const [activeModal, setActiveModal] = useState<string | null>(null)
     const [viewConfig, setViewConfig] = useState<{ type: string, id: number | string } | null>(null)
 

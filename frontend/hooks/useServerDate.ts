@@ -18,10 +18,10 @@ export function useServerDate() {
             try {
                 const response = await api.get<ServerDateResponse>('/core/server-time/')
                 return response.data
-            } catch (err: any) {
-                // If the server fails or rate limits, fallback to the local machine date.
+            } catch (err: unknown) {
+                // If the server fails or rate limits, fallback to the local machine time.
                 // This prevents the application from breaking over a minor utility endpoint.
-                console.warn('Could not fetch server time, falling back to local time', err?.message)
+                console.warn('Could not fetch server time, falling back to local time', err instanceof Error ? err.message : err)
                 const now = new Date()
                 return {
                     datetime: now.toISOString(),
