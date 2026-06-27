@@ -128,7 +128,7 @@ function CartItemComponent({
 
     return (
         <div
-            className="flex flex-col gap-1.5 p-3 rounded-sm border border-border/40 bg-background group"
+            className="flex flex-col gap-1.5 p-2 rounded-md border bg-background group"
             style={isTouchMode ? { touchAction: 'manipulation' } : undefined}
         >
             <div className="grid grid-cols-[1fr_auto_1fr] items-start gap-2">

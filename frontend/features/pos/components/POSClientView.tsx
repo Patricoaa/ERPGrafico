@@ -557,8 +557,9 @@ export function POSClientView() {
                     {posMode === 'SHOPPING' ? (
                         <div key="shop" className="flex-1 flex flex-col min-h-0 animate-in fade-in slide-in-from-left-2 ease-premium duration-300 fill-mode-both">
                             <Card className="flex-1 flex flex-col overflow-hidden bg-card dot-grid-surface border py-1.5">
-                                <div className="px-2 pt-1.5 pb-1.5 border-b bg-muted/50 space-y-2">
+                                <div className="px-2 pt-1.5 pb-1.5 border-b space-y-2">
                                     <SearchBar
+                                        className="bg-muted/50 hover:bg-muted/70 focus-within:bg-muted/70"
                                         value={searchTerm}
                                         onChange={setSearchTerm}
                                         onEnter={handleSearchEnter}
