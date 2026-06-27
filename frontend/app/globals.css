@@ -468,6 +468,28 @@
 }
 
 /*
+ * CARD ACCENT CMY — Vertical gradient accent on the left side of cards
+ * Apply via className="card-accent-cmyk" on any <EntityCard> or container.
+ * Renders a 3px cyan→magenta→yellow gradient bar along the left edge.
+ */
+@utility card-accent-cmyk {
+  @apply relative overflow-hidden;
+
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    width: 3px;
+    background: var(--gradient-cmyk);
+    z-index: 1;
+    pointer-events: none;
+    border-radius: var(--radius-sm) 0 0 var(--radius-sm);
+  }
+}
+
+/*
  * TAB UNDERLINE CMY — Bottom border for underline variant
  * Applied via className="tab-underline-cmyk" on TabsTrigger when variant="underline"
  * Uses ::after pseudo-element for active (CMY gradient), focus-visible (ring), and hover (muted).
