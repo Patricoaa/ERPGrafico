@@ -477,7 +477,8 @@
   @apply relative overflow-hidden;
 
   &:focus::before,
-  &:hover::before {
+  &:hover::before,
+  &.accent-visible::before {
     content: '';
     position: absolute;
     top: 0;
