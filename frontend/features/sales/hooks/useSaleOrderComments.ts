@@ -3,6 +3,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import api from '@/lib/api'
 import { showApiError } from '@/lib/errors'
+import { useRealtime } from '@/features/realtime'
 
 export interface SaleOrderComment {
     id: number
@@ -28,12 +29,15 @@ export function useSaleOrderComments(orderId: number | string) {
         enabled: !!orderId,
     })
 
+    const { markLocalMutation } = useRealtime()
+
     const addMutation = useMutation({
         mutationFn: async (text: string) => {
             const res = await api.post(`/sales/orders/${orderId}/comments/`, { text })
             return res.data as SaleOrderComment
         },
         onSuccess: () => {
+            markLocalMutation()
             queryClient.invalidateQueries({ queryKey: [COMMENTS_KEY, orderId] })
         },
         onError: (err) => showApiError(err, 'Error al agregar comentario'),
