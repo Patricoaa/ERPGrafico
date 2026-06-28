@@ -8,6 +8,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
 from .models import Notification, NotificationRule, Task, TaskAssignmentRule, WorkflowSettings
+from .selectors import NotificationSelector
 from .serializers import (
     NotificationRuleSerializer,
     NotificationSerializer,
@@ -39,21 +40,7 @@ class TaskViewSet(viewsets.ModelViewSet):
 
     def perform_update(self, serializer):
         instance = self.get_object()
-        old_status = instance.status
-
-        updated_task = serializer.save()
-
-        if old_status != updated_task.status and updated_task.status in [
-            Task.Status.COMPLETED,
-            Task.Status.REJECTED,
-        ]:
-            if not updated_task.completed_by:
-                # Delegar la persistencia al servicio — no mutar directamente en la vista
-                WorkflowService.finalize_task_completion(
-                    task=updated_task, completed_by=self.request.user
-                )
-
-            WorkflowService.handle_task_update(updated_task, old_status)
+        WorkflowService.finalize_task_update(instance, serializer, self.request.user)
 
     @action(detail=True, methods=["post"])
     def complete(self, request, pk=None):
@@ -83,11 +70,11 @@ class NotificationViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
-        return Notification.objects.filter(user=self.request.user)
+        return NotificationSelector.get_queryset_for_user(self.request.user)
 
     @action(detail=False, methods=["post"])
     def mark_all_read(self, request):
-        self.get_queryset().filter(read=False).update(read=True)
+        WorkflowService.mark_all_notifications_read(self.request.user)
         return Response({"status": "marked_read"})
 
     @action(detail=True, methods=["post"])
@@ -98,8 +85,7 @@ class NotificationViewSet(viewsets.ModelViewSet):
 
     @action(detail=False, methods=["get"])
     def unread_count(self, request):
-        count = self.get_queryset().filter(read=False).count()
-        return Response({"count": count})
+        return Response({"count": NotificationSelector.unread_count_for_user(self.request.user)})
 
 
 class TaskAssignmentRuleViewSet(viewsets.ModelViewSet):

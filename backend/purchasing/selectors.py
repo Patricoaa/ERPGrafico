@@ -5,6 +5,20 @@ from tax.services import AccountingPeriodService, TaxPeriodService
 
 class PurchaseOrderSelector:
     @staticmethod
+    def get_base_queryset():
+        from .models import PurchaseOrder
+
+        return PurchaseOrder.objects.select_related(
+            "supplier", "warehouse", "work_order", "payment_method_ref"
+        ).prefetch_related(
+            "payments__invoice",
+            "invoices",
+            "lines__product",
+            "lines__uom",
+            "receipts__lines__stock_move__product",
+            "receipts__lines__product",
+        ).all()
+    @staticmethod
     def get_cancel_impact(order) -> dict:
         """Returns a preview of what will happen when cancelling the purchase order."""
         action_kind = "soft_cancel" if order.status == "DRAFT" else "full_annul"
