@@ -249,6 +249,18 @@ def get_stock_report_data() -> list[dict]:
 
 class ProductSelector:
     @staticmethod
+    def filter_suggestions(q: str) -> list[str]:
+        from .models import Product
+
+        names = (
+            Product.objects.filter(is_active=True, name__icontains=q)
+            .values_list("name", flat=True)
+            .distinct()
+            .order_by("name")[:10]
+        )
+        return list(names)
+
+    @staticmethod
     def get_insights(instance: Product) -> dict:
         product_ids = [instance.id]
         if instance.has_variants:
@@ -549,6 +561,17 @@ class SubscriptionSelector:
 
 
 class StockMoveSelector:
+    @staticmethod
+    def stock_level(product_id: int, warehouse_id: int) -> str:
+        from decimal import Decimal
+        from django.db.models import Sum
+        from .models import StockMove
+
+        total = StockMove.objects.filter(
+            product_id=product_id,
+            warehouse_id=warehouse_id,
+        ).aggregate(total=Sum("quantity"))["total"] or Decimal("0.0")
+        return str(total)
     @staticmethod
     def get_related_documents(obj):
         docs = obj.journal_entry.get_source_documents if obj.journal_entry else []
