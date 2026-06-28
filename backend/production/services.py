@@ -1754,6 +1754,7 @@ class WorkOrderService:
         )
 
     @staticmethod
+    @transaction.atomic
     def handle_update_attachments(work_order, files, user):
         """
         Processes file attachments after a WorkOrder update.

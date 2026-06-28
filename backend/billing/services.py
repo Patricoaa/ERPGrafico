@@ -174,6 +174,7 @@ class BillingService:
             )
 
     @staticmethod
+    @transaction.atomic
     def request_credit_approval(
         order_data, amount, payment_method, full_request_data, requesting_user
     ):

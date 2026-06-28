@@ -782,6 +782,7 @@ class WorkflowService:
         NotificationSelector.get_queryset_for_user(user).filter(read=False).update(read=True)
 
     @staticmethod
+    @transaction.atomic
     def finalize_task_update(instance, serializer, user):
         old_status = instance.status
         updated_task = serializer.save()
