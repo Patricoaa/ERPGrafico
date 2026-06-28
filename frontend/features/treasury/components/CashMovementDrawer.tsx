@@ -8,10 +8,10 @@ import { getEntityIcon } from "@/lib/entity-registry"
 import { useReactToPrint } from 'react-to-print'
 import { formatCurrency } from '@/lib/money'
 import { formatPlainDate } from '@/lib/utils'
-import { PrintableLayout } from '@/features/_shared/transaction-drawer'
+import { PrintableLayout } from '@/features/_shared'
 import { useTreasuryMovement } from '@/features/treasury/hooks/useTreasuryMovement'
-import { ActivitySidebar } from '@/features/audit/components'
-import type { TransactionDrawerProps } from '@/features/_shared/transaction-drawer'
+import { ActivitySidebar } from '@/features/audit'
+import type { TransactionDrawerProps } from '@/features/_shared'
 
 interface CashMovementDrawerProps extends TransactionDrawerProps {
   movementId?: number

@@ -2,7 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import api from '@/lib/api'
 import { toast } from 'sonner'
 import { type BOM, type ProductMinimal } from '../types'
-import { BOMS_QUERY_KEY, PRODUCTS_QUERY_KEY } from '@/features/inventory/hooks/queryKeys'
+import { BOMS_QUERY_KEY, PRODUCTS_QUERY_KEY } from '@/features/inventory'
 import { useRealtime } from '@/features/realtime'
 import type { FilterState } from '@/components/shared'
 

@@ -13,7 +13,7 @@ import { toast } from "sonner"
 import { formatCurrency } from "@/lib/money"
 import { useVatRate } from '@/hooks/useVatRate'
 import { useServerDate } from '@/hooks/useServerDate'
-import { PricingUtils } from '@/features/inventory/utils/pricing'
+import { PricingUtils } from '@/lib/pricing-utils'
 import { Card } from "@/components/ui/card"
 import { formatEntityDisplay } from "@/lib/entity-registry"
 

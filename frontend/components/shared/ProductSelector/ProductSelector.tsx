@@ -7,7 +7,7 @@ import { CategoryFilter } from './CategoryFilter'
 import { ProductGrid } from './ProductGrid'
 import { CategoryDropdown } from './CategoryDropdown'
 import { useDeviceContext } from '@/hooks/useDeviceContext'
-import type { BaseProduct, ProductCategory } from '@/features/inventory/types'
+import type { BaseProduct, ProductCategory } from '@/features/inventory'
 import type { SharedStockLimits } from './ProductGrid'
 
 export interface ProductSelectorProps {

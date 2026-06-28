@@ -4,11 +4,11 @@ import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import { ordersApi } from '../api/ordersApi'
 import { useRealtime } from '@/features/realtime'
-import { SALES_KEYS } from '@/features/sales/hooks/queryKeys'
-import { PURCHASING_KEYS } from '@/features/purchasing/hooks/queryKeys'
-import { INVOICES_QUERY_KEY } from '@/features/billing/hooks/queryKeys'
-import { MOVEMENTS_KEYS, PAYMENTS_KEYS } from '@/features/treasury/hooks/queryKeys'
-import { PRODUCTS_KEYS } from '@/features/inventory/hooks/queryKeys'
+import { SALES_KEYS } from '@/features/sales'
+import { PURCHASING_KEYS } from '@/features/purchasing'
+import { INVOICES_QUERY_KEY } from '@/features/billing'
+import { MOVEMENTS_KEYS, PAYMENTS_KEYS } from '@/features/treasury'
+import { PRODUCTS_KEYS } from '@/features/inventory'
 
 // ─── Billing mutations ────────────────────────────────────────────────────────
 

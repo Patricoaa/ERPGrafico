@@ -45,11 +45,10 @@ import {
     useDraftSync,
     type SyncDraft
 } from '@/features/pos/hooks'
-import { type CheckoutResponse, type SaleOrderLine, type CheckoutDTEData, type CheckoutPaymentData, type CheckoutDeliveryData } from '@/features/sales/types'
+import { type CheckoutResponse, type SaleOrderLine, type CheckoutDTEData, type CheckoutPaymentData, type CheckoutDeliveryData, type CheckoutWizardState, SalesCheckoutWizardContent, type SalesCheckoutWizardContentHandle } from '@/features/sales'
 import type { Product, WizardState } from '@/types/pos'
 import type { TransactionData } from '@/types/transactions'
 import { type DraftCart } from './DraftCartsClientView'
-import type { CheckoutWizardState } from '@/features/sales/components/checkout/SalesCheckoutWizardContent'
 
 import { SearchBar, CategoryDropdown } from '@/components/shared'
 import { CategoryFilter } from './CategoryFilter'
@@ -57,12 +56,11 @@ import { ProductGrid } from './ProductGrid'
 import { Cart } from './Cart'
 import { POSCheckoutHeader } from './POSCheckoutHeader'
 import { POSLayoutSkeleton } from './skeletons/POSLayoutSkeleton'
-import { SalesCheckoutWizardContent, type SalesCheckoutWizardContentHandle } from '@/features/sales/components/checkout/SalesCheckoutWizardContent'
 
 // Shared components
 import { SessionControl, type SessionControlHandle } from '@/features/pos/components/SessionControl'
 import { ScannerFeedback, type ScannerFeedbackHandle } from '@/features/pos/components/ScannerFeedback'
-import { PricingUtils } from '@/features/inventory/utils/pricing'
+import { PricingUtils } from '@/lib/pricing-utils'
 import { SalesOrdersDrawer } from '@/features/pos/components/SalesOrdersDrawer'
 import { AdvancedContactSelector } from '@/components/selectors/AdvancedContactSelector'
 import { Label } from '@/components/ui/label'

@@ -10,7 +10,7 @@ import { Button } from '@/components/ui/button'
 import { DynamicIcon } from '@/components/shared'
 import { cn } from '@/lib/utils'
 import { useDeviceContext } from '@/hooks/useDeviceContext'
-import type { ProductCategory } from '@/features/inventory/types'
+import type { ProductCategory } from '@/features/inventory'
 
 export interface CategoryFilterProps {
     categories: ProductCategory[]

@@ -10,8 +10,8 @@ import { getDtePrefix, getDteLabel } from '@/lib/entity-registry'
 import { toast } from "sonner"
 import { useAnnulInvoice, useCancelInvoice } from "../../hooks/useOrdersMutations"
 import { ActionConfirmModal } from '@/components/shared'
-import { saleOrderActions } from '@/features/sales/actions'
-import { purchaseOrderActions } from '@/features/purchasing/actions'
+import { saleOrderActions } from '@/features/sales'
+import { purchaseOrderActions } from '@/features/purchasing'
 import { type Order, type PhaseDocument } from "../../types"
 import { type LucideIcon } from "lucide-react"
 

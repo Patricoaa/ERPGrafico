@@ -6,7 +6,7 @@ import { Upload } from "lucide-react"
 import { useStatementsQuery } from "../hooks/useReconciliationQueries"
 import { useSelectedEntity } from "@/hooks/useSelectedEntity"
 import type { BankStatement } from "../types"
-import { StatementImportModal } from "@/features/treasury"
+import { StatementImportModal } from "@/features/finance"
 import { DataTableView, StatusBadge, SmartSearchBar, SegmentationBar, useClientSearch, useSegmentation, EntityCard } from '@/components/shared'
 import { DataTableColumnHeader } from '@/components/shared'
 import type { ColumnDef } from "@tanstack/react-table"

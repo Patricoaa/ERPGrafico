@@ -467,7 +467,8 @@ Estructura objetivo para una feature con mutaciones. Referencia ejecutable: [`fe
 ```
 features/<feature>/
 ├── api/
-│   └── <feature>Api.ts        ← funciones puras (list, get, create, update, delete)
+│   ├── <feature>Api.ts              ← funciones puras (list, get, create, update, delete)
+│   └── index.ts                     ← barrel: exporta funciones de API públicas
 ├── hooks/
 │   ├── queryKeys.ts            ← factory jerárquica
 │   ├── use<Entity>.ts          ← hook principal con useQuery + useMutation
@@ -477,7 +478,7 @@ features/<feature>/
 │   ├── <Entity>Form.tsx        ← consume hook
 │   └── <Entity>DetailClient.tsx ← consume hook
 ├── types.ts
-└── index.ts                    ← barrel: exporta hooks y componentes públicos
+└── index.ts                    ← barrel: exporta hooks, tipos y componentes públicos
 ```
 
 ### `queryKeys.ts` — esqueleto

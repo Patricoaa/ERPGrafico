@@ -25,7 +25,7 @@ import {
     createPayrollConcept,
     updatePayrollConcept,
     deletePayrollConcept
-} from '@/features/hr/api/hrApi'
+} from '@/features/hr'
 import type {
     AFP,
     PayrollConcept

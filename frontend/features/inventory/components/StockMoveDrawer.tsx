@@ -7,10 +7,10 @@ import { Printer } from 'lucide-react'
 import { getEntityIcon } from "@/lib/entity-registry"
 import { useReactToPrint } from 'react-to-print'
 import { formatPlainDate } from '@/lib/utils'
-import { PrintableLayout } from '@/features/_shared/transaction-drawer'
+import { PrintableLayout } from '@/features/_shared'
 import { useStockMove } from '@/features/inventory/hooks/useStockMoves'
-import { ActivitySidebar } from '@/features/audit/components'
-import type { TransactionDrawerProps } from '@/features/_shared/transaction-drawer'
+import { ActivitySidebar } from '@/features/audit'
+import type { TransactionDrawerProps } from '@/features/_shared'
 
 interface StockMoveDrawerProps extends TransactionDrawerProps {
     stockMoveId?: number

@@ -36,7 +36,7 @@ import { DataTable } from '@/components/shared'
 
 import { type ColumnDef } from "@tanstack/react-table"
 
-import { getHubStatuses } from '@/features/orders/utils/status'
+import { getHubStatuses } from '@/features/orders'
 import { LabeledInput, LabeledContainer, LabeledCheckboxGroup, TabBar, TabBarContent, type TabItem, FormFooter, FormSection, FormSplitLayout, SkeletonShell } from "@/components/shared"
 import { cn } from "@/lib/utils"
 import { formatCurrency } from "@/lib/money"

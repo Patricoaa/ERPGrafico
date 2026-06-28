@@ -1,6 +1,6 @@
 import { DataCell, createEntityActions } from '@/components/shared'
 import { TrendingUp, Banknote, ArrowRightLeft, History } from 'lucide-react'
-import type { Partner } from '@/features/contacts/types/partner'
+import type { Partner } from '@/features/contacts'
 
 export interface PartnerActionsCtx {
     onFormalizeExcessCapital: (id: number, amount: string) => void

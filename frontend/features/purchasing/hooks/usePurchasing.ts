@@ -1,7 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import type { FilterState } from '@/components/shared'
-import type { Invoice } from '@/features/billing/types'
+import type { Invoice } from '@/features/billing'
 import { useRealtime } from '@/features/realtime'
 
 import { purchasingApi } from '../api/purchasingApi'

@@ -7,9 +7,9 @@ import { Printer, ChartPie } from 'lucide-react'
 import { useReactToPrint } from 'react-to-print'
 import { formatCurrency } from '@/lib/money'
 import { formatPlainDate } from '@/lib/utils'
-import { PrintableLayout } from '@/features/_shared/transaction-drawer'
-import { useProfitDistribution } from '@/features/contacts/hooks/useProfitDistribution'
-import type { TransactionDrawerProps } from '@/features/_shared/transaction-drawer'
+import { PrintableLayout } from '@/features/_shared'
+import { useProfitDistribution } from '@/features/contacts'
+import type { TransactionDrawerProps } from '@/features/_shared'
 
 interface ProfitDistributionDrawerProps extends TransactionDrawerProps {
   distributionId?: number

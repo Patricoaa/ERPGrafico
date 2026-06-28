@@ -16,7 +16,7 @@ import { usePricingRuleMutations } from "@/features/inventory"
 import { showApiError } from "@/lib/errors"
 import { toast } from "sonner"
 import { Layers, Zap, DollarSign, Calendar, Printer } from "lucide-react"
-import { PricingUtils } from '@/features/inventory/utils/pricing'
+import { PricingUtils } from '@/lib/pricing-utils'
 import { ProductSelector } from "@/components/selectors/ProductSelector"
 import { UoMSelector } from "@/components/selectors/UoMSelector"
 import { useSingleProduct } from "@/features/inventory/hooks/useProductSearch"

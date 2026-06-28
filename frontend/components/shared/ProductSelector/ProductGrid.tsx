@@ -11,9 +11,9 @@ import { Card } from '@/components/ui/card'
 
 import { cn } from '@/lib/utils'
 import { formatCurrency } from "@/lib/money"
-import { PricingUtils } from '@/features/inventory/utils/pricing'
+import { PricingUtils } from '@/lib/pricing-utils'
 import { useDeviceContext } from '@/hooks/useDeviceContext'
-import type { BaseProduct, ProductCategory } from '@/features/inventory/types'
+import type { BaseProduct, ProductCategory } from '@/features/inventory'
 import { Plus, Heart } from 'lucide-react'
 import { memo } from 'react'
 import { DynamicIcon, EmptyState } from '@/components/shared'

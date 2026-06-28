@@ -19,7 +19,7 @@ import { toast } from "sonner"
 import { cn, translateProductType } from "@/lib/utils"
 import { resolveMediaUrl } from "@/features/inventory/api/inventoryApi"
 import { useVatRate } from '@/hooks/useVatRate'
-import { PricingUtils } from '@/features/inventory/utils/pricing'
+import { PricingUtils } from '@/lib/pricing-utils'
 import { Checkbox } from "@/components/ui/checkbox"
 import { Archive as ArchiveIcon } from "lucide-react"
 import { ArchivingRestrictionsModal } from "./ArchivingRestrictionsModal"

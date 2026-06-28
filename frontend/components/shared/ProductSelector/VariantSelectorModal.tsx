@@ -8,12 +8,12 @@ import React, { useEffect, useState } from "react"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Package, ImageIcon } from "lucide-react"
 import { formatCurrency } from "@/lib/money"
-import { PricingUtils } from '@/features/inventory/utils/pricing'
+import { PricingUtils } from '@/lib/pricing-utils'
 import { cn } from "@/lib/utils"
 import { BaseModal, Chip } from '@/components/shared'
 import { resolveMediaUrl } from '@/lib/api'
-import type { BaseProduct } from '@/features/inventory/types'
-import { useVariants } from '@/features/inventory/hooks/useVariants'
+import type { BaseProduct } from '@/features/inventory'
+import { useVariants } from '@/features/inventory'
 
 export interface VariantSelectorModalProps {
     open: boolean

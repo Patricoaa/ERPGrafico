@@ -9,8 +9,8 @@ import { ClipboardList, Ban } from "lucide-react"
 import { Progress } from "@/components/ui/progress"
 import { useAnnulWorkOrder } from "../../hooks/useOrdersMutations"
 import { ActionConfirmModal } from '@/components/shared'
-import { saleOrderActions } from '@/features/sales/actions'
-import { purchaseOrderActions } from '@/features/purchasing/actions'
+import { saleOrderActions } from '@/features/sales'
+import { purchaseOrderActions } from '@/features/purchasing'
 import { type Order, type OrderLine, type PhaseDocument, type WorkOrder, type InvoiceSummary } from "../../types"
 
 interface ProductionPhaseProps {

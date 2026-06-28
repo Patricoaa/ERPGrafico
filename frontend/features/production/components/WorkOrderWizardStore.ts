@@ -3,7 +3,7 @@
 import { create } from 'zustand'
 import type { WorkOrder, WorkOrderMaterial, WorkOrderTask, WizardStepMode } from '../types'
 import type { ManufacturingData } from '@/components/shared'
-import type { Contact } from '@/features/contacts/types'
+import type { Contact } from '@/features/contacts'
 
 interface WizardState {
   // ── data ─────────────────────────────────────────────────────────────────
