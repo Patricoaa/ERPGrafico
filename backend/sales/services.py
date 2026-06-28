@@ -39,6 +39,7 @@ class SalesService:
         return order
 
     @staticmethod
+    @transaction.atomic
     def create_sale_order_from_pos(user, data, files, serializer):
         """
         Validates POS session and PIN, then saves the serializer and confirms the sale.
