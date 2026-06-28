@@ -1,7 +1,7 @@
 ---
 status: active
 owner: core-team
-last_review: 2026-06-27
+last_review: 2026-06-28
 layer: 50-audit
 doc: architecture-compliance-audit-2026-06
 ---
@@ -33,15 +33,16 @@ doc: architecture-compliance-audit-2026-06
 | 3. `any` types en features | 2026-06-27 | Eliminados ~700 usos `any` en 6 fases secuenciales. 10/14 features en 0 violaciones. ESLint rule `no-explicit-any: error` para features. 3 features con warn temporal. | `26f1c83b`, `6bce380f`, `cdeef239` |
 | 5.1 + 5.2 Views inline business logic + get_queryset sin selector | 2026-06-28 | Migradas ~25 violaciones en 7 fases (A-G) a través de 15 archivos. Creados: SubscriptionSelector (Phase A), Treasury services/selectors (Phase B), ContactSelector (Phase C), PricingService/NoteWorkflowSelector (Phase D), AccountingService/CoreService/BillingService/SalesService (Phase E), NotificationSelector/PurchaseOrderSelector/DraftCartSelector (Phase F), ProductSelector.filter_suggestions/StockMoveSelector.stock_level/ProductService.toggle_favorite y sync_variant_prices/ProductionSelectorExt.get_bom_queryset (Phase G). | `1adda007`, `257115d7`, `8fb5430f`, `dd588ca0`, `46776d59`, `97c19950`, `33212b97` |
 | 6. ProductTypeStrategy | 2026-06-27 | Migradas ~37 cadenas if/elif a ProductTypeStrategy en 6 fases (A-E). 32 restantes son casos deliberadamente mantenidos (ORM filters, validaciones cruzadas, legacy controlado). | (múltiples) |
+| 8.1 `@transaction.atomic` faltante | 2026-06-28 | Agregado `@transaction.atomic` a `SalesService.create_sale_order_from_pos`. Creados 7 tests unitarios en `sales/tests/test_create_order_from_pos.py` cubriendo rollback en 3 tipos de excepción, happy path, sesión inválida, PIN requerido y PIN bypass. | `ac26a91d` |
 
 | Severidad | Count | Área |
 |-----------|-------|------|
-| 🔴 CRÍTICO | ~0 | Backend — views con lógica inline, product_type chains ✅ |
+| 🔴 CRÍTICO | ~0 | Backend — views con lógica inline, product_type chains, transaction safety ✅ |
 | 🟡 ALTO | ~100 | Frontend — FSD boundaries, naming, barrels |
 | 🟡 ALTO | ~70 | Backend — cross-app coupling, serializers |
 | 🟢 MEDIO | 10 | Gaps de contrato (no cubiertos por documentación actual) |
 
-> ✅ **Resuelto:** Frontend hooks/API any types (~250 violaciones) — eliminado en Fase 1-6. `staleTime` y `markLocalMutation` también resueltos. **Section 5.1 + 5.2 + 6** — views inline business logic y product_type chains migrados a services/selectors/strategy.
+> ✅ **Resuelto:** Frontend hooks/API any types (~250 violaciones) — eliminado en Fase 1-6. `staleTime` y `markLocalMutation` también resueltos. **Section 5.1 + 5.2 + 6** — views inline business logic y product_type chains migrados a services/selectors/strategy. **Section 8.1** — `@transaction.atomic` agregado a `create_sale_order_from_pos`.
 
 ---
 
@@ -1012,7 +1013,9 @@ Contrato de referencia: `docs/10-architecture/backend-apps.md`.
 
 Contrato de referencia: `docs/10-architecture/backend-apps.md:141-171`.
 
-### 8.1 `@transaction.atomic` faltante (1 confirmado + zona de riesgo)
+### 8.1 `@transaction.atomic` faltante (1 confirmado + zona de riesgo) — ✅ RESUELTO
+
+> **Resuelto 2026-06-28.** Se agregó `@transaction.atomic` a `SalesService.create_sale_order_from_pos()` en `backend/sales/services.py:42`. Se crearon 7 tests unitarios en `backend/sales/tests/test_create_order_from_pos.py` que verifican rollback en 3 tipos de excepción (ValidationError, PermissionDenied, Exception genérica), happy path, sesión inválida, PIN requerido y PIN bypass. Commit: `ac26a91d`.
 
 #### Violación confirmada
 
@@ -1030,7 +1033,7 @@ Contrato de referencia: `docs/10-architecture/backend-apps.md:141-171`.
 
 #### Solución
 
-1. Agregar `@transaction.atomic` a `SalesService.create_sale_order_from_pos()`.
+1. ~~Agregar `@transaction.atomic` a `SalesService.create_sale_order_from_pos()`.~~ ✅ Resuelto (`ac26a91d`)
 2. Auditar servicios que mutan ≥2 tablas para verificar que todos tengan `@transaction.atomic` o `with transaction.atomic():` explícito.
 3. Considerar agregar CI check que detecte servicios sin atomic escribiendo a múltiples modelos.
 
@@ -1196,7 +1199,9 @@ Esta sección documenta vacíos en la documentación del proyecto que permiten a
 | Fase 2 | ~13 | Correctivo (alto riesgo) | ✅ any types resuelto |
 | Fase 3 | ~2 | Preventivo (contratos) | ⏳ Pendiente |
 | Fase 4 | ~6 | Preventivo (automático) | ⏳ Pendiente (1/4 items) |
-| **Total** | **~29 días** | | |
+| **Subtotal auditoría original** | **~29 días** | | |
+| 8.1 `@transaction.atomic` faltante | ~0.25 día | Correctivo (alto riesgo) | ✅ Resuelto (`ac26a91d`) |
+| **Total acumulado** | **~29.25 días** | | |
 
 ---
 
