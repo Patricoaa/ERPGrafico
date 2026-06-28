@@ -385,21 +385,6 @@ class BillingService:
                 line.save(update_fields=["unit_cost", "total_cost"])
 
     @staticmethod
-    def _revert_tax_from_product_cost(product, tax_amount):
-        """
-        Reverts previously capitalized tax from product cost.
-        This is used when confirming a Draft Factura as a regular Factura.
-        """
-        from inventory.models import StockMove
-
-        total_stock = sum(m.quantity for m in StockMove.objects.filter(product=product))
-
-        if total_stock > 0:
-            current_value = product.cost_price * total_stock
-            product.cost_price = (current_value - tax_amount) / total_stock
-            product.save()
-
-    @staticmethod
     @transaction.atomic
     def create_sale_invoice(
         order: SaleOrder,
