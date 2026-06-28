@@ -1,4 +1,3 @@
-from django.db.models import Sum
 from rest_framework import serializers
 
 from sales.selectors import SaleOrderSelector
@@ -334,7 +333,7 @@ class CreateSaleOrderSerializer(serializers.ModelSerializer):
                 product = line.get("product")
                 quantity = line.get("quantity")
                 if product and product.product_type == "STORABLE":
-                    current_stock = product.moves.aggregate(total=Sum("quantity"))["total"] or 0
+                    current_stock = float(product.qty_on_hand or 0)
                     if current_stock < quantity:
                         raise serializers.ValidationError(
                             f"Stock insuficiente para {product.name}. Disponible: {current_stock}, Solicitado: {quantity}"
