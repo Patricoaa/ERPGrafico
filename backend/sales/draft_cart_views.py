@@ -9,6 +9,7 @@ from treasury.api.permissions import IsPOSSessionActive
 from .draft_cart_serializers import DraftCartSerializer
 from .draft_cart_service import DraftCartService
 from .models import DraftCart
+from .selectors import DraftCartSelector
 
 
 class DraftCartViewSet(viewsets.ModelViewSet):
@@ -23,37 +24,18 @@ class DraftCartViewSet(viewsets.ModelViewSet):
     permission_classes = [StandardizedModelPermissions, IsPOSSessionActive]
 
     def retrieve(self, request, pk=None):
-        """
-        GET /api/sales/pos-drafts/{id}/ - Obtener borrador por ID
-        No requiere pos_session_id porque el borrador se busca por su PK.
-        """
         try:
-            draft = DraftCart.objects.select_related(
-                "customer", "created_by", "last_modified_by", "pos_session", "locked_by"
-            ).get(id=pk)
+            draft = DraftCartSelector.get_draft_by_id(int(pk))
         except DraftCart.DoesNotExist:
             return Response({"error": "Borrador no encontrado"}, status=status.HTTP_404_NOT_FOUND)
         serializer = self.get_serializer(draft)
         return Response(serializer.data)
 
     def get_queryset(self):
-        """
-        Filtrar por sesión activa (no por usuario individual).
-        Requiere pos_session_id como query param.
-        """
         pos_session_id = self.request.query_params.get("pos_session_id")
-
-        if not pos_session_id:
-            return DraftCart.objects.none()
-
-        return DraftCart.objects.filter(pos_session_id=pos_session_id).select_related(
-            "customer", "created_by", "last_modified_by", "pos_session", "locked_by"
-        )
+        return DraftCartSelector.get_queryset_for_session(pos_session_id)
 
     def create(self, request):
-        """
-        POST /api/sales/pos-drafts/ - Guardar nuevo borrador
-        """
         pos_session_id = request.data.get("pos_session_id")
         items = request.data.get("items", [])
         customer_id = request.data.get("customer_id")
@@ -62,11 +44,10 @@ class DraftCartViewSet(viewsets.ModelViewSet):
         wizard_state = request.data.get("wizard_state")
         session_key = request.data.get("session_key", "")
 
-        if not pos_session_id:
-            return Response(
-                {"error": "Se requiere una sesión POS activa (pos_session_id)"},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
+        try:
+            DraftCartService.validate_pos_session_id(pos_session_id)
+        except ValueError as e:
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
         if not items:
             return Response({"error": "El carrito está vacío"}, status=status.HTTP_400_BAD_REQUEST)
@@ -89,9 +70,6 @@ class DraftCartViewSet(viewsets.ModelViewSet):
             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
     def update(self, request, pk=None):
-        """
-        PUT/PATCH /api/sales/pos-drafts/{id}/ - Actualizar borrador existente
-        """
         pos_session_id = request.data.get("pos_session_id")
         items = request.data.get("items", [])
         customer_id = request.data.get("customer_id")
@@ -100,10 +78,10 @@ class DraftCartViewSet(viewsets.ModelViewSet):
         wizard_state = request.data.get("wizard_state")
         session_key = request.data.get("session_key", "")
 
-        if not pos_session_id:
-            return Response(
-                {"error": "Se requiere pos_session_id"}, status=status.HTTP_400_BAD_REQUEST
-            )
+        try:
+            DraftCartService.validate_pos_session_id(pos_session_id)
+        except ValueError as e:
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
         try:
             draft = DraftCartService.save_draft(
@@ -126,15 +104,12 @@ class DraftCartViewSet(viewsets.ModelViewSet):
             return Response({"error": "Borrador no encontrado"}, status=status.HTTP_404_NOT_FOUND)
 
     def destroy(self, request, pk=None):
-        """
-        DELETE /api/sales/pos-drafts/{id}/ - Eliminar borrador
-        """
         pos_session_id = request.query_params.get("pos_session_id")
 
-        if not pos_session_id:
-            return Response(
-                {"error": "Se requiere pos_session_id"}, status=status.HTTP_400_BAD_REQUEST
-            )
+        try:
+            DraftCartService.validate_pos_session_id(pos_session_id)
+        except ValueError as e:
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
         success = DraftCartService.delete_draft(int(pk), int(pos_session_id))
 
@@ -144,15 +119,12 @@ class DraftCartViewSet(viewsets.ModelViewSet):
 
     @action(detail=True, methods=["post"])
     def restore(self, request, pk=None):
-        """
-        POST /api/sales/pos-drafts/{id}/restore/ - Restaurar borrador al carrito activo
-        """
         pos_session_id = request.data.get("pos_session_id")
 
-        if not pos_session_id:
-            return Response(
-                {"error": "Se requiere pos_session_id"}, status=status.HTTP_400_BAD_REQUEST
-            )
+        try:
+            DraftCartService.validate_pos_session_id(pos_session_id)
+        except ValueError as e:
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
         draft = DraftCartService.load_draft(int(pk), int(pos_session_id))
 
@@ -166,19 +138,12 @@ class DraftCartViewSet(viewsets.ModelViewSet):
 
     @action(detail=False, methods=["get"])
     def sync(self, request):
-        """
-        GET /api/sales/pos-drafts/sync/?pos_session_id=X
-
-        Endpoint ligero para polling. Retorna estado de todos los borradores
-        de la sesión sin incluir los items del carrito (solo metadatos + locks).
-        Limpia automáticamente locks expirados.
-        """
         pos_session_id = request.query_params.get("pos_session_id")
 
-        if not pos_session_id:
-            return Response(
-                {"error": "Se requiere pos_session_id"}, status=status.HTTP_400_BAD_REQUEST
-            )
+        try:
+            DraftCartService.validate_pos_session_id(pos_session_id)
+        except ValueError as e:
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
         data = DraftCartService.get_sync_data(
             pos_session_id=int(pos_session_id),
@@ -190,19 +155,17 @@ class DraftCartViewSet(viewsets.ModelViewSet):
 
     @action(detail=True, methods=["post"])
     def lock(self, request, pk=None):
-        """
-        POST /api/sales/pos-drafts/{id}/lock/
-        Body: { "pos_session_id": X, "session_key": "uuid-browser-tab" }
-
-        Adquiere el lock del borrador. Si ya está lockeado por otro,
-        retorna 423 Locked con información del holder.
-        """
         pos_session_id = request.data.get("pos_session_id")
         session_key = request.data.get("session_key", "")
 
-        if not pos_session_id or not session_key:
+        try:
+            DraftCartService.validate_pos_session_id(pos_session_id)
+        except ValueError as e:
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+        if not session_key:
             return Response(
-                {"error": "Se requiere pos_session_id y session_key"},
+                {"error": "Se requiere session_key"},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
@@ -230,19 +193,13 @@ class DraftCartViewSet(viewsets.ModelViewSet):
 
     @action(detail=True, methods=["post"])
     def unlock(self, request, pk=None):
-        """
-        POST /api/sales/pos-drafts/{id}/unlock/
-        Body: { "pos_session_id": X, "session_key": "uuid-browser-tab" }
-
-        Libera el lock del borrador.
-        """
         pos_session_id = request.data.get("pos_session_id")
         session_key = request.data.get("session_key", "")
 
-        if not pos_session_id:
-            return Response(
-                {"error": "Se requiere pos_session_id"}, status=status.HTTP_400_BAD_REQUEST
-            )
+        try:
+            DraftCartService.validate_pos_session_id(pos_session_id)
+        except ValueError as e:
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
         success = DraftCartService.release_lock(
             draft_id=int(pk),
@@ -255,19 +212,17 @@ class DraftCartViewSet(viewsets.ModelViewSet):
 
     @action(detail=True, methods=["post"])
     def heartbeat(self, request, pk=None):
-        """
-        POST /api/sales/pos-drafts/{id}/heartbeat/
-        Body: { "pos_session_id": X, "session_key": "uuid-browser-tab" }
-
-        Renueva el lock (heartbeat). Debe llamarse periódicamente
-        para mantener el lock activo.
-        """
         pos_session_id = request.data.get("pos_session_id")
         session_key = request.data.get("session_key", "")
 
-        if not pos_session_id or not session_key:
+        try:
+            DraftCartService.validate_pos_session_id(pos_session_id)
+        except ValueError as e:
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+        if not session_key:
             return Response(
-                {"error": "Se requiere pos_session_id y session_key"},
+                {"error": "Se requiere session_key"},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
@@ -288,19 +243,13 @@ class DraftCartViewSet(viewsets.ModelViewSet):
 
     @action(detail=True, methods=["post"])
     def withdraw(self, request, pk=None):
-        """
-        POST /api/sales/pos-drafts/{id}/withdraw/
-        Body: { "pos_session_id": X }
-
-        Procesa el retiro de stock por parte de un socio basándose en los items del carrito.
-        """
         pos_session_id = request.data.get("pos_session_id")
         partner_id = request.data.get("partner_id")
 
-        if not pos_session_id:
-            return Response(
-                {"error": "Se requiere pos_session_id"}, status=status.HTTP_400_BAD_REQUEST
-            )
+        try:
+            DraftCartService.validate_pos_session_id(pos_session_id)
+        except ValueError as e:
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
         try:
             result = DraftCartService.process_withdrawal(

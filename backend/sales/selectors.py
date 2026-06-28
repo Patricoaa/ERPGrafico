@@ -129,3 +129,24 @@ class SaleOrderSelector:
             })
 
         return docs
+
+
+class DraftCartSelector:
+    @staticmethod
+    def get_draft_by_id(draft_id: int):
+        from .models import DraftCart
+
+        return DraftCart.objects.select_related(
+            "customer", "created_by", "last_modified_by", "pos_session", "locked_by"
+        ).get(id=draft_id)
+
+    @staticmethod
+    def get_queryset_for_session(pos_session_id: int | None):
+        from .models import DraftCart
+
+        if not pos_session_id:
+            return DraftCart.objects.none()
+
+        return DraftCart.objects.filter(pos_session_id=pos_session_id).select_related(
+            "customer", "created_by", "last_modified_by", "pos_session", "locked_by"
+        )

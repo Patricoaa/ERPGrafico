@@ -1107,6 +1107,32 @@ class PurchasingService:
         return invoice
 
     @staticmethod
+    def validate_editable(order: PurchaseOrder):
+        if order.status != "DRAFT":
+            raise ValidationError("Solo se pueden editar órdenes en estado Borrador.")
+
+    @staticmethod
+    def validate_can_purge(order: PurchaseOrder, user):
+        if not user.is_staff:
+            raise ValidationError("Solo administradores pueden purgar documentos cancelados.")
+        PurchasingService.validate_purge(order)
+
+    @staticmethod
+    def purchase_checkout_response(result: dict) -> dict:
+        from workflow.services import WorkflowService
+        WorkflowService.sync_hub_tasks(result["order"])
+        from billing.serializers import InvoiceSerializer
+        from treasury.serializers import TreasuryMovementSerializer
+        from .serializers import PurchaseReceiptSerializer, PurchaseOrderSerializer
+
+        return {
+            "order": PurchaseOrderSerializer(result["order"]).data,
+            "invoice": InvoiceSerializer(result["invoice"]).data if result["invoice"] else None,
+            "payment": TreasuryMovementSerializer(result["payment"]).data if result["payment"] else None,
+            "receipt": PurchaseReceiptSerializer(result["receipt"]).data if result["receipt"] else None,
+        }
+
+    @staticmethod
     def validate_purge(order: PurchaseOrder):
         """
         Un documento solo puede purgarse (hard delete) si está CANCELLED y no dejó

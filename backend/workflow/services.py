@@ -799,11 +799,25 @@ class WorkflowService:
 
     @staticmethod
     def mark_notification_read(*, notification: "Notification") -> None:
-        """
-        Marca una notificación como leída.
-
-        Reemplaza el ``notif.save()`` directo que existía en
-        ``workflow/views.py::NotificationViewSet.mark_read``.
-        """
         notification.read = True
         notification.save(update_fields=["read"])
+
+    @staticmethod
+    def mark_all_notifications_read(user):
+        from .selectors import NotificationSelector
+
+        NotificationSelector.get_queryset_for_user(user).filter(read=False).update(read=True)
+
+    @staticmethod
+    def finalize_task_update(instance, serializer, user):
+        old_status = instance.status
+        updated_task = serializer.save()
+        if old_status != updated_task.status and updated_task.status in [
+            "COMPLETED",
+            "REJECTED",
+        ]:
+            if not updated_task.completed_by:
+                WorkflowService.finalize_task_completion(
+                    task=updated_task, completed_by=user
+                )
+            WorkflowService.handle_task_update(updated_task, old_status)

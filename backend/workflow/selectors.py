@@ -1,3 +1,15 @@
+class NotificationSelector:
+    @staticmethod
+    def get_queryset_for_user(user):
+        from .models import Notification
+
+        return Notification.objects.filter(user=user)
+
+    @staticmethod
+    def unread_count_for_user(user):
+        return NotificationSelector.get_queryset_for_user(user).filter(read=False).count()
+
+
 class TaskSelectorExt:
     @staticmethod
     def get_queryset_for_user(user):

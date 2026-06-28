@@ -22,6 +22,11 @@ class DraftCartService:
     Incluye bloqueo optimista con heartbeat para evitar edición concurrente.
     """
 
+    @staticmethod
+    def validate_pos_session_id(pos_session_id):
+        if not pos_session_id:
+            raise ValueError("Se requiere una sesión POS activa (pos_session_id)")
+
     # ── Lock Management ──────────────────────────────────────────────
 
     @staticmethod

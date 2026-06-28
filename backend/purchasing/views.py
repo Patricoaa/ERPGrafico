@@ -13,8 +13,6 @@ from core.api.permissions import StandardizedModelPermissions
 from core.api.search import DistinctSearchFilter
 from core.idempotency import idempotent_endpoint
 from core.mixins import AuditHistoryMixin, NoDestroyModelMixin
-from inventory.models import Warehouse
-
 from .models import PurchaseOrder, PurchaseReceipt, PurchaseReturn
 from .return_services import PurchaseReturnService
 from .serializers import (
@@ -23,6 +21,7 @@ from .serializers import (
     PurchaseReturnSerializer,
     WritePurchaseOrderSerializer,
 )
+from .selectors import PurchaseOrderSelector
 from .services import PurchasingService
 
 
@@ -107,16 +106,7 @@ class PurchaseOrderFilterSet(FilterSet):
 
 class PurchaseOrderViewSet(NoDestroyModelMixin, viewsets.ModelViewSet, AuditHistoryMixin):
     def get_queryset(self):
-        return PurchaseOrder.objects.select_related(
-            "supplier", "warehouse", "work_order", "payment_method_ref"
-        ).prefetch_related(
-            "payments__invoice",
-            "invoices",
-            "lines__product",
-            "lines__uom",
-            "receipts__lines__stock_move__product",
-            "receipts__lines__product"
-        ).all()
+        return PurchaseOrderSelector.get_base_queryset()
     pagination_class = StandardResultsSetPagination
     filter_backends = [DjangoFilterBackend, filters.SearchFilter]
     filterset_class = PurchaseOrderFilterSet
@@ -128,35 +118,24 @@ class PurchaseOrderViewSet(NoDestroyModelMixin, viewsets.ModelViewSet, AuditHist
         return PurchaseOrderSerializer
 
     def update(self, request, *args, **kwargs):
-        instance = self.get_object()
-        if instance.status != "DRAFT":
-            return Response(
-                {"error": "Solo se pueden editar órdenes en estado Borrador."},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
+        try:
+            PurchasingService.validate_editable(self.get_object())
+        except ValidationError as e:
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
         return super().update(request, *args, **kwargs)
 
     def partial_update(self, request, *args, **kwargs):
-        instance = self.get_object()
-        if instance.status != "DRAFT":
-            return Response(
-                {"error": "Solo se pueden editar órdenes en estado Borrador."},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
+        try:
+            PurchasingService.validate_editable(self.get_object())
+        except ValidationError as e:
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
         return super().partial_update(request, *args, **kwargs)
 
     def destroy(self, request, *args, **kwargs):
-        instance = self.get_object()
-        if not request.user.is_staff:
-            return Response(
-                {"error": "Solo administradores pueden purgar documentos cancelados."},
-                status=status.HTTP_403_FORBIDDEN,
-            )
         try:
-            PurchasingService.validate_purge(instance)
+            PurchasingService.validate_can_purge(self.get_object(), request.user)
         except ValidationError as e:
-            msg = e.messages[0] if getattr(e, "messages", None) else str(e)
-            return Response({"error": msg}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
         return super().destroy(request, *args, **kwargs)
 
     @action(detail=True, methods=["get"])
@@ -245,19 +224,7 @@ class PurchaseOrderViewSet(NoDestroyModelMixin, viewsets.ModelViewSet, AuditHist
     def purchase_checkout(self, request):
         try:
             result = PurchasingService.purchase_checkout_from_request(request)
-            from workflow.services import WorkflowService
-            WorkflowService.sync_hub_tasks(result["order"])
-            from billing.serializers import InvoiceSerializer
-            from treasury.serializers import TreasuryMovementSerializer
-            from .serializers import PurchaseReceiptSerializer
-
-            res = {
-                "order": PurchaseOrderSerializer(result["order"]).data,
-                "invoice": InvoiceSerializer(result["invoice"]).data if result["invoice"] else None,
-                "payment": TreasuryMovementSerializer(result["payment"]).data if result["payment"] else None,
-                "receipt": PurchaseReceiptSerializer(result["receipt"]).data if result["receipt"] else None,
-            }
-            return Response(res, status=status.HTTP_201_CREATED)
+            return Response(PurchasingService.purchase_checkout_response(result), status=status.HTTP_201_CREATED)
         except ValidationError as e:
             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
         except Exception as e:
