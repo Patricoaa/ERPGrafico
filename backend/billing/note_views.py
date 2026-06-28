@@ -10,41 +10,17 @@ from billing.note_serializers import (
     FullNoteCheckoutSerializer,
     NoteWorkflowSerializer,
 )
-from billing.note_workflow import NoteWorkflow
+from billing.selectors import NoteWorkflowSelector
 from core.mixins import AuditHistoryMixin
 
 
 class NoteWorkflowViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
     pagination_class = StandardResultsSetPagination
-    """
-    ViewSet for Note Workflow (Credit/Debit Note checkout)
-
-    Endpoints:
-    - POST /note-workflows/{id}/complete/ - Complete workflow
-    - POST /note-workflows/checkout/ - Atomic checkout (all-in-one)
-    """
-
-    queryset = NoteWorkflow.objects.select_related(
-        "invoice", "corrected_invoice", "sale_order", "purchase_order", "created_by"
-    ).all()
+    queryset = NoteWorkflowSelector.get_queryset_from_request(None, None)  # placeholder
     serializer_class = NoteWorkflowSerializer
 
     def get_queryset(self):
-        """Filter by order if provided"""
-        queryset = super().get_queryset()
-
-        sale_order_id = self.request.query_params.get("sale_order_id")
-        purchase_order_id = self.request.query_params.get("purchase_order_id")
-        stage = self.request.query_params.get("stage")
-
-        if sale_order_id:
-            queryset = queryset.filter(sale_order_id=sale_order_id)
-        if purchase_order_id:
-            queryset = queryset.filter(purchase_order_id=purchase_order_id)
-        if stage:
-            queryset = queryset.filter(current_stage=stage)
-
-        return queryset
+        return NoteWorkflowSelector.get_queryset_from_request(self, self.request)
 
     @action(detail=True, methods=["post"])
     def complete(self, request, pk=None):
@@ -83,23 +59,7 @@ class NoteWorkflowViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
 
     @action(detail=False, methods=["post"], url_path="checkout")
     def checkout(self, request):
-        """
-        Atomic checkout for Notes.
-        POST /billing/note-workflows/checkout/
-        """
-        import json
-
-        # Handle FormData parsing for JSON fields
-        data = request.data.dict() if hasattr(request.data, "dict") else request.data.copy()
-
-        # Parse JSON fields if they are strings (Multipart/form-data)
-        for field in ["selected_items", "logistics_data", "registration_data", "payment_data"]:
-            if field in data and isinstance(data[field], str):
-                try:
-                    data[field] = json.loads(data[field])
-                except json.JSONDecodeError:
-                    pass
-
+        data = NoteCheckoutService.parse_formdata_json(request.data)
         serializer = FullNoteCheckoutSerializer(data=data)
 
         if serializer.is_valid():

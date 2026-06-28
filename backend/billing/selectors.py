@@ -1,3 +1,26 @@
+class NoteWorkflowSelector:
+    @staticmethod
+    def get_queryset_from_request(view, request):
+        from billing.note_workflow import NoteWorkflow
+
+        qs = NoteWorkflow.objects.select_related(
+            "invoice", "corrected_invoice", "sale_order", "purchase_order", "created_by"
+        ).all()
+
+        sale_order_id = request.query_params.get("sale_order_id")
+        purchase_order_id = request.query_params.get("purchase_order_id")
+        stage = request.query_params.get("stage")
+
+        if sale_order_id:
+            qs = qs.filter(sale_order_id=sale_order_id)
+        if purchase_order_id:
+            qs = qs.filter(purchase_order_id=purchase_order_id)
+        if stage:
+            qs = qs.filter(current_stage=stage)
+
+        return qs
+
+
 class InvoiceSelectorExt:
     @staticmethod
     def get_queryset_from_request(view, request):
