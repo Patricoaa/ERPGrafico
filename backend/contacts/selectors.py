@@ -436,8 +436,67 @@ class ContactSelector:
                         "paid_amount": str(payments_net),
                     }
                 )
-
         return ledger_data
+
+    @staticmethod
+    def filter_suggestions(query: str) -> list:
+        if len(query) < 2:
+            return []
+        names = (
+            Contact.objects.filter(name__icontains=query)
+            .values_list("name", flat=True)
+            .distinct()
+            .order_by("name")[:10]
+        )
+        return list(names)
+
+    @staticmethod
+    def list_customers():
+        return Contact.objects.filter(sale_orders__isnull=False).distinct()
+
+    @staticmethod
+    def list_suppliers():
+        return Contact.objects.filter(purchase_orders__isnull=False).distinct()
+
+    @staticmethod
+    def list_partners():
+        return Contact.objects.filter(is_partner=True).distinct()
+
+    @staticmethod
+    def get_credit_history(contact):
+        from sales.models import SaleOrder
+        from sales.serializers import SaleOrderSerializer
+
+        history = SaleOrder.objects.filter(
+            customer=contact, credit_assignment_origin__isnull=False
+        ).order_by("-date", "-created_at")
+        return SaleOrderSerializer(history, many=True).data
+
+    @staticmethod
+    def list_partner_transactions(partner):
+        from .partner_models import PartnerTransaction
+        from .serializers import PartnerTransactionSerializer
+
+        return PartnerTransaction.objects.filter(partner=partner).order_by("-date", "-created_at")
+
+    @staticmethod
+    def list_all_partner_transactions():
+        from .partner_models import PartnerTransaction
+        from .serializers import PartnerTransactionSerializer
+
+        txs = PartnerTransaction.objects.all().select_related("partner", "journal_entry")
+        return PartnerTransactionSerializer(txs, many=True).data
+
+    @staticmethod
+    def get_equity_stakes_history(partner_id: int | None = None):
+        from .partner_models import PartnerEquityStake
+        from .serializers import PartnerEquityStakeSerializer
+
+        qs = PartnerEquityStake.objects.all().select_related("partner", "source_transaction")
+        if partner_id:
+            qs = qs.filter(partner_id=partner_id)
+        return PartnerEquityStakeSerializer(qs, many=True).data
+
 
 class ContactSelectorExt:
     @staticmethod
