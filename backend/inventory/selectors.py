@@ -420,6 +420,134 @@ class ProductSelector:
             "production_usage": production_usage,
         }
 
+class SubscriptionSelector:
+    @staticmethod
+    def list_subscriptions(*, params: dict) -> QuerySet:
+        from django.utils import timezone
+
+        queryset = Subscription.objects.all().select_related("product", "supplier").order_by("-created_at")
+
+        status_filter = params.get("status")
+        if status_filter:
+            queryset = queryset.filter(status=status_filter)
+
+        supplier_id = params.get("supplier")
+        if supplier_id:
+            queryset = queryset.filter(supplier_id=supplier_id)
+
+        upcoming_days = params.get("upcoming_days")
+        if upcoming_days:
+            try:
+                days = int(upcoming_days)
+                threshold = timezone.now().date() + timezone.timedelta(days=days)
+                queryset = queryset.filter(
+                    status=Subscription.Status.ACTIVE, next_payment_date__lte=threshold
+                )
+            except (ValueError, TypeError):
+                pass
+
+        return queryset
+
+    @staticmethod
+    def get_stats():
+        from django.db.models import Count, Sum, Q
+
+        now = timezone.now()
+        threshold_30 = now.date() + timezone.timedelta(days=30)
+
+        agg = Subscription.objects.aggregate(
+            active_count=Count("pk", filter=Q(status=Subscription.Status.ACTIVE)),
+            paused_count=Count("pk", filter=Q(status=Subscription.Status.PAUSED)),
+            cancelled_count=Count("pk", filter=Q(status=Subscription.Status.CANCELLED)),
+            total_monthly_cost=Sum("amount", filter=Q(status=Subscription.Status.ACTIVE)),
+            upcoming_renewals=Count(
+                "pk",
+                filter=Q(
+                    status=Subscription.Status.ACTIVE,
+                    next_payment_date__lte=threshold_30,
+                ),
+            ),
+        )
+
+        return {
+            "active_subscriptions": agg["active_count"],
+            "paused_subscriptions": agg["paused_count"],
+            "cancelled_subscriptions": agg["cancelled_count"],
+            "total_monthly_cost": float(agg["total_monthly_cost"] or 0),
+            "upcoming_renewals_30_days": agg["upcoming_renewals"],
+        }
+
+    @staticmethod
+    def get_full_history(subscription):
+        from billing.models import Invoice
+        from purchasing.models import PurchaseLine, PurchaseOrder
+
+        product = subscription.product
+        supplier = subscription.supplier
+
+        orders_qs = (
+            PurchaseOrder.objects.filter(supplier=supplier, lines__product=product)
+            .distinct()
+            .order_by("-date")
+        )
+
+        orders_data = [
+            {
+                "id": o.id,
+                "number": o.number,
+                "display_id": o.display_id,
+                "date": o.date,
+                "status": o.status,
+                "total": float(o.total),
+                "receiving_status": o.receiving_status,
+            }
+            for o in orders_qs
+        ]
+
+        price_history_qs = PurchaseLine.objects.filter(
+            product=product,
+            order__supplier=supplier,
+            order__status__in=[PurchaseOrder.Status.CONFIRMED, PurchaseOrder.Status.RECEIVED],
+        ).order_by("-order__date")[:20]
+
+        price_history = [
+            {
+                "date": line.order.date,
+                "unit_cost": float(line.unit_cost),
+                "order_number": line.order.number,
+            }
+            for line in price_history_qs
+        ]
+
+        order_ids = [o["id"] for o in orders_data]
+        notes_qs = Invoice.objects.filter(
+            purchase_order__in=order_ids,
+            dte_type__in=[Invoice.DTEType.NOTA_CREDITO, Invoice.DTEType.NOTA_DEBITO],
+        ).order_by("-date")
+
+        notes_data = [
+            {
+                "id": n.id,
+                "number": n.number,
+                "display_id": n.display_id,
+                "date": n.date,
+                "status": n.status,
+                "dte_type": n.dte_type,
+                "total": float(n.total),
+                "purchase_order_number": n.purchase_order.number if n.purchase_order else None,
+            }
+            for n in notes_qs
+        ]
+
+        return {
+            "orders": orders_data,
+            "price_history": price_history,
+            "notes": notes_data,
+            "product_name": product.name,
+            "supplier_name": supplier.name,
+        }
+
+
 class StockMoveSelector:
     @staticmethod
     def get_related_documents(obj):
