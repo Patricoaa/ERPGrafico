@@ -4,7 +4,7 @@ import { Separator } from "@/components/ui/separator"
 import {CheckCircle2, FileText, Package, AlertCircle} from "lucide-react"
 import { cn } from "@/lib/utils"
 import {DataCell, DocumentAttachmentDropzone, EmptyState, FolioValidationInput, LabeledContainer, PeriodValidationDateInput} from '@/components/shared'
-import { PaymentMethodCardSelector, type PaymentData } from "@/features/treasury/components/PaymentMethodCardSelector"
+import { PaymentMethodSelector, type PaymentData } from "@/features/treasury"
 
 // --- STEP 1: General Information ---
 
@@ -439,7 +439,7 @@ export function Step4_Payment({
                 </p>
             </div>
 
-            <PaymentMethodCardSelector
+            <PaymentMethodSelector
                 operation={operation}
                 total={total}
                 paymentData={paymentData}

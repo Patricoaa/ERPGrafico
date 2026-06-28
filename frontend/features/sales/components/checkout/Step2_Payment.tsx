@@ -1,6 +1,6 @@
 "use client"
 
-import { PaymentMethodCardSelector, type PaymentData } from "@/features/treasury/components/PaymentMethodCardSelector"
+import { PaymentMethodSelector, type PaymentData } from "@/features/treasury"
 import { type CheckoutPaymentData } from "../../types"
 import { FormSection } from '@/components/shared'
 import { Wallet } from "lucide-react"
@@ -16,7 +16,7 @@ interface Step2_PaymentProps {
 export function Step2_Payment({ paymentData, setPaymentData, total, terminalId, customerCreditBalance }: Step2_PaymentProps) {
     return (
         <div className="space-y-6">
-            <PaymentMethodCardSelector
+            <PaymentMethodSelector
                 operation="sales"
                 terminalId={terminalId}
                 total={total}

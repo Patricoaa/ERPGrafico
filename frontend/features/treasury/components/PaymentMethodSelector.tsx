@@ -1,261 +1,454 @@
 "use client"
 
-import { useAllowedPaymentMethods, type PaymentMethod } from "@/hooks/useAllowedPaymentMethods"
-import { useMemo, useEffect } from "react"
-import { Label } from "@/components/ui/label"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Banknote, CreditCard, Building2, ClipboardList } from "lucide-react"
+import { Banknote, CreditCard, Building2, ClipboardList, Wallet } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { Checkbox } from "@/components/ui/checkbox"
+import { useAllowedPaymentMethods, type PaymentMethod } from "@/hooks/useAllowedPaymentMethods"
+import { useBanks } from '../hooks/useMasterData'
+import { useState, useMemo, useEffect } from "react"
+import { Button } from "@/components/ui/button"
+import { BaseModal, Numpad } from '@/components/shared'
 
-import { CardSkeleton, EmptyState, LabeledContainer } from '@/components/shared'
+import { LabeledInput, LabeledSelect, MoneyDisplay } from "@/components/shared"
+import { formatMoney } from "@/lib/money"
 
-export interface PaymentMethodValue {
-    methodType: 'CASH' | 'CARD' | 'TRANSFER' | 'CHECK' | null
+export interface PaymentData {
+    method: 'CASH' | 'CARD' | 'CARD_TERMINAL' | 'CREDIT_CARD' | 'DEBIT_CARD' | 'TRANSFER' | 'CHECK' | 'CREDIT_BALANCE' | null
+    amount: number
     treasuryAccountId: string | null
-    paymentMethodId: string | null
+    paymentMethodId: number | null
+    isPending?: boolean
+    checkNumber?: string
+    /** true cuando el método es CARD_TERMINAL — activa flujo TUU automatizado */
+    isTerminalIntegration?: boolean
+    /** CHECK: banco emisor del cheque */
+    checkBankId?: number | null
+    /** CHECK: fecha de vencimiento (ISO date string) */
+    checkDueDate?: string
+    /** CREDIT_CARD: cantidad de cuotas (default 1 = pago único) */
+    installments?: number
 }
 
-interface PaymentMethodSelectorProps {
-    value: PaymentMethodValue
-    onChange: (value: PaymentMethodValue) => void
-    operation?: 'sales' | 'purchases'
+interface PaymentMethodCardSelectorProps {
+    operation: 'sales' | 'purchases'
     terminalId?: number
-    className?: string
+    total: number
+    paymentData: PaymentData
+    onPaymentDataChange: (data: PaymentData) => void
+    labels?: {
+        totalLabel?: string
+        amountLabel?: string
+        differencePositiveLabel?: string
+        differenceNegativeLabel?: string
+        amountModalTitle?: string
+        amountModalDescription?: string
+    }
+    compactMode?: boolean
+    customerCreditBalance?: number
+    allowCreditBalanceAccumulation?: boolean
+    /** Componente renderizado entre los labels de resumen y los métodos de pago */
+    methodTitle?: React.ReactNode
 }
 
 export function PaymentMethodSelector({
-    value,
-    onChange,
-    operation = 'sales',
+    operation,
     terminalId,
-    className
-}: PaymentMethodSelectorProps) {
-    const { methods: allowedMethods, loading } = useAllowedPaymentMethods({
+    total,
+    paymentData,
+    onPaymentDataChange,
+    labels = {},
+    compactMode = false,
+    customerCreditBalance = 0,
+    allowCreditBalanceAccumulation = false,
+    methodTitle
+}: PaymentMethodCardSelectorProps) {
+    const {
+        amountModalTitle = 'Monto',
+        amountModalDescription = 'Ingrese el monto para este pago.'
+    } = labels
+
+    const { methods: allowedMethods, loading: loadingMethods } = useAllowedPaymentMethods({
         terminalId,
         operation,
         enabled: true
     })
 
-    // Group methods by High-Level Type
-    const methodsByType = useMemo(() => {
-        const groups: Record<string, PaymentMethod[]> = {
-            CASH: [],
-            CARD: [],
-            TRANSFER: [],
-            CHECK: []
+    const { banks } = useBanks()
+
+    const isMethodAllowed = (methodId: string) => {
+        if (loadingMethods) return true
+        if (!allowedMethods.length) return false
+
+        switch (methodId) {
+            case 'CASH':
+                return allowedMethods.some(m => m.method_type === 'CASH')
+            case 'CARD':
+                // Solo métodos CARD genéricos (no CARD_TERMINAL, no DEBIT_CARD/CREDIT_CARD ya filtrados por allow_for_sales)
+                return allowedMethods.some(m => m.method_type === 'CARD')
+            case 'CREDIT_CARD':
+                return allowedMethods.some(m => m.method_type === 'CREDIT_CARD')
+            case 'DEBIT_CARD':
+                return allowedMethods.some(m => m.method_type === 'DEBIT_CARD')
+            case 'CARD_TERMINAL':
+                return allowedMethods.some(m => m.method_type === 'CARD_TERMINAL' && m.is_terminal_integration)
+            case 'TRANSFER':
+                return allowedMethods.some(m => m.method_type === 'TRANSFER')
+            case 'CHECK':
+                return allowedMethods.some(m => m.method_type === 'CHECK')
+            case 'CREDIT_BALANCE':
+                if (operation === 'sales') return customerCreditBalance > 0
+                return allowCreditBalanceAccumulation
+            default:
+                return false
+        }
+    }
+
+    const [isAmountModalOpen, setIsAmountModalOpen] = useState(false)
+    const [tempAmount, setTempAmount] = useState("")
+
+    const handleMethodChange = (val: string) => {
+        const isReClick = paymentData.method === val
+        const isTerminalIntegration = val === 'CARD_TERMINAL'
+        onPaymentDataChange({
+            ...paymentData,
+            method: val as PaymentData['method'],
+            isTerminalIntegration,
+        })
+        if (isReClick) {
+            openAmountModal()
+        } else {
+            setTempAmount((paymentData.amount || 0).toString())
+            setIsAmountModalOpen(true)
+        }
+    }
+
+    const handleAmountConfirm = () => {
+        const parsed = parseFloat(tempAmount)
+        let finalAmount = parsed || 0
+
+        // For purchases, limit to total (no overpayments)
+        if (operation === 'purchases' && finalAmount > total) {
+            finalAmount = total
         }
 
-        allowedMethods.forEach(m => {
-            if (m.method_type === 'CASH') groups.CASH.push(m)
-            else if (['CREDIT_CARD', 'DEBIT_CARD', 'CARD'].includes(m.method_type)) groups.CARD.push(m)
-            else if (m.method_type === 'TRANSFER') groups.TRANSFER.push(m)
-            else if (['CHECK', 'CHECKBOOK'].includes(m.method_type)) groups.CHECK.push(m)
+        // Limit sales CREDIT_BALANCE to available customer balance
+        if (operation === 'sales' && paymentData.method === 'CREDIT_BALANCE' && finalAmount > customerCreditBalance) {
+            finalAmount = customerCreditBalance
+            // Optionally, we could show a toast here to notify the user
+        }
+
+        onPaymentDataChange({
+            ...paymentData,
+            amount: finalAmount
         })
+        setIsAmountModalOpen(false)
+    }
 
-        return groups
-    }, [allowedMethods])
+    const openAmountModal = () => {
+        setTempAmount((paymentData.amount || 0).toString())
+        setIsAmountModalOpen(true)
+    }
 
-    // Available High-Level Types
-    const availableTypes = useMemo(() => {
-        return [
+    const methodsForType = useMemo<PaymentMethod[]>(() => {
+        return allowedMethods.filter(m => {
+            if (paymentData.method === 'CASH') return m.method_type === 'CASH'
+            if (paymentData.method === 'CARD') return m.method_type === 'CARD'
+            if (paymentData.method === 'CREDIT_CARD') return m.method_type === 'CREDIT_CARD'
+            if (paymentData.method === 'DEBIT_CARD') return m.method_type === 'DEBIT_CARD'
+            if (paymentData.method === 'CARD_TERMINAL') return m.method_type === 'CARD_TERMINAL'
+            if (paymentData.method === 'TRANSFER') return m.method_type === 'TRANSFER'
+            if (paymentData.method === 'CHECK') return m.method_type === 'CHECK'
+            if (paymentData.method === 'CREDIT_BALANCE') return false // Doesn't need a treasury account
+            return false
+        })
+    }, [allowedMethods, paymentData.method])
+
+    useEffect(() => {
+        // Auto-select: If there is at least one candidate account/method
+        if (methodsForType.length >= 1) {
+            const currentAccountId = paymentData.treasuryAccountId?.toString();
+            // If the current account ID is not associated with any of the allowed methods for this type, select the first one
+            const isValid = methodsForType.some(m => m.treasury_account?.toString() === currentAccountId);
+
+            if (!isValid) {
+                const first = methodsForType[0]
+                requestAnimationFrame(() => {
+                    onPaymentDataChange({
+                        ...paymentData,
+                        treasuryAccountId: first.treasury_account?.toString() ?? null,
+                        paymentMethodId: first.id
+                    });
+                })
+            }
+        } else if (methodsForType.length === 0 && (paymentData.treasuryAccountId || paymentData.paymentMethodId)) {
+            requestAnimationFrame(() => {
+                onPaymentDataChange({ ...paymentData, treasuryAccountId: null, paymentMethodId: null });
+            })
+        }
+    }, [methodsForType, paymentData.method])
+
+    const methods = useMemo(() => {
+        const availableMethods = [
             {
                 id: 'CASH',
                 label: 'Efectivo',
                 icon: Banknote,
                 color: 'text-success',
-                bg: 'bg-success/10',
-                border: 'border-success/20',
-                methods: methodsByType.CASH
+                isAllowed: isMethodAllowed('CASH')
             },
             {
                 id: 'CARD',
                 label: 'Tarjeta',
                 icon: CreditCard,
                 color: 'text-primary',
-                bg: 'bg-info/10',
-                border: 'border-info/20',
-                methods: methodsByType.CARD
+                isAllowed: isMethodAllowed('CARD')
+            },
+            {
+                id: 'CREDIT_CARD',
+                label: 'T. Crédito',
+                icon: CreditCard,
+                color: 'text-primary',
+                isAllowed: isMethodAllowed('CREDIT_CARD')
+            },
+            {
+                id: 'DEBIT_CARD',
+                label: 'T. Débito',
+                icon: CreditCard,
+                color: 'text-primary',
+                isAllowed: isMethodAllowed('DEBIT_CARD')
+            },
+            {
+                id: 'CARD_TERMINAL',
+                label: 'Tarjeta TUU',
+                icon: CreditCard,
+                color: 'text-primary',
+                isAllowed: isMethodAllowed('CARD_TERMINAL')
             },
             {
                 id: 'TRANSFER',
                 label: 'Transferencia',
                 icon: Building2,
                 color: 'text-primary',
-                bg: 'bg-primary/10',
-                border: 'border-primary/20',
-                methods: methodsByType.TRANSFER
+                isAllowed: isMethodAllowed('TRANSFER')
             },
             {
                 id: 'CHECK',
                 label: 'Cheque',
                 icon: ClipboardList,
                 color: 'text-warning',
-                bg: 'bg-warning/10',
-                border: 'border-warning/20',
-                methods: methodsByType.CHECK
+                isAllowed: isMethodAllowed('CHECK')
+            },
+            {
+                id: 'CREDIT_BALANCE',
+                label: 'Saldo a Favor',
+                icon: Wallet,
+                color: 'text-primary',
+                isAllowed: isMethodAllowed('CREDIT_BALANCE')
             }
-        ].filter(t => t.methods.length > 0)
-    }, [methodsByType])
+        ]
 
-    // Specific methods for the CURRENTLY selected type
-    const currentTypeMethods = useMemo(() => {
-        if (!value.methodType) return []
-        return methodsByType[value.methodType] || []
-    }, [value.methodType, methodsByType])
-
-    // Auto-select logic: If a type is selected and has only 1 method, select it automatically.
-    // Also, if no specific account/method is selected but we have candidates, select the first one.
-    useEffect(() => {
-        if (!value.methodType) return
-
-        // Filtra métodos virtuales (CHECK hardcodeado sin id)
-        const realMethods = currentTypeMethods.filter(m => m.id != null && m.treasury_account != null)
-
-        if (realMethods.length > 0) {
-            // Check if current selection is valid for this type
-            const isCurrentValid = currentTypeMethods.some(m =>
-                String(m.id) === value.paymentMethodId &&
-                String(m.treasury_account) === value.treasuryAccountId
-            )
-
-            if (!isCurrentValid) {
-                // Default to first available method for this type
-                const defaultMethod = realMethods[0]
-                onChange({
-                    ...value,
-                    treasuryAccountId: String(defaultMethod.treasury_account),
-                    paymentMethodId: String(defaultMethod.id)
-                })
-            }
-        } else {
-            // Type selected but no methods available (shouldn't happen due to filtering, but safe fallback)
-            if (value.treasuryAccountId || value.paymentMethodId) {
-                onChange({ ...value, treasuryAccountId: null, paymentMethodId: null })
-            }
-        }
-    }, [value.methodType, currentTypeMethods, onChange, value.paymentMethodId, value.treasuryAccountId])
-
-    // Handle Type Change
-    const handleTypeChange = (type: string) => {
-        // Find methods for this new type
-        const newMethods = methodsByType[type] || []
-
-        const nextValue: PaymentMethodValue = {
-            methodType: type as 'CASH' | 'CARD' | 'TRANSFER' | 'CHECK',
-            treasuryAccountId: null,
-            paymentMethodId: null
-        }
-
-        // If there's only one method (or at least one), we'll let the useEffect above handle the specific selection
-        // OR we can do it right here to be snappier
-        const firstReal = newMethods.find(m => m.id != null && m.treasury_account != null)
-        if (firstReal) {
-            nextValue.treasuryAccountId = String(firstReal.treasury_account)
-            nextValue.paymentMethodId = String(firstReal.id)
-        }
-
-        onChange(nextValue)
-    }
-
-    if (loading && availableTypes.length === 0) {
-        return (
-            <CardSkeleton
-                count={4}
-                gridClassName="grid grid-cols-2 md:grid-cols-4 gap-4"
-                className="h-[100px]"
-            />
-        )
-    }
-
-    if (availableTypes.length === 0) {
-        return (
-            <EmptyState context="finance" variant="compact" description="No hay métodos de pago disponibles para esta operación" />
-        )
-    }
+        return availableMethods.filter(m => m.isAllowed)
+    }, [allowedMethods, isMethodAllowed, operation])
 
     return (
-        <div className={cn("space-y-4", className)}>
-            <RadioGroup
-                value={value.methodType || ""}
-                onValueChange={handleTypeChange}
-                className="grid grid-cols-2 md:grid-cols-4 gap-4"
-            >
-                {availableTypes.map((type) => {
-                    const isSelected = value.methodType === type.id
-                    return (
-                        <div key={type.id} className="relative">
-                            <RadioGroupItem
-                                value={type.id}
-                                id={`pm-type-${type.id}`}
-                                className="sr-only"
-                            />
-                            <Label
-                                htmlFor={`pm-type-${type.id}`}
+        <div className="space-y-4">
+            {/* Account Details Form */}
+            <div className="space-y-4">
+                {methodTitle}
+                <RadioGroup
+                    value={paymentData.method || ''}
+                    onValueChange={handleMethodChange}
+                    className="grid gap-4"
+                    style={{
+                        gridTemplateColumns: `repeat(${methods.length}, minmax(0, 1fr))`
+                    }}
+                >
+                    {methods.map((m) => (
+                        <div key={m.id} className="relative group h-full">
+                            <label
+                                htmlFor={`method-${m.id}`}
                                 className={cn(
-                                    "flex flex-col items-center gap-3 p-4 rounded-md border-2 cursor-pointer transition-all hover:bg-accent",
-                                    isSelected
-                                        ? `border-primary/50 bg-accent ring-1 ring-primary/20`
-                                        : "border-muted bg-popover"
+                                    "card-accent-cmyk relative overflow-hidden flex flex-col rounded-md border bg-card hover:shadow-elevated transition-all h-full cursor-pointer",
+                                    "focus-visible:border-2 focus-visible:border-primary",
+                                    "[&:has([data-state=checked])]:border-2 [&:has([data-state=checked])]:border-primary",
+                                    paymentData.method === m.id ? 'border-2 border-primary accent-visible' : 'border',
+                                    !m.isAllowed ? 'opacity-50 grayscale cursor-not-allowed' : '',
+                                    compactMode ? "gap-2 p-3" : "gap-4 p-6"
                                 )}
+                                onClick={(e) => {
+                                    if (!m.isAllowed) {
+                                        e.preventDefault()
+                                        return
+                                    }
+                                    if (paymentData.method === m.id && m.id !== 'TRANSFER' && m.id !== 'CREDIT_BALANCE') {
+                                        openAmountModal()
+                                    }
+                                }}
                             >
-                                <div className={cn(
-                                    "p-3 rounded-full",
-                                    isSelected ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
-                                )}>
-                                    <type.icon className="h-6 w-6" />
+                                <RadioGroupItem value={m.id} id={`method-${m.id}`} className="sr-only" disabled={!m.isAllowed} />
+                                <div className="flex flex-col items-center justify-center gap-4 h-full">
+                                    <div className={cn(
+                                        "rounded-md bg-background border-2 shadow-card flex items-center justify-center relative",
+                                        m.color,
+                                        compactMode ? "p-3" : "p-6"
+                                    )}>
+                                        {m.id === 'CREDIT_BALANCE' && operation === 'sales' && (
+                                            <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-primary text-primary-foreground px-3 py-1 rounded-full text-xs font-black shadow-elevated border-2 border-background animate-in zoom-in duration-300 z-10 whitespace-nowrap">
+                                                <MoneyDisplay amount={customerCreditBalance} inline className="text-primary-foreground" />
+                                            </div>
+                                        )}
+                                        <m.icon className={cn(
+                                            compactMode ? "h-6 w-6" : "h-10 w-10"
+                                        )} />
+                                    </div>
+                                    <div className="flex flex-col items-center gap-1">
+                                        <span className={cn(
+                                            "font-black uppercase tracking-tight text-center",
+                                            compactMode ? "text-xs" : "text-sm"
+                                        )}>{m.label}</span>
+                                        {!m.isAllowed && (
+                                            <span className="text-[10px] font-black text-destructive uppercase tracking-widest">No Disponible</span>
+                                        )}
+                                    </div>
                                 </div>
-                                <span className={cn(
-                                    "font-bold uppercase text-xs tracking-wider",
-                                    isSelected ? "text-primary" : "text-muted-foreground"
-                                )}>
-                                    {type.label}
-                                </span>
-                            </Label>
+
+                                {paymentData.method === m.id && (
+                                    <div className="mt-2 space-y-3 pt-3 border-t w-full animate-in fade-in slide-in-from-top-2" onClick={(e) => e.stopPropagation()}>
+                                                        {m.id === 'CHECK' && (
+                                            <LabeledInput
+                                                label="N° de Cheque"
+                                                placeholder="Ej: 000123"
+                                                value={paymentData.checkNumber || ""}
+                                                onChange={(e) => onPaymentDataChange({ ...paymentData, checkNumber: e.target.value })}
+                                            />
+                                        )}
+
+                                        {m.id === 'CREDIT_CARD' && (
+                                                <LabeledInput
+                                                    label="N° de Cuotas"
+                                                    type="number"
+                                                    min={1}
+                                                    max={36}
+                                                    value={(paymentData.installments || 1).toString()}
+                                                    onChange={(e) => {
+                                                        const val = parseInt(e.target.value) || 1
+                                                        onPaymentDataChange({ ...paymentData, installments: Math.max(1, Math.min(36, val)) })
+                                                    }}
+                                                    placeholder="1"
+                                                />
+                                        )}
+
+                                        {m.id === 'DEBIT_CARD' && (
+                                            <p className="text-xs text-muted-foreground">
+                                                Débito directo desde la cuenta vinculada.
+                                            </p>
+                                        )}
+
+                                        {m.id === 'CHECK' && (
+                                            <>
+                                                <LabeledSelect
+                                                    label="Banco Emisor"
+                                                    placeholder="Seleccione banco..."
+                                                    value={paymentData.checkBankId?.toString() || ""}
+                                                    onChange={(val) => onPaymentDataChange({
+                                                        ...paymentData,
+                                                        checkBankId: val ? parseInt(val) : null
+                                                    })}
+                                                    options={banks
+                                                        .filter(b => b.is_active)
+                                                        .map(b => ({ value: b.id.toString(), label: b.name }))}
+                                                />
+                                                <LabeledInput
+                                                    label="Fecha Vencimiento"
+                                                    type="date"
+                                                    value={paymentData.checkDueDate || ""}
+                                                    onChange={(e) => onPaymentDataChange({ ...paymentData, checkDueDate: e.target.value })}
+                                                />
+                                            </>
+                                        )}
+
+                                        {(paymentData.method === 'CREDIT_CARD' || paymentData.method === 'DEBIT_CARD' || methodsForType.filter(m => m.treasury_account != null).length > 1) && (
+                                            <LabeledSelect
+                                                label={paymentData.method === 'TRANSFER' ? 'Banco / Cuenta' : paymentData.method === 'CREDIT_CARD' ? 'Tarjeta de Crédito' : paymentData.method === 'DEBIT_CARD' ? 'Tarjeta Débito' : 'Cuenta'}
+                                                value={paymentData.treasuryAccountId || ""}
+                                                onChange={(val) => {
+                                                    const selectedMethod = methodsForType.find(m => String(m.treasury_account) === val)
+                                                    onPaymentDataChange({
+                                                        ...paymentData,
+                                                        treasuryAccountId: val,
+                                                        paymentMethodId: selectedMethod?.id ?? null
+                                                    })
+                                                }}
+                                                options={methodsForType.filter(m => m.treasury_account != null).map((m) => ({
+                                                    value: String(m.treasury_account),
+                                                    label: `${m.name} (${m.treasury_account_name})`
+                                                }))}
+                                            />
+                                        )}
+
+                                        
+                                    </div>
+                                )}
+                            </label>
                         </div>
-                    )
-                })}
-            </RadioGroup>
+                    ))}
+                </RadioGroup>
+            </div>
 
-            {/* Sub-selector for specific Method/Account if multiple exist */}
-            {value.methodType && currentTypeMethods.filter(m => m.id != null).length > 1 && (
-                <div className="animate-in fade-in slide-in-from-top-1">
-                    <LabeledContainer label={`Seleccionar ${value.methodType === 'TRANSFER' ? 'Cuenta Bancaria' : 'Cuenta / Opción'}`}>
-                        <Select
-                            value={value.paymentMethodId || ""}
-                            onValueChange={(val) => {
-                                const selected = currentTypeMethods.find(m => String(m.id) === val)
-                                if (selected && selected.id != null && selected.treasury_account != null) {
-                                    onChange({
-                                        ...value,
-                                        paymentMethodId: String(selected.id),
-                                        treasuryAccountId: String(selected.treasury_account)
-                                    })
+            {/* Numpad Modal */}
+            <BaseModal
+                open={isAmountModalOpen}
+                onOpenChange={setIsAmountModalOpen}
+                title={amountModalTitle || "Monto"}
+                description={amountModalDescription}
+                className="sm:max-w-md"
+                footer={
+                    <Button
+                        className="w-full bg-primary hover:bg-primary font-black uppercase tracking-widest text-xs lg:text-base"
+                        onClick={handleAmountConfirm}
+                    >
+                        CONFIRMAR
+                    </Button>
+                }
+            >
+                <div className="flex flex-col items-center gap-4 overflow-y-auto">
+                    <Numpad
+                        value={tempAmount}
+                        onChange={setTempAmount}
+                        onConfirm={handleAmountConfirm}
+                        onClose={() => setIsAmountModalOpen(false)}
+                        allowDecimal={false}
+                        hideConfirm
+                        className="border-none shadow-none p-0 w-full max-w-none"
+                        displayValue={formatMoney(parseFloat(tempAmount) || 0)}
+                        quickAmounts={[
+                            ...[50, 100, 500, 1000, 2000, 5000, 10000, 20000].map(val => ({
+                                label: `+${formatMoney(val)}`,
+                                value: val,
+                                action: 'add' as const,
+                            })),
+                            { label: 'Exacto', value: total, action: 'set' as const },
+                        ]}
+                        onQuickAmountAction={(qa) => {
+                            let newAmount: number
+                            if (qa.action === 'add') {
+                                const current = parseFloat(tempAmount) || 0
+                                newAmount = current + qa.value
+                                if (operation === 'purchases' && newAmount > total) {
+                                    newAmount = total
                                 }
-                            }}
-                        >
-                            <SelectTrigger className="h-8 border-0 focus:ring-0 bg-transparent shadow-none px-2">
-                                <SelectValue placeholder="Seleccione opción..." />
-                            </SelectTrigger>
-                            <SelectContent className="w-[var(--radix-select-trigger-width)]">
-                                {currentTypeMethods.filter(m => m.id != null).map(m => (
-                                    <SelectItem key={m.id} value={String(m.id)}>
-                                        {m.name === 'Transferencia Scotiabank' ? 'Scotiabank' : m.name}
-                                        <span className="text-muted-foreground text-xs ml-2">({m.treasury_account_name})</span>
-                                    </SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
-                    </LabeledContainer>
+                            } else {
+                                newAmount = qa.value
+                            }
+                            if (operation === 'sales' && paymentData.method === 'CREDIT_BALANCE' && newAmount > customerCreditBalance) {
+                                newAmount = customerCreditBalance
+                            }
+                            setTempAmount(newAmount.toString())
+                        }}
+                    />
                 </div>
-            )}
-
-            {/* Show selected account info if only 1 exists, for confirmation */}
-            {value.methodType && currentTypeMethods.length === 1 && (
-                <div className="text-xs text-muted-foreground text-center bg-muted/30 p-2 rounded border border-dashed">
-                    Cuenta: <span className="font-medium text-foreground">{currentTypeMethods[0].treasury_account_name}</span>
-                </div>
-            )}
+            </BaseModal>
         </div>
     )
 }

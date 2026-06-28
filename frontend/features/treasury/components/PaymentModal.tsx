@@ -1,7 +1,7 @@
 "use client"
 
-import { useState, useEffect } from "react"
-import { BaseModal, CancelButton, DocumentAttachmentDropzone, LabeledInput, LabeledSelect, LoadingFallback, PeriodValidationDateInput } from '@/components/shared'
+import { useState } from "react"
+import { BaseModal, CancelButton, DocumentAttachmentDropzone, FormFooter, LabeledInput, LabeledSelect, LoadingFallback, PeriodValidationDateInput } from '@/components/shared'
 
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
@@ -9,7 +9,7 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { Card } from "@/components/ui/card"
 import {Banknote, Receipt, Hash, Calendar, FileUp} from "lucide-react"
 import { cn } from "@/lib/utils"
-import { PaymentMethodCardSelector, type PaymentData } from "@/features/treasury/components/PaymentMethodCardSelector"
+import { PaymentMethodSelector, type PaymentData } from "@/features/treasury"
 import { useServerDate } from "@/hooks/useServerDate"
 import { usePOSSession } from "@/features/treasury/hooks/usePOSSession"
 
@@ -65,20 +65,22 @@ export function PaymentModal({
     const [dteType, setDteType] = useState("NONE")
     const [documentReference, setDocumentReference] = useState("")
     const [documentDate, setDocumentDate] = useState("")
+    const [prevDateString, setPrevDateString] = useState(dateString)
 
     const [isPeriodValid, setIsPeriodValid] = useState(true)
 
-    // Sync document date with server date
-    useEffect(() => {
-        if (dateString && !documentDate) {
-            requestAnimationFrame(() => setDocumentDate(dateString))
+    // Sync document date with server date — adjust during render
+    if (dateString !== prevDateString) {
+        setPrevDateString(dateString)
+        if (!documentDate) {
+            setDocumentDate(dateString)
         }
-    }, [dateString])
+    }
 
     const [documentAttachment, setDocumentAttachment] = useState<File | null>(null)
     const [isDocumentPending, setIsDocumentPending] = useState(false)
 
-    // Payment data managed by PaymentMethodCardSelector
+    // Payment data managed by PaymentMethodSelector
     const [paymentData, setPaymentData] = useState<PaymentData>({
         method: null,
         amount: pendingAmount,
@@ -90,31 +92,26 @@ export function PaymentModal({
     const { session: posSession } = usePOSSession(posSessionId)
     const terminalId = posSession?.terminal ?? null
 
-    // Reset payment data when modal opens
-    useEffect(() => {
+    // Reset payment data when modal opens — adjust during render
+    const [prevOpen, setPrevOpen] = useState(open)
+    if (open !== prevOpen) {
+        setPrevOpen(open)
         if (open) {
-            requestAnimationFrame(() => {
-                setPaymentData({
-                    method: null,
-                    amount: pendingAmount,
-                    treasuryAccountId: null,
-                    paymentMethodId: null,
-                    isPending: false
-                })
-                setDocumentReference(existingInvoice?.number || "")
-                if (dateString) setDocumentDate(dateString)
-                setDocumentAttachment(null)
-                setIsDocumentPending(false)
-                setIsPeriodValid(true)
-
-                if (existingInvoice) {
-                    setDteType(existingInvoice.dte_type)
-                } else {
-                    setDteType(isPurchase ? "NONE" : "BOLETA")
-                }
+            setPaymentData({
+                method: null,
+                amount: pendingAmount,
+                treasuryAccountId: null,
+                paymentMethodId: null,
+                isPending: false
             })
+            setDocumentReference(existingInvoice?.number || "")
+            if (dateString) setDocumentDate(dateString)
+            setDocumentAttachment(null)
+            setIsDocumentPending(false)
+            setIsPeriodValid(true)
+            setDteType(existingInvoice ? existingInvoice.dte_type : (isPurchase ? "NONE" : "BOLETA"))
         }
-    }, [open, pendingAmount, isPurchase, existingInvoice, dateString])
+    }
 
     return (
         <BaseModal
@@ -127,37 +124,41 @@ export function PaymentModal({
                 </span>
             }
             size="lg"
-            footer={(
-                <div className="flex w-full gap-2">
-                    <CancelButton onClick={() => onOpenChange(false)} className="flex-1" />
-                    <Button
-                        className="flex-[2] bg-success hover:bg-success/90 h-12 text-lg font-bold"
-                        onClick={() => onConfirm({
-                            paymentMethod: paymentData.amount === 0 ? 'CREDIT' : paymentData.method || 'CASH',
-                            amount: paymentData.amount,
-                            dteType: (showDteSelector && dteType !== 'NONE') ? dteType : undefined,
-                            documentReference: (dteType !== 'NONE') ? documentReference : undefined,
-                            documentDate: (dteType !== 'NONE') ? documentDate : undefined,
-                            documentAttachment: (dteType !== 'NONE') ? documentAttachment : undefined,
-                            is_pending_registration: paymentData.isPending,
-                            treasury_account_id: paymentData.amount === 0 ? null : paymentData.treasuryAccountId,
-                            payment_method_new: paymentData.amount === 0 ? null : paymentData.paymentMethodId?.toString(),
-                            installments: paymentData.method === 'CREDIT_CARD' ? (paymentData.installments || 1) : undefined
-                        })}
-                        disabled={
-                            (paymentData.amount < 0) ||
-                            (paymentData.amount > 0 && !paymentData.treasuryAccountId && paymentData.method !== 'CHECK') ||
-                            ((!hideDteFields && isPurchase && (dteType === 'BOLETA' || dteType === 'FACTURA') && !existingInvoice && !documentReference && !isDocumentPending)) ||
-                            ((hideDteFields && isPurchase && (dteType === 'BOLETA' || dteType === 'FACTURA') && !!existingInvoice && !documentReference)) ||
-                            (paymentData.method === 'CHECK' && paymentData.amount > 0 && !paymentData.checkNumber) ||
-                            (!hideDteFields && dteType === 'FACTURA' && !existingInvoice && !isDocumentPending && !documentAttachment) ||
-                            ((dteType === 'BOLETA' || dteType === 'FACTURA') && !isPeriodValid)
-                        }
-                    >
-                        {isRefund ? 'Confirmar Reembolso' : 'Confirmar Pago'}
-                    </Button>
-                </div>
-            )}
+            footer={
+                <FormFooter
+                    actions={
+                        <>
+                            <CancelButton onClick={() => onOpenChange(false)} />
+                            <Button
+                                className="bg-success hover:bg-success/90 h-10 text-sm font-bold"
+                                onClick={() => onConfirm({
+                                    paymentMethod: paymentData.amount === 0 ? 'CREDIT' : paymentData.method || 'CASH',
+                                    amount: paymentData.amount,
+                                    dteType: (showDteSelector && dteType !== 'NONE') ? dteType : undefined,
+                                    documentReference: (dteType !== 'NONE') ? documentReference : undefined,
+                                    documentDate: (dteType !== 'NONE') ? documentDate : undefined,
+                                    documentAttachment: (dteType !== 'NONE') ? documentAttachment : undefined,
+                                    is_pending_registration: paymentData.isPending,
+                                    treasury_account_id: paymentData.amount === 0 ? null : paymentData.treasuryAccountId,
+                                    payment_method_new: paymentData.amount === 0 ? null : paymentData.paymentMethodId?.toString(),
+                                    installments: paymentData.method === 'CREDIT_CARD' ? (paymentData.installments || 1) : undefined
+                                })}
+                                disabled={
+                                    (paymentData.amount < 0) ||
+                                    (paymentData.amount > 0 && !paymentData.treasuryAccountId && paymentData.method !== 'CHECK') ||
+                                    ((!hideDteFields && isPurchase && (dteType === 'BOLETA' || dteType === 'FACTURA') && !existingInvoice && !documentReference && !isDocumentPending)) ||
+                                    ((hideDteFields && isPurchase && (dteType === 'BOLETA' || dteType === 'FACTURA') && !!existingInvoice && !documentReference)) ||
+                                    (paymentData.method === 'CHECK' && paymentData.amount > 0 && !paymentData.checkNumber) ||
+                                    (!hideDteFields && dteType === 'FACTURA' && !existingInvoice && !isDocumentPending && !documentAttachment) ||
+                                    ((dteType === 'BOLETA' || dteType === 'FACTURA') && !isPeriodValid)
+                                }
+                            >
+                                {isRefund ? 'Confirmar Reembolso' : 'Confirmar Pago'}
+                            </Button>
+                        </>
+                    }
+                />
+            }
         >
             <div className="py-2 space-y-6">
                 <div className="grid gap-4">
@@ -278,7 +279,7 @@ export function PaymentModal({
                     {/* Payment Method Card Selector */}
                     {/* Only show when terminalId is loaded if posSessionId is provided */}
                     {(!posSessionId || terminalId !== null) && (
-                        <PaymentMethodCardSelector
+                        <PaymentMethodSelector
                             operation={isPurchase ? 'purchases' : 'sales'}
                             terminalId={terminalId || undefined}
                             total={pendingAmount}

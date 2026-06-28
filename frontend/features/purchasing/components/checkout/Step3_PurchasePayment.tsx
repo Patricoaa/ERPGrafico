@@ -1,7 +1,7 @@
 "use client"
 
 import { CreditCard } from "lucide-react"
-import { PaymentMethodCardSelector, type PaymentData } from "@/features/treasury/components/PaymentMethodCardSelector"
+import { PaymentMethodSelector, type PaymentData } from "@/features/treasury"
 import { useEffect } from "react"
 
 interface Step3_PurchasePaymentProps {
@@ -30,7 +30,7 @@ export function Step3_PurchasePayment({ paymentData, setPaymentData, total }: St
                 </p>
             </div>
 
-            <PaymentMethodCardSelector
+            <PaymentMethodSelector
                 operation="purchases"
                 total={total}
                 paymentData={paymentData as PaymentData}

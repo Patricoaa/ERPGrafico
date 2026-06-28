@@ -13,7 +13,7 @@ import { useCancelPayment, useAnnulPayment } from "../../hooks/useOrdersMutation
 import { ActionConfirmModal, BaseModal, CancelButton, LabeledInput } from '@/components/shared'
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
-import { PaymentMethodCardSelector, type PaymentData } from "@/features/treasury/components/PaymentMethodCardSelector"
+import { PaymentMethodSelector, type PaymentData } from "@/features/treasury"
 import { saleOrderActions } from '@/features/sales/actions'
 import { purchaseOrderActions } from '@/features/purchasing/actions'
 import { type Order, type PhaseDocument, type Payment } from "../../types"
@@ -257,7 +257,7 @@ export function TreasuryPhase({
                 }
             >
                 <div className="py-2 space-y-6">
-                    <PaymentMethodCardSelector
+                    <PaymentMethodSelector
                         operation={isSale ? 'sales' : 'purchases'}
                         total={annulPaymentState.paymentAmount}
                         paymentData={annulPaymentData}

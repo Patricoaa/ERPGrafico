@@ -12,7 +12,7 @@ import { PurchaseProcessSummarySidebar } from "./checkout/PurchaseProcessSummary
 import { toast } from "sonner"
 import { purchasingApi } from "../api/purchasingApi"
 import { type PurchaseOrderAPI, type PurchaseOrderLineAPI, type CheckoutLine, type DTEData, type ReceiptData } from "../types"
-import { type PaymentData } from "@/features/treasury/components/PaymentMethodCardSelector"
+import { type PaymentData } from "@/features/treasury"
 
 import { PricingUtils } from '@/features/inventory/utils/pricing'
 import { Step0_Supplier } from "./checkout/Step0_Supplier"

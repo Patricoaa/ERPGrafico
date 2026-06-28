@@ -14,28 +14,24 @@ import { Button } from "@/components/ui/button"
 import { toast } from "sonner"
 import { financeApi } from "@/features/finance/api/financeApi"
 import { AdvancedContactSelector } from "@/components/selectors/AdvancedContactSelector"
-import { TreasuryAccountSelector } from "@/components/selectors/TreasuryAccountSelector"
-import { CreditCard, Landmark, Wallet, ClipboardList, Printer, ArrowRightLeft, Hash } from "lucide-react"
-import { Drawer, Skeleton, LabeledInput, LabeledSelect, FormFooter, CancelButton, ActionSlideButton, SkeletonShell, FormSplitLayout, StatusBadge } from "@/components/shared"
+import { Landmark, Printer, ArrowRightLeft, Hash, Wallet, ClipboardList, CreditCard } from "lucide-react"
+import { Drawer, LabeledInput, LabeledSelect, FormFooter, CancelButton, ActionSlideButton, SkeletonShell, FormSplitLayout, StatusBadge } from "@/components/shared"
 import { formDrawerWidth } from "@/lib/form-widths"
-import { useBillingInvoices, usePaymentMethodsByFilter } from "@/features/finance/hooks"
+import { useBillingInvoices } from "@/features/finance/hooks"
 import { useReactToPrint } from "react-to-print"
 import { PrintableLayout } from "@/features/_shared/transaction-drawer"
 import { formatCurrency } from "@/lib/money"
 import { ActivitySidebar } from "@/features/audit/components"
 import { usePayment } from "@/features/treasury/hooks/usePayment"
+import { PaymentMethodSelector, type PaymentData } from "@/features/treasury"
 import type { DrawerMode } from "@/features/_shared/drawer/types"
 
 const paymentSchema = z.object({
     payment_type: z.enum(["INBOUND", "OUTBOUND"]),
-    payment_method: z.enum(["CASH", "DEBIT_CARD", "CREDIT_CARD", "TRANSFER", "CHECK"]),
-    treasury_account: z.string().optional().nullable(),
-    amount: z.number().min(0.01, "El monto debe ser mayor a 0"),
     customer_id: z.string().optional().or(z.literal("")),
     supplier_id: z.string().optional().or(z.literal("")),
     invoice_id: z.string().optional().or(z.literal("")),
     reference: z.string().optional(),
-    payment_method_new: z.string().optional().nullable(),
 })
 
 type PaymentFormValues = z.infer<typeof paymentSchema>
@@ -58,12 +54,6 @@ interface InvoiceOption {
     sale_order?: { customer: number }
     purchase_order?: { supplier: number }
     status: string
-}
-
-interface PaymentMethodOption {
-    id: number | string
-    name: string
-    method_type: string
 }
 
 export function PaymentDrawer({
@@ -89,36 +79,30 @@ export function PaymentDrawer({
 
     const [loading, setLoading] = useState(false)
 
+    const [paymentDataState, setPaymentDataState] = useState<PaymentData>({
+        method: null,
+        amount: initialData?.amount ? parseFloat(String(initialData.amount)) : 0,
+        treasuryAccountId: initialData?.treasury_account?.toString() || initialData?.treasury_account_id?.toString() || null,
+        paymentMethodId: initialData?.payment_method_new ? parseInt(initialData.payment_method_new.toString()) : null,
+        isPending: false,
+    })
+
     const { data: allInvoicesData, isFetching: isFetchingInvoices } = useBillingInvoices()
 
     const form = useForm<PaymentFormValues>({
         resolver: zodResolver(paymentSchema),
         defaultValues: {
             payment_type: initialData?.payment_type || "INBOUND",
-            payment_method: (initialData?.payment_method as "CASH" | "DEBIT_CARD" | "CREDIT_CARD" | "TRANSFER" | "CHECK") || "CASH",
-            treasury_account: initialData?.treasury_account?.toString() || initialData?.treasury_account_id?.toString() || null,
-            amount: initialData?.amount ? parseFloat(String(initialData.amount)) : 0,
             customer_id: (initialData?.payment_type === "INBOUND" ? (initialData?.contact?.toString() || initialData?.customer?.toString() || initialData?.customer_id?.toString()) : "") || "",
             supplier_id: (initialData?.payment_type === "OUTBOUND" ? (initialData?.contact?.toString() || initialData?.supplier?.toString() || initialData?.supplier_id?.toString()) : "") || "",
             invoice_id: initialData?.invoice?.toString() || initialData?.invoice_id?.toString() || "",
             reference: initialData?.reference || "",
-            payment_method_new: initialData?.payment_method_new?.toString() || null,
         },
     })
 
     const paymentType = useWatch({ control: form.control, name: "payment_type" })
     const customerId = useWatch({ control: form.control, name: "customer_id" })
     const supplierId = useWatch({ control: form.control, name: "supplier_id" })
-    const treasuryAccountId = useWatch({ control: form.control, name: "treasury_account" })
-
-    const { data: methodsData = [], isFetching: isFetchingMethods } = usePaymentMethodsByFilter(
-        treasuryAccountId
-            ? {
-                treasury_account: treasuryAccountId,
-                ...(paymentType === "INBOUND" ? { for_sales: true } : { for_purchases: true }),
-            }
-            : null
-    )
 
     const orders: InvoiceOption[] = useMemo(() => {
         if (!allInvoicesData) return []
@@ -131,32 +115,14 @@ export function PaymentDrawer({
         return results
     }, [allInvoicesData, customerId, supplierId, paymentType])
 
-    const availableMethods = methodsData as PaymentMethodOption[]
-
-    useEffect(() => {
-        if (availableMethods.length > 0) {
-            const currentPM = form.getValues("payment_method_new")
-            const exists = availableMethods.find((m: PaymentMethodOption) => m.id.toString() === currentPM)
-            if (!exists) {
-                form.setValue("payment_method_new", availableMethods[0].id.toString())
-            }
-        } else if (!treasuryAccountId) {
-            form.setValue("payment_method_new", null)
-        }
-    }, [availableMethods, treasuryAccountId, form])
-
     useEffect(() => {
         if (isViewMode && paymentData) {
             form.reset({
                 payment_type: (paymentData.payment_type ?? paymentData.payment_type_new ?? "INBOUND") as "INBOUND" | "OUTBOUND",
-                payment_method: (paymentData.payment_method ?? "CASH") as "CASH" | "DEBIT_CARD" | "CREDIT_CARD" | "TRANSFER" | "CHECK",
-                treasury_account: paymentData.treasury_account?.toString() ?? paymentData.treasury_account_id?.toString() ?? null,
-                amount: paymentData.amount ? parseFloat(String(paymentData.amount)) : 0,
                 customer_id: (paymentData.payment_type === "INBOUND" ? (paymentData.contact?.toString() ?? paymentData.customer?.toString() ?? paymentData.customer_id?.toString()) : "") ?? "",
                 supplier_id: (paymentData.payment_type === "OUTBOUND" ? (paymentData.contact?.toString() ?? paymentData.supplier?.toString() ?? paymentData.supplier_id?.toString()) : "") ?? "",
                 invoice_id: paymentData.invoice?.toString() ?? paymentData.invoice_id?.toString() ?? "",
                 reference: paymentData.reference ?? "",
-                payment_method_new: paymentData.payment_method_new?.toString() ?? null,
             })
         }
     }, [isViewMode, paymentData, form])
@@ -165,11 +131,13 @@ export function PaymentDrawer({
         setLoading(true)
         const payload = {
             ...data,
+            amount: paymentDataState.amount,
+            payment_method: paymentDataState.method || 'CASH',
+            treasury_account_id: paymentDataState.amount === 0 ? null : paymentDataState.treasuryAccountId,
+            payment_method_new: paymentDataState.amount === 0 ? null : paymentDataState.paymentMethodId?.toString(),
             customer_id: (data.customer_id === "" || data.customer_id === "__none__") ? null : parseInt(data.customer_id as string),
             supplier_id: (data.supplier_id === "" || data.supplier_id === "__none__") ? null : parseInt(data.supplier_id as string),
             invoice_id: (data.invoice_id === "" || data.invoice_id === "__none__") ? null : parseInt(data.invoice_id as string),
-            treasury_account_id: data.treasury_account ? parseInt(data.treasury_account) : null,
-            payment_method_new: data.payment_method_new ? parseInt(data.payment_method_new) : null,
         }
         try {
             if (initialData?.id) {
@@ -214,7 +182,7 @@ export function PaymentDrawer({
                     <div className="text-[9px] space-y-1 mb-2">
                         <div className="flex justify-between">
                             <span>Monto:</span>
-                            <span>{formatCurrency(Number(form.watch("amount") ?? 0))}</span>
+                            <span>{formatCurrency(Number(paymentDataState.amount ?? 0))}</span>
                         </div>
                         <div className="flex justify-between">
                             <span>Método:</span>
@@ -342,76 +310,27 @@ export function PaymentDrawer({
                                                     )}
                                                 />
                                             )}
-                                            <FormField
-                                                control={form.control}
-                                                name="amount"
-                                                render={({ field, fieldState }) => (
-                                                    <LabeledInput
-                                                        label="Monto"
-                                                        required
-                                                        icon={<span className="font-bold text-muted-foreground">$</span>}
-                                                        type="number"
-                                                        step="0.01"
-                                                        className="font-bold text-lg"
-                                                        error={fieldState.error?.message}
-                                                        {...field}
-                                                        onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
-                                                    />
-                                                )}
-                                            />
                                         </div>
 
-                                        <div className="space-y-4">
-                                            <FormField
-                                                control={form.control}
-                                                name="treasury_account"
-                                                render={({ field, fieldState }) => (
-                                                    <TreasuryAccountSelector
-                                                        label="Cuenta de Tesorería"
-                                                        required
-                                                        value={field.value}
-                                                        onChange={field.onChange}
-                                                        placeholder="Seleccione cuenta..."
-                                                        error={fieldState.error?.message}
-                                                    />
-                                                )}
-                                            />
+                                        <PaymentMethodSelector
+                                            operation={paymentType === "INBOUND" ? "sales" : "purchases"}
+                                            total={paymentDataState.amount}
+                                            paymentData={paymentDataState}
+                                            onPaymentDataChange={setPaymentDataState}
+                                            compactMode
+                                            labels={{
+                                                totalLabel: paymentType === "INBOUND" ? "Total a Cobrar" : "Total a Pagar",
+                                                amountLabel: paymentType === "INBOUND" ? "Monto Recibido" : "Monto a Pagar",
+                                                differencePositiveLabel: "Excedente",
+                                                differenceNegativeLabel: "Deuda Pendiente",
+                                                amountModalTitle: paymentType === "INBOUND" ? "Monto Recibido" : "Monto a Pagar",
+                                                amountModalDescription: paymentType === "INBOUND"
+                                                    ? "Ingrese el monto recibido."
+                                                    : "Ingrese el monto a pagar.",
+                                            }}
+                                        />
 
-                                            {availableMethods.length > 0 && (
-                                                <FormField
-                                                    control={form.control}
-                                                    name="payment_method_new"
-                                                    render={({ field, fieldState }) => (
-                                                        <div className="animate-in slide-in-from-top-2 duration-300">
-                                                            {isFetchingMethods ? (
-                                                                <div className="h-[42px] flex items-center px-3 border border-border/50 rounded-md bg-muted/20">
-                                                                    <Skeleton className="h-4 w-24" />
-                                                                </div>
-                                                            ) : (
-                                                                <LabeledSelect
-                                                                    label="Método Detallado"
-                                                                    value={field.value || ""}
-                                                                    onChange={field.onChange}
-                                                                    error={fieldState.error?.message}
-                                                                    placeholder="Canal de pago..."
-                                                                    options={availableMethods.map((m) => ({
-                                                                        value: m.id.toString(),
-                                                                        label: (
-                                                                            <div className="flex items-center gap-2">
-                                                                                {m.method_type === 'CASH' ? <Wallet className="h-3 w-3" /> :
-                                                                                    m.method_type === 'TRANSFER' || m.method_type === 'BANK' ? <Landmark className="h-3 w-3" /> :
-                                                                                        m.method_type === 'CHECK' ? <ClipboardList className="h-3 w-3" /> :
-                                                                                            <CreditCard className="h-3 w-3" />}
-                                                                                {m.name}
-                                                                            </div>
-                                                                        )
-                                                                    }))}
-                                                                />
-                                                            )}
-                                                        </div>
-                                                    )}
-                                                />
-                                            )}
+                                        <div className="space-y-4">
 
                                             {paymentType === "INBOUND" ? (
                                                 <FormField
