@@ -37,15 +37,16 @@ doc: architecture-compliance-audit-2026-06
 | 2.1 Cross-feature internal imports (~86 violaciones) + 10.1 API barrels | 2026-06-28 | Migrados ~95 archivos a barrel imports en 24 features. Creados barrels `api/index.ts` en 20 features. Cerrados agujeros ESLint `no-restricted-imports`. Promovido `PricingUtils` a `@/lib/pricing-utils`. Script `validate-barrel-imports.sh` para CI. | (múltiples) |
 | 7.1 Cross-app serializer imports top-level | 2026-06-28 | Eliminados 5 imports top-level en 3 serializers (billing, sales, purchasing). `TreasuryMovementSerializer` en billing era dead code. Los restantes migrados a `SerializerMethodField` + lazy import inside method. Solo `core` (infraestructura) mantiene imports top-level. | `3dd68676` |
 | 5.3 ORM queries en serializers | 2026-06-28 | Eliminados 2 aggregates inline en inventory/serializers y sales/serializers. Inventory: get_current_stock usa getattr(annotated_current_stock). Sales: validate usa product.qty_on_hand. Agregado test assertNumQueries para ProductViewSet list. | `14fbd077` |
+| 8.1 Phase 0 — Transaction safety extendida | 2026-06-28 | Auditados 8 paths multi-write adicionales. Corregidos 4: `create_task`, `finalize_task_update`, `handle_update_attachments`, `request_credit_approval`. Removido `@transaction.atomic` de `handle_task_update` (savepoint anidado). Eliminado dead code (`complete_hub_stage_task`, `_revert_tax_from_product_cost`). 9 tests de rollback agregados. | `e364d0cc` + commits relacionados |
 
 | Severidad | Count | Área |
 |-----------|-------|------|
-| 🔴 CRÍTICO | ~0 | Backend — views lógica inline, product_type chains, transaction safety, ORM en serializers ✅ |
+| 🔴 CRÍTICO | ~0 | Backend — views lógica inline, product_type chains, transaction safety (Phase 0 extendida ✅), ORM en serializers ✅ |
 | 🟡 ALTO | ~0 | Frontend — FSD boundaries, naming, barrels ✅ |
 | 🟡 ALTO | ~0 | Backend — cross-app coupling, serializers ✅ |
 | 🟢 MEDIO | 8 | Gaps de contrato (no cubiertos por documentación actual) — 2 resueltos (10.1 API barrels, 10.3 PricingUtils) |
 
-> ✅ **Resuelto:** Frontend hooks/API any types (~250 violaciones) — eliminado en Fase 1-6. `staleTime` y `markLocalMutation` también resueltos. **Section 5.1 + 5.2 + 6** — views inline business logic y product_type chains migrados a services/selectors/strategy. **Section 8.1** — `@transaction.atomic` agregado a `create_sale_order_from_pos`. **Section 2.1** — cross-feature internal imports (~86 violaciones) migrados a barrel imports en 24 features. `PricingUtils` promovido a `@/lib/pricing-utils`. **Section 7.1** — cross-app serializer imports top-level (~9 violaciones) migrados a lazy imports inside method. **Section 5.3** — ORM queries en serializers (2 aggregates inline) reemplazados por annotation/property reads. Test `assertNumQueries` agregado.
+> ✅ **Resuelto:** Frontend hooks/API any types (~250 violaciones) — eliminado en Fase 1-6. `staleTime` y `markLocalMutation` también resueltos. **Section 5.1 + 5.2 + 6** — views inline business logic y product_type chains migrados a services/selectors/strategy. **Section 8.1** — `@transaction.atomic` agregado a `create_sale_order_from_pos` y 4 métodos adicionales en Phase 0 (`create_task`, `finalize_task_update`, `handle_update_attachments`, `request_credit_approval`). `handle_task_update` liberado de decorador (savepoint anidado). 9 tests de rollback agregados. Dead code (`complete_hub_stage_task`, `_revert_tax_from_product_cost`) eliminado. **Section 2.1** — cross-feature internal imports (~86 violaciones) migrados a barrel imports en 24 features. `PricingUtils` promovido a `@/lib/pricing-utils`. **Section 7.1** — cross-app serializer imports top-level (~9 violaciones) migrados a lazy imports inside method. **Section 5.3** — ORM queries en serializers (2 aggregates inline) reemplazados por annotation/property reads. Test `assertNumQueries` agregado.
 
 ---
 
@@ -931,17 +932,42 @@ Contrato de referencia: `docs/10-architecture/backend-apps.md`.
 
 Contrato de referencia: `docs/10-architecture/backend-apps.md:141-171`.
 
-### 8.1 `@transaction.atomic` faltante (1 confirmado + zona de riesgo) — ✅ RESUELTO
+### 8.1 `@transaction.atomic` faltante (5 confirmados + zona de riesgo) — ✅ RESUELTO
 
-> **Resuelto 2026-06-28.** Se agregó `@transaction.atomic` a `SalesService.create_sale_order_from_pos()` en `backend/sales/services.py:42`. Se crearon 7 tests unitarios en `backend/sales/tests/test_create_order_from_pos.py` que verifican rollback en 3 tipos de excepción (ValidationError, PermissionDenied, Exception genérica), happy path, sesión inválida, PIN requerido y PIN bypass. Commit: `ac26a91d`.
+> **Resuelto en 2 fases:**
+>
+> **Fase 1 (2026-06-28):** Se agregó `@transaction.atomic` a `SalesService.create_sale_order_from_pos()` en `backend/sales/services.py:42`. Se crearon 7 tests unitarios en `backend/sales/tests/test_create_order_from_pos.py` que verifican rollback en 3 tipos de excepción (ValidationError, PermissionDenied, Exception genérica), happy path, sesión inválida, PIN requerido y PIN bypass. Commit: `ac26a91d`.
+>
+> **Fase 2 (2026-06-28) — Phase 0 (auditoría extendida):** Se auditaron 8 paths multi-write adicionales y se corrigieron 4:
+>
+> - `create_task` (`workflow/services.py`): Escribe `Task` + 1..N `Notification`. Sin `@transaction.atomic`. Callers no garantizaban atomicidad.
+> - `finalize_task_update` (`workflow/services.py`): `serializer.save()` (Task update) + `finalize_task_completion` + `handle_task_update` (Notification). Sin `@transaction.atomic`. Called from `TaskViewSet.perform_update` en contexto no atómico.
+> - `handle_update_attachments` (`production/services.py`): Loop `Attachment.create()` × N + `work_order.save()`. Sin `@transaction.atomic`. Called from `WorkOrderViewSet.update` en contexto no atómico.
+> - `request_credit_approval` (`billing/services.py`): Queries SaleOrder + `create_task` (Task + Notification). Sin `@transaction.atomic`. Called from `billing/views.py` request_credit action en contexto no atómico.
+>
+> **Hallazgos que resultaron ser falsos positivos (ya protegidos):**
+> - `create_task` → `purchasing/tasks.py`: Ya envuelto en `with transaction.atomic():` por iteración de suscripción (línea 34).
+> - `create_hub_stage_tasks`: Solo caller `sync_hub_tasks` ya tiene `@transaction.atomic`.
+> - `complete_periodic_task`: Todos los callers en `tax/services.py` ya tienen `@transaction.atomic`.
+> - `_create_initial_artifacts`: Todos los callers ya tienen `@transaction.atomic`.
+>
+> **Cambio estructural:** Se removió `@transaction.atomic` de `handle_task_update` (`workflow/services.py`) porque solo es llamada desde `finalize_task_update` y `complete_task` — ambos ahora atómicos en su borde. Mantener el decorador en `handle_task_update` crearía un savepoint anidado, violando `backend-apps.md:152`.
+>
+> **Dead code eliminado:** `complete_hub_stage_task` (workflow/services.py) y `_revert_tax_from_product_cost` (billing/services.py) — no tenían callers.
+>
+> Commits: `ac26a91d`, `e364d0cc`, commits de dead code y decorator fix.
 
-#### Violación confirmada
+#### Violaciones confirmadas (originales + Phase 0)
 
-| Archivo | Línea | Método | Problema |
-|---------|-------|--------|----------|
-| `sales/services.py` | 42 | `SalesService.create_sale_order_from_pos()` | Sin `@transaction.atomic`. El método ejecuta `serializer.save()` (línea 76) que escribe SaleOrder a DB, luego llama `confirm_sale()` (línea 95) que hace más writes. Si `confirm_sale()` falla, la orden persiste sin confirmar — datos inconsistentes. |
+| Archivo | Línea | Método | Problema | Estado |
+|---------|-------|--------|----------|--------|
+| `sales/services.py` | 42 | `SalesService.create_sale_order_from_pos()` | Sin `@transaction.atomic`. `serializer.save()` escribe SaleOrder, luego `confirm_sale()` escribe más. Si falla, orden huérfana. | ✅ Resuelto (`ac26a91d`) |
+| `workflow/services.py` | 39 | `WorkflowService.create_task()` | Sin `@transaction.atomic`. Escribe `Task` + 1..N `Notification` vía `notify_assignment`. | ✅ Resuelto (`e364d0cc`) |
+| `workflow/services.py` | 784 | `WorkflowService.finalize_task_update()` | Sin `@transaction.atomic`. `serializer.save()` + `finalize_task_completion` + `handle_task_update` (Notification). | ✅ Resuelto (`e364d0cc`) |
+| `production/services.py` | 1758 | `WorkOrderService.handle_update_attachments()` | Sin `@transaction.atomic`. Loop `Attachment.create()` × N + `work_order.save()`. | ✅ Resuelto (`e364d0cc`) |
+| `billing/services.py` | 176 | `BillingService.request_credit_approval()` | Sin `@transaction.atomic`. Queries SaleOrder + `create_task` (Task + Notification). | ✅ Resuelto (`e364d0cc`) |
 
-#### Zona de riesgo (servicios sin `@transaction.atomic` que mutan ≥2 tablas)
+#### Zona de riesgo (re-evaluada post-Phase 0)
 
 | Archivo | Línea | Método | Riesgo |
 |---------|-------|--------|--------|
@@ -949,11 +975,33 @@ Contrato de referencia: `docs/10-architecture/backend-apps.md:141-171`.
 | `purchasing/services.py` | 92 | `PurchasingService.receive_order_from_request()` | Delega a `receive_order()` que tiene `atomic` en línea 143 — riesgo bajo |
 | `purchasing/services.py` | 42 | `PurchasingService.create_order()` | Sin `@transaction.atomic` aparente |
 
+#### Tests agregados (Phase 0)
+
+9 tests de rollback en 3 archivos:
+
+| Test | Archivo | Verifica |
+|------|---------|----------|
+| `test_create_task_rollback` | `workflow/tests/test_workflow_transactional_atomic.py` | Si `notify_assignment` falla, no queda Task |
+| `test_finalize_task_update_rollback` | `workflow/tests/test_workflow_transactional_atomic.py` | Si `finalize_task_completion` falla, status del Task se revierte |
+| `test_complete_task_rollback_hub` | `workflow/tests/test_workflow_transactional_atomic.py` | HUB tasks son rechazadas sin persistencia |
+| `test_complete_task_rollback_files` | `workflow/tests/test_workflow_transactional_atomic.py` | Si `send_notification` falla, status + completed_by se revierten |
+| `test_handle_task_update_no_atomic_decorator` | `workflow/tests/test_workflow_transactional_atomic.py` | Verifica que no hay savepoint anidado |
+| `test_complete_task_has_atomic_decorator` | `workflow/tests/test_workflow_transactional_atomic.py` | Regresión: decorador se mantiene |
+| `test_handle_update_attachments_rollback` | `production/tests/test_production_transactional_atomic.py` | Si 2do Attachment falla, 1ero se revierte |
+| `test_request_credit_approval_rollback` | `billing/tests/test_billing_transactional_atomic.py` | Si `create_task` falla, no queda Task |
+| `test_request_credit_approval_happy_path` | `billing/tests/test_billing_transactional_atomic.py` | Flujo feliz verifica creación correcta |
+
 #### Solución
 
 1. ~~Agregar `@transaction.atomic` a `SalesService.create_sale_order_from_pos()`.~~ ✅ Resuelto (`ac26a91d`)
-2. Auditar servicios que mutan ≥2 tablas para verificar que todos tengan `@transaction.atomic` o `with transaction.atomic():` explícito.
-3. Considerar agregar CI check que detecte servicios sin atomic escribiendo a múltiples modelos.
+2. ~~Agregar `@transaction.atomic` a `WorkflowService.create_task()`.~~ ✅ Resuelto (`e364d0cc`)
+3. ~~Agregar `@transaction.atomic` a `WorkflowService.finalize_task_update()`.~~ ✅ Resuelto (`e364d0cc`)
+4. ~~Remover `@transaction.atomic` de `WorkflowService.handle_task_update()` (evitar savepoint anidado).~~ ✅ Resuelto
+5. ~~Agregar `@transaction.atomic` a `WorkOrderService.handle_update_attachments()`.~~ ✅ Resuelto (`e364d0cc`)
+6. ~~Agregar `@transaction.atomic` a `BillingService.request_credit_approval()`.~~ ✅ Resuelto (`e364d0cc`)
+7. ~~Eliminar dead code: `complete_hub_stage_task`, `_revert_tax_from_product_cost`.~~ ✅ Resuelto
+8. ~~Escribir 9 tests de rollback.~~ ✅ Resuelto
+9. Considerar agregar CI check que detecte servicios sin atomic escribiendo a múltiples modelos.
 
 ---
 
@@ -1113,10 +1161,11 @@ Esta sección documenta vacíos en la documentación del proyecto que permiten a
 | Fase 3 | ~2 | Preventivo (contratos) | ⏳ Pendiente |
 | Fase 4 | ~6 | Preventivo (automático) | ⏳ Pendiente (1/4 items) |
 | **Subtotal auditoría original** | **~29 días** | | |
-| 8.1 `@transaction.atomic` faltante | ~0.25 día | Correctivo (alto riesgo) | ✅ Resuelto (`ac26a91d`) |
+| 8.1 `@transaction.atomic` faltante (Fase 1) | ~0.25 día | Correctivo (alto riesgo) | ✅ Resuelto (`ac26a91d`) |
+| 8.1 Phase 0 — Transaction safety extendida (4 métodos + 9 tests) | ~1 día | Correctivo (alto riesgo) | ✅ Resuelto (`e364d0cc`) |
 | 7.1 Cross-app serializer imports top-level | ~0.5 día | Correctivo (riesgo medio) | ✅ Resuelto (`3dd68676`) |
 | 5.3 ORM queries en serializers | ~0.25 día | Correctivo (N+1 performance) | ✅ Resuelto (`14fbd077`) |
-| **Total acumulado** | **~30 días** | | |
+| **Total acumulado** | **~31 días** | | |
 
 ---
 
