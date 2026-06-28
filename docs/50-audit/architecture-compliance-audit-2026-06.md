@@ -41,7 +41,7 @@ doc: architecture-compliance-audit-2026-06
 | 🔴 CRÍTICO | ~0 | Backend — views con lógica inline, product_type chains, transaction safety ✅ |
 | 🟡 ALTO | ~0 | Frontend — FSD boundaries, naming, barrels ✅ |
 | 🟡 ALTO | ~70 | Backend — cross-app coupling, serializers |
-| 🟢 MEDIO | 10 | Gaps de contrato (no cubiertos por documentación actual) |
+| 🟢 MEDIO | 8 | Gaps de contrato (no cubiertos por documentación actual) — 2 resueltos (10.1 API barrels, 10.3 PricingUtils) |
 
 > ✅ **Resuelto:** Frontend hooks/API any types (~250 violaciones) — eliminado en Fase 1-6. `staleTime` y `markLocalMutation` también resueltos. **Section 5.1 + 5.2 + 6** — views inline business logic y product_type chains migrados a services/selectors/strategy. **Section 8.1** — `@transaction.atomic` agregado a `create_sale_order_from_pos`. **Section 2.1** — cross-feature internal imports (~86 violaciones) migrados a barrel imports en 24 features. `PricingUtils` promovido a `@/lib/pricing-utils`.
 
@@ -416,26 +416,21 @@ Crear `features/audit/api/auditApi.ts` y `features/notifications/api/notificatio
 
 ---
 
-### 1.8 Cross-feature hook imports
+### 1.8 Cross-feature hook imports — ⚠️ MITIGADO (barrels)
 
 #### Explicación del error
 
 El contrato permite solo importar **query key constants** a través de boundaries de feature, no implementaciones de hooks. Sin embargo, hay varios casos donde un feature importa hooks completos de otro feature.
 
-#### Archivos afectados
+#### Estado actual (2026-06-28)
 
-| Archivo | Import | Impacto |
-|---------|--------|---------|
-| `features/billing/hooks/useInvoices.ts:6` | `SALES_KEYS` desde `@/features/sales/hooks/useSalesOrders` | Debería importar desde `sales/hooks/queryKeys.ts` |
-| `features/contacts/hooks/useContacts.ts:6-7` | `SALES_KEYS`, `PURCHASING_KEYS` desde hooks específicos | Deberían ser queryKeys.ts |
-| `features/settings/components/ProfitDistributionDrawer.tsx:11` | `useProfitDistribution` desde `@/features/contacts/hooks/useProfitDistribution` | 🔴 Importa implementación de hook cruzando feature |
-| `features/sales/hooks/usePosTerminals.ts:3-6` | treasury API, keys, types | Acoplamiento sales→treasury |
-| `features/finance/hooks/useAccountMappings.ts:3-4` | accounting feature | Acoplamiento finance→accounting |
+Todas las importaciones listadas fueron migradas a barrels:
+- `SALES_KEYS` y `PURCHASING_KEYS` ahora se importan desde `@/features/sales` y `@/features/purchasing` respectivamente.
+- `useProfitDistribution` ahora se importa desde `@/features/contacts` (barrel).
+- treasury API, keys, types: `@/features/treasury`.
+- accounting API, types: `@/features/accounting`.
 
-#### Solución
-
-1. Para query keys: exportarlas desde `queryKeys.ts` y referenciar ese archivo.
-2. Para hooks: evaluar si merecen promoción a `/hooks/` global o si hay que refactorizar para evitar la dependencia.
+La violación de **sub-path** está resuelta. Sin embargo, el patrón de **hooks cross-feature** persiste: settings consume `useProfitDistribution` de contacts, sales consume treasury API hooks, finance consume accounting. Estos son acoplamientos de diseño legítimos pero que idealmente deberían pasar por una capa de interfaz compartida o promoverse a `/hooks/` globales si el patrón se repite ≥3 veces.
 
 ---
 
@@ -518,8 +513,8 @@ El patrón `export * from` es dominante en los barrels de features. Mientras no 
 
 | Feature | Wildcards `export *` | Exports explícitos |
 |---------|---------------------|-------------------|
-| `treasury/index.ts` | 61 | 1 |
-| `inventory/index.ts` | 14 | 0 |
+| `treasury/index.ts` | 60 | 1 |
+| `inventory/index.ts` | 14 | 6 |
 | `settings/index.ts` | 12 | 1 |
 | `sales/index.ts` | 9 | 9 |
 | `contacts/index.ts` | 8 | 0 |
@@ -982,7 +977,7 @@ Severidad baja. Solo 4 casos de `Any` donde se podría usar un tipo más especí
 
 ---
 
-## 10. Contract Gaps
+## 10. Contract Gaps (8 pendientes, 2 resueltos)
 
 Esta sección documenta vacíos en la documentación del proyecto que permiten ambigüedad o comportamientos inconsistentes. No son violaciones de contratos existentes, sino **oportunidades de mejora** para prevenir futuras violaciones.
 
@@ -1077,7 +1072,7 @@ Esta sección documenta vacíos en la documentación del proyecto que permiten a
 | Item | Esfuerzo | Impacto | Dependencias |
 |------|----------|---------|--------------|
 | Migrar `any` types (777 → 0) | ~5 días | Type safety completo | Fase 1 items | ✅ Resuelto (Fase 1-6) — 0 errores `no-explicit-any` en features. 3 features con warn temporal.
-| `product_type` if/elif → Strategy (69 cadenas) | ~4 días | Elimina duplicación cross-app | Fase 1 (views) |
+| `product_type` if/elif → Strategy (69 cadenas) | ~4 días | Elimina duplicación cross-app | Fase 1 (views) | ✅ Resuelto |
 | Cross-feature imports + API barrels | ~4 días | FSD compliance | ✅ Resuelto |
 
 **Total Fase 2:** ~13 días (completado)
@@ -1144,12 +1139,10 @@ grep -rn "useQuery(" frontend/features/*/hooks/ | grep -v "staleTime" | grep -v 
 # 3. any types
 grep -rn ":" frontend/features/*/src/ --include="*.ts" --include="*.tsx" | grep " any;" | wc -l
 
-# 4. Cross-feature internal imports
-cd frontend
-for f in features/*/components/*.tsx features/*/hooks/*.ts features/*/api/*.ts; do
-  feature=$(echo "$f" | cut -d'/' -f2)
-  grep -n "from '@/features/" "$f" 2>/dev/null | grep -v "'@/features/$feature" || true
-done
+# 4. Cross-feature internal imports (usar el script CI)
+bash scripts/validate-barrel-imports.sh
+# Alternativamente, VERBOSE=1 para ver cada violación:
+VERBOSE=1 bash scripts/validate-barrel-imports.sh
 
 # 5. Direct lib/api in components
 grep -rn "from '@/lib/api'" frontend/features/*/components/ frontend/components/shared/ frontend/components/ui/
