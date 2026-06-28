@@ -26,6 +26,7 @@ import type { SyncDraft } from '@/features/pos/hooks/useDraftSync'
 
 export interface DraftCart {
     id: number
+    session_local_id: number
     name: string
     notes: string
     customer: number | null
@@ -222,7 +223,7 @@ export function DraftCartsClientView({
                         "text-center text-[11px] font-mono font-bold",
                         lockedByOther ? "text-destructive/60" : "text-primary/70"
                     )}>
-                        {row.original.id}
+                        {row.original.session_local_id}
                     </span>
                 )
             },
@@ -239,7 +240,7 @@ export function DraftCartsClientView({
                     <div className="min-w-0">
                         <div className="flex items-center gap-1.5 flex-wrap">
                             <span className="text-sm font-medium truncate leading-tight">
-                                {draft.name || `Borrador #${draft.id}`}
+                                {draft.name || `Borrador #${draft.session_local_id}`}
                             </span>
                             {lockedByOther && (
                                 <Tooltip>

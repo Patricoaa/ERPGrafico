@@ -229,6 +229,7 @@ export interface BOMCache {
 
 export interface DraftCart {
     id: number
+    session_local_id?: number
     name: string
     items: CartItem[]
     customer_id?: number

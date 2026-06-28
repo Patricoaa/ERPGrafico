@@ -2,7 +2,7 @@ from datetime import timedelta
 from decimal import Decimal
 from typing import Any, Dict, List, Optional
 
-from django.db import transaction
+from django.db import models, transaction
 from django.utils import timezone
 
 from inventory.models import Product, StockMove
@@ -167,6 +167,7 @@ class DraftCartService:
             drafts.append(
                 {
                     "id": d.id,
+                    "session_local_id": d.session_local_id,
                     "name": d.name,
                     "customer_name": d.customer.name if d.customer else None,
                     "item_count": len(d.items) if d.items else 0,
@@ -205,6 +206,7 @@ class DraftCartService:
     # ── CRUD Original ────────────────────────────────────────────────
 
     @staticmethod
+    @transaction.atomic
     def save_draft(
         pos_session_id: int,
         user,
@@ -223,8 +225,11 @@ class DraftCartService:
         Valida ownership del lock si el borrador está bloqueado.
         """
         # Validar que la sesión existe y está abierta
+        # select_for_update serializa la creación para evitar duplicados en session_local_id
         try:
-            session = POSSession.objects.get(id=pos_session_id, status=POSSession.Status.OPEN)
+            session = POSSession.objects.select_for_update().get(
+                id=pos_session_id, status=POSSession.Status.OPEN
+            )
         except POSSession.DoesNotExist:
             raise ValueError("La sesión POS no existe o está cerrada")
 
@@ -274,12 +279,17 @@ class DraftCartService:
             draft.total_discount_amount = total_discount_amount
             draft.last_modified_by = user
         else:
-            # Crear nuevo borrador
+            # Crear nuevo borrador con ID secuencial dentro de la sesión
+            max_local_id = DraftCart.objects.filter(
+                pos_session_id=pos_session_id,
+            ).aggregate(m=models.Max("session_local_id"))["m"] or 0
+
             if not name:
                 name = f"Borrador {timezone.now().strftime('%d/%m/%Y %H:%M')}"
 
             draft = DraftCart(
                 pos_session=session,
+                session_local_id=max_local_id + 1,
                 created_by=user,
                 last_modified_by=user,
                 customer_id=customer_id,

@@ -41,6 +41,7 @@ class DraftCartSerializer(serializers.ModelSerializer):
         model = DraftCart
         fields = [
             "id",
+            "session_local_id",
             "pos_session",
             "name",
             "notes",
