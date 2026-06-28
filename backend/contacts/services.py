@@ -91,6 +91,14 @@ class ContactPartnerService:
         return contact
 
 class ContactService:
+    @staticmethod
+    def validate_deletion(contact):
+        if contact.is_default_customer or contact.is_default_vendor:
+            from rest_framework.exceptions import ValidationError
+            raise ValidationError(
+                "No se puede eliminar un cliente o proveedor por defecto del sistema."
+            )
+
     @classmethod
     def write_off_debt_from_request(cls, request, contact):
         total, entry = cls.write_off_debt(contact)

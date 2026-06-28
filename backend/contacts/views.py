@@ -12,7 +12,7 @@ from rest_framework.response import Response
 from core.mixins import AuditHistoryMixin
 
 from .models import Contact
-from .selectors import list_contacts, list_credit_portfolio
+from .selectors import ContactSelector, list_contacts, list_credit_portfolio
 from .serializers import ContactListSerializer, ContactSerializer
 
 
@@ -32,14 +32,15 @@ class ContactViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
     ordering = ["name"]
 
     def destroy(self, request, *args, **kwargs):
-        contact = self.get_object()
-        if contact.is_default_customer or contact.is_default_vendor:
-            from rest_framework import status
+        from rest_framework import status
+        from rest_framework.exceptions import ValidationError
+        from .services import ContactService
 
-            return Response(
-                {"error": "No se puede eliminar un cliente o proveedor por defecto del sistema."},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
+        contact = self.get_object()
+        try:
+            ContactService.validate_deletion(contact)
+        except ValidationError as e:
+            return Response({"error": str(e.detail)}, status=status.HTTP_400_BAD_REQUEST)
         return super().destroy(request, *args, **kwargs)
 
     def get_serializer_class(self):
@@ -54,27 +55,17 @@ class ContactViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
     @action(detail=False, methods=["get"], url_path="filter-suggestions")
     def filter_suggestions(self, request):
         q = request.query_params.get("q", "").strip()
-        if len(q) < 2:
-            return Response([])
-        names = (
-            Contact.objects.filter(name__icontains=q)
-            .values_list("name", flat=True)
-            .distinct()
-            .order_by("name")[:10]
-        )
-        return Response(list(names))
+        return Response(ContactSelector.filter_suggestions(q))
 
     @action(detail=False, methods=["get"])
     def customers(self, request):
-        """Get all contacts that are customers (have sale orders)"""
-        contacts = Contact.objects.filter(sale_orders__isnull=False).distinct()
+        contacts = ContactSelector.list_customers()
         serializer = self.get_serializer(contacts, many=True)
         return Response(serializer.data)
 
     @action(detail=False, methods=["get"])
     def suppliers(self, request):
-        """Get all contacts that are suppliers (have purchase orders)"""
-        contacts = Contact.objects.filter(purchase_orders__isnull=False).distinct()
+        contacts = ContactSelector.list_suppliers()
         serializer = self.get_serializer(contacts, many=True)
         return Response(serializer.data)
 
@@ -116,22 +107,8 @@ class ContactViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
 
     @action(detail=True, methods=["get"])
     def credit_history(self, request, pk=None):
-        """
-        Returns the history of credit assignments for this contact.
-        Includes manual approvals, fallback assignments, and contact file limit uses.
-        """
         contact = self.get_object()
-        from sales.models import SaleOrder
-        from sales.serializers import SaleOrderSerializer
-
-        # Get orders with credit assignment origin tracked
-        history = SaleOrder.objects.filter(
-            customer=contact, credit_assignment_origin__isnull=False
-        ).order_by("-date", "-created_at")
-
-        # Reuse SaleOrderSerializer which now includes the new credit fields
-        serializer = SaleOrderSerializer(history, many=True)
-        return Response(serializer.data)
+        return Response(ContactSelector.get_credit_history(contact))
 
     @action(detail=True, methods=["post"])
     def unblock_credit(self, request, pk=None):
@@ -160,8 +137,7 @@ class ContactViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
 
     @action(detail=False, methods=["get"])
     def partners(self, request):
-        """Get all contacts that are partners"""
-        contacts = Contact.objects.filter(is_partner=True).distinct()
+        contacts = ContactSelector.list_partners()
         serializer = self.get_serializer(contacts, many=True)
         return Response(serializer.data)
 
@@ -241,9 +217,8 @@ class ContactViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
 
     @action(detail=True, methods=['get'])
     def partner_transactions(self, request, pk=None):
-        from .partner_models import PartnerTransaction
         from .serializers import PartnerTransactionSerializer
-        transactions = PartnerTransaction.objects.filter(partner=self.get_object()).order_by('-date', '-created_at')
+        transactions = ContactSelector.list_partner_transactions(self.get_object())
         page = self.paginate_queryset(transactions)
         if page is not None:
             return self.get_paginated_response(PartnerTransactionSerializer(page, many=True).data)
@@ -293,26 +268,16 @@ class ContactViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
 
     @action(detail=False, methods=["get"])
     def all_partner_transactions(self, request):
-        """Returns all transactions for all partners."""
-        from .partner_models import PartnerTransaction
-        from .serializers import PartnerTransactionSerializer
-
-        txs = PartnerTransaction.objects.all().select_related("partner", "journal_entry")
-        return Response(PartnerTransactionSerializer(txs, many=True).data)
+        return Response(ContactSelector.list_all_partner_transactions())
 
     @action(detail=False, methods=["get"])
     def equity_stakes_history(self, request):
-        """Returns the full history of equity participation changes."""
-        from .partner_models import PartnerEquityStake
-        from .serializers import PartnerEquityStakeSerializer
-
         partner_id = request.query_params.get("partner_id")
-        qs = PartnerEquityStake.objects.all().select_related("partner", "source_transaction")
-
-        if partner_id:
-            qs = qs.filter(partner_id=partner_id)
-
-        return Response(PartnerEquityStakeSerializer(qs, many=True).data)
+        return Response(
+            ContactSelector.get_equity_stakes_history(
+                partner_id=int(partner_id) if partner_id else None
+            )
+        )
 
     @action(detail=False, methods=['post'])
     def initial_setup(self, request):
