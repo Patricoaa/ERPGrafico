@@ -179,14 +179,12 @@ def _is_concurrent(record: IdempotencyRecord) -> bool:
 def _coerce_payload(data):
     """
     Aplana DRF response.data a algo serializable a JSONField.
-    - dict / list / primitivos: passthrough.
-    - ReturnDict / ReturnList: cast a dict/list nativos.
-    - Otros: serializa a str (último recurso).
+    Convierte recursivamente valores no primitivos (Decimal, datetime, UUID, etc.) a str.
     """
     if data is None or isinstance(data, (str, int, float, bool)):
         return data
     if isinstance(data, dict):
-        return dict(data)
-    if isinstance(data, list):
-        return list(data)
+        return {k: _coerce_payload(v) for k, v in data.items()}
+    if isinstance(data, (list, tuple)):
+        return [_coerce_payload(item) for item in data]
     return str(data)

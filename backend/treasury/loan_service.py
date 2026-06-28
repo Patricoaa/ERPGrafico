@@ -90,7 +90,13 @@ class LoanService:
         Devuelve el dict listo para Response.
         """
         from decimal import Decimal
+        from django.core.exceptions import ValidationError
         from .loan_service import _add_months
+
+        if loan.installments.exists():
+            raise ValidationError(
+                "El crédito ya tiene una tabla generada. Use GET amortization_table."
+            )
 
         if loan.rate_basis == loan.RateBasis.MONTHLY:
             i = loan.interest_rate / Decimal("100")

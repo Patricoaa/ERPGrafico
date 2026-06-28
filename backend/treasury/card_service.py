@@ -754,6 +754,12 @@ class CardService:
         if statement.status == CreditCardStatement.Status.CANCELED:
             return statement  # idempotente
 
+        if statement.status == CreditCardStatement.Status.PAID:
+            raise ValidationError(
+                "No se puede anular un estado de cuenta pagado. "
+                "Revierta el pago primero."
+            )
+
         timestamp = timezone.now().isoformat()
         reversal_lines: list[str] = []
         reversible_statuses = (

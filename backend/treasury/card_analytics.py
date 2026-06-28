@@ -331,7 +331,7 @@ class CardAnalyticsService:
 
     @staticmethod
     def get_consolidated_hub_data(
-        card_account: TreasuryAccount | None = None,
+        card_account_id: int | None = None,
         months: int = 12,
         granularity: str = "month",
     ) -> dict:
@@ -345,6 +345,15 @@ class CardAnalyticsService:
             - purchase_group_analysis: recent groups with costs
             - summary: top-level KPIs (total debt, open count, etc.)
         """
+        card_account = None
+        if card_account_id:
+            from .models import TreasuryAccount
+            try:
+                card_account = TreasuryAccount.objects.get(pk=card_account_id)
+            except TreasuryAccount.DoesNotExist:
+                from django.core.exceptions import ValidationError
+                raise ValidationError("Cuenta de tarjeta no existe.")
+
         financial_costs = CardAnalyticsService.get_financial_costs_by_month(
             card_account=card_account,
             months=months,

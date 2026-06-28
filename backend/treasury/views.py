@@ -84,12 +84,6 @@ class BankViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
 
     @action(detail=True, methods=["post"])
     def archive(self, request, pk=None):
-        """Archivo del banco: ``is_active = False`` (cf. ADR-0037).
-
-        Valida dependencias activas con :class:`BankDeletionService`. Devuelve
-        ``409 Conflict`` si el banco tiene préstamos vigentes o cheques
-        pendientes.
-        """
         bank = self.get_object()
         ok, reason = BankDeletionService.can_archive(bank)
         if not ok:
@@ -100,7 +94,6 @@ class BankViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
 
     @action(detail=True, methods=["post"])
     def restore(self, request, pk=None):
-        """Restaura un banco archivado (``is_active = True``)."""
         bank = self.get_object()
         bank.is_active = True
         bank.save(update_fields=["is_active", "updated_at"])
@@ -333,11 +326,10 @@ class POSTerminalViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
 
     @action(detail=True, methods=['get'])
     def allowed_payment_methods(self, request, pk=None):
+        from .selectors import POSSelector
         terminal = self.get_object()
         op = request.query_params.get('operation')
-        methods = terminal.allowed_payment_methods.filter(is_active=True)
-        if op == 'sales': methods = methods.filter(allow_for_sales=True)
-        elif op == 'purchases': methods = methods.filter(allow_for_purchases=True)
+        methods = POSSelector.get_payment_methods_for_terminal(terminal, operation=op)
         return Response(PaymentMethodSerializer(methods, many=True).data)
 
 
@@ -432,20 +424,9 @@ class TreasuryMovementViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
 
     @action(detail=True, methods=["get"])
     def cancel_impact(self, request, pk=None):
+        from .selectors import TreasuryMovementSelector
         movement = self.get_object()
-        try:
-            return Response(
-                {
-                    "document_type": "TreasuryMovement",
-                    "document_id": movement.id,
-                    "display_id": movement.display_id,
-                    "status": movement.status,
-                    "is_cancellable": movement.status == TreasuryMovement.MovementStatus.DRAFT,
-                    "warning": "",
-                }
-            )
-        except Exception as e:
-            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        return Response(TreasuryMovementSelector.get_cancel_impact(movement))
 
     @action(detail=True, methods=["post"])
     def annul(self, request, pk=None):
@@ -602,15 +583,11 @@ class BankStatementViewSet(viewsets.ModelViewSet):
 
     @action(detail=True, methods=["post"])
     def auto_match(self, request, pk=None):
-        """S4.8: Kicks off async auto-match, returns task_id for polling."""
-        from .tasks import auto_match_statement_task
-        from celery import uuid
-        from django.db import transaction
+        from .reconciliation_service import ReconciliationService
 
         try:
             threshold = float(request.data.get("confidence_threshold", 90.0))
-            task_id = uuid()
-            transaction.on_commit(lambda: auto_match_statement_task.apply_async(args=[int(pk), threshold], task_id=task_id))
+            task_id = ReconciliationService.kickoff_auto_match(int(pk), threshold)
             return Response({"task_id": task_id, "status": "PENDING"})
         except ValueError as e:
             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
@@ -760,8 +737,8 @@ class ReconciliationSettingsViewSet(viewsets.ModelViewSet):
 
     @action(detail=False, methods=["get"])
     def for_account(self, request):
-        """Always returns the global settings singleton."""
-        settings, _ = ReconciliationSettings.objects.get_or_create(treasury_account=None)
+        from .services import TreasuryService
+        settings = TreasuryService.get_or_create_reconciliation_settings()
         return Response(ReconciliationSettingsSerializer(settings).data)
 
 
@@ -793,8 +770,8 @@ class POSSessionViewSet(viewsets.ModelViewSet):
 
     @action(detail=False, methods=["get"])
     def current(self, request):
-        """Get the current open session for the requesting user"""
-        session = POSSession.objects.filter(user=request.user, status="OPEN").first()
+        from .selectors import POSSelector
+        session = POSSelector.get_current_session(request.user)
         if session:
             return Response(POSSessionSerializer(session).data)
         return Response({"session": None})
@@ -891,8 +868,7 @@ class CheckViewSet(viewsets.ModelViewSet):
 
         check = self.get_object()
         try:
-            deposit_account = TreasuryAccount.objects.get(pk=request.data["deposit_account"])
-            check = CheckService.deposit(check, deposit_account, created_by=request.user)
+            check = CheckService.deposit(check, request.data["deposit_account"], created_by=request.user)
         except (ValidationError, TreasuryAccount.DoesNotExist, KeyError) as e:
             return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
         return Response(self.get_serializer(check).data)
@@ -959,36 +935,13 @@ class TreasuryDashboardViewSet(viewsets.ViewSet):
 
     @action(detail=False, methods=["get"])
     def stats(self, request):
-        """
-        Retorna estadísticas generales de tesorería (Saldos por tipo de cuenta).
-        """
-        bank_balance = sum(
-            a.current_balance
-            for a in TreasuryAccount.objects.filter(account_type=TreasuryAccount.Type.BANK)
-        )
-        cash_balance = sum(
-            a.current_balance
-            for a in TreasuryAccount.objects.filter(account_type=TreasuryAccount.Type.CASH)
-        )
-
-        return Response(
-            {
-                "bank_total": bank_balance,
-                "cash_total": cash_balance,
-                "total_available": bank_balance + cash_balance,
-            }
-        )
+        from .selectors import TreasuryDashboardSelector
+        return Response(TreasuryDashboardSelector.get_stats())
 
     @action(detail=False, methods=["get"])
     def accounts(self, request):
-        """
-        Retorna la lista de cuentas con sus saldos actuales.
-        """
-        accounts = TreasuryAccount.objects.all().order_by("account_type", "name")
-        from .serializers import TreasuryAccountSerializer
-
-        serializer = TreasuryAccountSerializer(accounts, many=True)
-        return Response(serializer.data)
+        from .selectors import TreasuryDashboardSelector
+        return Response(TreasuryDashboardSelector.list_dashboard_accounts())
 
     @action(detail=False, methods=["get"])
     def future_maturities(self, request):
@@ -1173,15 +1126,9 @@ class BankLoanViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
 
     @action(detail=True, methods=["get"])
     def schedule(self, request, pk=None):
-        """Preview de la tabla de amortización SIN persistir."""
-        loan = self.get_object()
-        if loan.installments.exists():
-            return Response(
-                {"detail": "El crédito ya tiene una tabla generada. Use GET amortization_table."},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-
         from .loan_service import LoanService
+
+        loan = self.get_object()
         data = LoanService.preview_schedule(loan=loan)
         return Response(data)
 
@@ -1355,16 +1302,9 @@ class CreditCardStatementViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
 
     @action(detail=True, methods=["post"])
     def cancel(self, request, pk=None):
-        """Anula el estado de cuenta: revierte la facturación de cargos/cuotas
-        y marca como CANCELED. Solo disponible si no está pagado."""
         from .card_service import CardService
 
         stmt = self.get_object()
-        if stmt.status == "PAID":
-            return Response(
-                {"detail": "No se puede anular un estado de cuenta pagado."},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
         notes = request.data.get("notes", "")
         try:
             stmt = CardService.reverse_statement(stmt, notes=notes)
@@ -1397,16 +1337,13 @@ class CreditCardStatementViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
 
     @action(detail=False, methods=['get'], url_path='unbilled-charges')
     def unbilled_charges(self, request):
-        from django.shortcuts import get_object_or_404
         from datetime import date as _date
         from .selectors import CardSelector
-        from .models import TreasuryAccount
         acc_id = request.query_params.get('card_account')
         if not acc_id: return Response({'detail': 'card_account req.'}, status=400)
-        card = get_object_or_404(TreasuryAccount, pk=acc_id, account_type=TreasuryAccount.Type.CREDIT_CARD)
         c_date_str = request.query_params.get('cut_off_date')
         c_date = _date.fromisoformat(c_date_str) if c_date_str else None
-        return Response(CardSelector.get_unbilled_charges_data(card, c_date))
+        return Response(CardSelector.get_unbilled_charges_data(int(acc_id), c_date))
 
     @action(detail=False, methods=["post"], url_path="add-charge")
     def add_charge(self, request):
@@ -1449,15 +1386,10 @@ class CreditCardStatementViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
     @action(detail=False, methods=['get'])
     def analytics(self, request):
         from .card_analytics import CardAnalyticsService
-        from .models import TreasuryAccount
         acc_id = request.query_params.get('card_account')
         months = int(request.query_params.get('months', '12'))
         gran = request.query_params.get('granularity', 'month')
-        card = None
-        if acc_id:
-            try: card = TreasuryAccount.objects.get(pk=acc_id)
-            except TreasuryAccount.DoesNotExist: return Response({'detail': 'No existe'}, status=400)
-        return Response(CardAnalyticsService.get_consolidated_hub_data(card, months, gran))
+        return Response(CardAnalyticsService.get_consolidated_hub_data(acc_id, months, gran))
 
     @action(detail=True, methods=['get'], url_path='charges')
     def charges(self, request, pk=None):

@@ -46,6 +46,12 @@ class TreasuryService:
         return cls.register_internal_transfer(fa, ta, am, request.user, request.data.get('notes', ''), datetime.fromisoformat(ds) if ds else None)
 
     @staticmethod
+    def get_or_create_reconciliation_settings():
+        from .models import ReconciliationSettings
+        settings, _ = ReconciliationSettings.objects.get_or_create(treasury_account=None)
+        return settings
+
+    @staticmethod
     @transaction.atomic
     def create_movement(
         amount,
