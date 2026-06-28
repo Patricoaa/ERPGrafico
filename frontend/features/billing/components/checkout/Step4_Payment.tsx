@@ -1,7 +1,7 @@
 "use client"
 
 import { CheckCircle2 } from "lucide-react"
-import { PaymentMethodCardSelector, type PaymentData } from "@/features/treasury/components/PaymentMethodCardSelector"
+import { PaymentMethodSelector, type PaymentData } from "@/features/treasury"
 import { useEffect } from "react"
 
 interface Step4_PaymentProps {
@@ -90,7 +90,7 @@ export function Step4_Payment({
                 </p>
             </div>
 
-            <PaymentMethodCardSelector
+            <PaymentMethodSelector
                 operation={operation}
                 total={total}
                 paymentData={paymentData}

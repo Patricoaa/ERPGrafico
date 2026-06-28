@@ -19,7 +19,7 @@ import {ActionSlideButton, BaseModal, CancelButton, FormFooter, LoadingFallback,
 // Components
 import { PurchaseNoteSummarySidebar } from "./notes/PurchaseNoteSummarySidebar"
 import { Step1_GeneralInfo, Step2_LineItems, Step3_Review, Step4_Payment } from "./notes/PurchaseNoteWizardSteps"
-import { type PaymentData } from "@/features/treasury/components/PaymentMethodCardSelector"
+import { type PaymentData } from "@/features/treasury"
 
 interface PurchaseNoteModalProps {
     open: boolean
