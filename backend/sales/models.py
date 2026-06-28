@@ -904,6 +904,14 @@ class DraftCart(models.Model):
         help_text=_("UUID único de la pestaña del navegador que tiene el lock"),
     )
 
+    # ID secuencial dentro de la sesión POS (1, 2, 3…)
+    session_local_id = models.IntegerField(
+        _("N° Borrador"),
+        null=False,
+        default=0,
+        help_text=_("Número secuencial del borrador dentro de la sesión POS"),
+    )
+
     # Auditoría temporal
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -915,6 +923,12 @@ class DraftCart(models.Model):
         indexes = [
             models.Index(fields=["pos_session", "-updated_at"]),
         ]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["pos_session", "session_local_id"],
+                name="unique_draft_per_session",
+            ),
+        ]
 
     def __str__(self):
-        return f"Borrador #{self.id} - Sesión {self.pos_session_id} ({self.updated_at.strftime('%d/%m/%Y %H:%M')})"
+        return f"Borrador #{self.session_local_id} - Sesión {self.pos_session_id} ({self.updated_at.strftime('%d/%m/%Y %H:%M')})"
