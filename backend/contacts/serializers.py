@@ -113,6 +113,7 @@ class ContactListSerializer(serializers.ModelSerializer):
     partner_excess_capital = serializers.DecimalField(
         max_digits=14, decimal_places=0, read_only=True
     )
+    last_sale_date = serializers.DateField(read_only=True)
 
     class Meta:
         model = Contact
