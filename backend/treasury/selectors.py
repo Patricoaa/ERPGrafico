@@ -268,6 +268,28 @@ class BankSelector:
 
 class TreasuryDashboardSelector:
     @staticmethod
+    def get_stats():
+        bank_balance = sum(
+            a.current_balance
+            for a in TreasuryAccount.objects.filter(account_type=TreasuryAccount.Type.BANK)
+        )
+        cash_balance = sum(
+            a.current_balance
+            for a in TreasuryAccount.objects.filter(account_type=TreasuryAccount.Type.CASH)
+        )
+        return {
+            "bank_total": bank_balance,
+            "cash_total": cash_balance,
+            "total_available": bank_balance + cash_balance,
+        }
+
+    @staticmethod
+    def list_dashboard_accounts():
+        accounts = TreasuryAccount.objects.all().order_by("account_type", "name")
+        from .serializers import TreasuryAccountSerializer
+        return TreasuryAccountSerializer(accounts, many=True).data
+
+    @staticmethod
     def get_future_maturities(days: int = 90, treasury_account_id: int = None) -> dict:
         today = timezone.now().date()
         horizon = today + timedelta(days=days)
@@ -458,6 +480,20 @@ class TreasuryDashboardSelector:
 
 class POSSelector:
     @staticmethod
+    def get_payment_methods_for_terminal(terminal, operation=None):
+        methods = terminal.allowed_payment_methods.filter(is_active=True)
+        if operation == "sales":
+            methods = methods.filter(allow_for_sales=True)
+        elif operation == "purchases":
+            methods = methods.filter(allow_for_purchases=True)
+        return methods
+
+    @staticmethod
+    def get_current_session(user):
+        session = POSSession.objects.filter(user=user, status="OPEN").first()
+        return session
+
+    @staticmethod
     def get_summary(session) -> dict:
         totals = {
             "session_id": session.id,
@@ -525,12 +561,15 @@ class POSSelector:
 
 class CardSelector:
     @staticmethod
-    def get_unbilled_charges_data(card_account, cut_off_date=None) -> dict:
+    def get_unbilled_charges_data(card_account_id: int, cut_off_date=None) -> dict:
         from django.db.models import CharField, IntegerField, OuterRef, Subquery
         from .card_service import CardService
         from .models import TreasuryMovement
         from .serializers import CardPendingChargeSerializer
 
+        card_account = TreasuryAccount.objects.get(
+            pk=card_account_id, account_type=TreasuryAccount.Type.CREDIT_CARD
+        )
         pending = CardService.get_pending_charges(card_account, cut_off_date=cut_off_date)
         summary = CardService.get_unbilled_summary(card_account, cut_off_date=cut_off_date)
         installments = CardService.get_unbilled_installments(
@@ -682,6 +721,18 @@ class CardSelector:
         }
 
 class TreasuryMovementSelector:
+    @staticmethod
+    def get_cancel_impact(movement) -> dict:
+        from .models import TreasuryMovement
+        return {
+            "document_type": "TreasuryMovement",
+            "document_id": movement.id,
+            "display_id": movement.display_id,
+            "status": movement.status,
+            "is_cancellable": movement.status == TreasuryMovement.MovementStatus.DRAFT,
+            "warning": "",
+        }
+
     @staticmethod
     def list_treasury_movements(qs, params: dict):
         import re

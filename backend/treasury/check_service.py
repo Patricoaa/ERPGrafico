@@ -136,7 +136,7 @@ class CheckService:
     @transaction.atomic
     def deposit(
         check: Check,
-        deposit_account: TreasuryAccount,
+        deposit_account_id: int,
         *,
         date=None,
         created_by: "AbstractUser | None" = None,
@@ -144,6 +144,7 @@ class CheckService:
         """Transfiere el cheque de cartera al banco; pasa a DEPOSITED."""
         CheckService._assert_transition(check, Check.Status.DEPOSITED)
 
+        deposit_account = TreasuryAccount.objects.get(pk=deposit_account_id)
         from .services import TreasuryService
 
         movement = TreasuryService.create_movement(

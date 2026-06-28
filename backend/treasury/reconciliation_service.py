@@ -619,6 +619,20 @@ class ReconciliationService:
             raise ValueError(f"No se pudo generar vista previa: {str(e)}")
 
     @staticmethod
+    def kickoff_auto_match(statement_id: int, confidence_threshold: float = 90.0) -> str:
+        from .tasks import auto_match_statement_task
+        from celery import uuid
+        from django.db import transaction
+
+        task_id = uuid()
+        transaction.on_commit(
+            lambda: auto_match_statement_task.apply_async(
+                args=[statement_id, confidence_threshold], task_id=task_id
+            )
+        )
+        return task_id
+
+    @staticmethod
     def get_task_status_data(task_id):
         from celery.result import AsyncResult
 
