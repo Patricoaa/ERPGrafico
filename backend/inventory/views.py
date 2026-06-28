@@ -1,5 +1,3 @@
-from decimal import Decimal
-
 from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import filters, status, viewsets
@@ -18,7 +16,6 @@ from .models import (
     ProductAttribute,
     ProductAttributeValue,
     ProductCategory,
-    ProductFavorite,
     ProductUoMPrice,
     StockMove,
     Subscription,
@@ -26,7 +23,13 @@ from .models import (
     UoMCategory,
     Warehouse,
 )
-from .selectors import get_product_base_queryset, get_stock_report_data, list_products
+from .selectors import (
+    ProductSelector,
+    StockMoveSelector,
+    get_product_base_queryset,
+    get_stock_report_data,
+    list_products,
+)
 from .serializers import (
     PricingRuleSerializer,
     ProductAttributeSerializer,
@@ -82,28 +85,16 @@ class ProductViewSet(NoDestroyModelMixin, BulkImportMixin, AuditHistory, viewset
         q = request.query_params.get("q", "").strip()
         if len(q) < 2:
             return Response([])
-        names = (
-            Product.objects.filter(is_active=True, name__icontains=q)
-            .values_list("name", flat=True)
-            .distinct()
-            .order_by("name")[:10]
-        )
-        return Response(list(names))
+        return Response(ProductSelector.filter_suggestions(q))
 
     @action(detail=True, methods=["post"])
     def toggle_favorite(self, request, pk=None):
         product = self.get_object()
-        user = request.user
-        if not user.is_authenticated:
+        if not request.user.is_authenticated:
             return Response(
                 {"detail": "Authentication required"}, status=status.HTTP_401_UNAUTHORIZED
             )
-
-        favorite, created = ProductFavorite.objects.get_or_create(user=user, product=product)
-        if not created:
-            favorite.delete()
-            return Response({"is_favorite": False})
-        return Response({"is_favorite": True})
+        return Response({"is_favorite": ProductService.toggle_favorite(product, request.user)})
 
     def perform_update(self, serializer):
         serializer.save()
@@ -183,18 +174,13 @@ class ProductViewSet(NoDestroyModelMixin, BulkImportMixin, AuditHistory, viewset
 
     @action(detail=True, methods=["post"], url_path="sync-variant-prices")
     def sync_variant_prices(self, request, pk=None):
-        """Establece price_inheritance_mode=INHERIT en todas las variantes activas del template."""
         template = self.get_object()
         if not template.has_variants:
             return Response(
                 {"error": "Este producto no es un template de variantes."},
                 status=status.HTTP_400_BAD_REQUEST,
             )
-        updated = template.variants.filter(is_active=True).update(
-            price_inheritance_mode=Product.PriceInheritance.INHERIT,
-            price_surcharge=None,
-        )
-        return Response({"updated": updated})
+        return Response(ProductService.sync_variant_prices(template))
 
     @action(detail=True, methods=["post"], url_path="bulk-clone-bom")
     def bulk_clone_bom(self, request, pk=None):
@@ -340,8 +326,6 @@ class StockMoveViewSet(viewsets.ReadOnlyModelViewSet, AuditHistory):
 
     @action(detail=False, methods=["get"], url_path="stock-level")
     def stock_level(self, request):
-        from django.db.models import Sum
-
         product_id = request.query_params.get("product_id")
         warehouse_id = request.query_params.get("warehouse_id")
         if not product_id or not warehouse_id:
@@ -349,11 +333,7 @@ class StockMoveViewSet(viewsets.ReadOnlyModelViewSet, AuditHistory):
                 {"detail": "product_id and warehouse_id are required."},
                 status=status.HTTP_400_BAD_REQUEST,
             )
-        total = StockMove.objects.filter(
-            product_id=product_id,
-            warehouse_id=warehouse_id,
-        ).aggregate(total=Sum("quantity"))["total"] or Decimal("0.0")
-        return Response({"stock_level": str(total)})
+        return Response({"stock_level": StockMoveSelector.stock_level(int(product_id), int(warehouse_id))})
 
     @idempotent_endpoint(scope="inventory.move.create")
     @action(detail=False, methods=["post"])

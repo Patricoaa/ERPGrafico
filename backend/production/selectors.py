@@ -1,5 +1,22 @@
 class ProductionSelectorExt:
     @staticmethod
+    def get_bom_queryset(request):
+        from django.db.models import Q
+        from .models import BillOfMaterials
+
+        qs = BillOfMaterials.objects.all()
+        pid = request.query_params.get("product_id")
+        parent = request.query_params.get("parent_id")
+        if pid:
+            qs = qs.filter(product_id=pid)
+        elif parent:
+            qs = qs.filter(Q(product_id=parent) | Q(product__parent_template_id=parent))
+        return qs.select_related(
+            "product", "product__parent_template", "yield_uom"
+        ).prefetch_related(
+            "lines", "lines__component", "lines__component__uom", "lines__uom", "lines__supplier"
+        )
+    @staticmethod
     def get_stock_available(obj, context):
         from django.db.models import Sum
         from inventory.services import UoMService

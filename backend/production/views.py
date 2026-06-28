@@ -52,6 +52,7 @@ from .serializers import (
     BillOfMaterialsSerializer,
     WorkOrderSerializer,
 )
+from .selectors import ProductionSelectorExt
 from .services import WorkOrderMetricsService, WorkOrderPdfService, WorkOrderService
 
 
@@ -341,12 +342,7 @@ class BillOfMaterialsViewSet(viewsets.ModelViewSet):
     search_fields = ["name", "product__name", "product__code"]
 
     def get_queryset(self):
-        from django.db.models import Q
-        qs = super().get_queryset()
-        pid, parent = self.request.query_params.get('product_id'), self.request.query_params.get('parent_id')
-        if pid: qs = qs.filter(product_id=pid)
-        elif parent: qs = qs.filter(Q(product_id=parent) | Q(product__parent_template_id=parent))
-        return qs.select_related('product', 'product__parent_template', 'yield_uom').prefetch_related('lines', 'lines__component', 'lines__component__uom', 'lines__uom', 'lines__supplier')
+        return ProductionSelectorExt.get_bom_queryset(self.request)
 
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)

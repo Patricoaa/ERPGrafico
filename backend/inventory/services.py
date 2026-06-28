@@ -1489,3 +1489,23 @@ class ProductService:
             price_surcharge=Decimal(str(surcharge)),
         )
         return updated
+
+    @staticmethod
+    def toggle_favorite(product, user):
+        from .models import ProductFavorite
+
+        favorite, created = ProductFavorite.objects.get_or_create(user=user, product=product)
+        if not created:
+            favorite.delete()
+            return False
+        return True
+
+    @staticmethod
+    def sync_variant_prices(template):
+        from .models import Product
+
+        updated = template.variants.filter(is_active=True).update(
+            price_inheritance_mode=Product.PriceInheritance.INHERIT,
+            price_surcharge=None,
+        )
+        return {"updated": updated}
