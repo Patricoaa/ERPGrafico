@@ -6,7 +6,7 @@ import { DollarSign, Zap } from "lucide-react"
 import { type UseFormReturn } from "react-hook-form"
 import { type ProductFormValues } from "./schema"
 import { useVatRate } from '@/hooks/useVatRate'
-import { PricingUtils } from "../../utils/pricing"
+import { PricingUtils } from "@/lib/pricing-utils"
 import { cn } from "@/lib/utils"
 import { type UoM } from "@/types/entities"
 

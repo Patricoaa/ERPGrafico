@@ -34,15 +34,16 @@ doc: architecture-compliance-audit-2026-06
 | 5.1 + 5.2 Views inline business logic + get_queryset sin selector | 2026-06-28 | Migradas ~25 violaciones en 7 fases (A-G) a través de 15 archivos. Creados: SubscriptionSelector (Phase A), Treasury services/selectors (Phase B), ContactSelector (Phase C), PricingService/NoteWorkflowSelector (Phase D), AccountingService/CoreService/BillingService/SalesService (Phase E), NotificationSelector/PurchaseOrderSelector/DraftCartSelector (Phase F), ProductSelector.filter_suggestions/StockMoveSelector.stock_level/ProductService.toggle_favorite y sync_variant_prices/ProductionSelectorExt.get_bom_queryset (Phase G). | `1adda007`, `257115d7`, `8fb5430f`, `dd588ca0`, `46776d59`, `97c19950`, `33212b97` |
 | 6. ProductTypeStrategy | 2026-06-27 | Migradas ~37 cadenas if/elif a ProductTypeStrategy en 6 fases (A-E). 32 restantes son casos deliberadamente mantenidos (ORM filters, validaciones cruzadas, legacy controlado). | (múltiples) |
 | 8.1 `@transaction.atomic` faltante | 2026-06-28 | Agregado `@transaction.atomic` a `SalesService.create_sale_order_from_pos`. Creados 7 tests unitarios en `sales/tests/test_create_order_from_pos.py` cubriendo rollback en 3 tipos de excepción, happy path, sesión inválida, PIN requerido y PIN bypass. | `ac26a91d` |
+| 2.1 Cross-feature internal imports (~86 violaciones) + 10.1 API barrels | 2026-06-28 | Migrados ~95 archivos a barrel imports en 24 features. Creados barrels `api/index.ts` en 20 features. Cerrados agujeros ESLint `no-restricted-imports`. Promovido `PricingUtils` a `@/lib/pricing-utils`. Script `validate-barrel-imports.sh` para CI. | (múltiples) |
 
 | Severidad | Count | Área |
 |-----------|-------|------|
 | 🔴 CRÍTICO | ~0 | Backend — views con lógica inline, product_type chains, transaction safety ✅ |
-| 🟡 ALTO | ~100 | Frontend — FSD boundaries, naming, barrels |
+| 🟡 ALTO | ~0 | Frontend — FSD boundaries, naming, barrels ✅ |
 | 🟡 ALTO | ~70 | Backend — cross-app coupling, serializers |
 | 🟢 MEDIO | 10 | Gaps de contrato (no cubiertos por documentación actual) |
 
-> ✅ **Resuelto:** Frontend hooks/API any types (~250 violaciones) — eliminado en Fase 1-6. `staleTime` y `markLocalMutation` también resueltos. **Section 5.1 + 5.2 + 6** — views inline business logic y product_type chains migrados a services/selectors/strategy. **Section 8.1** — `@transaction.atomic` agregado a `create_sale_order_from_pos`.
+> ✅ **Resuelto:** Frontend hooks/API any types (~250 violaciones) — eliminado en Fase 1-6. `staleTime` y `markLocalMutation` también resueltos. **Section 5.1 + 5.2 + 6** — views inline business logic y product_type chains migrados a services/selectors/strategy. **Section 8.1** — `@transaction.atomic` agregado a `create_sale_order_from_pos`. **Section 2.1** — cross-feature internal imports (~86 violaciones) migrados a barrel imports en 24 features. `PricingUtils` promovido a `@/lib/pricing-utils`.
 
 ---
 
@@ -442,90 +443,9 @@ El contrato permite solo importar **query key constants** a través de boundarie
 
 Contrato de referencia: `docs/10-architecture/frontend-fsd.md`.
 
-### 2.1 Cross-feature internal imports (93+ violaciones en 40+ archivos)
+### 2.1 Cross-feature internal imports (93+ violaciones en 40+ archivos) — ✅ RESUELTO
 
-#### Explicación del error
-
-La regla FSD (`frontend-fsd.md:41-54`) exige que las importaciones entre features ocurran **solo a través del barrel** (`features/X/index.ts`). Importar desde sub-paths internos (`features/X/components/Y`, `features/X/hooks/Y`) viola el encapsulamiento y crea acoplamiento frágil.
-
-#### Impacto
-
-- Refactorizar un componente interno puede romper consumers en otros features.
-- No hay API surface explícita de qué es público vs interno.
-- Dificulta la promoción a shared: hay que rastrear todos los imports directos.
-
-#### Patrones de violación encontrados
-
-```ts
-// Features de settings importando de contacts
-import { partnersApi } from '@/features/contacts/api/partnersApi'        // settings/
-import { Partner, PartnerStatement } from '@/features/contacts/types/'   // settings/
-
-// Sales importando de inventory
-import { useUoMs } from '@/features/inventory/hooks/'                    // sales/
-import { PricingUtils } from '@/features/inventory/utils/'               // sales/, purchasing/
-
-// Inventory importando de production
-import { useBOMs } from '@/features/production/hooks/'                   // inventory/
-import { BOMDrawer } from '@/features/production/components/'            // inventory/
-
-// Billing importando de treasury
-import { PaymentModal } from '@/features/treasury/components/'           // billing/
-import { treasuryApi } from '@/features/treasury/api/'                   // billing/
-
-// Purchasing importando de treasury
-import { PaymentMethodCardSelector } from '@/features/treasury/components/' // purchasing/
-
-// Components selectors importando de features
-import { useCategories } from '@/features/inventory/hooks/'               // selectors/
-import { useWarehouses } from '@/features/inventory/hooks/'              // selectors/
-import { useAccountSearch } from '@/features/accounting/hooks/'          // selectors/
-```
-
-**Lista exhaustiva de archivos ofensores por feature consumidor:**
-
-**`settings/components/`** — 14 archivos: `PartnerLedgerTab`, `PartnerLedgerDrawer`, `PartnerWithdrawalWizard`, `AddPartnerModal`, `EquityCompositionTab`, `PartnerContributionWizard`, `EquityMovementModals`, `EquityStatsDrawer`, `InventoryContributionModal`, `MassPaymentWizard`, `MobilizeEarningsWizard`, `CreateDistributionFlow`, `ProfitDistributionsTab`, `PartnerEditDrawer`, `GroupsClientView`, `UsersSettingsView`, `CompanySettingsView`, `HRSettingsView`
-
-**`sales/components/`** — 5 archivos: `PricingRuleDrawer`, `Step3_Delivery`, `Step2_Payment`, `SalesCheckoutWizardContent`, `POSSessionsClientView`, `PosTerminalDrawer`
-
-**`inventory/components/`** — 5 archivos: `ProductManufacturingTab`, `BulkVariantEditFormV2`, `VariantQuickEditForm`, `PricingRuleClientView`, `ProductDrawer`, `AttributesClientView`
-
-**`purchasing/components/`** — 4 archivos: `PurchaseOrderModal`, `PurchaseNoteModal`, `PurchaseCheckoutWizard`, `Step3_PurchasePayment`, `PurchaseNoteWizardSteps`
-
-**`pos/components/`** — 2 archivos: `POSClientView`, `SalesOrdersDrawer`, `SessionControl`
-
-**`billing/components/`** — 4 archivos: `SalesInvoicesClientView`, `PurchaseInvoicesClientView`, `Step4_Payment`, `NoteCheckoutWizard`
-
-**`treasury/components/`** — 2 archivos: `BankCreationWizard`, `PaymentDrawer`
-
-**`production/components/`** — 2 archivos: `ApprovalTaskList`, `SaleOrderProductStep`
-
-**`hr/components/`** — 1 archivo: `PayrollDetailContent`
-
-**`profile/components/`** — 1 archivo: `PartnerProfileTab`
-
-**`finance/bank-reconciliation/components/`** — 1 archivo: `ReconciliationPanel`
-
-**`accounting/components/`** — 1 archivo: `AccountsClientView`
-
-**`credits/components/`** — 1 archivo: `CreditAssignmentModal`
-
-**`components/selectors/`** — 7 archivos (selectores compartidos importando de features)
-
-**`components/shared/`** — 3 archivos: `VariantSelectorModal`, `ProductGrid`, `FolioValidationInput`
-
-**`components/layout/`** — 2 archivos: `UserActions`, `QuickActionsMenu`
-
-#### Causa raíz
-
-La mayoría de features **carecen de API barrels** (`api/index.ts`). Cuando `settings/` necesita `partnersApi`, no hay un barrel en `contacts/` que lo exporte, forzando el import directo a `contacts/api/partnersApi`. La solución no es solo hacer `import { partnersApi } from '@/features/contacts'` (eso requeriría re-exportar desde el barrel raíz, lo cual también es cuestionable) sino **crear barrels de API** en cada feature.
-
-#### Solución
-
-1. **Crear barrels de API** en cada feature: `features/contacts/api/index.ts` → `export { partnersApi } from './partnersApi'`
-2. **Migrar imports** en los ~40 archivos para que consuman del barrel de API correspondiente.
-3. Para imports de componentes (ej. `PaymentModal` de treasury): ya existen en el barrel `features/treasury/index.ts`, pero los consumers no lo usan — cambiar `from '@/features/treasury/components/PaymentModal'` a `from '@/features/treasury'`.
-4. Para imports de hooks cross-feature (ej. `useUoMs`): promover a `/hooks/` global o evaluar si el hook debe refactorearse.
+> **Resuelto 2026-06-28.** Migradas ~86 violaciones a barrel imports en 24 features. Creación de barrels `api/index.ts` en 20 features. ESLint `no-restricted-imports` cerrado (agregados patrones `utils/*`, `actions`, `contexts/*`, expandido scope a `hooks/`, `components/shared/`, `app/`). `PricingUtils` promovido de `features/inventory/utils/pricing` a `@/lib/pricing-utils`. Fix estructural: treasury/index.ts ya no re-exporta cross-feature desde finance. Script `validate-barrel-imports.sh` como barrera CI.
 
 ---
 
@@ -1066,13 +986,9 @@ Severidad baja. Solo 4 casos de `Any` donde se podría usar un tipo más especí
 
 Esta sección documenta vacíos en la documentación del proyecto que permiten ambigüedad o comportamientos inconsistentes. No son violaciones de contratos existentes, sino **oportunidades de mejora** para prevenir futuras violaciones.
 
-### 10.1 Falta contrato para barrels de `api/`
+### 10.1 Falta contrato para barrels de `api/` — ✅ RESUELTO
 
-**Observación:** La mayoría de features no tienen `api/index.ts`. El contrato `hook-contracts.md:496-514` muestra un archivo de API pero nunca especifica "debes tener un barrel de API para que otros features consuman tu API sin violar FSD".
-
-**Consecuencia:** Los consumers importan `@/features/contacts/api/partnersApi` directamente (ruta interna) en vez de `@/features/contacts` (barrel).
-
-**Sugerencia:** Agregar al canonical feature skeleton (`hook-contracts.md:459-473`) la línea `├── api/index.ts ← barrel: exporta funciones de API públicas`. En `frontend-fsd.md`, agregar regla de import: `features/X → features/Y/api/index.ts` (pero no a `features/Y/api/particularApi.ts`).
+> **Resuelto 2026-06-28.** Se crearon barrels `api/index.ts` en 20 features. El canonical feature skeleton en `hook-contracts.md` ahora incluye `api/index.ts` como barrel público. La barrera CI `validate-barrel-imports.sh` previene regresiones.
 
 ### 10.2 Falta regla sobre `export *` vs exports explícitos
 
@@ -1080,11 +996,9 @@ Esta sección documenta vacíos en la documentación del proyecto que permiten a
 
 **Sugerencia:** Agregar a `naming-conventions.md` o `GOVERNANCE.md` una regla: "Los barrels de feature deben usar exports explícitos (nunca `export * from`)". Esto fuerza a declarar intencionalmente qué es público.
 
-### 10.3 Falta contrato para `utils/` cross-feature
+### 10.3 Falta contrato para `utils/` cross-feature — ✅ RESUELTO
 
-**Observación:** `PricingUtils` de `inventory/utils/` es importado por `sales/`, `purchasing/`, `pos/`, y `components/shared/`. No hay regla que diga: ¿esto debería promoverse a `lib/`? ¿O es legal como cross-feature utility import?
-
-**Sugerencia:** Agregar una regla: "Si una utilidad es usada por ≥3 features, debe promoverse a `@/lib/` (si es genérica) o `@/components/shared/` (si es de UI). Si es usada por 2 features, puede quedarse en el feature origen pero debe exportarse por barrel."
+> **Resuelto 2026-06-28.** `PricingUtils` promovido a `@/lib/pricing-utils`. Todos los consumers (12 cross-feature + 2 within-inventory) migrados. Una regla se agregó a `hook-contracts.md` en la sección del canonical feature skeleton: utilidades reutilizables deben ir a `@/lib/` cuando son usadas por ≥3 features.
 
 ### 10.4 Falta árbol de decisión: lazy import vs adapter
 
@@ -1164,9 +1078,9 @@ Esta sección documenta vacíos en la documentación del proyecto que permiten a
 |------|----------|---------|--------------|
 | Migrar `any` types (777 → 0) | ~5 días | Type safety completo | Fase 1 items | ✅ Resuelto (Fase 1-6) — 0 errores `no-explicit-any` en features. 3 features con warn temporal.
 | `product_type` if/elif → Strategy (69 cadenas) | ~4 días | Elimina duplicación cross-app | Fase 1 (views) |
-| Cross-feature imports + API barrels | ~4 días | FSD compliance | Fase 1 (naming) |
+| Cross-feature imports + API barrels | ~4 días | FSD compliance | ✅ Resuelto |
 
-**Total Fase 2:** ~13 días
+**Total Fase 2:** ~13 días (completado)
 
 ### Fase 3 — Cierre de gaps de contrato
 

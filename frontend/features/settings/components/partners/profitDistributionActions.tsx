@@ -1,6 +1,6 @@
 import { DataCell, createEntityActions } from '@/components/shared'
 import { Wand2, Play, Wallet } from 'lucide-react'
-import type { ProfitDistribution } from '@/features/contacts/types/partner'
+import type { ProfitDistribution } from '@/features/contacts'
 
 export interface ProfitDistributionActionsCtx {
     onViewDetail: (dist: ProfitDistribution) => void

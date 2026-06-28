@@ -17,7 +17,7 @@ import { ChecksClientView } from "../checks/ChecksClientView"
 import { LoansClientView } from "../loans/LoansClientView"
 import { CardChargesView } from "../card-statements/CardChargesView"
 import { BankMovementsClientView } from "./BankMovementsClientView"
-import { StatementsList } from "@/features/finance/bank-reconciliation/components"
+import { StatementsList } from "@/features/finance"
 
 export function BankCenterDashboard({ bankId, subtab }: { bankId: number; subtab?: string }) {
     const pathname = usePathname()

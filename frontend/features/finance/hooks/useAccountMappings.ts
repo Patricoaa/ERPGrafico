@@ -1,7 +1,7 @@
 import { useMemo, useCallback } from 'react'
 import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query'
-import { accountingApi } from '@/features/accounting/api/accountingApi'
-import { type Account } from '@/features/accounting/types'
+import { accountingApi } from '@/features/accounting'
+import { type Account } from '@/features/accounting'
 import { useRealtime } from '@/features/realtime'
 
 export type MappingType = 'is' | 'cf' | 'bs'

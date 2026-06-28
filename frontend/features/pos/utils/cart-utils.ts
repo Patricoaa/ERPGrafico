@@ -2,7 +2,7 @@
 // Helper functions for cart management
 
 import type { CartItem, Product } from '@/types/pos'
-import { PricingUtils } from '@/features/inventory/utils/pricing'
+import { PricingUtils } from '@/lib/pricing-utils'
 
 /**
  * Generate unique cart item ID

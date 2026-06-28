@@ -2,7 +2,7 @@ import api from '@/lib/api'
 import type {
     PurchaseOrderAPI,
 } from '../types'
-import type { Invoice } from '@/features/billing/types'
+import type { Invoice } from '@/features/billing'
 import { toPage, type Page } from '@/lib/pagination'
 import type { PageParams } from '@/lib/pagination'
 

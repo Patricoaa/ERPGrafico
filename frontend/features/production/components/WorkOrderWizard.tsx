@@ -16,7 +16,7 @@ import { useVatRate } from '@/hooks/useVatRate'
 import { useAuth } from '@/contexts/AuthContext'
 import { useHubPanel } from '@/components/providers/HubPanelProvider'
 import { useWorkOrderMutations, productionApi } from '../hooks'
-import { completeTask } from '@/features/workflow/api/workflowApi'
+import { completeTask } from '@/features/workflow'
 
 import { WizardModeBanner } from './WizardModeBanner'
 import { WizardProcessSidebar } from './WizardProcessSidebar'

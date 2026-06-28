@@ -1,8 +1,8 @@
 "use client"
 
 import { useState, useRef, useCallback, useEffect } from 'react'
-import { validateTaxPeriod } from '@/features/tax/actions'
-import { validateAccountingPeriod } from '@/features/accounting/actions'
+import { validateTaxPeriod } from '@/features/tax'
+import { validateAccountingPeriod } from '@/features/accounting'
 
 type ValidationType = 'tax' | 'accounting' | 'both'
 

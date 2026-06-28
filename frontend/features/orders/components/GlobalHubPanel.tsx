@@ -5,8 +5,8 @@ import { useHubPanel } from "@/components/providers/HubPanelProvider"
 import { useGlobalModals } from "@/components/providers/GlobalModalProvider"
 import { OrderHubPanel } from "@/features/orders/components/OrderHubPanel"
 import { ActionCategory } from "@/features/orders/components/ActionCategory"
-import { saleOrderActions } from '@/features/sales/actions'
-import { purchaseOrderActions } from '@/features/purchasing/actions'
+import { saleOrderActions } from '@/features/sales'
+import { purchaseOrderActions } from '@/features/purchasing'
 import { useOrderHubData } from "@/hooks/useOrderHubData"
 import { type LucideIcon, LayoutGrid } from "lucide-react"
 import { CollapsibleSheet } from "@/components/shared"

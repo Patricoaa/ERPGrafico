@@ -5,7 +5,7 @@ import { Chip } from "@/components/shared"
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 import { ShoppingBag } from "lucide-react"
 import { formatCurrency } from "@/lib/money"
-import { PricingUtils } from '@/features/inventory/utils/pricing'
+import { PricingUtils } from '@/lib/pricing-utils'
 import { type CheckoutLine } from "../../types"
 
 interface PurchaseOrderSummaryCardProps {

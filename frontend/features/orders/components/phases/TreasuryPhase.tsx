@@ -14,8 +14,8 @@ import { ActionConfirmModal, BaseModal, CancelButton, LabeledInput } from '@/com
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { PaymentMethodSelector, type PaymentData } from "@/features/treasury"
-import { saleOrderActions } from '@/features/sales/actions'
-import { purchaseOrderActions } from '@/features/purchasing/actions'
+import { saleOrderActions } from '@/features/sales'
+import { purchaseOrderActions } from '@/features/purchasing'
 import { type Order, type PhaseDocument, type Payment } from "../../types"
 
 interface TreasuryPhaseProps {

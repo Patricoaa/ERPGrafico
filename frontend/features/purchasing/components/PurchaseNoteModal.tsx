@@ -12,7 +12,7 @@ import {
 } from "lucide-react"
 import { purchasingApi } from "../api/purchasingApi"
 import { type PurchaseOrderAPI, type PurchaseNoteLine } from "../types"
-import { PricingUtils } from '@/features/inventory/utils/pricing'
+import { PricingUtils } from '@/lib/pricing-utils'
 import { useServerDate } from '@/hooks/useServerDate'
 import {ActionSlideButton, BaseModal, CancelButton, FormFooter, LoadingFallback, SubmitButton} from '@/components/shared'
 

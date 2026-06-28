@@ -9,7 +9,7 @@ import { Numpad, LabeledInput, MoneyDisplay, GenericWizard, type WizardStep } fr
 import { TreasuryAccountSelector } from "@/components/selectors/TreasuryAccountSelector"
 import { AdvancedContactSelector } from "@/components/selectors/AdvancedContactSelector"
 import { treasuryApi } from "../api/treasuryApi"
-import { validateAccountingPeriod } from '@/features/accounting/actions'
+import { validateAccountingPeriod } from '@/features/accounting'
 import { useServerDate } from '@/hooks/useServerDate'
 import { usePeriodValidation } from '@/hooks/usePeriodValidation'
 import { toast } from 'sonner'

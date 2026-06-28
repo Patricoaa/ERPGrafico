@@ -1,7 +1,7 @@
 import api from '@/lib/api'
 import type { SaleOrder, SaleOrderFilters, SaleOrderPayload, SaleNote } from '../types'
 import type { SaleNoteFilters } from '../hooks/useSalesOrders'
-import { type Invoice } from '@/features/billing/types'
+import { type Invoice } from '@/features/billing'
 import { toPage, type Page } from '@/lib/pagination'
 
 /**

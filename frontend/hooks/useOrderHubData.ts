@@ -2,7 +2,7 @@
 
 import { useQuery } from "@tanstack/react-query"
 import api from "@/lib/api"
-import { getNoteHubStatuses, getHubStatuses } from '@/features/orders/utils/status'
+import { getNoteHubStatuses, getHubStatuses } from '@/features/orders'
 
 interface UseOrderHubDataProps {
     orderId?: number | null

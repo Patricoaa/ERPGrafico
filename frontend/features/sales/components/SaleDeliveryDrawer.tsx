@@ -6,9 +6,9 @@ import { Button } from '@/components/ui/button'
 import { Printer, Truck } from 'lucide-react'
 import { useReactToPrint } from 'react-to-print'
 import { formatPlainDate } from '@/lib/utils'
-import { PrintableLayout } from '@/features/_shared/transaction-drawer'
+import { PrintableLayout } from '@/features/_shared'
 import { useSaleOrder } from '@/features/sales/hooks/useSalesOrders'
-import type { TransactionDrawerProps } from '@/features/_shared/transaction-drawer'
+import type { TransactionDrawerProps } from '@/features/_shared'
 
 interface SaleDeliveryDrawerProps extends TransactionDrawerProps {
     deliveryId?: number

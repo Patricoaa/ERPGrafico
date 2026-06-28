@@ -10,9 +10,9 @@ import { useReactToPrint } from 'react-to-print'
 import { useRef } from 'react'
 import { formatCurrency } from '@/lib/money'
 import { formatPlainDate } from '@/lib/utils'
-import { PrintableLayout } from '@/features/_shared/transaction-drawer'
-import { ActivitySidebar } from '@/features/audit/components'
-import type { TransactionDrawerProps } from '@/features/_shared/transaction-drawer'
+import { PrintableLayout } from '@/features/_shared'
+import { ActivitySidebar } from '@/features/audit'
+import type { TransactionDrawerProps } from '@/features/_shared'
 
 interface SaleOrderDrawerProps extends TransactionDrawerProps {
     orderId?: number

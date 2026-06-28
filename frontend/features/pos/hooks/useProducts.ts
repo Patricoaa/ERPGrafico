@@ -10,7 +10,7 @@ import * as BOMResolver from '@/features/pos/utils/bom-resolver'
 import { useRealtime } from '@/features/realtime'
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { inventoryApi } from '@/features/inventory/api/inventoryApi'
+import { inventoryApi } from '@/features/inventory'
 import { POS_KEYS } from './queryKeys'
 
 const EMPTY_ARRAY: Product[] = []

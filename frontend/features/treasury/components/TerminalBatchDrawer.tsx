@@ -8,9 +8,9 @@ import { getEntityIcon } from "@/lib/entity-registry"
 import { useReactToPrint } from 'react-to-print'
 import { formatCurrency } from '@/lib/money'
 import { formatPlainDate } from '@/lib/utils'
-import { PrintableLayout } from '@/features/_shared/transaction-drawer'
+import { PrintableLayout } from '@/features/_shared'
 import { useTerminalBatch } from '@/features/treasury/hooks/useTerminalBatch'
-import type { TransactionDrawerProps } from '@/features/_shared/transaction-drawer'
+import type { TransactionDrawerProps } from '@/features/_shared'
 
 interface TerminalBatchDrawerProps extends TransactionDrawerProps {
   batchId?: number

@@ -1,8 +1,8 @@
 "use client"
 
-import { TaskActionCard } from '@/features/workflow/components/TaskActionCard'
+import { TaskActionCard } from '@/features/workflow'
 import type { WorkOrderTask } from '../../types'
-import type { Task } from '@/features/workflow/api/workflowApi'
+import type { Task } from '@/features/workflow'
 
 interface ApprovalTaskListProps {
   tasks: WorkOrderTask[]

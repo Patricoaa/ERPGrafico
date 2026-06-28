@@ -4,7 +4,7 @@ import { useState, useEffect } from "react"
 import { Check, ChevronDown, Search, Loader2 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { getEntityIcon } from "@/lib/entity-registry"
-import { PricingUtils } from '@/features/inventory/utils/pricing'
+import { PricingUtils } from '@/lib/pricing-utils'
 import { Button } from "@/components/ui/button"
 import {
     Tooltip,

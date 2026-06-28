@@ -9,8 +9,8 @@ import { cn } from "@/lib/utils"
 import { formatEntity } from '@/features/orders/utils/status'
 import { useAnnulLogistics } from "../../hooks/useOrdersMutations"
 import { ActionConfirmModal } from '@/components/shared'
-import { saleOrderActions } from '@/features/sales/actions'
-import { purchaseOrderActions } from '@/features/purchasing/actions'
+import { saleOrderActions } from '@/features/sales'
+import { purchaseOrderActions } from '@/features/purchasing'
 import { type Order, type OrderLine, type PhaseDocument } from "../../types"
 
 interface LogisticsPhaseProps {

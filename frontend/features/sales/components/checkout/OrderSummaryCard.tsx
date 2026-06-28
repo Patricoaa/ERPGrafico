@@ -7,7 +7,7 @@ import { Chip } from "@/components/shared"
 import { translatePaymentMethod } from "@/lib/utils"
 import { cn } from "@/lib/utils"
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
-import { PricingUtils } from '@/features/inventory/utils/pricing'
+import { PricingUtils } from '@/lib/pricing-utils'
 
 import { type SaleOrderLine } from "../../types"
 import { type Contact } from "@/types/entities"

@@ -1,6 +1,6 @@
 import { DataCell, createEntityActions } from '@/components/shared'
 import { Eye } from 'lucide-react'
-import type { PartnerTransaction } from '@/features/contacts/types/partner'
+import type { PartnerTransaction } from '@/features/contacts'
 
 export interface PartnerTransactionActionsCtx {
     onViewMovement: (movementId: number) => void
