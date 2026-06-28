@@ -833,6 +833,21 @@ class SalesService:
         return order
 
     @staticmethod
+    def validate_editable(instance):
+        if instance.status != "DRAFT":
+            raise ValidationError("Solo se pueden editar notas de venta en estado Borrador.")
+
+    @staticmethod
+    def dispatch_order_by_id(order: SaleOrder, warehouse_id, delivery_date=None):
+        from inventory.models import Warehouse
+
+        try:
+            warehouse = Warehouse.objects.get(pk=warehouse_id)
+        except Warehouse.DoesNotExist:
+            raise ValidationError("Bodega no encontrada.")
+        return SalesService.dispatch_order(order, warehouse, delivery_date)
+
+    @staticmethod
     def validate_purge(order: SaleOrder):
         """
         Un documento solo puede purgarse (hard delete) si está CANCELLED y no dejó

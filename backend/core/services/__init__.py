@@ -123,9 +123,6 @@ class BaseNoteService:
 class ActionLoggingService:
     @staticmethod
     def log_action(user, action_type, description, request=None, metadata=None):
-        """
-        Creates an ActionLog entry.
-        """
         from core.models import ActionLog
 
         ip_address = None
@@ -143,6 +140,31 @@ class ActionLoggingService:
             ip_address=ip_address,
             metadata=metadata or {},
         )
+
+    @staticmethod
+    def log_failed_login(username, request):
+        from core.models import User, ActionLog
+
+        u = User.objects.filter(username=username).first()
+        ActionLoggingService.log_action(
+            user=u,
+            action_type=ActionLog.Type.SECURITY,
+            description=f"Fallo login '{username}'.",
+            request=request,
+        )
+
+    @staticmethod
+    def log_successful_login(username, request):
+        from core.models import User, ActionLog
+
+        u = User.objects.filter(username=username).first()
+        if u:
+            ActionLoggingService.log_action(
+                user=u,
+                action_type=ActionLog.Type.LOGIN,
+                description=f"Login {u.username}",
+                request=request,
+            )
 
 
 class PINService:

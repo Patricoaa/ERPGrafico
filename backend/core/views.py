@@ -29,7 +29,7 @@ from .serializers import (
     UserSerializer,
     BackgroundJobSerializer,
 )
-from .services import ActionLoggingService, UserService
+from .services import ActionLoggingService, CoreSelector, CoreService, UserService
 
 
 class BackgroundJobViewSet(viewsets.ModelViewSet):
@@ -61,20 +61,22 @@ class CustomTokenRefreshView(TokenRefreshView):
 
 class CustomTokenObtainPairView(TokenObtainPairView):
     def post(self, request, *args, **kwargs):
-        try: response = super().post(request, *args, **kwargs)
+        try:
+            response = super().post(request, *args, **kwargs)
         except Exception as e:
-            from core.models import User, ActionLog
-            usr = request.data.get('username') or 'unknown'
-            u = User.objects.filter(username=usr).first()
-            ActionLoggingService.log_action(user=u, action_type=ActionLog.Type.SECURITY, description=f"Fallo login '{usr}'.", request=request, metadata={'error': str(e)})
+            ActionLoggingService.log_failed_login(
+                request.data.get('username') or 'unknown', request
+            )
             raise e
         if response.status_code == 200:
             try:
-                if response.data.get('access'): response.set_cookie('access_token', response.data['access'], httponly=True, secure=not settings.DEBUG, samesite='Strict', max_age=1800, path='/')
-                from core.models import User, ActionLog
-                u = User.objects.filter(username=request.data.get('username')).first()
-                if u: ActionLoggingService.log_action(user=u, action_type=ActionLog.Type.LOGIN, description=f'Login {u.username}', request=request)
-            except Exception: pass
+                if response.data.get('access'):
+                    response.set_cookie('access_token', response.data['access'], httponly=True, secure=not settings.DEBUG, samesite='Strict', max_age=1800, path='/')
+                ActionLoggingService.log_successful_login(
+                    request.data.get('username'), request
+                )
+            except Exception:
+                pass
         return response
 
 
@@ -156,17 +158,11 @@ class UserPreferenceView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        prefs = UserPreference.objects.filter(user=request.user)
-        data = {p.key: p.value for p in prefs}
-        return Response(data)
+        return Response(CoreService.get_user_preferences(request.user))
 
     def patch(self, request):
-        data = request.data
-        for key, value in data.items():
-            UserPreference.objects.update_or_create(
-                user=request.user, key=key, defaults={"value": value}
-            )
-        return Response(data)
+        CoreService.set_user_preferences(request.user, request.data)
+        return Response(request.data)
 
 
 class UserViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
@@ -212,9 +208,7 @@ class CompanySettingsViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
 
     @action(detail=False, methods=["get", "put", "patch"])
     def current(self, request):
-        obj, _ = CompanySettings.objects.get_or_create(
-            pk=1, defaults={"name": "Mi Empresa"}
-        )
+        obj = CoreService.get_or_create_company_settings()
 
         if request.method == "GET":
             serializer = self.get_serializer(obj)
@@ -299,8 +293,4 @@ class BackgroundJobViewSet(viewsets.ReadOnlyModelViewSet):
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
-        user = self.request.user
-        qs = BackgroundJob.objects.all()
-        if not user.is_superuser:
-            qs = qs.filter(user=user)
-        return qs
+        return CoreSelector.get_background_jobs_for_user(self.request.user)

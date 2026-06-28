@@ -34,7 +34,6 @@ from core.mixins import BulkImportMixin
 
 from .fiscal_year_service import FiscalYearClosingService
 from .selectors import (
-    balance_affecting_statuses,
     get_account_ledger,
     list_accounts,
     list_budgetable_accounts,
@@ -62,7 +61,7 @@ class AccountingSettingsViewSet(viewsets.ModelViewSet):
 
     @action(detail=False, methods=["get", "put", "patch"])
     def current(self, request):
-        obj, _ = AccountingSettings.objects.get_or_create(pk=1)
+        obj = AccountingService.get_or_create_current_settings()
 
         if request.method == "GET":
             serializer = self.get_serializer(obj)
@@ -106,12 +105,10 @@ class AccountViewSet(BulkImportMixin, AuditHistory, viewsets.ModelViewSet):
 
     def destroy(self, request, *args, **kwargs):
         account = self.get_object()
-        # Check if account has journal items that affect balances
-        if account.journal_items.filter(entry__status__in=balance_affecting_statuses()).exists():
-            return Response(
-                {"error": "No se puede eliminar una cuenta con movimientos contables asociados."},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
+        try:
+            AccountingService.validate_account_deletion(account)
+        except ValidationError as e:
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
         return super().destroy(request, *args, **kwargs)
 
     @action(detail=True, methods=["get"])
@@ -162,13 +159,6 @@ class JournalEntryViewSet(viewsets.ModelViewSet, AuditHistory):
     @action(detail=True, methods=["post"])
     def reverse_entry(self, request, pk=None):
         entry = self.get_object()
-        if not entry.is_manual:
-            return Response(
-                {
-                    "error": "No se puede revertir un asiento generado automáticamente. Use el proceso de anulación del documento origen."
-                },
-                status=status.HTTP_400_BAD_REQUEST,
-            )
         try:
             description = request.data.get("description")
             reversal = JournalEntryService.reverse_entry(entry, description=description)
@@ -192,7 +182,10 @@ class JournalEntryViewSet(viewsets.ModelViewSet, AuditHistory):
 
     def update(self, request, *args, **kwargs):
         inst = self.get_object()
-        if inst.status != 'DRAFT': return Response({'error': 'Solo editar en Borrador.'}, status=400)
+        try:
+            JournalEntryService.validate_editable(inst)
+        except ValidationError as e:
+            return Response({'error': str(e)}, status=400)
         data = request.data.copy()
         items = data.pop('items', None)
         try:
@@ -324,22 +317,15 @@ class FiscalYearViewSet(viewsets.ModelViewSet):
 
     @action(detail=False, methods=['post'], url_path='(?P<year>[0-9]{4})/close')
     def close(self, request, year=None):
-        if not request.user.has_perm('accounting.can_close_fiscal_year'): return Response({'error': 'Sin permisos'}, status=403)
-        try: return Response(self.get_serializer(FiscalYearClosingService.close_fiscal_year(year=int(year), user=request.user, notes=request.data.get('notes', ''))).data)
+        try:
+            FiscalYearClosingService.validate_can_close(request.user, year)
+            return Response(self.get_serializer(FiscalYearClosingService.close_fiscal_year(year=int(year), user=request.user, notes=request.data.get('notes', ''))).data)
         except ValidationError as e: return Response({'error': str(e.message if hasattr(e, 'message') else e)}, status=400)
 
     @action(detail=False, methods=["post"], url_path="(?P<year>[0-9]{4})/reopen")
     def reopen(self, request, year=None):
-        """
-        Reopens a closed fiscal year by reversing the closing entry.
-        """
-        if not request.user.has_perm("accounting.can_reopen_fiscal_year"):
-            return Response(
-                {"error": "No tiene permisos para reabrir el ejercicio fiscal."},
-                status=status.HTTP_403_FORBIDDEN,
-            )
-
         try:
+            FiscalYearClosingService.validate_can_reopen(request.user, year)
             result = FiscalYearClosingService.reopen_fiscal_year(year=int(year), user=request.user)
             serializer = self.get_serializer(result)
             return Response(serializer.data)

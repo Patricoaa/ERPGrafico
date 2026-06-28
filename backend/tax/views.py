@@ -67,13 +67,10 @@ class TaxPeriodViewSet(viewsets.ModelViewSet):
 
     @action(detail=False, methods=['get'], permission_classes=[AllowAny])
     def check_closed(self, request):
-        ds = request.query_params.get('date')
-        if not ds: return Response({'error': 'Date required'}, status=400)
         try:
-            from datetime import datetime
-            return Response({'is_closed': TaxPeriodService.is_period_closed(datetime.strptime(ds, '%Y-%m-%d').date()), 'date': ds})
-        except (ValueError, TypeError):
-            return Response({'error': 'Invalid date'}, status=400)
+            return Response(TaxPeriodService.parse_and_check_closed(request.query_params.get('date')))
+        except Exception as e:
+            return Response({"error": str(e)}, status=400)
 
 
 class F29DeclarationViewSet(viewsets.ModelViewSet):
@@ -171,16 +168,9 @@ class AccountingPeriodViewSet(viewsets.ModelViewSet):
     @idempotent_endpoint(scope="tax.period.close")
     @action(detail=True, methods=["post"])
     def close(self, request, pk=None):
-        """Close an accounting period"""
-        # Check permission
-        if not request.user.has_perm("tax.can_close_accounting_period"):
-            return Response(
-                {"error": "No tiene permisos para cerrar periodos contables."},
-                status=status.HTTP_403_FORBIDDEN,
-            )
-
-        period = self.get_object()
         try:
+            AccountingPeriodService.validate_can_close(request.user)
+            period = self.get_object()
             updated_period = AccountingPeriodService.close_period(
                 period.year, period.month, request.user
             )
@@ -188,19 +178,14 @@ class AccountingPeriodViewSet(viewsets.ModelViewSet):
             return Response(serializer.data)
         except DjangoValidationError as e:
             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_403_FORBIDDEN)
 
     @action(detail=True, methods=["post"])
     def reopen(self, request, pk=None):
-        """Reopen a closed accounting period"""
-        # Check permission
-        if not request.user.has_perm("tax.can_reopen_accounting_period"):
-            return Response(
-                {"error": "No tiene permisos para reabrir periodos contables."},
-                status=status.HTTP_403_FORBIDDEN,
-            )
-
-        period = self.get_object()
         try:
+            AccountingPeriodService.validate_can_reopen(request.user)
+            period = self.get_object()
             updated_period = AccountingPeriodService.reopen_period(
                 period.year, period.month, request.user
             )
@@ -208,6 +193,8 @@ class AccountingPeriodViewSet(viewsets.ModelViewSet):
             return Response(serializer.data)
         except DjangoValidationError as e:
             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_403_FORBIDDEN)
 
     @action(detail=True, methods=["get"])
     def status_check(self, request, pk=None):
@@ -218,10 +205,7 @@ class AccountingPeriodViewSet(viewsets.ModelViewSet):
 
     @action(detail=False, methods=['get'], permission_classes=[AllowAny])
     def check_closed(self, request):
-        ds = request.query_params.get('date')
-        if not ds: return Response({'error': 'Date required'}, status=400)
         try:
-            from datetime import datetime
-            return Response({'is_closed': AccountingPeriodService.is_period_closed(datetime.strptime(ds, '%Y-%m-%d').date()), 'date': ds})
-        except (ValueError, TypeError):
-            return Response({'error': 'Invalid date'}, status=400)
+            return Response(AccountingPeriodService.parse_and_check_closed(request.query_params.get('date')))
+        except Exception as e:
+            return Response({"error": str(e)}, status=400)

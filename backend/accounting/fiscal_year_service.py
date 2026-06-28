@@ -596,3 +596,13 @@ class FiscalYearClosingService:
         }
 
         return validations
+
+    @staticmethod
+    def validate_can_close(user, year):
+        if not user.has_perm('accounting.can_close_fiscal_year'):
+            raise ValidationError("Sin permisos para cerrar ejercicio fiscal.")
+
+    @staticmethod
+    def validate_can_reopen(user, year):
+        if not user.has_perm("accounting.can_reopen_fiscal_year"):
+            raise ValidationError("No tiene permisos para reabrir el ejercicio fiscal.")
