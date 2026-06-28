@@ -3,7 +3,7 @@ import { showApiError } from "@/lib/errors"
 // Manages draft carts (save/load/delete) with lock integration
 
 import { useState, useEffect, useCallback } from 'react'
-import { usePOS } from '../contexts/POSContext'
+import { usePOS } from '../contexts/POSProvider'
 import { useRealtime } from '@/features/realtime'
 import type { CartItem, DraftCart, WizardState } from '@/types/pos'
 import { posApi } from '../api/posApi'

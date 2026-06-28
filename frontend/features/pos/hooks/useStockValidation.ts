@@ -2,7 +2,7 @@
 // Real-time stock limit calculation and validation
 
 import { useState, useEffect, useCallback } from 'react'
-import { usePOS } from '../contexts/POSContext'
+import { usePOS } from '../contexts/POSProvider'
 import type { StockLimits, Product, CartItem } from '@/types/pos'
 import * as StockCalculator from '@/features/pos/utils/stock-calculator'
 import * as BOMResolver from '@/features/pos/utils/bom-resolver'

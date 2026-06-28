@@ -13,7 +13,7 @@ import { DataTableView } from '@/components/shared'
 import { DataTableColumnHeader } from '@/components/shared'
 
 import { Tabs, TabsContent } from "@/components/ui/tabs"
-import { BankManagement, PaymentMethodManagement } from "@/features/treasury"
+import { BankCenterClientView, PaymentMethodClientView } from "@/features/treasury"
 import { TreasuryAccountWizard } from "./TreasuryAccountWizard"
 
 import { useGlobalModalActions } from "@/components/providers/GlobalModalProvider"
@@ -344,7 +344,7 @@ export const TreasuryAccountsClientView: React.FC<TreasuryAccountsClientViewProp
 
             <TabsContent value="banks" className="flex-1 min-h-0 flex flex-col">
                 <FadeIn className="h-full">
-                    <BankManagement
+                    <BankCenterClientView
                         externalOpen={isBankModalOpen || (activeTab === "banks" && !!externalOpen)}
                         onOpenChange={(open) => {
                             if (!open) {
@@ -360,7 +360,7 @@ export const TreasuryAccountsClientView: React.FC<TreasuryAccountsClientViewProp
 
             <TabsContent value="methods" className="flex-1 min-h-0 flex flex-col">
                 <FadeIn className="h-full">
-                    <PaymentMethodManagement
+                    <PaymentMethodClientView
                         externalOpen={isMethodModalOpen || (activeTab === "methods" && !!externalOpen)}
                         onOpenChange={(open) => {
                             if (!open) {

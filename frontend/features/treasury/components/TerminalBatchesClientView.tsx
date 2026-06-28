@@ -16,7 +16,7 @@ import { terminalBatchSegDef } from "@/features/treasury/segmentationDef"
 import { terminalBatchSearchDef } from "@/features/treasury/searchDef"
 
 // Lazy load feature components
-const LazyTerminalBatchForm = lazy(() => import("./TerminalBatchForm"))
+const LazyTerminalBatchSelectionModal = lazy(() => import("./TerminalBatchSelectionModal"))
 const MonthlyInvoiceModal = lazy(() => import("./MonthlyInvoiceModal"))
 
 interface TerminalBatchesClientViewProps {
@@ -236,7 +236,7 @@ function TerminalBatchModal({ open, onOpenChange, onSuccess }: { open: boolean, 
          >
             <SkeletonShell isLoading={false} ariaLabel="Cargando formulario de lote de terminal">
                 <Suspense fallback={<div />}>
-                    <LazyTerminalBatchForm onSuccess={onSuccess} onCancel={() => onOpenChange(false)} onFooterStateChange={setFooterState} />
+                    <LazyTerminalBatchSelectionModal onSuccess={onSuccess} onCancel={() => onOpenChange(false)} onFooterStateChange={setFooterState} />
                 </Suspense>
             </SkeletonShell>
         </BaseModal>

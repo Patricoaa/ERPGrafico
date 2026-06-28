@@ -1,6 +1,6 @@
 "use client"
 
-import { usePOS } from "../contexts/POSContext"
+import { usePOS } from "../contexts/POSProvider"
 import { cn, formatPlainDate } from "@/lib/utils"
 import { getDteLabel } from "@/lib/entity-registry"
 import {Check, ChevronRight, ShoppingCart, User, Factory, Truck, Wallet as WalletIcon, FileWarning} from "lucide-react"

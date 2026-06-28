@@ -237,41 +237,13 @@ export { EmployeeDrawer as EmployeeFormModal } from './components/EmployeeDrawer
 
 ---
 
-## 7. Violaciones conocidas (deuda técnica)
+## 7. Violaciones conocidas (histórico — resueltas)
 
-Los siguientes archivos violan la convención de sufijos y deben renombrarse al próximo toque ("Boy Scout Rule"):
+Todas las violaciones documentadas previamente en esta sección han sido resueltas en la auditoría de junio 2026:
+- Renombres `*FormModal`/`*Modal` → `*Drawer` (~16 archivos)
+- Migraciones `*View`/`*List` → `*ClientView` (`AbsenceManagementView` → `AbsenceClientView`, alias `*List` en inventory eliminados)
 
-| Archivo actual | Nombre correcto | Surface real |
-|---|---|---|
-| `hr/AbsenceFormModal.tsx` | `AbsenceDrawer` | `<Drawer>` |
-| `hr/AdvanceFormModal.tsx` | `AdvanceDrawer` | `<Drawer>` |
-| `hr/CreatePayrollModal.tsx` | `CreatePayrollDrawer` | `<Drawer>` |
-| `hr/EmployeeFormModal.tsx` | `EmployeeDrawer` | `<Drawer>` |
-| `production/BOMFormModal.tsx` | `BOMDrawer` | `<Drawer>` |
-| `settings/TerminalFormModal.tsx` | `TerminalDrawer` | `<Drawer>` |
-| `treasury/TreasuryAccountModal.tsx` | `TreasuryAccountDrawer` | `<Drawer>` |
-| `treasury/TransferModal.tsx` | `TransferDrawer` | `<Drawer>` |
-| `accounting/LedgerModal.tsx` | `LedgerDrawer` | `<Drawer>` |
-| `accounting/closures/NewFiscalYearModal.tsx` | `NewFiscalYearDrawer` | `<Drawer>` |
-| `contacts/ContactModal.tsx` | `ContactDrawer` | `<Drawer>` |
-| `pos/SalesOrdersModal.tsx` | `SalesOrdersDrawer` | `<Drawer>` |
-| `sales/DeliveryModal.tsx` | `DeliveryDrawer` | `<Drawer>` |
-| `sales/forms/AdvancedManufacturingModal.tsx` | `AdvancedManufacturingDrawer` | `<Drawer>` |
-| `settings/PartnerEditModal.tsx` | `PartnerEditDrawer` | `<Drawer>` |
-| `settings/partners/PartnerLedgerModal.tsx` | `PartnerLedgerDrawer` | `<Drawer>` |
-
-> No renombrar en masa. Aplicar Boy Scout Rule: corregir cuando el archivo se toque por otra razón.
-
-### 7.1 Migración `*View`/`*List`/`*Management` → `*ClientView`
-
-En 2026-06 se centralizó la convención de vistas de listado de entidad a `*ClientView`. Quedan como deuda técnica los siguientes archivos con sufijos no estándar (Boy Scout Rule al próximo toque):
-
-| Archivo actual | Nombre correcto | Razón |
-|---|---|---|
-| `hr/AbsenceManagementView.tsx` | `AbsenceClientView` | Listado con DataTable |
-| `inventory/ProductList.tsx` | Eliminar (alias de `ProductClientView`) | Re-export deprecated |
-
-> Los alias `*List` en inventory (`ProductList`, `CategoryList`, etc.) están marcados como `@deprecated` y se eliminarán en sprint +2.
+Ver `docs/50-audit/architecture-compliance-audit-2026-06.md §4` para el detalle.
 
 ---
 

@@ -51,13 +51,13 @@ type PaymentMethodFormValues = z.infer<typeof paymentMethodSchema>
 
 // --- Payment Method Management ---
 
-interface PaymentMethodManagementProps {
+interface PaymentMethodClientViewProps {
     externalOpen?: boolean
     onOpenChange?: (open: boolean) => void
     createAction?: React.ReactNode
 }
 
-export function PaymentMethodManagement({ externalOpen, onOpenChange, createAction }: PaymentMethodManagementProps) {
+export function PaymentMethodClientView({ externalOpen, onOpenChange, createAction }: PaymentMethodClientViewProps) {
     const { methods, refetch, deleteMethod } = usePaymentMethods()
     const { filterFn: filterMethods, isFiltered: isTextFiltered, clearAll: clearText } = useClientSearch<PaymentMethod>(paymentMethodSearchDef)
     const { filters: segFilters, isFiltered: isSegFiltered, clearAll: clearSeg } = useSegmentation(paymentMethodSegDef)

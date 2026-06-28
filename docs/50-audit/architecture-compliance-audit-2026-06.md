@@ -33,6 +33,7 @@ doc: architecture-compliance-audit-2026-06
 | 3. `any` types en features | 2026-06-27 | Eliminados ~700 usos `any` en 6 fases secuenciales. 10/14 features en 0 violaciones. ESLint rule `no-explicit-any: error` para features. 3 features con warn temporal. | `26f1c83b`, `6bce380f`, `cdeef239` |
 | 5.1 + 5.2 Views inline business logic + get_queryset sin selector | 2026-06-28 | Migradas ~25 violaciones en 7 fases (A-G) a través de 15 archivos. Creados: SubscriptionSelector (Phase A), Treasury services/selectors (Phase B), ContactSelector (Phase C), PricingService/NoteWorkflowSelector (Phase D), AccountingService/CoreService/BillingService/SalesService (Phase E), NotificationSelector/PurchaseOrderSelector/DraftCartSelector (Phase F), ProductSelector.filter_suggestions/StockMoveSelector.stock_level/ProductService.toggle_favorite y sync_variant_prices/ProductionSelectorExt.get_bom_queryset (Phase G). | `1adda007`, `257115d7`, `8fb5430f`, `dd588ca0`, `46776d59`, `97c19950`, `33212b97` |
 | 6. ProductTypeStrategy | 2026-06-27 | Migradas ~37 cadenas if/elif a ProductTypeStrategy en 6 fases (A-E). 32 restantes son casos deliberadamente mantenidos (ORM filters, validaciones cruzadas, legacy controlado). | (múltiples) |
+| 4. Naming conventions (5 hallazgos) | 2026-06-28 | Renombrados: `TerminalBatchForm` → `TerminalBatchSelectionModal`, `BankManagement` → `BankCenterClientView`, `PaymentMethodManagement` → `PaymentMethodClientView`, `AbsenceManagementView` → `AbsenceClientView`, `POSContext.tsx` → `POSProvider.tsx`, `ProfileContext.tsx` → `ProfileProvider.tsx`. Limpiado `naming-conventions.md §7`. 2 hallazgos postergados (EquityMovementModals, PurchaseNoteWizardSteps — requieren splitting). 2 falsos positivos (POSLayoutSkeleton — sí exporta `POSLayoutSkeleton`; useCancelOrderFlow.tsx — sí contiene JSX). | `(este commit)` |
 | 8.1 `@transaction.atomic` faltante | 2026-06-28 | Agregado `@transaction.atomic` a `SalesService.create_sale_order_from_pos`. Creados 7 tests unitarios en `sales/tests/test_create_order_from_pos.py` cubriendo rollback en 3 tipos de excepción, happy path, sesión inválida, PIN requerido y PIN bypass. | `ac26a91d` |
 | 2.1 Cross-feature internal imports (~86 violaciones) + 10.1 API barrels | 2026-06-28 | Migrados ~95 archivos a barrel imports en 24 features. Creados barrels `api/index.ts` en 20 features. Cerrados agujeros ESLint `no-restricted-imports`. Promovido `PricingUtils` a `@/lib/pricing-utils`. Script `validate-barrel-imports.sh` para CI. | (múltiples) |
 | 7.1 Cross-app serializer imports top-level | 2026-06-28 | Eliminados 5 imports top-level en 3 serializers (billing, sales, purchasing). `TreasuryMovementSerializer` en billing era dead code. Los restantes migrados a `SerializerMethodField` + lazy import inside method. Solo `core` (infraestructura) mantiene imports top-level. | `3dd68676` |
@@ -44,9 +45,9 @@ doc: architecture-compliance-audit-2026-06
 | 🔴 CRÍTICO | ~0 | Backend — views lógica inline, product_type chains, transaction safety (Phase 0 extendida ✅), ORM en serializers ✅ |
 | 🟡 ALTO | ~0 | Frontend — FSD boundaries, naming, barrels ✅ |
 | 🟡 ALTO | ~0 | Backend — cross-app coupling, serializers ✅ |
-| 🟢 MEDIO | 8 | Gaps de contrato (no cubiertos por documentación actual) — 2 resueltos (10.1 API barrels, 10.3 PricingUtils) |
+| 🟢 MEDIO | 6 | Gaps de contrato (no cubiertos por documentación actual) — 2 resueltos (10.1 API barrels, 10.3 PricingUtils) + 1 naming resuelto (4.5 §7 cleanup) |
 
-> ✅ **Resuelto:** Frontend hooks/API any types (~250 violaciones) — eliminado en Fase 1-6. `staleTime` y `markLocalMutation` también resueltos (57 archivos, 2 regresiones corregidas en Fase 5). **Section 5.1 + 5.2 + 6** — views inline business logic y product_type chains migrados a services/selectors/strategy. **Section 8.1** — `@transaction.atomic` agregado a `create_sale_order_from_pos` y 4 métodos adicionales en Phase 0 (`create_task`, `finalize_task_update`, `handle_update_attachments`, `request_credit_approval`). `handle_task_update` liberado de decorador (savepoint anidado). 16 tests de rollback agregados. Dead code (`complete_hub_stage_task`, `_revert_tax_from_product_cost`) eliminado. **Section 2.1** — cross-feature internal imports (~86 violaciones) migrados a barrel imports en 24 features. `PricingUtils` promovido a `@/lib/pricing-utils`. **Section 7.1** — cross-app serializer imports top-level (~9 violaciones) migrados a lazy imports inside method. **Section 5.3** — ORM queries en serializers (2 aggregates inline) reemplazados por annotation/property reads. Test `assertNumQueries` agregado.
+> ✅ **Resuelto:** Frontend hooks/API any types (~250 violaciones) — eliminado en Fase 1-6. `staleTime` y `markLocalMutation` también resueltos (57 archivos, 2 regresiones corregidas en Fase 5). **Section 5.1 + 5.2 + 6** — views inline business logic y product_type chains migrados a services/selectors/strategy. **Section 8.1** — `@transaction.atomic` agregado a `create_sale_order_from_pos` y 4 métodos adicionales en Phase 0 (`create_task`, `finalize_task_update`, `handle_update_attachments`, `request_credit_approval`). `handle_task_update` liberado de decorador (savepoint anidado). 16 tests de rollback agregados. Dead code (`complete_hub_stage_task`, `_revert_tax_from_product_cost`) eliminado. **Section 2.1** — cross-feature internal imports (~86 violaciones) migrados a barrel imports en 24 features. `PricingUtils` promovido a `@/lib/pricing-utils`. **Section 7.1** — cross-app serializer imports top-level (~9 violaciones) migrados a lazy imports inside method. **Section 5.3** — ORM queries en serializers (2 aggregates inline) reemplazados por annotation/property reads. Test `assertNumQueries` agregado. **Section 4** — naming conventions: 5 hallazgos corregidos (renombres de componentes/archivos, cleanup de naming-conventions.md §7), 2 postergados (EquityMovementModals, PurchaseNoteWizardSteps), 1 falso positivo (POSLayoutSkeleton).
 
 ---
 
@@ -684,81 +685,90 @@ Requiere tipos wrapper o cast controlado.
 
 ---
 
-## 4. Frontend — Naming Conventions
+## 4. Frontend — Naming Conventions — ✅ RESUELTO (parcial)
 
 Contrato de referencia: `docs/90-governance/naming-conventions.md`.
 
-### 4.1 `*Form` con surface propia (1 violación)
+> **Resuelto 2026-06-28.** 4 hallazgos corregidos (4.1, 4.2 parcial, 4.3, 4.5), 2 postergados (EquityMovementModals, PurchaseNoteWizardSteps requieren splitting), 2 falsos positivos (4.4 useCancelOrderFlow.tsx — sí tiene JSX; POSLayoutSkeleton — sí exporta `POSLayoutSkeleton` coincidiendo con filename).
+
+### 4.1 `*Form` con surface propia (1 violación) — ✅ RESUELTO
+
+> **Resuelto 2026-06-28.** Renombrado `TerminalBatchForm` → `TerminalBatchSelectionModal`. Archivo renombrado a `TerminalBatchSelectionModal.tsx`. Barrel actualizado con alias `@deprecated`. Lazy import en `TerminalBatchesClientView.tsx` actualizado.
 
 #### Explicación del error
 
-Regla `naming-conventions.md:1.2.3`: un componente con sufijo `Form` **no debe tener surface propia** (Drawer/Modal/Sheet). El padre decide dónde montarlo. `TerminalBatchForm.tsx` renderiza `<BaseModal>` internamente, violando esta regla.
+Regla `naming-conventions.md:1.2.3`: un componente con sufijo `Form` **no debe tener surface propia** (Drawer/Modal/Sheet). El padre decide dónde montarlo. `TerminalBatchForm.tsx` renderiza `<BaseModal>` internamente (vía `SaleSelectionModal`), violando esta regla.
 
-| Archivo | Línea | Surface | Debería ser |
-|---------|-------|---------|-------------|
-| `features/treasury/components/TerminalBatchForm.tsx` | 434 | `<BaseModal>` | `TerminalBatchSelectionModal` |
-
-#### Solución
-
-Renombrar a `TerminalBatchSelectionModal` (el sufijo refleja la surface: Modal).
+| Archivo | Línea | Surface | Resolución |
+|---------|-------|---------|------------|
+| `features/treasury/components/TerminalBatchForm.tsx` | 434 | `<BaseModal>` | → `TerminalBatchSelectionModal` ✅ |
 
 ---
 
-### 4.2 File/export name mismatches (7 violaciones)
+### 4.2 File/export name mismatches (7 violaciones) — ✅ RESUELTO (parcial)
+
+> **Resuelto 2026-06-28.** 5/7 corregidos:
+> 1. `BankCenterClientView.tsx`: export `BankManagement` → `BankCenterClientView` ✅
+> 2. `PaymentMethodClientView.tsx`: export `PaymentMethodManagement` → `PaymentMethodClientView` ✅
+> 3. `POSContext.tsx` → `POSProvider.tsx` (git mv + barrel + 7 importers) ✅
+> 4. `ProfileContext.tsx` → `ProfileProvider.tsx` (git mv + barrel) ✅
+> 5. `POSLayoutSkeleton.tsx`: **falso positivo** — el archivo SÍ exporta `POSLayoutSkeleton` (línea 53), coincidiendo con el nombre del archivo. No requiere acción. ✅
+>
+> **Postergados (requieren splitting en múltiples archivos):**
+> 6. `EquityMovementModals.tsx` — 5 componentes modal en 1 archivo (848 líneas)
+> 7. `PurchaseNoteWizardSteps.tsx` — 4 step componentes en 1 archivo (459 líneas)
 
 #### Explicación del error
 
 Regla `naming-conventions.md:2.1`: el nombre del archivo debe coincidir con el export principal.
 
-| Archivo | Export principal | Correcto sería |
-|---------|-----------------|----------------|
-| `features/treasury/components/BankCenterClientView.tsx` | `BankManagement` | Renombrar export a `BankCenterClientView` o file a `BankManagement.tsx` |
-| `features/treasury/components/PaymentMethodClientView.tsx` | `PaymentMethodManagement` | Renombrar export a `PaymentMethodClientView` o file a `PaymentMethodManagement.tsx` |
-| `features/settings/components/partners/EquityMovementModals.tsx` | 5 exports (`*Modal`) | Dividir en archivos individuales |
-| `features/purchasing/components/notes/PurchaseNoteWizardSteps.tsx` | 4 exports (`Step*`) | Dividir en `Step[N]_Name.tsx` individuales |
-| `features/pos/components/skeletons/POSLayoutSkeleton.tsx` | `POSSearchSkeleton`, `POSGridSkeleton`, `POSRecentOrderSkeleton` | Sin export `POSLayoutSkeleton` — crear o renombrar |
-| `features/pos/contexts/POSContext.tsx` | `POSProvider` | Renombrar a `POSProvider.tsx` o exportar `POSContext` |
-| `features/profile/context/ProfileContext.tsx` | `ProfileProvider` | Renombrar a `ProfileProvider.tsx` o exportar `ProfileContext` |
-
-#### Solución
-
-Renombrar exports o archivos para que coincidan. Para archivos multi-componente, dividir o renombrar el archivo para reflejar el contenido.
+| Archivo | Export principal | Resolución |
+|---------|-----------------|------------|
+| `features/treasury/components/BankCenterClientView.tsx` | `BankManagement` | Renombrado export → `BankCenterClientView` ✅ |
+| `features/treasury/components/PaymentMethodClientView.tsx` | `PaymentMethodManagement` | Renombrado export → `PaymentMethodClientView` ✅ |
+| `features/settings/components/partners/EquityMovementModals.tsx` | 5 exports (`*Modal`) | ⏳ Pendiente — requiere splitting |
+| `features/purchasing/components/notes/PurchaseNoteWizardSteps.tsx` | 4 exports (`Step*`) | ⏳ Pendiente — requiere splitting |
+| `features/pos/components/skeletons/POSLayoutSkeleton.tsx` | `POSSearchSkeleton`, `POSGridSkeleton`, `POSCartItemsSkeleton`, `POSLayoutSkeleton` | Falso positivo — `POSLayoutSkeleton` sí existe ✅ |
+| `features/pos/contexts/POSContext.tsx` | `POSProvider` | Renombrado → `POSProvider.tsx` ✅ |
+| `features/profile/context/ProfileContext.tsx` | `ProfileProvider` | Renombrado → `ProfileProvider.tsx` ✅ |
 
 ---
 
-### 4.3 Deuda documentada: `*View` no `*ClientView` (1 archivo)
+### 4.3 Deuda documentada: `*View` no `*ClientView` (1 archivo) — ✅ RESUELTO
 
-| Archivo | Estado | Razón |
-|---------|--------|-------|
-| `features/hr/components/AbsenceManagementView.tsx` | Sigue pendiente | Usa `DataTableView` — debería ser `AbsenceClientView` |
+> **Resuelto 2026-06-28.** Renombrado `AbsenceManagementView` → `AbsenceClientView`. Archivo renombrado, export renombrado, barrel y consumers actualizados.
 
-#### Solución
-
-Aplicar Boy Scout Rule cuando se toque el archivo por otra razón.
+| Archivo | Antes | Después |
+|---------|-------|---------|
+| `features/hr/components/AbsenceManagementView.tsx` | `AbsenceManagementView` | `AbsenceClientView` ✅ |
 
 ---
 
-### 4.4 Hook extension `.tsx` sin JSX (1 archivo)
+### 4.4 Hook extension `.tsx` sin JSX (1 archivo) — ❌ FALSO POSITIVO
 
-#### Explicación del error
+> **No requiere acción.** El archivo SÍ contiene JSX (`<div>`, `<p>`, `<span>` en líneas 58-80). La auditoría original buscó solo el patrón `<Componente` (React components con mayúscula), omitiendo elementos HTML. La extensión `.tsx` es correcta.
+
+#### Explicación del error (original)
 
 `features/orders/hooks/useCancelOrderFlow.tsx` usa extensión `.tsx` pero no contiene JSX (0 matches para `<Componente`). Debería ser `.ts`.
 
-#### Solución
+#### Re-evaluación
 
-Renombrar a `useCancelOrderFlow.ts`.
+El archivo renderiza JSX en una función interna que produce contenido para un modal de confirmación. La extensión `.tsx` es necesaria para que TypeScript compile las expresiones JSX. **No es una violación.**
 
 ---
 
-### 4.5 Contrato obsoleto: sección 7 de `naming-conventions.md`
+### 4.5 Contrato obsoleto: sección 7 de `naming-conventions.md` — ✅ RESUELTO
+
+> **Resuelto 2026-06-28.** Limpiada la tabla de deuda histórica (16 items renombrados en auditorías previas + `AbsenceManagementView` resuelto en 4.3). §7 ahora redirige al audit para detalle.
 
 #### Explicación del error
 
-La sección 7 de `naming-conventions.md` documenta 16 violaciones conocidas (archivos `*FormModal`/`*Modal` que deberían ser `*Drawer`). **Todos han sido renombrados** — la tabla ahora siembra confusión. El único item que persiste es `AbsenceManagementView`.
+La sección 7 de `naming-conventions.md` documentaba 16 violaciones conocidas (archivos `*FormModal`/`*Modal` que deberían ser `*Drawer`). **Todos han sido renombrados** — la tabla sembraba confusión.
 
 #### Solución
 
-Limpiar la tabla de `naming-conventions.md §7`: mantener solo `AbsenceManagementView` como deuda activa.
+Reemplazada la tabla histórica con referencia al documento de auditoría. ✅
 
 ---
 

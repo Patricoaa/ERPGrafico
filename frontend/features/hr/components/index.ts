@@ -6,6 +6,6 @@ export * from './AbsenceDrawer';
 export * from './AdvanceDrawer';
 export * from './CreatePayrollDrawer';
 export * from './EmployeeClientView';
-export * from './AbsenceManagementView';
+export * from './AbsenceClientView';
 export * from './PayrollClientView';
 export * from './SalaryAdvanceClientView';

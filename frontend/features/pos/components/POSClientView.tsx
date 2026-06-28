@@ -35,7 +35,7 @@ import * as Validation from '@/features/pos/utils/validation'
 import { cn } from "@/lib/utils"
 import { isPOSProductDisabled } from '@/features/pos/utils/product-availability'
 
-import { usePOS } from '@/features/pos/contexts/POSContext'
+import { usePOS } from '@/features/pos/contexts/POSProvider'
 import { useAuth } from '@/contexts/AuthContext'
 import {
     useProducts,
