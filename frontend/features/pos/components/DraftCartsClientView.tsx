@@ -1,7 +1,7 @@
 "use client"
 import { formatCurrency } from "@/lib/money"
 
-import { useState, useEffect, useMemo } from "react"
+import { useState, useEffect, useMemo, useCallback } from "react"
 import { Button } from "@/components/ui/button"
 
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from "@/components/ui/tooltip"
@@ -40,6 +40,9 @@ export interface DraftCart {
     created_at: string
     updated_at: string
     pos_session: number
+    is_locked?: boolean
+    locked_by_name?: string | null
+    locked_by?: number | null
     wizard_state?: {
         step: number
         dteData: Record<string, unknown>
@@ -90,6 +93,23 @@ export function DraftCartsClientView({
     const [confirmDeleteId, setConfirmDeleteId] = useState<number | null>(null)
     const [confirmDeleteName, setConfirmDeleteName] = useState("")
     const [prevDraftIds, setPrevDraftIds] = useState<Set<number>>(new Set())
+
+    // Lock info from syncDrafts (WebSocket, real-time) + fallback to HTTP drafts data
+    const resolveLockInfo = useCallback((draftId: number): LockInfo => {
+        if (getLockInfo) {
+            const syncLock = getLockInfo(draftId)
+            if (syncLock.isLocked) return syncLock
+        }
+        const draft = drafts.find(d => d.id === draftId)
+        if (draft?.is_locked) {
+            return {
+                isLocked: true,
+                lockedByName: draft.locked_by_name ?? null,
+                isOwnLock: false,
+            }
+        }
+        return { isLocked: false, lockedByName: null, isOwnLock: false }
+    }, [getLockInfo, drafts])
 
     const isControlled = externalOpen !== undefined
     const open = isControlled ? externalOpen : internalOpen
@@ -147,15 +167,13 @@ export function DraftCartsClientView({
             return
         }
 
-        if (getLockInfo) {
-            const lock = getLockInfo(draft.id)
-            if (lock.isLocked && !lock.isOwnLock) {
-                toast.error(`Borrador en uso por ${lock.lockedByName}`, {
-                    description: 'Espere a que el otro usuario termine de editarlo.',
-                    duration: 5000,
-                })
-                return
-            }
+        const lock = resolveLockInfo(draft.id)
+        if (lock.isLocked && !lock.isOwnLock) {
+            toast.error(`Borrador en uso por ${lock.lockedByName}`, {
+                description: 'Espere a que el otro usuario termine de editarlo.',
+                duration: 5000,
+            })
+            return
         }
 
         try {
@@ -174,15 +192,13 @@ export function DraftCartsClientView({
             return
         }
 
-        if (getLockInfo) {
-            const lock = getLockInfo(draftId)
-            if (lock.isLocked) {
-                const msg = lock.isOwnLock
-                    ? "No se puede eliminar el borrador que está actualmente seleccionado"
-                    : `No se puede eliminar: en uso por ${lock.lockedByName}`
-                toast.error(msg)
-                return
-            }
+        const lock = resolveLockInfo(draftId)
+        if (lock.isLocked) {
+            const msg = lock.isOwnLock
+                ? "No se puede eliminar el borrador que está actualmente seleccionado"
+                : `No se puede eliminar: en uso por ${lock.lockedByName}`
+            toast.error(msg)
+            return
         }
 
         setDeletingId(draftId)
@@ -230,8 +246,8 @@ export function DraftCartsClientView({
             id: 'id',
             header: '#',
             cell: ({ row }) => {
-                const lockInfo = getLockInfo?.(row.original.id)
-                const lockedByOther = lockInfo?.isLocked && !lockInfo?.isOwnLock
+                const lockInfo = resolveLockInfo(row.original.id)
+                const lockedByOther = lockInfo.isLocked && !lockInfo.isOwnLock
                 return (
                     <span className={cn(
                         "text-center text-[11px] font-mono font-bold",
@@ -247,8 +263,8 @@ export function DraftCartsClientView({
             header: 'Nombre / Cliente',
             cell: ({ row }) => {
                 const draft = row.original
-                const lockInfo = getLockInfo?.(draft.id)
-                const lockedByOther = lockInfo?.isLocked && !lockInfo?.isOwnLock
+                const lockInfo = resolveLockInfo(draft.id)
+                const lockedByOther = lockInfo.isLocked && !lockInfo.isOwnLock
 
                 return (
                     <div className="min-w-0">
@@ -333,7 +349,7 @@ export function DraftCartsClientView({
                 </span>
             ),
         },
-    ], [getLockInfo, formatRelative])
+    ], [resolveLockInfo, formatRelative])
 
     return (
         <>
@@ -376,11 +392,11 @@ export function DraftCartsClientView({
                             onRowClick={(draft) => handleLoadDraft(draft as DraftCart)}
                             renderRowActions={(draft) => {
                                 const d = draft as DraftCart
-                                const lockInfo = getLockInfo?.(d.id)
-                                const lockedByOther = lockInfo?.isLocked && !lockInfo?.isOwnLock
+                                const lockInfo = resolveLockInfo(d.id)
+                                const lockedByOther = lockInfo.isLocked && !lockInfo.isOwnLock
                                 const isCurrentDraft = d.id === currentDraftId
-                                const cannotDelete = !!lockedByOther || isCurrentDraft
-                                const cannotLoad = !!lockedByOther || isCurrentDraft
+                                const cannotDelete = lockedByOther || isCurrentDraft
+                                const cannotLoad = lockedByOther || isCurrentDraft
                                 return (
                                     <>
                                         <Button
