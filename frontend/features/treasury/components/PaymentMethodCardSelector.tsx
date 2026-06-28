@@ -64,10 +64,6 @@ export function PaymentMethodCardSelector({
     methodTitle
 }: PaymentMethodCardSelectorProps) {
     const {
-        totalLabel = 'Total',
-        amountLabel = 'Monto',
-        differencePositiveLabel = 'Vuelto',
-        differenceNegativeLabel = 'Deuda Pendiente',
         amountModalTitle = 'Monto',
         amountModalDescription = 'Ingrese el monto para este pago.'
     } = labels
@@ -255,48 +251,8 @@ export function PaymentMethodCardSelector({
         return availableMethods.filter(m => m.isAllowed)
     }, [allowedMethods, isMethodAllowed, operation])
 
-    const difference = paymentData.amount - total
-    const showChangeCard = !(operation === 'purchases' && difference >= 0);
-
     return (
         <div className="space-y-4">
-            {/* Summary Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                <div className={cn("bg-primary/5 rounded-md border border-primary/10 flex justify-between items-center", compactMode ? "p-3 h-20" : "p-4 h-24")}>
-                    <div>
-                        <span className="text-[10px] font-bold uppercase text-muted-foreground block mb-1">{totalLabel}</span>
-                        <MoneyDisplay amount={total} className={cn("text-primary", compactMode ? "text-lg" : "text-xl")} />
-                    </div>
-                </div>
-
-                <div className={cn("bg-primary/5 rounded-md border border-primary/10 flex justify-between items-center", compactMode ? "p-3 h-20" : "p-4 h-24")}>
-                    <div>
-                        <span className="text-[10px] font-bold uppercase text-muted-foreground block mb-1">{amountLabel}</span>
-                        <MoneyDisplay amount={paymentData.amount || 0} className={cn("text-primary", compactMode ? "text-lg" : "text-xl")} />
-                    </div>
-                </div>
-
-                {(paymentData.amount > 0 || difference < 0) && showChangeCard && (
-                    <div className={cn(
-                        "rounded-md border flex justify-between items-center shadow-card transition-all animate-in zoom-in-95 duration-200",
-                        compactMode ? "p-3 h-20" : "p-4 h-24",
-                        difference >= 0
-                            ? "bg-success/5 border-success/10"
-                            : "border-border hover:border-primary/30"
-                    )}>
-                        <div>
-                            <span className="text-[10px] font-bold uppercase text-muted-foreground block mb-1">
-                                {difference >= 0 ? differencePositiveLabel : differenceNegativeLabel}
-                            </span>
-                            <MoneyDisplay amount={Math.abs(difference)} className={cn(
-                                difference >= 0 ? "text-success" : "text-warning",
-                                compactMode ? "text-lg" : "text-xl"
-                            )} />
-                        </div>
-                    </div>
-                )}
-            </div>
-
             {/* Account Details Form */}
             <div className="space-y-4">
                 {methodTitle}

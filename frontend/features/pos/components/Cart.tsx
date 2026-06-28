@@ -7,7 +7,7 @@ import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 
 import {ShoppingCart, Zap, Clock, ChevronLeft, ChevronRight, Check} from 'lucide-react'
-import { cn } from '@/lib/utils'
+import { cn, translatePaymentMethod } from '@/lib/utils'
 import { CartItem } from './CartItem'
 import { formatCurrency } from "@/lib/money"
 import { useVatRate } from '@/hooks/useVatRate'
@@ -55,6 +55,8 @@ interface CartProps {
     onSuspend?: () => void
     isLastStep?: boolean
     checkoutLoading?: boolean
+    paymentMethod?: string | null
+    paymentAmount?: number
 }
 
 export function Cart({
@@ -87,6 +89,8 @@ export function Cart({
     onSuspend,
     isLastStep = false,
     checkoutLoading = false,
+    paymentMethod,
+    paymentAmount,
 }: CartProps) {
     const { rate } = useVatRate()
     const { isTouchPOS } = useDeviceContext()
@@ -208,6 +212,29 @@ export function Cart({
                             <span>Total</span>
                             <span>{formatCurrency(totals.total_gross)}</span>
                         </div>
+
+                        {/* Payment Summary — visible on checkout payment step */}
+                        {posMode === 'CHECKOUT' && isLastStep && (paymentAmount || 0) > 0 && (
+                            <>
+                                <div className="border-t my-1.5" />
+                                <div className="flex justify-between text-xs text-muted-foreground">
+                                    <span>Monto Recibido</span>
+                                    <span className="font-bold text-foreground">{formatCurrency(paymentAmount || 0)}</span>
+                                </div>
+                                <div className="flex justify-between text-xs text-muted-foreground">
+                                    <span>Método</span>
+                                    <span className="font-bold text-foreground">{translatePaymentMethod(paymentMethod)}</span>
+                                </div>
+                                {(paymentAmount || 0) !== totals.total_gross && (
+                                    <div className="flex justify-between text-xs text-muted-foreground">
+                                        <span>{(paymentAmount || 0) > totals.total_gross ? 'Vuelto' : 'Crédito Asignado'}</span>
+                                        <span className={cn("font-bold", (paymentAmount || 0) > totals.total_gross ? "text-success" : "text-warning")}>
+                                            {formatCurrency(Math.abs((paymentAmount || 0) - totals.total_gross))}
+                                        </span>
+                                    </div>
+                                )}
+                            </>
+                        )}
                     </div>
 
                     {posMode === 'SHOPPING' && (

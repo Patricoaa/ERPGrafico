@@ -167,7 +167,7 @@ export const SalesCheckoutWizardContent = forwardRef<SalesCheckoutWizardContentH
         isPending: false
     })
     const [paymentData, setPaymentData] = useState<CheckoutPaymentData>(initialPaymentData || {
-        method: 'CASH',
+        method: null,
         amount: 0,
         treasuryAccountId: null,
         isPending: false
@@ -941,6 +941,8 @@ export const SalesCheckoutWizardContent = forwardRef<SalesCheckoutWizardContentH
                         totalDiscountAmount={totalDiscountAmount}
                         dteType={dteData.type}
                         customer={selectedCustomer || undefined}
+                        paymentMethod={paymentData.method}
+                        paymentAmount={paymentData.amount}
                     />
                 </div>
             )}

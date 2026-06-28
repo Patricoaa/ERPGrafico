@@ -607,7 +607,7 @@ export function POSClientView() {
                             </Card>
                         </div>
                     ) : (
-                        <div key={currentDraftId || 'checkout-new'} className="flex-1 flex flex-col min-h-0 bg-card border rounded-md shadow-card overflow-hidden relative border-primary/20 animate-in fade-in slide-in-from-right-2 ease-premium duration-300 fill-mode-both">
+                        <div key={currentDraftId || 'checkout-new'} className="flex-1 flex flex-col min-h-0 bg-card dot-grid-surface border rounded-md shadow-card overflow-hidden relative border-primary/20 animate-in fade-in slide-in-from-right-2 ease-premium duration-300 fill-mode-both">
                             <SalesCheckoutWizardContent
                                 ref={checkoutWizardRef}
                                 key={currentDraftId || 'checkout-new'}
@@ -673,6 +673,8 @@ export function POSClientView() {
                         }}
                         isLastStep={isCheckoutLastStep}
                         checkoutLoading={false}
+                        paymentMethod={wizardState?.paymentData?.method}
+                        paymentAmount={wizardState?.paymentData?.amount}
                     />
                 </div>
             </div>

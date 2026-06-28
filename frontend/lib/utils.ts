@@ -258,8 +258,13 @@ export function translatePaymentMethod(method: string | null | undefined): strin
   const map: Record<string, string> = {
     'CASH': 'Efectivo',
     'CARD': 'Tarjeta',
+    'CARD_TERMINAL': 'Tarjeta (TUU)',
+    'CREDIT_CARD': 'T. Crédito',
+    'DEBIT_CARD': 'T. Débito',
     'TRANSFER': 'Transferencia',
+    'CHECK': 'Cheque',
     'CREDIT': 'Crédito',
+    'CREDIT_BALANCE': 'Saldo a Favor',
     'WRITE_OFF': 'Castigo',
   }
   return map[method.toUpperCase()] || method
