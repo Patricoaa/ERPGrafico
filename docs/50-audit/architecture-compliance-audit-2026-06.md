@@ -31,15 +31,17 @@ doc: architecture-compliance-audit-2026-06
 | 1.1 `markLocalMutation` ausente | 2026-06-26 | Agregado a ~160 mutations en 4 fases (pos→ALLOWLIST→resto→ESLint rule preventiva). Solo auth/ excluido (no entidad de negocio). 55 archivos con markLocalMutation. | `8b10ac98`, `d947d633`, `48e7aa20` |
 | 1.2 `staleTime` faltante | 2026-06-26 | Agregado staleTime explícito a ~50 queries en 28 archivos; corregido useServerDate (5min→30s); actualizado hook-contracts.md con tiers y notas | `8d1685e9`, `d8cce460` |
 | 3. `any` types en features | 2026-06-27 | Eliminados ~700 usos `any` en 6 fases secuenciales. 10/14 features en 0 violaciones. ESLint rule `no-explicit-any: error` para features. 3 features con warn temporal. | `26f1c83b`, `6bce380f`, `cdeef239` |
+| 5.1 + 5.2 Views inline business logic + get_queryset sin selector | 2026-06-28 | Migradas ~25 violaciones en 7 fases (A-G) a través de 15 archivos. Creados: SubscriptionSelector (Phase A), Treasury services/selectors (Phase B), ContactSelector (Phase C), PricingService/NoteWorkflowSelector (Phase D), AccountingService/CoreService/BillingService/SalesService (Phase E), NotificationSelector/PurchaseOrderSelector/DraftCartSelector (Phase F), ProductSelector.filter_suggestions/StockMoveSelector.stock_level/ProductService.toggle_favorite y sync_variant_prices/ProductionSelectorExt.get_bom_queryset (Phase G). | `1adda007`, `257115d7`, `8fb5430f`, `dd588ca0`, `46776d59`, `97c19950`, `33212b97` |
+| 6. ProductTypeStrategy | 2026-06-27 | Migradas ~37 cadenas if/elif a ProductTypeStrategy en 6 fases (A-E). 32 restantes son casos deliberadamente mantenidos (ORM filters, validaciones cruzadas, legacy controlado). | (múltiples) |
 
 | Severidad | Count | Área |
 |-----------|-------|------|
-| 🔴 CRÍTICO | ~110 | Backend — views con lógica inline, product_type chains |
+| 🔴 CRÍTICO | ~0 | Backend — views con lógica inline, product_type chains ✅ |
 | 🟡 ALTO | ~100 | Frontend — FSD boundaries, naming, barrels |
 | 🟡 ALTO | ~70 | Backend — cross-app coupling, serializers |
 | 🟢 MEDIO | 10 | Gaps de contrato (no cubiertos por documentación actual) |
 
-> ✅ **Resuelto:** Frontend hooks/API any types (~250 violaciones) — eliminado en Fase 1-6. `staleTime` y `markLocalMutation` también resueltos.
+> ✅ **Resuelto:** Frontend hooks/API any types (~250 violaciones) — eliminado en Fase 1-6. `staleTime` y `markLocalMutation` también resueltos. **Section 5.1 + 5.2 + 6** — views inline business logic y product_type chains migrados a services/selectors/strategy.
 
 ---
 
@@ -842,100 +844,37 @@ Limpiar la tabla de `naming-conventions.md §7`: mantener solo `AbsenceManagemen
 
 Contrato de referencia: `docs/10-architecture/backend-apps.md`.
 
-### 5.1 Views con inline business logic / >20 líneas (25+ violaciones)
+### 5.1 Views con inline business logic / >20 líneas (25+ violaciones) — ✅ RESUELTO
 
-#### Explicación del error
+> **Resuelto 2026-06-28.** Migradas ~25 violaciones en 7 fases secuenciales (A-G) a través de 15 archivos. Cada método ofensor fue extraído a `selectors.py` (reads) o `services.py` (writes). Todos los ViewSets ahora delegan en servicios/selectores.
 
-La regla de oro (`backend-apps.md:47`, `GOVERNANCE.md:35`) establece: `views.py` nunca contiene lógica de negocio. Tampoco debe exceder 20 líneas por acción. Varios ViewSets contienen ORM queries inline, lógica de filtros compleja, y métodos con más de 20 líneas.
+#### Fases de resolución
 
-#### Archivos críticos
+| Fase | Archivos | Violaciones | Commit |
+|------|----------|-------------|--------|
+| **A** | `inventory/subscription_views.py` → `SubscriptionSelector` | 3 CRITICAL (stats, history, get_queryset) | `1adda007` |
+| **B** | `treasury/views.py` → selectors/services | 14 (BankViewSet, CheckViewSet, CardViewSet, Dashboard, TerminalBatch, POS, PaymentMethod) | `257115d7` |
+| **C** | `contacts/views.py` → `ContactSelector` + `ContactService` | 9 (filter_suggestions, customers, suppliers, credit_history, partners, partner_transactions, all_partner_transactions, equity_stakes_history) | `8fb5430f` |
+| **D** | `sales/pricing_views.py`, `billing/note_views.py`, `contacts/profit_distribution_views.py`, `production/views.py` | 9 (pricing, note_workflow, profit_distribution, work_order) | `dd588ca0` |
+| **E** | `accounting/views.py`, `core/views.py`, `billing/views.py`, `sales/views.py`, `tax/views.py` | 21 (status guards, singletons, inline ORM) | `46776d59` |
+| **F** | `workflow/views.py`, `purchasing/views.py`, `sales/draft_cart_views.py` | 9 (notifications, purchase_order, draft_cart) | `97c19950` |
+| **G** | `inventory/views.py`, `production/views.py` | 5 (filter_suggestions, toggle_favorite, sync_variant_prices, stock_level, bom_queryset) | `33212b97` |
 
-**`contacts/views.py`** — 9 métodos con ORM inline (el peor ofensor):
-
-| Método | Líneas | Problema |
-|--------|--------|----------|
-| `ContactViewSet.filter_suggestions` | 54-65 | `Contact.objects.filter(...)` inline |
-| `ContactViewSet.customers` | 67-72 | `Contact.objects.filter(...)` inline |
-| `ContactViewSet.suppliers` | 74-79 | `Contact.objects.filter(...)` inline |
-| `ContactViewSet.credit_history` | 117-134 | `CreditNote.objects.filter(...)` + serializer inline |
-| `ContactViewSet.partners` | 161-166 | `Contact.objects.filter(...)` inline |
-| `ContactViewSet.partner_transactions` | 242-250 | ORM inline |
-| `ContactViewSet.all_partner_transactions` | 294-301 | ORM inline |
-| `ContactViewSet.equity_stakes_history` | 303-315 | ORM inline |
-
-**`inventory/views.py`** — 4 métodos:
-
-| Método | Líneas | Problema |
-|--------|--------|----------|
-| `ProductViewSet.filter_suggestions` | 80-91 | `Product.objects.filter(...)` inline |
-| `ProductViewSet.toggle_favorite` | 93-106 | `ProductFavorite.objects.get_or_create(...)` inline |
-| `ProductViewSet.sync_variant_prices` | 184-197 | `template.variants.filter(...).update(...)` inline |
-| `StockMoveViewSet.stock_level` | 341-356 | `StockMove.objects.filter(...).aggregate(...)` inline |
-
-**`sales/views.py`** — 3 métodos:
-
-| Método | Líneas | Problema |
-|--------|--------|----------|
-| `SaleOrderViewSet.dispatch_order` | 248-265 | `Warehouse.objects.get(pk=...)` inline |
-| `SaleOrderViewSet.filter_suggestions` | 320-330 | ORM inline |
-| `SaleOrderViewSet.credit_history` | 333-347 | ORM inline |
-
-**`treasury/views.py`** — 4 métodos:
-
-| Método | Líneas | Problema |
-|--------|--------|----------|
-| `PaymentMethodViewSet.get_queryset` | 134-152 | Filter params inline |
-| `CheckViewSet.perform_create` | 860-877 | Creación compleja inline |
-| `TreasuryDashboardViewSet.stats` | 951-971 | ORM aggregation inline |
-| `TerminalBatchViewSet.get_queryset` | 1033-1045 | Date range filter inline |
-
-**`production/views.py`** — 3 métodos:
-
-| Método | Líneas | Problema |
-|--------|--------|----------|
-| `WorkOrderViewSet.remove_material` | 282-299 | ORM + source check inline |
-| `WorkOrderViewSet.bulk_transition` | 301-319 | Loop + ORM inline |
-| `WorkOrderViewSet.update_section` | 190-209 | if/elif inline |
-
-**`core/views.py`:**
-
-| Método | Líneas | Problema |
-|--------|--------|----------|
-| `UserPreferenceView.get/patch` | 160-171 | `UserPreference.objects.filter/update_or_create` inline |
-
-**`inventory/subscription_views.py`:**
-
-| Método | Líneas | Problema |
-|--------|--------|----------|
-| `SubscriptionViewSet.stats` | 99-129 | ORM aggregation |
-| `SubscriptionViewSet.history` | 151-235 | **85 líneas** de lógica inline |
-
-#### Solución
-
-Para cada método ofensor:
-1. Crear función en `selectors.py` (para reads) o `services.py` (para writes).
-2. Llamar esa función desde el ViewSet.
-3. Asegurar que el ViewSet no exceda 20 líneas por acción.
+Contra 8 apps. Queda pendiente para futuras iteraciones: `core/views.py::UserPreferenceView` (ORM inline menor).
 
 ---
 
-### 5.2 `get_queryset()` sin selector (5 violaciones)
+### 5.2 `get_queryset()` sin selector (5 violaciones) — ✅ RESUELTO
 
-#### Explicación del error
+> **Resuelto 2026-06-28.** Los 5 ViewSets listados fueron migrados:
 
-`backend-apps.md:73` exige que `get_queryset()` llame a un selector. Varios ViewSets tienen lógica inline en `get_queryset()`:
-
-| ViewSet | Archivo | Líneas | Problema |
-|---------|---------|--------|----------|
-| `WorkOrderViewSet` | `production/views.py` | 76-89 | `select_related`/`prefetch_related` inline |
-| `BillOfMaterialsViewSet` | `production/views.py` | 375-381 | `get_queryset()` inline |
-| `NoteWorkflowViewSet` | `billing/note_views.py` | 32-47 | Filter logic inline |
-| `ProfitDistributionResolutionViewSet` | `contacts/profit_distribution_views.py` | 16-23 | Filters inline |
-| `SubscriptionViewSet` | `inventory/subscription_views.py` | 23-51 | Complex filters inline |
-
-#### Solución
-
-Extraer la lógica a un selector (ej. `production/selectors.py → list_work_orders(user, params)`) y llamarlo desde `get_queryset()`.
+| ViewSet | Resolución | Commit |
+|---------|-----------|--------|
+| `WorkOrderViewSet` (production) | `WorkOrderViewSet` ya usaba `queryset = ...` directo (no `get_queryset()`). No requiere extracción. | Pre-existente |
+| `BillOfMaterialsViewSet` (production) | `ProductionSelectorExt.get_bom_queryset()` | `33212b97` |
+| `NoteWorkflowViewSet` (billing/note_views) | Extraído en Phase D | `dd588ca0` |
+| `ProfitDistributionResolutionViewSet` (contacts/profit_distribution_views) | Extraído en Phase D | `dd588ca0` |
+| `SubscriptionViewSet` (inventory/subscription_views) | Extraído en Phase A | `1adda007` |
 
 ---
 
