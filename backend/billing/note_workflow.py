@@ -202,7 +202,7 @@ class NoteWorkflow(models.Model):
             product = Product.objects.filter(id=item.get("product_id")).first()
             if product and product.track_inventory:
                 # Exclude manufacturable without BOM or advanced
-                if product.product_type == "MANUFACTURABLE":
+                if product.strategy.can_have_bom:
                     if product.requires_advanced_manufacturing or not product.has_bom:
                         continue
                 return True

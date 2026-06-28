@@ -5,7 +5,7 @@ class ProductionSelectorExt:
         from inventory.services import UoMService
         c = obj.component
         if c.product_type == 'SERVICE': return 999999
-        if c.product_type == 'MANUFACTURABLE' and not c.requires_advanced_manufacturing: return c.get_manufacturable_quantity() or 0.0
+        if c.strategy.can_have_bom and not c.requires_advanced_manufacturing: return c.get_manufacturable_quantity() or 0.0
         w = obj.work_order.warehouse
         if not w: return 0.0
         

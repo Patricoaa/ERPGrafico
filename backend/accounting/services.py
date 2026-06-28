@@ -1165,7 +1165,7 @@ class AccountingMapper:
 
             # Inventory Account Credit
             # If it's a manufacturable product without direct inventory tracking, we credit the components used.
-            if not product.track_inventory and product.product_type == "MANUFACTURABLE":
+            if not product.track_inventory and product.strategy.requires_manufacturing_profile:
                 # Check if this product has a work order (advanced manufacturing)
                 # If so, the cost was already expensed during OT finalization
                 if line.sale_line.work_orders.exists():
@@ -1186,7 +1186,7 @@ class AccountingMapper:
             # Add to groupings (Debits)
             debits[cogs_account] = debits.get(cogs_account, Decimal("0.00")) + line.total_cost
 
-            if not product.track_inventory and product.product_type == "MANUFACTURABLE":
+            if not product.track_inventory and product.strategy.requires_manufacturing_profile:
                 # Continue with existing BOM explosion logic for express manufacturing
                 from inventory.services import UoMService
                 from production.models import BillOfMaterials
@@ -1427,10 +1427,7 @@ class AccountingMapper:
                         line_tax = (line.subtotal * (line.tax_rate / Decimal("100.0"))).quantize(
                             Decimal("1"), rounding="ROUND_HALF_UP"
                         )
-                        if hasattr(line, "product") and line.product.product_type in (
-                            "SERVICE",
-                            "SUBSCRIPTION",
-                        ):
+                        if hasattr(line, "product") and not line.product.strategy.capitalizes_purchase_tax:
                             service_tax += line_tax
                         else:
                             product_tax += line_tax
@@ -1500,35 +1497,11 @@ class AccountingMapper:
         items = []
         total_amount = Decimal("0.00")
         for line in receipt.lines.all():
-            # Choose account based on product type
-            if line.product.product_type == "CONSUMABLE":
-                target_account = (
-                    settings.default_consumable_account or line.product.get_expense_account
-                )
-                if not target_account:
-                    # Fallback to asset if no expense account found
-                    target_account = (
-                        line.product.get_asset_account
-                        if not callable(line.product.get_asset_account)
-                        else line.product.get_asset_account()
-                    )
-            elif line.product.product_type in ["SERVICE", "SUBSCRIPTION"]:
-                target_account = (
-                    line.product.get_expense_account or settings.default_service_expense_account
-                )
-                if not target_account:
-                    # Fallback to asset/inventory if no expense found
-                    target_account = (
-                        line.product.get_asset_account
-                        if not callable(line.product.get_asset_account)
-                        else line.product.get_asset_account()
-                    )
+            # Choose account based on product type (via ProductTypeStrategy)
+            if not line.product.strategy.tracks_inventory:
+                target_account = line.product.get_expense_account
             else:
-                target_account = (
-                    line.product.get_asset_account
-                    if not callable(line.product.get_asset_account)
-                    else line.product.get_asset_account()
-                )
+                target_account = line.product.get_asset_account
 
             if not target_account:
                 continue
@@ -1537,10 +1510,11 @@ class AccountingMapper:
             total_amount += line_total
 
             label = f"Ingreso Inventario: {line.product.code}"
-            if line.product.product_type == "CONSUMABLE":
-                label = f"Gasto Consumible: {line.product.code}"
-            elif line.product.product_type == "SERVICE":
-                label = f"Gasto Servicio: {line.product.code}"
+            if not line.product.strategy.tracks_inventory:
+                if not line.product.strategy.supports_returns:
+                    label = f"Gasto Servicio: {line.product.code}"
+                else:
+                    label = f"Gasto Consumible: {line.product.code}"
 
             items.append(
                 {

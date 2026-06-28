@@ -947,95 +947,18 @@ class Product(models.Model):
         # Express products and variants without an active BOM need validation
         return not self.has_active_bom()
 
-    # Helpers to get effective accounts (Category > Type-based)
+    # Helpers to get effective accounts (delegados a ProductTypeStrategy)
     @property
     def get_asset_account(self):
-        """
-        Returns the asset account for this product.
-        Priority:
-        1. Category-specific account (allows customization)
-        2. Type-specific account from settings (storable/manufacturable)
-        """
-        from accounting.models import AccountingSettings
-
-        # 1. Category override (highest priority)
-        if self.category and self.category.asset_account:
-            return self.category.asset_account
-
-        # 2. Type-based account from settings
-        settings = AccountingSettings.get_solo()
-        if not settings:
-            return None
-
-        if self.product_type == self.Type.STORABLE:
-            return settings.storable_inventory_account
-
-        elif self.product_type == self.Type.MANUFACTURABLE:
-            return settings.manufacturable_inventory_account
-
-        elif self.product_type == self.Type.CONSUMABLE:
-            return settings.default_consumable_account
-
-        elif self.product_type in [self.Type.SERVICE, self.Type.SUBSCRIPTION]:
-            return None
-
-        return None
+        return self.strategy.get_asset_account(self)
 
     @property
     def get_income_account(self):
-        """
-        Returns the income account for this product.
-        Priority:
-        1. Category-specific account
-        2. Type-specific account from settings
-        3. General revenue account (fallback)
-        """
-        if self.category and self.category.income_account:
-            return self.category.income_account
-
-        from accounting.models import AccountingSettings
-
-        settings = AccountingSettings.get_solo()
-        if not settings:
-            return None
-
-        if self.product_type == self.Type.SERVICE:
-            return settings.default_service_revenue_account or settings.default_revenue_account
-        elif self.product_type == self.Type.SUBSCRIPTION:
-            return settings.default_subscription_revenue_account or settings.default_revenue_account
-
-        return settings.default_revenue_account
+        return self.strategy.get_income_account(self)
 
     @property
     def get_expense_account(self):
-        """
-        Returns the expense/cost account for this product.
-        Priority:
-        1. Category-specific account
-        2. Type-specific account from settings
-        3. General expense account (fallback)
-        """
-        if self.category and self.category.expense_account:
-            return self.category.expense_account
-
-        from accounting.models import AccountingSettings
-
-        settings = AccountingSettings.get_solo()
-        if not settings:
-            return None
-
-        if self.product_type == self.Type.SERVICE:
-            return settings.default_service_expense_account or settings.default_expense_account
-        elif self.product_type == self.Type.SUBSCRIPTION:
-            return settings.default_subscription_expense_account or settings.default_expense_account
-        elif self.product_type == self.Type.CONSUMABLE:
-            return settings.default_consumable_account or settings.default_expense_account
-        elif self.product_type == self.Type.MANUFACTURABLE:
-            return settings.manufactured_cogs_account or settings.default_expense_account
-        elif self.product_type == self.Type.STORABLE:
-            return settings.merchandise_cogs_account or settings.default_expense_account
-
-        return settings.default_expense_account
+        return self.strategy.get_expense_account(self)
 
     def get_allowed_sale_uoms(self):
         """
@@ -1082,6 +1005,13 @@ class Product(models.Model):
 
         return total_bom_cost
 
+    @property
+    def strategy(self):
+        """Retorna la estrategia de comportamiento para el tipo de producto."""
+        from inventory.strategies import get_product_type_strategy
+
+        return get_product_type_strategy(self.product_type)
+
     def get_manufacturable_quantity(self):
         """
         Calculate how many units of this product can be manufactured
@@ -1089,7 +1019,7 @@ class Product(models.Model):
         Returns None if product is not MANUFACTURABLE or has no active BOM.
         Returns float for the maximum manufacturable quantity.
         """
-        if self.product_type != self.Type.MANUFACTURABLE:
+        if not self.strategy.can_have_bom:
             return None
 
         # Get active BOM
