@@ -770,6 +770,15 @@ class POSSessionViewSet(viewsets.ModelViewSet):
     pagination_class = StandardResultsSetPagination
     """ViewSet for POS Session Management (Apertura/Cierre de Caja)"""
 
+    def get_permissions(self):
+        from treasury.api.permissions import IsPOSSessionActive
+
+        permissions = [IsAuthenticated()]
+        # current() y open_session() no requieren sesión activa
+        if self.action not in ("current", "open_session"):
+            permissions.append(IsPOSSessionActive())
+        return permissions
+
     from django.db.models import Prefetch
     queryset = POSSession.objects.all().select_related("treasury_account", "user", "closed_by", "terminal").prefetch_related(
         Prefetch("movements", queryset=TreasuryMovement.objects.select_related(
