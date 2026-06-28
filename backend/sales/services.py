@@ -199,7 +199,7 @@ class SalesService:
 
                 # Case 1: Advanced Manufacturing (Needs Finished OT)
                 if (
-                    product.product_type == "MANUFACTURABLE"
+                    product.strategy.requires_manufacturing_profile
                     and product.requires_advanced_manufacturing
                 ):
                     # Check if all associated OTs are finished (unless auto-finalize/express)
@@ -218,7 +218,7 @@ class SalesService:
 
                 # Case 2: Simple/Express Manufacturing (Needs BOM components stock)
                 elif (
-                    product.product_type == "MANUFACTURABLE"
+                    product.strategy.requires_manufacturing_profile
                     and not product.requires_advanced_manufacturing
                 ):
                     auto_finalize = (
@@ -234,7 +234,7 @@ class SalesService:
                             )
 
                 # Case 3: Storable Product (Needs physical stock)
-                elif product.product_type == "STORABLE" and product.track_inventory:
+                elif product.strategy.tracks_inventory:
                     # Logic: We must have enough stock, but we ignore what THIS order has already reserved
                     # because the reservation already lowered qty_available.
                     available_for_this_order = product.qty_available + sale_line.quantity_pending
@@ -348,7 +348,7 @@ class SalesService:
                 continue
 
             # Check Availability
-            if product.product_type == "STORABLE" and product.track_inventory:
+            if product.strategy.tracks_inventory:
                 # Simplified check: assumes base UoM for now
                 if product.qty_available < quantity:
                     raise ValidationError(f"Stock insuficiente para {product.name} (Nota Débito).")
@@ -404,7 +404,7 @@ class SalesService:
             if product:
                 # Case 1: Advanced Manufacturing (Needs Finished OT)
                 if (
-                    product.product_type == "MANUFACTURABLE"
+                    product.strategy.requires_manufacturing_profile
                     and product.requires_advanced_manufacturing
                 ):
                     auto_finalize = (
@@ -422,7 +422,7 @@ class SalesService:
 
                 # Case 2: Simple/Express Manufacturing (Needs BOM components stock)
                 elif (
-                    product.product_type == "MANUFACTURABLE"
+                    product.strategy.requires_manufacturing_profile
                     and not product.requires_advanced_manufacturing
                 ):
                     auto_finalize = (
@@ -437,7 +437,7 @@ class SalesService:
                             )
 
                 # Case 3: Storable Product (Needs physical stock)
-                elif product.product_type == "STORABLE" and product.track_inventory:
+                elif product.strategy.tracks_inventory:
                     # Logic: qty_available already reflects the reservation of the whole order.
                     # We add back the pending quantity of THIS line to see if we can dispatch it.
                     available_for_this_order = product.qty_available + sale_line.quantity_pending
@@ -498,7 +498,7 @@ class SalesService:
             raise ValidationError(f"La línea '{sale_line.description}' no tiene producto asociado.")
 
         # Determine unit cost
-        if product.product_type == "MANUFACTURABLE":
+        if product.strategy.can_have_bom:
             unit_cost = product.get_bom_cost()
         else:
             unit_cost = product.cost_price
@@ -545,7 +545,7 @@ class SalesService:
             product = line.product
 
             # Skip if advanced manufacturing (OT was created at sale confirmation)
-            if product and product.product_type == Product.Type.MANUFACTURABLE:
+            if product and product.strategy.requires_manufacturing_profile:
                 if product.requires_advanced_manufacturing:
                     continue
 
@@ -605,7 +605,7 @@ class SalesService:
 
             # PATH B: Product DOES NOT track inventory (Service or Non-tracked Manufactured)
             else:
-                if product.product_type == "MANUFACTURABLE":
+                if product.strategy.can_have_bom:
                     # SAFEGUARD: If this sale line already has a Work Order,
                     # do NOT explode BOM again here (production already consumed materials).
                     if line.sale_line.work_orders.exists():
@@ -993,7 +993,7 @@ class SalesService:
                 quantity = Decimal(str(item["quantity"]))
 
                 # Rule: No returns for services
-                if product.product_type == Product.Type.SERVICE:
+                if not product.strategy.supports_returns:
                     raise ValidationError(
                         f"No se pueden registrar devoluciones físicas para servicios ({product.name})."
                     )
@@ -1001,7 +1001,7 @@ class SalesService:
                 # Rule: Debit Note restricted for manufacturable non-storable products
                 if note_type == Invoice.DTEType.NOTA_DEBITO:
                     if (
-                        product.product_type == Product.Type.MANUFACTURABLE
+                        product.strategy.requires_manufacturing_profile
                         and not product.track_inventory
                     ):
                         raise ValidationError(
@@ -1314,11 +1314,10 @@ class SaleOrderService(DocumentService):
 
             # 3. Trigger Work Order creation ONLY for ADVANCED manufacturable products
             # Express products (mfg_auto_finalize=True) will have OTs created at dispatch time
-            from inventory.models import Product
             from production.services import WorkOrderService
 
             for i, line in enumerate(order.lines.all()):
-                if line.product and line.product.product_type == Product.Type.MANUFACTURABLE:
+                if line.product and line.product.strategy.requires_manufacturing_profile:
                     # IMPORTANT: Only create OT if requires advanced manufacturing
                     # Express products: OT will be created during delivery confirmation
                     if line.product.requires_advanced_manufacturing:

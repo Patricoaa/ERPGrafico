@@ -433,11 +433,8 @@ class DraftCartService:
                             f"El producto '{product.name}' no tiene habilitado el control de stock."
                         )
 
-                    # 2. Tipo Almacenable o Fabricable Simple
-                    if product.product_type not in [
-                        Product.Type.STORABLE,
-                        Product.Type.MANUFACTURABLE,
-                    ]:
+                    # 2. Productos con gestión de stock (Almacenable o Fabricable)
+                    if not product.strategy.allows_stock_moves:
                         raise ValueError(
                             f"El producto '{product.name}' no puede ser retirado (solo Almacenables o Fabricables)."
                         )

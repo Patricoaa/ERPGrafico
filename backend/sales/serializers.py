@@ -85,7 +85,7 @@ class SaleLineSerializer(serializers.ModelSerializer):
         return obj.product.track_inventory if obj.product else False
 
     def get_manufacturable_quantity(self, obj):
-        if obj.product and obj.product.product_type == "MANUFACTURABLE":
+        if obj.product and obj.product.strategy.can_have_bom:
             qty = obj.product.get_manufacturable_quantity()
             return float(qty) if qty is not None else None
         return None
@@ -118,7 +118,7 @@ class SaleLineSerializer(serializers.ModelSerializer):
 
     def get_is_production_finished(self, obj):
         # If not manufacturable, we consider "production" as N/A (True for dispatch purposes)
-        if not obj.product or obj.product.product_type != "MANUFACTURABLE":
+        if not obj.product or not obj.product.strategy.requires_manufacturing_profile:
             return True
 
         # Use prefetched work_orders

@@ -619,7 +619,7 @@ class BillingService:
             for line in order.lines.all():
                 # Skip services/subscriptions — IVA on non-inventory products
                 # goes to expense, not capitalized into inventory
-                if line.product.product_type in ("SERVICE", "SUBSCRIPTION"):
+                if not line.product.strategy.capitalizes_purchase_tax:
                     continue
                 line_tax = (line.subtotal * (line.tax_rate / Decimal("100.0"))).quantize(
                     Decimal("1"), rounding="ROUND_HALF_UP"

@@ -276,20 +276,8 @@ class NoteCheckoutService:
                         f"({sale_line.quantity_delivered}) para {product.name}"
                     )
 
-            # Check if creates stock movements OR is manufacturable (even if no direct move, we want to record the intent)
-            creates_stock_move = False
-            if product.track_inventory:
-                # Standard inventory items
-                if product.product_type != Product.Type.MANUFACTURABLE:
-                    creates_stock_move = True
-                else:
-                    # Manufacturable items with inventory tracking
-                    creates_stock_move = True
-
-            # Special case: Non-tracked manufacturable products should STILL go through logistics
-            # to record the manual return or the intention of delivery.
-            if product.product_type == Product.Type.MANUFACTURABLE:
-                creates_stock_move = True
+            # Stock movement needed: tracked inventory OR manufacturable (non-tracked needs BOM explosion)
+            creates_stock_move = bool(product.track_inventory) or product.strategy.requires_manufacturing_profile
 
             if creates_stock_move:
                 has_stockable = True
@@ -670,7 +658,7 @@ class NoteCheckoutService:
                 continue
 
             product = Product.objects.get(id=product_id)
-            if product.product_type != Product.Type.MANUFACTURABLE:
+            if not product.strategy.requires_manufacturing_profile:
                 continue
 
             # Only for ADVANCED manufacturing (Express are created at dispatch)
@@ -1085,9 +1073,7 @@ class NoteCheckoutService:
                     raise ValidationError(f"Cantidad excede lo entregado para {product.name}")
 
             # Determine stockable / logistics-required
-            creates_stock_move = False
-            if product.track_inventory or product.product_type == Product.Type.MANUFACTURABLE:
-                creates_stock_move = True
+            creates_stock_move = bool(product.track_inventory) or product.strategy.requires_manufacturing_profile
 
             if creates_stock_move:
                 has_stockable = True

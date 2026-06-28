@@ -89,7 +89,7 @@ class WorkOrderService:
           - require_manufacturable=True and product is not MANUFACTURABLE.
           - product.requires_bom_validation is True (Express product missing BOM).
         """
-        if require_manufacturable and product.product_type != Product.Type.MANUFACTURABLE:
+        if require_manufacturable and not product.strategy.requires_manufacturing_profile:
             raise ValidationError("El producto debe ser fabricable.")
 
         if product.requires_bom_validation:
@@ -108,7 +108,7 @@ class WorkOrderService:
         Automatically assigns materials if an active BOM exists.
         """
         product = sale_line.product
-        if not product or product.product_type != Product.Type.MANUFACTURABLE:
+        if not product or not product.strategy.requires_manufacturing_profile:
             return None
 
         # TASK-209: Centralised validation
@@ -311,11 +311,11 @@ class WorkOrderService:
         auto_finalize = (
             product.mfg_profile.mfg_auto_finalize
             if product
-            and product.product_type == Product.Type.MANUFACTURABLE
+            and product.strategy.requires_manufacturing_profile
             and product.mfg_profile
             else False
         )
-        if not (product and product.product_type == Product.Type.MANUFACTURABLE and auto_finalize):
+        if not (product and product.strategy.requires_manufacturing_profile and auto_finalize):
             return None
 
         # TASK-209: Centralised validation
@@ -1053,7 +1053,7 @@ class WorkOrderService:
             )
 
         # 3. Generate Accounting Entry for Production
-        if product and product.product_type == Product.Type.MANUFACTURABLE:
+        if product and product.strategy.requires_manufacturing_profile:
             if total_material_cost > 0:
                 from accounting.models import AccountingSettings, JournalEntry
                 from accounting.services import JournalEntryService

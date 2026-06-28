@@ -1047,7 +1047,7 @@ class ProductService:
                                         document_type=line.document_type,
                                     )
                                 variant_product.has_bom = True
-                                if variant_product.product_type != Product.Type.MANUFACTURABLE:
+                                if not variant_product.strategy.can_have_bom:
                                     variant_product.product_type = Product.Type.MANUFACTURABLE
 
                         except (Product.DoesNotExist, ValueError):
@@ -1282,15 +1282,7 @@ class ProductService:
                 "missing_components": [],
             }
 
-            if product.product_type == Product.Type.STORABLE:
-                available_qty = product.qty_available
-                line_detail["available_qty"] = float(available_qty)
-                line_detail["is_available"] = requested_qty <= available_qty
-
-                if not line_detail["is_available"]:
-                    all_available = False
-
-            elif product.product_type == Product.Type.MANUFACTURABLE:
+            if product.strategy.can_have_bom:
                 if product.has_bom:
                     manufacturable_qty = product.manufacturable_quantity or 0
                     line_detail["manufacturable_qty"] = float(manufacturable_qty)
@@ -1319,9 +1311,14 @@ class ProductService:
                                     )
                         except BillOfMaterials.DoesNotExist:
                             pass
-                else:
-                    line_detail["is_available"] = True
-                    line_detail["manufacturable_qty"] = float("inf")
+
+            elif product.strategy.tracks_inventory:
+                available_qty = product.qty_available
+                line_detail["available_qty"] = float(available_qty)
+                line_detail["is_available"] = requested_qty <= available_qty
+
+                if not line_detail["is_available"]:
+                    all_available = False
 
             else:
                 line_detail["is_available"] = True
