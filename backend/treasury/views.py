@@ -9,6 +9,7 @@ from rest_framework import filters as drf_filters
 from rest_framework import serializers as drf_serializers
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
 from accounting.models import Account
@@ -765,7 +766,6 @@ class ReconciliationSettingsViewSet(viewsets.ModelViewSet):
 
 
 class POSSessionViewSet(viewsets.ModelViewSet):
-    from rest_framework.permissions import IsAuthenticated
     permission_classes = [IsAuthenticated]
     pagination_class = StandardResultsSetPagination
     """ViewSet for POS Session Management (Apertura/Cierre de Caja)"""
