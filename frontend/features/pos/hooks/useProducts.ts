@@ -2,7 +2,7 @@
 // Manages product data, search, filtering, and fetching
 
 import { useState, useEffect, useMemo, useCallback } from 'react'
-import { usePOS } from '../contexts/POSContext'
+import { usePOS } from '../contexts/POSProvider'
 import { posApi } from '../api/posApi'
 import type { Product, StockLimits, Category } from '@/types/pos'
 import { toast } from 'sonner'

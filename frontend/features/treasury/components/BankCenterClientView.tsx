@@ -36,13 +36,13 @@ type BankFormValues = z.infer<typeof bankSchema>
 
 // --- Bank Management ---
 
-interface BankManagementProps {
+interface BankCenterClientViewProps {
     externalOpen?: boolean
     onOpenChange?: (open: boolean) => void
     createAction?: React.ReactNode
 }
 
-export function BankManagement({ externalOpen, onOpenChange, createAction }: BankManagementProps) {
+export function BankCenterClientView({ externalOpen, onOpenChange, createAction }: BankCenterClientViewProps) {
     const { banks, refetch, archiveBank, restoreBank } = useBanks()
     const { overviews } = useAllBanksOverview()
     const { filterFn: filterBanks, isFiltered: isTextFiltered, clearAll: clearText } = useClientSearch<Bank>(bankSearchDef)

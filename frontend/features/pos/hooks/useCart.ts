@@ -2,7 +2,7 @@
 // Manages cart operations with stock validation and pricing
 
 import { useCallback } from 'react'
-import { usePOS } from '../contexts/POSContext'
+import { usePOS } from '../contexts/POSProvider'
 import type { Product, CartItem } from '@/types/pos'
 import { toast } from 'sonner'
 import * as CartUtils from '@/features/pos/utils/cart-utils'

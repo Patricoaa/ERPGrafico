@@ -43,7 +43,7 @@ interface TerminalBatchFormProps {
     onFooterStateChange?: (state: { isValid: boolean; isCreating: boolean; providerId: string; depositMethodId: string }) => void
 }
 
-export function TerminalBatchForm({ onSuccess, onCancel, onFooterStateChange }: TerminalBatchFormProps) {
+export function TerminalBatchSelectionModal({ onSuccess, onCancel, onFooterStateChange }: TerminalBatchFormProps) {
     const { providers, isLoading: isProvidersLoading } = useTerminalProviders()
     const { methods, isLoading: isMethodsLoading } = usePaymentMethods()
     const { createBatch, isCreating } = useTerminalBatchMutations()
@@ -481,4 +481,4 @@ function SaleSelectionModal({ open, onOpenChange, providerId, dateRange, onConfi
     )
 }
 
-export default TerminalBatchForm
+export default TerminalBatchSelectionModal

@@ -17,11 +17,11 @@ import { absenceSearchDef } from "../searchDef"
 import { useSelectedEntity } from "@/hooks/useSelectedEntity"
 import { useEntityRouteActions } from "@/hooks/useEntityRouteActions"
 
-interface AbsenceManagementViewProps {
+interface AbsenceClientViewProps {
     initialAbsences?: Absence[]
 }
 
-export function AbsenceManagementView({ initialAbsences }: AbsenceManagementViewProps) {
+export function AbsenceClientView({ initialAbsences }: AbsenceClientViewProps) {
     const createAction = <ToolbarCreateButton label="Nueva Inasistencia" href="/hr/absences?modal=new" />
     const router = useRouter()
     const pathname = usePathname()

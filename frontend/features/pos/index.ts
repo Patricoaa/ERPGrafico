@@ -1,3 +1,3 @@
 export * from './components'
 export * from './segmentationDef'
-export * from './contexts/POSContext'
+export * from './contexts/POSProvider'
