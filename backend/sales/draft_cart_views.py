@@ -4,6 +4,7 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 
 from core.api.permissions import StandardizedModelPermissions
+from treasury.api.permissions import IsPOSSessionActive
 
 from .draft_cart_serializers import DraftCartSerializer
 from .draft_cart_service import DraftCartService
@@ -19,7 +20,7 @@ class DraftCartViewSet(viewsets.ModelViewSet):
     """
 
     serializer_class = DraftCartSerializer
-    permission_classes = [StandardizedModelPermissions]
+    permission_classes = [StandardizedModelPermissions, IsPOSSessionActive]
 
     def retrieve(self, request, pk=None):
         """
