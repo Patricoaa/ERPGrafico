@@ -86,7 +86,6 @@ class WorkflowService:
         return task
 
     @staticmethod
-    @transaction.atomic
     def handle_task_update(task, old_status):
         if old_status != task.status and task.status in [Task.Status.COMPLETED, Task.Status.REJECTED]:
             if task.status == Task.Status.COMPLETED and task.category == Task.Category.APPROVAL and task.created_by and task.task_type == "CREDIT_POS_REQUEST":
