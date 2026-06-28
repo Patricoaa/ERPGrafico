@@ -114,7 +114,7 @@ export function useDrafts(options: UseDraftsOptions = {}) {
     })
 
     const deleteDraftMutation = useMutation({
-        mutationFn: (draftId: number) => posApi.deleteDraft(draftId),
+        mutationFn: ({ draftId, posSessionId }: { draftId: number; posSessionId: number }) => posApi.deleteDraft(draftId, { pos_session_id: posSessionId }),
         onSuccess: (data, variables) => {
             markLocalMutation()
             // Invalidate draft lists and details
@@ -275,7 +275,7 @@ export function useDrafts(options: UseDraftsOptions = {}) {
     const deleteDraft = useCallback(async (draftId: number) => {
         if (!currentSession?.id) return
         try {
-            await deleteDraftMutation.mutateAsync(draftId)
+            await deleteDraftMutation.mutateAsync({ draftId, posSessionId: currentSession.id })
             toast.success("Borrador eliminado")
             await fetchDrafts()
             options.forceSync?.()

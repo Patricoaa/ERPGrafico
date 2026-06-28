@@ -172,7 +172,7 @@ export function DraftCartsClientView({
 
         setDeletingId(draftId)
         try {
-            await posApi.deleteDraft(draftId)
+            await posApi.deleteDraft(draftId, { pos_session_id: posSessionId })
             toast.success(`Borrador "${draftName}" eliminado`)
             await fetchDrafts()
             onDraftDeleted?.()
