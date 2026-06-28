@@ -308,14 +308,14 @@ export function Cart({
                                 {isLastStep && (
                                     <Button
                                         className={cn(
-                                            "flex-1 font-black uppercase tracking-tight bg-warning text-warning-foreground hover:bg-warning/90 shadow-card",
+                                            "flex-1 font-black uppercase tracking-tight bg-info text-info-foreground hover:bg-info/90 shadow-card",
                                             isTouchPOS ? "h-20 text-2xl" : "h-12 text-lg"
                                         )}
                                         size="lg"
                                         onClick={onSuspend}
                                         disabled={checkoutLoading}
                                     >
-                                        Pagar en otro terminal
+                                        Pagar en otro POS
                                     </Button>
                                 )}
                             </div>
