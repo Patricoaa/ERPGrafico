@@ -35,15 +35,16 @@ doc: architecture-compliance-audit-2026-06
 | 6. ProductTypeStrategy | 2026-06-27 | Migradas ~37 cadenas if/elif a ProductTypeStrategy en 6 fases (A-E). 32 restantes son casos deliberadamente mantenidos (ORM filters, validaciones cruzadas, legacy controlado). | (múltiples) |
 | 8.1 `@transaction.atomic` faltante | 2026-06-28 | Agregado `@transaction.atomic` a `SalesService.create_sale_order_from_pos`. Creados 7 tests unitarios en `sales/tests/test_create_order_from_pos.py` cubriendo rollback en 3 tipos de excepción, happy path, sesión inválida, PIN requerido y PIN bypass. | `ac26a91d` |
 | 2.1 Cross-feature internal imports (~86 violaciones) + 10.1 API barrels | 2026-06-28 | Migrados ~95 archivos a barrel imports en 24 features. Creados barrels `api/index.ts` en 20 features. Cerrados agujeros ESLint `no-restricted-imports`. Promovido `PricingUtils` a `@/lib/pricing-utils`. Script `validate-barrel-imports.sh` para CI. | (múltiples) |
+| 7.1 Cross-app serializer imports top-level | 2026-06-28 | Eliminados 5 imports top-level en 3 serializers (billing, sales, purchasing). `TreasuryMovementSerializer` en billing era dead code. Los restantes migrados a `SerializerMethodField` + lazy import inside method. Solo `core` (infraestructura) mantiene imports top-level. | `3dd68676` |
 
 | Severidad | Count | Área |
 |-----------|-------|------|
 | 🔴 CRÍTICO | ~0 | Backend — views con lógica inline, product_type chains, transaction safety ✅ |
 | 🟡 ALTO | ~0 | Frontend — FSD boundaries, naming, barrels ✅ |
-| 🟡 ALTO | ~70 | Backend — cross-app coupling, serializers |
+| 🟡 ALTO | ~0 | Backend — cross-app coupling, serializers ✅ |
 | 🟢 MEDIO | 8 | Gaps de contrato (no cubiertos por documentación actual) — 2 resueltos (10.1 API barrels, 10.3 PricingUtils) |
 
-> ✅ **Resuelto:** Frontend hooks/API any types (~250 violaciones) — eliminado en Fase 1-6. `staleTime` y `markLocalMutation` también resueltos. **Section 5.1 + 5.2 + 6** — views inline business logic y product_type chains migrados a services/selectors/strategy. **Section 8.1** — `@transaction.atomic` agregado a `create_sale_order_from_pos`. **Section 2.1** — cross-feature internal imports (~86 violaciones) migrados a barrel imports en 24 features. `PricingUtils` promovido a `@/lib/pricing-utils`.
+> ✅ **Resuelto:** Frontend hooks/API any types (~250 violaciones) — eliminado en Fase 1-6. `staleTime` y `markLocalMutation` también resueltos. **Section 5.1 + 5.2 + 6** — views inline business logic y product_type chains migrados a services/selectors/strategy. **Section 8.1** — `@transaction.atomic` agregado a `create_sale_order_from_pos`. **Section 2.1** — cross-feature internal imports (~86 violaciones) migrados a barrel imports en 24 features. `PricingUtils` promovido a `@/lib/pricing-utils`. **Section 7.1** — cross-app serializer imports top-level (~9 violaciones) migrados a lazy imports inside method.
 
 ---
 
@@ -884,11 +885,13 @@ Se migraron ~37 de 69 ocurrencias a `ProductTypeStrategy`. Las 32 restantes son 
 
 Contrato de referencia: `docs/10-architecture/backend-apps.md`.
 
-### 7.1 Cross-app serializer imports top-level (9 violaciones)
+### 7.1 Cross-app serializer imports top-level (9 violaciones) — ✅ RESUELTO
 
 #### Explicación del error
 
 `backend-apps.md:104-139` establece que un serializer de app A importando un serializer de app B es un **code smell** que señala falta de adapter layer o workflow action. Las importaciones top-level son las peores porque crean acoplamiento en tiempo de importación y riesgos de circular imports.
+
+> **Resuelto 2026-06-28.** Eliminados 5 imports top-level en 3 archivos (`billing/serializers.py`, `sales/serializers.py`, `purchasing/serializers.py`). `TreasuryMovementSerializer` en `billing/serializers.py:5` era dead code — eliminado sin reemplazo (el uso real ya era lazy import via `billing/selectors.py`). Los 3 campos class-level que usaban cross-app serializers (`sale_order_detail` en `InvoiceSerializer`, `serialized_payments` en `SaleOrderSerializer` y `PurchaseOrderSerializer`) convertidos a `SerializerMethodField` + lazy import inside method. Usos programáticos (`WorkOrderSerializer` en `sales/serializers.py`) migrados a lazy import directo en cada método. Único import top-level restante: `core.serializers.AttachmentSerializer` (core es infraestructura, no dominio). Commit: `3dd68676`.
 
 #### Archivos afectados
 
@@ -916,11 +919,13 @@ Contrato de referencia: `docs/10-architecture/backend-apps.md`.
 | `production/serializers.py` | 374 | `from workflow.serializers import TaskSerializer` | Adapter |
 | `billing/serializers.py` | 184 | `from production.serializers import WorkOrderSerializer` | Adapter |
 
-#### Solución
+#### Solución aplicada
 
-1. Los imports de `core.serializers.AttachmentSerializer` y `core.serializers.UserSerializer` son los menos problemáticos (core es infraestructura, no dominio).
-2. Para `SaleOrderSerializer`, `TreasuryMovementSerializer`, `WorkOrderSerializer`: migrar a lazy imports dentro del método o crear adapter functions.
-3. Priorizar: `billing/serializers.py` (3 imports top-level) y `sales/serializers.py` (2 imports top-level) son los peores.
+1. ✅ `billing/serializers.py`: eliminado import muerto `TreasuryMovementSerializer` (línea 5). `SaleOrderSerializer` migrado a `SerializerMethodField` + lazy import.
+2. ✅ `sales/serializers.py`: eliminados imports de `WorkOrderSerializer` y `TreasuryMovementSerializer`. Ambos migrados a lazy imports dentro de métodos.
+3. ✅ `purchasing/serializers.py`: eliminado import de `TreasuryMovementSerializer`. Migrado a `SerializerMethodField` + lazy import.
+4. ✅ Los imports de `core.serializers` se mantienen (core es infraestructura, no dominio).
+5. ⏳ Los lazy imports dentro de serializers (treasury→contacts, treasury→accounting, inventory→production, production→workflow, billing→production) permanecen como lazy imports. Son el patrón recomendado por `backend-apps.md:110` para read-only access. No requieren acción correctiva inmediata pero podrían beneficiarse de adapters en una iteración futura.
 
 ---
 
@@ -1064,7 +1069,8 @@ Esta sección documenta vacíos en la documentación del proyecto que permiten a
 | Agregar `staleTime` a ~50 queries | ~1 día | Reduce requests innecesarios >50% | ✅ Resuelto |
 | Eliminar `mutateAsync` wrappers (23 casos) | ~0.5 día | Código más limpio | Parcial (settings hooks corregidos junto con markLocalMutation) |
 | Renombrar 4 hooks con retorno genérico | ~1 día | Consistencia de API | Pendiente |
-| Views > 20 líneas + ORM inline → services | ~3 días | Bloqueante para mantenibilidad | Pendiente |
+| Views > 20 líneas + ORM inline → services | ~3 días | Bloqueante para mantenibilidad | ✅ Resuelto (Fases A-G) |
+| Cross-app serializer imports top-level | ~1 día | Acoplamiento cross-app | ✅ Resuelto (`3dd68676`) |
 | Renombrar naming mismatches (7 archivos) | ~0.5 día | Consistencia | Pendiente |
 
 ### Fase 2 — Alto impacto, esfuerzo alto
@@ -1110,7 +1116,8 @@ Esta sección documenta vacíos en la documentación del proyecto que permiten a
 | Fase 4 | ~6 | Preventivo (automático) | ⏳ Pendiente (1/4 items) |
 | **Subtotal auditoría original** | **~29 días** | | |
 | 8.1 `@transaction.atomic` faltante | ~0.25 día | Correctivo (alto riesgo) | ✅ Resuelto (`ac26a91d`) |
-| **Total acumulado** | **~29.25 días** | | |
+| 7.1 Cross-app serializer imports top-level | ~0.5 día | Correctivo (riesgo medio) | ✅ Resuelto (`3dd68676`) |
+| **Total acumulado** | **~29.75 días** | | |
 
 ---
 
