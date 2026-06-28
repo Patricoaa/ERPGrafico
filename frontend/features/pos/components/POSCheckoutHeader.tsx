@@ -39,7 +39,7 @@ export function POSCheckoutHeader() {
 
     const currentStep = posMode === 'SHOPPING' ? 1 : (wizardState?.step ?? 1) + 1
     const hasManufacturing = items.some(line =>
-        line.product_type === 'MANUFACTURABLE' && line.requires_advanced_manufacturing
+        line.product_type === 'MANUFACTURABLE'
     )
     // Define steps — mirrors SalesCheckoutWizardContent steps + leading 'Carrito'
     const steps = [

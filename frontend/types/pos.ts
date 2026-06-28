@@ -25,6 +25,9 @@ export interface Product {
     image?: string | null
     requires_advanced_manufacturing?: boolean
     mfg_auto_finalize?: boolean
+    mfg_enable_prepress?: boolean
+    mfg_enable_press?: boolean
+    mfg_enable_postpress?: boolean
     is_dynamic_pricing?: boolean
     is_favorite?: boolean
     has_bom?: boolean
