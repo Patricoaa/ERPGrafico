@@ -2,7 +2,6 @@ from rest_framework import serializers
 
 from purchasing.selectors import PurchaseOrderSelector
 from purchasing.services import PurchasingService
-from treasury.serializers import TreasuryMovementSerializer
 
 from .models import (
     PurchaseLine,
@@ -74,7 +73,7 @@ class PurchaseOrderSerializer(serializers.ModelSerializer):
     pending_amount = serializers.SerializerMethodField()
     is_invoiced = serializers.SerializerMethodField()
     invoice_details = serializers.SerializerMethodField()
-    serialized_payments = TreasuryMovementSerializer(source="payments", many=True, read_only=True)
+    serialized_payments = serializers.SerializerMethodField()
     payment_method_ref_name = serializers.CharField(
         source="payment_method_ref.name", read_only=True, allow_null=True
     )
@@ -158,6 +157,10 @@ class PurchaseOrderSerializer(serializers.ModelSerializer):
             base_total = obj.total
 
         return base_total - self.get_total_paid(obj)
+
+    def get_serialized_payments(self, obj):
+        from treasury.serializers import TreasuryMovementSerializer
+        return TreasuryMovementSerializer(obj.payments.all(), many=True).data
 
     def get_is_invoiced(self, obj):
         from billing.models import Invoice
