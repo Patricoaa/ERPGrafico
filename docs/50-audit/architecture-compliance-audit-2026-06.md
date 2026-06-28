@@ -28,7 +28,7 @@ doc: architecture-compliance-audit-2026-06
 
 | Issue | Date | Resolution | Commits |
 |-------|------|-----------|---------|
-| 1.1 `markLocalMutation` ausente | 2026-06-26 | Agregado a ~160 mutations en 4 fases (pos→ALLOWLIST→resto→ESLint rule preventiva). Solo auth/ excluido (no entidad de negocio). 55 archivos con markLocalMutation. | `8b10ac98`, `d947d633`, `48e7aa20` |
+| 1.1 `markLocalMutation` ausente | 2026-06-26 (Fase 1-4), 2026-06-28 (Fase 5) | Agregado a ~160 mutations en 5 fases (pos→ALLOWLIST→resto→ESLint rule→cierre). 2 regresiones corregidas: `useSaleOrderComments.ts` y `useWorkflowMutations.ts`. 57 archivos con markLocalMutation. Solo auth/ excluido (no entidad de negocio). | `8b10ac98`, `d947d633`, `48e7aa20`, `6de9d153` |
 | 1.2 `staleTime` faltante | 2026-06-26 | Agregado staleTime explícito a ~50 queries en 28 archivos; corregido useServerDate (5min→30s); actualizado hook-contracts.md con tiers y notas | `8d1685e9`, `d8cce460` |
 | 3. `any` types en features | 2026-06-27 | Eliminados ~700 usos `any` en 6 fases secuenciales. 10/14 features en 0 violaciones. ESLint rule `no-explicit-any: error` para features. 3 features con warn temporal. | `26f1c83b`, `6bce380f`, `cdeef239` |
 | 5.1 + 5.2 Views inline business logic + get_queryset sin selector | 2026-06-28 | Migradas ~25 violaciones en 7 fases (A-G) a través de 15 archivos. Creados: SubscriptionSelector (Phase A), Treasury services/selectors (Phase B), ContactSelector (Phase C), PricingService/NoteWorkflowSelector (Phase D), AccountingService/CoreService/BillingService/SalesService (Phase E), NotificationSelector/PurchaseOrderSelector/DraftCartSelector (Phase F), ProductSelector.filter_suggestions/StockMoveSelector.stock_level/ProductService.toggle_favorite y sync_variant_prices/ProductionSelectorExt.get_bom_queryset (Phase G). | `1adda007`, `257115d7`, `8fb5430f`, `dd588ca0`, `46776d59`, `97c19950`, `33212b97` |
@@ -46,7 +46,7 @@ doc: architecture-compliance-audit-2026-06
 | 🟡 ALTO | ~0 | Backend — cross-app coupling, serializers ✅ |
 | 🟢 MEDIO | 8 | Gaps de contrato (no cubiertos por documentación actual) — 2 resueltos (10.1 API barrels, 10.3 PricingUtils) |
 
-> ✅ **Resuelto:** Frontend hooks/API any types (~250 violaciones) — eliminado en Fase 1-6. `staleTime` y `markLocalMutation` también resueltos. **Section 5.1 + 5.2 + 6** — views inline business logic y product_type chains migrados a services/selectors/strategy. **Section 8.1** — `@transaction.atomic` agregado a `create_sale_order_from_pos` y 4 métodos adicionales en Phase 0 (`create_task`, `finalize_task_update`, `handle_update_attachments`, `request_credit_approval`). `handle_task_update` liberado de decorador (savepoint anidado). 9 tests de rollback agregados. Dead code (`complete_hub_stage_task`, `_revert_tax_from_product_cost`) eliminado. **Section 2.1** — cross-feature internal imports (~86 violaciones) migrados a barrel imports en 24 features. `PricingUtils` promovido a `@/lib/pricing-utils`. **Section 7.1** — cross-app serializer imports top-level (~9 violaciones) migrados a lazy imports inside method. **Section 5.3** — ORM queries en serializers (2 aggregates inline) reemplazados por annotation/property reads. Test `assertNumQueries` agregado.
+> ✅ **Resuelto:** Frontend hooks/API any types (~250 violaciones) — eliminado en Fase 1-6. `staleTime` y `markLocalMutation` también resueltos (57 archivos, 2 regresiones corregidas en Fase 5). **Section 5.1 + 5.2 + 6** — views inline business logic y product_type chains migrados a services/selectors/strategy. **Section 8.1** — `@transaction.atomic` agregado a `create_sale_order_from_pos` y 4 métodos adicionales en Phase 0 (`create_task`, `finalize_task_update`, `handle_update_attachments`, `request_credit_approval`). `handle_task_update` liberado de decorador (savepoint anidado). 16 tests de rollback agregados. Dead code (`complete_hub_stage_task`, `_revert_tax_from_product_cost`) eliminado. **Section 2.1** — cross-feature internal imports (~86 violaciones) migrados a barrel imports en 24 features. `PricingUtils` promovido a `@/lib/pricing-utils`. **Section 7.1** — cross-app serializer imports top-level (~9 violaciones) migrados a lazy imports inside method. **Section 5.3** — ORM queries en serializers (2 aggregates inline) reemplazados por annotation/property reads. Test `assertNumQueries` agregado.
 
 ---
 
@@ -73,15 +73,16 @@ Contrato de referencia: `docs/20-contracts/hook-contracts.md`.
 
 ### 1.1 `markLocalMutation()` ausente (~160 violaciones) — ✅ RESUELTO
 
-> **Resuelto 2026-06-26.** Se agregó `markLocalMutation()` como primera línea en cada `onSuccess` de `useMutation` a través de 4 fases secuenciales:
->
+> **Resuelto 2026-06-26 (Fase 1-4), 2026-06-28 (Fase 5).** Se agregó `markLocalMutation()` como primera línea en cada `onSuccess` de `useMutation` a través de 5 fases secuenciales:
+> 
 > | Fase | Alcance | Mutaciones | Commit |
 > |------|---------|-----------|--------|
 > | **A** | `pos/` (bugs reales — orden incorrecto) | 4 | `8b10ac98` |
 > | **B** | `contacts/`, `billing/`, `purchasing/` (ALLOWLIST según ADR-0026) | 9 | `d947d633` |
 > | **C** | `accounting/`, `treasury/`, `production/`, `orders/`, `settings/`, `finance/` | ~100+ | `48e7aa20` |
 > | **D** | ESLint rule preventiva `mutation/must-mark-local` | — | *(este commit)* |
->
+> | **E** | Cierre: `useSaleOrderComments.ts`, `useWorkflowMutations.ts` | 2 | `6de9d153` |
+> 
 > Bugs reales corregidos en Fase A: `pos/hooks/useProducts.ts` y `useDrafts.ts` tenían `markLocalMutation()` después de `invalidateQueries`, lo que impedía que el filtro `ignoreOwnActor` funcionase.
 >
 > Excepción documentada: `auth/hooks/useAuthLogin.ts` usa `useMutation` con `onSuccess` pero no es una entidad de negocio — no aplica `markLocalMutation`.
@@ -115,9 +116,9 @@ onSuccess: () => {
 
 #### Estado actual
 
-`markLocalMutation()` presente en **55 archivos** de hooks. Única feature sin ella: `auth/` (no aplica — no es entidad de negocio). ESLint rule preventiva activa como `warn` para detectar regresiones en CI.
+`markLocalMutation()` presente en **57 archivos** de hooks. Única feature sin ella: `auth/` (no aplica — no es entidad de negocio). ESLint rule preventiva activa como `warn` para detectar regresiones en CI. Se corrigieron 2 regresiones post-audit: `useSaleOrderComments.ts` y `useWorkflowMutations.ts`.
 
-Archivos con `markLocalMutation` (55 total, obtenido con `grep -rl "markLocalMutation" frontend/features/*/hooks/`):
+Archivos con `markLocalMutation` (57 total, obtenido con `grep -rl "markLocalMutation" frontend/features/*/hooks/`):
 
 - `accounting/hooks/useAccountMutations.ts`
 - `accounting/hooks/useAccountingPeriods.ts`
@@ -149,6 +150,7 @@ Archivos con `markLocalMutation` (55 total, obtenido con `grep -rl "markLocalMut
 - `purchasing/hooks/usePurchasing.ts`
 - `sales/hooks/useDeliveryData.ts`
 - `sales/hooks/usePosTerminals.ts`
+- `sales/hooks/useSaleOrderComments.ts`
 - `sales/hooks/useSalesOrders.ts`
 - `settings/hooks/useAccountingSettings.ts`
 - `settings/hooks/useBillingSettings.ts`
@@ -164,6 +166,7 @@ Archivos con `markLocalMutation` (55 total, obtenido con `grep -rl "markLocalMut
 - `treasury/hooks/useTerminalBatches.ts`
 - `treasury/hooks/useTerminalProviders.ts`
 - `treasury/hooks/useTreasuryMovements.ts`
+- `workflow/hooks/useWorkflowMutations.ts`
 
 ---
 

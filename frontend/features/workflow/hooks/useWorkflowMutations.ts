@@ -131,10 +131,12 @@ export function useUpdateWorkflowSettings() {
 
 export function useGetUnreadNotificationCount() {
   const queryClient = useQueryClient()
+  const { markLocalMutation } = useRealtime()
   
   return useMutation({
     mutationFn: workflowApi.getUnreadNotificationCount,
     onSuccess: (data) => {
+      markLocalMutation()
       queryClient.setQueryData(WORKFLOW_KEYS.getUnreadNotificationCount(), data)
     }
   })
