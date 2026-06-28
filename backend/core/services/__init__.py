@@ -261,3 +261,7 @@ class UserService:
             request=request,
             metadata={"target_user_id": user.id, "target_username": user.username},
         )
+
+
+from .core_service import CoreService
+from .selectors import CoreSelector
