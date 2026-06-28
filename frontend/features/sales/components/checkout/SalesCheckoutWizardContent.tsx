@@ -125,6 +125,18 @@ export const SalesCheckoutWizardContent = forwardRef<SalesCheckoutWizardContentH
     const [step, setStep] = useState(initialStep || 1)
     const [loading, setLoading] = useState(false)
 
+    function generateUUID(): string {
+        if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+            return crypto.randomUUID()
+        }
+        return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
+            const r = (Math.random() * 16) | 0
+            const v = c === 'x' ? r : (r & 0x3) | 0x8
+            return v.toString(16)
+        })
+    }
+    const idempotencyKeyRef = useRef<string>(generateUUID())
+
     const hasManufacturing = useMemo(() => initialOrderLines.some((line: SaleOrderLine) =>
         line.product_type === 'MANUFACTURABLE'
     ), [initialOrderLines]);
@@ -471,13 +483,7 @@ export const SalesCheckoutWizardContent = forwardRef<SalesCheckoutWizardContentH
     // Checkout handlers
     const executeCheckout = async (pin?: string) => {
         setLoading(true)
-        const idempotencyKey = typeof crypto !== 'undefined' && crypto.randomUUID
-            ? crypto.randomUUID()
-            : 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
-                const r = (Math.random() * 16) | 0
-                const v = c === 'x' ? r : (r & 0x3) | 0x8
-                return v.toString(16)
-            })
+        const idempotencyKey = idempotencyKeyRef.current
         try {
             const formData = new FormData()
 
@@ -576,9 +582,25 @@ export const SalesCheckoutWizardContent = forwardRef<SalesCheckoutWizardContentH
                 formData.append('pos_pin', pin)
             }
 
-            const data = await posCheckout({ payload: formData, idempotencyKey }) as CheckoutResponse
-            toast.success("Venta procesada correctamente")
-            onComplete(data)
+            let retries = 0
+            const MAX_RETRIES = 5
+            while (true) {
+                try {
+                    const response = await posCheckout({ payload: formData, idempotencyKey }) as CheckoutResponse
+                    idempotencyKeyRef.current = generateUUID()
+                    toast.success("Venta procesada correctamente")
+                    onComplete(response)
+                    return
+                } catch (retryError: unknown) {
+                    const is425 = (retryError as { response?: { status?: number } })?.response?.status === 425
+                    if (is425 && retries < MAX_RETRIES) {
+                        retries++
+                        await new Promise(resolve => setTimeout(resolve, 2000))
+                        continue
+                    }
+                    throw retryError
+                }
+            }
         } catch (error: unknown) {
             console.error("Checkout error:", error)
             const rawError = getErrorMessage(error) || "Error al procesar la venta"
@@ -591,8 +613,6 @@ export const SalesCheckoutWizardContent = forwardRef<SalesCheckoutWizardContentH
             } else {
                 toast.error(errorMessage)
             }
-
-            setLoading(false)
 
             if (approvalTaskId && !errorMessage.includes("Intento de aumento") && !errorMessage.includes("Seguridad:")) {
                 setApprovalTaskId(null)
