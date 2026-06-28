@@ -37,6 +37,7 @@ class WorkflowService:
             return None
 
     @staticmethod
+    @transaction.atomic
     def create_task(
         task_type,
         title,
