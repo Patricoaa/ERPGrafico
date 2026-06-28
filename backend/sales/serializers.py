@@ -1,10 +1,8 @@
 from django.db.models import Sum
 from rest_framework import serializers
 
-from production.serializers import WorkOrderSerializer
 from sales.selectors import SaleOrderSelector
 from sales.services import SalesService
-from treasury.serializers import TreasuryMovementSerializer
 
 from .models import (
     SaleDelivery,
@@ -184,7 +182,7 @@ class SaleOrderSerializer(serializers.ModelSerializer):
     channel_display = serializers.CharField(source="get_channel_display", read_only=True)
     total_paid = serializers.SerializerMethodField()
     pending_amount = serializers.SerializerMethodField()
-    serialized_payments = TreasuryMovementSerializer(source="payments", many=True, read_only=True)
+    serialized_payments = serializers.SerializerMethodField()
     related_documents = serializers.SerializerMethodField()
     work_orders = serializers.SerializerMethodField()
     production_progress = serializers.SerializerMethodField()
@@ -264,6 +262,10 @@ class SaleOrderSerializer(serializers.ModelSerializer):
             "journal_entry",
         ]
 
+    def get_serialized_payments(self, obj):
+        from treasury.serializers import TreasuryMovementSerializer
+        return TreasuryMovementSerializer(obj.payments.all(), many=True).data
+
     def get_related_documents(self, obj):
         return SaleOrderSelector.get_related_documents(obj)
 
@@ -275,6 +277,7 @@ class SaleOrderSerializer(serializers.ModelSerializer):
     def get_work_orders(self, obj):
         # Only include OTs NOT linked to a note (original order OTs)
         ots = [ot for ot in obj.work_orders.all() if getattr(ot, "related_note_id", None) is None]
+        from production.serializers import WorkOrderSerializer
         return WorkOrderSerializer(ots, many=True).data
 
     def get_has_pending_work_orders(self, obj):
@@ -288,7 +291,7 @@ class SaleOrderSerializer(serializers.ModelSerializer):
         return obj.effective_total - self.get_total_paid(obj)
 
     def get_production_progress(self, obj):
-        # Only calculate progress for OTs NOT linked to notes and NOT cancelled
+        from production.serializers import WorkOrderSerializer
         wos = [ot for ot in obj.work_orders.all() if getattr(ot, "related_note_id", None) is None and ot.status != "CANCELLED"]
         if not wos:
             return 0

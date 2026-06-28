@@ -1,8 +1,6 @@
 from rest_framework import serializers
 
 from core.serializers import AttachmentSerializer
-from sales.serializers import SaleOrderSerializer
-from treasury.serializers import TreasuryMovementSerializer
 
 from .models import Invoice
 
@@ -40,7 +38,7 @@ class InvoiceSerializer(serializers.ModelSerializer):
     pos_session = serializers.IntegerField(
         source="sale_order.pos_session", read_only=True, allow_null=True
     )
-    sale_order_detail = SaleOrderSerializer(source="sale_order", read_only=True, allow_null=True)
+    sale_order_detail = serializers.SerializerMethodField()
     is_sale_document = serializers.ReadOnlyField()
 
     class Meta:
@@ -99,6 +97,12 @@ class InvoiceSerializer(serializers.ModelSerializer):
             "journal_entry",
             "tax_period_closed",
         ]
+
+    def get_sale_order_detail(self, obj):
+        if not obj.sale_order:
+            return None
+        from sales.serializers import SaleOrderSerializer
+        return SaleOrderSerializer(obj.sale_order).data
 
     def get_serialized_payments(self, obj):
         from .selectors import InvoiceSelectorExt
