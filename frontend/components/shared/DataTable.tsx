@@ -519,17 +519,17 @@ export function DataTable<TData, TValue>({
         if (isLoading) {
             return (
                 <div ref={containerRef} className="relative">
-                    <div className={cn("grid", effectiveGridTemplate, gridGap, "px-3 py-1.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground border-b")}>
-                        {table.getHeaderGroups()[0]?.headers.map((header) => (
-                            <div key={header.id} className="text-center">
-                                {header.isPlaceholder ? null : flexRender(header.column.columnDef.header, header.getContext())}
-                            </div>
-                        ))}
-                        {renderRowActions && <div />}
-                    </div>
-                    <div className="divide-y divide-border/60">
+                    <div className={cn("grid", effectiveGridTemplate, gridGap)}>
+                        <div className={cn("grid grid-cols-subgrid col-span-full px-3 py-1.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground border-b")}>
+                            {table.getHeaderGroups()[0]?.headers.map((header) => (
+                                <div key={header.id} className="text-center">
+                                    {header.isPlaceholder ? null : flexRender(header.column.columnDef.header, header.getContext())}
+                                </div>
+                            ))}
+                            {renderRowActions && <div />}
+                        </div>
                         {Array.from({ length: effectiveSkeletonRows }, (_, i) => (
-                            <div key={`skel-${i}`} className={cn("grid", effectiveGridTemplate, gridGap, "items-center px-3 py-2.5")}>
+                            <div key={`skel-${i}`} className={cn("grid grid-cols-subgrid col-span-full items-center px-3 py-2.5 border-b border-border/60 last:border-b-0")}>
                                 {columns.map((_, j) => (
                                     <div key={`skel-${i}-${j}`} className="flex justify-center">
                                         <Skeleton className="h-4 w-16" />
@@ -547,26 +547,24 @@ export function DataTable<TData, TValue>({
             <div ref={containerRef} className="relative">
                 {table.getRowModel().rows?.length ? (
                     <ScrollArea className={compactMaxHeight}>
-                        {/* Header */}
-                        <div className={cn("grid", effectiveGridTemplate, gridGap, "px-3 py-1.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground border-b sticky top-0 bg-card z-10")} role="row">
-                            {table.getHeaderGroups()[0]?.headers.map((header) => (
-                                <div key={header.id} role="columnheader">
-                                    {header.isPlaceholder ? null : flexRender(header.column.columnDef.header, header.getContext())}
-                                </div>
-                            ))}
-                            {renderRowActions && <div role="columnheader" />}
-                        </div>
-                        {/* Body */}
-                        <div className="divide-y divide-border/60" role="rowgroup">
+                        <div className={cn("grid", effectiveGridTemplate, gridGap)}>
+                            {/* Header */}
+                            <div className={cn("grid grid-cols-subgrid col-span-full px-3 py-1.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground border-b sticky top-0 bg-card z-10")} role="row">
+                                {table.getHeaderGroups()[0]?.headers.map((header) => (
+                                    <div key={header.id} role="columnheader">
+                                        {header.isPlaceholder ? null : flexRender(header.column.columnDef.header, header.getContext())}
+                                    </div>
+                                ))}
+                                {renderRowActions && <div role="columnheader" />}
+                            </div>
+                            {/* Body */}
                             {table.getRowModel().rows.map((row) => (
                                 <div
                                     key={row.id}
                                     role="row"
                                     className={cn(
-                                        "grid",
-                                        effectiveGridTemplate,
-                                        gridGap,
-                                        "items-center px-3 py-2.5 hover:bg-muted/40 transition-all group animate-in fade-in duration-300",
+                                        "grid grid-cols-subgrid col-span-full",
+                                        "items-center px-3 py-2.5 hover:bg-muted/40 transition-all group animate-in fade-in duration-300 border-b border-border/60 last:border-b-0",
                                         onRowClick && "cursor-pointer"
                                     )}
                                     onClick={() => onRowClick?.(row.original)}
