@@ -514,33 +514,6 @@ class WorkflowService:
                 task.save()
 
     @staticmethod
-    def complete_hub_stage_task(content_object, stage):
-        """
-        Auto-completes the pending HUB stage task for a given object.
-        Called during stage transitions (dispatch, invoice, payment).
-        """
-        from django.contrib.contenttypes.models import ContentType
-
-        task_type = WorkflowService.HUB_STAGE_TASK_TYPES.get(stage)
-        if not task_type:
-            return
-
-        content_type = ContentType.objects.get_for_model(content_object)
-
-        pending_tasks = Task.objects.filter(
-            content_type=content_type,
-            object_id=content_object.pk,
-            task_type=task_type,
-            category=Task.Category.TASK,
-            status__in=[Task.Status.PENDING, Task.Status.IN_PROGRESS],
-        )
-
-        for task in pending_tasks:
-            task.status = Task.Status.COMPLETED
-            task.completed_at = timezone.now()
-            task.save()
-
-    @staticmethod
     def complete_periodic_task(task_type, year, month):
         """
         Completes a periodic task (F29_CREATE, F29_PAY, PERIOD_CLOSE)
