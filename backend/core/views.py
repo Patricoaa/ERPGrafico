@@ -64,7 +64,6 @@ class CustomTokenObtainPairView(TokenObtainPairView):
         try: response = super().post(request, *args, **kwargs)
         except Exception as e:
             from core.models import User, ActionLog
-            from core.action_logger import ActionLoggingService
             usr = request.data.get('username') or 'unknown'
             u = User.objects.filter(username=usr).first()
             ActionLoggingService.log_action(user=u, action_type=ActionLog.Type.SECURITY, description=f"Fallo login '{usr}'.", request=request, metadata={'error': str(e)})
@@ -73,7 +72,6 @@ class CustomTokenObtainPairView(TokenObtainPairView):
             try:
                 if response.data.get('access'): response.set_cookie('access_token', response.data['access'], httponly=True, secure=not settings.DEBUG, samesite='Strict', max_age=1800, path='/')
                 from core.models import User, ActionLog
-                from core.action_logger import ActionLoggingService
                 u = User.objects.filter(username=request.data.get('username')).first()
                 if u: ActionLoggingService.log_action(user=u, action_type=ActionLog.Type.LOGIN, description=f'Login {u.username}', request=request)
             except Exception: pass
