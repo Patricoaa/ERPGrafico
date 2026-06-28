@@ -5,6 +5,7 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 
 from billing.note_checkout_service import NoteCheckoutService
+from billing.note_workflow import NoteWorkflow
 from billing.note_serializers import (
     CompleteWorkflowSerializer,
     FullNoteCheckoutSerializer,
@@ -16,7 +17,7 @@ from core.mixins import AuditHistoryMixin
 
 class NoteWorkflowViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
     pagination_class = StandardResultsSetPagination
-    queryset = NoteWorkflowSelector.get_queryset_from_request(None, None)  # placeholder
+    queryset = NoteWorkflow.objects.none()
     serializer_class = NoteWorkflowSerializer
 
     def get_queryset(self):
