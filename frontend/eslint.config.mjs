@@ -146,8 +146,11 @@ const eslintConfig = defineConfig([...nextVitals, ...nextTs, globalIgnores([
       ]
     }]
   }
-}, {
-  files: ["features/**/*.ts", "features/**/*.tsx"],
+}, // Cross-feature internal import guard for hooks/ and shared/
+// This block applies to hooks/ and shared/ where the features block below doesn't reach
+// (the features block takes precedence for features/ files since it comes later).
+{
+  files: ["hooks/**/*.ts", "hooks/**/*.tsx", "components/shared/**/*.ts", "components/shared/**/*.tsx"],
   rules: {
     "no-restricted-imports": ["error", {
       patterns: [
@@ -167,11 +170,21 @@ const eslintConfig = defineConfig([...nextVitals, ...nextTs, globalIgnores([
           group: ["@/features/*/types/*", "@/features/*/types/**"],
           message: "Cross-feature: import from barrel (features/[name]/index.ts), not internals.",
         },
+        {
+          group: ["@/features/*/utils/*", "@/features/*/utils/**"],
+          message: "Cross-feature: import from barrel (features/[name]/index.ts), not utils/ subpath.",
+        },
+        {
+          group: ["@/features/*/actions", "@/features/*/actions/*",
+                   "@/features/*/contexts/*", "@/features/*/contexts/**"],
+          message: "Cross-feature: import from barrel (features/[name]/index.ts), not internal file.",
+        },
       ],
     }],
   },
-}, // Block direct @/components/ui/skeleton imports outside of components/shared (where it's implemented)
-// Excludes **/skeletons/** — those files ARE skeleton implementations and may use the primitive.
+}, // Cross-feature internal import guard + skeleton restriction for features/ and app/
+// NOTE: this block OVERRIDES the previous block for features/ files (flat config last-wins).
+// That's intentional — the previous block only applies to hooks/ and shared/.
 {
   files: ["features/**/*.ts", "features/**/*.tsx", "app/**/*.ts", "app/**/*.tsx"],
   ignores: ["features/**/skeletons/**"],
@@ -181,6 +194,33 @@ const eslintConfig = defineConfig([...nextVitals, ...nextTs, globalIgnores([
         name: "@/components/ui/skeleton",
         message: "Import skeleton components from @/components/shared barrel, not @/components/ui/skeleton directly.",
       }],
+      patterns: [
+        {
+          group: ["@/features/*/components/*", "@/features/*/components/**"],
+          message: "Cross-feature: import from barrel (features/[name]/index.ts), not internals.",
+        },
+        {
+          group: ["@/features/*/hooks/*", "@/features/*/hooks/**"],
+          message: "Cross-feature: import from barrel (features/[name]/index.ts), not internals.",
+        },
+        {
+          group: ["@/features/*/api/*", "@/features/*/api/**"],
+          message: "Cross-feature: import from barrel (features/[name]/index.ts), not internals.",
+        },
+        {
+          group: ["@/features/*/types/*", "@/features/*/types/**"],
+          message: "Cross-feature: import from barrel (features/[name]/index.ts), not internals.",
+        },
+        {
+          group: ["@/features/*/utils/*", "@/features/*/utils/**"],
+          message: "Cross-feature: import from barrel (features/[name]/index.ts), not utils/ subpath.",
+        },
+        {
+          group: ["@/features/*/actions", "@/features/*/actions/*",
+                   "@/features/*/contexts/*", "@/features/*/contexts/**"],
+          message: "Cross-feature: import from barrel (features/[name]/index.ts), not internal file.",
+        },
+      ],
     }],
   },
 }, // FSD invariant #5 — components must not import @/lib/api directly.
