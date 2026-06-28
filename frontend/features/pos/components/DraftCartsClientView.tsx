@@ -60,6 +60,7 @@ interface LockInfo {
 
 interface DraftCartsClientViewProps {
     posSessionId: number | null
+    currentDraftId?: number | null
     onLoadDraft: (draft: DraftCart | SyncDraft) => void
     onDraftDeleted?: () => void
     open?: boolean
@@ -73,6 +74,7 @@ interface DraftCartsClientViewProps {
 
 export function DraftCartsClientView({
     posSessionId,
+    currentDraftId,
     onLoadDraft,
     onDraftDeleted,
     open: externalOpen,
@@ -139,7 +141,12 @@ export function DraftCartsClientView({
     }, [syncDrafts, open])
 
     const handleLoadDraft = async (draft: DraftCart) => {
-        // Check lock before even trying
+        // Already the current draft — just close modal
+        if (draft.id === currentDraftId) {
+            setOpen(false)
+            return
+        }
+
         if (getLockInfo) {
             const lock = getLockInfo(draft.id)
             if (lock.isLocked && !lock.isOwnLock) {
@@ -162,11 +169,18 @@ export function DraftCartsClientView({
     const handleDeleteDraft = async (draftId: number, draftName: string) => {
         if (!posSessionId) return
 
-        // Prevent deleting locked drafts
+        if (draftId === currentDraftId) {
+            toast.error("No se puede eliminar el borrador que está actualmente seleccionado")
+            return
+        }
+
         if (getLockInfo) {
             const lock = getLockInfo(draftId)
-            if (lock.isLocked && !lock.isOwnLock) {
-                toast.error(`No se puede eliminar: en uso por ${lock.lockedByName}`)
+            if (lock.isLocked) {
+                const msg = lock.isOwnLock
+                    ? "No se puede eliminar el borrador que está actualmente seleccionado"
+                    : `No se puede eliminar: en uso por ${lock.lockedByName}`
+                toast.error(msg)
                 return
             }
         }
@@ -364,6 +378,9 @@ export function DraftCartsClientView({
                                 const d = draft as DraftCart
                                 const lockInfo = getLockInfo?.(d.id)
                                 const lockedByOther = lockInfo?.isLocked && !lockInfo?.isOwnLock
+                                const isCurrentDraft = d.id === currentDraftId
+                                const cannotDelete = !!lockedByOther || isCurrentDraft
+                                const cannotLoad = !!lockedByOther || isCurrentDraft
                                 return (
                                     <>
                                         <Button
@@ -371,9 +388,9 @@ export function DraftCartsClientView({
                                             variant="ghost"
                                             className={cn(
                                                 "h-7 w-7 p-0 opacity-0 group-hover:opacity-100 transition-opacity text-destructive hover:text-destructive hover:bg-destructive/10",
-                                                lockedByOther && "!opacity-0 pointer-events-none"
+                                                cannotDelete && "!opacity-0 pointer-events-none"
                                             )}
-                                            disabled={deletingId === d.id || !!lockedByOther}
+                                            disabled={deletingId === d.id || cannotDelete}
                                             onClick={(e) => {
                                                 e.stopPropagation()
                                                 setConfirmDeleteId(d.id)
@@ -389,20 +406,20 @@ export function DraftCartsClientView({
                                             variant="ghost"
                                             className={cn(
                                                 "h-7 px-2 text-[11px] font-medium gap-0.5",
-                                                lockedByOther
+                                                cannotLoad
                                                     ? "text-muted-foreground cursor-not-allowed"
                                                     : "hover:bg-primary/10 hover:text-primary"
                                             )}
-                                            disabled={!!lockedByOther}
+                                            disabled={cannotLoad}
                                             onClick={(e) => {
                                                 e.stopPropagation()
                                                 handleLoadDraft(d)
                                             }}
                                         >
-                                            {lockedByOther ? (
+                                            {cannotLoad ? (
                                                 <>
                                                     <Lock className="h-3 w-3" />
-                                                    En uso
+                                                    {isCurrentDraft ? "Actual" : "En uso"}
                                                 </>
                                             ) : (
                                                 <>
