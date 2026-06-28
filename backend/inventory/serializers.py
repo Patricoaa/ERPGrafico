@@ -392,11 +392,15 @@ class ProductSerializer(serializers.ModelSerializer):
         return float(getattr(obj, "annotated_current_stock", None) or 0.0)
 
     def get_effective_price(self, obj):
+        if hasattr(obj, "annotated_effective_price"):
+            return float(obj.annotated_effective_price)
         from .services import PricingService
 
         return PricingService.get_product_price(obj, 1)
 
     def get_effective_price_net(self, obj):
+        if hasattr(obj, "annotated_effective_price_net"):
+            return float(obj.annotated_effective_price_net)
         from .services import PricingService
 
         if obj.parent_template_id:

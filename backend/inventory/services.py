@@ -1121,6 +1121,207 @@ class ProductService:
             p.annotated_qty_reserved = reserved_map[p.id]
 
     @staticmethod
+    def bulk_annotate_pricing(products):
+        """
+        Pre-computes effective_price for a list of products in bulk to avoid N+1.
+        Injects 'annotated_effective_price' (gross) and 'annotated_effective_price_net'
+        into each product instance.
+        Performs 2 queries regardless of the number of products.
+        """
+        if not products:
+            return
+
+        from collections import defaultdict
+        from datetime import date
+
+        from accounting.utils import get_vat_multiplier
+
+        today = date.today()
+        product_ids = [p.id for p in products]
+        category_ids = list({p.category_id for p in products if p.category_id})
+        parent_ids = list(
+            {p.parent_template_id for p in products if p.parent_template_id}
+        )
+
+        # 1. Bulk fetch all PricingRules active today for these products/categories
+        rule_filter = Q(active=True)
+        rule_filter &= Q(start_date__isnull=True) | Q(start_date__lte=today)
+        rule_filter &= Q(end_date__isnull=True) | Q(end_date__gte=today)
+        rule_filter &= Q(product_id__in=product_ids) | Q(category_id__in=category_ids)
+        if parent_ids:
+            rule_filter |= Q(product_id__in=parent_ids)
+
+        all_rules = list(
+            PricingRule.objects.filter(rule_filter)
+            .select_related("uom")
+            .order_by("-priority")
+        )
+
+        # Index rules by product_id and category_id
+        rules_by_product = defaultdict(list)
+        rules_by_category = defaultdict(list)
+        for rule in all_rules:
+            if rule.product_id:
+                rules_by_product[rule.product_id].append(rule)
+            elif rule.category_id:
+                rules_by_category[rule.category_id].append(rule)
+
+        # 2. Bulk fetch ProductUoMPrice
+        uom_prices = list(
+            ProductUoMPrice.objects.filter(product_id__in=product_ids)
+        )
+        uom_price_by_product_uom = {}
+        for up in uom_prices:
+            uom_price_by_product_uom[(up.product_id, up.uom_id)] = up
+
+        # 3. Compute annotated prices for each product
+        vat_mult = get_vat_multiplier()
+        for p in products:
+            base_price_gross = p.sale_price_gross
+            base_price_net = p.sale_price
+
+            # If product has UoM, try UoMPrice resolution
+            if p.uom_id:
+                up = uom_price_by_product_uom.get((p.id, p.uom_id))
+                if up is not None:
+                    base_price_gross = up.price_gross
+                    base_price_net = up.price_net
+                elif p.parent_template_id:
+                    # If p is a variant, try parent's UoM price
+                    up_parent = uom_price_by_product_uom.get(
+                        (p.parent_template_id, p.uom_id)
+                    )
+                    if up_parent is not None:
+                        base_price_gross = up_parent.price_gross
+                        base_price_net = up_parent.price_net
+
+            # If still no base price, fallback to sale_price
+            if base_price_gross is None:
+                base_price_gross = (
+                    p.sale_price_gross
+                    or (p.sale_price * vat_mult).quantize(Decimal("1"))
+                    or Decimal("0")
+                )
+            if base_price_net is None:
+                base_price_net = p.sale_price or Decimal("0")
+
+            # Find matching rules: direct product rules, then category rules, then parent rules
+            candidate_rules = list(rules_by_product.get(p.id, []))
+            if p.category_id:
+                candidate_rules.extend(rules_by_category.get(p.category_id, []))
+            if (
+                p.parent_template_id
+                and hasattr(p, "price_inheritance_mode")
+                and p.price_inheritance_mode in ["INHERIT", "SURCHARGE"]
+            ):
+                candidate_rules.extend(
+                    rules_by_product.get(p.parent_template_id, [])
+                )
+
+            # Sort by priority (highest first) — they should already be in order
+            candidate_rules.sort(key=lambda r: -r.priority)
+
+            effective_price_gross = base_price_gross
+            effective_price_net = base_price_net
+
+            for rule in candidate_rules:
+                # Quantity check: effective_price always called with quantity=1
+                check_qty = Decimal("1")
+                if rule.uom_id and p.uom_id and rule.uom_id != p.uom_id:
+                    try:
+                        from .services import StockService
+
+                        check_qty = StockService.convert_quantity(
+                            Decimal("1"), p.uom, rule.uom
+                        )
+                    except ValidationError:
+                        continue
+
+                # Operator matching against min_q
+                op = rule.operator
+                min_q = rule.min_quantity
+                max_q = rule.max_quantity
+
+                matches = False
+                if op == PricingRule.Operator.GE:
+                    matches = check_qty >= min_q
+                elif op == PricingRule.Operator.GT:
+                    matches = check_qty > min_q
+                elif op == PricingRule.Operator.LE:
+                    matches = check_qty <= min_q
+                elif op == PricingRule.Operator.LT:
+                    matches = check_qty < min_q
+                elif op == PricingRule.Operator.EQ:
+                    matches = check_qty == min_q
+                elif op == PricingRule.Operator.BT:
+                    matches = min_q <= check_qty <= max_q if max_q else check_qty >= min_q
+
+                if not matches:
+                    continue
+
+                # Apply rule
+                if rule.rule_type == PricingRule.RuleType.FIXED:
+                    if rule.fixed_price_gross is not None:
+                        rule_price = rule.fixed_price_gross
+                    elif rule.fixed_price is not None:
+                        rule_price = (rule.fixed_price * vat_mult).quantize(
+                            Decimal("1"), rounding="ROUND_HALF_UP"
+                        )
+                    else:
+                        continue
+
+                    if (
+                        p.parent_template_id
+                        and p.price_inheritance_mode == "SURCHARGE"
+                        and rule.product_id == p.parent_template_id
+                    ):
+                        surcharge = p.price_surcharge or Decimal("0")
+                        surcharge_gross = (
+                            surcharge * vat_mult
+                        ).quantize(Decimal("1"), rounding="ROUND_HALF_UP")
+                        rule_price += surcharge_gross
+
+                    effective_price_gross = rule_price
+
+                elif rule.rule_type == PricingRule.RuleType.PACKAGE_FIXED:
+                    p_price = (
+                        rule.fixed_price_gross
+                        if rule.fixed_price_gross is not None
+                        else (rule.fixed_price * vat_mult if rule.fixed_price else None)
+                    )
+                    if p_price is not None:
+                        unit_price = (p_price / Decimal("1")).quantize(
+                            Decimal("1"), rounding="ROUND_HALF_UP"
+                        )
+                        if (
+                            p.parent_template_id
+                            and p.price_inheritance_mode == "SURCHARGE"
+                            and rule.product_id == p.parent_template_id
+                        ):
+                            surcharge = p.price_surcharge or Decimal("0")
+                            surcharge_gross = (
+                                surcharge * vat_mult
+                            ).quantize(Decimal("1"), rounding="ROUND_HALF_UP")
+                            unit_price += surcharge_gross
+                        effective_price_gross = unit_price
+
+                else:  # DISCOUNT_PERCENTAGE
+                    if rule.discount_percentage is not None:
+                        effective_price_gross = (
+                            base_price_gross
+                            * (Decimal("1") - rule.discount_percentage / Decimal("100"))
+                        ).quantize(Decimal("1"), rounding="ROUND_HALF_UP")
+
+                # First matching rule wins (highest priority)
+                effective_price_net = (
+                    effective_price_gross / vat_mult
+                ).quantize(Decimal("1"), rounding="ROUND_HALF_UP")
+                break
+
+            p.annotated_effective_price = effective_price_gross
+            p.annotated_effective_price_net = effective_price_net
+
+    @staticmethod
     def check_archiving_restrictions(product: Product):
         """
         Checks for dependencies that prevent archiving a product.
