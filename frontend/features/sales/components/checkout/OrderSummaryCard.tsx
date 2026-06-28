@@ -4,6 +4,8 @@ import { Separator } from "@/components/ui/separator"
 import { ShoppingBag } from "lucide-react"
 import { formatCurrency } from "@/lib/money"
 import { Chip } from "@/components/shared"
+import { translatePaymentMethod } from "@/lib/utils"
+import { cn } from "@/lib/utils"
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 import { PricingUtils } from '@/features/inventory/utils/pricing'
 
@@ -16,6 +18,8 @@ interface OrderSummaryCardProps {
     totalDiscountAmount?: number
     dteType?: string
     customer?: Contact
+    paymentMethod?: string | null
+    paymentAmount?: number
 }
 
 export function OrderSummaryCard({
@@ -23,7 +27,9 @@ export function OrderSummaryCard({
     total,
     totalDiscountAmount = 0,
     dteType,
-    customer
+    customer,
+    paymentMethod,
+    paymentAmount,
 }: OrderSummaryCardProps) {
     const isExempt = dteType === 'FACTURA_EXENTA' || dteType === 'BOLETA_EXENTA';
 
@@ -123,6 +129,30 @@ export function OrderSummaryCard({
                             <span className={`font-mono font-bold ${Number(customer?.credit_available) < total ? 'text-destructive' : 'text-success'}`}>
                                 {formatCurrency(Number(customer?.credit_available || 0))}
                             </span>
+                        </div>
+                    </>
+                )}
+
+                {(paymentAmount || 0) > 0 && (
+                    <>
+                        <Separator className="my-2 opacity-30" />
+                        <div className="space-y-1.5 pt-1">
+                            <div className="flex justify-between text-xs font-bold text-muted-foreground/80">
+                                <span>Monto Recibido</span>
+                                <span className="font-mono">{formatCurrency(paymentAmount || 0)}</span>
+                            </div>
+                            <div className="flex justify-between text-xs font-bold text-muted-foreground/80">
+                                <span>Método</span>
+                                <span className="font-mono">{translatePaymentMethod(paymentMethod)}</span>
+                            </div>
+                            {(paymentAmount || 0) !== total && (
+                                <div className="flex justify-between text-xs font-bold text-muted-foreground/80">
+                                    <span>{(paymentAmount || 0) > total ? 'Vuelto' : 'Crédito Asignado'}</span>
+                                    <span className={cn("font-mono", (paymentAmount || 0) > total ? "text-success" : "text-warning")}>
+                                        {formatCurrency(Math.abs((paymentAmount || 0) - total))}
+                                    </span>
+                                </div>
+                            )}
                         </div>
                     </>
                 )}
