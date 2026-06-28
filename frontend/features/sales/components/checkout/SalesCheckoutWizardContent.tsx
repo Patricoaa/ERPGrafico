@@ -126,7 +126,7 @@ export const SalesCheckoutWizardContent = forwardRef<SalesCheckoutWizardContentH
     const [loading, setLoading] = useState(false)
 
     const hasManufacturing = useMemo(() => initialOrderLines.some((line: SaleOrderLine) =>
-        line.product_type === 'MANUFACTURABLE' && line.requires_advanced_manufacturing
+        line.product_type === 'MANUFACTURABLE'
     ), [initialOrderLines]);
 
     const steps = useMemo(() => {

@@ -41,7 +41,7 @@ export function useProducts() {
                 is_active: true,
                 can_be_sold: true,
                 page_size: 2000, // Ensure we get all sellable items in one go for instant search
-                fields: 'id,name,sale_price,sale_price_gross,image,uom_name,internal_code,barcode,product_type,track_inventory,requires_advanced_manufacturing,category,uom,available_uoms,is_favorite,has_bom'
+                fields: 'id,name,sale_price,sale_price_gross,image,uom_name,internal_code,barcode,product_type,track_inventory,requires_advanced_manufacturing,category,uom,available_uoms,is_favorite,has_bom,mfg_auto_finalize,mfg_enable_prepress,mfg_enable_press,mfg_enable_postpress,qty_available,manufacturable_quantity'
             })
             return (page.results ?? []) as unknown as Product[]
         },

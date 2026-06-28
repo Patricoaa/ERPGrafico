@@ -192,7 +192,7 @@ export function POSClientView() {
     const draftLoadedFromUrl = useRef(false)
     const checkoutWizardRef = useRef<SalesCheckoutWizardContentHandle>(null)
 
-    const checkoutTotalSteps = 4 + (items.some(i => i.product_type === 'MANUFACTURABLE' && i.requires_advanced_manufacturing) ? 1 : 0)
+    const checkoutTotalSteps = 4 + (items.some(i => i.product_type === 'MANUFACTURABLE') ? 1 : 0)
     const isCheckoutLastStep = posMode === 'CHECKOUT' && (wizardState?.step ?? 0) >= checkoutTotalSteps
 
     const handleCheckoutNext = useCallback(() => {
@@ -209,6 +209,7 @@ export function POSClientView() {
 
     const currentOrderLines = useMemo(() => items.map(item => ({
         product: item.id,
+        id: item.id,
         product_name: item.name,
         description: item.name,
         quantity: item.qty,
@@ -223,6 +224,13 @@ export function POSClientView() {
         product_type: item.product_type,
         requires_advanced_manufacturing: item.requires_advanced_manufacturing,
         manufacturing_data: item.manufacturing_data,
+        has_bom: item.has_bom,
+        mfg_auto_finalize: item.mfg_auto_finalize,
+        mfg_enable_prepress: item.mfg_enable_prepress,
+        mfg_enable_press: item.mfg_enable_press,
+        mfg_enable_postpress: item.mfg_enable_postpress,
+        qty_available: item.qty_available,
+        manufacturable_quantity: item.manufacturable_quantity,
         code: item.code,
         internal_code: item.internal_code,
     })), [items])
@@ -410,7 +418,7 @@ export function POSClientView() {
         }
 
         if (!selectedCustomerId && defaultCustomerId) setSelectedCustomerId(defaultCustomerId)
-        const hasMfg = items.some(line => line.product_type === 'MANUFACTURABLE' && line.requires_advanced_manufacturing)
+        const hasMfg = items.some(line => line.product_type === 'MANUFACTURABLE')
         const lastStep = 4 + (hasMfg ? 1 : 0)
         setWizardState({ step: lastStep, isQuickSale: true, dteData: { type: 'BOLETA', number: '', date: dateString || new Date().toISOString().split('T')[0], attachment: null, isPending: false }, deliveryData: { type: 'IMMEDIATE', date: null } } as unknown as WizardState)
         setTimeout(() => setPosMode('CHECKOUT'), 0)
@@ -441,7 +449,7 @@ export function POSClientView() {
                 {/* Right: Actions & Menu */}
                 <div className="flex items-center gap-2 flex-1 justify-end">
                     {(() => {
-                        const hasMfg = items.some(line => line.product_type === 'MANUFACTURABLE' && line.requires_advanced_manufacturing)
+                        const hasMfg = items.some(line => line.product_type === 'MANUFACTURABLE')
                         const totalSteps = 3 + (hasMfg ? 1 : 0)
                         const isPaymentStep = wizardState?.step === totalSteps
 
