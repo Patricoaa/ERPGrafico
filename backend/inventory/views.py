@@ -74,6 +74,7 @@ class ProductViewSet(NoDestroyModelMixin, BulkImportMixin, AuditHistory, viewset
         
         from .services import ProductService
         ProductService.bulk_annotate_reserved_qty(objects)
+        ProductService.bulk_annotate_pricing(objects)
         
         serializer = self.get_serializer(objects, many=True)
         if page is not None:

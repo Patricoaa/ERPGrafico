@@ -798,7 +798,7 @@ Contra 8 apps. Queda pendiente para futuras iteraciones: `core/views.py::UserPre
 
 ### 5.3 ORM queries en serializers (2 claras + 4 borderline) — ✅ RESUELTO
 
-> **Resuelto 2026-06-28.** Inventory: `get_current_stock` reemplazó el aggregate fallback por `float(getattr(obj, "annotated_current_stock", None) or 0.0)`, eliminando la query N+1 en detail endpoints. Sales: `product.moves.aggregate(Sum("quantity"))` en `CreateSaleOrderSerializer.validate()` reemplazado por `product.qty_on_hand` (property que respeta annotation existente). Se agregó `test_performance.py` con `assertNumQueries` como barrera CI para ProductViewSet list. Commit: `14fbd077`.
+> **Resuelto 2026-06-28.** Inventory: `get_current_stock` reemplazó el aggregate fallback por `float(getattr(obj, "annotated_current_stock", None) or 0.0)`, eliminando la query N+1 en detail endpoints. Sales: `product.moves.aggregate(Sum("quantity"))` en `CreateSaleOrderSerializer.validate()` reemplazado por `product.qty_on_hand` (property que respeta annotation existente). Pricing: `PricingService.get_product_price()` en `get_effective_price`/`get_effective_price_net` evita N+1 en list vía `bulk_annotate_pricing()` (2 queries totales en vez de 2×N). Se agregó `select_related("parent_template")` a ambos selectors. Test `assertNumQueries` reducido de 45 a ≤38. Commits: `14fbd077`, `(pending)`.
 
 #### Explicación del error (original)
 
@@ -815,7 +815,7 @@ La política zero N+1 (`GOVERNANCE.md:40`) prohíbe ORM queries dentro de Serial
 
 | Archivo | Línea | Código | Estado |
 |---------|-------|--------|--------|
-| `inventory/serializers.py` | 402-404 | `PricingService.get_product_price()` | ⚠️ Persiste (causa N+1 en list, pre-existente) |
+| `inventory/serializers.py` | 402-404 | `PricingService.get_product_price()` | ✅ Anotación via `bulk_annotate_pricing` |
 | `inventory/serializers.py` | 463-466 | `UoMService.get_allowed_uoms_for_context()` | ⚠️ Persiste |
 | `sales/serializers.py` | 166-168 | `UoMService.get_allowed_uoms_for_context()` en `validate()` | ⚠️ Persiste |
 | `purchasing/serializers.py` | 62-65 | `UoMService.validate_uom_compatibility()` en `validate()` | ⚠️ Persiste |

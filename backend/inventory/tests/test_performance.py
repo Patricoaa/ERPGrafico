@@ -39,9 +39,9 @@ def test_product_list_queries(api_client, product_setup, django_assert_max_num_q
     """Verifica O(1): el número de queries es fijo, no escala con N productos."""
     api_client.force_authenticate(user=product_setup["user"])
 
-    # Baseline: 45 queries for 5 products (pre-existing N+1 in PricingService).
-    # This test guards against adding NEW per-product queries.
-    with django_assert_max_num_queries(50):
+    # Baseline ~37 queries (reduced from ~45 by bulk_annotate_pricing).
+    # Remaining per-product queries: available_uoms, boms — future optimization targets.
+    with django_assert_max_num_queries(38):
         response = api_client.get("/api/inventory/products/")
 
     assert response.status_code == 200
