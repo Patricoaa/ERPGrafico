@@ -4,6 +4,7 @@ Tests del decorador @idempotent_endpoint y del modelo IdempotencyRecord.
 Contrato: docs/20-contracts/idempotency.md.
 """
 
+import json
 from datetime import timedelta
 
 import pytest
@@ -45,6 +46,12 @@ def user(db):
 @pytest.fixture
 def factory():
     return APIRequestFactory()
+
+
+def _json_hash(body: dict) -> str:
+    """Return the SHA-256 hash of body as Django/DRF would encode it (compact JSON)."""
+    from hashlib import sha256
+    return sha256(json.dumps(body, separators=(",", ":")).encode()).hexdigest()
 
 
 def _post(factory, user, *, key=None, body=None):
@@ -120,8 +127,8 @@ class TestIdempotentEndpointDecorator:
 
         request = factory.post("/x/", {"a": 1}, format="json", HTTP_IDEMPOTENCY_KEY="err-key")
         force_authenticate(request, user=user)
-        with pytest.raises(RuntimeError):
-            _ExplodingView.as_view()(request)
+        resp = _ExplodingView.as_view()(request)
+        assert resp.status_code == http_status.HTTP_500_INTERNAL_SERVER_ERROR
 
         record = IdempotencyRecord.objects.get(key="err-key", scope=SCOPE)
         assert record.status == IdempotencyRecord.Status.ERROR
@@ -134,22 +141,15 @@ class TestIdempotentEndpointDecorator:
 class TestPendingHandling:
     def test_pending_record_recent_returns_425(self, factory, user):
         # Simular request en vuelo: registro PENDING reciente
+        body = {"foo": "bar"}
+        expected_hash = _json_hash(body)
         IdempotencyRecord.objects.create(
             key="pending-key",
             scope=SCOPE,
-            body_hash="dummy",  # se sobreescribirá comparado más abajo
+            body_hash=expected_hash,
             user=user,
             status=IdempotencyRecord.Status.PENDING,
         )
-        # Pero el body_hash de la request real será distinto → tropieza primero con 409
-        # Por eso forzamos el mismo hash:
-        from hashlib import sha256
-
-        body = {"foo": "bar"}
-        import json
-
-        expected_hash = sha256(json.dumps(body).encode()).hexdigest()
-        IdempotencyRecord.objects.filter(key="pending-key").update(body_hash=expected_hash)
 
         request = factory.post("/dummy/", body, format="json", HTTP_IDEMPOTENCY_KEY="pending-key")
         force_authenticate(request, user=user)
@@ -160,11 +160,8 @@ class TestPendingHandling:
 
     def test_pending_record_stale_allows_retry(self, factory, user):
         # PENDING record creado hace >60s → permite re-ejecutar (asume crash del worker original)
-        import json
-        from hashlib import sha256
-
         body = {"foo": "bar"}
-        expected_hash = sha256(json.dumps(body).encode()).hexdigest()
+        expected_hash = _json_hash(body)
 
         rec = IdempotencyRecord.objects.create(
             key="stale-key",
