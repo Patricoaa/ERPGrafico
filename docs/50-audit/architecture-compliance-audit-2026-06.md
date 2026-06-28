@@ -36,15 +36,16 @@ doc: architecture-compliance-audit-2026-06
 | 8.1 `@transaction.atomic` faltante | 2026-06-28 | Agregado `@transaction.atomic` a `SalesService.create_sale_order_from_pos`. Creados 7 tests unitarios en `sales/tests/test_create_order_from_pos.py` cubriendo rollback en 3 tipos de excepción, happy path, sesión inválida, PIN requerido y PIN bypass. | `ac26a91d` |
 | 2.1 Cross-feature internal imports (~86 violaciones) + 10.1 API barrels | 2026-06-28 | Migrados ~95 archivos a barrel imports en 24 features. Creados barrels `api/index.ts` en 20 features. Cerrados agujeros ESLint `no-restricted-imports`. Promovido `PricingUtils` a `@/lib/pricing-utils`. Script `validate-barrel-imports.sh` para CI. | (múltiples) |
 | 7.1 Cross-app serializer imports top-level | 2026-06-28 | Eliminados 5 imports top-level en 3 serializers (billing, sales, purchasing). `TreasuryMovementSerializer` en billing era dead code. Los restantes migrados a `SerializerMethodField` + lazy import inside method. Solo `core` (infraestructura) mantiene imports top-level. | `3dd68676` |
+| 5.3 ORM queries en serializers | 2026-06-28 | Eliminados 2 aggregates inline en inventory/serializers y sales/serializers. Inventory: get_current_stock usa getattr(annotated_current_stock). Sales: validate usa product.qty_on_hand. Agregado test assertNumQueries para ProductViewSet list. | `14fbd077` |
 
 | Severidad | Count | Área |
 |-----------|-------|------|
-| 🔴 CRÍTICO | ~0 | Backend — views con lógica inline, product_type chains, transaction safety ✅ |
+| 🔴 CRÍTICO | ~0 | Backend — views lógica inline, product_type chains, transaction safety, ORM en serializers ✅ |
 | 🟡 ALTO | ~0 | Frontend — FSD boundaries, naming, barrels ✅ |
 | 🟡 ALTO | ~0 | Backend — cross-app coupling, serializers ✅ |
 | 🟢 MEDIO | 8 | Gaps de contrato (no cubiertos por documentación actual) — 2 resueltos (10.1 API barrels, 10.3 PricingUtils) |
 
-> ✅ **Resuelto:** Frontend hooks/API any types (~250 violaciones) — eliminado en Fase 1-6. `staleTime` y `markLocalMutation` también resueltos. **Section 5.1 + 5.2 + 6** — views inline business logic y product_type chains migrados a services/selectors/strategy. **Section 8.1** — `@transaction.atomic` agregado a `create_sale_order_from_pos`. **Section 2.1** — cross-feature internal imports (~86 violaciones) migrados a barrel imports en 24 features. `PricingUtils` promovido a `@/lib/pricing-utils`. **Section 7.1** — cross-app serializer imports top-level (~9 violaciones) migrados a lazy imports inside method.
+> ✅ **Resuelto:** Frontend hooks/API any types (~250 violaciones) — eliminado en Fase 1-6. `staleTime` y `markLocalMutation` también resueltos. **Section 5.1 + 5.2 + 6** — views inline business logic y product_type chains migrados a services/selectors/strategy. **Section 8.1** — `@transaction.atomic` agregado a `create_sale_order_from_pos`. **Section 2.1** — cross-feature internal imports (~86 violaciones) migrados a barrel imports en 24 features. `PricingUtils` promovido a `@/lib/pricing-utils`. **Section 7.1** — cross-app serializer imports top-level (~9 violaciones) migrados a lazy imports inside method. **Section 5.3** — ORM queries en serializers (2 aggregates inline) reemplazados por annotation/property reads. Test `assertNumQueries` agregado.
 
 ---
 
@@ -795,32 +796,29 @@ Contra 8 apps. Queda pendiente para futuras iteraciones: `core/views.py::UserPre
 
 ---
 
-### 5.3 ORM queries en serializers (2 claras + 4 borderline)
+### 5.3 ORM queries en serializers (2 claras + 4 borderline) — ✅ RESUELTO
 
-#### Explicación del error
+> **Resuelto 2026-06-28.** Inventory: `get_current_stock` reemplazó el aggregate fallback por `float(getattr(obj, "annotated_current_stock", None) or 0.0)`, eliminando la query N+1 en detail endpoints. Sales: `product.moves.aggregate(Sum("quantity"))` en `CreateSaleOrderSerializer.validate()` reemplazado por `product.qty_on_hand` (property que respeta annotation existente). Se agregó `test_performance.py` con `assertNumQueries` como barrera CI para ProductViewSet list. Commit: `14fbd077`.
+
+#### Explicación del error (original)
 
 La política zero N+1 (`GOVERNANCE.md:40`) prohíbe ORM queries dentro de Serializers o `SerializerMethodField`. Toda relación debe precargarse con `select_related`/`prefetch_related` en el ViewSet.
 
-#### Violaciones claras
+#### Violaciones claras (originales)
 
-| Archivo | Línea | Código |
-|---------|-------|--------|
-| `inventory/serializers.py` | 399 | `obj.stock_moves.aggregate(total=Sum("quantity"))` |
-| `sales/serializers.py` | 334 | `product.moves.aggregate(total=Sum("quantity"))` |
+| Archivo | Línea | Código original | Estado |
+|---------|-------|-----------------|--------|
+| `inventory/serializers.py` | 399 | `obj.stock_moves.aggregate(total=Sum("quantity"))` | ✅ `getattr` + annotation |
+| `sales/serializers.py` | 334 | `product.moves.aggregate(total=Sum("quantity"))` | ✅ `product.qty_on_hand` |
 
 #### Borderline (service calls desde serializers)
 
-| Archivo | Línea | Código |
-|---------|-------|--------|
-| `inventory/serializers.py` | 402-404 | `PricingService.get_product_price()` |
-| `inventory/serializers.py` | 463-466 | `UoMService.get_allowed_uoms_for_context()` |
-| `sales/serializers.py` | 166-168 | `UoMService.get_allowed_uoms_for_context()` en `validate()` |
-| `purchasing/serializers.py` | 62-65 | `UoMService.validate_uom_compatibility()` en `validate()` |
-
-#### Solución
-
-1. Mover las agregaciones a `selectors.py` y precargar los datos en el `ViewSet.get_queryset()`.
-2. Los service calls en `validate()` son menos críticos pero deberían migrarse a `services.py` cuando sea posible.
+| Archivo | Línea | Código | Estado |
+|---------|-------|--------|--------|
+| `inventory/serializers.py` | 402-404 | `PricingService.get_product_price()` | ⚠️ Persiste (causa N+1 en list, pre-existente) |
+| `inventory/serializers.py` | 463-466 | `UoMService.get_allowed_uoms_for_context()` | ⚠️ Persiste |
+| `sales/serializers.py` | 166-168 | `UoMService.get_allowed_uoms_for_context()` en `validate()` | ⚠️ Persiste |
+| `purchasing/serializers.py` | 62-65 | `UoMService.validate_uom_compatibility()` en `validate()` | ⚠️ Persiste |
 
 ---
 
@@ -1117,7 +1115,8 @@ Esta sección documenta vacíos en la documentación del proyecto que permiten a
 | **Subtotal auditoría original** | **~29 días** | | |
 | 8.1 `@transaction.atomic` faltante | ~0.25 día | Correctivo (alto riesgo) | ✅ Resuelto (`ac26a91d`) |
 | 7.1 Cross-app serializer imports top-level | ~0.5 día | Correctivo (riesgo medio) | ✅ Resuelto (`3dd68676`) |
-| **Total acumulado** | **~29.75 días** | | |
+| 5.3 ORM queries en serializers | ~0.25 día | Correctivo (N+1 performance) | ✅ Resuelto (`14fbd077`) |
+| **Total acumulado** | **~30 días** | | |
 
 ---
 
