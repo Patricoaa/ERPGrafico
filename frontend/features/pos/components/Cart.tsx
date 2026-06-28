@@ -242,9 +242,7 @@ export function Cart({
                         <div className="flex gap-2">
                             <Button
                                 className={cn(
-                                    "flex-1 font-black uppercase tracking-tight border border-primary bg-transparent hover:bg-transparent relative overflow-hidden",
-                                    "after:content-[''] after:absolute after:inset-x-0 after:bottom-0 after:h-0.5 after:opacity-0 hover:after:opacity-100",
-                                    "after:transition-opacity after:bg-gradient-to-r after:from-cyan after:via-magenta after:to-yellow",
+                                    "flex-1 font-black uppercase tracking-tight border border-primary bg-transparent hover:bg-primary/10 relative overflow-hidden transition-colors",
                                     isTouchPOS ? "h-20 text-2xl" : "h-12 text-lg"
                                 )}
                                 size="lg"
@@ -276,12 +274,12 @@ export function Cart({
                         <Button
                             id="confirm-sale-btn"
                             className={cn(
-                                "w-full font-black uppercase tracking-tight",
-                                isTouchPOS ? "h-20 text-2xl" : "h-12 text-lg"
-                            )}
-                            size="lg"
-                            disabled={loading || saving || items.length === 0}
-                            onClick={onConfirmSale}
+                                "w-full font-black uppercase tracking-tight hover:brightness-110 transition-all",
+                                    isTouchPOS ? "h-20 text-2xl" : "h-12 text-lg"
+                                )}
+                                size="lg"
+                                disabled={loading || saving || items.length === 0}
+                                onClick={onConfirmSale}
                         >
                             <ShoppingCart className={cn(
                                 "mr-2",
@@ -297,9 +295,7 @@ export function Cart({
                             <div className="flex gap-2">
                                 <Button
                                     className={cn(
-                                        "flex-1 font-black uppercase tracking-tight border border-primary bg-transparent hover:bg-transparent relative overflow-hidden",
-                                        "after:content-[''] after:absolute after:inset-x-0 after:bottom-0 after:h-0.5 after:opacity-0 hover:after:opacity-100",
-                                        "after:transition-opacity after:bg-gradient-to-r after:from-cyan after:via-magenta after:to-yellow",
+                                        "flex-1 font-black uppercase tracking-tight border border-primary bg-transparent hover:bg-primary/10 relative overflow-hidden transition-colors",
                                         isTouchPOS ? "h-20 text-2xl" : "h-12 text-lg"
                                     )}
                                     size="lg"
