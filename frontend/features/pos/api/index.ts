@@ -1,0 +1,1 @@
+export { posApi } from './posApi'
