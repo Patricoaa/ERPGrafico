@@ -43,14 +43,10 @@ class WorkOrderFilterSet(FilterSet):
 
 from decimal import Decimal
 
-from django.contrib.contenttypes.models import ContentType
-from django.db.models import Q, Sum
 from django.core.exceptions import ValidationError
 from django.http import HttpResponse
 from core.mixins import AuditHistoryMixin
 from core.idempotency import idempotent_endpoint
-from core.models import Attachment
-from inventory.models import Product, UoM, Warehouse
 
 from .serializers import (
     BillOfMaterialsSerializer,
@@ -281,19 +277,9 @@ class WorkOrderViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
 
     @action(detail=True, methods=["post"])
     def remove_material(self, request, pk=None):
-        """Remove a manually added material"""
         work_order = self.get_object()
         try:
-            material_id = request.data.get("material_id")
-            material = WorkOrderMaterial.objects.get(pk=material_id, work_order=work_order)
-
-            if material.source != "MANUAL":
-                return Response(
-                    {"error": "Solo se pueden eliminar materiales agregados manualmente."},
-                    status=status.HTTP_400_BAD_REQUEST,
-                )
-
-            material.delete()
+            WorkOrderService.remove_material(work_order, request.data.get("material_id"))
             return Response(WorkOrderSerializer(work_order).data)
         except Exception as e:
             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
@@ -301,38 +287,20 @@ class WorkOrderViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
     @idempotent_endpoint(scope="production.order.bulk_transition")
     @action(detail=False, methods=["post"], url_path="bulk_transition")
     def bulk_transition(self, request):
-        """TASK-306: Advance multiple OTs to the same next stage."""
-        ids = request.data.get("ids", [])
-        next_stage = request.data.get("next_stage")
-        if not ids or not next_stage:
-            return Response(
-                {"error": "ids y next_stage son requeridos"}, status=status.HTTP_400_BAD_REQUEST
+        try:
+            results = WorkOrderService.bulk_transition(
+                request.data.get("ids", []), request.data.get("next_stage")
             )
-        results = {"ok": [], "errors": []}
-        for pk in ids:
-            try:
-                wo = WorkOrder.objects.get(pk=pk)
-                WorkOrderService.transition_to(wo, next_stage)
-                results["ok"].append(pk)
-            except Exception as e:
-                results["errors"].append({"id": pk, "error": str(e)})
-        return Response(results)
+            return Response(results)
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
     @action(detail=False, methods=["post"], url_path="bulk_print")
     def bulk_print(self, request):
-        """TASK-306: Print a merged PDF for multiple OTs."""
         ids = request.data.get("ids", [])
-        if not ids:
-            return Response({"error": "ids es requerido"}, status=status.HTTP_400_BAD_REQUEST)
-        orders = WorkOrder.objects.filter(pk__in=ids).select_related(
-            "warehouse", "sale_line__order__customer"
-        )
-        if not orders.exists():
-            return Response(
-                {"error": "No se encontraron órdenes"}, status=status.HTTP_404_NOT_FOUND
-            )
         try:
-            merged = WorkOrderPdfService.generate_bulk_pdf(list(orders))
+            orders = WorkOrderPdfService.get_orders_for_bulk_print(ids)
+            merged = WorkOrderPdfService.generate_bulk_pdf(orders, request)
             response = HttpResponse(merged, content_type="application/pdf")
             response["Content-Disposition"] = f'attachment; filename="ots_bulk_{len(ids)}.pdf"'
             return response

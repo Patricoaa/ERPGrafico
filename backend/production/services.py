@@ -2016,6 +2016,27 @@ class WorkOrderService:
         )
 
     @staticmethod
+    def remove_material(work_order, material_id):
+        material = WorkOrderMaterial.objects.get(pk=material_id, work_order=work_order)
+        if material.source != "MANUAL":
+            raise ValidationError("Solo se pueden eliminar materiales agregados manualmente.")
+        material.delete()
+
+    @staticmethod
+    def bulk_transition(ids, next_stage):
+        if not ids or not next_stage:
+            raise ValidationError("ids y next_stage son requeridos")
+        results = {"ok": [], "errors": []}
+        for pk in ids:
+            try:
+                wo = WorkOrder.objects.get(pk=pk)
+                WorkOrderService.transition_to(wo, next_stage)
+                results["ok"].append(pk)
+            except Exception as e:
+                results["errors"].append({"id": pk, "error": str(e)})
+        return results
+
+    @staticmethod
     def get_comments_queryset(work_order):
         from django.contrib.contenttypes.models import ContentType
         from workflow.models import Comment
@@ -2149,6 +2170,20 @@ class WorkOrderPdfService:
         pdf_bytes = html.write_pdf()
 
         return pdf_bytes
+
+    @staticmethod
+    @staticmethod
+    def get_orders_for_bulk_print(ids):
+        if not ids:
+            raise ValidationError("ids es requerido")
+        orders = list(
+            WorkOrder.objects.filter(pk__in=ids).select_related(
+                "warehouse", "sale_line__order__customer"
+            )
+        )
+        if not orders:
+            raise ValidationError("No se encontraron órdenes")
+        return orders
 
     @staticmethod
     def generate_bulk_pdf(work_orders, request=None):

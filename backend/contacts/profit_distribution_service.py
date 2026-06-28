@@ -23,6 +23,20 @@ from .partner_service import PartnerService
 
 class ProfitDistributionService:
     @staticmethod
+    def validate_create_data(fiscal_year_id, net_result, resolution_date):
+        if fiscal_year_id is None or net_result is None or not resolution_date:
+            raise ValidationError(
+                "Faltan campos obligatorios (fiscal_year_id, net_result, resolution_date)."
+            )
+
+    @staticmethod
+    def validate_can_delete(resolution: ProfitDistributionResolution):
+        if resolution.status == ProfitDistributionResolution.Status.EXECUTED:
+            raise ValidationError(
+                "No se puede eliminar una resolución que ya ha sido ejecutada contablemente."
+            )
+
+    @staticmethod
     @transaction.atomic
     def create_draft_resolution(
         fiscal_year_id: int,
@@ -476,6 +490,9 @@ class ProfitDistributionService:
         Executes payments for DIVIDEND_PAYABLE destinations.
         payments_data: [{'partner_id': int, 'amount': float}]
         """
+        if not treasury_account_id:
+            raise ValidationError("Falta seleccionar la cuenta de tesorería (treasury_account_id).")
+
         if resolution.status != ProfitDistributionResolution.Status.EXECUTED:
             raise ValidationError(
                 "La resolución debe estar ejecutada contablemente para realizar pagos."

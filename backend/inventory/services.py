@@ -593,11 +593,19 @@ class PricingService:
         # OVERRIDE — precio propio
         return variant.sale_price, variant.sale_price_gross
 
+    class ProductNotFound(Exception):
+        pass
+
     @staticmethod
-    def get_effective_price(product, quantity, uom_id):
+    def get_effective_sale_price(product_id, quantity, uom_id=None):
         from decimal import Decimal
-        from inventory.models import UoM
+        from inventory.models import Product, UoM
         from accounting.utils import get_vat_multiplier
+
+        try:
+            product = Product.objects.get(pk=product_id)
+        except Product.DoesNotExist:
+            raise PricingService.ProductNotFound(f"Product {product_id} not found")
 
         uom = None
         if uom_id:
@@ -615,6 +623,10 @@ class PricingService:
             "price_gross": float(price_gross),
             "price_net": float(price_net),
         }
+
+    @staticmethod
+    def get_effective_price(product, quantity, uom_id):
+        return PricingService.get_effective_sale_price(product.id, quantity, uom_id)
 
 
 class UoMService:

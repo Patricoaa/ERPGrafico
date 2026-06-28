@@ -19,10 +19,18 @@ from treasury.models import TreasuryAccount
 
 
 class NoteCheckoutService:
-    """
-    Service for handling multi-stage checkout of Credit/Debit Notes.
-    Replaces atomic create_note with a staged workflow similar to SalesCheckoutWizard.
-    """
+    @staticmethod
+    def parse_formdata_json(data):
+        import json
+
+        parsed = data.dict() if hasattr(data, "dict") else data.copy()
+        for field in ["selected_items", "logistics_data", "registration_data", "payment_data"]:
+            if field in parsed and isinstance(parsed[field], str):
+                try:
+                    parsed[field] = json.loads(parsed[field])
+                except json.JSONDecodeError:
+                    pass
+        return parsed
 
     @staticmethod
     def process_logistics_from_request(request, invoice_id: int):
