@@ -389,14 +389,7 @@ class ProductSerializer(serializers.ModelSerializer):
         return super().to_internal_value(ret)
 
     def get_current_stock(self, obj):
-        # Use annotated value if available from the ViewSet
-        if hasattr(obj, "annotated_current_stock"):
-            return float(obj.annotated_current_stock or 0.0)
-
-        # Fallback to aggregate if not annotated (e.g. in direct detail access)
-        from django.db.models import Sum
-
-        return obj.stock_moves.aggregate(total=Sum("quantity"))["total"] or 0.0
+        return float(getattr(obj, "annotated_current_stock", None) or 0.0)
 
     def get_effective_price(self, obj):
         from .services import PricingService
