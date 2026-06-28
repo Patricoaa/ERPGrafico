@@ -575,6 +575,18 @@ class TaxPeriodService:
             return False
 
     @staticmethod
+    def parse_and_check_closed(date_str):
+        from datetime import datetime
+
+        if not date_str:
+            raise ValidationError("Date required")
+        try:
+            parsed = datetime.strptime(date_str, '%Y-%m-%d').date()
+        except (ValueError, TypeError):
+            raise ValidationError("Invalid date")
+        return {"is_closed": TaxPeriodService.is_period_closed(parsed), "date": date_str}
+
+    @staticmethod
     @transaction.atomic
     def close_period(year: int, month: int, user) -> TaxPeriod:
         """
@@ -840,6 +852,28 @@ class AccountingPeriodService:
             return period.status == AccountingPeriod.Status.CLOSED
         except AccountingPeriod.DoesNotExist:
             return False
+
+    @staticmethod
+    def parse_and_check_closed(date_str):
+        from datetime import datetime
+
+        if not date_str:
+            raise ValidationError("Date required")
+        try:
+            parsed = datetime.strptime(date_str, '%Y-%m-%d').date()
+        except (ValueError, TypeError):
+            raise ValidationError("Invalid date")
+        return {"is_closed": AccountingPeriodService.is_period_closed(parsed), "date": date_str}
+
+    @staticmethod
+    def validate_can_close(user):
+        if not user.has_perm("tax.can_close_accounting_period"):
+            raise ValidationError("No tiene permisos para cerrar periodos contables.")
+
+    @staticmethod
+    def validate_can_reopen(user):
+        if not user.has_perm("tax.can_reopen_accounting_period"):
+            raise ValidationError("No tiene permisos para reabrir periodos contables.")
 
     @staticmethod
     @transaction.atomic

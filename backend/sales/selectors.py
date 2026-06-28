@@ -6,6 +6,42 @@ from .models import SaleOrder
 
 class SaleOrderSelector:
     @staticmethod
+    def get_base_queryset():
+        from .models import SaleOrder
+
+        return SaleOrder.objects.select_related(
+            "customer", "credit_approval_task", "pos_session"
+        ).prefetch_related(
+            "lines",
+            "lines__product",
+            "lines__product__manufacturing_profile",
+            "lines__work_orders",
+            "invoices",
+            "deliveries",
+            "payments",
+            "work_orders",
+        ).order_by("-date", "-id")
+
+    @staticmethod
+    def get_customer_name_suggestions(q):
+        from .models import SaleOrder
+
+        names = (
+            SaleOrder.objects.filter(customer__name__icontains=q)
+            .values_list("customer__name", flat=True)
+            .distinct()
+            .order_by("customer__name")[:10]
+        )
+        return list(names)
+
+    @staticmethod
+    def get_credit_history_queryset():
+        from .models import SaleOrder
+
+        return SaleOrder.objects.filter(credit_assignment_origin__isnull=False).order_by(
+            "-date", "-created_at"
+        )
+    @staticmethod
     def get_cancel_impact(order: SaleOrder) -> dict:
         action_kind = "soft_cancel" if order.status == "DRAFT" else "full_annul"
         impact = {

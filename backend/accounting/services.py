@@ -43,14 +43,14 @@ class JournalEntryService:
     @staticmethod
     @transaction.atomic
     def reverse_entry(entry: JournalEntry, description=None):
-        """
-        Creates a reversal Journal Entry that mirrors the original.
-        Debit becomes Credit, Credit becomes Debit.
-        The original entry stays unchanged (POSTED/CLOSED) for audit trail.
-        Returns the new reversal entry with status REVERSAL.
-        """
         if entry.status not in [JournalEntry.State.POSTED, JournalEntry.State.CLOSED]:
             raise ValidationError("Solo se pueden reversar asientos publicados o cerrados.")
+
+        if not entry.is_manual:
+            raise ValidationError(
+                "No se puede revertir un asiento generado automáticamente. "
+                "Use el proceso de anulación del documento origen."
+            )
 
         if JournalEntry.objects.filter(reversal_of=entry).exists():
             raise ValidationError("Este asiento ya fue revertido.")
@@ -133,6 +133,11 @@ class JournalEntryService:
                     else:
                         JournalItem.objects.create(entry=entry, account_id=account_val, **item)
         return entry
+
+    @staticmethod
+    def validate_editable(entry):
+        if entry.status != 'DRAFT':
+            raise ValidationError("Solo editar en Borrador.")
 
 class AccountingService:
     @staticmethod
@@ -1034,6 +1039,20 @@ class AccountingService:
         settings.save()
 
         return f"Plan de cuentas IFRS robusto cargado. {created_count} nuevas cuentas creadas. Mapeos de configuración actualizados (Contabilidad)."
+
+    @staticmethod
+    def get_or_create_current_settings():
+        settings, _ = AccountingSettings.objects.get_or_create(pk=1)
+        return settings
+
+    @staticmethod
+    def validate_account_deletion(account):
+        from .selectors import balance_affecting_statuses
+
+        if account.journal_items.filter(entry__status__in=balance_affecting_statuses()).exists():
+            raise ValidationError(
+                "No se puede eliminar una cuenta con movimientos contables asociados."
+            )
 
 
 from decimal import Decimal

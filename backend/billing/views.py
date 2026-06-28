@@ -61,20 +61,18 @@ class InvoiceViewSet(NoDestroyModelMixin, viewsets.ModelViewSet, AuditHistoryMix
 
     def update(self, request, *args, **kwargs):
         instance = self.get_object()
-        if instance.status != "DRAFT":
-            return Response(
-                {"error": "Solo se pueden editar facturas en estado Borrador."},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
+        try:
+            BillingService.validate_editable(instance)
+        except ValidationError as e:
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
         return super().update(request, *args, **kwargs)
 
     def partial_update(self, request, *args, **kwargs):
         instance = self.get_object()
-        if instance.status != "DRAFT":
-            return Response(
-                {"error": "Solo se pueden editar facturas en estado Borrador."},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
+        try:
+            BillingService.validate_editable(instance)
+        except ValidationError as e:
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
         return super().partial_update(request, *args, **kwargs)
 
     def destroy(self, request, *args, **kwargs):
@@ -124,11 +122,11 @@ class InvoiceViewSet(NoDestroyModelMixin, viewsets.ModelViewSet, AuditHistoryMix
 
     @action(detail=False, methods=['get'])
     def check_folio(self, request):
-        from .selectors import InvoiceSelector
-        num, dte = request.query_params.get('number'), request.query_params.get('dte_type')
-        if not num or not dte: return Response({'error': 'Faltan parametros'}, status=400)
-        res = InvoiceSelector.check_folio_uniqueness(number=num, dte_type=dte, exclude_id=request.query_params.get('exclude_id'), contact_id=request.query_params.get('contact_id'), is_purchase=request.query_params.get('is_purchase', 'false').lower() == 'true')
-        return Response(res)
+        try:
+            res = BillingService.check_folio_from_request(request)
+            return Response(res)
+        except ValidationError as e:
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
     @idempotent_endpoint(scope="billing.pos.checkout")
     @action(detail=False, methods=["post"])

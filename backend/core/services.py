@@ -3,6 +3,29 @@ from django.conf import settings
 
 class CoreService:
     @staticmethod
+    def get_or_create_company_settings():
+        from .models import CompanySettings
+
+        obj, _ = CompanySettings.objects.get_or_create(pk=1, defaults={"name": "Mi Empresa"})
+        return obj
+
+    @staticmethod
+    def get_user_preferences(user):
+        from .models import UserPreference
+
+        prefs = UserPreference.objects.filter(user=user)
+        return {p.key: p.value for p in prefs}
+
+    @staticmethod
+    def set_user_preferences(user, data):
+        from .models import UserPreference
+
+        for key, value in data.items():
+            UserPreference.objects.update_or_create(
+                user=user, key=key, defaults={"value": value}
+            )
+
+    @staticmethod
     def get_system_status():
         from django.utils import timezone
         from django.db import connections
@@ -19,6 +42,15 @@ class CoreService:
         }
 
 class CoreSelector:
+    @staticmethod
+    def get_background_jobs_for_user(user):
+        from .models import BackgroundJob
+
+        qs = BackgroundJob.objects.all()
+        if not user.is_superuser:
+            qs = qs.filter(user=user)
+        return qs
+
     @staticmethod
     def get_global_audit_log(limit):
         from sales.models import SaleOrder

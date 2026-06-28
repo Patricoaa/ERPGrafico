@@ -1365,6 +1365,28 @@ class BillingService:
         return invoice
 
     @staticmethod
+    @staticmethod
+    def validate_editable(instance):
+        if instance.status != "DRAFT":
+            raise ValidationError("Solo se pueden editar facturas en estado Borrador.")
+
+    @staticmethod
+    def check_folio_from_request(request):
+        from .selectors import InvoiceSelector
+
+        num = request.query_params.get('number')
+        dte = request.query_params.get('dte_type')
+        if not num or not dte:
+            raise ValidationError('Faltan parametros')
+        return InvoiceSelector.check_folio_uniqueness(
+            number=num,
+            dte_type=dte,
+            exclude_id=request.query_params.get('exclude_id'),
+            contact_id=request.query_params.get('contact_id'),
+            is_purchase=request.query_params.get('is_purchase', 'false').lower() == 'true',
+        )
+
+    @staticmethod
     def validate_purge(invoice: Invoice):
         """
         Una factura solo puede purgarse (hard delete) si está CANCELLED y no dejó

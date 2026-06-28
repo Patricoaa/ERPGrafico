@@ -13,9 +13,9 @@ from rest_framework.response import Response
 
 from core.api.search import DistinctSearchFilter
 from core.mixins import AuditHistoryMixin, NoDestroyModelMixin
-from inventory.models import Warehouse
 
 from .models import SaleDelivery, SaleOrder, SaleReturn, SalesSettings
+from .selectors import SaleOrderSelector
 from .serializers import (
     CreateSaleOrderSerializer,
     SaleDeliverySerializer,
@@ -136,19 +136,9 @@ class SaleOrderFilterSet(django_filters.FilterSet):
 
 class SaleOrderViewSet(NoDestroyModelMixin, viewsets.ModelViewSet, AuditHistoryMixin):
     pagination_class = StandardResultsSetPagination
+
     def get_queryset(self):
-        return SaleOrder.objects.select_related(
-            "customer", "credit_approval_task", "pos_session"
-        ).prefetch_related(
-            "lines", 
-            "lines__product", 
-            "lines__product__manufacturing_profile",
-            "lines__work_orders", 
-            "invoices", 
-            "deliveries", 
-            "payments",
-            "work_orders"
-        ).order_by("-date", "-id")
+        return SaleOrderSelector.get_base_queryset()
     permission_classes = [StandardizedModelPermissions]
     filter_backends = [DjangoFilterBackend, DistinctSearchFilter]
     filterset_class = SaleOrderFilterSet
@@ -179,20 +169,18 @@ class SaleOrderViewSet(NoDestroyModelMixin, viewsets.ModelViewSet, AuditHistoryM
 
     def update(self, request, *args, **kwargs):
         instance = self.get_object()
-        if instance.status != "DRAFT":
-            return Response(
-                {"error": "Solo se pueden editar notas de venta en estado Borrador."},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
+        try:
+            SalesService.validate_editable(instance)
+        except ValidationError as e:
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
         return super().update(request, *args, **kwargs)
 
     def partial_update(self, request, *args, **kwargs):
         instance = self.get_object()
-        if instance.status != "DRAFT":
-            return Response(
-                {"error": "Solo se pueden editar notas de venta en estado Borrador."},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
+        try:
+            SalesService.validate_editable(instance)
+        except ValidationError as e:
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
         return super().partial_update(request, *args, **kwargs)
 
     def destroy(self, request, *args, **kwargs):
@@ -246,18 +234,13 @@ class SaleOrderViewSet(NoDestroyModelMixin, viewsets.ModelViewSet, AuditHistoryM
     @idempotent_endpoint(scope="sales.order.dispatch")
     @action(detail=True, methods=["post"], url_path="dispatch")
     def dispatch_order(self, request, pk=None):
-        """Dispatch complete order"""
         order = self.get_object()
         try:
-            warehouse_id = request.data.get("warehouse_id")
-            delivery_date = request.data.get("delivery_date")
-
-            warehouse = Warehouse.objects.get(pk=warehouse_id)
-
-            delivery = SalesService.dispatch_order(
-                order=order, warehouse=warehouse, delivery_date=delivery_date
+            delivery = SalesService.dispatch_order_by_id(
+                order=order,
+                warehouse_id=request.data.get("warehouse_id"),
+                delivery_date=request.data.get("delivery_date"),
             )
-
             return Response(SaleDeliverySerializer(delivery).data, status=status.HTTP_201_CREATED)
         except ValidationError as e:
             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
@@ -321,23 +304,11 @@ class SaleOrderViewSet(NoDestroyModelMixin, viewsets.ModelViewSet, AuditHistoryM
         q = request.query_params.get("q", "").strip()
         if len(q) < 2:
             return Response([])
-        names = (
-            SaleOrder.objects.filter(customer__name__icontains=q)
-            .values_list("customer__name", flat=True)
-            .distinct()
-            .order_by("customer__name")[:10]
-        )
-        return Response(list(names))
+        return Response(SaleOrderSelector.get_customer_name_suggestions(q))
 
     @action(detail=False, methods=["get"])
     def credit_history(self, request):
-        """
-        Global history of credit assignments across all customers.
-        """
-        history = SaleOrder.objects.filter(credit_assignment_origin__isnull=False).order_by(
-            "-date", "-created_at"
-        )
-
+        history = SaleOrderSelector.get_credit_history_queryset()
         page = self.paginate_queryset(history)
         if page is not None:
             serializer = self.get_serializer(page, many=True)
