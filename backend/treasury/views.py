@@ -1,9 +1,14 @@
+import logging
+
 from decimal import Decimal
 
 import django_filters
 from celery.result import AsyncResult
 from django.core.exceptions import ValidationError
+from django.http import HttpResponse
 from django.utils import timezone
+
+logger = logging.getLogger(__name__)
 from django_filters.rest_framework import DjangoFilterBackend, FilterSet
 from rest_framework import filters as drf_filters
 from rest_framework import serializers as drf_serializers
@@ -810,6 +815,28 @@ class POSSessionViewSet(viewsets.ModelViewSet):
             import traceback
 
             traceback.print_exc()
+            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+    @action(detail=True, methods=["get"])
+    def pdf(self, request, pk=None):
+        """Generate a downloadable PDF of the X/Z session report."""
+        from .pos_report_pdf import render_pos_report_pdf
+
+        session = self.get_object()
+        report_type = request.query_params.get("type", "X" if session.status == "OPEN" else "Z").upper()
+
+        audit = None
+        if report_type == "Z" and hasattr(session, "audit"):
+            audit = session.audit
+
+        try:
+            pdf_bytes = render_pos_report_pdf(session, request, report_type, audit)
+            filename = f"informe-pos-{report_type}-{session.id}.pdf"
+            response = HttpResponse(pdf_bytes, content_type="application/pdf")
+            response["Content-Disposition"] = f'inline; filename="{filename}"'
+            return response
+        except Exception as e:
+            logger.exception("Error generating POS report PDF")
             return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
     @action(detail=True, methods=["post"])

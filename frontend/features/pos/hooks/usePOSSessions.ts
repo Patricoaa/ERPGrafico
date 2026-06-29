@@ -21,6 +21,7 @@ export interface POSSession {
     total_card_sales: number
     total_transfer_sales: number
     total_credit_sales: number
+    total_check_sales: number
     total_other_cash_inflow: number
     total_other_cash_outflow: number
 }
@@ -76,4 +77,23 @@ export function usePOSSessionSummary<T = Record<string, unknown>>(sessionId: num
         // Summary se computa server-side y es relativamente costoso; sin staleTime
         // explícito → vuelve a fetchear según el global staleTime (5min).
     })
+}
+
+/**
+ * Download a POS X/Z report as PDF.
+ */
+export function useDownloadPOSReportPDF() {
+    return {
+        downloadPdf: async (sessionId: number, type: "X" | "Z") => {
+            const blob = await posApi.getSessionPdf(sessionId, type)
+            const url = window.URL.createObjectURL(new Blob([blob], { type: 'application/pdf' }))
+            const link = document.createElement('a')
+            link.href = url
+            link.download = `informe-pos-${type}-${sessionId}.pdf`
+            document.body.appendChild(link)
+            link.click()
+            link.remove()
+            window.URL.revokeObjectURL(url)
+        },
+    }
 }

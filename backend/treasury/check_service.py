@@ -101,7 +101,7 @@ class CheckService:
         movement = TreasuryService.create_movement(
             amount=amount,
             movement_type=TreasuryMovement.Type.INBOUND,
-            payment_method=TreasuryMovement.Method.OTHER,
+            payment_method=TreasuryMovement.Method.CHECK,
             to_account=portfolio_account,
             date=issue_date,
             created_by=created_by,
