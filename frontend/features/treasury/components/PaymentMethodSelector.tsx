@@ -251,6 +251,17 @@ export function PaymentMethodSelector({
         return availableMethods.filter(m => m.isAllowed)
     }, [allowedMethods, isMethodAllowed, operation])
 
+    const hasAdditionalFields = useMemo(() => {
+        if (!paymentData.method) return false
+        if (paymentData.method === 'CHECK') return true
+        if (paymentData.method === 'CREDIT_CARD') return true
+        if (paymentData.method === 'DEBIT_CARD') return true
+        if (paymentData.method === 'CARD' || paymentData.method === 'CARD_TERMINAL' || paymentData.method === 'TRANSFER') {
+            return methodsForType.filter(m => m.treasury_account != null).length > 1
+        }
+        return false
+    }, [paymentData.method, methodsForType])
+
     return (
         <div className="space-y-4">
             {/* Account Details Form */}
@@ -317,7 +328,7 @@ export function PaymentMethodSelector({
                     ))}
                 </RadioGroup>
 
-                {paymentData.method && (
+                {hasAdditionalFields && (
                     <div className="space-y-4 animate-in fade-in slide-in-from-top-2">
                         <FormSection title="Datos Adicionales" />
 
