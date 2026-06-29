@@ -34,13 +34,13 @@ interface BIAnalyticsData {
     };
     performance: {
         purchase_total: number;
-        efficiency: number;
         ar_total: number;
         ap_total: number;
     };
     production: {
         finished_wo: number;
         total_wo: number;
+        efficiency: number;
     };
 }
 
@@ -56,9 +56,9 @@ export const BIAnalyticsDashboard: React.FC<BIAnalyticsDashboardProps> = ({ date
     if (isError) return <EmptyState context="finance" variant="compact" title="Error al cargar analytics" description="No se pudieron cargar los datos de inteligencia de negocio." />;
     if (!data && !isLoading) return <EmptyState context="finance" variant="compact" description="No hay datos disponibles para el período seleccionado" />;
 
-    const PLACEHOLDER = { sales: { total_sales: 0, growth: 0, average_ticket: 0, sales_count: 0, monthly_trend: [], top_customers: [] }, inventory: { total_value: 0, item_count: 0, turnover_ratio: 0, low_stock_alerts: 0, stock_distribution: [] }, performance: { purchase_total: 0, efficiency: 0, ar_total: 0, ap_total: 0 }, production: { finished_wo: 0, total_wo: 0 } };
+    const PLACEHOLDER = { sales: { total_sales: 0, growth: 0, average_ticket: 0, sales_count: 0, monthly_trend: [], top_customers: [] }, inventory: { total_value: 0, item_count: 0, turnover_ratio: 0, low_stock_alerts: 0, stock_distribution: [] }, performance: { purchase_total: 0, ar_total: 0, ap_total: 0 }, production: { finished_wo: 0, total_wo: 0, efficiency: 0 } };
     const d = data ?? PLACEHOLDER;
-    const { sales, inventory, performance } = d;
+    const { sales, inventory, performance, production } = d;
 
     return (
         <SkeletonShell isLoading={isLoading} ariaLabel="Cargando analytics de negocio">
@@ -197,11 +197,11 @@ export const BIAnalyticsDashboard: React.FC<BIAnalyticsDashboardProps> = ({ date
                         <div className="space-y-2">
                             <div className="flex justify-between items-center">
                                 <span className="text-sm text-muted-foreground">OTs Completadas:</span>
-                                <span className="font-semibold">{data.production.finished_wo} / {data.production.total_wo}</span>
+                                <span className="font-semibold">{production.finished_wo} / {production.total_wo}</span>
                             </div>
                             <div className="flex justify-between items-center">
                                 <span className="text-sm text-muted-foreground">Eficiencia:</span>
-                                <span className="font-semibold text-success">{data.performance.efficiency}%</span>
+                                <span className="font-semibold text-success">{production.efficiency}%</span>
                             </div>
                         </div>
                     </CardContent>
