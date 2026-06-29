@@ -11,7 +11,7 @@ import { Card } from '@/components/ui/card'
 import { PrintableReceipt, BaseModal } from '@/components/shared'
 import { useVatRate } from '@/hooks/useVatRate'
 import { useDeviceContext } from '@/hooks/useDeviceContext'
-import { Loader2, FileText, BarChart3, Save, Lock, Unlock, ArrowRightLeft, LogOut, ShoppingCart, Wallet, Check, Printer } from 'lucide-react'
+import { Loader2, FileText, BarChart3, Save, Lock, Unlock, ArrowRightLeft, ShoppingCart, Wallet, Check, Printer } from 'lucide-react'
 
 import {
     DropdownMenu,
@@ -128,15 +128,11 @@ export function POSClientView() {
         })
     }, [])
 
-    const handleDraftDeleted = useCallback((_draftId: number) => {
-        // Silently refresh — the list will update via sync
-    }, [])
-
     const { syncDrafts, acquireLock, releaseLock, getLockInfo, forceSync, browserSessionKey } = useDraftSync({
         posSessionId: (currentSession?.id ?? null) as number | null,
         enabled: !!currentSession?.id,
         onNewDraft: handleNewDraft,
-        onDraftUpdated: (draft) => { /* Optional: handle quiet updates */ },
+        onDraftUpdated: () => { /* Optional: handle quiet updates */ },
         onSessionStateChange: (status, closedBy) => {
             if (status === 'CLOSED') {
                 toast.error("Sesión Cerrada", {
@@ -149,7 +145,7 @@ export function POSClientView() {
         }
     })
 
-    const { saveDraft, loadDraft, drafts, isSaving, lastSaved, fetchDrafts, releaseCurrentLock } = useDrafts({
+    const { saveDraft, loadDraft, isSaving, lastSaved, fetchDrafts, releaseCurrentLock } = useDrafts({
         browserSessionKey,
         acquireLock,
         releaseLock,
@@ -159,7 +155,7 @@ export function POSClientView() {
     const [isWithdrawing, setIsWithdrawing] = useState(false)
     const [withdrawDialogOpen, setWithdrawDialogOpen] = useState(false)
     const [selectedPartnerId, setSelectedPartnerId] = useState<string | null>(null)
-    const [selectedPartnerName, setSelectedPartnerName] = useState<string>("")
+    const [, setSelectedPartnerName] = useState<string>("")
 
     const posContentRef = useRef<HTMLDivElement>(null)
     const handlePrint = useReactToPrint({
@@ -184,7 +180,7 @@ export function POSClientView() {
     const [numpadConfig, setNumpadConfig] = useState<{ itemId: string, field: 'qty' | 'price' | 'discount', initialValue: number } | null>(null)
     const [numpadValue, setNumpadValue] = useState("0")
     const [ordersModalOpen, setOrdersModalOpen] = useState(false)
-    const [isSharedSession, setIsSharedSession] = useState(false)
+    const [, setIsSharedSession] = useState(false)
     const draftLoadedFromUrl = useRef(false)
     const checkoutWizardRef = useRef<SalesCheckoutWizardContentHandle>(null)
 
@@ -445,10 +441,6 @@ export function POSClientView() {
                 {/* Right: Actions & Menu */}
                 <div className="flex items-center gap-2 flex-1 justify-end">
                     {(() => {
-                        const hasMfg = items.some(line => line.product_type === 'MANUFACTURABLE')
-                        const totalSteps = 3 + (hasMfg ? 1 : 0)
-                        const isPaymentStep = wizardState?.step === totalSteps
-
                         // Prioritize current draft in quick view
                         const quickDrafts = [...syncDrafts].slice(0, 5)
                         if (currentDraftId && !quickDrafts.find(d => d.id === currentDraftId)) {

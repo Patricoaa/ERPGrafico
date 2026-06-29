@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState, useMemo } from "react"
 import { useRouter } from "next/navigation"
+import Image from "next/image"
 import {
     ArrowRight,
     CornerDownLeft,
@@ -247,7 +248,7 @@ export function UniversalSearch() {
                                         <div className="relative mb-4 flex h-16 w-16 items-center justify-center rounded-md bg-gradient-to-br from-primary/20 to-primary/5 shadow-floating overflow-hidden">
                                             <div className="absolute inset-0 animate-pulse rounded-md bg-primary/5 blur-lg" />
                                             {logo ? (
-                                                <img src={logo} alt="Logo" className="relative h-full w-full object-cover" />
+                                                <Image src={logo} alt="Logo" fill className="object-cover" />
                                             ) : (
                                                 <span className="relative bg-gradient-to-br from-primary to-primary/50 bg-clip-text text-2xl font-black tracking-tighter text-transparent">
                                                     {getInitials()}

@@ -1,5 +1,5 @@
 import { DataCell, createEntityActions } from '@/components/shared'
-import type { PricingRule } from '@/features/inventory/hooks/usePricingRules'
+import type { PricingRule } from './hooks/usePricingRules'
 
 export interface PricingRuleActionsCtx {
     onEdit: (item: PricingRule) => void

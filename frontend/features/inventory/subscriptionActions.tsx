@@ -1,5 +1,5 @@
 import { DataCell, createEntityActions } from '@/components/shared'
-import type { Subscription } from '@/features/inventory/hooks/useSubscriptions'
+import type { Subscription } from './hooks/useSubscriptions'
 import { Pencil, Pause, Play, History, Archive } from "lucide-react"
 
 export interface SubscriptionActionsCtx {

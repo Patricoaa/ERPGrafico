@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react"
 import {
-    Plus, CreditCard, Landmark, Lock, ChevronDown, Wallet, ArrowRightLeft, HandCoins, Monitor, FileText, Ban, CircleSlash, type LucideIcon
+    CreditCard, Lock, ChevronDown, Wallet, ArrowRightLeft, HandCoins, Monitor, FileText, CircleSlash, type LucideIcon
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
@@ -75,11 +75,6 @@ export function PaymentMethodClientView({ externalOpen, onOpenChange, createActi
 
     const handleDelete = (id: number) => {
         deleteConfirm.requestConfirm(id)
-    }
-
-    const openCreate = () => {
-        setSelectedMethod(null)
-        setDialogOpen(true)
     }
 
     const openEdit = (method: PaymentMethod) => {

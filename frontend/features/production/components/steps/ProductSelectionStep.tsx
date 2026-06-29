@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import Image from "next/image";
 import {FileText, X} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { BaseProduct } from "@/features/inventory/types";
@@ -108,12 +109,14 @@ export function ProductSelectionStep({
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-3">
-                {selectedProduct.image ? (
-                  <img
-                    src={resolveMediaUrl(selectedProduct.image) ?? ""}
-                    alt={selectedProduct.name || ""}
-                    className="h-8 w-8 rounded object-cover"
-                  />
+{selectedProduct.image ? (
+                                  <Image
+                                    src={resolveMediaUrl(selectedProduct.image) ?? ""}
+                                    alt={selectedProduct.name || ""}
+                                    width={32}
+                                    height={32}
+                                    className="rounded object-cover"
+                                  />
                 ) : (
                   <div className="h-8 w-8 flex items-center justify-center rounded bg-muted/20">
                     <FileText className="h-4 w-4 text-muted-foreground" />

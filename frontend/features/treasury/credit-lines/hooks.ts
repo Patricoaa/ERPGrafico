@@ -1,7 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useRealtime } from '@/features/realtime'
 import { creditLinesApi } from './api'
-import { CREDIT_LINES_KEYS } from '@/features/treasury/hooks/queryKeys'
+import { CREDIT_LINES_KEYS } from '../hooks/queryKeys'
 import type { CreditLineCreatePayload } from './types'
 
 export function useCreditLines(params?: { treasury_account_id?: number; bank_id?: number; status?: string }) {

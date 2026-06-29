@@ -43,6 +43,7 @@ export const PrintableReceipt = forwardRef<HTMLDivElement, PrintableReceiptProps
                 {/* Header */}
                 <div className="text-center border-b border-dashed pb-3 mb-3">
                     {logo && (
+                        // eslint-disable-next-line @next/next/no-img-element -- print context, next/image doesn't support print CSS
                         <img
                             src={logo}
                             alt="Logo"

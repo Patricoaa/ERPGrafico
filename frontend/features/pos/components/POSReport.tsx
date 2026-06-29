@@ -35,9 +35,15 @@ export interface POSReportData {
         to_account?: number
         from_account?: number
     }>
+    total_card_terminal_sales?: number
     sales_by_category?: Array<{ name: string, value: number }>
+    sale_order_count?: number
+    dte_breakdown?: Array<{ dte_type: string, count: number }>
     generated_at?: string
     user_name?: string
+    terminal_name?: string
+    opened_at?: string
+    closed_at?: string
 }
 
 interface POSReportProps {
@@ -45,9 +51,25 @@ interface POSReportProps {
     title?: string
     type?: "X" | "Z"
     onClose?: () => void
+    loading?: boolean
 }
 
-export function POSReport({ data, title, type = "X", onClose }: POSReportProps) {
+function formatSessionTime(openedAt?: string, closedAt?: string): string {
+    if (!openedAt) return ""
+    const d = new Date(openedAt)
+    const datePart = d.toLocaleDateString("es-CL", { day: "2-digit", month: "2-digit", year: "numeric" })
+    const timePart = d.toLocaleTimeString("es-CL", { hour: "2-digit", minute: "2-digit", hour12: false })
+    if (!closedAt) return `${datePart}  ${timePart}`
+    const endTime = new Date(closedAt).toLocaleTimeString("es-CL", { hour: "2-digit", minute: "2-digit", hour12: false })
+    return `${datePart}  ${timePart} - ${endTime}`
+}
+
+function sentenceCase(str: string): string {
+    if (!str) return str
+    return str.charAt(0).toUpperCase() + str.slice(1).toLocaleLowerCase("es-CL")
+}
+
+export function POSReport({ data, title, type = "X", onClose, loading = false }: POSReportProps) {
     const { logo } = useBranding()
     const reportRef = useRef<HTMLDivElement>(null)
     const { downloadPdf } = useDownloadPOSReportPDF()
@@ -75,6 +97,15 @@ export function POSReport({ data, title, type = "X", onClose }: POSReportProps) 
             "w-full max-w-[380px] mx-auto bg-card p-6 shadow-overlay border border-border/50 text-card-foreground font-sans relative rounded-md animate-in zoom-in-95 duration-200",
             "print:shadow-none print:border-none print:p-0 print:w-[80mm]"
         )}>
+            {loading && (
+                <div className="absolute inset-0 z-20 flex items-center justify-center bg-card/60 rounded-md animate-pulse print:hidden">
+                    <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-muted-foreground/60">
+                        <div className="h-2 w-2 rounded-full bg-muted-foreground/40 animate-bounce" style={{ animationDelay: "0ms" }} />
+                        <div className="h-2 w-2 rounded-full bg-muted-foreground/40 animate-bounce" style={{ animationDelay: "150ms" }} />
+                        <div className="h-2 w-2 rounded-full bg-muted-foreground/40 animate-bounce" style={{ animationDelay: "300ms" }} />
+                    </div>
+                </div>
+            )}
             {/* Close Button */}
             {onClose && (
                 <SheetCloseButton
@@ -85,97 +116,151 @@ export function POSReport({ data, title, type = "X", onClose }: POSReportProps) 
 
 
             {/* Header */}
-            <div className="text-center space-y-1 mb-6 border-b-2 border-border/50 pb-4 flex flex-col items-center">
+            <div className="text-center space-y-1 mb-6 flex flex-col items-center">
                 {logo && (
                     <div className="mb-2">
+                        {/* eslint-disable-next-line @next/next/no-img-element -- print/PDF context */}
                         <img src={logo} alt="Logo" className="max-h-16 object-contain" />
                     </div>
                 )}
                 <h1 className="text-sm font-black uppercase tracking-widest leading-tight">
-                    {title || (type === 'Z' ? 'Informe de Cierre de Caja' : 'Informe Parcial de Caja')}
+                    {title || (type === 'Z' ? 'Informe de Cierre (Z)' : 'Informe Parcial (X)')}
                 </h1>
                 <div className="flex justify-center items-center gap-2 mt-1">
-                    <span className="text-[10px] font-mono font-bold text-muted-foreground">Sesión #{data.session_id}</span>
-                    <span className="text-[10px] font-mono font-bold text-muted-foreground/40">•</span>
-                    <span className="text-[10px] font-mono font-bold text-muted-foreground">{data.user_name || 'Sistema'}</span>
+                    <span className="text-[11px] font-mono font-bold text-muted-foreground">Sesión #{data.session_id}</span>
+                    <span className="text-[11px] font-mono font-bold text-muted-foreground/40">•</span>
+                    <span className="text-[11px] font-mono font-bold text-muted-foreground">{data.user_name || 'Sistema'}</span>
                 </div>
-                <p className="text-[10px] font-bold uppercase text-muted-foreground mt-2">{new Date().toLocaleString()}</p>
+                {data.terminal_name && (
+                    <p className="text-[11px] font-bold text-muted-foreground">{data.terminal_name}</p>
+                )}
+                <p className="text-[11px] font-bold text-muted-foreground">{formatSessionTime(data.opened_at, data.closed_at)}</p>
             </div>
 
-            {/* SECCIÓN A: CONTROL DE EFECTIVO */}
+            {/* SECCIÓN A: CONTROL DE CAJA */}
             <div className="space-y-4 mb-6">
-                <div className="flex items-center gap-2 border-b border-border pb-1">
+                <div className="flex items-center gap-2 pb-1.5 border-b border-border">
                     <Calculator className="h-3 w-3 text-foreground" />
-                    <h4 className="font-black text-[10px] uppercase tracking-widest text-foreground">Control de Efectivo</h4>
+                    <h4 className="font-heading font-black text-xs uppercase tracking-widest text-foreground">Control de Caja</h4>
                 </div>
 
-                <div className="space-y-2 text-[11px] leading-tight">
+                <div className="space-y-1.5 text-[11px] leading-tight">
                     <div className="flex justify-between">
-                        <span className="font-bold uppercase text-muted-foreground">Fondo Inicial:</span>
+                        <span className="font-bold text-muted-foreground">Fondo inicial:</span>
                         <span className="font-bold font-mono">{formatCurrency(data.opening_balance)}</span>
                     </div>
 
                     <div className="flex justify-between">
-                        <span className="font-bold uppercase text-muted-foreground">(+) Ventas Efectivo:</span>
-                        <span className="font-black font-mono">+{formatCurrency(data.total_cash_sales)}</span>
+                            <span className="font-bold text-muted-foreground">(+) Efectivo de ventas:</span>
+                            <span className="font-black font-mono text-income">+{formatCurrency(data.total_cash_sales)}</span>
                     </div>
 
                     {totalInflows > 0 && (
                         <div className="flex justify-between">
-                            <span className="font-bold uppercase text-muted-foreground">(+) Otros Depósitos:</span>
-                            <span className="font-black font-mono">+{formatCurrency(totalInflows)}</span>
+                            <span className="font-bold text-muted-foreground">(+) Depósitos manuales:</span>
+                            <span className="font-black font-mono text-income">+{formatCurrency(totalInflows)}</span>
                         </div>
                     )}
 
                     {totalOutflows > 0 && (
                         <div className="flex justify-between">
-                            <span className="font-bold uppercase text-muted-foreground">(-) Retiros / Gastos:</span>
-                            <span className="font-black font-mono text-destructive">-{formatCurrency(totalOutflows)}</span>
+                            <span className="font-bold text-muted-foreground">(-) Retiros / gastos:</span>
+                            <span className="font-black font-mono text-expense">-{formatCurrency(totalOutflows)}</span>
                         </div>
                     )}
 
                     <div className="flex justify-between items-center pt-1 border-t border-dashed border-border/30 mt-1">
-                        <span className="font-black text-xs uppercase tracking-tight">Efectivo Esperado:</span>
-                        <span className="font-black text-xl font-mono tracking-tighter">{formatCurrency(calculatedExpected)}</span>
+                        <span className="font-black text-[11px] uppercase tracking-tight">Efectivo Esperado:</span>
+                        <span className="font-black text-base font-mono tracking-tighter">{formatCurrency(calculatedExpected)}</span>
                     </div>
                 </div>
             </div>
 
-            {/* SECCIÓN B: DESGLOSE DE PAGOS */}
-            <div className="space-y-4 pt-4 border-t-2 border-border/50">
-                <div className="flex items-center gap-2 border-b border-border pb-1">
+            {/* SECCIÓN B: VENTAS */}
+            {data.total_sales > 0 && (
+            <div className="space-y-4">
+                <div className="flex items-center gap-2 pb-1.5 border-b border-border">
                     <CreditCard className="h-3 w-3 text-foreground" />
-                    <h4 className="font-black text-[10px] uppercase tracking-widest text-foreground">Desglose de Pagos</h4>
+                    <h4 className="font-heading font-black text-xs uppercase tracking-widest text-foreground">Ventas</h4>
                 </div>
 
-                <div className="space-y-1.5 text-[11px] leading-tight">
+                <div className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground mb-1">Por Método de Pago</div>
+                <div className="space-y-1.5 text-[11px] leading-tight mb-4">
+                    {data.total_cash_sales > 0 && (
                     <div className="flex justify-between">
-                        <span className="font-bold uppercase text-muted-foreground">Efectivo:</span>
+                        <span className="font-bold text-muted-foreground">Efectivo:</span>
                         <span className="font-bold font-mono">{formatCurrency(data.total_cash_sales)}</span>
                     </div>
+                    )}
+                    {data.total_card_terminal_sales !== undefined ? (
+                      <>
+                        {(data.total_card_sales - data.total_card_terminal_sales) > 0 && (
+                        <div className="flex justify-between">
+                            <span className="font-bold text-muted-foreground">Tarjeta:</span>
+                            <span className="font-bold font-mono">{formatCurrency((data.total_card_sales || 0) - data.total_card_terminal_sales)}</span>
+                        </div>
+                        )}
+                        {data.total_card_terminal_sales > 0 && (
+                        <div className="flex justify-between">
+                            <span className="font-bold text-muted-foreground">Tarjeta terminal:</span>
+                            <span className="font-bold font-mono">{formatCurrency(data.total_card_terminal_sales)}</span>
+                        </div>
+                        )}
+                      </>
+                    ) : (
+                      data.total_card_sales > 0 && (
+                      <div className="flex justify-between">
+                          <span className="font-bold text-muted-foreground">Tarjeta:</span>
+                          <span className="font-bold font-mono">{formatCurrency(data.total_card_sales)}</span>
+                      </div>
+                      )
+                    )}
+                    {data.total_transfer_sales > 0 && (
                     <div className="flex justify-between">
-                        <span className="font-bold uppercase text-muted-foreground/80">Tarjeta:</span>
-                        <span className="font-bold font-mono">{formatCurrency(data.total_card_sales)}</span>
-                    </div>
-                    <div className="flex justify-between">
-                        <span className="font-bold uppercase text-muted-foreground/80">Transferencia:</span>
+                        <span className="font-bold text-muted-foreground">Transferencia:</span>
                         <span className="font-bold font-mono">{formatCurrency(data.total_transfer_sales)}</span>
                     </div>
+                    )}
+                    {data.total_credit_sales > 0 && (
                     <div className="flex justify-between">
-                        <span className="font-bold uppercase text-muted-foreground/80">Crédito:</span>
+                        <span className="font-bold text-muted-foreground">Crédito:</span>
                         <span className="font-bold font-mono">{formatCurrency(data.total_credit_sales)}</span>
                     </div>
+                    )}
+                    {data.total_check_sales > 0 && (
                     <div className="flex justify-between">
-                        <span className="font-bold uppercase text-muted-foreground/80">Cheque:</span>
+                        <span className="font-bold text-muted-foreground">Cheque:</span>
                         <span className="font-bold font-mono">{formatCurrency(data.total_check_sales)}</span>
                     </div>
+                    )}
 
                     <div className="flex justify-between items-center pt-1 border-t border-dashed border-border/30 mt-1">
-                        <span className="font-black text-xs uppercase tracking-tight">Total Ventas:</span>
-                        <span className="font-black text-xl font-mono tracking-tighter">{formatCurrency(data.total_sales)}</span>
+                        <span className="font-black text-[11px] uppercase tracking-tight">Total Ventas:</span>
+                        <span className="font-black text-base font-mono tracking-tighter">{formatCurrency(data.total_sales)}</span>
                     </div>
                 </div>
+
+                {data.sale_order_count !== undefined && (
+                  <>
+                    <div className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground mb-1">Por Documentos Emitidos</div>
+                    <div className="space-y-1.5 text-[11px] leading-tight mb-4">
+                        {data.sale_order_count > 0 && (
+                        <div className="flex justify-between">
+                            <span className="font-bold text-muted-foreground">Notas de venta:</span>
+                            <span className="font-bold font-mono">{data.sale_order_count}</span>
+                        </div>
+                        )}
+                        {data.dte_breakdown && data.dte_breakdown.length > 0 && data.dte_breakdown.map((dte) => (
+                            <div key={dte.dte_type} className="flex justify-between">
+                                <span className="font-bold text-muted-foreground">{sentenceCase(dte.dte_type)}:</span>
+                                <span className="font-bold font-mono">{dte.count}</span>
+                            </div>
+                        ))}
+                    </div>
+                  </>
+                )}
             </div>
+            )}
 
             {/* Action buttons */}
             <div className="mt-6 flex justify-center gap-3 print:hidden">

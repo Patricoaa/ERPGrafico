@@ -46,12 +46,7 @@ export function PhaseCard({
     documents = [],
     onViewDetail,
     emptyMessage = "No disponible",
-    showDocProgress = false,
-    stageId = '',
     isComplete = false,
-    posSessionId = null,
-    isTimeline = false,
-    onModalChange = () => { },
     className,
     // Accordion props
     collapsible = false,

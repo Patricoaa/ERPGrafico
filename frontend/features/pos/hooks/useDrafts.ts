@@ -87,7 +87,7 @@ export function useDrafts(options: UseDraftsOptions = {}) {
     const updateDraftMutation = useMutation({
         mutationFn: ({ draftId, draftData }: { draftId: number; draftData: Partial<DraftCart> }) =>
             posApi.updateDraft(draftId, draftData),
-        onSuccess: (data, variables) => {
+        onSuccess: (_data, variables) => {
             markLocalMutation()
             // Invalidate draft lists and details
             queryClient.invalidateQueries({ queryKey: POS_KEYS.drafts.lists() })
@@ -102,7 +102,7 @@ export function useDrafts(options: UseDraftsOptions = {}) {
 
     const createDraftMutation = useMutation({
         mutationFn: (draftData: Partial<DraftCart>) => posApi.createDraft(draftData),
-        onSuccess: (data, variables) => {
+        onSuccess: () => {
             markLocalMutation()
             // Invalidate draft lists
             queryClient.invalidateQueries({ queryKey: POS_KEYS.drafts.lists() })
@@ -115,7 +115,7 @@ export function useDrafts(options: UseDraftsOptions = {}) {
 
     const deleteDraftMutation = useMutation({
         mutationFn: ({ draftId, posSessionId }: { draftId: number; posSessionId: number }) => posApi.deleteDraft(draftId, { pos_session_id: posSessionId }),
-        onSuccess: (data, variables) => {
+        onSuccess: () => {
             markLocalMutation()
             // Invalidate draft lists and details
             queryClient.invalidateQueries({ queryKey: POS_KEYS.drafts.lists() })

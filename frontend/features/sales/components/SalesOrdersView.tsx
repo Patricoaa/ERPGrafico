@@ -26,8 +26,8 @@ interface SalesOrdersViewProps {
     selectedId?: number | null
 }
 
-export function SalesOrdersView({ viewMode, posSessionId, onActionSuccess, hideStatusInCards, onSelectOrder, selectedId }: SalesOrdersViewProps) {
-    const { openHub, closeHub, hubConfig, isHubOpen } = useHubPanel()
+export function SalesOrdersView({ viewMode, posSessionId, onSelectOrder, selectedId }: SalesOrdersViewProps) {
+    const { hubConfig, isHubOpen } = useHubPanel()
     const router = useRouter()
     const searchParams = useSearchParams()
     const pathname = usePathname()
@@ -61,7 +61,7 @@ export function SalesOrdersView({ viewMode, posSessionId, onActionSuccess, hideS
     const [pageState, setPageState] = useState({ pageIndex: 0, pageSize: 20 })
     const [pageStateNotes, setPageStateNotes] = useState({ pageIndex: 0, pageSize: 20 })
 
-    const { page, orders, isLoading: isLoadingOrders, isRefetching, refetch: refetchOrders } = useSalesOrders({
+    const { page, orders, isLoading: isLoadingOrders, isRefetching } = useSalesOrders({
         filters: {
             ...(textFilters as SaleOrderFilters),
             ...(segFilters as Record<string, string>),
@@ -70,7 +70,7 @@ export function SalesOrdersView({ viewMode, posSessionId, onActionSuccess, hideS
             page_size: pageState.pageSize,
         },
     })
-    const { page: pageNotes, notes, isLoading: isLoadingNotes, isRefetching: isRefetchingNotes, refetch: refetchNotes } = useSalesNotes({
+    const { page: pageNotes, notes, isLoading: isLoadingNotes, isRefetching: isRefetchingNotes } = useSalesNotes({
         filters: {
             ...(textFilters as Record<string, string>),
             ...(segFilters as Record<string, string>),
@@ -78,12 +78,6 @@ export function SalesOrdersView({ viewMode, posSessionId, onActionSuccess, hideS
             page_size: pageStateNotes.pageSize,
         }
     })
-
-    const handleActionSuccess = () => {
-        refetchOrders()
-        refetchNotes()
-        if (onActionSuccess) onActionSuccess()
-    }
 
     const columns: ColumnDef<SaleOrder>[] = [
         {

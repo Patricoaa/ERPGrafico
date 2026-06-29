@@ -5,7 +5,7 @@
 
 import { createContext, useContext, useState, useCallback, type ReactNode, useEffect, useMemo } from 'react'
 import type { Product, CartItem, Category, UoM, POSSession, BOMCache, ComponentCache, BOM, WizardState, Customer } from '../types'
-import * as CartUtils from '@/features/pos/utils/cart-utils'
+import * as CartUtils from '../utils/cart-utils'
 import api from '@/lib/api'
 
 

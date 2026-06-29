@@ -1,9 +1,7 @@
 "use client"
 
-import { useRef } from 'react'
 import {CheckCircle2, AlertTriangle, Loader2, Copy} from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { useHubPanel } from '@/components/providers/HubPanelProvider'
 import type { WorkOrder } from '../../types'
 
 interface FinishedStepProps {
@@ -14,11 +12,8 @@ interface FinishedStepProps {
   isDuplicating?: boolean
 }
 
-export function FinishedStep({ order, onUploadPhoto, isUploadingPhoto, onPrintCopy, isDuplicating }: FinishedStepProps) {
-  const { openHub } = useHubPanel()
-  const fileInputRef = useRef<HTMLInputElement>(null)
+export function FinishedStep({ order, onPrintCopy, isDuplicating }: FinishedStepProps) {
   const discrepancy = order.production_discrepancy
-  const hasPhoto = !!(order.stage_data as Record<string, unknown>)?.final_photo
 
   return (
     <div className="flex flex-col items-center justify-center py-12 text-center space-y-6 animate-in zoom-in-95 duration-500">

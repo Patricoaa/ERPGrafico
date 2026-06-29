@@ -263,6 +263,7 @@ export function SmartSearchBar({ searchDef, placeholder = 'Buscar...', className
           aria-expanded={isOpen}
           aria-haspopup="listbox"
           aria-autocomplete="list"
+          aria-controls={isOpen ? "ssb-listbox" : undefined}
           aria-activedescendant={isOpen && focusedIndex >= 0 ? `ssb-option-${focusedIndex}` : undefined}
         />
 

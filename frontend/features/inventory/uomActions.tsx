@@ -1,5 +1,5 @@
 import { DataCell, createEntityActions } from '@/components/shared'
-import type { UoM } from '@/features/inventory/hooks/useUoMs'
+import type { UoM } from './hooks/useUoMs'
 
 export interface UoMActionsCtx {
     onEdit: (id: number) => void

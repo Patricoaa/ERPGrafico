@@ -1,5 +1,5 @@
 import { DataCell, createEntityActions } from '@/components/shared'
-import type { Warehouse } from '@/features/inventory/hooks/useWarehouses'
+import type { Warehouse } from './hooks/useWarehouses'
 
 export interface WarehouseActionsCtx {
     onEdit: (id: number) => void

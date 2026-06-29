@@ -69,9 +69,9 @@ export function Step2_Logistics({
     setData,
     selectedItems
 }: Step2_LogisticsProps) {
-    const [warehouses, setWarehouses] = useState<Record<string, unknown>[]>([])
-    const [fetchingWarehouses, setFetchingWarehouses] = useState(true)
     const { dateString } = useServerDate()
+    const [, setWarehouses] = useState<Record<string, unknown>[]>([])
+    const [, setFetchingWarehouses] = useState(true)
 
     // Check for "Manufacturable" products (Simple or Advanced) - ONLY block for Debit Notes
     const restrictedItems = selectedItems.filter(item =>
@@ -79,26 +79,6 @@ export function Step2_Logistics({
         !item.mfg_auto_finalize
     );
     const hasRestrictedItems = !isCreditNote && restrictedItems.length > 0;
-
-    const fetchWarehouses = async () => {
-        try {
-            setFetchingWarehouses(true)
-            const list = await billingApi.getWarehouses()
-            setWarehouses(Array.isArray(list) ? list : [])
-
-            if (Array.isArray(list) && list.length > 0 && (!data || !data.warehouse_id)) {
-                setData({
-                    ...(data || { date: dateString || "", notes: "", delivery_type: hasRestrictedItems ? 'SCHEDULED' : 'IMMEDIATE', line_data: [] }),
-                    warehouse_id: (list[0] as Record<string, unknown>).id as string
-                })
-            }
-        } catch (err) {
-            console.error("Error fetching warehouses", err)
-            // toast.error("Error al cargar almacenes")
-        } finally {
-            setFetchingWarehouses(false)
-        }
-    }
 
     // Initialize data if null or missing fields
     useEffect(() => {
@@ -155,8 +135,6 @@ export function Step2_Logistics({
             setData({ ...formData, delivery_type: 'SCHEDULED' });
         }, 0);
     }
-
-    const moveTypeLabel = isCreditNote ? "Entrada de Stock" : "Salida de Stock"
 
     return (
         <div className="space-y-6">

@@ -81,11 +81,13 @@ export function SessionCloseModal({
 
     // Fetch Accounting Settings and Full Report Data
     const [fullReportData, setFullReportData] = useState<POSReportData | null>(null)
+    const [reportDataLoading, setReportDataLoading] = useState(false)
     useEffect(() => {
         if (open && session) {
             let cancelled = false
             requestAnimationFrame(() => {
                 if (cancelled) return
+                setReportDataLoading(true)
                 setSettingsLoading(true)
                 posApi.getAccountingSettings()
                     .then(data => { if (!cancelled) requestAnimationFrame(() => setAccountingSettings(data)) })
@@ -95,6 +97,7 @@ export function SessionCloseModal({
                 posApi.getSessionSummary(session.id)
                     .then(data => { if (!cancelled) requestAnimationFrame(() => setFullReportData(data)) })
                     .catch(err => { if (!cancelled) console.error("Failed to load sumary", err) })
+                    .finally(() => { if (!cancelled) requestAnimationFrame(() => setReportDataLoading(false)) })
             })
             return () => { cancelled = true }
         }
@@ -187,6 +190,7 @@ export function SessionCloseModal({
     const renderStepContent = () => {
         switch (step) {
             case 1: // Count
+                const hasReportData = fullReportData !== null
                 const reportData = fullReportData || {
                     session_id: session.id,
                     opening_balance: session.opening_balance,
@@ -202,7 +206,11 @@ export function SessionCloseModal({
                     manual_movements: session.cash_movements as unknown as POSReportData["manual_movements"],
                     sales_by_category: session.sales_by_category as POSReportData["sales_by_category"],
                     treasury_account_id: typeof session.treasury_account === 'object' ? session.treasury_account?.id : (session.treasury_account as number || undefined),
-                }
+                    user_name: session.user_name,
+                    terminal_name: session.terminal_name,
+                    opened_at: session.opened_at,
+                    closed_at: session.closed_at ?? undefined,
+                } as POSReportData
 
                 return (
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6 animate-in fade-in slide-in-from-right-4 duration-300">
@@ -210,6 +218,7 @@ export function SessionCloseModal({
                         <POSReport
                             data={reportData}
                             type="Z"
+                            loading={!hasReportData && reportDataLoading}
                         />
 
                         {/* Right Column: Counter */}
