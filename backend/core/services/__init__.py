@@ -107,7 +107,14 @@ class BaseNoteService:
         invoice = Invoice.objects.create(**invoice_data)
 
         # 2. Accounting Entry
-        description = f"{invoice.get_dte_type_display()} {document_number} (Ref {order.number})"
+        from accounting.glosa_builder import GlosaBuilder
+
+        action = (
+            GlosaBuilder.NOTA_CREDITO
+            if note_type == Invoice.DTEType.NOTA_CREDITO
+            else GlosaBuilder.NOTA_DEBITO
+        )
+        description = GlosaBuilder.build(action, invoice.display_id, partner_name or "", total_amount)
         entry = JournalEntry.objects.create(
             date=doc_date,
             description=description,

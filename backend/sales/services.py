@@ -5,6 +5,7 @@ from django.core.exceptions import ValidationError
 from django.db import transaction
 from django.utils import timezone
 
+from accounting.glosa_builder import GlosaBuilder, Roles
 from accounting.models import JournalEntry, JournalItem
 from accounting.services import AccountingMapper, JournalEntryService
 from core.services import BaseNoteService
@@ -119,8 +120,9 @@ class SalesService:
             raise ValidationError("No se encontró una cuenta por cobrar configurada.")
 
         with transaction.atomic():
+            doc_id = order.display_id
             entry = JournalEntry.objects.create(
-                description=f"Castigo de documento {order.number}: {contact.name}",
+                description=GlosaBuilder.build(GlosaBuilder.CASTIGO, doc_id, contact.name, balance),
                 reference=f"CASTIGO-{order.number}",
                 status="POSTED",
                 source_content_type=ContentType.objects.get_for_model(order.__class__),
@@ -129,7 +131,7 @@ class SalesService:
             JournalItem.objects.create(
                 entry=entry,
                 account=settings.default_uncollectible_expense_account,
-                label=f"Pérdida por incobrabilidad {order.number}",
+                label=GlosaBuilder.item(Roles.PERDIDA_INCOBRABLE, doc_id),
                 debit=balance,
                 credit=0,
             )
@@ -138,7 +140,7 @@ class SalesService:
                 account=receivable_account,
                 partner=contact,
                 partner_name=contact.name,
-                label=f"Cierre de deuda {order.number}",
+                label=GlosaBuilder.item(Roles.CXC, contact.name, doc_id),
                 debit=0,
                 credit=balance,
             )
@@ -1058,6 +1060,8 @@ class SalesService:
         tax_account = settings.default_tax_payable_account
 
         total_amount = amount_net + amount_tax
+        doc_id = invoice.display_id
+        customer_name = order.customer.name
 
         # Receivable side
         JournalItem.objects.create(
@@ -1066,8 +1070,8 @@ class SalesService:
             debit=total_amount if note_type == Invoice.DTEType.NOTA_DEBITO else 0,
             credit=0 if note_type == Invoice.DTEType.NOTA_DEBITO else total_amount,
             partner=order.customer,
-            partner_name=order.customer.name,
-            label=f"{invoice.get_dte_type_display()} {document_number} - NV {order.number}",
+            partner_name=customer_name,
+            label=GlosaBuilder.item(Roles.CXC, customer_name, doc_id),
         )
 
         # Revenue and Tax side (per product if return_items exist, otherwise global)
@@ -1103,6 +1107,7 @@ class SalesService:
                     line_tax = 0
 
                 prod_revenue_acc = product.get_income_account or settings.default_revenue_account
+                product_code = product.code or str(product.id)
 
                 # Revenue Reverse/Increase
                 JournalItem.objects.create(
@@ -1110,7 +1115,7 @@ class SalesService:
                     account=prod_revenue_acc,
                     debit=line_net if note_type == Invoice.DTEType.NOTA_CREDITO else 0,
                     credit=0 if note_type == Invoice.DTEType.NOTA_CREDITO else line_net,
-                    label=f"{'Reverso' if note_type == Invoice.DTEType.NOTA_CREDITO else 'Ajuste'} Venta {product.code or product.id}",
+                    label=GlosaBuilder.item(Roles.INGRESO, product_code, doc_id),
                 )
 
                 # Tax Reverse/Increase
@@ -1120,7 +1125,7 @@ class SalesService:
                         account=tax_account,
                         debit=line_tax if note_type == Invoice.DTEType.NOTA_CREDITO else 0,
                         credit=0 if note_type == Invoice.DTEType.NOTA_CREDITO else line_tax,
-                        label=f"{'Reverso' if note_type == Invoice.DTEType.NOTA_CREDITO else 'Ajuste'} IVA - {product.code or product.id}",
+                        label=GlosaBuilder.item(Roles.IVA_DEBITO, product_code, doc_id),
                     )
         else:
             # Global adjustment if no items specified
@@ -1130,7 +1135,7 @@ class SalesService:
                 account=revenue_account,
                 debit=amount_net if note_type == Invoice.DTEType.NOTA_CREDITO else 0,
                 credit=0 if note_type == Invoice.DTEType.NOTA_CREDITO else amount_net,
-                label=f"{'Reverso' if note_type == Invoice.DTEType.NOTA_CREDITO else 'Ajuste'} Venta Global",
+                label=GlosaBuilder.item(Roles.INGRESO, "Global", doc_id),
             )
             if amount_tax > 0:
                 JournalItem.objects.create(
@@ -1138,7 +1143,7 @@ class SalesService:
                     account=tax_account,
                     debit=amount_tax if note_type == Invoice.DTEType.NOTA_CREDITO else 0,
                     credit=0 if note_type == Invoice.DTEType.NOTA_CREDITO else amount_tax,
-                    label=f"{'Reverso' if note_type == Invoice.DTEType.NOTA_CREDITO else 'Ajuste'} IVA Global",
+                    label=GlosaBuilder.item(Roles.IVA_DEBITO, "Global", doc_id),
                 )
 
         # 4. Inventory Moves & COGS Reversal (Credit Note Returns)
@@ -1239,9 +1244,7 @@ class SalesService:
                         )
 
                     if cogs_account and inventory_account:
-                        # Reversal Entries:
-                        # Original Sale: Dr COGS, Cr Inventory
-                        # RETURN Reversal: Dr Inventory, Cr COGS
+                        product_code = product.code or str(product.id)
 
                         # Debit: Inventory (Asset increases)
                         JournalItem.objects.create(
@@ -1249,7 +1252,7 @@ class SalesService:
                             account=inventory_account,
                             debit=line_cogs,
                             credit=0,
-                            label=f"Reingreso Stock - {product.code or product.id}",
+                            label=GlosaBuilder.item(Roles.INVENTARIO, product_code, doc_id),
                         )
                         # Credit: COGS (Expense decreases)
                         JournalItem.objects.create(
@@ -1257,7 +1260,7 @@ class SalesService:
                             account=cogs_account,
                             debit=0,
                             credit=line_cogs,
-                            label=f"Reverso COGS - NV {order.number}",
+                            label=GlosaBuilder.item(Roles.COSTO_VENTA, doc_ref=doc_id),
                         )
                         print(
                             f"DEBUG: Created JournalItems for COGS reversal (Inv: {inventory_account.code}, COGS: {cogs_account.code})"

@@ -28,6 +28,8 @@ from django.db import transaction
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _t
 
+from accounting.glosa_builder import GlosaBuilder, Roles
+
 from .models import BankLoan, LoanInstallment, TreasuryMovement
 
 if TYPE_CHECKING:
@@ -873,7 +875,7 @@ def _build_disbursement_entry(
 
     entry = JournalEntry.objects.create(
         date=movement.date,
-        description=(f"Desembolso crédito {movement.reference or ''} - {movement.notes[:120]}"),
+        description=GlosaBuilder.build(GlosaBuilder.DESEMBOLSO, movement.reference or f"MOV-{movement.id}", "", principal, extra=[movement.notes[:80] if movement.notes else None]),
         reference=movement.reference or f"MOV-{movement.id}",
         status=JournalEntry.Status.DRAFT,
         source_content_type=ContentType.objects.get_for_model(movement),
@@ -885,6 +887,7 @@ def _build_disbursement_entry(
         account=liability_account,
         debit=Decimal("0"),
         credit=principal,
+        label=GlosaBuilder.item(Roles.PASIVO_PRESTAMO, doc_ref=movement.reference),
     )
     # Debe: gastos de apertura (comisión, ITE).
     fee_debit_whole = Decimal("0")
@@ -894,6 +897,7 @@ def _build_disbursement_entry(
             account=fee_account,
             debit=fee_amount,
             credit=Decimal("0"),
+            label=GlosaBuilder.item(Roles.GASTO, "Comisión/Impuesto", movement.reference),
         )
         fee_debit_whole += _peso(fee_amount)
     # Debe: banco por el residuo (capital − gastos, ambos a peso entero) para que
@@ -903,6 +907,7 @@ def _build_disbursement_entry(
         account=bank_account,
         debit=_peso(principal) - fee_debit_whole,
         credit=Decimal("0"),
+        label=GlosaBuilder.item(Roles.BANCO, doc_ref=movement.reference),
     )
     JournalEntryService.post_entry(entry)
     movement.journal_entry = entry
@@ -953,7 +958,7 @@ def _build_installment_entry(
     # Construir DRAFT con la descripción y el source (el movimiento).
     entry = JournalEntry.objects.create(
         date=movement.date,
-        description=(f"Pago cuota crédito {movement.reference or ''} - {movement.notes[:120]}"),
+        description=GlosaBuilder.build(GlosaBuilder.PAGO_CUOTA, movement.reference or f"MOV-{movement.id}", "", principal_clp),
         reference=movement.reference or f"MOV-{movement.id}",
         status=JournalEntry.Status.DRAFT,
         source_content_type=ContentType.objects.get_for_model(movement),
@@ -981,6 +986,7 @@ def _build_installment_entry(
         account=liability_account,
         debit=liability_debit,
         credit=Decimal("0"),
+        label=GlosaBuilder.item(Roles.PASIVO_PRESTAMO, doc_ref=movement.reference),
     )
     debit_total_whole += _peso(liability_debit)
     # 2) Debe: gasto interés
@@ -990,6 +996,7 @@ def _build_installment_entry(
             account=interest_expense_account,
             debit=interest_clp,
             credit=Decimal("0"),
+            label=GlosaBuilder.item(Roles.INTERES, doc_ref=movement.reference),
         )
         debit_total_whole += _peso(interest_clp)
     # 3) Debe: gasto seguro
@@ -999,6 +1006,7 @@ def _build_installment_entry(
             account=insurance_expense_account,
             debit=insurance_clp,
             credit=Decimal("0"),
+            label=GlosaBuilder.item(Roles.SEGURO, doc_ref=movement.reference),
         )
         debit_total_whole += _peso(insurance_clp)
     # 3.5) Debe: gasto por mora (interés penal de cuota vencida)
@@ -1008,6 +1016,7 @@ def _build_installment_entry(
             account=penalty_expense_account,
             debit=penalty_clp,
             credit=Decimal("0"),
+            label=GlosaBuilder.item(Roles.PENALIZACION, doc_ref=movement.reference),
         )
         debit_total_whole += _peso(penalty_clp)
     # 4) Haber: tesorería por la suma EXACTA de los débitos ya redondeados a
@@ -1017,6 +1026,7 @@ def _build_installment_entry(
         account=from_account.account,
         debit=Decimal("0"),
         credit=debit_total_whole,
+        label=GlosaBuilder.item(Roles.EFECTIVO, doc_ref=movement.reference),
     )
 
     JournalEntryService.post_entry(entry)

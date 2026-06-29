@@ -397,13 +397,14 @@ class CardService:
         from accounting.models import JournalEntry, JournalItem
         from accounting.services import JournalEntryService
 
+        doc_ref = f"CHG-{statement.display_id}"
         entry = JournalEntry.objects.create(
             date=apply_date,
-            description=(
-                f"Cargos financieros {statement.display_id} "
-                f"({statement.period_month:02d}/{statement.period_year})"
+            description=GlosaBuilder.build(
+                GlosaBuilder.CARGOS_FINANCIEROS, statement.display_id, "",
+                total, extra=[f"{statement.period_month:02d}/{statement.period_year}"],
             ),
-            reference=f"CHG-{statement.display_id}",
+            reference=doc_ref,
             status=JournalEntry.Status.DRAFT,
             source_content_type=ContentType.objects.get_for_model(statement),
             source_object_id=statement.id,
@@ -415,18 +416,16 @@ class CardService:
             account=liability_acc,
             debit=Decimal("0"),
             credit=total,
+            label=GlosaBuilder.item(Roles.PASIVO_TC, statement.display_id, doc_ref),
         )
 
-        # El Debe: las cuentas de gasto YA están validadas arriba
-        # (Gap 1.5b, ADR-0037). Si llegamos aquí, son siempre válidas
-        # y la imputación es Debe gasto / Haber pasivo — sin
-        # workaround.
         if interest:
             JournalItem.objects.create(
                 entry=entry,
                 account=interest_expense_account,
                 debit=interest,
                 credit=Decimal("0"),
+                label=GlosaBuilder.item(Roles.INTERES, "Cargos financieros", doc_ref),
             )
         if fees:
             JournalItem.objects.create(
@@ -434,6 +433,7 @@ class CardService:
                 account=fees_expense_account,
                 debit=fees,
                 credit=Decimal("0"),
+                label=GlosaBuilder.item(Roles.GASTO, "Comisiones TC", doc_ref),
             )
 
         JournalEntryService.post_entry(entry)
@@ -1358,7 +1358,8 @@ class CardService:
         """
         from django.contrib.contenttypes.models import ContentType
 
-        from accounting.models import AccountingSettings, JournalEntry, JournalItem
+        from accounting.glosa_builder import GlosaBuilder, Roles
+from accounting.models import AccountingSettings, JournalEntry, JournalItem
         from accounting.services import JournalEntryService
 
         p_rows = pending_rows or []
@@ -1378,13 +1379,14 @@ class CardService:
             # imputar al gasto. El operador debe configurar la cuenta.
             return
 
+        doc_ref = statement.display_id
         entry = JournalEntry.objects.create(
             date=statement.cut_off_date,
-            description=(
-                f"Cargos TC {statement.card_account.name} - "
-                f"{statement.period_year}-{statement.period_month:02d}"
+            description=GlosaBuilder.build(
+                GlosaBuilder.CARGOS_DIFERIDOS, doc_ref, statement.card_account.name,
+                total, extra=[f"{statement.period_year}-{statement.period_month:02d}"],
             ),
-            reference=statement.display_id,
+            reference=doc_ref,
             status=JournalEntry.State.DRAFT,
             source_content_type=ContentType.objects.get_for_model(CreditCardStatement),
             source_object_id=statement.id,
@@ -1394,12 +1396,14 @@ class CardService:
             account=liability_account,
             debit=Decimal("0"),
             credit=total,
+            label=GlosaBuilder.item(Roles.PASIVO_TC, "Cargos diferidos", doc_ref),
         )
         JournalItem.objects.create(
             entry=entry,
             account=expense_account,
             debit=total,
             credit=Decimal("0"),
+            label=GlosaBuilder.item(Roles.GASTO, "Cargos TC diferidos", doc_ref),
         )
         JournalEntryService.post_entry(entry)
 

@@ -5,6 +5,7 @@ from django.core.exceptions import ValidationError
 from django.db import transaction
 from django.utils import timezone
 
+from accounting.glosa_builder import GlosaBuilder, Roles
 from accounting.models import JournalEntry, JournalItem
 from accounting.services import JournalEntryService
 from inventory.models import StockMove, Warehouse
@@ -243,9 +244,14 @@ class ReturnService:
 
         # 2. Accounting Entry (COGS Reversal)
         if total_cogs_reversal > 0 and settings:
+            doc_id = return_doc.display_id
+            customer_name = return_doc.sale_order.customer.name
+
             entry = JournalEntry.objects.create(
                 date=return_doc.date,
-                description=f"Reverso COGS - {return_doc.display_id}",
+                description=GlosaBuilder.build(
+                    GlosaBuilder.DEVOLUCION_FISICA, doc_id, customer_name, total_cogs_reversal,
+                ),
                 reference=return_doc.display_id,
                 status=JournalEntry.State.DRAFT,
                 source_content_type=ContentType.objects.get_for_model(SaleReturn),
@@ -268,7 +274,7 @@ class ReturnService:
                     account=inv_acc,
                     debit=total_cogs_reversal,
                     credit=0,
-                    label=f"Reingreso Stock - {return_doc.display_id}",
+                    label=GlosaBuilder.item(Roles.INVENTARIO, doc_ref=doc_id),
                 )
                 # Credit COGS (Expense decreases)
                 JournalItem.objects.create(
@@ -276,7 +282,7 @@ class ReturnService:
                     account=cogs_acc,
                     debit=0,
                     credit=total_cogs_reversal,
-                    label="Reverso Costo Venta",
+                    label=GlosaBuilder.item(Roles.COSTO_VENTA, doc_ref=doc_id),
                 )
 
                 JournalEntryService.post_entry(entry)

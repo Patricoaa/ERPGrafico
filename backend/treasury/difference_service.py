@@ -13,6 +13,7 @@ from django.contrib.contenttypes.models import ContentType
 from django.db import transaction
 from django.utils.translation import gettext_lazy as _
 
+from accounting.glosa_builder import GlosaBuilder, Roles
 from accounting.models import AccountingSettings, JournalEntry, JournalItem
 
 from .models import BankStatement, BankStatementLine
@@ -111,7 +112,7 @@ class DifferenceService:
         entry = JournalEntry.objects.create(
             date=accounting_date or line.transaction_date,
             reference=f"AJ-{line.statement.display_id}-{line.line_number}",
-            description=f"{difference_label} - {notes}" if notes else difference_label,
+            description=GlosaBuilder.build(GlosaBuilder.AJUSTE_BANCARIO, line.statement.display_id, "", abs_diff, extra=[difference_label, notes] if notes else [difference_label]),
             status=JournalEntry.State.POSTED,
             source_content_type=ContentType.objects.get_for_model(BankStatement),
             source_object_id=line.statement_id,
@@ -122,32 +123,40 @@ class DifferenceService:
         if difference > 0:
             if difference_type in [DifferenceService.INTEREST]:
                 JournalItem.objects.create(
-                    entry=entry, account=treasury_account, debit=abs_diff, credit=0
+                    entry=entry, account=treasury_account, debit=abs_diff, credit=0,
+                    label=GlosaBuilder.item(Roles.BANCO, "Ajuste interés", line.statement.display_id),
                 )
                 JournalItem.objects.create(
-                    entry=entry, account=difference_account, debit=0, credit=abs_diff
+                    entry=entry, account=difference_account, debit=0, credit=abs_diff,
+                    label=GlosaBuilder.item(Roles.INGRESO, "Ajuste interés", line.statement.display_id),
                 )
             else:
                 JournalItem.objects.create(
-                    entry=entry, account=difference_account, debit=abs_diff, credit=0
+                    entry=entry, account=difference_account, debit=abs_diff, credit=0,
+                    label=GlosaBuilder.item(Roles.GASTO, difference_label, line.statement.display_id),
                 )
                 JournalItem.objects.create(
-                    entry=entry, account=treasury_account, debit=0, credit=abs_diff
+                    entry=entry, account=treasury_account, debit=0, credit=abs_diff,
+                    label=GlosaBuilder.item(Roles.BANCO, difference_label, line.statement.display_id),
                 )
         else:
             if difference_type in [DifferenceService.COMMISSION, DifferenceService.ERROR]:
                 JournalItem.objects.create(
-                    entry=entry, account=difference_account, debit=abs_diff, credit=0
+                    entry=entry, account=difference_account, debit=abs_diff, credit=0,
+                    label=GlosaBuilder.item(Roles.GASTO, difference_label, line.statement.display_id),
                 )
                 JournalItem.objects.create(
-                    entry=entry, account=treasury_account, debit=0, credit=abs_diff
+                    entry=entry, account=treasury_account, debit=0, credit=abs_diff,
+                    label=GlosaBuilder.item(Roles.BANCO, difference_label, line.statement.display_id),
                 )
             else:
                 JournalItem.objects.create(
-                    entry=entry, account=treasury_account, debit=abs_diff, credit=0
+                    entry=entry, account=treasury_account, debit=abs_diff, credit=0,
+                    label=GlosaBuilder.item(Roles.BANCO, difference_label, line.statement.display_id),
                 )
                 JournalItem.objects.create(
-                    entry=entry, account=difference_account, debit=0, credit=abs_diff
+                    entry=entry, account=difference_account, debit=0, credit=abs_diff,
+                    label=GlosaBuilder.item(Roles.INGRESO, difference_label, line.statement.display_id),
                 )
 
         line.difference_journal_entry = entry

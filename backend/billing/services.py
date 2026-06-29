@@ -5,6 +5,7 @@ from django.core.exceptions import ValidationError
 from django.db import transaction
 from django.utils import timezone
 
+from accounting.glosa_builder import GlosaBuilder, Roles
 from accounting.models import AccountingSettings, JournalEntry, JournalItem
 from accounting.services import AccountingMapper, JournalEntryService
 from purchasing.models import PurchaseOrder
@@ -477,9 +478,14 @@ class BillingService:
         total_advanced = sum(p.amount for p in advances)
 
         if total_advanced > 0:
+            doc_id = invoice.display_id
+            customer_name = order.customer.name
+
             recon_entry = JournalEntry.objects.create(
                 date=timezone.now().date(),
-                description=f"Conciliación Anticipos - Pedido {order.number} -> Factura {invoice.id}",
+                description=GlosaBuilder.build(
+                    GlosaBuilder.CONCILIACION_ANTICIPOS, doc_id, customer_name, total_advanced,
+                ),
                 reference=f"RECO-{invoice.id}",
                 status=JournalEntry.State.DRAFT,
                 source_content_type=ContentType.objects.get_for_model(Invoice),
@@ -496,7 +502,8 @@ class BillingService:
                 debit=total_advanced,
                 credit=0,
                 partner=order.customer,
-                partner_name=order.customer.name,
+                partner_name=customer_name,
+                label=GlosaBuilder.item(Roles.ANTICIPO, customer_name, doc_id),
             )
 
             # Credit: Receivable Account (Reduce what they owe us)
@@ -506,7 +513,8 @@ class BillingService:
                 debit=0,
                 credit=total_advanced,
                 partner=order.customer,
-                partner_name=order.customer.name,
+                partner_name=customer_name,
+                label=GlosaBuilder.item(Roles.CXC, customer_name, doc_id),
             )
 
             JournalEntryService.post_entry(recon_entry)
@@ -638,9 +646,14 @@ class BillingService:
 
         if total_prepaid > 0:
             # Reconcile prepayments: Move from Prepayment Account to Payable Account
+            doc_id = invoice.display_id
+            supplier_name = order.supplier.name
+
             recon_entry = JournalEntry.objects.create(
                 date=timezone.now().date(),
-                description=f"Conciliación Anticipos - OC {order.number} -> Factura {supplier_invoice_number}",
+                description=GlosaBuilder.build(
+                    GlosaBuilder.CONCILIACION_ANTICIPOS, doc_id, supplier_name, total_prepaid,
+                ),
                 reference=f"RECO-{invoice.id}",  # Reconciliation
                 status=JournalEntry.State.DRAFT,
                 source_content_type=ContentType.objects.get_for_model(Invoice),
@@ -657,7 +670,8 @@ class BillingService:
                 debit=total_prepaid,
                 credit=0,
                 partner=order.supplier,
-                partner_name=order.supplier.name,
+                partner_name=supplier_name,
+                label=GlosaBuilder.item(Roles.CXP, supplier_name, doc_id),
             )
 
             # Credit: Prepayment Account (Clear the advance)
@@ -667,7 +681,8 @@ class BillingService:
                 debit=0,
                 credit=total_prepaid,
                 partner=order.supplier,
-                partner_name=order.supplier.name,
+                partner_name=supplier_name,
+                label=GlosaBuilder.item(Roles.ANTICIPO, supplier_name, doc_id),
             )
 
             JournalEntryService.post_entry(recon_entry)

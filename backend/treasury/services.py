@@ -10,6 +10,7 @@ from django.db.models.deletion import ProtectedError
 from django.utils import timezone
 from django.utils.translation import gettext as _
 
+from accounting.glosa_builder import GlosaBuilder, Roles
 from accounting.models import AccountingSettings, JournalEntry, JournalItem
 from accounting.services import JournalEntryService
 
@@ -390,10 +391,19 @@ class TreasuryService:
             return
 
         date = movement.date
-        description = f"{movement.get_movement_type_display()} - {movement.reference or movement.notes or 'Sin Ref'}"
+        partner_name = movement.contact.name if movement.contact else ""
+        doc_ref = movement.reference or f"MOV-{movement.id}"
+
+        mtype = movement.movement_type
+        action = {
+            TreasuryMovement.Type.TRANSFER: GlosaBuilder.TRANSFERENCIA,
+            TreasuryMovement.Type.INBOUND: GlosaBuilder.INGRESO,
+            TreasuryMovement.Type.OUTBOUND: GlosaBuilder.EGRESO,
+        }.get(mtype, "")
+
         entry = JournalEntry.objects.create(
             date=date,
-            description=description,
+            description=GlosaBuilder.build(action, doc_ref, partner_name, movement.amount),
             reference=f"MOV-{movement.id}",
             status=JournalEntry.State.DRAFT,
             source_content_type=ContentType.objects.get_for_model(TreasuryMovement),
@@ -407,43 +417,34 @@ class TreasuryService:
         if movement.payment_method == TreasuryMovement.Method.CREDIT_BALANCE:
             pool_acc = settings.default_advance_payment_account
             if pool_acc:
-                if movement.movement_type == TreasuryMovement.Type.INBOUND:
+                if mtype == TreasuryMovement.Type.INBOUND:
                     to_acc = pool_acc
-                elif movement.movement_type == TreasuryMovement.Type.OUTBOUND:
+                elif mtype == TreasuryMovement.Type.OUTBOUND:
                     from_acc = pool_acc
 
-        # Resolve the related business document used to pick the counterpart
-        # account. The `allocated_to` GFK is only backfilled for historical
-        # movements (migration 0046); movements created via create_movement
-        # leave it null, which used to make the default-account fallbacks
-        # below unreachable and silently drop the entry (E1). Fall back to the
-        # legacy document FKs, preferring the order (unambiguous sale/purchase
-        # direction) over the invoice (whose direction depends on source_order).
+        # Resolve the related business document
         allocated = getattr(movement, "allocated_to", None)
         if allocated is None:
             allocated = movement.purchase_order or movement.sale_order or movement.invoice
 
         # 1. TRANSFER (Internal)
-        if movement.movement_type == TreasuryMovement.Type.TRANSFER:
+        if mtype == TreasuryMovement.Type.TRANSFER:
             if from_acc and to_acc:
                 JournalItem.objects.create(
-                    entry=entry, account=from_acc, debit=0, credit=movement.amount
+                    entry=entry, account=from_acc, debit=0, credit=movement.amount,
+                    partner=movement.contact, partner_name=partner_name,
+                    label=GlosaBuilder.item(Roles.BANCO, "Origen", doc_ref),
                 )
                 JournalItem.objects.create(
-                    entry=entry, account=to_acc, debit=movement.amount, credit=0
+                    entry=entry, account=to_acc, debit=movement.amount, credit=0,
+                    partner=movement.contact, partner_name=partner_name,
+                    label=GlosaBuilder.item(Roles.BANCO, "Destino", doc_ref),
                 )
 
         # 2. INBOUND (Sale / Deposit)
-        elif movement.movement_type == TreasuryMovement.Type.INBOUND:
-            # Debit ToAccount (Treasury or Card Provider Receivable)
+        elif mtype == TreasuryMovement.Type.INBOUND:
             debit_acc = to_acc
 
-            # Stage 1.2: Terminal payments must hit the provider's clearing/receivable
-            # account (so Stage 2 batch settlement can credit the same account and
-            # cancel the cycle cleanly). Detect by method type (stable) rather than
-            # is_integrated (runtime-only). If the provider lacks receivable_account,
-            # fail loudly — silently falling back to the treasury account would create
-            # an asymmetric cycle that batch settlement cannot close.
             pm = movement.payment_method_new
             is_card_terminal = bool(pm and pm.method_type == PaymentMethod.Type.CARD_TERMINAL)
             if is_card_terminal:
@@ -460,78 +461,83 @@ class TreasuryService:
 
             if debit_acc:
                 JournalItem.objects.create(
-                    entry=entry, account=debit_acc, debit=movement.amount, credit=0
+                    entry=entry, account=debit_acc, debit=movement.amount, credit=0,
+                    partner=movement.contact, partner_name=partner_name,
+                    label=GlosaBuilder.item(Roles.INGRESO, partner_name, doc_ref),
                 )
 
             # Credit Source (Revenue / Debtor)
             source_acc = None
+            inbound_role = Roles.INGRESO
             if (
                 movement.justify_reason == TreasuryMovement.JustifyReason.CAPITAL_CONTRIBUTION
                 and movement.contact
                 and movement.contact.is_partner
             ):
-                # Smart Contribution: Priority Capital Receivable > Equity
                 partner = movement.contact
                 if partner.partner_pending_capital > 0:
                     source_acc = settings.partner_capital_receivable_account
+                    inbound_role = Roles.CAPITAL_COBRAR
                 else:
                     source_acc = settings.partner_capital_contribution_account
+                    inbound_role = Roles.CAPITAL_SOCIAL
 
             if not source_acc:
                 if allocated is not None and allocated._meta.model_name in ("invoice", "saleorder"):
-                    # Resolve customer from the document itself, not movement.contact —
-                    # they can diverge in some flows (e.g. POS guest sales) and any
-                    # divergence breaks the receivable offset against Stage 1.1's invoice
-                    # entry. Fall back to movement.contact only when the document has no
-                    # explicit customer.
                     source_acc = settings.default_receivable_account
+                    inbound_role = Roles.CXC
                 elif movement.justify_reason:
-                    # Operational Reasons (Tips, Adjustments)
                     source_acc = TreasuryService._get_reason_account(
                         settings, movement.justify_reason, "IN"
                     )
 
             if not source_acc:
                 source_acc = settings.default_receivable_account
+                inbound_role = Roles.CXC
 
             if source_acc:
                 JournalItem.objects.create(
-                    entry=entry, account=source_acc, debit=0, credit=movement.amount
+                    entry=entry, account=source_acc, debit=0, credit=movement.amount,
+                    partner=movement.contact, partner_name=partner_name,
+                    label=GlosaBuilder.item(inbound_role, partner_name, doc_ref),
                 )
 
         # 3. OUTBOUND (Expense / Withdrawal)
-        elif movement.movement_type == TreasuryMovement.Type.OUTBOUND:
-            # Credit FromAccount (Treasury)
+        elif mtype == TreasuryMovement.Type.OUTBOUND:
             if from_acc:
                 JournalItem.objects.create(
-                    entry=entry, account=from_acc, debit=0, credit=movement.amount
+                    entry=entry, account=from_acc, debit=0, credit=movement.amount,
+                    partner=movement.contact, partner_name=partner_name,
+                    label=GlosaBuilder.item(Roles.BANCO, partner_name, doc_ref),
                 )
 
-            # Debit Target (Expense / Creditor)
             target_acc = None
+            outbound_role = Roles.GASTO
             if (
                 movement.justify_reason == TreasuryMovement.JustifyReason.PARTNER_WITHDRAWAL
                 and movement.contact
                 and movement.contact.is_partner
             ):
-                # Smart Withdrawal: Priority Dividends Payable > Provisional Withdrawal
                 partner = movement.contact
                 if partner.partner_dividends_payable_balance > 0:
                     target_acc = settings.partner_dividends_payable_account
+                    outbound_role = Roles.DIVIDENDO_PAGAR
                 else:
                     target_acc = (
                         settings.partner_provisional_withdrawal_account
                         or settings.partner_withdrawal_account
                         or settings.pos_partner_withdrawal_account
                     )
+                    outbound_role = Roles.RETIRO_PROVISORIO
 
             if not target_acc:
                 if allocated is not None:
                     if allocated.is_sale_document():
                         target_acc = settings.default_receivable_account
+                        outbound_role = Roles.CXC
                     else:
-                        # Supplier Account
                         target_acc = settings.default_payable_account
+                        outbound_role = Roles.CXP
                 elif movement.justify_reason:
                     target_acc = TreasuryService._get_reason_account(
                         settings, movement.justify_reason, "OUT"
@@ -539,30 +545,28 @@ class TreasuryService:
 
             if not target_acc:
                 target_acc = settings.default_payable_account
+                outbound_role = Roles.CXP
 
             if not target_acc and movement.payroll:
                 acct_settings = AccountingSettings.get_solo()
                 if acct_settings:
                     if movement.payroll_payment_type == "SALARY":
                         target_acc = acct_settings.account_remuneraciones_por_pagar
+                        outbound_role = Roles.REMUNERACION_PAGAR
                     elif movement.payroll_payment_type == "PREVIRED":
                         target_acc = acct_settings.account_previred_por_pagar
+                        outbound_role = Roles.OBLIGACIONES_PREVIRED
                     elif movement.payroll_payment_type == "ADVANCE":
                         target_acc = acct_settings.account_anticipos
+                        outbound_role = Roles.ANTICIPO
 
             if target_acc:
                 JournalItem.objects.create(
-                    entry=entry, account=target_acc, debit=movement.amount, credit=0
+                    entry=entry, account=target_acc, debit=movement.amount, credit=0,
+                    partner=movement.contact, partner_name=partner_name,
+                    label=GlosaBuilder.item(outbound_role, partner_name, doc_ref),
                 )
 
-        # Post if valid. The E1 fix above (allocated revival + default-account
-        # fallbacks) makes the counterpart resolvable whenever it is
-        # configured, so well-formed movements now produce a balanced entry
-        # instead of being silently dropped. We keep the soft delete for the
-        # residual <2-leg cases (e.g. ADJUSTMENT, whose entry is built
-        # elsewhere) to avoid a fail-closed regression on under-configured
-        # flows (check reception, cash sales). Callers that REQUIRE the entry
-        # to exist — like create_card_purchase — assert it as a post-condition.
         if entry.items.count() >= 2:
             JournalEntryService.post_entry(entry)
             movement.journal_entry = entry
@@ -1036,18 +1040,21 @@ class TreasuryService:
             if movement.sale_order:
                 partner_account = settings.default_receivable_account
                 treasury_acc_ref = from_account
-                entry_desc = (
-                    f"Devolución pago cliente - {movement.contact.name if movement.contact else ''}"
-                )
+                refund_role = Roles.CXC
             elif movement.purchase_order:
                 partner_account = settings.default_payable_account
                 treasury_acc_ref = to_account
-                entry_desc = f"Devolución pago proveedor - {movement.contact.name if movement.contact else ''}"
+                refund_role = Roles.CXP
 
             if movement.sale_order or movement.purchase_order:
+                partner_name = movement.contact.name if movement.contact else ""
+                doc_ref = f"DEV-{movement.id}"
+
                 entry = JournalEntry.objects.create(
                     date=return_movement.date,
-                    description=entry_desc,
+                    description=GlosaBuilder.build(
+                        GlosaBuilder.DEVOLUCION_PAGO, doc_ref, partner_name, refund_amount,
+                    ),
                     reference=f"DEV-JE-{movement.id}",
                     status=JournalEntry.State.DRAFT,
                     source_content_type=ContentType.objects.get_for_model(TreasuryMovement),
@@ -1062,7 +1069,8 @@ class TreasuryService:
                         debit=refund_amount,
                         credit=0,
                         partner=movement.contact,
-                        label=f"Devolución pago - {reason}",
+                        partner_name=partner_name,
+                        label=GlosaBuilder.item(refund_role, partner_name, doc_ref),
                     )
                     JournalItem.objects.create(
                         entry=entry,
@@ -1071,7 +1079,7 @@ class TreasuryService:
                         else treasury_acc_ref,
                         debit=0,
                         credit=refund_amount,
-                        label="Salida efectivo - Devolución",
+                        label=GlosaBuilder.item(Roles.EFECTIVO, "Devolución", doc_ref),
                     )
                 else:
                     # Debit: Treasury, Credit: Payable
@@ -1082,7 +1090,7 @@ class TreasuryService:
                         else treasury_acc_ref,
                         debit=refund_amount,
                         credit=0,
-                        label="Entrada efectivo - Devolución",
+                        label=GlosaBuilder.item(Roles.EFECTIVO, "Devolución", doc_ref),
                     )
                     JournalItem.objects.create(
                         entry=entry,
@@ -1090,7 +1098,8 @@ class TreasuryService:
                         debit=0,
                         credit=refund_amount,
                         partner=movement.contact,
-                        label=f"Devolución pago - {reason}",
+                        partner_name=partner_name,
+                        label=GlosaBuilder.item(refund_role, partner_name, doc_ref),
                     )
 
                 JournalEntryService.post_entry(entry)
@@ -1379,14 +1388,15 @@ class TerminalBatchService:
         payments.update(terminal_batch=batch)
 
         # 3. Create Accounting Entry (Settlement)
-        # Description: Liquidación Terminal [Provider] - [Date]
-        description = f"Liq. {provider.name} - {sales_date}"
         first_movement = payments.first()
         source_ct = ContentType.objects.get_for_model(TreasuryMovement) if first_movement else None
         source_oid = first_movement.id if first_movement else None
+        doc_ref = f"LIQ-{batch.display_id}"
         entry = JournalEntry.objects.create(
             date=batch.settlement_date,
-            description=description,
+            description=GlosaBuilder.build(
+                GlosaBuilder.LIQUIDACION_TC, doc_ref, provider.name, gross_amount,
+            ),
             reference=f"LIQ-JE-{batch.id}",
             status=JournalEntry.State.DRAFT,
             source_content_type=source_ct,
@@ -1394,17 +1404,27 @@ class TerminalBatchService:
         )
 
         # A. Commission Expense - Net (Debit)
-        JournalItem.objects.create(entry=entry, account=comm_acc, debit=commission_base, credit=0)
+        JournalItem.objects.create(
+            entry=entry, account=comm_acc, debit=commission_base, credit=0,
+            label=GlosaBuilder.item(Roles.COMISION, doc_ref=doc_ref),
+        )
 
         # B. IVA Commission (Debit)
-        JournalItem.objects.create(entry=entry, account=iva_acc, debit=commission_tax, credit=0)
+        JournalItem.objects.create(
+            entry=entry, account=iva_acc, debit=commission_tax, credit=0,
+            label=GlosaBuilder.item(Roles.IVA_CREDITO, "Comisión TC", doc_ref),
+        )
 
         # C. Bank Check/Transfer (Debit) <-- Net Amount received
-        JournalItem.objects.create(entry=entry, account=bank_acc, debit=net_amount, credit=0)
+        JournalItem.objects.create(
+            entry=entry, account=bank_acc, debit=net_amount, credit=0,
+            label=GlosaBuilder.item(Roles.BANCO, "Liquidación TC", doc_ref),
+        )
 
         # D. Receivable Offset (Credit) <-- Gross Amount was previously debited here
         JournalItem.objects.create(
-            entry=entry, account=receivable_acc, debit=0, credit=gross_amount
+            entry=entry, account=receivable_acc, debit=0, credit=gross_amount,
+            label=GlosaBuilder.item(Roles.CXC, "Liquidación TC", doc_ref),
         )
 
         JournalEntryService.post_entry(entry)
@@ -1549,24 +1569,30 @@ class TerminalBatchService:
             )
 
         bridge_total = total_commission_net + total_commission_tax
+        doc_ref = f"BRIDGE-{invoice.display_id}"
 
         bridge_entry = JournalEntry.objects.create(
             date=date or timezone.now().date(),
-            description=f"Cruce comisiones terminales {provider.name} - {month}/{year}",
+            description=GlosaBuilder.build(
+                GlosaBuilder.TRASPASO_CONCILIACION, doc_ref, provider.name, bridge_total,
+            ),
             reference=f"BRIDGE-{invoice.display_id}",
             status=JournalEntry.State.DRAFT,
             source_content_type=ContentType.objects.get_for_model(TreasuryMovement),
             source_object_id=invoice.id,
         )
         JournalItem.objects.create(
-            entry=bridge_entry, account=payable_acc, debit=bridge_total, credit=0
+            entry=bridge_entry, account=payable_acc, debit=bridge_total, credit=0,
+            label=GlosaBuilder.item(Roles.CXP, "Comisiones TC", doc_ref),
         )
         JournalItem.objects.create(
-            entry=bridge_entry, account=comm_bridge, debit=0, credit=total_commission_net
+            entry=bridge_entry, account=comm_bridge, debit=0, credit=total_commission_net,
+            label=GlosaBuilder.item(Roles.COMISION, "Puente", doc_ref),
         )
         if total_commission_tax > 0:
             JournalItem.objects.create(
-                entry=bridge_entry, account=iva_bridge, debit=0, credit=total_commission_tax
+                entry=bridge_entry, account=iva_bridge, debit=0, credit=total_commission_tax,
+                label=GlosaBuilder.item(Roles.IVA_CREDITO, "Puente TC", doc_ref),
             )
         JournalEntryService.post_entry(bridge_entry)
 

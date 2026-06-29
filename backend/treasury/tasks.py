@@ -238,6 +238,7 @@ def accrue_monthly_loan_interest(year: int = None, month: int = None):
     """
     from django.db.models import Sum
 
+    from accounting.glosa_builder import GlosaBuilder, Roles
     from accounting.models import AccountingSettings, JournalEntry, JournalItem
 
     from .models import BankLoan, LoanInstallment
@@ -287,7 +288,7 @@ def accrue_monthly_loan_interest(year: int = None, month: int = None):
 
         entry = JournalEntry.objects.create(
             date=timezone.now().date(),
-            description=f"Devengo intereses {month:02d}/{year} - {inst.loan.display_id}",
+            description=GlosaBuilder.build(GlosaBuilder.DEVENGO_INTERESES, inst.loan.display_id, "", total_interest_clp, extra=[f"{month:02d}/{year}"]),
             reference=ref,
             status=JournalEntry.Status.DRAFT,
         )
@@ -296,12 +297,14 @@ def accrue_monthly_loan_interest(year: int = None, month: int = None):
             account=interest_expense_account,
             debit=total_interest_clp,
             credit=0,
+            label=GlosaBuilder.item(Roles.INTERES, inst.loan.display_id, ref),
         )
         JournalItem.objects.create(
             entry=entry,
             account=interest_payable_account,
             debit=0,
             credit=total_interest_clp,
+            label=GlosaBuilder.item(Roles.INTERES_PAGAR, inst.loan.display_id, ref),
         )
         from accounting.services import JournalEntryService
 

@@ -16,6 +16,7 @@ from django.core.exceptions import ValidationError
 from django.db import transaction
 from django.utils import timezone
 
+from accounting.glosa_builder import GlosaBuilder, Roles
 from accounting.models import (
     AccountingSettings,
     JournalEntry,
@@ -214,8 +215,7 @@ class PartnerService:
 
         # 1. Journal Entry
         entry = JournalEntry.objects.create(
-            description=f"Aporte de Capital: {partner.name}"
-            + (f" - {description}" if description else ""),
+            description=GlosaBuilder.build(GlosaBuilder.APORTE_CAPITAL, partner.display_id, partner.name, amount, extra=[description] if description else None),
             date=date,
             status=JournalEntry.Status.POSTED,
         )
@@ -224,7 +224,7 @@ class PartnerService:
         JournalItem.objects.create(
             entry=entry,
             account=cash_account,
-            label=f"Aporte Capital {partner.name}",
+            label=GlosaBuilder.item(Roles.CAPITAL_SOCIAL, partner.name, partner.display_id),
             debit=amount,
             credit=0,
         )
@@ -235,7 +235,7 @@ class PartnerService:
                 entry=entry,
                 account=receivable_account,
                 partner=partner,
-                label=f"Pago Capital Suscrito {partner.name}",
+                label=GlosaBuilder.item(Roles.CAPITAL_COBRAR, partner.name, partner.display_id),
                 debit=0,
                 credit=amount_to_receivable,
             )
@@ -252,9 +252,9 @@ class PartnerService:
                 entry=entry,
                 account=contribution_account,
                 partner=partner,
-                label=f"Aporte Capital Excedente {partner.name}"
+                label=GlosaBuilder.item(Roles.CAPITAL_EXCEDENTE, partner.name, partner.display_id)
                 if amount_to_receivable > 0
-                else f"Aporte Capital {partner.name}",
+                else GlosaBuilder.item(Roles.CAPITAL_SOCIAL, partner.name, partner.display_id),
                 debit=0,
                 credit=amount_to_equity_surplus,
             )
@@ -381,15 +381,8 @@ class PartnerService:
         amount_to_provisional = amount - amount_to_dividends
 
         # 1. Journal Entry
-        main_label = "Retiro de Socio" if is_withdrawal else "Pago de Dividendos"
-        entry_desc = f"{main_label}: {partner.name}"
-        if amount_to_provisional > 0 and not is_withdrawal:
-            entry_desc += f" (incluye Retiro Provisorio de ${amount_to_provisional:,.0f})"
-        if description:
-            entry_desc += f" - {description}"
-
         entry = JournalEntry.objects.create(
-            description=entry_desc,
+            description=GlosaBuilder.build(GlosaBuilder.PAGO_DIVIDENDOS, partner.display_id, partner.name, amount),
             date=date,
             status=JournalEntry.Status.POSTED,
         )
@@ -400,7 +393,7 @@ class PartnerService:
                 entry=entry,
                 account=dividends_payable_account,
                 partner=partner,
-                label=f"Pago Dividendo {partner.name}",
+                label=GlosaBuilder.item(Roles.DIVIDENDO_PAGAR, partner.name, partner.display_id),
                 debit=amount_to_dividends,
                 credit=0,
             )
@@ -409,7 +402,7 @@ class PartnerService:
                 entry=entry,
                 account=withdrawal_account,
                 partner=partner,
-                label=f"Retiro Provisorio {partner.name}",
+                label=GlosaBuilder.item(Roles.RETIRO_PROVISORIO, partner.name, partner.display_id),
                 debit=amount_to_provisional,
                 credit=0,
             )
@@ -418,7 +411,7 @@ class PartnerService:
         JournalItem.objects.create(
             entry=entry,
             account=cash_account,
-            label=f"Salida Fondos para {partner.name}",
+            label=GlosaBuilder.item(Roles.BANCO if is_bank else Roles.EFECTIVO, partner.name, partner.display_id),
             debit=0,
             credit=amount,
         )
@@ -436,7 +429,7 @@ class PartnerService:
                 from_account=treasury_account,
                 contact=partner,
                 date=date,
-                notes=description or entry_desc,
+                notes=description,
                 journal_entry=entry,
                 justify_reason=TreasuryMovement.JustifyReason.PARTNER_WITHDRAWAL,
                 is_pending_registration=False,
@@ -512,12 +505,8 @@ class PartnerService:
             raise ValidationError("La cuenta de Aportes por Cobrar Socios no está configurada.")
 
         # Journal Entry
-        entry_desc = f"Suscripción de Capital: {partner.name}"
-        if description:
-            entry_desc += f" - {description}"
-
         entry = JournalEntry.objects.create(
-            description=entry_desc,
+            description=GlosaBuilder.build(GlosaBuilder.SUSCRIPCION_CAPITAL, partner.display_id, partner.name, amount),
             date=date,
             status=JournalEntry.Status.POSTED,
         )
@@ -526,7 +515,7 @@ class PartnerService:
             entry=entry,
             account=receivable_account,
             partner=partner,
-            label=entry_desc,
+            label=GlosaBuilder.item(Roles.CAPITAL_COBRAR, partner.name, partner.display_id),
             debit=amount,
             credit=0,
         )
@@ -541,7 +530,7 @@ class PartnerService:
             entry=entry,
             account=contribution_account,
             partner=partner,
-            label=entry_desc,
+            label=GlosaBuilder.item(Roles.CAPITAL_SOCIAL, partner.name, partner.display_id),
             debit=0,
             credit=amount,
         )
@@ -605,12 +594,8 @@ class PartnerService:
         if not receivable_account:
             raise ValidationError("La cuenta de Aportes por Cobrar Socios no está configurada.")
 
-        entry_desc = f"Reducción de Capital: {partner.name}"
-        if description:
-            entry_desc += f" - {description}"
-
         entry = JournalEntry.objects.create(
-            description=entry_desc,
+            description=GlosaBuilder.build(GlosaBuilder.REDUCCION_CAPITAL, partner.display_id, partner.name, amount),
             date=date,
             status=JournalEntry.Status.POSTED,
         )
@@ -626,7 +611,7 @@ class PartnerService:
             entry=entry,
             account=contribution_account,
             partner=partner,
-            label=entry_desc,
+            label=GlosaBuilder.item(Roles.CAPITAL_SOCIAL, f"Reducción {partner.name}", partner.display_id),
             debit=amount,
             credit=0,
         )
@@ -635,7 +620,7 @@ class PartnerService:
             entry=entry,
             account=receivable_account,
             partner=partner,
-            label=entry_desc,
+            label=GlosaBuilder.item(Roles.CAPITAL_COBRAR, f"Pago reducción {partner.name}" if is_payment else f"Reducción {partner.name}", partner.display_id),
             debit=0,
             credit=amount,
         )
@@ -776,12 +761,8 @@ class PartnerService:
         if not receivable_account:
             raise ValidationError("La cuenta de Aportes por Cobrar Socios no está configurada.")
 
-        entry_desc = f"Transferencia de Capital: {seller.name} → {buyer.name}"
-        if description:
-            entry_desc += f" - {description}"
-
         entry = JournalEntry.objects.create(
-            description=entry_desc,
+            description=GlosaBuilder.build(GlosaBuilder.TRANSFERENCIA_CAPITAL, transfer.display_id, f"{seller.name} → {buyer.name}", amount),
             date=date,
             status=JournalEntry.Status.POSTED,
         )
@@ -789,7 +770,7 @@ class PartnerService:
             entry=entry,
             account=receivable_account,
             partner=seller,
-            label=entry_desc,
+            label=GlosaBuilder.item(Roles.CAPITAL_SOCIAL, f"{seller.name} → {buyer.name}", transfer.display_id),
             debit=amount,
             credit=0,
         )
@@ -797,7 +778,7 @@ class PartnerService:
             entry=entry,
             account=receivable_account,
             partner=buyer,
-            label=entry_desc,
+            label=GlosaBuilder.item(Roles.CAPITAL_COBRAR, buyer.name, transfer.display_id),
             debit=0,
             credit=amount,
         )
@@ -882,7 +863,7 @@ class PartnerService:
 
         # Single Journal Entry for all
         entry = JournalEntry.objects.create(
-            description="Asiento Inicial - Suscripción de Capital",
+            description=GlosaBuilder.build(GlosaBuilder.APERTURA, "CAPITAL", "", total_capital),
             status=JournalEntry.Status.POSTED,
             date=today,
         )
@@ -904,7 +885,7 @@ class PartnerService:
                 account=receivable_account,
                 partner=contact,
                 partner_name=contact.name,
-                label=f"Suscripción Capital: {contact.name}",
+                label=GlosaBuilder.item(Roles.CAPITAL_COBRAR, contact.name, "APERTURA"),
                 debit=amount,
                 credit=0,
             )
@@ -913,7 +894,7 @@ class PartnerService:
         JournalItem.objects.create(
             entry=entry,
             account=settings.partner_capital_social_account,
-            label="Suscripción de Capital Social Inicial",
+            label=GlosaBuilder.item(Roles.CAPITAL_SOCIAL, "Inicial", "APERTURA"),
             debit=0,
             credit=total_capital,
         )
@@ -990,8 +971,7 @@ class PartnerService:
 
         # 1. Journal Entry
         entry = JournalEntry.objects.create(
-            description=f"Movilización de Utilidades Retenidas: {partner.name}"
-            + (f" - {description}" if description else ""),
+            description=GlosaBuilder.build(GlosaBuilder.MOVILIZACION_RETENIDAS, partner.display_id, partner.name, total_amount),
             date=date,
             status=JournalEntry.Status.POSTED,
         )
@@ -1001,7 +981,7 @@ class PartnerService:
             entry=entry,
             account=retained_account,
             partner=partner,
-            label=f"Salida de Retenidas {partner.name}",
+            label=GlosaBuilder.item(Roles.RETENIDAS, partner.name, partner.display_id),
             debit=total_amount,
             credit=0,
         )
@@ -1012,7 +992,7 @@ class PartnerService:
                 entry=entry,
                 account=dividends_payable_account,
                 partner=partner,
-                label=f"Dividendos por Pagar {partner.name}",
+                label=GlosaBuilder.item(Roles.DIVIDENDO_PAGAR, partner.name, partner.display_id),
                 debit=0,
                 credit=amount_dividend,
             )
@@ -1023,7 +1003,7 @@ class PartnerService:
                 entry=entry,
                 account=contribution_account,
                 partner=partner,
-                label=f"Reinversión de Capital {partner.name}",
+                label=GlosaBuilder.item(Roles.REINVERSION, partner.name, partner.display_id),
                 debit=0,
                 credit=amount_reinvest,
             )

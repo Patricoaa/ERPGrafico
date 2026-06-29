@@ -31,6 +31,8 @@ from abc import ABC, abstractmethod
 from decimal import Decimal
 from typing import TYPE_CHECKING
 
+from accounting.glosa_builder import GlosaBuilder, Roles
+
 if TYPE_CHECKING:
     # Solo para type checkers — evitar import circular en runtime.
     from accounting.models import AccountingSettings
@@ -113,7 +115,7 @@ def _gross_to_net_items(
     revenue_gross_grouping: dict,
     total_net: Decimal,
     tax_divisor: Decimal,
-    label_prefix: str,
+    doc_ref: str = None,
 ) -> tuple[list, Decimal]:
     """
     Distribuye el neto entre cuentas de ingresos según el peso bruto de cada
@@ -140,7 +142,7 @@ def _gross_to_net_items(
                     "account": acc,
                     "debit": Decimal("0.00"),
                     "credit": net_amount,
-                    "label": label_prefix,
+                    "label": GlosaBuilder.item(Roles.INGRESO, doc_ref=doc_ref),
                 }
             )
             total_net_remaining -= net_amount
@@ -220,6 +222,8 @@ class FacturaStrategy(DTEStrategy):
 
         revenue_gross_grouping = _build_revenue_grouping(invoice)
         tax_divisor = Decimal("1") + (settings.default_vat_rate / Decimal("100.00"))
+        doc_id = invoice.display_id
+        customer_name = order.customer.name
 
         items: JournalItemList = [
             {
@@ -227,7 +231,8 @@ class FacturaStrategy(DTEStrategy):
                 "debit": invoice.total,
                 "credit": Decimal("0.00"),
                 "partner": order.customer,
-                "partner_name": order.customer.name,
+                "partner_name": customer_name,
+                "label": GlosaBuilder.item(Roles.CXC, customer_name, doc_id),
             }
         ]
 
@@ -235,7 +240,7 @@ class FacturaStrategy(DTEStrategy):
             revenue_gross_grouping,
             invoice.total_net,
             tax_divisor,
-            label_prefix=f"Factura {invoice.number or ''}",
+            doc_ref=doc_id,
         )
         items.extend(net_items)
 
@@ -247,12 +252,13 @@ class FacturaStrategy(DTEStrategy):
                     "account": settings.default_tax_payable_account,
                     "debit": Decimal("0.00"),
                     "credit": invoice.total_tax,
-                    "label": "IVA Débito Fiscal",
+                    "label": GlosaBuilder.item(Roles.IVA_DEBITO, doc_ref=doc_id),
                 }
             )
 
-        description = (
-            f"{invoice.get_dte_type_display()} {invoice.number or ''} - Pedido {order.number}"
+        description = GlosaBuilder.build(
+            GlosaBuilder.VENTA, doc_id, customer_name, invoice.total,
+            extra=[f"Pedido {order.display_id}"],
         )
         reference = f"{invoice.dte_type[:3]}-{order.number}"
         return description, reference, items
@@ -299,6 +305,8 @@ class BoletaStrategy(DTEStrategy):
 
         revenue_gross_grouping = _build_revenue_grouping(invoice)
         tax_divisor = Decimal("1") + (settings.default_vat_rate / Decimal("100.00"))
+        doc_id = invoice.display_id
+        customer_name = order.customer.name
 
         items: JournalItemList = [
             {
@@ -306,7 +314,8 @@ class BoletaStrategy(DTEStrategy):
                 "debit": invoice.total,
                 "credit": Decimal("0.00"),
                 "partner": order.customer,
-                "partner_name": order.customer.name,
+                "partner_name": customer_name,
+                "label": GlosaBuilder.item(Roles.CXC, customer_name, doc_id),
             }
         ]
 
@@ -314,7 +323,7 @@ class BoletaStrategy(DTEStrategy):
             revenue_gross_grouping,
             invoice.total_net,
             tax_divisor,
-            label_prefix=f"Boleta {invoice.number or ''}",
+            doc_ref=doc_id,
         )
         items.extend(net_items)
 
@@ -326,12 +335,13 @@ class BoletaStrategy(DTEStrategy):
                     "account": settings.default_tax_payable_account,
                     "debit": Decimal("0.00"),
                     "credit": invoice.total_tax,
-                    "label": "IVA Débito Fiscal",
+                    "label": GlosaBuilder.item(Roles.IVA_DEBITO, doc_ref=doc_id),
                 }
             )
 
-        description = (
-            f"{invoice.get_dte_type_display()} {invoice.number or ''} - Pedido {order.number}"
+        description = GlosaBuilder.build(
+            GlosaBuilder.VENTA, doc_id, customer_name, invoice.total,
+            extra=[f"Pedido {order.display_id}"],
         )
         reference = f"{invoice.dte_type[:3]}-{order.number}"
         return description, reference, items
@@ -367,6 +377,8 @@ class FacturaExentaStrategy(DTEStrategy):
             raise ValidationError("Falta configuración de cuenta por cobrar.")
 
         revenue_gross_grouping = _build_revenue_grouping(invoice)
+        doc_id = invoice.display_id
+        customer_name = order.customer.name
 
         items: JournalItemList = [
             {
@@ -374,7 +386,8 @@ class FacturaExentaStrategy(DTEStrategy):
                 "debit": invoice.total,
                 "credit": Decimal("0.00"),
                 "partner": order.customer,
-                "partner_name": order.customer.name,
+                "partner_name": customer_name,
+                "label": GlosaBuilder.item(Roles.CXC, customer_name, doc_id),
             }
         ]
 
@@ -385,12 +398,13 @@ class FacturaExentaStrategy(DTEStrategy):
                         "account": acc,
                         "debit": Decimal("0.00"),
                         "credit": gross_amount,
-                        "label": f"Venta Exenta {invoice.number or ''}",
+                        "label": GlosaBuilder.item(Roles.INGRESO, f"Exenta {invoice.number or ''}", doc_id),
                     }
                 )
 
-        description = (
-            f"{invoice.get_dte_type_display()} {invoice.number or ''} - Pedido {order.number}"
+        description = GlosaBuilder.build(
+            GlosaBuilder.VENTA, doc_id, customer_name, invoice.total,
+            extra=[f"Pedido {order.display_id}"],
         )
         reference = f"{invoice.dte_type[:3]}-{order.number}"
         return description, reference, items
@@ -427,6 +441,8 @@ class BoletaExentaStrategy(DTEStrategy):
             raise ValidationError("Falta configuración de cuenta por cobrar.")
 
         revenue_gross_grouping = _build_revenue_grouping(invoice)
+        doc_id = invoice.display_id
+        customer_name = order.customer.name
 
         items: JournalItemList = [
             {
@@ -434,7 +450,8 @@ class BoletaExentaStrategy(DTEStrategy):
                 "debit": invoice.total,
                 "credit": Decimal("0.00"),
                 "partner": order.customer,
-                "partner_name": order.customer.name,
+                "partner_name": customer_name,
+                "label": GlosaBuilder.item(Roles.CXC, customer_name, doc_id),
             }
         ]
 
@@ -445,12 +462,13 @@ class BoletaExentaStrategy(DTEStrategy):
                         "account": acc,
                         "debit": Decimal("0.00"),
                         "credit": gross_amount,
-                        "label": f"Boleta Exenta {invoice.number or ''}",
+                        "label": GlosaBuilder.item(Roles.INGRESO, f"Exenta {invoice.number or ''}", doc_id),
                     }
                 )
 
-        description = (
-            f"{invoice.get_dte_type_display()} {invoice.number or ''} - Pedido {order.number}"
+        description = GlosaBuilder.build(
+            GlosaBuilder.VENTA, doc_id, customer_name, invoice.total,
+            extra=[f"Pedido {order.display_id}"],
         )
         reference = f"{invoice.dte_type[:3]}-{order.number}"
         return description, reference, items
@@ -476,9 +494,6 @@ class ComprobantePagoStrategy(DTEStrategy):
     def make_journal_entry(
         self, invoice: "Invoice", settings: "AccountingSettings"
     ) -> tuple[str, str, JournalItemList]:
-        # Para ventas afectas pagadas con DTE 48, el asiento de la venta es el mismo que una Boleta
-        # (se asume gravado). En sistemas complejos podría ser exento, pero por ahora se modela
-        # como Boleta estándar.
         from django.core.exceptions import ValidationError
 
         order = invoice.sale_order
@@ -488,6 +503,8 @@ class ComprobantePagoStrategy(DTEStrategy):
 
         revenue_gross_grouping = _build_revenue_grouping(invoice)
         tax_divisor = Decimal("1") + (settings.default_vat_rate / Decimal("100.00"))
+        doc_id = invoice.display_id
+        customer_name = order.customer.name
 
         items: JournalItemList = [
             {
@@ -495,7 +512,8 @@ class ComprobantePagoStrategy(DTEStrategy):
                 "debit": invoice.total,
                 "credit": Decimal("0.00"),
                 "partner": order.customer,
-                "partner_name": order.customer.name,
+                "partner_name": customer_name,
+                "label": GlosaBuilder.item(Roles.CXC, customer_name, doc_id),
             }
         ]
 
@@ -503,7 +521,7 @@ class ComprobantePagoStrategy(DTEStrategy):
             revenue_gross_grouping,
             invoice.total_net,
             tax_divisor,
-            label_prefix=f"Comprobante Pago {invoice.number or ''}",
+            doc_ref=doc_id,
         )
         items.extend(net_items)
 
@@ -515,12 +533,13 @@ class ComprobantePagoStrategy(DTEStrategy):
                     "account": settings.default_tax_payable_account,
                     "debit": Decimal("0.00"),
                     "credit": invoice.total_tax,
-                    "label": "IVA Débito Fiscal",
+                    "label": GlosaBuilder.item(Roles.IVA_DEBITO, doc_ref=doc_id),
                 }
             )
 
-        description = (
-            f"{invoice.get_dte_type_display()} {invoice.number or ''} - Pedido {order.number}"
+        description = GlosaBuilder.build(
+            GlosaBuilder.VENTA, doc_id, customer_name, invoice.total,
+            extra=[f"Pedido {order.display_id}"],
         )
         reference = f"{invoice.dte_type[:3]}-{order.number}"
         return description, reference, items
@@ -556,19 +575,23 @@ class PurchaseInvStrategy(DTEStrategy):
         if not payable_account or not stock_input_account:
             raise ValidationError("Falta configuración de cuentas para Factura de Compra.")
 
+        doc_id = invoice.display_id
+        supplier_name = order.supplier.name
+
         items: JournalItemList = [
             {
                 "account": payable_account,
                 "debit": Decimal("0.00"),
                 "credit": invoice.total,
                 "partner": order.supplier,
-                "partner_name": order.supplier.name,
+                "partner_name": supplier_name,
+                "label": GlosaBuilder.item(Roles.CXP, supplier_name, doc_id),
             },
             {
                 "account": stock_input_account,
                 "debit": invoice.total_net,
                 "credit": Decimal("0.00"),
-                "label": "Limpieza Cuenta Puente Recepción",
+                "label": GlosaBuilder.item(Roles.PUENTE_RECEPCION, doc_ref=doc_id),
             },
         ]
 
@@ -579,11 +602,14 @@ class PurchaseInvStrategy(DTEStrategy):
                     "account": tax_account,
                     "debit": invoice.total_tax,
                     "credit": Decimal("0.00"),
-                    "label": "IVA Compras (Crédito Fiscal)",
+                    "label": GlosaBuilder.item(Roles.IVA_CREDITO, doc_ref=doc_id),
                 }
             )
 
-        description = f"{invoice.get_dte_type_display()} Compra {invoice.number or '(Pendiente)'} - OC {order.number}"
+        description = GlosaBuilder.build(
+            GlosaBuilder.COMPRA, doc_id, supplier_name, invoice.total,
+            extra=[f"OC {order.display_id}"],
+        )
         reference = f"FCP-{invoice.id}"
         return description, reference, items
 
@@ -615,15 +641,17 @@ def _note_journal_entry(
         raise ValidationError(f"No se encontró cuenta {partner_type} por defecto.")
 
     total_amount = invoice.total
+    doc_id = invoice.display_id
+    contact_name = contact.name if contact else ""
 
     if is_credit:
-        # Credit Note: Reduces debt
         debit_amount = Decimal("0") if is_sale else total_amount
         credit_amount = total_amount if is_sale else Decimal("0")
     else:
-        # Debit Note: Increases debt
         debit_amount = total_amount if is_sale else Decimal("0")
         credit_amount = Decimal("0") if is_sale else total_amount
+
+    partner_role = Roles.CXC if is_sale else Roles.CXP
 
     items: JournalItemList = [
         {
@@ -631,8 +659,8 @@ def _note_journal_entry(
             "debit": debit_amount,
             "credit": credit_amount,
             "partner": contact,
-            "partner_name": contact.name if contact else "",
-            "label": f"{invoice.display_id}",
+            "partner_name": contact_name,
+            "label": GlosaBuilder.item(partner_role, contact_name, doc_id),
         }
     ]
 
@@ -680,7 +708,11 @@ def _note_journal_entry(
                 "account": product_account,
                 "debit": item_debit,
                 "credit": item_credit,
-                "label": label_text,
+                "label": GlosaBuilder.item(
+                    Roles.INGRESO if is_sale else Roles.GASTO,
+                    detail=label_text,
+                    doc_ref=doc_id,
+                ),
             }
         )
 
@@ -711,11 +743,15 @@ def _note_journal_entry(
                 "account": tax_account,
                 "debit": tax_debit,
                 "credit": tax_credit,
-                "label": "Impuesto (IVA)",
+                "label": GlosaBuilder.item(
+                    Roles.IVA_DEBITO if is_sale else Roles.IVA_CREDITO,
+                    doc_ref=doc_id,
+                ),
             }
         )
 
-    description = f"{invoice.get_dte_type_display()} {invoice.number}"
+    action = GlosaBuilder.NOTA_CREDITO if is_credit else GlosaBuilder.NOTA_DEBITO
+    description = GlosaBuilder.build(action, doc_id, contact_name, total_amount)
     reference = f"WORKFLOW-{workflow.id}"
     return description, reference, items
 

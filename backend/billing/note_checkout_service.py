@@ -6,6 +6,7 @@ from django.core.exceptions import ValidationError
 from django.db import transaction
 from django.utils import timezone
 
+from accounting.glosa_builder import GlosaBuilder, Roles
 from accounting.models import AccountingSettings, JournalEntry, JournalItem
 from billing.models import Invoice
 from billing.note_workflow import NoteWorkflow
@@ -727,10 +728,17 @@ class NoteCheckoutService:
 
         # ... [rest of method] ...
 
-        # Create entry
+        contact = workflow.corrected_invoice.contact
+        partner_name = contact.name if contact else ""
+        doc_ref = invoice.display_id
+        total_amount = invoice.total
+
         entry = JournalEntry.objects.create(
             date=invoice.date,
-            description=f"{invoice.get_dte_type_display()} {invoice.number}",
+            description=GlosaBuilder.build(
+                GlosaBuilder.NOTA_CREDITO if invoice.dte_type == Invoice.DTEType.NOTA_CREDITO else GlosaBuilder.NOTA_DEBITO,
+                doc_ref, partner_name, total_amount,
+            ),
             reference=f"WORKFLOW-{workflow.id}",
             status=JournalEntry.State.DRAFT,
             source_content_type=ContentType.objects.get_for_model(Invoice),
@@ -743,8 +751,10 @@ class NoteCheckoutService:
         # Determine receivable/payable account
         if is_sale:
             partner_account = settings.default_receivable_account
+            partner_role = Roles.CXC
         else:
             partner_account = settings.default_payable_account
+            partner_role = Roles.CXP
 
         if not partner_account:
             partner_type = "por cobrar" if is_sale else "por pagar"
@@ -752,17 +762,10 @@ class NoteCheckoutService:
                 f"No se encontró cuenta {partner_type} por defecto en la configuración contable o en el contacto."
             )
 
-        # Create receivable/payable entry
-        total_amount = invoice.total
-
         if invoice.dte_type == Invoice.DTEType.NOTA_CREDITO:
-            # Credit Note: Reduces debt
-            # Sale NC -> Credit Receivable; Purchase NC -> Debit Payable
             debit_amount = 0 if is_sale else total_amount
             credit_amount = total_amount if is_sale else 0
         else:
-            # Debit Note: Increases debt
-            # Sale ND -> Debit Receivable; Purchase ND -> Credit Payable
             debit_amount = total_amount if is_sale else 0
             credit_amount = 0 if is_sale else total_amount
 
@@ -771,11 +774,9 @@ class NoteCheckoutService:
             account=partner_account,
             debit=debit_amount,
             credit=credit_amount,
-            partner=workflow.corrected_invoice.contact,
-            partner_name=workflow.corrected_invoice.contact.name
-            if workflow.corrected_invoice.contact
-            else "",
-            label=f"{invoice.display_id}",
+            partner=contact,
+            partner_name=partner_name,
+            label=GlosaBuilder.item(partner_role, partner_name, doc_ref),
         )
 
         # Create revenue/expense entries per product
@@ -823,15 +824,19 @@ class NoteCheckoutService:
                 debit_amount = 0 if is_sale else line_amount
                 credit_amount = line_amount if is_sale else 0
 
-            JournalItem.objects.create(
-                entry=entry,
-                account=product_account,
-                debit=debit_amount,
-                credit=credit_amount,
-                label=f"{product.name} - {item['reason']}" if item.get("reason") else product.name,
-            )
+                JournalItem.objects.create(
+                    entry=entry,
+                    account=product_account,
+                    debit=debit_amount,
+                    credit=credit_amount,
+                    label=GlosaBuilder.item(
+                        Roles.GASTO if not is_sale else Roles.INGRESO,
+                        item.get("reason") or product.name,
+                        doc_ref,
+                    ),
+                )
 
-        # Tax entry (Only if NOT a Purchase Boleta, where tax was already merged into cost reversal)
+        # Tax entry
         is_purchase_boleta = (
             not is_sale and workflow.corrected_invoice.dte_type == Invoice.DTEType.BOLETA
         )
@@ -860,7 +865,11 @@ class NoteCheckoutService:
                 account=tax_account,
                 debit=debit_amount,
                 credit=credit_amount,
-                label="Impuesto (IVA)",
+                label=GlosaBuilder.item(
+                    Roles.IVA_DEBITO if is_sale else Roles.IVA_CREDITO,
+                    partner_name,
+                    doc_ref,
+                ),
             )
 
         return entry

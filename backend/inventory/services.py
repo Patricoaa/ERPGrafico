@@ -8,6 +8,7 @@ from django.db import models, transaction
 from django.db.models import Q, QuerySet
 from django.utils import timezone
 
+from accounting.glosa_builder import GlosaBuilder, Roles
 from accounting.models import Account, AccountType, JournalEntry, JournalItem
 from accounting.services import JournalEntryService
 
@@ -295,14 +296,28 @@ class StockService:
 
         total_value = abs(quantity * unit_cost)
 
+        doc_ref = product.internal_code
         entry = JournalEntry.objects.create(
             date=timezone.now().date(),
-            description=f"Ajuste Stock {product.internal_code}: {description} ({adjustment_reason or 'Manual'})",
+            description=GlosaBuilder.build(
+                GlosaBuilder.AJUSTE_STOCK, doc_ref, description, total_value,
+                extra=[adjustment_reason or "Manual"],
+            ),
             reference=f"STK-{move.id}",
             status=JournalEntry.State.DRAFT,
             source_content_type=ContentType.objects.get_for_model(StockMove),
             source_object_id=move.id,
         )
+
+        # Determine counterpart role for the item label
+        if adjustment_reason == StockMove.AdjustmentReason.PARTNER_CONTRIBUTION:
+            contra_role = Roles.CAPITAL_SOCIAL
+        elif adjustment_reason == StockMove.AdjustmentReason.PARTNER_WITHDRAWAL:
+            contra_role = Roles.RETIRO_PROVISORIO
+        elif quantity > 0:
+            contra_role = Roles.INGRESO
+        else:
+            contra_role = Roles.GASTO
 
         if quantity > 0:
             # Entry: Debit Asset, Credit Counterpart
@@ -311,7 +326,7 @@ class StockService:
                 account=asset_account,
                 debit=total_value,
                 credit=0,
-                label=description,
+                label=GlosaBuilder.item(Roles.INVENTARIO, description, doc_ref),
                 partner=partner_contact,
             )
             JournalItem.objects.create(
@@ -319,7 +334,7 @@ class StockService:
                 account=contra_account,
                 debit=0,
                 credit=total_value,
-                label=description,
+                label=GlosaBuilder.item(contra_role, description, doc_ref),
                 partner=partner_contact,
             )
         else:
@@ -329,7 +344,7 @@ class StockService:
                 account=contra_account,
                 debit=total_value,
                 credit=0,
-                label=description,
+                label=GlosaBuilder.item(contra_role, description, doc_ref),
                 partner=partner_contact,
             )
             JournalItem.objects.create(
@@ -337,7 +352,7 @@ class StockService:
                 account=asset_account,
                 debit=0,
                 credit=total_value,
-                label=description,
+                label=GlosaBuilder.item(Roles.INVENTARIO, description, doc_ref),
                 partner=partner_contact,
             )
 
