@@ -1,4 +1,4 @@
-import { PageSectionHeader, ToolbarCreateButton } from "@/components/shared"
+import { PageSectionHeader } from "@/components/shared"
 
 export default async function ProductsCustomFieldsPage() {
     return (

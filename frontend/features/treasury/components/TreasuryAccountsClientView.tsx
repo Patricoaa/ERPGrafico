@@ -277,7 +277,6 @@ export const TreasuryAccountsClientView: React.FC<TreasuryAccountsClientViewProp
                                 const name = acc.account_name
                                 const providers = acc.terminal_providers ?? []
                                 const hasBank = !!acc.bank
-                                const hasProviders = providers.length > 0
                                 const typeKey = acc.account_type?.toUpperCase()
                                 const Icon = accountTypeIcons[typeKey]
                                 const iconStyle = accountTypeIconStyles[typeKey]
