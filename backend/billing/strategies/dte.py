@@ -192,7 +192,7 @@ class FacturaStrategy(DTEStrategy):
     (accounting/services.py:581-604).
     """
 
-    display_prefix = "FAC"
+    display_prefix = "FACV"
     sii_document_code = 33
 
     def expected_fields(self) -> set[str]:
@@ -531,7 +531,7 @@ class PurchaseInvStrategy(DTEStrategy):
     Factura de Compra (PURCHASE_INV). Mapea a DTE 33 (Factura de Compra de proveedores).
     """
 
-    display_prefix = "FAC"
+    display_prefix = "FACC"
     sii_document_code = 33
 
     def expected_fields(self) -> set[str]:

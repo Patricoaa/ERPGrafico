@@ -433,7 +433,7 @@ export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
     titlePlural: 'Devoluciones de Compra',
     icon: Undo2,
     iconName: 'Undo2',
-    shortTemplate: 'DEV-COM-{number}',
+    shortTemplate: 'DEV-{number}',
     listUrl: '/purchasing/orders',
     detailUrlPattern: '/purchasing/returns/{id}',
     partnerField: 'supplier_name',
@@ -681,10 +681,11 @@ export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
 };
 
 export const DTE_CONFIG: Record<string, { prefix: string, label: string }> = {
-  'FACTURA': { prefix: 'FAC', label: 'Factura' },
-  'FACTURA_EXENTA': { prefix: 'FE', label: 'Factura Exenta' },
+  'FACTURA': { prefix: 'FACV', label: 'Factura' },
+  'FACTURA_EXENTA': { prefix: 'FAC-EX', label: 'Factura Exenta' },
   'BOLETA': { prefix: 'BOL', label: 'Boleta' },
   'BOLETA_EXENTA': { prefix: 'BE', label: 'Boleta Exenta' },
+  'PURCHASE_INV': { prefix: 'FACC', label: 'Factura de Compra' },
   'NOTA_CREDITO': { prefix: 'NC', label: 'Nota de Crédito' },
   'NOTA_DEBITO': { prefix: 'ND', label: 'Nota de Débito' },
   'GUIA_DESPACHO': { prefix: 'GUI', label: 'Guía de Despacho' },
@@ -803,7 +804,7 @@ export function detectEntityLabel(text: string): string | null {
   if (t.includes('OT_') || t.includes('OT-')) return 'production.workorder';
   if (t.includes('OCS_') || t.includes('OCS-')) return 'purchasing.purchaseorder';
   if (t.includes('NV_') || t.includes('NV-')) return 'sales.saleorder';
-  if (t.includes('FAC_') || t.includes('FAC-')) return 'billing.invoice';
+  if (t.includes('FACV_') || t.includes('FACV-') || t.includes('FACC_') || t.includes('FACC-') || t.includes('FAC_') || t.includes('FAC-')) return 'billing.invoice';
   if (t.includes('NC_') || t.includes('NC-') || t.includes('ND_') || t.includes('ND-')) return 'billing.invoice';
   if (t.includes('EMP_') || t.includes('EMP-')) return 'hr.employee';
   if (t.includes('LIQ_') || t.includes('LIQ-')) return 'hr.payroll';
