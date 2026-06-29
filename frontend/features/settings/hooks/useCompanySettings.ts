@@ -10,7 +10,7 @@ interface UseCompanySettingsReturn {
     settings: CompanySettings | undefined
     isLoading: boolean
     saving: boolean
-    updateSettings: (payload: CompanySettingsUpdatePayload) => Promise<void>
+    updateSettings: (payload: CompanySettingsUpdatePayload) => Promise<CompanySettings>
     refetch: () => Promise<unknown>
 }
 

@@ -12,7 +12,7 @@ interface UseSalesSettingsReturn {
     settings: SalesSettings
     isLoading: boolean
     saving: boolean
-    updateSettings: (payload: SalesSettingsUpdatePayload) => Promise<void>
+    updateSettings: (payload: SalesSettingsUpdatePayload) => Promise<SalesSettings>
     refetch: () => Promise<unknown>
     canApplyLineDiscount: boolean
     canApplyGlobalDiscount: boolean

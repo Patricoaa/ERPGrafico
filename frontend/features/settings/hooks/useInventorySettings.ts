@@ -2,14 +2,14 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import { settingsApi } from '../api/settingsApi'
 import { ACCOUNTING_SETTINGS_QUERY_KEY } from './useAccountingSettings'
-import type { InventorySettings, InventorySettingsUpdatePayload } from '../types'
+import type { InventorySettings, InventorySettingsUpdatePayload, AccountingSettings } from '../types'
 import { useRealtime } from '@/features/realtime'
 
 interface UseInventorySettingsReturn {
     settings: InventorySettings
     isLoading: boolean
     saving: boolean
-    updateSettings: (payload: InventorySettingsUpdatePayload) => Promise<void>
+    updateSettings: (payload: InventorySettingsUpdatePayload) => Promise<AccountingSettings>
     refetch: () => Promise<unknown>
 }
 

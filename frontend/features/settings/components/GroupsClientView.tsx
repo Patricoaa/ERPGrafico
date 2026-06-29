@@ -36,8 +36,8 @@ export function GroupsClientView({ externalOpen, onExternalOpenChange, createAct
 
     const handleDelete = async () => {
         if (!deleteId) return
-        const success = await deleteGroup(deleteId)
-        if (success) setDeleteId(null)
+        await deleteGroup(deleteId)
+        setDeleteId(null)
     }
 
     const groupActionsCtx: GroupActionsCtx = {
