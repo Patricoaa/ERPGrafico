@@ -6,7 +6,6 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
 import { showApiError } from "@/lib/errors"
 import { ArrowLeftRight, DollarSign } from "lucide-react"
-import { useReactToPrint } from "react-to-print"
 import type { DrawerMode } from "@/features/_shared/drawer/types"
 import { TreasuryAccountSelector } from "@/components/selectors"
 import { PeriodValidationDateInput } from "@/components/shared"
@@ -44,7 +43,6 @@ export function TransferDrawer({ open, onOpenChange, onSuccess, mode: modeProp }
     const mode: DrawerMode = modeProp ?? 'create'
     const isView = mode === 'view'
     const printRef = useRef<HTMLDivElement>(null)
-    const handlePrint = useReactToPrint({ contentRef: printRef })
     const isFetchingInitialData = open && (isAccountsLoading || isServerDateLoading)
     const [isDateValid, setIsDateValid] = useState(true)
 
@@ -86,7 +84,6 @@ export function TransferDrawer({ open, onOpenChange, onSuccess, mode: modeProp }
     }
 
     const sourceAccount = accounts.find(a => a.id.toString() === fromAccountId)
-    const destAccount = accounts.find(a => a.id.toString() === toAccountId)
 
     const drawerTitle = isView ? "Ficha de Traspaso" : "Traspaso entre Cuentas"
 

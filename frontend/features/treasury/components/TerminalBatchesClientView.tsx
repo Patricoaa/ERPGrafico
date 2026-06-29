@@ -1,7 +1,7 @@
 "use client"
 
 import React, { useState, useEffect, lazy, Suspense, useMemo, useCallback } from "react"
-import { useRouter, useSearchParams } from "next/navigation"
+import { useRouter } from "next/navigation"
 import { BaseModal, DataTableView, EntityCard, StatusBadge, FormFooter, CancelButton, ActionSlideButton } from '@/components/shared'
 import { DataTableColumnHeader } from '@/components/shared'
 import type { ColumnDef, Row } from "@tanstack/react-table"
@@ -20,14 +20,12 @@ const LazyTerminalBatchSelectionModal = lazy(() => import("./TerminalBatchSelect
 const MonthlyInvoiceModal = lazy(() => import("./MonthlyInvoiceModal"))
 
 interface TerminalBatchesClientViewProps {
-    showTitle?: boolean
     externalOpenBatch?: boolean
     externalOpenInvoice?: boolean
     createAction?: React.ReactNode
 }
 
 export function TerminalBatchesClientView({
-    showTitle = true,
     externalOpenBatch,
     externalOpenInvoice,
     createAction

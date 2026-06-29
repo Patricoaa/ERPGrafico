@@ -76,7 +76,7 @@ export function MovementWizard({
     variant = 'standard'
 }: MovementWizardProps) {
     const { dateString } = useServerDate()
-    const { validatePeriod, isClosed: periodClosed, isValidating: periodValidating } = usePeriodValidation()
+    const { validatePeriod } = usePeriodValidation()
 
     useEffect(() => {
         if (dateString) {

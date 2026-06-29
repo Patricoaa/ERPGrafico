@@ -13,7 +13,7 @@ import { PrintableLayout } from "@/features/_shared/transaction-drawer"
 import type { DrawerMode } from "@/features/_shared/drawer/types"
 import { AccountSelector } from "@/components/selectors/AccountSelector"
 import { ActivitySidebar } from "@/features/audit/components"
-import { useTreasuryAccounts, treasuryApi, useCreditLines, useCreditLineMutations, CreditLineDrawer } from "@/features/treasury"
+import { useTreasuryAccounts, treasuryApi, useCreditLineMutations, CreditLineDrawer } from "@/features/treasury"
 import type { Bank, TreasuryAccount, TreasuryAccountCreatePayload, TreasuryAccountUpdatePayload } from "../types"
 import type { CreditLine } from "../credit-lines/types"
 

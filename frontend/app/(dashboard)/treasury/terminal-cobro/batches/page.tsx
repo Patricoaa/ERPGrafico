@@ -20,7 +20,6 @@ export default async function TerminalCobroBatchesPage({ searchParams }: PagePro
         <>
             <PageSectionHeader title="Liquidaciones" description="Gestión de liquidaciones y cierres de lote" />
             <TerminalBatchesClientView
-                showTitle={false}
                 externalOpenBatch={modal === 'batch'}
                 externalOpenInvoice={modal === 'invoice'}
                 createAction={createAction}

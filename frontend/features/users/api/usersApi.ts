@@ -1,6 +1,6 @@
 import api from '@/lib/api'
 import { toPage, type Page } from '@/lib/pagination'
-import type { AppUser, AppGroup } from '@/types/entities'
+import type { AppUser } from '@/types/entities'
 
 export const usersApi = {
     getUsers: async (params?: Record<string, unknown>): Promise<Page<AppUser>> => {
