@@ -73,7 +73,7 @@ export function POSLayoutSkeleton() {
 
             <div className="relative grid grid-cols-1 md:grid-cols-12 gap-3 flex-1 min-h-0 overflow-hidden">
                 <div className="md:col-span-12 lg:col-span-6 flex flex-col min-h-0">
-                    <Card className="flex-1 flex flex-col overflow-hidden bg-card dot-grid-surface border py-1.5">
+                    <Card className="flex-1 flex flex-col overflow-hidden bg-card dot-grid-surface border border-border/50 py-1.5 shadow-card shadow-black/5">
                         <POSSearchSkeleton />
                         <div className="flex-1 px-1.5 pt-1.5 pb-0">
                             <POSGridSkeleton count={12} />
@@ -82,7 +82,7 @@ export function POSLayoutSkeleton() {
                 </div>
 
                 <div className="md:col-span-12 lg:col-span-6 flex flex-col min-h-0">
-                    <Card className="py-2 flex-1 flex flex-col overflow-hidden border bg-card dot-grid-surface shadow-card rounded-md">
+                    <Card className="py-2 flex-1 flex flex-col overflow-hidden border border-border/50 bg-card dot-grid-surface shadow-card shadow-black/5 rounded-md">
                         <CardContent className="p-0 flex-1 flex flex-col overflow-hidden">
                             <div className="px-4 py-1.5 border-b bg-transparent shrink-0">
                                 <div className="flex justify-between items-center h-10">
