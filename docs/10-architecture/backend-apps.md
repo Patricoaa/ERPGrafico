@@ -105,6 +105,21 @@ class SaleOrderViewSet(ModelViewSet):
 
 Serializers from different apps must NOT import each other directly at the top level — this creates fragile coupling and circular import chains. When data from one app is needed inside another app's serializer:
 
+**Decision tree — what pattern to use:**
+
+```
+¿Necesitas orquestar ≥3 apps?
+├── Sí → Move to workflow/ — crear action en backend/workflow/actions/
+│         que llama a cada servicio (sin importar serializers)
+└── No → ¿Es solo un campo de lectura de otro dominio?
+    ├── No → ¿Varios consumidores del mismo dato?
+    │   ├── Sí → Interface / protocol class (ej. production/adapters.py:BomData)
+    │   └── No → Adapter function (ej. accounting/adapters.py:get_settings_fields())
+    └── Sí → ¿Lo usan ≥2 apps consumidoras?
+        ├── Sí → Adapter function en el dominio fuente
+        └── No → Lazy import inside method + comentario de dependencia
+```
+
 | Pattern | When | Example |
 |---------|------|---------|
 | **Lazy import inside method** | Read-only, small field subset | `InvoiceSerializer` imports `TreasuryMovementSerializer` inside `get_serialized_payments()` |

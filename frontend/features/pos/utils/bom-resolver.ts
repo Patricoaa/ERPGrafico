@@ -1,7 +1,7 @@
 // BOM Resolver Utilities
 // Business logic for fetching and caching Bill of Materials
 
-import type { Product, BOM, BOMCache, ComponentCache } from '@/types/pos'
+import type { Product, BOM, BOMCache, ComponentCache } from '../types'
 import api from '@/lib/api'
 
 /**

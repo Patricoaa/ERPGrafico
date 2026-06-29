@@ -1,7 +1,7 @@
 // Stock Calculator Utilities
 // Business logic for stock validation and limit calculation
 
-import type {Product, CartItem, BOM, UoM, BOMCache} from '@/types/pos'
+import type {Product, CartItem, BOM, UoM, BOMCache} from '../types'
 import api from '@/lib/api'
 
 /**

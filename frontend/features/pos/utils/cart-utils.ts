@@ -1,7 +1,7 @@
 // Cart Utilities
 // Helper functions for cart management
 
-import type { CartItem, Product } from '@/types/pos'
+import type { CartItem, Product } from '../types'
 import { PricingUtils } from '@/lib/pricing-utils'
 
 /**

@@ -8,7 +8,7 @@ import { cn } from '@/lib/utils'
 import { formatCurrency } from "@/lib/money"
 import { useTouchMode } from '@/hooks/useTouchMode'
 import { Trash2, Minus, Plus } from 'lucide-react'
-import type { CartItem as CartItemType, Product, UoM } from '@/types/pos'
+import type { CartItem as CartItemType, Product, UoM } from '../types'
 import type { UoM as EntityUoM } from '@/types/entities'
 
 interface CartItemProps {

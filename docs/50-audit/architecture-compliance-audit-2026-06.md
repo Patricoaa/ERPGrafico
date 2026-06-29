@@ -1059,7 +1059,9 @@ Esta sección documenta vacíos en la documentación del proyecto que permiten a
 
 > **Resuelto 2026-06-28.** `PricingUtils` promovido a `@/lib/pricing-utils`. Todos los consumers (12 cross-feature + 2 within-inventory) migrados. Una regla se agregó a `hook-contracts.md` en la sección del canonical feature skeleton: utilidades reutilizables deben ir a `@/lib/` cuando son usadas por ≥3 features.
 
-### 10.4 Falta árbol de decisión: lazy import vs adapter — PENDIENTE
+### 10.4 Falta árbol de decisión: lazy import vs adapter — ✅ RESUELTO
+
+> **Resuelto 2026-06-28.** Árbol de decisión agregado a `backend-apps.md` en la sección Cross-app data contracts, antes de la tabla de patrones. Incluye flujo: orquestación ≥3 apps → workflow; campo de lectura de otro dominio → adapter/lazy según consumidores; múltiples consumidores → interface/protocol. Ver commit `3582c050`.
 
 **Observación:** `backend-apps.md:106-139` menciona 4 patrones (lazy import, adapter function, interface/protocol, workflow action) pero no da un árbol de decisión claro.
 
@@ -1078,36 +1080,40 @@ Esta sección documenta vacíos en la documentación del proyecto que permiten a
 
 > **Resuelto 2026-06-28.** Las 12 páginas fueron migradas a hooks de feature. Se crearon 7 hooks nuevos: `useBOM`, `useDeleteBomMutation`, `usePostJournalEntry`, `useReverseJournalEntry`, `useConfirmStatement`, `useAuditLogs`, `useBackgroundJobs`. 0 imports `@/lib/api` en `app/`. Pendiente agregar regla formal a `frontend-fsd.md`.
 
-### 10.6 Falta detección automática de `@transaction.atomic` faltante — PENDIENTE
+### 10.6 Falta detección automática de `@transaction.atomic` faltante — ✅ RESUELTO
+
+> **Resuelto 2026-06-28.** Se creó `backend/core/tests/test_transaction_atomic_in_services.py` — test AST que detecta métodos en cualquier `services.py` que escriban en ≥2 tablas sin `@transaction.atomic` o `with transaction.atomic():`. Clasifica: (a) **FAIL** — métodos públicos sin atomic (actual: 0 after allowlisting 1 false positive), (b) **WARN** — métodos privados sin atomic (actual: 4, requieren revisión manual de caller). Integrable en CI como `python -m pytest core/tests/test_transaction_atomic_in_services.py -v`.
 
 **Observación:** No hay herramienta/métrica en CI para detectar servicios que mutan ≥2 tablas sin `@transaction.atomic`. Solo se detecta en code review.
 
 **Sugerencia:** Crear un test DRF genérico o un ruff plugin que detecte métodos en `services.py` que hagan ≥2 writes (`.save()`, `.create()`, `.update()`, `.bulk_create()`) sin `@transaction.atomic` o `with transaction.atomic():`.
 
-### 10.7 `pos` feature — arquitectura divergente
+### 10.7 `pos` feature — arquitectura divergente — 🟡 RESUELTO PARCIAL
+
+> **Resuelto parcial 2026-06-28.** Se auditaron las divergencias y se corrigieron: (a) barrel convertido a exports explícitos, (b) 3 deprecated shims (`CategoryFilter`, `ProductGrid`, `SearchBar`) removidos y re-exportados desde `@/components/shared`, (c) tipos migrados de `@/types/pos.ts` a `features/pos/types/index.ts`, (d) 14 import sites actualizados de `@/types/pos` a `../types`. **Pendiente:** La arquitectura central (POSContext, hooks multi-dominio) sigue siendo divergente. Ver análisis completo en sesión 2026-06-28 de agente: 42 archivos, `POSProvider.tsx` con 26 estados, `POSClientView.tsx` 792 líneas, `SessionControl.tsx` 920 líneas. Contrato de excepción aceptado: POS es un feature legacy de alta criticidad comercial; refactor mayor requiere plan separado.
 
 **Observación:** `features/pos/` parece tener su propio patrón: contextos pesados (`POSContext.tsx` → exporta `POSProvider`), hooks propios que mezclan queries de múltiples dominios, nombres que no siguen convenciones (`POSLayoutSkeleton.tsx` exporta `POSSearchSkeleton`).
 
 **Sugerencia:** Auditar `pos/` por separado. Documentar como excepción o migrar al canonical feature skeleton.
 
-### 10.8 Sub-feature folders sin convención
+### 10.8 Sub-feature folders sin convención — ✅ RESUELTO
+
+> **Resuelto 2026-06-28.** Sección "Sub-folder within a feature" agregada a `frontend-fsd.md` con: (a) 3 criterios (≥3 hooks, ≥5 componentes, ciclo de vida propio), (b) tabla de casos actuales (bank-reconciliation, card-statements, credit-lines), (c) estructura obligatoria con barrel explícito, (d) reglas de importación y prohibiciones.
 
 **Observación:** `finance/bank-reconciliation/`, `treasury/card-statements/`, `treasury/credit-lines/` — no hay regla sobre cuándo un sub-dominio merece su propia carpeta vs ser parte del feature padre.
 
 **Sugerencia:** Agregar a `frontend-fsd.md`: "Un sub-dominio dentro de un feature merece su propia carpeta cuando: (a) tiene ≥3 hooks propios, (b) tiene ≥5 componentes, (c) modela un dominio interno con su propio ciclo de vida."
 
-### 10.9 `naming-conventions.md` §7 — tabla obsoleta
+### 10.9 `naming-conventions.md` §7 — tabla obsoleta — ✅ YA LIMPIO (pre-resuelto)
 
-**Observación:** Los 16 items de deuda documentados en §7 ya están **todos resueltos**. La tabla ahora siembra confusión.
+### 10.10 Observabilidad de abstracciones en CI — ✅ RESUELTO
 
-**Sugerencia:** Vaciar la tabla y mantener solo `AbsenceManagementView` como deuda activa. Mover el historial a un ADR o commit log.
-
-### 10.10 Observabilidad de abstracciones en CI
+> **Resuelto 2026-06-28.** Se creó `scripts/compliance-dashboard.sh` que mide 6 métricas: (1) % markLocalMutation en hooks, (2) staleTime en useQuery, (3) inline ORM en views, (4) product_type comparisons, (5) any types restantes, (6) cross-feature internal imports. Soporta modo `--ci` para fallar en violaciones graves. Ver resultados de la ronda base en el README.
 
 **Observación:** No hay métricas en CI que midan el cumplimiento de los contratos más allá de ESLint/type-check.
 
 **Sugerencia:** Agregar un dashboard de compliance que mida:
-- % de hooks con `markLocalMutation` (~100% — ✅ resuelto, excepto auth/ que es excepción documentada)
+- % de hooks con `markLocalMutation`
 - % de queries con `staleTime`
 - % de views con inline ORM
 - Cantidad de usos de `product_type` sin strategy
@@ -1146,11 +1152,14 @@ Esta sección documenta vacíos en la documentación del proyecto que permiten a
 |------|----------|---------|--------|
 | Contrato para barrels de API | ~0.5 día | Previene nuevas violaciones FSD | ✅ Resuelto |
 | Regla de export explícito en barrels | ~0.5 día | API surface clara | ✅ Resuelto (18 barrels convertidos) |
-| Árbol de decisión lazy import vs adapter | ~0.5 día | Consistencia cross-app | Pendiente |
+| Árbol de decisión lazy import vs adapter | ~0.5 día | Consistencia cross-app | ✅ Resuelto (backend-apps.md) |
 | Contrato para app/ pages | ~0.5 día | Cierra loophole | ✅ Resuelto (12 páginas migradas) |
-| Limpiar naming-conventions.md §7 | ~0.25 día | Documentación precisa | ✅ Ya limpio |
+| Convención sub-folders en features | ~0.25 día | Claridad estructural | ✅ Resuelto (frontend-fsd.md) |
+| Detector @transaction.atomic automático | ~1 día | Previene datos inconsistentes | ✅ Resuelto (test AST) |
+| Dashboard compliance en CI | ~1.5 día | Visibilidad continua | ✅ Resuelto (scripts/compliance-dashboard.sh) |
+| POS feature audit | ~1.5 día | Documentar excepción | 🟡 Parcial (barrels+types, no contexto) |
 
-**Total Fase 3:** ~2.25 días *(4/5 items resueltos)*
+**Total Fase 3:** ~6 días *(7/8 items resueltos)*
 
 ### Fase 4 — Automatización (prevención)
 
@@ -1169,7 +1178,7 @@ Esta sección documenta vacíos en la documentación del proyecto que permiten a
 |------|------|------|--------|
 | Fase 1 | ~8 | Correctivo (bajo riesgo) | ✅ |
 | Fase 2 | ~13 | Correctivo (alto riesgo) | ✅ any types resuelto |
-| Fase 3 | ~2 | Preventivo (contratos) | ✅ 4/5 items resueltos |
+| Fase 3 | ~6 | Preventivo (contratos + tools) | ✅ 7/8 items resueltos |
 | Fase 4 | ~6 | Preventivo (automático) | ⏳ Pendiente (1/4 items) |
 | **Subtotal auditoría original** | **~29 días** | | |
 | 8.1 `@transaction.atomic` faltante (Fase 1) | ~0.25 día | Correctivo (alto riesgo) | ✅ Resuelto (`ac26a91d`) |
@@ -1178,7 +1187,9 @@ Esta sección documenta vacíos en la documentación del proyecto que permiten a
 | 5.3 ORM queries en serializers | ~0.25 día | Correctivo (N+1 performance) | ✅ Resuelto (`14fbd077`) |
 | 10.5 app/ pages importing @/lib/api | ~2 días | Correctivo (FSD compliance) | ✅ Resuelto (12 páginas) |
 | 10.2 export * en barrels | ~1 día | Correctivo (API surface clara) | ✅ Resuelto (18 barrels) |
-| **Total acumulado** | **~34 días** | | |
+| 10.6 Detector @transaction.atomic | ~1 día | Preventivo (integridad datos) | ✅ Resuelto (test AST) |
+| 10.10 Compliance dashboard | ~1.5 día | Preventivo (visibilidad) | ✅ Resuelto (script) |
+| **Total acumulado** | **~36.5 días** | | |
 
 ---
 

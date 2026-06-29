@@ -8,7 +8,7 @@
 import React, { useCallback, useMemo } from 'react'
 import { VariantSelectorModal } from '@/components/shared'
 import { isPOSProductDisabled } from '@/features/pos/utils/product-availability'
-import type { Product, Variant, CartItem } from '@/types/pos'
+import type { Product, Variant, CartItem } from '../types'
 import type { BaseProduct } from '@/features/inventory'
 import { usePOS } from '@/features/pos/contexts/POSProvider'
 

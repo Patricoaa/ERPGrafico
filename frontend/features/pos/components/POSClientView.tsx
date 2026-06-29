@@ -46,13 +46,11 @@ import {
     type SyncDraft
 } from '@/features/pos/hooks'
 import { type CheckoutResponse, type SaleOrderLine, type CheckoutDTEData, type CheckoutPaymentData, type CheckoutDeliveryData, type CheckoutWizardState, SalesCheckoutWizardContent, type SalesCheckoutWizardContentHandle } from '@/features/sales'
-import type { Product, WizardState } from '@/types/pos'
+import type { Product, WizardState } from '../types'
 import type { TransactionData } from '@/types/transactions'
 import { type DraftCart } from './DraftCartsClientView'
 
-import { SearchBar, CategoryDropdown } from '@/components/shared'
-import { CategoryFilter } from './CategoryFilter'
-import { ProductGrid } from './ProductGrid'
+import { CategoryDropdown, CategoryFilter, ProductGrid, SearchBar } from '@/components/shared'
 import { Cart } from './Cart'
 import { POSCheckoutHeader } from './POSCheckoutHeader'
 import { POSLayoutSkeleton } from './skeletons/POSLayoutSkeleton'

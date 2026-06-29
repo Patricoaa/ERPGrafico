@@ -5,7 +5,7 @@ import { showApiError } from "@/lib/errors"
 import { useState, useEffect, useCallback } from 'react'
 import { usePOS } from '../contexts/POSProvider'
 import { useRealtime } from '@/features/realtime'
-import type { CartItem, DraftCart, WizardState } from '@/types/pos'
+import type { CartItem, DraftCart, WizardState } from '../types'
 import { posApi } from '../api/posApi'
 import { toast } from 'sonner'
 
