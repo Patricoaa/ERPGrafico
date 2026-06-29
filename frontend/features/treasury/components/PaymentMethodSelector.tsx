@@ -256,7 +256,7 @@ export function PaymentMethodSelector({
         if (paymentData.method === 'CHECK') return true
         if (paymentData.method === 'CREDIT_CARD') return true
         if (paymentData.method === 'DEBIT_CARD') return true
-        if (paymentData.method === 'CARD' || paymentData.method === 'CARD_TERMINAL' || paymentData.method === 'TRANSFER') {
+        if (paymentData.method === 'CASH' || paymentData.method === 'CARD' || paymentData.method === 'CARD_TERMINAL' || paymentData.method === 'TRANSFER') {
             return methodsForType.filter(m => m.treasury_account != null).length > 1
         }
         return false
