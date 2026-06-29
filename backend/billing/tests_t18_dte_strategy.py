@@ -64,6 +64,7 @@ def make_customer() -> MagicMock:
 def make_sale_order(lines: list, number: str = "1001", customer=None) -> MagicMock:
     order = MagicMock()
     order.number = number
+    order.display_id = f"NV-{number}"
     order.customer = customer or make_customer()
     order.lines.all.return_value = iter(lines)
     order.total_net = sum(line.subtotal for line in lines)
@@ -86,6 +87,7 @@ def make_invoice(
     inv.sale_order = sale_order or make_sale_order([], number="9999")
     inv.sale_order_id = 1
     inv.number = number
+    inv.display_id = f"{dte_type[:4]}-{number}"
     inv.get_dte_type_display.return_value = {
         "FACTURA": "Factura Electrónica",
         "BOLETA": "Boleta Electrónica",
@@ -303,7 +305,7 @@ class TestFacturaMakeJournalEntry:
         settings = make_settings(tax_rate=Decimal("0"))
 
         _, _, items = self.strategy.make_journal_entry(invoice, settings)
-        iva_items = [i for i in items if i.get("label") == "IVA Débito Fiscal"]
+        iva_items = [i for i in items if i.get("account") == settings.default_tax_payable_account]
         assert len(iva_items) == 0
 
     def test_multiple_lines_different_accounts_balance(self):
@@ -365,7 +367,7 @@ class TestBoletaMakeJournalEntry:
         assert ref.startswith("BOL-")
         assert "5001" in desc
 
-    def test_label_uses_boleta_prefix(self):
+    def test_revenue_label_uses_ingreso_role(self):
         rev_acc = make_account()
         product = make_product(income_account=rev_acc)
         line = make_line(Decimal("1190"), product)
@@ -382,8 +384,10 @@ class TestBoletaMakeJournalEntry:
         )
         settings = make_settings()
 
+        from accounting.glosa_builder import Roles
+
         _, _, items = self.strategy.make_journal_entry(invoice, settings)
-        rev_items = [i for i in items if i.get("label", "").startswith("Boleta")]
+        rev_items = [i for i in items if "Ingreso" in i.get("label", "")]
         assert len(rev_items) == 1
 
 

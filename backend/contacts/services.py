@@ -6,6 +6,7 @@ from django.db import transaction
 from django.utils.translation import gettext_lazy as _
 
 from contacts.models import Contact
+from accounting.glosa_builder import GlosaBuilder, Roles
 
 logger = logging.getLogger(__name__)
 
@@ -186,7 +187,7 @@ class ContactService:
             raise ValidationError("No se encontró una cuenta por cobrar configurada para este contacto o sistema.")
 
         entry = JournalEntry.objects.create(
-            description=f"Castigo de deuda incobrable: {contact.name}",
+            description=GlosaBuilder.build(GlosaBuilder.CASTIGO, contact.display_id, contact.name, total_balance, extra=[contact.tax_id]),
             reference=f"CASTIGO-{contact.code}",
             status="POSTED",
             source_content_type=ContentType.objects.get_for_model(Contact),
@@ -196,7 +197,7 @@ class ContactService:
         JournalItem.objects.create(
             entry=entry,
             account=settings.default_uncollectible_expense_account,
-            label=f"Pérdida por incobrabilidad RUT {contact.tax_id}",
+            label=GlosaBuilder.item(Roles.PERDIDA_INCOBRABLE, contact.tax_id, contact.display_id),
             debit=total_balance,
             credit=0,
         )
@@ -206,7 +207,7 @@ class ContactService:
             account=receivable_account,
             partner=contact,
             partner_name=contact.name,
-            label=f"Cierre de deuda incobrable RUT {contact.tax_id}",
+            label=GlosaBuilder.item(Roles.CXC, f"Castigo {contact.tax_id}", contact.display_id),
             debit=0,
             credit=total_balance,
         )
@@ -263,7 +264,7 @@ class ContactService:
             raise ValidationError("No hay una cuenta de tesorería activa para recibir el pago.")
 
         entry = JournalEntry.objects.create(
-            description=f"Recuperación de deuda castigada: {contact.name}",
+            description=GlosaBuilder.build(GlosaBuilder.RECUPERACION_CASTIGO, contact.display_id, contact.name, amount),
             reference=f"RECUP-{contact.code}",
             status="POSTED",
             source_content_type=ContentType.objects.get_for_model(Contact),
@@ -273,7 +274,7 @@ class ContactService:
         JournalItem.objects.create(
             entry=entry,
             account=target_account.account,
-            label=f"Ingreso por recuperación de deuda RUT {contact.tax_id}",
+            label=GlosaBuilder.item(Roles.RECUPERACION_INCOBRABLE, contact.tax_id, contact.display_id),
             debit=amount,
             credit=0,
         )
@@ -281,7 +282,7 @@ class ContactService:
         JournalItem.objects.create(
             entry=entry,
             account=recovery_account,
-            label=f"Recuperación de incobrable RUT {contact.tax_id}",
+            label=GlosaBuilder.item(Roles.CXC, f"Recup {contact.tax_id}", contact.display_id),
             debit=0,
             credit=amount,
         )

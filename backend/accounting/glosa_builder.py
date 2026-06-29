@@ -208,6 +208,7 @@ class Roles:
     PENALIZACION = "Penalización"
     BANCO = "Banco"
     EFECTIVO = "Efectivo"
+    TRANSFERENCIA = "Transferencia"
     IVA_PAGAR = "IVA por Pagar"
     IVA_REMANENTE = "IVA Remanente"
     RESULTADO = "Resultado"

@@ -5,6 +5,7 @@ from django.core.exceptions import ValidationError
 from django.db import models, transaction
 from django.utils import timezone
 
+from accounting.glosa_builder import GlosaBuilder, Roles
 from accounting.models import AccountingSettings, AccountType, JournalEntry, JournalItem
 from accounting.services import AccountingMapper, JournalEntryService
 from core.services import BaseNoteService
@@ -436,18 +437,19 @@ class PurchasingService:
         if receipt.status != PurchaseReceipt.Status.DRAFT:
             raise ValidationError("Solo se pueden confirmar devoluciones en borrador.")
 
-        # Create Accounting Entry
+        settings = AccountingSettings.get_solo()
+        total_amount = Decimal("0.00")
+        supplier_name = receipt.purchase_order.supplier.name
+        doc_id = receipt.display_id
+
         entry = JournalEntry.objects.create(
             date=receipt.receipt_date,
-            description=f"Devolución OCS-{receipt.purchase_order.number} (Ret-{receipt.number})",
+            description="",
             reference=f"Ret-{receipt.number}",
             status=JournalEntry.State.DRAFT,
             source_content_type=ContentType.objects.get_for_model(PurchaseReceipt),
             source_object_id=receipt.id,
         )
-
-        total_amount = Decimal("0.00")
-        settings = AccountingSettings.get_solo()
 
         for line in receipt.lines.all():
             # 1. Create Stock Move (OUT) - quantity is already negative in receipt line
@@ -498,7 +500,9 @@ class PurchasingService:
                     account=asset_account,
                     debit=0,
                     credit=line_total,
-                    label=f"Devolución {line.product.code} x {abs(line.quantity_received)}",
+                    label=GlosaBuilder.item(
+                        Roles.INVENTARIO, f"{line.product.code} x {abs(line.quantity_received)}",
+                    ),
                 )
 
         # 4. Debit Received Not Billed (Liability clearing)
@@ -513,8 +517,14 @@ class PurchasingService:
                     account=credit_account,
                     debit=total_amount,
                     credit=0,
-                    label=f"Contrapartida Devolución OCS-{receipt.purchase_order.number}",
+                    label=GlosaBuilder.item(Roles.PUENTE_RECEPCION, doc_ref=doc_id),
                 )
+
+        # Update entry description
+        entry.description = GlosaBuilder.build(
+            GlosaBuilder.DEVOLUCION, doc_id, supplier_name, total_amount,
+        )
+        entry.save()
 
         JournalEntryService.post_entry(entry)
         receipt.journal_entry = entry
@@ -880,10 +890,15 @@ class PurchasingService:
         if not stock_input_account:
             raise ValidationError("No se encontró cuenta de entrada de stock.")
 
-        # No need to re-create the entry here, it was already created by BaseNoteService
-        # We just need to ensure description and reference matches if we want specific PO info
-        entry.description = description
-        entry.reference = reference
+        # Update entry description with GlosaBuilder format
+        supplier_name = order.supplier.name
+        doc_id = invoice.display_id
+        action = (
+            GlosaBuilder.NOTA_CREDITO
+            if note_type == Invoice.DTEType.NOTA_CREDITO
+            else GlosaBuilder.NOTA_DEBITO
+        )
+        entry.description = GlosaBuilder.build(action, doc_id, supplier_name, total_amount)
         entry.save()
 
         # 3. Accounts Payable Entry (opposite for credit vs debit)
@@ -895,7 +910,8 @@ class PurchasingService:
                 debit=total_amount,
                 credit=0,
                 partner=order.supplier,
-                partner_name=order.supplier.name,
+                partner_name=supplier_name,
+                label=GlosaBuilder.item(Roles.CXP, supplier_name, doc_id),
             )
         else:
             # Debit Note: Increases debt -> Credit AP (we owe more)
@@ -905,7 +921,8 @@ class PurchasingService:
                 debit=0,
                 credit=total_amount,
                 partner=order.supplier,
-                partner_name=order.supplier.name,
+                partner_name=supplier_name,
+                label=GlosaBuilder.item(Roles.CXP, supplier_name, doc_id),
             )
 
         # 4. Reverse Stock Input Account (clearing account)
@@ -917,7 +934,7 @@ class PurchasingService:
                 account=stock_input_account,
                 debit=0,
                 credit=amount_net,
-                label="Reverso Limpieza Cuenta Puente",
+                label=GlosaBuilder.item(Roles.PUENTE_RECEPCION, doc_ref=doc_id),
             )
         else:
             # Debit: Stock Input
@@ -926,15 +943,13 @@ class PurchasingService:
                 account=stock_input_account,
                 debit=amount_net,
                 credit=0,
-                label="Ajuste Cuenta Puente",
+                label=GlosaBuilder.item(Roles.PUENTE_RECEPCION, doc_ref=doc_id),
             )
 
         # 5. Tax Handling - depends on original document type
         if amount_tax > 0:
             if is_boleta:
                 # BOLETA: Tax was capitalized into product cost
-                # For simplicity and balance, we use a global adjustment to inventory
-                # instead of detailed per-product logic that can cause rounding remainders.
                 inv_account = (
                     settings.storable_inventory_account or settings.manufacturable_inventory_account
                 )
@@ -943,49 +958,26 @@ class PurchasingService:
                         "Falta cuenta de inventario para reversar IVA capitalizado de Boleta. "
                         "Configure storable_inventory_account o manufacturable_inventory_account."
                     )
-                if note_type == Invoice.DTEType.NOTA_CREDITO:
-                    JournalItem.objects.create(
-                        entry=entry,
-                        account=inv_account,
-                        debit=0,
-                        credit=amount_tax,
-                        label="Reverso IVA Capitalizado (Global)",
-                    )
-                else:
-                    JournalItem.objects.create(
-                        entry=entry,
-                        account=inv_account,
-                        debit=amount_tax,
-                        credit=0,
-                        label="IVA Capitalizado (Global)",
-                    )
+                JournalItem.objects.create(
+                    entry=entry,
+                    account=inv_account,
+                    debit=0 if note_type == Invoice.DTEType.NOTA_CREDITO else amount_tax,
+                    credit=amount_tax if note_type == Invoice.DTEType.NOTA_CREDITO else 0,
+                    label=GlosaBuilder.item(Roles.IVA_CAPITALIZADO, doc_ref=doc_id),
+                )
             else:
                 # FACTURA: Tax was recorded as IVA Crédito Fiscal
-                # Reverse the tax receivable account
                 tax_account = settings.default_tax_receivable_account
                 if not tax_account:
                     raise ValidationError("No se encontró cuenta de IVA Crédito Fiscal.")
 
-                if note_type == Invoice.DTEType.NOTA_CREDITO:
-                    # Credit: IVA Crédito Fiscal (reverses the debit from invoice)
-                    # FIX: Use CREDIT
-                    JournalItem.objects.create(
-                        entry=entry,
-                        account=tax_account,
-                        debit=0,
-                        credit=amount_tax,
-                        label="Reverso IVA Crédito Fiscal",
-                    )
-                else:
-                    # Debit: IVA Crédito Fiscal
-                    # FIX: Use DEBIT
-                    JournalItem.objects.create(
-                        entry=entry,
-                        account=tax_account,
-                        debit=amount_tax,
-                        credit=0,
-                        label="IVA Crédito Fiscal",
-                    )
+                JournalItem.objects.create(
+                    entry=entry,
+                    account=tax_account,
+                    debit=0 if note_type == Invoice.DTEType.NOTA_CREDITO else amount_tax,
+                    credit=amount_tax if note_type == Invoice.DTEType.NOTA_CREDITO else 0,
+                    label=GlosaBuilder.item(Roles.IVA_CREDITO, doc_ref=doc_id),
+                )
 
         # 6. Process Inventory Movements (for both NC and ND if return_items specified)
         if return_items:
@@ -1053,50 +1045,44 @@ class PurchasingService:
                 )
 
                 # ACCOUNTING FOR INVENTORY RETURN
-                # We need to reverse the Reception: Dr Stock Input (Liability), Cr Inventory (Asset)
-                # This Dr Stock Input cancels the Cr Stock Input from the Financial Reversal (Step 4)
-
                 inventory_account = purchase_line.product.get_asset_account
                 line_cost = (quantity * purchase_line.unit_cost).quantize(
                     Decimal("0.01"), rounding="ROUND_HALF_UP"
                 )
 
                 if line_cost > 0:
+                    product_code = purchase_line.product.code
                     if note_type == Invoice.DTEType.NOTA_CREDITO:
                         # Credit Note = Return Goods
-                        # Debit: Stock Input (Bridge) - Offsets the financial Credit
-                        # Credit: Inventory (Asset) - Reduces stock value
                         JournalItem.objects.create(
                             entry=entry,
                             account=stock_input_account,
                             debit=line_cost,
                             credit=0,
-                            label=f"Reverso Recepción (Devolución) - {purchase_line.product.code}",
+                            label=GlosaBuilder.item(Roles.PUENTE_RECEPCION, product_code, doc_id),
                         )
                         JournalItem.objects.create(
                             entry=entry,
                             account=inventory_account,
                             debit=0,
                             credit=line_cost,
-                            label=f"Baja de Inventario - {purchase_line.product.code}",
+                            label=GlosaBuilder.item(Roles.INVENTARIO, product_code, doc_id),
                         )
                     else:
-                        # Debit Note = Receive Goods (Rare, usually price adjustment, but if qty > 0)
-                        # Credit: Stock Input
-                        # Debit: Inventory
+                        # Debit Note = Receive Goods (Rare)
                         JournalItem.objects.create(
                             entry=entry,
                             account=stock_input_account,
                             debit=0,
                             credit=line_cost,
-                            label=f"Ajuste Recepción (Corrección) - {purchase_line.product.code}",
+                            label=GlosaBuilder.item(Roles.PUENTE_RECEPCION, product_code, doc_id),
                         )
                         JournalItem.objects.create(
                             entry=entry,
                             account=inventory_account,
                             debit=line_cost,
                             credit=0,
-                            label=f"Alta de Inventario - {purchase_line.product.code}",
+                            label=GlosaBuilder.item(Roles.INVENTARIO, product_code, doc_id),
                         )
 
         # 7. Post the entry

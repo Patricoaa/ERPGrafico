@@ -10,6 +10,7 @@ from django.core.exceptions import ValidationError
 from django.db import transaction
 from django.utils import timezone
 
+from accounting.glosa_builder import GlosaBuilder, Roles
 from accounting.models import AccountingSettings, JournalEntry, JournalItem
 from contacts.models import Contact
 
@@ -262,12 +263,14 @@ class ProfitDistributionService:
             if not settings.partner_capital_social_account:
                 raise ValidationError("Falta configurar la Cuenta de Capital Social.")
 
-        entry_desc = f"Distribución de Resultados {resolution.fiscal_year}"
-        if resolution.acta_number:
-            entry_desc += f" (Acta: {resolution.acta_number})"
-
         entry = JournalEntry(
-            description=entry_desc,
+            description=GlosaBuilder.build(
+                GlosaBuilder.DISTRIBUCION_RESULTADOS,
+                resolution.display_id,
+                "",
+                abs(resolution.net_result),
+                extra=[f"Acta: {resolution.acta_number}"] if resolution.acta_number else None,
+            ),
             date=resolution.resolution_date,
             status=JournalEntry.Status.POSTED,
         )
@@ -283,7 +286,7 @@ class ProfitDistributionService:
         JournalItem.objects.create(
             entry=entry,
             account=settings.partner_current_year_earnings_account,
-            label="Cierre Utilidades del Ejercicio",
+            label=GlosaBuilder.item(Roles.RESULTADO, f"Ejercicio {resolution.fiscal_year}", resolution.display_id),
             debit=abs(resolution.net_result) if resolution.is_profit else 0,
             credit=0 if resolution.is_profit else abs(resolution.net_result),
         )
@@ -318,7 +321,7 @@ class ProfitDistributionService:
                     entry=entry,
                     account=settings.partner_provisional_withdrawal_account,
                     partner=partner,
-                    label=f"Liquidación Retiros Prov. {partner.name}",
+                    label=GlosaBuilder.item(Roles.RETIRO_PROVISORIO, partner.name, resolution.display_id),
                     debit=0,
                     credit=line.provisional_withdrawals_offset,
                 )
@@ -348,7 +351,7 @@ class ProfitDistributionService:
                         entry=entry,
                         account=settings.partner_retained_earnings_account,
                         partner=partner,
-                        label=f"Utilidades Retenidas {partner.name}",
+                        label=GlosaBuilder.item(Roles.RETENIDAS, partner.name, resolution.display_id),
                         debit=0,
                         credit=abs_net,
                     )
@@ -381,7 +384,7 @@ class ProfitDistributionService:
                     JournalItem.objects.create(
                         entry=entry,
                         account=div_account,
-                        label=f"Dividendos por Pagar {partner.name}",
+                        label=GlosaBuilder.item(Roles.DIVIDENDO_PAGAR, partner.name, resolution.display_id),
                         debit=0,
                         credit=abs_net,
                     )
@@ -411,7 +414,7 @@ class ProfitDistributionService:
                         entry=entry,
                         account=settings.partner_capital_contribution_account,
                         partner=partner,
-                        label=f"Reinversión de Utilidades {partner.name}",
+                        label=GlosaBuilder.item(Roles.REINVERSION, partner.name, resolution.display_id),
                         debit=0,
                         credit=abs_net,
                     )
@@ -439,7 +442,7 @@ class ProfitDistributionService:
                         entry=entry,
                         account=settings.partner_retained_earnings_account,
                         partner=partner,
-                        label=f"Absorción de Pérdida {partner.name}",
+                        label=GlosaBuilder.item(Roles.RESULTADO, f"Absorción pérdida {partner.name}", resolution.display_id),
                         debit=abs_net,
                         credit=0,
                     )
@@ -542,9 +545,11 @@ class ProfitDistributionService:
         except TreasuryAccount.DoesNotExist:
             raise ValidationError("Cuenta de tesorería no válida.")
 
+        is_bank = treasury_account.account_type != TreasuryAccount.Type.CASH
+
         # Create Journal Entry
         entry = JournalEntry.objects.create(
-            description=f"Pago Dividendos - Ejercicio {resolution.fiscal_year} (Acta: {resolution.acta_number})",
+            description=GlosaBuilder.build(GlosaBuilder.PAGO_DIVIDENDOS, resolution.display_id, "", total_payment, extra=[f"Acta: {resolution.acta_number}"]),
             date=timezone.now().date(),
             status=JournalEntry.Status.POSTED,
             source_content_type=ContentType.objects.get_for_model(ProfitDistributionResolution),
@@ -561,7 +566,7 @@ class ProfitDistributionService:
         JournalItem.objects.create(
             entry=entry,
             account=bank_account,
-            label=f"Pago Dividendos Ej. {resolution.fiscal_year}",
+            label=GlosaBuilder.item(Roles.DIVIDENDO_PAGAR, f"Ej. {resolution.fiscal_year}", resolution.display_id),
             debit=0,
             credit=total_payment,
         )
@@ -582,7 +587,7 @@ class ProfitDistributionService:
             JournalItem.objects.create(
                 entry=entry,
                 account=p_div_account,
-                label=f"Cancelación Pasivo Dividendos {p_obj.name}",
+                label=GlosaBuilder.item(Roles.BANCO if is_bank else Roles.EFECTIVO, p_obj.name, resolution.display_id),
                 debit=p_amount,
                 credit=0,
             )

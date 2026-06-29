@@ -638,12 +638,13 @@ class MatchingService:
                 # Create Transfer Entry
                 from django.contrib.contenttypes.models import ContentType
 
+                from accounting.glosa_builder import GlosaBuilder, Roles
                 from accounting.models import JournalEntry, JournalItem
 
                 transfer_entry = JournalEntry.objects.create(
                     date=line.transaction_date,
                     reference=f"RECON-TRF-{line.statement.id}",
-                    description=f"Movimiento de fondos por conciliación ({p.get_payment_method_display()})",
+                    description=GlosaBuilder.build(GlosaBuilder.TRASPASO_CONCILIACION, line.statement.display_id, p.contact.name if p.contact else "", p.amount),
                     status=JournalEntry.State.DRAFT,
                     source_content_type=ContentType.objects.get_for_model(
                         line.statement._meta.model
@@ -659,6 +660,7 @@ class MatchingService:
                     credit=abs(p.amount) if p.movement_type == "OUTBOUND" else 0,
                     partner=p.contact,
                     partner_name=p.contact.name if p.contact else "",
+                    label=GlosaBuilder.item(Roles.BANCO, line.statement.treasury_account.name or "", line.statement.display_id),
                 )
 
                 # Cr Original Account (Source/Bridge)
@@ -669,6 +671,7 @@ class MatchingService:
                     credit=abs(p.amount) if p.movement_type == "INBOUND" else 0,
                     partner=p.contact,
                     partner_name=p.contact.name if p.contact else "",
+                    label=GlosaBuilder.item(Roles.TRANSFERENCIA, p.contact.name if p.contact else "", line.statement.display_id),
                 )
 
                 # Link entry to match group for explicit tracking

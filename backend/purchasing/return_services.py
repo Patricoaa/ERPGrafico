@@ -5,6 +5,7 @@ from django.core.exceptions import ValidationError
 from django.db import transaction
 from django.utils import timezone
 
+from accounting.glosa_builder import GlosaBuilder, Roles
 from accounting.models import JournalEntry, JournalItem
 from accounting.services import JournalEntryService
 from inventory.models import StockMove, Warehouse
@@ -190,17 +191,19 @@ class PurchaseReturnService:
                 total_inventory_reversal += line_val
 
         # 2. Accounting Entry (Bridge Reversal)
-        # Standard flow for Purchase Return:
-        # Credit Inventory (Asset decreases)
-        # Debit Goods Received Not Billed / Bridge (Liability/Clearing decreases)
         if total_inventory_reversal > 0 and settings:
             bridge_account = settings.stock_input_account or settings.default_expense_account
 
             if bridge_account:
+                doc_id = return_doc.display_id
+                supplier_name = return_doc.purchase_order.supplier.name
+
                 entry = JournalEntryService.create_entry(
                     {
                         "date": return_doc.date,
-                        "description": f"Devolución Física OCS-{return_doc.purchase_order.number} ({return_doc.display_id})",
+                        "description": GlosaBuilder.build(
+                            GlosaBuilder.DEVOLUCION_FISICA, doc_id, supplier_name, total_inventory_reversal,
+                        ),
                         "reference": return_doc.display_id,
                         "status": JournalEntry.State.DRAFT,
                         "source_content_type": ContentType.objects.get_for_model(PurchaseReturn),
@@ -215,10 +218,10 @@ class PurchaseReturnService:
                     account=bridge_account,
                     debit=total_inventory_reversal,
                     credit=0,
-                    label=f"Reverso Puente Recepción - {return_doc.display_id}",
+                    label=GlosaBuilder.item(Roles.PUENTE_RECEPCION, doc_ref=doc_id),
                 )
 
-                # Credit Inventory per line (to maintain granular tracking if needed)
+                # Credit Inventory per line
                 for line in return_doc.lines.all():
                     product = line.product
                     if product.track_inventory:
@@ -236,7 +239,7 @@ class PurchaseReturnService:
                                 account=inv_account,
                                 debit=0,
                                 credit=line_val,
-                                label=f"Salida Stock: {product.name}",
+                                label=GlosaBuilder.item(Roles.INVENTARIO, product.name, doc_id),
                             )
 
                 JournalEntryService.post_entry(entry)

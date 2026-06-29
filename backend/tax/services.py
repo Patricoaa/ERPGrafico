@@ -6,6 +6,7 @@ from django.db import transaction
 from django.utils import timezone
 from django.utils.dateparse import parse_date
 
+from accounting.glosa_builder import GlosaBuilder, Roles
 from accounting.models import AccountingSettings, JournalEntry, JournalItem
 from billing.models import Invoice
 from workflow.services import WorkflowService
@@ -300,11 +301,14 @@ class F29CalculationService:
                 "Falta configurar cuenta de IVA por Pagar (F29) en configuración contable."
             )
 
-        # Create journal entry
-        entry_desc = f"Declaración F29 - {declaration.tax_period.get_month_display()} {declaration.tax_period.year}"
+        doc_ref = f"F29-{folio_number}" if folio_number else "F29"
+        period_label = f"{declaration.tax_period.get_month_display()} {declaration.tax_period.year}"
+
         journal_entry = JournalEntry.objects.create(
             date=accrual_date,
-            description=entry_desc,
+            description=GlosaBuilder.build(
+                GlosaBuilder.CIERRE_ANUAL, "F29", "", declaration.total_amount_due, extra=[period_label],
+            ),
             reference=f"F29-{folio_number}" if folio_number else "",
         )
 
@@ -317,7 +321,7 @@ class F29CalculationService:
                     "account": settings.default_tax_payable_account,
                     "debit": declaration.vat_debit,
                     "credit": Decimal("0"),
-                    "label": "Cierre IVA Débito Fiscal",
+                    "label": GlosaBuilder.item(Roles.CIERRE_IVA, "Debito", doc_ref),
                 }
             )
 
@@ -328,34 +332,31 @@ class F29CalculationService:
                     "account": settings.default_tax_receivable_account,
                     "debit": Decimal("0"),
                     "credit": declaration.vat_credit,
-                    "label": "Cierre IVA Crédito Fiscal",
+                    "label": GlosaBuilder.item(Roles.CIERRE_IVA, "Credito", doc_ref),
                 }
             )
 
         # Register result FOR VAT ONLY
         if declaration.vat_to_pay > 0:
-            # We owe taxes (net) for VAT
             items.append(
                 {
                     "account": settings.vat_payable_account,
                     "debit": Decimal("0"),
                     "credit": declaration.vat_to_pay,
-                    "label": "IVA por Pagar al SII (F29)",
+                    "label": GlosaBuilder.item(Roles.IVA_PAGAR, period_label, doc_ref),
                 }
             )
         elif declaration.vat_credit_balance > 0:
-            # We have credit balance (remanente)
             if not settings.vat_carryforward_account:
                 raise ValidationError(
                     "Falta configurar cuenta de IVA Remanente (Remanente del mes) en configuración contable."
                 )
-
             items.append(
                 {
                     "account": settings.vat_carryforward_account,
                     "debit": declaration.vat_credit_balance,
                     "credit": Decimal("0"),
-                    "label": "IVA Remanente a Favor",
+                    "label": GlosaBuilder.item(Roles.IVA_REMANENTE, period_label, doc_ref),
                 }
             )
 
@@ -367,23 +368,20 @@ class F29CalculationService:
                 raise ValidationError(
                     "Falta configurar cuenta de Ingreso por Corrección Monetaria (Ajuste Art. 31)."
                 )
-
-            # Debit: Asset (Increase Remanente)
             items.append(
                 {
                     "account": settings.vat_carryforward_account,
                     "debit": declaration.vat_correction_amount,
                     "credit": Decimal("0"),
-                    "label": "Reajuste Remanente (Art. 31)",
+                    "label": GlosaBuilder.item(Roles.IVA_REMANENTE, "Reajuste Art.31", doc_ref),
                 }
             )
-            # Credit: Income (Monetary Correction)
             items.append(
                 {
                     "account": settings.correction_income_account,
                     "debit": Decimal("0"),
                     "credit": declaration.vat_correction_amount,
-                    "label": "Ingreso por Corrección Monetaria",
+                    "label": GlosaBuilder.item(Roles.INGRESO, "Correccion Monetaria", doc_ref),
                 }
             )
 
@@ -401,13 +399,11 @@ class F29CalculationService:
                     "account": settings.vat_carryforward_account,
                     "debit": Decimal("0"),
                     "credit": total_remanente_to_use,
-                    "label": "Uso Remanente (Nominal + Reajuste)",
+                    "label": GlosaBuilder.item(Roles.IVA_REMANENTE, "Uso nominal+reajuste", doc_ref),
                 }
             )
 
         # 3. Close Other Tax Liabilities
-
-        # Debit: Close Withholding Tax Liability
         if declaration.withholding_tax > 0:
             if not settings.withholding_tax_account:
                 raise ValidationError("Falta configurar cuenta de Retenciones de Impuestos.")
@@ -416,11 +412,10 @@ class F29CalculationService:
                     "account": settings.withholding_tax_account,
                     "debit": declaration.withholding_tax,
                     "credit": Decimal("0"),
-                    "label": "Cierre Retenciones Honorarios",
+                    "label": GlosaBuilder.item(Roles.CIERRE_RETENCIONES, "Honorarios", doc_ref),
                 }
             )
 
-        # Debit: Close Second Category Tax Liability
         if declaration.second_category_tax > 0:
             if not settings.second_category_tax_account:
                 raise ValidationError("Falta configurar cuenta de Impuesto Único 2da Categoría.")
@@ -429,11 +424,10 @@ class F29CalculationService:
                     "account": settings.second_category_tax_account,
                     "debit": declaration.second_category_tax,
                     "credit": Decimal("0"),
-                    "label": "Cierre Impuesto Único 2da Cat.",
+                    "label": GlosaBuilder.item(Roles.CIERRE_RETENCIONES, "2da Categoria", doc_ref),
                 }
             )
 
-        # Debit: Close Loan Retention Liability
         if declaration.loan_retention > 0:
             if not settings.loan_retention_account:
                 raise ValidationError("Falta configurar cuenta de Retención Préstamo Solidario.")
@@ -442,11 +436,10 @@ class F29CalculationService:
                     "account": settings.loan_retention_account,
                     "debit": declaration.loan_retention,
                     "credit": Decimal("0"),
-                    "label": "Cierre Retención Préstamo Solidario",
+                    "label": GlosaBuilder.item(Roles.CIERRE_RETENCIONES, "Prestamo Solidario", doc_ref),
                 }
             )
 
-        # Debit: Close ILA Tax Liability
         if declaration.ila_tax > 0:
             if not settings.ila_tax_account:
                 raise ValidationError("Falta configurar cuenta de Impuesto ILA por Pagar.")
@@ -455,11 +448,10 @@ class F29CalculationService:
                     "account": settings.ila_tax_account,
                     "debit": declaration.ila_tax,
                     "credit": Decimal("0"),
-                    "label": "Cierre Impuesto ILA",
+                    "label": GlosaBuilder.item(Roles.CIERRE_RETENCIONES, "ILA", doc_ref),
                 }
             )
 
-        # Debit: Close VAT Withholding Liability
         if declaration.vat_withholding > 0:
             if not settings.vat_withholding_account:
                 raise ValidationError("Falta configurar cuenta de Retención IVA por Pagar.")
@@ -468,13 +460,11 @@ class F29CalculationService:
                     "account": settings.vat_withholding_account,
                     "debit": declaration.vat_withholding,
                     "credit": Decimal("0"),
-                    "label": "Cierre Retención IVA (Cambio Sujeto)",
+                    "label": GlosaBuilder.item(Roles.CIERRE_RETENCIONES, "IVA Cambio Sujeto", doc_ref),
                 }
             )
 
         # 4. Clear Other Credits
-
-        # Debit: Increase PPM Asset (we are paying this month)
         if declaration.ppm_amount > 0:
             if not settings.ppm_account:
                 raise ValidationError("Falta configurar cuenta de PPM por Recuperar.")
@@ -483,18 +473,14 @@ class F29CalculationService:
                     "account": settings.ppm_account,
                     "debit": declaration.ppm_amount,
                     "credit": Decimal("0"),
-                    "label": "Provisión PPM Mensual",
+                    "label": GlosaBuilder.item(Roles.PROVISION_PPM, period_label, doc_ref),
                 }
             )
 
-        # 4. Total Amount Due to SII (Rent Taxes + VAT to pay + PPM)
         total_due = declaration.total_amount_due
         if total_due > 0 and not (
             declaration.vat_to_pay > 0 and total_due == declaration.vat_to_pay
         ):
-            # If there's more than just VAT to pay, we should record the non-VAT liabilities
-            # as payable to SII. Because F29 payment usually pays everything from a single liability account.
-            # To keep it simple, we use vat_payable_account as the generic SII payable account for F29.
             non_vat_due = (
                 declaration.withholding_tax
                 + declaration.second_category_tax
@@ -508,7 +494,7 @@ class F29CalculationService:
                     "account": settings.vat_payable_account,
                     "debit": Decimal("0"),
                     "credit": non_vat_due,
-                    "label": "Otras Obligaciones F29 (Retenciones, ILA, Renta, PPM)",
+                    "label": GlosaBuilder.item(Roles.IVA_PAGAR, "Otras obligaciones F29", doc_ref),
                 }
             )
 
@@ -772,12 +758,15 @@ class F29PaymentService:
             created_by=user,
         )
 
-        # Create journal entry for payment
-        entry_desc = (
-            f"Pago F29 - {declaration.tax_period.get_month_display()} {declaration.tax_period.year}"
-        )
+        period_label = f"{declaration.tax_period.get_month_display()} {declaration.tax_period.year}"
+        doc_ref = payment.reference or "F29"
+
         journal_entry = JournalEntry.objects.create(
-            date=payment.payment_date, description=entry_desc, reference=f"Pago-{payment.reference}"
+            date=payment.payment_date,
+            description=GlosaBuilder.build(
+                GlosaBuilder.PAGO_F29, doc_ref=doc_ref, extra=[period_label],
+            ),
+            reference=f"Pago-{payment.reference}",
         )
 
         # Debit: IVA por Pagar (reduce liability)
@@ -786,7 +775,7 @@ class F29PaymentService:
             account=settings.vat_payable_account,
             debit=payment.amount,
             credit=Decimal("0"),
-            label="Pago IVA al SII",
+            label=GlosaBuilder.item(Roles.IVA_PAGAR, period_label, doc_ref),
         )
 
         # Credit: Treasury Account (cash out)
@@ -796,7 +785,7 @@ class F29PaymentService:
             account=treasury_account_obj,
             debit=Decimal("0"),
             credit=payment.amount,
-            label=f"Pago desde {payment.treasury_account.name}",
+            label=GlosaBuilder.item(Roles.EFECTIVO, payment.treasury_account.name, doc_ref),
         )
 
         # Post the entry

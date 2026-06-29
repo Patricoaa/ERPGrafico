@@ -11,6 +11,8 @@ from django.db import transaction
 from django.db.models import Sum
 from django.utils.translation import gettext_lazy as _
 
+from accounting.glosa_builder import GlosaBuilder, Roles
+
 from .models import Employee, EmployeeConceptAmount, Payroll
 
 
@@ -453,8 +455,13 @@ def post_payroll(payroll):
     period_str = payroll.period_label
 
     with transaction.atomic():
+        doc_ref = payroll.display_id
+        gross_amount = payroll.gross_salary or payroll.total_haberes
+
         entry = JournalEntry.objects.create(
-            description=f"Centralización Remuneraciones {payroll.display_id} - {employee_name} ({period_str})",
+            description=GlosaBuilder.build(
+                GlosaBuilder.REMUNERACIONES, doc_ref, employee_name, gross_amount, extra=[period_str],
+            ),
             reference=payroll.display_id,
             source_content_type=ContentType.objects.get_for_model(Payroll),
             source_object_id=payroll.id,
@@ -479,7 +486,7 @@ def post_payroll(payroll):
                 JournalItem.objects.create(
                     entry=entry,
                     account=concept.account,
-                    label=f"{concept.name} - {employee_name}",
+                    label=GlosaBuilder.item(Roles.GASTO, concept.name, doc_ref),
                     debit=amount,
                     credit=Decimal("0"),
                 )
@@ -495,7 +502,7 @@ def post_payroll(payroll):
                 JournalItem.objects.create(
                     entry=entry,
                     account=concept.account,
-                    label=f"Gasto {concept.name} - {employee_name}",
+                    label=GlosaBuilder.item(Roles.GASTO, f"Patronal {concept.name}", doc_ref),
                     debit=amount,
                     credit=Decimal("0"),
                 )
@@ -503,7 +510,6 @@ def post_payroll(payroll):
 
             elif concept.category == PayrollConcept.Category.DESCUENTO_LEGAL_TRABAJADOR:
                 # 3. Descuento Legal Trabajador -> Pasivo Previred (CREDIT)
-                # No genera gasto extra porque ya está en el Bruto (Haberes) que ya se debitó
                 previred_credit += amount
 
             elif concept.category == PayrollConcept.Category.OTRO_DESCUENTO:
@@ -517,7 +523,7 @@ def post_payroll(payroll):
                 JournalItem.objects.create(
                     entry=entry,
                     account=concept.account,
-                    label=f"{concept.name} - {employee_name}",
+                    label=GlosaBuilder.item(concept.name, employee_name, doc_ref),
                     debit=Decimal("0"),
                     credit=amount,
                 )
@@ -527,14 +533,12 @@ def post_payroll(payroll):
             JournalItem.objects.create(
                 entry=entry,
                 account=settings.account_previred_por_pagar,
-                label=f"Obligaciones Previred - {employee_name}",
+                label=GlosaBuilder.item(Roles.OBLIGACIONES_PREVIRED, employee_name, doc_ref),
                 debit=Decimal("0"),
                 credit=previred_credit,
             )
 
-        # 6. Rebaja de Anticipos (CREDIT) y Ajuste de Remuneraciones por Pagar
-        # Si hay anticipos asociados, debemos rebajarlos de la cuenta de Anticipos (Activo)
-        # y el saldo a Remuneraciones por Pagar será el Neto - Anticipos.
+        # 6. Rebaja de Anticipos (CREDIT)
         total_advances = Decimal("0")
         advances = payroll.advances.all()
         for adv in advances:
@@ -543,7 +547,7 @@ def post_payroll(payroll):
                 JournalItem.objects.create(
                     entry=entry,
                     account=settings.account_anticipos,
-                    label=f"Rebaja Anticipo {adv.date} - {employee_name}",
+                    label=GlosaBuilder.item(Roles.ANTICIPO, f"Rebaja {adv.date}", doc_ref),
                     debit=Decimal("0"),
                     credit=adv.amount,
                 )
@@ -551,14 +555,12 @@ def post_payroll(payroll):
             adv.save(update_fields=["is_discounted"])
 
         # 7. Pasivo Sueldo Líquido Ajustado (CREDIT)
-        # El sueldo líquido ya tiene los descuentos aplicados, pero el asiento contable
-        # debe reflejar que una parte ya se pagó (Anticipos) y el resto queda por pagar.
         rem_por_pagar = payroll.net_salary - total_advances
 
         JournalItem.objects.create(
             entry=entry,
             account=settings.account_remuneraciones_por_pagar,
-            label=f"Remuneraciones por Pagar (Saldo) - {employee_name}",
+            label=GlosaBuilder.item(Roles.REMUNERACION_PAGAR, employee_name, doc_ref),
             debit=Decimal("0"),
             credit=rem_por_pagar,
         )

@@ -1,6 +1,7 @@
 from django.core.exceptions import ValidationError
 from django.db import transaction
 
+from .glosa_builder import GlosaBuilder, Roles
 from .models import (
     Account,
     AccountingSettings,
@@ -60,7 +61,7 @@ class JournalEntryService:
         # 1. Create reversal entry linked to original
         reversal = JournalEntry.objects.create(
             date=timezone.now().date(),
-            description=description or f"REVERSO: {entry.description}",
+            description=description or GlosaBuilder.build_reversal(entry.description),
             status=JournalEntry.State.DRAFT,
             reversal_of=entry,
             is_manual=False,
@@ -72,7 +73,10 @@ class JournalEntryService:
                 entry=reversal,
                 account=item.account,
                 partner=item.partner,
-                label=f"REV: {item.label}"[:255],
+                label=GlosaBuilder.item_reversal(
+                    item.label.split(":")[0] if ":" in item.label else item.label,
+                    doc_ref=reversal.id,
+                ),
                 debit=item.credit,
                 credit=item.debit,
             )
@@ -1084,13 +1088,17 @@ class AccountingMapper:
                 revenue_gross_grouping.get(rev_acc, Decimal("0.00")) + line.subtotal
             )
 
+        doc_id = order.display_id
+        customer_name = order.customer.name
+
         items = [
             {
                 "account": receivable_account,
                 "debit": order.total,
                 "credit": Decimal("0.00"),
                 "partner": order.customer,
-                "partner_name": order.customer.name,
+                "partner_name": customer_name,
+                "label": GlosaBuilder.item(Roles.CXC, customer_name, doc_id),
             },
         ]
 
@@ -1117,7 +1125,7 @@ class AccountingMapper:
                         "account": acc,
                         "debit": Decimal("0.00"),
                         "credit": net_amount,
-                        "label": f"Venta {order.number}",
+                        "label": GlosaBuilder.item(Roles.INGRESO, f"Productos", doc_id),
                     }
                 )
                 total_net_remaining -= net_amount
@@ -1129,11 +1137,12 @@ class AccountingMapper:
                     "account": tax_acc,
                     "debit": Decimal("0.00"),
                     "credit": order.total_tax,
-                    "label": "IVA Débito Fiscal",
+                    "label": GlosaBuilder.item(Roles.IVA_DEBITO, doc_ref=doc_id),
                 }
             )
 
-        return f"Venta NV-{order.number}", f"SO-{order.id}", items
+        description = GlosaBuilder.build(GlosaBuilder.VENTA, doc_id, customer_name, order.total)
+        return description, f"SO-{order.id}", items
 
     @staticmethod
     def get_entries_for_purchase_order(order, settings):
@@ -1147,24 +1156,39 @@ class AccountingMapper:
         if not payable_account or not clearing_account:
             raise ValidationError("Falta configuración de cuentas para Compras.")
 
+        doc_id = order.display_id
+        supplier_name = order.supplier.name
+
         items = [
             {
                 "account": payable_account,
                 "debit": Decimal("0.00"),
                 "credit": order.total,
                 "partner": order.supplier,
-                "partner_name": order.supplier.name,
+                "partner_name": supplier_name,
+                "label": GlosaBuilder.item(Roles.CXP, supplier_name, doc_id),
             },
-            {"account": clearing_account, "debit": order.total_net, "credit": Decimal("0.00")},
+            {
+                "account": clearing_account,
+                "debit": order.total_net,
+                "credit": Decimal("0.00"),
+                "label": GlosaBuilder.item(Roles.PUENTE_RECEPCION, doc_ref=doc_id),
+            },
         ]
 
         if order.total_tax > 0:
             tax_acc = (
                 settings.default_tax_receivable_account
             )  # For Purchases it is Usually Receivable (IVA Crédito)
-            items.append({"account": tax_acc, "debit": order.total_tax, "credit": Decimal("0.00")})
+            items.append({
+                "account": tax_acc,
+                "debit": order.total_tax,
+                "credit": Decimal("0.00"),
+                "label": GlosaBuilder.item(Roles.IVA_CREDITO, doc_ref=doc_id),
+            })
 
-        return f"Compra OCS-{order.number}", f"PO-{order.id}", items
+        description = GlosaBuilder.build(GlosaBuilder.COMPRA, doc_id, supplier_name, order.total)
+        return description, f"PO-{order.id}", items
 
     @staticmethod
     def get_entries_for_delivery(delivery, settings):
@@ -1281,9 +1305,15 @@ class AccountingMapper:
                     credits.get(inventory_account, Decimal("0.00")) + line.total_cost
                 )
 
+        doc_id = delivery.display_id
+        partner = delivery.sale_order.customer.name
+
         if not debits:
             # No cost to record (e.g., manufacturable products without BOM)
-            return f"Costo de Venta GD-{delivery.number} (Diferido)", f"SD-{delivery.id}", []
+            description = GlosaBuilder.build(
+                f"{GlosaBuilder.COSTO_DE_VENTA} (Diferido)", doc_id, partner, delivery.total_cost
+            )
+            return description, f"SD-{delivery.id}", []
 
         items = []
         # Create summarized items
@@ -1293,7 +1323,7 @@ class AccountingMapper:
                     "account": account,
                     "debit": amount,
                     "credit": Decimal("0.00"),
-                    "label": f"COGS: GD-{delivery.number}",
+                    "label": GlosaBuilder.item(Roles.COSTO_VENTA, doc_ref=doc_id),
                 }
             )
 
@@ -1303,11 +1333,12 @@ class AccountingMapper:
                     "account": account,
                     "debit": Decimal("0.00"),
                     "credit": amount,
-                    "label": f"Inv: GD-{delivery.number}",
+                    "label": GlosaBuilder.item(Roles.INVENTARIO, doc_ref=doc_id),
                 }
             )
 
-        return f"Costo de Venta GD-{delivery.number}", f"SD-{delivery.id}", items
+        description = GlosaBuilder.build(GlosaBuilder.COSTO_DE_VENTA, doc_id, partner, delivery.total_cost)
+        return description, f"SD-{delivery.id}", items
 
     @staticmethod
     def get_entries_for_sale_invoice(invoice, settings):
@@ -1331,13 +1362,17 @@ class AccountingMapper:
                 revenue_gross_grouping.get(rev_acc, Decimal("0.00")) + line.subtotal
             )
 
+        doc_id = invoice.display_id
+        customer_name = order.customer.name
+
         items = [
             {
                 "account": receivable_account,
                 "debit": invoice.total,
                 "credit": Decimal("0.00"),
                 "partner": order.customer,
-                "partner_name": order.customer.name,
+                "partner_name": customer_name,
+                "label": GlosaBuilder.item(Roles.CXC, customer_name, doc_id),
             },
         ]
 
@@ -1353,7 +1388,7 @@ class AccountingMapper:
                             "account": acc,
                             "debit": Decimal("0.00"),
                             "credit": gross_amount,
-                            "label": f"Venta Exenta {invoice.number or ''}",
+                            "label": GlosaBuilder.item(Roles.INGRESO, f"Exenta {invoice.number or ''}", doc_id),
                         }
                     )
         else:
@@ -1378,7 +1413,7 @@ class AccountingMapper:
                             "account": acc,
                             "debit": Decimal("0.00"),
                             "credit": net_amount,
-                            "label": f"Factura {invoice.number or ''}",
+                            "label": GlosaBuilder.item(Roles.INGRESO, doc_ref=doc_id),
                         }
                     )
                     total_net_remaining -= net_amount
@@ -1391,15 +1426,15 @@ class AccountingMapper:
                         "account": tax_acc,
                         "debit": Decimal("0.00"),
                         "credit": invoice.total_tax,
-                        "label": "IVA Débito Fiscal",
+                        "label": GlosaBuilder.item(Roles.IVA_DEBITO, doc_ref=doc_id),
                     }
                 )
 
-        return (
-            f"{invoice.get_dte_type_display()} {invoice.number or ''} - Pedido {order.number}",
-            f"{invoice.dte_type[:3]}-{order.number}",
-            items,
+        description = GlosaBuilder.build(
+            GlosaBuilder.VENTA, doc_id, customer_name, invoice.total,
+            extra=[f"Pedido {order.display_id}"],
         )
+        return description, f"{invoice.dte_type[:3]}-{order.number}", items
 
     @staticmethod
     def get_entries_for_purchase_bill(invoice, settings):
@@ -1415,19 +1450,23 @@ class AccountingMapper:
         if not payable_account or not stock_input_account:
             raise ValidationError("Falta configuración de cuentas para Factura de Compra.")
 
+        doc_id = invoice.display_id
+        supplier_name = order.supplier.name
+
         items = [
             {
                 "account": payable_account,
                 "debit": Decimal("0.00"),
                 "credit": invoice.total,
                 "partner": order.supplier,
-                "partner_name": order.supplier.name,
+                "partner_name": supplier_name,
+                "label": GlosaBuilder.item(Roles.CXP, supplier_name, doc_id),
             },
             {
                 "account": stock_input_account,
                 "debit": invoice.total_net,
                 "credit": Decimal("0.00"),
-                "label": "Limpieza Cuenta Puente Recepción",
+                "label": GlosaBuilder.item(Roles.PUENTE_RECEPCION, doc_ref=doc_id),
             },
         ]
 
@@ -1450,10 +1489,10 @@ class AccountingMapper:
                             strategy = line.product.strategy
                             account = strategy.get_asset_account(line.product)
                             if account is not None:
-                                label = "IVA Capitalizado - Productos"
+                                label = GlosaBuilder.item(Roles.IVA_CAPITALIZADO, doc_ref=doc_id)
                             else:
                                 account = strategy.get_expense_account(line.product) or settings.default_expense_account
-                                label = "IVA No Recuperable - Servicios"
+                                label = GlosaBuilder.item(Roles.IVA_NO_RECUPERABLE, doc_ref=doc_id)
                             if account:
                                 key = account.pk
                                 if key not in tax_by_account:
@@ -1471,15 +1510,15 @@ class AccountingMapper:
                             "account": tax_account,
                             "debit": invoice.total_tax,
                             "credit": Decimal("0.00"),
-                            "label": "IVA Compras (Crédito Fiscal)",
+                            "label": GlosaBuilder.item(Roles.IVA_CREDITO, doc_ref=doc_id),
                         }
                     )
 
-        return (
-            f"{invoice.get_dte_type_display()} Compra {invoice.number or '(Pendiente)'} - OC {order.number}",
-            f"FCP-{invoice.id}",
-            items,
+        description = GlosaBuilder.build(
+            GlosaBuilder.COMPRA, doc_id, supplier_name, invoice.total,
+            extra=[f"OC {order.display_id}"],
         )
+        return description, f"FCP-{invoice.id}", items
 
     @staticmethod
     def get_entries_for_receipt(receipt, settings):
@@ -1491,6 +1530,9 @@ class AccountingMapper:
 
         if not stock_input_account:
             raise ValidationError("Falta configuración de cuenta puente de entrada de stock.")
+
+        doc_id = receipt.display_id
+        supplier_name = order.supplier.name
 
         items = []
         total_amount = Decimal("0.00")
@@ -1507,19 +1549,19 @@ class AccountingMapper:
             line_total = line.total_cost
             total_amount += line_total
 
-            label = f"Ingreso Inventario: {line.product.code}"
-            if not line.product.strategy.tracks_inventory:
-                if not line.product.strategy.supports_returns:
-                    label = f"Gasto Servicio: {line.product.code}"
-                else:
-                    label = f"Gasto Consumible: {line.product.code}"
+            if line.product.strategy.tracks_inventory:
+                role = f"{Roles.INVENTARIO}: {line.product.code}"
+            elif not line.product.strategy.supports_returns:
+                role = f"{Roles.GASTO}: {line.product.code} (Servicio)"
+            else:
+                role = f"{Roles.GASTO}: {line.product.code} (Consumible)"
 
             items.append(
                 {
                     "account": target_account,
                     "debit": line_total,
                     "credit": Decimal("0.00"),
-                    "label": label,
+                    "label": role,
                 }
             )
 
@@ -1529,11 +1571,15 @@ class AccountingMapper:
                     "account": stock_input_account,
                     "debit": Decimal("0.00"),
                     "credit": total_amount,
-                    "label": f"Contrapartida Recepción OCS-{order.number}",
+                    "label": GlosaBuilder.item(Roles.PUENTE_RECEPCION, doc_ref=doc_id),
                 }
             )
 
-        return f"Recepción OC-{order.number}", f"REC-{receipt.id}", items
+        description = GlosaBuilder.build(
+            GlosaBuilder.RECEPCION, doc_id, supplier_name, total_amount,
+            extra=[f"OC {order.display_id}"],
+        )
+        return description, f"REC-{receipt.id}", items
 
 
 class BudgetService:
