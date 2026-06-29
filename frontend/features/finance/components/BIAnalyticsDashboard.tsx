@@ -103,7 +103,7 @@ export const BIAnalyticsDashboard: React.FC<BIAnalyticsDashboardProps> = ({ date
                 </CardHeader>
                 <CardContent className="h-[350px]">
                         <LineChart
-                            data={[{ id: "Ventas Mensuales", data: (sales.monthly_trend || []).map(m => ({ x: m.month, y: m.sales })) }]}
+                            data={[{ id: "Ventas Mensuales", data: (sales.monthly_trend || []).map((m: { month: string; sales: number }) => ({ x: m.month, y: m.sales })) }]}
                             margin={{ top: 20, right: 20, bottom: 50, left: 60 }}
                             axisBottom={{
                                 tickSize: 0,
