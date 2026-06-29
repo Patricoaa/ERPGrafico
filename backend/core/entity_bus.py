@@ -33,6 +33,9 @@ from .middleware import get_current_user_id
 # (app_label, model_name) — lowercase, matches Django `Model._meta.app_label` / `model_name`.
 ALLOWLIST: set[tuple[str, str]] = {
     ("sales", "saleorder"),
+    ("inventory", "product"),
+    ("inventory", "productcategory"),
+    ("inventory", "uom"),
 }
 
 # Child models that invalidate their parent instead of broadcasting their own topic.
