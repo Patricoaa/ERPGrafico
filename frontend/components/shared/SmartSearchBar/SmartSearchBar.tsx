@@ -25,7 +25,7 @@ function isTextField(field: FieldDef): field is TextFieldDef {
 }
 
 export function SmartSearchBar({ searchDef, placeholder = 'Buscar...', className, prefix }: SmartSearchBarProps) {
-  const { filters, chips, inputValue, setInputValue, applyFilter, removeFilter, clearAll } = useSmartSearch(searchDef)
+  const { chips, inputValue, setInputValue, applyFilter, removeFilter, clearAll } = useSmartSearch(searchDef)
 
   const [stage, setStage] = useState<DropdownStage>({ type: 'closed' })
   const [focusedIndex, setFocusedIndex] = useState(-1)
@@ -192,11 +192,11 @@ export function SmartSearchBar({ searchDef, placeholder = 'Buscar...', className
     focusedIndex < 0
 
   return (
-    <div ref={containerRef} className={cn('relative w-full', className)}>
+    <div ref={containerRef} className={cn('relative bg-background rounded-sm px-1 h-9 flex items-center', className)}>
       <div
         className={cn(
-          'group flex items-center gap-1.5 h-9 px-2 py-1 rounded-sm overflow-x-auto scrollbar-hide',
-          'bg-background transition-all',
+          'group flex items-center gap-1.5 h-7 w-full rounded-sm overflow-x-auto scrollbar-hide',
+          'transition-all',
           'hover:bg-accent/50 hover:text-foreground',
           isOpen && 'bg-muted/50',
         )}

@@ -3,7 +3,6 @@
 import { useInfiniteQuery } from '@tanstack/react-query'
 import { inventoryApi } from '@/features/inventory'
 import type { ProductFilters } from '@/features/inventory'
-import type { Product } from '@/features/inventory'
 
 export function useWorkOrderProducts(otType: 'LINKED' | 'NONE' | null, searchTerm: string) {
   return useInfiniteQuery({

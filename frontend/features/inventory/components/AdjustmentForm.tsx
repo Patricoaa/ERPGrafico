@@ -121,7 +121,6 @@ export function AdjustmentForm({
     const adjustmentReason = form.watch("adjustment_reason")
     const quantity = Number(form.watch("quantity") || 0)
     const unitCost = Number(form.watch("unit_cost") || 0)
-    const totalCostWatch = Number(form.watch("total_cost") || 0)
 
     const isPartnerReason = adjustmentReason === 'PARTNER_CONTRIBUTION' || adjustmentReason === 'PARTNER_WITHDRAWAL'
 
@@ -212,8 +211,6 @@ export function AdjustmentForm({
         }
     }
 
-    // Helper: Calculate Total Value Preview
-    const totalValue = quantity * unitCost
     const selectedUoM = productUoMs.find((u: any) => u.id.toString() === selectedUoMId)
 
     // Helper: Conversion Preview

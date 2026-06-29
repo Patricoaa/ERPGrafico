@@ -48,7 +48,7 @@ export interface SaleNoteModalProps extends Omit<SaleNoteFormProps, "id" | "onLo
 export function SaleNoteModal({ open, onOpenChange, ...props }: SaleNoteModalProps) {
     const [loading, setLoading] = useState(false)
     const formId = "modal-sale-note-form"
-    const amountNet = 0 // Mocked for modal footer disabled state, properly handled in form but hard to bubble up cleanly without context. 
+    // Mocked for modal footer disabled state, properly handled in form but hard to bubble up cleanly without context. 
     // Wait, the modal's SubmitButton needs to be disabled if amountNet <= 0 or !documentNumber.
     // If we use HTML form validation inside the form, we can just rely on standard form submission block.
 
@@ -97,7 +97,7 @@ export function SaleNoteForm({
     const { serverDate } = useServerDate()
     const [lines, setLines] = useState<SaleNoteLine[]>([])
     const [attachment, setAttachment] = useState<File | null>(null)
-    const [submitting, setSubmitting] = useState(false)
+    const [, setSubmitting] = useState(false)
     const [isPeriodValid, setIsPeriodValid] = useState(true)
 
     const form = useForm<SaleNoteFormValues>({

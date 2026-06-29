@@ -6,7 +6,6 @@ import { Button } from '@/components/ui/button'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import { formatCurrency } from "@/lib/money"
 import { showApiError } from '@/lib/errors'
-import { useHubPanel } from '@/components/providers/HubPanelProvider'
 import { useWorkOrderMutations, productionApi } from '../../hooks'
 import { useState } from 'react'
 import { useVatRate } from '@/hooks/useVatRate'
@@ -23,7 +22,6 @@ interface OutsourcingAssignmentStepProps {
 export function OutsourcingAssignmentStep({
   order, isViewingCurrentStage, onMaterialSaved, onMaterialDeleted,
 }: OutsourcingAssignmentStepProps) {
-  const { openHub } = useHubPanel()
   const { multiplier: vatMultiplier } = useVatRate()
   const { addMaterial, updateMaterial, removeMaterial, isAddingMaterial } = useWorkOrderMutations(
     order.id,

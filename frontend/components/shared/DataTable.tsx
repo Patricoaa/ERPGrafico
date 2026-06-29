@@ -37,16 +37,6 @@ export interface DataTableProps<TData, TValue> {
     defaultPageSize?: number
     pageSizeOptions?: number[]
     hideToolbar?: boolean
-    facetedFilters?: {
-        column: string
-        title: string
-        options?: {
-            label: string
-            value: string
-            icon?: LucideIcon
-        }[]
-    }[]
-    toolbarAction?: React.ReactNode
     /** Items de acciones secundarias agrupadas en dropdown "Acciones". */
     toolbarActions?: ToolbarActionItem[]
     onRowSelectionChange?: (selection: RowSelectionState) => void
@@ -94,7 +84,6 @@ export interface DataTableProps<TData, TValue> {
     onViewChange?: (view: string) => void
     columnToggle?: boolean
     renderFooter?: (table: ReactTable<TData>) => React.ReactNode
-    customFilters?: React.ReactNode
     getSubRows?: (originalRow: TData, index: number) => TData[] | undefined
     autoExpand?: boolean
     initialColumnFilters?: { id: string; value: unknown }[]
@@ -166,8 +155,6 @@ export function DataTable<TData, TValue>({
     defaultPageSize = 20,
     pageSizeOptions = DEFAULT_PAGE_SIZE_OPTIONS,
     hideToolbar = false,
-    facetedFilters,
-    toolbarAction,
     toolbarActions,
     onRowSelectionChange,
     initialColumnVisibility = DEFAULT_COLUMN_VISIBILITY,
@@ -195,7 +182,6 @@ export function DataTable<TData, TValue>({
     onViewChange,
     columnToggle,
     renderFooter,
-    customFilters,
     getSubRows,
     autoExpand,
     createAction,
@@ -324,9 +310,6 @@ export function DataTable<TData, TValue>({
     const showToolbar = !hideToolbar && !isMinimal && !isCompact && (
         smartSearch ||
         segmentation ||
-        (facetedFilters && facetedFilters.length > 0) ||
-        customFilters ||
-        toolbarAction ||
         (toolbarActions && toolbarActions.length > 0) ||
         createAction ||
         (viewOptions && viewOptions.length > 0) ||
@@ -373,8 +356,6 @@ export function DataTable<TData, TValue>({
                 {showToolbar && !isMinimal && (
                     <DataTableToolbar
                         table={table}
-                        facetedFilters={facetedFilters}
-                        toolbarAction={toolbarAction}
                         toolbarActions={toolbarActions}
                         onReset={onReset}
                         sortOptions={sortOptions}
@@ -382,7 +363,6 @@ export function DataTable<TData, TValue>({
                         currentView={currentView}
                         onViewChange={onViewChange}
                         columnToggle={columnToggle}
-                        customFilters={customFilters}
                         smartSearch={smartSearch}
                         segmentation={segmentation}
                         showReset={showReset}
@@ -688,8 +668,6 @@ export function DataTable<TData, TValue>({
                     )}>
                         <DataTableToolbar
                             table={table}
-                            facetedFilters={facetedFilters}
-                            toolbarAction={toolbarAction}
                             toolbarActions={toolbarActions}
                             onReset={onReset}
                             sortOptions={sortOptions}
@@ -697,7 +675,6 @@ export function DataTable<TData, TValue>({
                             currentView={currentView}
                             onViewChange={onViewChange}
                             columnToggle={columnToggle}
-                            customFilters={customFilters}
                             smartSearch={smartSearch}
                             segmentation={segmentation}
                             showReset={showReset}
@@ -777,8 +754,6 @@ export function DataTable<TData, TValue>({
                 )}>
                     <DataTableToolbar
                         table={table}
-                        facetedFilters={facetedFilters}
-                        toolbarAction={toolbarAction}
                         toolbarActions={toolbarActions}
                         onReset={onReset}
                         sortOptions={sortOptions}
@@ -786,7 +761,6 @@ export function DataTable<TData, TValue>({
                         currentView={currentView}
                         onViewChange={onViewChange}
                         columnToggle={columnToggle}
-                        customFilters={customFilters}
                         smartSearch={smartSearch}
                         segmentation={segmentation}
                         showReset={showReset}

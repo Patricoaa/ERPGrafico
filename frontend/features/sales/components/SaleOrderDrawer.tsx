@@ -19,7 +19,7 @@ interface SaleOrderDrawerProps extends TransactionDrawerProps {
     segmenter?: React.ReactNode
 }
 
-export function SaleOrderDrawer({ id, open, onOpenChange, mode = 'view', orderId, segmenter }: SaleOrderDrawerProps) {
+export function SaleOrderDrawer({ id, open, onOpenChange, orderId, segmenter }: SaleOrderDrawerProps) {
     const entityId = id ?? orderId ?? null
     const { data: order, isLoading } = useSaleOrder(entityId)
     const printRef = useRef<HTMLDivElement>(null)

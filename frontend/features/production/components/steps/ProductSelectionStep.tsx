@@ -26,7 +26,7 @@ export function ProductSelectionStep({
   initialOtType,
   initialProductId
 }: ProductSelectionStepProps) {
-  const [otType, setOtType] = useState<"LINKED" | "NONE" | null>(
+  const [otType] = useState<"LINKED" | "NONE" | null>(
     initialOtType ?? null
   );
   const [searchTerm, setSearchTerm] = useState<string>("");
@@ -34,8 +34,6 @@ export function ProductSelectionStep({
 
   const {
     data,
-    fetchNextPage,
-    hasNextPage,
     isLoading,
     isError,
   } = useWorkOrderProducts(otType, searchTerm);

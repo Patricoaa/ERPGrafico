@@ -295,7 +295,6 @@ export function RectificationStep({ order, onChange }: RectificationStepProps) {
                                     const diff = getDiff(planned, actualStr)
                                     const hasChange = diff !== null && diff !== 0
                                     const isMore = (diff ?? 0) > 0
-                                    const isLess = (diff ?? 0) < 0
 
                                     return (
                                         <tr

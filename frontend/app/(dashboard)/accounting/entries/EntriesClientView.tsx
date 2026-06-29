@@ -5,7 +5,6 @@ import {
     type ColumnDef,
 } from "@tanstack/react-table"
 
-import { toast } from "sonner"
 import { JournalEntryDrawer, usePostJournalEntry, useReverseJournalEntry, useDeleteJournalEntry } from "@/features/accounting"
 
 import { DataTableView, DataTableColumnHeader, EntityCard } from '@/components/shared'

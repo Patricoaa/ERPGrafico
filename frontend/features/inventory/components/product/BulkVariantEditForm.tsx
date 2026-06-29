@@ -45,8 +45,8 @@ interface BulkVariantEditFormProps {
     onCancel: () => void
 }
 
-export function BulkVariantEditForm({ selectedVariants, availableVariants = [], templateData, onSaved, onCancel }: BulkVariantEditFormProps) {
-    const [loading, setLoading] = useState(false)
+export function BulkVariantEditForm({ selectedVariants, availableVariants = [], templateData, onSaved }: BulkVariantEditFormProps) {
+    const [, setLoading] = useState(false)
     const { uoms, isLoading: isUoMsLoading } = useUoMs()
     const { rate, multiplier } = useVatRate()
 

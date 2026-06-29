@@ -16,7 +16,7 @@ interface ApprovalTaskListProps {
 
 /** Renders the approval TaskActionCards for a given task_type filter. */
 export function ApprovalTaskList({
-  tasks, taskType, canComplete, taskNotes, taskFiles, onNoteChange, onFileChange,
+  tasks, taskType, canComplete, taskNotes, onNoteChange, onFileChange,
 }: ApprovalTaskListProps) {
   const filtered = tasks.filter((t) => t.task_type === taskType)
   if (!filtered.length) return null

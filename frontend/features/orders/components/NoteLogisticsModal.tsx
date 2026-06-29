@@ -118,7 +118,7 @@ export function NoteLogisticsModal({ open, onOpenChange, invoice, onSuccess }: N
         }
 
         const lineData = Object.entries(processQuantities)
-            .filter(([_, qty]) => qty > 0)
+            .filter(([, qty]) => qty > 0)
             .map(([pId, qty]) => ({
                 product_id: parseInt(pId),
                 quantity: qty

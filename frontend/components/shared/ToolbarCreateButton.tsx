@@ -28,27 +28,28 @@ export function ToolbarCreateButton({
         return <Plus className="h-3.5 w-3.5 mr-2" />
     }
 
-    const button = (
-        <Button
-            className={cn(
-                "h-9 px-4 rounded-sm text-[9px] font-black uppercase tracking-widest shadow-card",
-                "bg-primary text-primary-foreground hover:bg-primary/90",
-                className
-            )}
-            {...props}
-        >
-            {renderIcon()}
-            {label}
-        </Button>
+    const buttonContent = (
+        <div className="flex items-center shrink-0 bg-background rounded-sm px-1 h-9">
+            <Button
+                className={cn(
+                    "h-7 px-4 rounded-sm text-[9px] font-black uppercase tracking-widest",
+                    className
+                )}
+                {...props}
+            >
+                {renderIcon()}
+                {label}
+            </Button>
+        </div>
     )
 
     if (href) {
         return (
             <Link href={href} scroll={false}>
-                {button}
+                {buttonContent}
             </Link>
         )
     }
 
-    return button
+    return buttonContent
 }

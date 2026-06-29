@@ -63,8 +63,7 @@ export function PageHeader({
     titleActions, 
     isLoading,
     status,
-    children, 
-    className,
+    children,
     navigation 
 }: PageHeaderProps) {
     const { setHeader, clearHeader } = useHeader()

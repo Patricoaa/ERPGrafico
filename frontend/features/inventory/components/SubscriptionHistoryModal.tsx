@@ -66,14 +66,7 @@ interface SubscriptionHistory {
     supplier_name: string
 }
 
-// Placeholder tipado para el esqueleto - sigue el patrón del contrato
-const SUBSCRIPTION_HISTORY_SKELETON: SubscriptionHistory = {
-    orders: [],
-    price_history: [],
-    notes: [],
-    product_name: "————————————",
-    supplier_name: "————————————"
-}
+
 
 export function SubscriptionHistoryModal({ subscriptionId, open, onOpenChange }: SubscriptionHistoryModalProps) {
     // useSubscriptionHistory cachea por subscriptionId; al cerrar y reabrir

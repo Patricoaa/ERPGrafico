@@ -31,7 +31,7 @@ export function WizardRightSidebar({
     productName,
     stageData,
 }: WizardRightSidebarProps) {
-    const { comments, addComment, isAdding } = useWorkOrderComments(order.id)
+    const { comments, addComment } = useWorkOrderComments(order.id)
     
     // Map backend comments to the format expected by CommentSystem
     const mappedComments = comments.map(c => ({

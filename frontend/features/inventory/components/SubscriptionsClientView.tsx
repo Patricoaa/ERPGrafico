@@ -13,9 +13,7 @@ import {
     Pause,
     Play,
     AlertCircle,
-    Pencil,
-    Archive,
-    History
+    Archive
 } from "lucide-react"
 import { toast } from "sonner"
 

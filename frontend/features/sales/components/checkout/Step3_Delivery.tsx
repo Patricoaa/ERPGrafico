@@ -62,7 +62,7 @@ export function Step3_Delivery({ deliveryData, setDeliveryData, orderLines }: St
     // Determine mode
     const isServiceMode = isOnlyService
     const isMixedMode = !isOnlyService && hasPhysical && orderLines.some(line => line.product_type === 'SERVICE')
-    const isPhysicalMode = !isOnlyService && !orderLines.some(line => line.product_type === 'SERVICE')
+
 
     // Physical-only items for the table (exclude services in mixed mode)
     const physicalLines = isMixedMode
@@ -221,7 +221,7 @@ export function Step3_Delivery({ deliveryData, setDeliveryData, orderLines }: St
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
-                                {physicalLines.map((line, idx) => {
+                                {physicalLines.map((line) => {
                                     const isSimpleManufacturableWithAvailability = (line.product_type === 'MANUFACTURABLE' || line.has_bom) &&
                                         !line.requires_advanced_manufacturing &&
                                         ((line.qty_available || 0) + (line.manufacturable_quantity || 0)) >= (line.qty || line.quantity || 0);

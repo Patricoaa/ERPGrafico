@@ -16,7 +16,6 @@ import type { LucideIcon } from "lucide-react"
 import { TabBar } from "@/components/shared"
 import { AnalyticsPanel, type AnalyticsTab, type Granularity } from "./AnalyticsPanel"
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
-import { DataTableFacetedFilter } from "./DataTableFacetedFilter"
 import { DataTableColumnToggle, translateColumnId } from "./DataTableColumnToggle"
 import { SegmentationTableContext } from "./SegmentationBar/context"
 
@@ -30,18 +29,6 @@ export interface ToolbarActionItem {
 
 interface DataTableToolbarProps<TData> {
     table: Table<TData>
-    /** @deprecated Migrar a SegmentationBar con type:'multiselect' + dynamic:true */
-    facetedFilters?: {
-        column: string
-        title: string
-        options?: {
-            label: string
-            value: string
-            icon?: React.ComponentType<{ className?: string }>
-        }[]
-    }[]
-    /** @deprecated Usar toolbarActions (typed) en lugar de ReactNode. */
-    toolbarAction?: React.ReactNode
     /** Items de acciones secundarias agrupadas en dropdown "Acciones". */
     toolbarActions?: ToolbarActionItem[]
     onReset?: () => void
@@ -50,14 +37,7 @@ interface DataTableToolbarProps<TData> {
     currentView?: string
     onViewChange?: (view: string) => void
     columnToggle?: boolean
-    /** @deprecated Usar CustomSegmentDef en SegmentationBar */
-    customFilters?: React.ReactNode
     smartSearch?: React.ReactNode
-    /**
-     * Barra de segmentación unificada.
-     * Renderiza SegmentationBar, FacetedFilters (backward compat) y
-     * customFilters (backward compat) en la Fila 1.
-     */
     segmentation?: React.ReactNode
     showReset?: boolean
     analyticsPanel?: AnalyticsPanelConfig
@@ -86,8 +66,6 @@ export type AnalyticsPanelConfig = {
 export function DataTableToolbar<TData>(props: DataTableToolbarProps<TData>) {
     const {
         table,
-        facetedFilters = [],
-        toolbarAction,
         toolbarActions,
         onReset,
         sortOptions,
@@ -95,7 +73,6 @@ export function DataTableToolbar<TData>(props: DataTableToolbarProps<TData>) {
         currentView,
         onViewChange,
         columnToggle,
-        customFilters,
         smartSearch,
         segmentation,
         showReset,
@@ -139,30 +116,6 @@ export function DataTableToolbar<TData>(props: DataTableToolbarProps<TData>) {
                         {/* Segmentation filters (status tabs, date picker, etc.) */}
                         {segmentation}
 
-                        {/* @deprecated Faceted filters — migrar a multiselect con dynamic:true */}
-                        {facetedFilters.map((filter) => {
-                            const column = table.getColumn(filter.column)
-                            if (!column) return null
-                            const options: { label: string; value: string; icon?: React.ComponentType<{ className?: string }> }[] =
-                                filter.options && filter.options.length > 0
-                                    ? filter.options
-                                    : Array.from(column.getFacetedUniqueValues().keys())
-                                        .filter(val => val !== undefined && val !== null && val !== "")
-                                        .map(val => ({ label: String(val), value: String(val) }))
-                                        .sort((a, b) => a.label.localeCompare(b.label))
-                            return (
-                                <DataTableFacetedFilter
-                                    key={filter.column}
-                                    column={column}
-                                    title={filter.title}
-                                    options={options}
-                                />
-                            )
-                        })}
-
-                        {/* Custom filters (inline) */}
-                        {customFilters}
-
                         {/* Reset button */}
                         {(showReset || hasActiveFilters) && (
                             <Tooltip>
@@ -188,7 +141,7 @@ export function DataTableToolbar<TData>(props: DataTableToolbarProps<TData>) {
 
                     {/* Right: Acciones + Create */}
                     <div className="flex items-center gap-1 shrink-0">
-                        {(toolbarAction || (toolbarActions && toolbarActions.length > 0)) && (
+                        {toolbarActions && toolbarActions.length > 0 && (
                             <DropdownMenu>
                                 <DropdownMenuTrigger asChild>
                                     <Button
@@ -203,23 +156,21 @@ export function DataTableToolbar<TData>(props: DataTableToolbarProps<TData>) {
                                     align="end"
                                     className="w-[200px] p-1 border-border/80 shadow-floating"
                                 >
-                                    {toolbarActions
-                                        ? toolbarActions.map((action) => (
-                                            <DropdownMenuItem
-                                                key={action.key}
-                                                onClick={action.onClick}
-                                                className={cn(
-                                                    "flex items-center px-3 py-2 text-[10px] font-black uppercase tracking-widest cursor-pointer transition-colors",
-                                                    action.intent === 'success' && "text-success focus:bg-success/10 focus:text-success",
-                                                    action.intent === 'destructive' && "text-destructive focus:bg-destructive/10 focus:text-destructive",
-                                                    (!action.intent || action.intent === 'default' || action.intent === 'primary') && "text-primary focus:bg-primary/10 focus:text-primary",
-                                                )}
-                                            >
-                                                {action.icon && <action.icon className="h-4 w-4 mr-2" />}
-                                                {action.label}
-                                            </DropdownMenuItem>
-                                        ))
-                                        : toolbarAction}
+                                    {toolbarActions.map((action) => (
+                                        <DropdownMenuItem
+                                            key={action.key}
+                                            onClick={action.onClick}
+                                            className={cn(
+                                                "flex items-center px-3 py-2 text-[9px] font-black uppercase tracking-widest cursor-pointer transition-colors",
+                                                action.intent === 'success' && "text-success focus:bg-success/10 focus:text-success",
+                                                action.intent === 'destructive' && "text-destructive focus:bg-destructive/10 focus:text-destructive",
+                                                (!action.intent || action.intent === 'default' || action.intent === 'primary') && "text-primary focus:bg-primary/10 focus:text-primary",
+                                            )}
+                                        >
+                                            {action.icon && <action.icon className="h-4 w-4 mr-2" />}
+                                            {action.label}
+                                        </DropdownMenuItem>
+                                    ))}
                                 </DropdownMenuContent>
                             </DropdownMenu>
                         )}

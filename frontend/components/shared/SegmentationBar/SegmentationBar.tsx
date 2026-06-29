@@ -137,7 +137,7 @@ function TabsSegment({ def, filters, apply, remove }: TabsSegmentProps) {
         {!def.defaultValue && (
           <TabsTrigger
             value=""
-            className="h-7 px-2 text-[9px] uppercase font-black tracking-widest gap-1 data-[state=active]:bg-accent/50 data-[state=active]:shadow-none rounded-sm"
+            className="h-7 px-2 text-[9px] uppercase font-black tracking-widest gap-1 data-[state=active]:bg-accent/50 data-[state=active]:shadow-none rounded-sm hover:bg-accent/30 transition-all duration-150"
           >
             Todos
           </TabsTrigger>
@@ -146,7 +146,7 @@ function TabsSegment({ def, filters, apply, remove }: TabsSegmentProps) {
           <TabsTrigger
             key={opt.value}
             value={opt.value}
-            className="h-7 px-2 text-[9px] uppercase font-black tracking-widest gap-1 data-[state=active]:bg-accent/50 data-[state=active]:shadow-none rounded-sm"
+            className="h-7 px-2 text-[9px] uppercase font-black tracking-widest gap-1 data-[state=active]:bg-accent/50 data-[state=active]:shadow-none rounded-sm hover:bg-accent/30 transition-all duration-150"
           >
             {opt.label}
           </TabsTrigger>
@@ -289,7 +289,7 @@ function PeriodSegment({ def, filters, apply, remove }: PeriodSegmentProps) {
       <TabsList className="h-7 p-0 gap-0 bg-transparent border-border/60 shrink-0">
         <TabsTrigger
           value=""
-          className="h-7 px-2 text-[9px] uppercase font-black tracking-widest gap-1 data-[state=active]:bg-accent/50 data-[state=active]:shadow-none rounded-sm"
+          className="h-7 px-2 text-[9px] uppercase font-black tracking-widest gap-1 data-[state=active]:bg-accent/50 data-[state=active]:shadow-none rounded-sm hover:bg-accent/30 transition-all duration-150"
         >
           Todos
         </TabsTrigger>
@@ -297,7 +297,7 @@ function PeriodSegment({ def, filters, apply, remove }: PeriodSegmentProps) {
           <TabsTrigger
             key={opt.value}
             value={opt.value}
-            className="h-7 px-2 text-[9px] uppercase font-black tracking-widest gap-1 data-[state=active]:bg-accent/50 data-[state=active]:shadow-none rounded-sm"
+            className="h-7 px-2 text-[9px] uppercase font-black tracking-widest gap-1 data-[state=active]:bg-accent/50 data-[state=active]:shadow-none rounded-sm hover:bg-accent/30 transition-all duration-150"
           >
             {opt.label}
           </TabsTrigger>
@@ -962,42 +962,45 @@ function DateSegment({ def, filters, apply, remove }: DateSegmentProps) {
         <div className="flex flex-col gap-3">
           {/* Mode selector */}
           <div className="flex gap-2">
-            <button
-              type="button"
+            <Button
+              variant="ghost"
+              size="sm"
               onClick={() => setTempMode('all')}
               className={cn(
-                'px-2.5 py-1 text-[9px] uppercase font-black tracking-widest rounded-sm transition-colors',
+                'h-7 px-2 text-[9px] uppercase font-black tracking-widest rounded-sm',
                 tempMode === 'all'
-                  ? 'bg-primary/10 text-primary'
-                  : 'text-muted-foreground hover:text-foreground hover:bg-accent',
+                  ? 'bg-accent/50 text-foreground'
+                  : 'text-muted-foreground hover:text-foreground',
               )}
             >
               Todos
-            </button>
-            <button
-              type="button"
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
               onClick={() => setTempMode('single')}
               className={cn(
-                'px-2.5 py-1 text-[9px] uppercase font-black tracking-widest rounded-sm transition-colors',
+                'h-7 px-2 text-[9px] uppercase font-black tracking-widest rounded-sm',
                 tempMode === 'single'
-                  ? 'bg-primary/10 text-primary'
-                  : 'text-muted-foreground hover:text-foreground hover:bg-accent',
+                  ? 'bg-accent/50 text-foreground'
+                  : 'text-muted-foreground hover:text-foreground',
               )}
             >
               Fecha única
-            </button>
-            <button
-              type="button"
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
               onClick={() => setTempMode('range')}
               className={cn(
-                'px-2.5 py-1 text-[9px] uppercase font-black tracking-widest rounded-sm transition-colors',
+                'h-7 px-2 text-[9px] uppercase font-black tracking-widest rounded-sm',
                 tempMode === 'range'
-                  ? 'bg-primary/10 text-primary'
-                  : 'text-muted-foreground hover:text-foreground hover:bg-accent',
+                  ? 'bg-accent/50 text-foreground'
+                  : 'text-muted-foreground hover:text-foreground',
               )}
             >
               Rango
-            </button>
+            </Button>
           </div>
 
           {/* Calendar */}

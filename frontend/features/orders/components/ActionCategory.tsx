@@ -1,6 +1,6 @@
 "use client"
 
-import { showApiError, getErrorMessage } from "@/lib/errors"
+import { showApiError } from "@/lib/errors"
 import { useState, useEffect, forwardRef, useImperativeHandle, Suspense } from "react"
 import { cn } from "@/lib/utils"
 import { ActionConfirmModal, Chip } from '@/components/shared'
@@ -73,8 +73,7 @@ export const ActionCategory = forwardRef(({
         setActiveModal(null)
         setViewConfig(null)
     }
-    const [isProcessing, setIsProcessing] = useState(false)
-    const [hasNotifiedOpen, setHasNotifiedOpen] = useState(false)
+    const [, setIsProcessing] = useState(false)
 
     const { setHubTemporarilyHidden, triggerAction } = useHubPanel()
     const [tempInvoiceId, setTempInvoiceId] = useState<number | null>(null)

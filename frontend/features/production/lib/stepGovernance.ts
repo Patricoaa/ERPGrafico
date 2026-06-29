@@ -47,7 +47,7 @@ export function getStepCapabilities(stage: string, order: WorkOrder): StepCapabi
 
     // IN_PROGRESS: all past workflow stages allow view; rewind requires no side-effects.
     if (status === 'IN_PROGRESS') {
-        const se = hasSideEffects(order, stage as StageId)
+        const se = hasSideEffects(order)
         return {
             canView: true,
             canEdit: false,

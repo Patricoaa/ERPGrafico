@@ -41,7 +41,7 @@ interface PageTabsProps {
  * Maps navigation links to a standardized tab-like experience.
  * Supports dropdown sub-tabs if a tab has `subTabs` configured.
  */
-export function PageTabs({ tabs, activeValue, subActiveValue, maxWidth, className, variant: _variant, configHref }: PageTabsProps) {
+export function PageTabs({ tabs, activeValue, subActiveValue, maxWidth, className, configHref }: PageTabsProps) {
     return (
         <div className={cn("w-full border-b border-border/40 bg-muted/5", className)}>
             <div className={cn("px-4", maxWidth)}>

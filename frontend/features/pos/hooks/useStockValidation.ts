@@ -47,7 +47,6 @@ export function useStockValidation() {
     // Calculate max quantity wrapper
     const calculateMaxQty = useCallback(async (
         product: Product | CartItem,
-        currentQty: number = 0,
         cartItemId?: string
     ) => {
         return StockCalculator.calculateMaxQty(
@@ -58,7 +57,6 @@ export function useStockValidation() {
             bomCache,
             fetchComponentData,
             calculateConsumption,
-            currentQty,
             cartItemId
         )
     }, [items, products, uoms, bomCache, fetchComponentData, calculateConsumption])
@@ -72,7 +70,7 @@ export function useStockValidation() {
 
             // Calculate limits for cart items
             for (const item of items) {
-                const max = await calculateMaxQty(item, item.qty, item.cartItemId)
+                const max = await calculateMaxQty(item, item.cartItemId)
                 newLimits[`cart_${item.cartItemId}`] = max
             }
 
@@ -103,7 +101,7 @@ export function useStockValidation() {
 
     // Get limit for a product
     const getProductLimit = useCallback(async (product: Product): Promise<number> => {
-        return calculateMaxQty(product, 0)
+        return calculateMaxQty(product)
     }, [calculateMaxQty])
 
     return {

@@ -22,7 +22,7 @@ import { forwardRef, useImperativeHandle } from "react"
 
 import { cn } from "@/lib/utils"
 import type { POSSession, POSTerminal, AccountingSettings, TreasuryAccount, POSSessionAudit } from "@/types/pos"
-import { DEFICIT_OPTIONS, SURPLUS_OPTIONS, type JustifyOption } from "@/features/pos/utils/reasons"
+import { DEFICIT_OPTIONS, SURPLUS_OPTIONS } from "@/features/pos/utils/reasons"
 
 interface SessionControlProps {
     onSessionChange?: (session: POSSession | null) => void
@@ -51,7 +51,8 @@ export const SessionControl = forwardRef<SessionControlHandle, SessionControlPro
     const [terminals, setTerminals] = useState<POSTerminal[]>([])
     const [availableSessions, setAvailableSessions] = useState<POSSession[]>([])
     const [dataLoading, setDataLoading] = useState(false)
-    const [dataError, setDataError] = useState(false)
+    const [, setDataError] = useState(false)
+
 
     // Open session form state
     const [selectedTerminalId, setSelectedTerminalId] = useState<string>("")
@@ -116,10 +117,6 @@ export const SessionControl = forwardRef<SessionControlHandle, SessionControlPro
     // Fetch selected account for transfer validation during opening
     useEffect(() => {
         if (openingJustifyReason === 'TRANSFER' && selectedTerminalId) {
-            const accountId = openingDiff > 0
-                ? openingJustifyTargetId
-                : fundSourceId
-
             if (openingDiff < 0 && fundSourceId) {
                 // Deficit: cash went TO target; check if POS treasury had enough to send
                 posApi.getTreasuryAccount(Number(fundSourceId))

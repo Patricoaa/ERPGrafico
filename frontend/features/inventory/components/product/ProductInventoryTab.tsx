@@ -18,9 +18,8 @@ interface ProductInventoryTabProps {
     isEditing?: boolean
 }
 
-export function ProductInventoryTab({ form, initialData, warehouses = [], uoms = [], isEditing }: ProductInventoryTabProps) {
+export function ProductInventoryTab({ form, initialData, uoms = [], isEditing }: ProductInventoryTabProps) {
     const productType = form.watch("product_type")
-    const trackInventory = form.watch("track_inventory")
     const canBeSold = form.watch("can_be_sold")
     const stockUomId = form.watch("uom")
     const mfgAutoFinalize = form.watch("mfg_auto_finalize")

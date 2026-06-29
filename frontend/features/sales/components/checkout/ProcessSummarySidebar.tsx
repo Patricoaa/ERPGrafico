@@ -38,7 +38,6 @@ const deliveryLabels: Record<string, string> = {
 
 export function ProcessSummarySidebar({
     currentStep,
-    totalSteps,
     customerName,
     dteType,
     hasManufacturing,

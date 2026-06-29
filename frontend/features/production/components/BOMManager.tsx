@@ -40,7 +40,7 @@ export function BOMManager({ product, variantMode = false, onBomsChange }: BOMMa
         : { parent_id: product?.id }
 
     const { boms, isBOMsLoading, refetch, deleteBom, toggleActive } = useBOMs(bomParams)
-    const { variants, isVariantsLoading } = useProductionVariants(product?.id)
+    const { variants } = useProductionVariants(product?.id)
 
     // Sync external boms if needed
     useEffect(() => {

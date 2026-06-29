@@ -40,7 +40,7 @@ interface AttributeValue {
     value: string
 }
 
-export function ProductVariantsTab({ form, initialData, onEditVariant, onTabChange }: ProductVariantsTabProps) {
+export function ProductVariantsTab({ form, initialData, onTabChange }: ProductVariantsTabProps) {
     // Attributes y attribute-values vienen unidos por useAttributes.
     // Cast: el hook tipa AttributeValue con name/code pero el serializer
     // del backend usa { value } — el componente trabaja con la forma runtime.
@@ -411,7 +411,7 @@ export function ProductVariantsTab({ form, initialData, onEditVariant, onTabChan
                             selectedVariants={selectedVariantsList}
                             availableVariants={variants}
                             templateData={initialData as Product | undefined}
-                            onSaved={(_updatedVariants: Product[]) => {
+                            onSaved={() => {
                                 refetchVariants();
                                 setSelectedVariantIds([]);
                             }}
@@ -422,7 +422,7 @@ export function ProductVariantsTab({ form, initialData, onEditVariant, onTabChan
                             variant={activeEditVariant}
                             templateData={initialData as Product | undefined}
                             availableVariants={variants}
-                            onSaved={(_updatedVariant: Product) => {
+                            onSaved={() => {
                                 refetchVariants();
                             }}
                             onCancel={() => setSelectedVariantIds([])}

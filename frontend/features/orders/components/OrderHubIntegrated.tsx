@@ -46,8 +46,7 @@ export function OrderHubIntegrated({
     openDetails,
     onEdit,
     posSessionId = null,
-    showAnimations = true,
-    compact = false
+    showAnimations = true
 }: OrderHubIntegratedProps) {
     const {
         order,
@@ -61,19 +60,7 @@ export function OrderHubIntegrated({
         invoices,
         billingIsComplete,
         payments,
-        globalStatus
     } = data
-
-    // Determine which phases are visible
-    const visiblePhases = useMemo(() => {
-        const phases = []
-        phases.push('origin')
-        phases.push('billing')
-        phases.push('treasury')
-        if (showProduction) phases.push('production')
-        if (showLogistics) phases.push('logistics')
-        return phases
-    }, [showProduction, showLogistics])
 
     // --- Accordion State ---
     // Compute which phases should be open (all non-success phases)

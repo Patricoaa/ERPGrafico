@@ -83,7 +83,6 @@ export async function calculateMaxQty(
     bomCache: BOMCache,
     fetchComponentData: (componentId: number) => Promise<{ stock: number, uom: number } | null>,
     calculateConsumption: (items: CartItem[], ignoreItemId?: string) => Promise<Record<number, number>>,
-    currentQty: number = 0,
     cartItemId?: string
 ): Promise<number> {
     const consumption = await calculateConsumption(items, cartItemId)

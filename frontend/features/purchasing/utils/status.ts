@@ -5,7 +5,7 @@ export const getPurchaseHubStatuses = (order: Record<string, unknown>) => {
 
     const lines = (order.lines || order.items || []) as Array<Record<string, unknown>>
     const relatedDocs = order.related_documents as Record<string, unknown> | undefined
-    const receipts = (relatedDocs?.receipts as Array<Record<string, unknown>> | undefined) || []
+
 
     let receptionStatus = 'neutral'
     if (lines.length > 0) {

@@ -52,8 +52,6 @@ interface CostCalculatorDrawerProps {
 import { useVatRate } from '@/hooks/useVatRate'
 import { useProducts } from "@/features/inventory/hooks/useProducts"
 import { useCategories } from "@/features/inventory/hooks/useCategories"
-import { useWindowWidth } from "@/hooks/useWindowWidth"
-
 export function CostCalculatorDrawer({ open, onOpenChange }: CostCalculatorDrawerProps) {
     const [selectedItems, setSelectedItems] = useState<SelectedItem[]>([])
     const idCounterRef = React.useRef(0)
@@ -61,9 +59,6 @@ export function CostCalculatorDrawer({ open, onOpenChange }: CostCalculatorDrawe
     const [selectedCategoryId, setSelectedCategoryId] = useState<number | null>(null)
 
     const { rate, multiplier } = useVatRate()
-    const windowWidth = useWindowWidth(150, open)
-
-    const fullWidth = Math.min(windowWidth * 0.85, 1600)
 
     const { products: rawProducts = [], isLoading: loadingProducts } = useProducts({
         filters: {
@@ -160,13 +155,6 @@ export function CostCalculatorDrawer({ open, onOpenChange }: CostCalculatorDrawe
         return matchesSearch && matchesCategory && isStorable && isSimple
     })
 
-    const handleClose = () => {
-        setSelectedItems([])
-        setSearchTerm("")
-        setSelectedCategoryId(null)
-        onOpenChange(false)
-    }
-
     return (
         <Drawer
             open={open}
@@ -236,7 +224,7 @@ export function CostCalculatorDrawer({ open, onOpenChange }: CostCalculatorDrawe
                                 </div>
                             ) : (
                                 <div className="flex flex-col gap-2 p-3">
-                                    {selectedItems.map((item, index) => (
+                                    {selectedItems.map((item) => (
                                         <div key={item.id} className="flex flex-col gap-1 p-3 rounded-md border border-border/40 bg-card/5 group">
                                             <div className="grid grid-cols-[1fr_auto_1fr_auto_auto_auto] gap-x-1 items-start">
                                                 <div className="flex flex-col">

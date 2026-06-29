@@ -14,7 +14,6 @@ import { posApi } from '../api/posApi'
 export function useCart() {
     const {
         items,
-        setItems,
         addItem,
         updateItem,
         removeItem,

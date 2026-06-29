@@ -28,10 +28,6 @@ function getValueLabel(_def: SearchDefinition, _param: string, value: string): s
   return value
 }
 
-function getDefaultValue(_field: TextFieldDef): string | undefined {
-  return undefined
-}
-
 export function useSmartSearch(def: SearchDefinition) {
   const [inputValue, setInputValue] = useState('')
   const [dismissedDefaults, setDismissedDefaults] = useState<Set<string>>(new Set())

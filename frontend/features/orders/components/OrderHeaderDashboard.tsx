@@ -105,10 +105,8 @@ export function OrderHeaderDashboard({
                         {/* Connecting Line */}
                         <div className="absolute top-1/2 left-0 w-full h-0.5 bg-border -z-0 -translate-y-1/2 rounded-full hidden sm:block" />
 
-                        {steps.map((step, index) => {
-                            const isLast = index === steps.length - 1
+                        {steps.map((step) => {
                             const isActive = step.status === 'active'
-                            const isSuccess = step.status === 'success'
 
                             return (
                                 <div key={step.id} className={cn("relative z-10 flex flex-col items-center gap-2 group", step.status === 'not_applicable' && "hidden sm:flex")}>

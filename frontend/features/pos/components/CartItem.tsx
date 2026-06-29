@@ -33,7 +33,6 @@ function CartItemComponent({
     maxQty,
     onQuantityChange,
     onUomChange,
-    onPriceChange,
     onDiscountChange,
     onRemove,
     onOpenNumpad,

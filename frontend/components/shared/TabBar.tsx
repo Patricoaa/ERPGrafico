@@ -53,8 +53,6 @@ export function TabBar({
     const isVertical = orientation === "vertical"
     const isToolbar = variant === "toolbar" && !isVertical
     const isUnderline = variant === "underline" && !isVertical
-    const isFolder = variant === "folder"
-
     const triggerStyles = isToolbar
         ? cn(
             "h-7 px-2.5 text-[9px] uppercase font-black tracking-widest gap-1.5",

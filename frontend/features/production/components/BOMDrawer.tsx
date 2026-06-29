@@ -94,7 +94,7 @@ export function BOMDrawer({
     mode: modeProp
 }: BOMDrawerProps) {
     const { multiplier: vatMultiplier } = useVatRate()
-    const [loading, setLoading] = useState(false)
+    const [, setLoading] = useState(false)
 
     const mode: DrawerMode = modeProp ?? (bomToEdit ? 'edit' : 'create')
     const isView = mode === 'view'
@@ -105,7 +105,7 @@ export function BOMDrawer({
     const [selectedVariant, setSelectedVariant] = useState<ProductMinimal | null>(null)
     const [lineVariantsCache, setLineVariantsCache] = useState<Record<string, ProductMinimal[]>>({})
 
-    const fetchLineVariants = async (productId: string | number, index: number, isService: boolean = false) => {
+    const fetchLineVariants = async (productId: string | number) => {
         if (!productId) return
         try {
             const vars = await productionApi.getProductVariants(productId)
@@ -589,7 +589,7 @@ export function BOMDrawer({
                                                                                 }
 
                                                                                 if (p.uom_category) form.setValue(`lines.${index}.component_uom_category`, p.uom_category)
-                                                                                if (p.has_variants) fetchLineVariants(p.id, index)
+                                                                                if (p.has_variants) fetchLineVariants(p.id)
                                                                             }}
                                                                             onChange={(val) => propField.onChange(val)}
                                                                             placeholder="Buscar componente..."
@@ -632,7 +632,7 @@ export function BOMDrawer({
                                                                                 }
 
                                                                                 if (p.uom_category) form.setValue(`lines.${index}.component_uom_category`, p.uom_category)
-                                                                                if (p.has_variants) fetchLineVariants(p.id, index)
+                                                                                if (p.has_variants) fetchLineVariants(p.id)
                                                                             }}
                                                                             onChange={(val) => propField.onChange(val)}
                                                                             placeholder="Buscar..."
@@ -833,8 +833,8 @@ export function BOMDrawer({
                                                                                     const uomId = typeof p.uom === 'object' ? p.uom.id.toString() : p.uom.toString()
                                                                                     form.setValue(`service_lines.${index}.uom`, uomId)
                                                                                 }
-                                                                                if (p.has_variants) fetchLineVariants(p.id, index, true)
-                                                                            }}
+if (p.has_variants) fetchLineVariants(p.id)
+                                                                             }}
                                                                             onChange={(val) => propField.onChange(val)}
                                                                             placeholder="Buscar servicio..."
                                                                             shouldResolveVariants={false}
@@ -856,8 +856,8 @@ export function BOMDrawer({
                                                                                     const uomId = typeof p.uom === 'object' ? p.uom.id.toString() : p.uom.toString()
                                                                                     form.setValue(`service_lines.${index}.uom`, uomId)
                                                                                 }
-                                                                                if (p.has_variants) fetchLineVariants(p.id, index, true)
-                                                                            }}
+if (p.has_variants) fetchLineVariants(p.id)
+                                                                             }}
                                                                             onChange={(val) => propField.onChange(val)}
                                                                             placeholder="Buscar..."
                                                                             shouldResolveVariants={false}

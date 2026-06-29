@@ -13,8 +13,7 @@ import {
     CalendarDays,
     User,
     FileText,
-    Building2,
-    Eye
+    Building2
 } from "lucide-react"
 import { type ColumnDef } from "@tanstack/react-table"
 import { type PartnerTransaction } from "@/features/contacts/types/partner"

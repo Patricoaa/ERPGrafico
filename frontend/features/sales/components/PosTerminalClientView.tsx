@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useMemo } from "react"
+import { useMemo } from "react"
 import { useSearchParams, usePathname, useRouter } from "next/navigation"
 import { usePosTerminals } from "@/features/sales"
 import type { Terminal } from "@/features/treasury"
