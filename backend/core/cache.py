@@ -171,7 +171,7 @@ def invalidate_report_cache(module: str, endpoint: str | None = None) -> None:
 _MODULE_REPORTS = {
     "inventory": ["stock_report", "insights"],
     "contacts": ["credit_portfolio", "insights"],
-    "treasury": ["recon_dashboard", "recon_pending", "recon_history"],
+    "treasury": ["recon_dashboard", "recon_pending", "recon_history", "pos_summary"],
     "finances": ["balance_sheet", "income_statement", "cash_flow", "analysis", "bi_analytics"],
 }
 

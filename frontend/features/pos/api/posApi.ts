@@ -48,6 +48,11 @@ export const posApi = {
         api.get(`/treasury/pos-sessions/${id}/`).then(r => r.data),
     getSessionSummary: (id: number) =>
         api.get(`/treasury/pos-sessions/${id}/summary/`).then(r => r.data),
+    getSessionPdf: (id: number, type: "X" | "Z") =>
+        api.get(`/treasury/pos-sessions/${id}/pdf/`, {
+            params: { type },
+            responseType: 'blob',
+        }).then(r => r.data),
     openSession: (payload: Record<string, unknown>) =>
         api.post('/treasury/pos-sessions/open_session/', payload).then(r => r.data),
     closeSession: (id: number, payload: Record<string, unknown>) =>

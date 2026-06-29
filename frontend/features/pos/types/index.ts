@@ -171,6 +171,7 @@ export interface POSSession {
     total_card_sales: number
     total_transfer_sales: number
     total_credit_sales: number
+    total_check_sales: number
     expected_cash: number
     total_other_cash_inflow: number
     total_other_cash_outflow: number

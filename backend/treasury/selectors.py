@@ -496,69 +496,82 @@ class POSSelector:
 
     @staticmethod
     def get_summary(session) -> dict:
-        totals = {
-            "session_id": session.id,
-            "treasury_account_id": session.treasury_account_id
-            or (session.terminal.default_treasury_account_id if session.terminal else None),
-            "opening_balance": session.opening_balance,
-            "total_cash_sales": session.total_cash_sales,
-            "total_card_sales": session.total_card_sales,
-            "total_transfer_sales": session.total_transfer_sales,
-            "total_credit_sales": session.total_credit_sales,
-            "expected_cash": session.expected_cash,
-            "total_sales": (
-                session.total_cash_sales
-                + session.total_card_sales
-                + session.total_transfer_sales
-                + session.total_credit_sales
-            ),
-        }
+        from core.cache import cache_report
 
-        sales_by_category = {}
+        def _generate():
+            totals = {
+                "session_id": session.id,
+                "treasury_account_id": session.treasury_account_id
+                or (session.terminal.default_treasury_account_id if session.terminal else None),
+                "opening_balance": session.opening_balance,
+                "total_cash_sales": session.total_cash_sales,
+                "total_card_sales": session.total_card_sales,
+                "total_transfer_sales": session.total_transfer_sales,
+                "total_credit_sales": session.total_credit_sales,
+                "total_check_sales": session.total_check_sales,
+                "expected_cash": session.expected_cash,
+                "total_sales": (
+                    session.total_cash_sales
+                    + session.total_card_sales
+                    + session.total_transfer_sales
+                    + session.total_credit_sales
+                    + session.total_check_sales
+                ),
+            }
 
-        movements_with_invoice = session.movements.filter(invoice__isnull=False).select_related(
-            "invoice"
+            sales_by_category = {}
+
+            movements_with_invoice = session.movements.filter(invoice__isnull=False).select_related(
+                "invoice"
+            )
+            invoices = {m.invoice for m in movements_with_invoice}
+
+            for invoice in invoices:
+                lines = []
+                if invoice.sale_order:
+                    lines = invoice.sale_order.lines.all().select_related(
+                        "product", "product__category"
+                    )
+
+                for line in lines:
+                    category_name = "Sin Categoría"
+                    if line.product and line.product.category:
+                        category_name = line.product.category.name
+
+                    if category_name not in sales_by_category:
+                        sales_by_category[category_name] = 0
+
+                    amount = (
+                        line.total if hasattr(line, "total") else (line.quantity * line.unit_price)
+                    )
+                    sales_by_category[category_name] += amount or 0
+
+            category_data = [{"name": k, "value": v} for k, v in sales_by_category.items()]
+            category_data.sort(key=lambda x: x["value"], reverse=True)
+
+            manual_movements = session.movements.filter(
+                invoice__isnull=True, sale_order__isnull=True, purchase_order__isnull=True
+            ).order_by("-created_at")
+
+            from .serializers import TreasuryMovementSerializer
+
+            manual_movements_data = TreasuryMovementSerializer(manual_movements, many=True).data
+
+            return {
+                **totals,
+                "total_manual_inflow": session.total_other_cash_inflow,
+                "total_manual_outflow": session.total_other_cash_outflow,
+                "manual_movements": manual_movements_data,
+                "sales_by_category": category_data,
+            }
+
+        return cache_report(
+            module="treasury",
+            endpoint="pos_summary",
+            params={"session_id": session.id},
+            timeout=60,
+            generator=_generate,
         )
-        invoices = {m.invoice for m in movements_with_invoice}
-
-        for invoice in invoices:
-            lines = []
-            if invoice.sale_order:
-                lines = invoice.sale_order.lines.all().select_related(
-                    "product", "product__category"
-                )
-
-            for line in lines:
-                category_name = "Sin Categoría"
-                if line.product and line.product.category:
-                    category_name = line.product.category.name
-
-                if category_name not in sales_by_category:
-                    sales_by_category[category_name] = 0
-
-                amount = (
-                    line.total if hasattr(line, "total") else (line.quantity * line.unit_price)
-                )
-                sales_by_category[category_name] += amount or 0
-
-        category_data = [{"name": k, "value": v} for k, v in sales_by_category.items()]
-        category_data.sort(key=lambda x: x["value"], reverse=True)
-
-        manual_movements = session.movements.filter(
-            invoice__isnull=True, sale_order__isnull=True, purchase_order__isnull=True
-        ).order_by("-created_at")
-        
-        from .serializers import TreasuryMovementSerializer
-
-        manual_movements_data = TreasuryMovementSerializer(manual_movements, many=True).data
-
-        return {
-            **totals,
-            "total_manual_inflow": session.total_other_cash_inflow,
-            "total_manual_outflow": session.total_other_cash_outflow,
-            "manual_movements": manual_movements_data,
-            "sales_by_category": category_data,
-        }
 
 class CardSelector:
     @staticmethod

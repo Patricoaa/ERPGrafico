@@ -1,12 +1,15 @@
-
 "use client"
 
+import { useRef } from "react"
+import { useReactToPrint } from "react-to-print"
 import { formatCurrency } from "@/lib/money"
 import { cn } from "@/lib/utils"
-import { Printer, Calculator, CreditCard } from "lucide-react"
+import { Printer, Download, Calculator, CreditCard } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { useBranding } from "@/contexts/BrandingProvider"
 import { SheetCloseButton } from "@/components/shared"
+import { toast } from "sonner"
+import { useDownloadPOSReportPDF } from "../hooks/usePOSSessions"
 
 export interface POSReportData {
     session_id: number
@@ -16,6 +19,7 @@ export interface POSReportData {
     total_card_sales: number
     total_transfer_sales: number
     total_credit_sales: number
+    total_check_sales: number
     total_sales: number
     expected_cash: number
     total_manual_inflow?: number
@@ -45,60 +49,29 @@ interface POSReportProps {
 
 export function POSReport({ data, title, type = "X", onClose }: POSReportProps) {
     const { logo } = useBranding()
+    const reportRef = useRef<HTMLDivElement>(null)
+    const { downloadPdf } = useDownloadPOSReportPDF()
 
-    // Calcular totales para validación visual
+    const handlePrint = useReactToPrint({
+        contentRef: reportRef,
+        documentTitle: title || `Informe POS ${type}`,
+    })
+
+    const handleDownloadPdf = async () => {
+        try {
+            await downloadPdf(data.session_id, type)
+            toast.success("PDF descargado correctamente")
+        } catch {
+            toast.error("Error al descargar el PDF")
+        }
+    }
+
     const totalInflows = data.total_manual_inflow || 0
     const totalOutflows = data.total_manual_outflow || 0
     const calculatedExpected = Number(data.opening_balance || 0) + Number(data.total_cash_sales || 0) + Number(totalInflows) - Number(totalOutflows)
 
-    const handlePrint = () => {
-        const printContent = document.getElementById('pos-report-printable');
-        if (!printContent) return;
-
-        const iframe = document.createElement('iframe');
-        iframe.style.display = 'none';
-        document.body.appendChild(iframe);
-
-        const iframeDoc = iframe.contentWindow?.document;
-        if (iframeDoc) {
-            // Copy parent styles
-            const styles = Array.from(document.querySelectorAll('style, link[rel="stylesheet"]'))
-                .map(s => s.outerHTML)
-                .join('\n');
-
-            iframeDoc.open();
-            iframeDoc.write(`
-                <html>
-                    <head>
-                        <title>Imprimir Comprobante</title>
-                        ${styles}
-                        <style>
-                            /* Hide the print button in the print view */
-                            .print\\\\:hidden { display: none !important; }
-                            @page { margin: 0; }
-                            body { margin: 10px; padding: 0; background: white; }
-                        </style>
-                    </head>
-                    <body>
-                        ${printContent.outerHTML}
-                    </body>
-                </html>
-            `);
-            iframeDoc.close();
-
-            // Wait for styles to load before printing
-            setTimeout(() => {
-                iframe.contentWindow?.focus();
-                iframe.contentWindow?.print();
-                setTimeout(() => {
-                    document.body.removeChild(iframe);
-                }, 1000);
-            }, 500);
-        }
-    };
-
     return (
-        <div id="pos-report-printable" className={cn(
+        <div ref={reportRef} className={cn(
             "w-full max-w-[380px] mx-auto bg-card p-6 shadow-overlay border border-border/50 text-card-foreground font-sans relative rounded-md animate-in zoom-in-95 duration-200",
             "print:shadow-none print:border-none print:p-0 print:w-[80mm]"
         )}>
@@ -192,6 +165,10 @@ export function POSReport({ data, title, type = "X", onClose }: POSReportProps) 
                         <span className="font-bold uppercase text-muted-foreground/80">Crédito:</span>
                         <span className="font-bold font-mono">{formatCurrency(data.total_credit_sales)}</span>
                     </div>
+                    <div className="flex justify-between">
+                        <span className="font-bold uppercase text-muted-foreground/80">Cheque:</span>
+                        <span className="font-bold font-mono">{formatCurrency(data.total_check_sales)}</span>
+                    </div>
 
                     <div className="flex justify-between items-center pt-1 border-t border-dashed border-border/30 mt-1">
                         <span className="font-black text-xs uppercase tracking-tight">Total Ventas:</span>
@@ -200,14 +177,22 @@ export function POSReport({ data, title, type = "X", onClose }: POSReportProps) 
                 </div>
             </div>
 
-            {/* Print button inside preview */}
-            <div className="mt-6 flex justify-center print:hidden">
+            {/* Action buttons */}
+            <div className="mt-6 flex justify-center gap-3 print:hidden">
                 <Button
                     onClick={handlePrint}
-                    className="bg-primary text-primary-foreground hover:bg-primary/90 font-black uppercase tracking-widest text-[10px] h-10 px-8 rounded-sm shadow-elevated border-2 border-primary/20"
+                    className="bg-primary text-primary-foreground hover:bg-primary/90 font-black uppercase tracking-widest text-[10px] h-10 px-6 rounded-sm shadow-elevated border-2 border-primary/20"
                 >
                     <Printer className="mr-2 h-4 w-4" />
-                    Imprimir Informe
+                    Imprimir
+                </Button>
+                <Button
+                    onClick={handleDownloadPdf}
+                    variant="outline"
+                    className="font-black uppercase tracking-widest text-[10px] h-10 px-6 rounded-sm"
+                >
+                    <Download className="mr-2 h-4 w-4" />
+                    PDF
                 </Button>
             </div>
         </div>
