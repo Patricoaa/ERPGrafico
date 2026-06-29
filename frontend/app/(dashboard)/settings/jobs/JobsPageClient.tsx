@@ -1,7 +1,6 @@
 "use client"
 
-import { useQuery } from "@tanstack/react-query"
-import api from "@/lib/api"
+import { useBackgroundJobs, type BackgroundJob } from "@/features/settings"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -11,34 +10,8 @@ import { Download, AlertCircle, Loader2, RefreshCw } from "lucide-react"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Progress } from "@/components/ui/progress"
 
-interface BackgroundJob {
-    id: number
-    job_type: string
-    job_type_display: string
-    status: "PENDING" | "PROCESSING" | "COMPLETED" | "FAILED" | "CANCELLED"
-    status_display: string
-    title: string
-    progress_percent: number
-    result_file_url: string | null
-    error_message: string
-    completed_at: string | null
-    created_at: string
-}
-
 export default function JobsPageClient() {
-    const { data: jobs = [], isLoading, error, refetch } = useQuery<BackgroundJob[]>({
-        queryKey: ["background_jobs"],
-        queryFn: async () => {
-            const res = await api.get("/core/jobs/")
-            // Handle pagination gracefully if applicable
-            return Array.isArray(res.data) ? res.data : (res.data?.results ?? [])
-        },
-        refetchInterval: (query) => {
-            // Polling every 3s if any job is pending or processing
-            const hasActiveJobs = query.state.data?.some(j => j.status === "PENDING" || j.status === "PROCESSING")
-            return hasActiveJobs ? 3000 : false
-        }
-    })
+    const { jobs, isLoading, error, refetch } = useBackgroundJobs()
 
     const getStatusColor = (status: BackgroundJob['status']) => {
         switch (status) {

@@ -282,4 +282,18 @@ export const settingsApi = {
          const { data } = await api.post<{ message: string }>('/accounting/accounts/populate_ifrs/')
          return data
      },
+
+     // ========== Audit Logs ==========
+
+     getAuditLogs: async (): Promise<Record<string, unknown>[]> => {
+         const { data } = await api.get('/core/audit/global/')
+         return data
+     },
+
+     // ========== Background Jobs ==========
+
+     getBackgroundJobs: async (): Promise<Record<string, unknown>[]> => {
+         const { data } = await api.get('/core/jobs/')
+         return Array.isArray(data) ? data : (data?.results ?? [])
+     },
  }

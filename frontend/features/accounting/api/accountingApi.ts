@@ -41,6 +41,12 @@ export const accountingApi = {
         return data
     },
 
+    postEntry: async (id: number): Promise<void> => {
+        await api.post(`/accounting/entries/${id}/post_entry/`)
+    },
+    reverseEntry: async (id: number): Promise<void> => {
+        await api.post(`/accounting/entries/${id}/reverse_entry/`)
+    },
     deleteEntry: async (id: number): Promise<void> => {
         await api.delete(`/accounting/entries/${id}/`)
     },

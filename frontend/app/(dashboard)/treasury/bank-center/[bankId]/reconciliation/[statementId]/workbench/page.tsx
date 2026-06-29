@@ -6,10 +6,10 @@ import { Button } from "@/components/ui/button"
 import { Loader2, CheckCircle2 } from "lucide-react"
 import { useStatementQuery } from "@/features/finance"
 import { ReconciliationPanel } from "@/features/finance"
+import { useConfirmStatement } from "@/features/treasury"
 import { ActionConfirmModal } from '@/components/shared'
 import { BankPageHeader } from "@/features/treasury"
 import { useConfirmAction } from "@/hooks/useConfirmAction"
-import api from "@/lib/api"
 import { toast } from "sonner"
 import { showApiError } from "@/lib/errors"
 import { SkeletonShell } from "@/components/shared"
@@ -27,9 +27,10 @@ export default function BankWorkbenchPage({
     const reconciliationBase = `/treasury/bank-center/${bankId}/reconciliation`
     const { data: statement, isLoading, refetch } = useStatementQuery(statementIdNum)
 
+    const confirmMutation = useConfirmStatement()
     const confirmAction = useConfirmAction(async () => {
         try {
-            await api.post(`/treasury/statements/${statementIdNum}/confirm/`)
+            await confirmMutation.mutateAsync(statementIdNum)
             toast.success('Cartola confirmada exitosamente')
             router.push(reconciliationBase)
         } catch (error: unknown) {

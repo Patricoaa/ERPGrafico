@@ -3,7 +3,7 @@ import { formatCurrency } from "@/lib/money"
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 
 import { showApiError } from "@/lib/errors"
-import { useState, useEffect, use } from "react"
+import { useState, use } from "react"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -15,14 +15,13 @@ import { ActionConfirmModal, PageHeader, SkeletonShell, SegmentationBar } from '
 
 import { format } from "date-fns"
 import { es } from "date-fns/locale"
-import api from "@/lib/api"
 
 import { DataTable } from '@/components/shared'
 import { DataTableColumnHeader } from '@/components/shared'
 import { type ColumnDef } from "@tanstack/react-table"
 
 import { DataCell } from '@/components/shared'
-import { statementLineUnmatchActions, type StatementLineUnmatchActionsCtx } from '@/features/treasury'
+import { statementLineUnmatchActions, type StatementLineUnmatchActionsCtx, useBankStatement, treasuryApi } from '@/features/treasury'
 import { Progress } from "@/components/ui/progress"
 import { useConfirmAction } from "@/hooks/useConfirmAction"
 
@@ -70,8 +69,7 @@ export default function StatementDetailPage({ params }: { params: Promise<{ id: 
     const { id } = use(params)
     const router = useRouter()
 
-    const [statement, setStatement] = useState<BankStatement | null>(null)
-    const [loading, setLoading] = useState(true)
+    const { statement, isLoading, refetch } = useBankStatement<BankStatement>(Number(id))
     const [unmatchDialog, setUnmatchDialog] = useState<{ open: boolean, lineId: number | null }>({ open: false, lineId: null })
     const [confirming, setConfirming] = useState(false)
     const [paymentModal, setPaymentModal] = useState<{ open: boolean, id: number }>({ open: false, id: 0 })
@@ -85,40 +83,12 @@ export default function StatementDetailPage({ params }: { params: Promise<{ id: 
         },
     }
 
-    const fetchStatement = async () => {
-        try {
-            setLoading(true)
-            const response = await api.get(`/treasury/statements/${id}/`)
-            setStatement(response.data)
-        } catch (error) {
-            console.error('Error fetching statement:', error)
-        } finally {
-            setLoading(false)
-        }
-    }
-
-    useEffect(() => {
-        let cancelled = false
-            ; (async () => {
-                setLoading(true)
-                try {
-                    const response = await api.get(`/treasury/statements/${id}/`)
-                    if (!cancelled) setStatement(response.data)
-                } catch (error) {
-                    if (!cancelled) console.error('Error fetching statement:', error)
-                } finally {
-                    if (!cancelled) setLoading(false)
-                }
-            })()
-        return () => { cancelled = true }
-    }, [id])
-
     const handleUnmatch = async () => {
         if (!unmatchDialog.lineId) return
 
         try {
-            await api.post(`/treasury/statement-lines/${unmatchDialog.lineId}/unmatch/`)
-            await fetchStatement()
+            await treasuryApi.unmatchStatementLine(unmatchDialog.lineId)
+            await refetch()
         } catch (error) {
             console.error('Error unmatching line:', error)
             toast.error('Error al deshacer la reconciliación')
@@ -130,7 +100,7 @@ export default function StatementDetailPage({ params }: { params: Promise<{ id: 
     const confirmAction = useConfirmAction(async () => {
         try {
             setConfirming(true)
-            await api.post(`/treasury/statements/${id}/confirm/`)
+            await treasuryApi.confirmStatement(Number(id))
             toast.success('Cartola confirmada exitosamente')
             router.push('/treasury/reconciliation')
         } catch (error: unknown) {
@@ -247,7 +217,7 @@ export default function StatementDetailPage({ params }: { params: Promise<{ id: 
         statementLineUnmatchActions.column(statementLineUnmatchActionsCtx) as ColumnDef<BankStatementLine>,
     ]
 
-    if (loading) return (
+    if (isLoading) return (
         <div className="flex-1">
             <SkeletonShell isLoading ariaLabel="Cargando..." />
         </div>

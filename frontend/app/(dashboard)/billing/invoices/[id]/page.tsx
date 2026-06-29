@@ -2,8 +2,8 @@
 
 import { useEffect } from "react"
 import { useRouter } from "next/navigation"
-import api from "@/lib/api"
 import { use } from "react"
+import { useInvoice } from '@/features/billing'
 
 interface PageProps {
     params: Promise<{ id: string }>
@@ -12,24 +12,17 @@ interface PageProps {
 export default function InvoiceRouterClient({ params }: PageProps) {
     const { id } = use(params)
     const router = useRouter()
+    const { data: invoice, isLoading } = useInvoice(Number(id))
 
     useEffect(() => {
-        // Quick fetch to get metadata to route correctly
-        api.get(`/billing/invoices/${id}/`)
-            .then(res => {
-                const isSale = res.data.is_sale_document
-                if (isSale) {
-                    router.replace(`/billing/sales/${id}`)
-                } else {
-                    router.replace(`/billing/purchases/${id}`)
-                }
-            })
-            .catch(err => {
-                console.error("Error fetching invoice for routing:", err)
-                // Fallback to sales if we can't determine or it's a 404
+        if (!isLoading && invoice) {
+            if (invoice.is_sale_document) {
                 router.replace(`/billing/sales/${id}`)
-            })
-    }, [id, router])
+            } else {
+                router.replace(`/billing/purchases/${id}`)
+            }
+        }
+    }, [id, router, invoice, isLoading])
 
     return (
         <div className="flex-1 flex items-center justify-center p-8">

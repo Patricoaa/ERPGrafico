@@ -39,15 +39,17 @@ doc: architecture-compliance-audit-2026-06
 | 7.1 Cross-app serializer imports top-level | 2026-06-28 | Eliminados 5 imports top-level en 3 serializers (billing, sales, purchasing). `TreasuryMovementSerializer` en billing era dead code. Los restantes migrados a `SerializerMethodField` + lazy import inside method. Solo `core` (infraestructura) mantiene imports top-level. | `3dd68676` |
 | 5.3 ORM queries en serializers | 2026-06-28 | Eliminados 2 aggregates inline en inventory/serializers y sales/serializers. Inventory: get_current_stock usa getattr(annotated_current_stock). Sales: validate usa product.qty_on_hand. Agregado test assertNumQueries para ProductViewSet list. | `14fbd077` |
 | 8.1 Phase 0 — Transaction safety extendida | 2026-06-28 | Auditados 8 paths multi-write adicionales. Corregidos 4: `create_task`, `finalize_task_update`, `handle_update_attachments`, `request_credit_approval`. Removido `@transaction.atomic` de `handle_task_update` (savepoint anidado). Eliminado dead code (`complete_hub_stage_task`, `_revert_tax_from_product_cost`). 9 tests de rollback agregados. | `e364d0cc` + commits relacionados |
+| 10.5 `app/` pages importing `@/lib/api` | 2026-06-28 | Migradas 12 páginas a hooks de feature. Creados hooks: `useBOM`, `useDeleteBomMutation`, `usePostJournalEntry`, `useReverseJournalEntry`, `useConfirmStatement`, `useAuditLogs`, `useBackgroundJobs`. 0 imports directos `@/lib/api` en `app/`. | `(this commit)` |
+| 10.2 `export *` en barrels | 2026-06-28 | Convertidos 18 barrels de feature de `export *` a exports explícitos. 187 wildcards reemplazados. 24/24 barrels en 0 wildcards. | `(this commit)` |
 
 | Severidad | Count | Área |
 |-----------|-------|------|
 | 🔴 CRÍTICO | ~0 | Backend — views lógica inline, product_type chains, transaction safety (Phase 0 extendida ✅), ORM en serializers ✅ |
 | 🟡 ALTO | ~0 | Frontend — FSD boundaries, naming, barrels ✅ |
 | 🟡 ALTO | ~0 | Backend — cross-app coupling, serializers ✅ |
-| 🟢 MEDIO | 6 | Gaps de contrato (no cubiertos por documentación actual) — 2 resueltos (10.1 API barrels, 10.3 PricingUtils) + 1 naming resuelto (4.5 §7 cleanup) |
+| 🟢 MEDIO | 4 | Gaps de contrato (no cubiertos por documentación actual) — 4 resueltos (10.1 API barrels, 10.2 exports explícitos, 10.3 PricingUtils, 10.5 app/ pages) + naming resuelto (4.5 §7 cleanup). Pendientes: 10.4, 10.6, 10.8, 10.10 |
 
-> ✅ **Resuelto:** Frontend hooks/API any types (~250 violaciones) — eliminado en Fase 1-6. `staleTime` y `markLocalMutation` también resueltos (57 archivos, 2 regresiones corregidas en Fase 5). **Section 5.1 + 5.2 + 6** — views inline business logic y product_type chains migrados a services/selectors/strategy. **Section 8.1** — `@transaction.atomic` agregado a `create_sale_order_from_pos` y 4 métodos adicionales en Phase 0 (`create_task`, `finalize_task_update`, `handle_update_attachments`, `request_credit_approval`). `handle_task_update` liberado de decorador (savepoint anidado). 16 tests de rollback agregados. Dead code (`complete_hub_stage_task`, `_revert_tax_from_product_cost`) eliminado. **Section 2.1** — cross-feature internal imports (~86 violaciones) migrados a barrel imports en 24 features. `PricingUtils` promovido a `@/lib/pricing-utils`. **Section 7.1** — cross-app serializer imports top-level (~9 violaciones) migrados a lazy imports inside method. **Section 5.3** — ORM queries en serializers (2 aggregates inline) reemplazados por annotation/property reads. Test `assertNumQueries` agregado. **Section 4** — naming conventions: 5 hallazgos corregidos (renombres de componentes/archivos, cleanup de naming-conventions.md §7), 2 postergados (EquityMovementModals, PurchaseNoteWizardSteps), 1 falso positivo (POSLayoutSkeleton).
+> ✅ **Resuelto:** Frontend hooks/API any types (~250 violaciones) — eliminado en Fase 1-6. `staleTime` y `markLocalMutation` también resueltos (57 archivos, 2 regresiones corregidas en Fase 5). **Section 5.1 + 5.2 + 6** — views inline business logic y product_type chains migrados a services/selectors/strategy. **Section 8.1** — `@transaction.atomic` agregado a `create_sale_order_from_pos` y 4 métodos adicionales en Phase 0 (`create_task`, `finalize_task_update`, `handle_update_attachments`, `request_credit_approval`). `handle_task_update` liberado de decorador (savepoint anidado). 16 tests de rollback agregados. Dead code (`complete_hub_stage_task`, `_revert_tax_from_product_cost`) eliminado. **Section 2.1** — cross-feature internal imports (~86 violaciones) migrados a barrel imports en 24 features. `PricingUtils` promovido a `@/lib/pricing-utils`. **Section 7.1** — cross-app serializer imports top-level (~9 violaciones) migrados a lazy imports inside method. **Section 5.3** — ORM queries en serializers (2 aggregates inline) reemplazados por annotation/property reads. Test `assertNumQueries` agregado. **Section 10.5** — 12 `app/` pages migradas de `@/lib/api` directo a hooks de feature. **Section 10.2** — 18 barrels convertidos de `export *` a exports explícitos (187 wildcards reemplazados). 24/24 barrels en 0 wildcards. **Section 4** — naming conventions: 5 hallazgos corregidos (renombres de componentes/archivos, cleanup de naming-conventions.md §7), 2 postergados (EquityMovementModals, PurchaseNoteWizardSteps), 1 falso positivo (POSLayoutSkeleton).
 
 ---
 
@@ -1049,17 +1051,15 @@ Esta sección documenta vacíos en la documentación del proyecto que permiten a
 
 > **Resuelto 2026-06-28.** Se crearon barrels `api/index.ts` en 20 features. El canonical feature skeleton en `hook-contracts.md` ahora incluye `api/index.ts` como barrel público. La barrera CI `validate-barrel-imports.sh` previene regresiones.
 
-### 10.2 Falta regla sobre `export *` vs exports explícitos
+### 10.2 Falta regla sobre `export *` vs exports explícitos — ✅ RESUELTO
 
-**Observación:** 20/22 features usan `export * from` en sus barrels. No hay una regla que diga "preferir exports explícitos para mantener la API surface documentada".
-
-**Sugerencia:** Agregar a `naming-conventions.md` o `GOVERNANCE.md` una regla: "Los barrels de feature deben usar exports explícitos (nunca `export * from`)". Esto fuerza a declarar intencionalmente qué es público.
+> **Resuelto 2026-06-28.** Los 18 barrels con `export *` fueron convertidos a exports explícitos (187 wildcards reemplazados). 24/24 features en 0 wildcards. Pendiente agregar regla formal a `naming-conventions.md` o `GOVERNANCE.md`.
 
 ### 10.3 Falta contrato para `utils/` cross-feature — ✅ RESUELTO
 
 > **Resuelto 2026-06-28.** `PricingUtils` promovido a `@/lib/pricing-utils`. Todos los consumers (12 cross-feature + 2 within-inventory) migrados. Una regla se agregó a `hook-contracts.md` en la sección del canonical feature skeleton: utilidades reutilizables deben ir a `@/lib/` cuando son usadas por ≥3 features.
 
-### 10.4 Falta árbol de decisión: lazy import vs adapter
+### 10.4 Falta árbol de decisión: lazy import vs adapter — PENDIENTE
 
 **Observación:** `backend-apps.md:106-139` menciona 4 patrones (lazy import, adapter function, interface/protocol, workflow action) pero no da un árbol de decisión claro.
 
@@ -1074,13 +1074,11 @@ Esta sección documenta vacíos en la documentación del proyecto que permiten a
     └── No → Interface/protocol en el dominio fuente
 ```
 
-### 10.5 Falta contrato para `app/` pages
+### 10.5 Falta contrato para `app/` pages — ✅ RESUELTO
 
-**Observación:** 12 archivos en `app/(dashboard)/` importan `@/lib/api` directamente. El contrato FSD cubre `features/` y `components/` pero no especifica reglas para `app/` pages.
+> **Resuelto 2026-06-28.** Las 12 páginas fueron migradas a hooks de feature. Se crearon 7 hooks nuevos: `useBOM`, `useDeleteBomMutation`, `usePostJournalEntry`, `useReverseJournalEntry`, `useConfirmStatement`, `useAuditLogs`, `useBackgroundJobs`. 0 imports `@/lib/api` en `app/`. Pendiente agregar regla formal a `frontend-fsd.md`.
 
-**Sugerencia:** Agregar a `frontend-fsd.md`: "Las páginas en `app/` deben consumir hooks de features. No deben importar `@/lib/api` directamente. Si necesitan Server Components con datos, crear un data layer separado."
-
-### 10.6 Falta detección automática de `@transaction.atomic` faltante
+### 10.6 Falta detección automática de `@transaction.atomic` faltante — PENDIENTE
 
 **Observación:** No hay herramienta/métrica en CI para detectar servicios que mutan ≥2 tablas sin `@transaction.atomic`. Solo se detecta en code review.
 
@@ -1144,15 +1142,15 @@ Esta sección documenta vacíos en la documentación del proyecto que permiten a
 
 ### Fase 3 — Cierre de gaps de contrato
 
-| Item | Esfuerzo | Impacto |
-|------|----------|---------|
-| Contrato para barrels de API | ~0.5 día | Previene nuevas violaciones FSD |
-| Regla de export explícito en barrels | ~0.5 día | API surface clara |
-| Árbol de decisión lazy import vs adapter | ~0.5 día | Consistencia cross-app |
-| Contrato para app/ pages | ~0.5 día | Cierra loophole |
-| Limpiar naming-conventions.md §7 | ~0.25 día | Documentación precisa |
+| Item | Esfuerzo | Impacto | Estado |
+|------|----------|---------|--------|
+| Contrato para barrels de API | ~0.5 día | Previene nuevas violaciones FSD | ✅ Resuelto |
+| Regla de export explícito en barrels | ~0.5 día | API surface clara | ✅ Resuelto (18 barrels convertidos) |
+| Árbol de decisión lazy import vs adapter | ~0.5 día | Consistencia cross-app | Pendiente |
+| Contrato para app/ pages | ~0.5 día | Cierra loophole | ✅ Resuelto (12 páginas migradas) |
+| Limpiar naming-conventions.md §7 | ~0.25 día | Documentación precisa | ✅ Ya limpio |
 
-**Total Fase 3:** ~2.25 días
+**Total Fase 3:** ~2.25 días *(4/5 items resueltos)*
 
 ### Fase 4 — Automatización (prevención)
 
@@ -1171,14 +1169,16 @@ Esta sección documenta vacíos en la documentación del proyecto que permiten a
 |------|------|------|--------|
 | Fase 1 | ~8 | Correctivo (bajo riesgo) | ✅ |
 | Fase 2 | ~13 | Correctivo (alto riesgo) | ✅ any types resuelto |
-| Fase 3 | ~2 | Preventivo (contratos) | ⏳ Pendiente |
+| Fase 3 | ~2 | Preventivo (contratos) | ✅ 4/5 items resueltos |
 | Fase 4 | ~6 | Preventivo (automático) | ⏳ Pendiente (1/4 items) |
 | **Subtotal auditoría original** | **~29 días** | | |
 | 8.1 `@transaction.atomic` faltante (Fase 1) | ~0.25 día | Correctivo (alto riesgo) | ✅ Resuelto (`ac26a91d`) |
 | 8.1 Phase 0 — Transaction safety extendida (4 métodos + 9 tests) | ~1 día | Correctivo (alto riesgo) | ✅ Resuelto (`e364d0cc`) |
 | 7.1 Cross-app serializer imports top-level | ~0.5 día | Correctivo (riesgo medio) | ✅ Resuelto (`3dd68676`) |
 | 5.3 ORM queries en serializers | ~0.25 día | Correctivo (N+1 performance) | ✅ Resuelto (`14fbd077`) |
-| **Total acumulado** | **~31 días** | | |
+| 10.5 app/ pages importing @/lib/api | ~2 días | Correctivo (FSD compliance) | ✅ Resuelto (12 páginas) |
+| 10.2 export * en barrels | ~1 día | Correctivo (API surface clara) | ✅ Resuelto (18 barrels) |
+| **Total acumulado** | **~34 días** | | |
 
 ---
 

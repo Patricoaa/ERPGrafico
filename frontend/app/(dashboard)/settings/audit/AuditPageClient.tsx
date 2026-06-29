@@ -1,6 +1,5 @@
 "use client";
 
-import { useState, useEffect } from "react";
 import { DataTable, SegmentationBar } from '@/components/shared';
 import { Card, CardContent } from "@/components/ui/card";
 import { format } from "date-fns";
@@ -18,45 +17,17 @@ import {
     RefreshCw
 } from "lucide-react";
 import { Skeleton, Chip } from "@/components/shared";
-import api from "@/lib/api";
+import { useAuditLogs, type GlobalAuditLog } from "@/features/settings";
 import { DataCell } from '@/components/shared';
 import { DataTableColumnHeader } from '@/components/shared';
 import { type ColumnDef } from "@tanstack/react-table";
-
-interface GlobalAuditLog {
-    date: string;
-    user_name: string | null;
-    entity_label: string | null;
-    history_type: '+' | '~' | '-' | null;
-    source: 'action_log' | 'history';
-    action_type: string | null;
-    type_label: string | null;
-    description: string;
-}
 
 interface AuditPageClientProps {
     initialLogs?: GlobalAuditLog[]
 }
 
 export default function AuditPageClient({ initialLogs }: AuditPageClientProps) {
-    const [logs, setLogs] = useState<GlobalAuditLog[]>(initialLogs ?? []);
-    const [loading, setLoading] = useState(!initialLogs);
-
-    useEffect(() => {
-        if (initialLogs) return;
-        let cancelled = false;
-        ;(async () => {
-            try {
-                const response = await api.get("/core/audit/global/");
-                if (!cancelled) setLogs(response.data);
-            } catch (error) {
-                if (!cancelled) console.error("Error fetching audit logs:", error);
-            } finally {
-                if (!cancelled) setLoading(false);
-            }
-        })();
-        return () => { cancelled = true };
-    }, [initialLogs]);
+    const { logs, loading } = useAuditLogs(initialLogs);
 
     const getActionIcon = (type: string, source: string) => {
         if (source === 'action_log') {

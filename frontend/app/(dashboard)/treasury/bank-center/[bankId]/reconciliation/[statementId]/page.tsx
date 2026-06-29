@@ -3,7 +3,7 @@
 import { formatCurrency } from "@/lib/money"
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 import { showApiError } from "@/lib/errors"
-import { useState, useEffect, use } from "react"
+import { useState, use } from "react"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -15,7 +15,8 @@ import { ActionConfirmModal, DataTable, DataTableColumnHeader, DataCell, Skeleto
 import { statementLineUnmatchActions, BankPageHeader, type StatementLineUnmatchActionsCtx } from "@/features/treasury"
 import { format } from "date-fns"
 import { es } from "date-fns/locale"
-import api from "@/lib/api"
+import { useStatementQuery, useUnmatchMutation } from "@/features/finance"
+import { useConfirmStatement } from "@/features/treasury"
 import { type ColumnDef } from "@tanstack/react-table"
 import { Progress } from "@/components/ui/progress"
 import { useConfirmAction } from "@/hooks/useConfirmAction"
@@ -63,10 +64,14 @@ export default function BankStatementDetailPage({
     const bankIdNum = Number(bankId)
     const router = useRouter()
 
-    const [statement, setStatement] = useState<BankStatement | null>(null)
-    const [loading, setLoading] = useState(true)
     const [unmatchDialog, setUnmatchDialog] = useState<{ open: boolean; lineId: number | null }>({ open: false, lineId: null })
-    const [confirming, setConfirming] = useState(false)
+    const statementIdNum = Number(statementId)
+    const statementQuery = useStatementQuery(statementIdNum)
+    const statement = statementQuery.data as BankStatement | null
+    const loading = statementQuery.isLoading
+    const fetchStatement = statementQuery.refetch
+
+    const unmatchMutation = useUnmatchMutation(statementIdNum, (statement as BankStatement | null)?.treasury_account ?? 0)
 
     const statementLineUnmatchActionsCtx: StatementLineUnmatchActionsCtx = {
         onUnmatch: (lineId) => setUnmatchDialog({ open: true, lineId }),
@@ -79,38 +84,10 @@ export default function BankStatementDetailPage({
 
     const reconciliationBase = `/treasury/bank-center/${bankId}/reconciliation`
 
-    const fetchStatement = async () => {
-        try {
-            setLoading(true)
-            const response = await api.get(`/treasury/statements/${statementId}/`)
-            setStatement(response.data)
-        } catch {
-            // handled below
-        } finally {
-            setLoading(false)
-        }
-    }
-
-    useEffect(() => {
-        let cancelled = false
-        ;(async () => {
-            setLoading(true)
-            try {
-                const response = await api.get(`/treasury/statements/${statementId}/`)
-                if (!cancelled) setStatement(response.data)
-            } catch {
-                if (!cancelled) setStatement(null)
-            } finally {
-                if (!cancelled) setLoading(false)
-            }
-        })()
-        return () => { cancelled = true }
-    }, [statementId])
-
     const handleUnmatch = async () => {
         if (!unmatchDialog.lineId) return
         try {
-            await api.post(`/treasury/statement-lines/${unmatchDialog.lineId}/unmatch/`)
+            await unmatchMutation.mutateAsync(unmatchDialog.lineId)
             await fetchStatement()
         } catch {
             toast.error('Error al deshacer la reconciliación')
@@ -119,16 +96,14 @@ export default function BankStatementDetailPage({
         }
     }
 
+    const confirmMutation = useConfirmStatement()
     const confirmAction = useConfirmAction(async () => {
         try {
-            setConfirming(true)
-            await api.post(`/treasury/statements/${statementId}/confirm/`)
+            await confirmMutation.mutateAsync(statementIdNum)
             toast.success('Cartola confirmada exitosamente')
             router.push(reconciliationBase)
         } catch (error: unknown) {
             showApiError(error, 'Error al confirmar cartola')
-        } finally {
-            setConfirming(false)
         }
     })
 
