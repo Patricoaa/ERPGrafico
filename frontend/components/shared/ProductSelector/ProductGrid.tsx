@@ -9,6 +9,7 @@
 
 import { Card } from '@/components/ui/card'
 
+import Image from 'next/image'
 import { cn } from '@/lib/utils'
 import { formatCurrency } from "@/lib/money"
 import { PricingUtils } from '@/lib/pricing-utils'
@@ -112,7 +113,7 @@ function ProductGridComponent({
                             isTouchPOS && "min-h-[120px]"
                         )}>
                             {product.image ? (
-                                <img src={resolveMediaUrl(product.image) ?? ''} alt={product.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
+                                <Image src={resolveMediaUrl(product.image) ?? ''} alt={product.name} fill className="object-cover group-hover:scale-105 transition-transform" />
                             ) : (
                                 <DynamicIcon
                                     name={categoryIcon || "Package"}

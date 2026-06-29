@@ -6,7 +6,7 @@
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 
-import {ShoppingCart, Zap, Clock, ChevronLeft, ChevronRight, Check} from 'lucide-react'
+import {ShoppingCart, Zap, Clock, ChevronLeft, ChevronRight, Check, Repeat} from 'lucide-react'
 import { cn, translatePaymentMethod } from '@/lib/utils'
 import { CartItem } from './CartItem'
 import { formatCurrency } from "@/lib/money"
@@ -101,7 +101,7 @@ export function Cart({
     const showTotalDiscounts = canApplyGlobalDiscount
 
     return (
-        <Card className="py-2 flex-1 flex flex-col overflow-hidden border bg-card dot-grid-surface shadow-card rounded-md">
+        <Card className="flex-1 flex flex-col overflow-hidden border bg-card dot-grid-surface shadow-card rounded-md">
             <CardContent className="p-0 flex-1 flex flex-col overflow-hidden">
                 {/* Header */}
                 <div className="px-4 py-1.5 border-b bg-transparent shrink-0">
@@ -167,10 +167,11 @@ export function Cart({
                 </div>
 
                 {/* Footer — Mini Boletín + Details + Actions */}
-                <div className="p-3 bg-card border-t space-y-2">
+                <div className="bg-card border-t">
 
                     {/* Mini Boletín — Financial Breakdown inside a card */}
-                    <div className="rounded-lg bg-muted/50 p-2.5 space-y-1">
+                    <div className="p-3 pb-0">
+                        <div className="rounded-lg bg-muted/50 p-2.5 space-y-1">
                         <div className="flex justify-between text-xs text-muted-foreground">
                             <span>Subtotal Neto</span>
                             <span>{formatCurrency(totals.total_net)}</span>
@@ -235,14 +236,16 @@ export function Cart({
                                 )}
                             </>
                         )}
+                        </div>
                     </div>
 
+                    <div className="h-3" />
+
                     {posMode === 'SHOPPING' && (
-                        /* Quick Sale + Withdraw Row */
-                        <div className="flex gap-2">
+                        <div className="flex gap-0">
                             <Button
                                 className={cn(
-                                    "flex-1 font-black uppercase tracking-tight border border-primary bg-transparent hover:bg-primary/10 relative overflow-hidden transition-colors",
+                                    "flex-1 shrink rounded-none font-black uppercase tracking-tight bg-primary/20 text-primary hover:bg-primary/30 relative overflow-hidden transition-colors",
                                     isTouchPOS ? "h-20 text-2xl" : "h-12 text-lg"
                                 )}
                                 size="lg"
@@ -256,7 +259,7 @@ export function Cart({
                             {onWithdrawClick && items.length > 0 && items.every(i => i.track_inventory) && (
                                 <Button
                                     className={cn(
-                                        "flex-1 font-black uppercase tracking-tight bg-warning text-warning-foreground hover:bg-warning/90 shadow-card",
+                                        "flex-1 shrink rounded-none font-black uppercase tracking-tight bg-warning text-warning-foreground hover:bg-warning/90 shadow-card",
                                         isTouchPOS ? "h-20 text-2xl" : "h-12 text-lg"
                                     )}
                                     size="lg"
@@ -274,7 +277,7 @@ export function Cart({
                         <Button
                             id="confirm-sale-btn"
                             className={cn(
-                                "w-full font-black uppercase tracking-tight hover:brightness-110 transition-all",
+                                "w-full rounded-none font-black uppercase tracking-tight hover:brightness-110 transition-all",
                                     isTouchPOS ? "h-20 text-2xl" : "h-12 text-lg"
                                 )}
                                 size="lg"
@@ -292,10 +295,10 @@ export function Cart({
                     {posMode === 'CHECKOUT' && (
                         <>
                             {/* Row 1: Volver al Carrito | Pagar en otro terminal */}
-                            <div className="flex gap-2">
+                            <div className="flex gap-0">
                                 <Button
                                     className={cn(
-                                        "flex-1 font-black uppercase tracking-tight border border-primary bg-transparent hover:bg-primary/10 relative overflow-hidden transition-colors",
+                                        "flex-1 shrink rounded-none font-black uppercase tracking-tight bg-primary/20 text-primary hover:bg-primary/30 relative overflow-hidden transition-colors",
                                         isTouchPOS ? "h-20 text-2xl" : "h-12 text-lg"
                                     )}
                                     size="lg"
@@ -308,26 +311,27 @@ export function Cart({
                                 {isLastStep && (
                                     <Button
                                         className={cn(
-                                            "flex-1 font-black uppercase tracking-tight bg-info text-info-foreground hover:bg-info/90 shadow-card",
+                                            "flex-1 shrink rounded-none font-black uppercase tracking-tight bg-info text-info-foreground hover:bg-info/90",
                                             isTouchPOS ? "h-20 text-2xl" : "h-12 text-lg"
                                         )}
                                         size="lg"
                                         onClick={onSuspend}
                                         disabled={checkoutLoading}
                                     >
-                                        Pagar en otro POS
+                                        <Repeat className={cn("mr-2", isTouchPOS ? "h-8 w-8" : "h-6 w-6")} />
+                                        Pagar en otra sesión
                                     </Button>
                                 )}
                             </div>
 
                             {/* Row 2: Atrás | Siguiente / Finalizar Venta */}
-                            <div className="flex gap-2">
+                            <div className="flex gap-0">
                                 <Button
                                     variant="secondary"
                                     onClick={onCheckoutBack}
                                     disabled={checkoutLoading}
                                     className={cn(
-                                        "flex-1 font-black uppercase tracking-tight",
+                                        "flex-1 shrink rounded-none font-black uppercase tracking-tight",
                                         isTouchPOS ? "h-20 text-2xl" : "h-12 text-lg"
                                     )}
                                     size="lg"
@@ -340,7 +344,7 @@ export function Cart({
                                         onClick={onCheckoutNext}
                                         disabled={checkoutLoading}
                                         className={cn(
-                                            "flex-1 font-black uppercase tracking-tight",
+                                            "flex-1 shrink rounded-none font-black uppercase tracking-tight",
                                             isTouchPOS ? "h-20 text-2xl" : "h-12 text-lg"
                                         )}
                                         size="lg"
@@ -353,7 +357,7 @@ export function Cart({
                                         onClick={onCheckoutFinish}
                                         disabled={checkoutLoading}
                                         className={cn(
-                                            "flex-1 font-black uppercase tracking-tight bg-success hover:bg-success/90 text-success-foreground",
+                                            "flex-1 shrink rounded-none font-black uppercase tracking-tight bg-success hover:bg-success/90 text-success-foreground",
                                             isTouchPOS ? "h-20 text-2xl" : "h-12 text-lg"
                                         )}
                                         size="lg"

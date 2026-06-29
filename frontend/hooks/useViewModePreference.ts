@@ -1,7 +1,7 @@
 "use client"
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
-import { getUserPreferences, saveUserPreference } from "@/features/profile/api/profileApi"
+import { getUserPreferences, saveUserPreference } from "@/features/profile"
 import { useAuth } from "@/contexts/AuthContext"
 
 export function useViewModePreference() {

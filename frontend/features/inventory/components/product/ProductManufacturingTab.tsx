@@ -29,14 +29,13 @@ interface ProductManufacturingTabProps {
     variantMode?: boolean
 }
 
-export function ProductManufacturingTab({ form, products, uoms, variantMode = false, initialData }: ProductManufacturingTabProps) {
+export function ProductManufacturingTab({ form, initialData }: ProductManufacturingTabProps) {
     const { boms, isBOMsLoading, refetch, deleteBom, toggleActive } = useBOMs({ product_id: initialData?.id })
     const [isBomModalOpen, setIsBomModalOpen] = useState(false)
     const [bomToEdit, setBomToEdit] = useState<BOM | undefined>(undefined)
     const [confirmDeleteBomId, setConfirmDeleteBomId] = useState<number | undefined>(undefined)
 
     const hasBom = form.watch("has_bom")
-    const isEditing = !!initialData
     const requiresAdvancedmfg = form.watch("requires_advanced_manufacturing")
     const isExpress = form.watch("mfg_auto_finalize")
     const hasVariants = form.watch("has_variants")

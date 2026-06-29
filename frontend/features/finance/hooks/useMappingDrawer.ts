@@ -2,7 +2,7 @@
 
 import { useCallback } from 'react'
 import { useRouter, usePathname, useSearchParams } from 'next/navigation'
-import type { MappingType } from '@/features/finance/hooks/useAccountMappings'
+import type { MappingType } from './useAccountMappings'
 
 const VALID_TYPES = new Set<MappingType>(['is', 'cf', 'bs'])
 

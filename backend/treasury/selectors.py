@@ -557,13 +557,51 @@ class POSSelector:
 
             manual_movements_data = TreasuryMovementSerializer(manual_movements, many=True).data
 
+            from django.db.models import Sum, Count
+            from billing.models import Invoice
+
+            card_terminal_sales = (
+                session.movements.filter(
+                    payment_method=TreasuryMovement.Method.CARD_TERMINAL,
+                    movement_type=TreasuryMovement.Type.INBOUND,
+                ).aggregate(total=Sum("amount"))["total"]
+                or 0
+            )
+
+            sale_order_count = (
+                session.movements.filter(sale_order__isnull=False)
+                .values("sale_order")
+                .distinct()
+                .count()
+            )
+
+            dte_breakdown = (
+                Invoice.objects.filter(payments__pos_session=session)
+                .values("dte_type")
+                .annotate(count=Count("id", distinct=True))
+                .order_by("-count")
+            )
+
+            user_name = session.user.get_full_name() or session.user.username
+            terminal_name = session.terminal.name if session.terminal else ""
+
             return {
                 **totals,
+                "total_card_terminal_sales": card_terminal_sales,
                 "total_manual_inflow": session.total_other_cash_inflow,
                 "total_manual_outflow": session.total_other_cash_outflow,
                 "manual_movements": manual_movements_data,
                 "sales_by_category": category_data,
+                "sale_order_count": sale_order_count,
+                "dte_breakdown": list(dte_breakdown),
+                "user_name": user_name,
+                "terminal_name": terminal_name,
+                "opened_at": session.opened_at,
+                "closed_at": session.closed_at,
             }
+
+        if session.status == "CLOSED":
+            return _generate()
 
         return cache_report(
             module="treasury",

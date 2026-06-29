@@ -1,9 +1,8 @@
 'use client'
 
 import { useQuery } from '@tanstack/react-query'
-import { partnersApi } from "@/features/contacts/api/partnersApi"
+import { partnersApi, type PartnerStatement } from "@/features/contacts"
 import { PROFILE_KEYS } from './queryKeys'
-import type { PartnerStatement } from "@/features/contacts/types/partner"
 
 export function usePartnerStatement(contactId: number | null) {
     return useQuery<PartnerStatement>({

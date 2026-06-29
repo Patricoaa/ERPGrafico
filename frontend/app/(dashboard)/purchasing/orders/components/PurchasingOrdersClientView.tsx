@@ -8,7 +8,7 @@ import { DataTableColumnHeader, DataCell } from '@/components/shared'
 import type { AnalyticsPanelConfig } from '@/components/shared'
 import { type ColumnDef } from "@tanstack/react-table"
 import { Button } from "@/components/ui/button"
-import { ArrowRight, ArrowLeft, BarChart3, Building2, DollarSign, Wallet, CreditCard, ShoppingBag, Hash } from "lucide-react"
+import { ArrowRight, ArrowLeft, BarChart3, Building2 } from "lucide-react"
 import { PurchaseOrderModal, DocumentRegistrationModal, PurchaseCheckoutWizard, usePurchasingOrders, usePurchasingNotes, purchaseOrderSearchDef, usePurchasingAnalyticsData } from "@/features/purchasing"
 import { billingApi } from "@/features/billing"
 import { purchaseOrderSegDef } from "@/features/purchasing/segmentationDef"
@@ -369,97 +369,6 @@ export function PurchasingOrdersClientView({ viewMode, externalOpenCheckout, cre
             toast.error(errorMessage || "Error al anular la orden de compra.")
         }
     })
-
-    const forceAnnulColumns: ColumnDef<Order>[] = [
-        {
-            accessorKey: "dte_type_display",
-            header: ({ column }) => (
-                <DataTableColumnHeader column={column} title="Documento" />
-            ),
-            cell: ({ row }) => (
-                <DataCell.Text>{row.original.dte_type_display || '-'}</DataCell.Text>
-            ),
-        },
-        {
-            accessorKey: "number",
-            header: ({ column }) => (
-                <DataTableColumnHeader column={column} title="Folio" />
-            ),
-            cell: ({ row }) => <DataCell.Code>{row.original.display_id ?? row.original.number}</DataCell.Code>,
-            meta: { title: "Folio" },
-        },
-        {
-            accessorKey: "date",
-            header: ({ column }) => (
-                <DataTableColumnHeader column={column} title="Fecha" />
-            ),
-            cell: ({ row }) => <DataCell.Date value={row.getValue("date")} />,
-            meta: { title: "Fecha" },
-        },
-        {
-            accessorKey: "supplier_name", // Try supplier_name, fallback to partner_name
-            header: ({ column }) => (
-                <DataTableColumnHeader column={column} title="Proveedor" />
-            ),
-            cell: ({ row }) => <DataCell.Text>{row.original.supplier_name || row.original.partner_name}</DataCell.Text>,
-            meta: { title: "Proveedor" },
-        },
-        {
-            accessorKey: "total",
-            header: ({ column }) => (
-                <DataTableColumnHeader column={column} title="Total" />
-            ),
-            cell: ({ row }) => (
-                <DataCell.Currency value={row.getValue("total")} />
-            ),
-            meta: { title: "Total" },
-        },
-        {
-            accessorKey: "status",
-            header: ({ column }) => (
-                <DataTableColumnHeader column={column} title="Estados" />
-            ),
-            cell: ({ row }) => (
-                <div className="flex justify-center">
-                    <DomainHubStatus label="billing.invoice" data={row.original} />
-                </div>
-            ),
-            meta: { title: "Estado" },
-        },
-        // Filters for Notes (Hidden)
-        {
-            id: "status",
-            accessorFn: (row) => row.status,
-            header: () => null,
-            cell: () => null,
-            enableHiding: false,
-            filterFn: (row, id, value) => value.includes(row.getValue(id))
-        },
-        {
-            id: "hub_trigger",
-            header: () => null,
-            cell: ({ row }) => {
-                const item = row.original
-                const isSelected = hubConfig?.invoiceId === item.id
-                return (
-                    <div className="flex justify-end pr-2">
-                        <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8 hover:bg-transparent"
-                            onClick={() => toggleSelection(item.id)}
-                        >
-                            {isSelected && isHubOpen ? (
-                                <ArrowLeft className="h-4 w-4 text-primary animate-in fade-in slide-in-from-right-1 duration-300" />
-                            ) : (
-                                <ArrowRight className="h-4 w-4 text-muted-foreground/30 group-hover:text-primary group-hover:translate-x-0.5 transition-all" />
-                            )}
-                        </Button>
-                    </div>
-                )
-            },
-        },
-    ]
 
     const columns: ColumnDef<PurchaseOrder>[] = [
         {

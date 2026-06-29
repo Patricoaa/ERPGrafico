@@ -145,7 +145,7 @@ const deliverySchema = z.object({
 
 type DeliveryFormValues = z.infer<typeof deliverySchema>
 
-export function DeliveryForm({ orderId, order, warehouses, onSuccess, id = "delivery-form", onLoadingChange, onCancel, filterType = 'ALL' }: DeliveryFormProps) {
+export function DeliveryForm({ orderId, order, warehouses, onSuccess, id = "delivery-form", onLoadingChange, filterType = 'ALL' }: DeliveryFormProps) {
     const { dateString } = useServerDate()
     const { dispatchOrder, dispatchOrderPartial } = useSalesOrders()
 
@@ -165,7 +165,7 @@ export function DeliveryForm({ orderId, order, warehouses, onSuccess, id = "deli
         })
         return initial
     })
-    const [submitting, setSubmitting] = useState(false)
+    const [, setSubmitting] = useState(false)
     const [isPartialDispatch, setIsPartialDispatch] = useState(false)
     const isServiceMode = filterType === 'SERVICE'
 
@@ -233,7 +233,7 @@ export function DeliveryForm({ orderId, order, warehouses, onSuccess, id = "deli
         }
     }
 
-    const onSubmit = async (values: DeliveryFormValues) => {
+    const onSubmit = async () => {
         if (!isServiceMode && !selectedWarehouse) {
             toast.error("Seleccione una bodega")
             return
@@ -370,8 +370,6 @@ export function DeliveryForm({ orderId, order, warehouses, onSuccess, id = "deli
         }
         return { type: 'warning', message: 'Despacho parcial', icon: AlertTriangle }
     }
-
-    const canSubmit = (isServiceMode || selectedWarehouse) && !visibleLines.some((line: SaleOrderLine) => { const qty = deliveryQuantities[line.id] || 0; if (qty <= 0) return false; const status = getStockStatus(line); return status?.type === 'error'; });
 
     return (
         <div id={id} className="space-y-4">

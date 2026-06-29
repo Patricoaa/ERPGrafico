@@ -1,5 +1,5 @@
 import { DataCell, createEntityActions } from '@/components/shared'
-import type { StockMove } from '@/features/inventory/components/MovementClientView'
+import type { StockMove } from './components/MovementClientView'
 import { Eye } from "lucide-react"
 
 export interface StockMoveActionsCtx {

@@ -1,4 +1,5 @@
 import * as React from "react"
+import Image from "next/image"
 import { cn } from "@/lib/utils"
 import { Badge } from "@/components/ui/badge"
 import { type VariantProps } from "class-variance-authority"
@@ -76,7 +77,7 @@ function EntityCardHeader({ title, subtitle, trailing, center, icon: Icon, image
                 <div className="flex items-start gap-3 min-w-0">
                     {imageSrc ? (
                         <div className={cn("flex h-8 w-8 shrink-0 items-center justify-center rounded-md overflow-hidden", iconClassName ?? "bg-accent text-muted-foreground")}>
-                            <img src={imageSrc} alt="" className="h-full w-full object-cover" />
+                            <Image src={imageSrc} alt="" fill className="object-cover" />
                         </div>
                     ) : Icon ? (
                         <div className={cn("flex h-8 w-8 shrink-0 items-center justify-center rounded-md", iconClassName ?? "bg-accent text-muted-foreground")}>
@@ -109,7 +110,7 @@ function EntityCardHeader({ title, subtitle, trailing, center, icon: Icon, image
             <div className="flex items-start gap-3 min-w-0 flex-1">
                 {imageSrc ? (
                     <div className={cn("flex h-8 w-8 shrink-0 items-center justify-center rounded-md overflow-hidden", iconClassName ?? "bg-accent text-muted-foreground")}>
-                        <img src={imageSrc} alt="" className="h-full w-full object-cover" />
+                        <Image src={imageSrc} alt="" fill className="object-cover" />
                     </div>
                 ) : Icon ? (
                     <div className={cn("flex h-8 w-8 shrink-0 items-center justify-center rounded-md", iconClassName ?? "bg-accent text-muted-foreground")}>

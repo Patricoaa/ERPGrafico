@@ -69,14 +69,7 @@ export function ManufacturingConfigStep({
     uomId: uomIdFromStore,
     startDate: startDateFromStore,
     dueDate: dueDateFromStore,
-    internalNotes: internalNotesFromStore,
     setSelectedContact,
-    setQuantity: setQuantityStore,
-    setUomId: setUomIdStore,
-    setStartDate: setStartDateStore,
-    setDueDate: setDueDateStore,
-    setInternalNotes: setInternalNotesStore,
-    setMfgConfig: setMfgConfigStore,
   } = useWizardStore();
 
   const otType = chosenOtType;
@@ -84,7 +77,7 @@ export function ManufacturingConfigStep({
   const [mfgData, setMfgData] = useState<ManufacturingData>(
     mfgDataFromStore ?? emptyManufacturingData()
   );
-  const [selectedContact, setSelectedContactLocal] = useState<Contact | null>(
+  const [selectedContact] = useState<Contact | null>(
     selectedContactFromStore
   );
   const [quantity, setQuantity] = useState<string>(
@@ -110,9 +103,9 @@ export function ManufacturingConfigStep({
     return result;
   });
 
-  const { user } = useAuth();
+  useAuth();
   const formIdValue = formId;
-  const { multiplier: vatMultiplier, isLoading: isVatLoading } = useVatRate();
+  const { isLoading: isVatLoading } = useVatRate();
   const { data: uoms = [] } = useUoMs();
 
   // Fetch product details (UoM, mfg flags) when product is selected
@@ -483,7 +476,7 @@ export function ManufacturingConfigStep({
                   // Safe: discriminated union forces cast through unknown
                   control={form.control as unknown as Control<WorkOrderFormValues>}
                   name="start_date"
-                  render={({ field }) => (
+                  render={() => (
                     <PeriodValidationDateInput
                       date={startDate ?? undefined}
                       onDateChange={handleStartDateChange}
@@ -497,7 +490,7 @@ export function ManufacturingConfigStep({
                   // Safe: discriminated union forces cast through unknown
                   control={form.control as unknown as Control<WorkOrderFormValues>}
                   name="due_date"
-                  render={({ field }) => (
+                  render={() => (
                     <PeriodValidationDateInput
                       date={dueDate ?? undefined}
                       onDateChange={handleDueDateChange}

@@ -2,8 +2,6 @@
 
 import * as React from "react"
 import { formatCurrency } from "@/lib/money"
-import dynamic from "next/dynamic"
-import { useRouter, usePathname, useSearchParams } from "next/navigation"
 import {useState, useEffect, useMemo, useCallback} from "react"
 import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
@@ -20,12 +18,11 @@ import { reconciliationSegDef } from "../segmentationDef"
 import { isZeroTolerance, safeDifference, safeSum, safeParseFloat } from "@/lib/math"
 import {
     Ban, CheckCircle2, ChevronRight, ChevronLeft, FileText,
-    Loader2, Sparkles, X, Wand2, SplitSquareHorizontal, Calculator, RotateCcw, Brain, Plus
+    Loader2, Sparkles, X, Wand2, Calculator, Brain, Plus
 } from "lucide-react"
 import { format } from "date-fns"
 import { es } from "date-fns/locale"
 import { financeApi } from "../../api/financeApi"
-import { useHubPanel } from "@/components/providers/HubPanelProvider"
 import { cn, parseDateOnly } from "@/lib/utils"
 import {
     DndContext,
@@ -35,7 +32,6 @@ import {
     PointerSensor,
     useSensor,
     useSensors,
-    useSensors as useDndSensors,
 } from "@dnd-kit/core"
 import { CSS } from "@dnd-kit/utilities"
 import {
@@ -52,13 +48,12 @@ import {
     useExcludeMutation,
     useBulkExcludeMutation,
     useCreateAndMatchMutation,
-    useUnmatchMutation,
     useRestoreMutation,
     useCreateMovementMutation
 } from "../hooks/useReconciliationMutations"
 
 import { useServerDate } from '@/hooks/useServerDate'
-import { MovementWizard, type MovementData } from "@/features/treasury/components/MovementWizard"
+import { MovementWizard, type MovementData } from "@/features/treasury"
 import { AutoMatchProgressModal } from "./AutoMatchProgressModal"
 import { ReconciliationIntelligence } from "./ReconciliationIntelligence"
 
@@ -161,7 +156,6 @@ function DroppableBankLine({ id, children }: { id: number, children: React.React
 // ─── Main Component ──────────────────────────────────────────────────────────
 
 export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete }: ReconciliationPanelProps) {
-    const { isHubOpen } = useHubPanel()
     const { serverDate } = useServerDate()
     const [selectedLines, setSelectedLines] = useState<BankStatementLine[]>([])
     const [selectedPayments, setSelectedPayments] = useState<ReconciliationSystemItem[]>([])
@@ -172,10 +166,9 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
     const [bankParams, setBankParams] = useState<QueryPaginationParams>({ page: 1, pageSize: 50 })
     const [systemParams, setSystemParams] = useState<QueryPaginationParams>({ page: 1, pageSize: 50 })
 
-    const { filters: textFilters, isFiltered: isTextFiltered, clearAll: clearText } = useSmartSearch(reconciliationSearchDef)
+    const { filters: textFilters } = useSmartSearch(reconciliationSearchDef)
     const basePeriod = { serverParamFrom: 'date_from', serverParamTo: 'date_to' }
-    const { filters: segFilters, isFiltered: isSegFiltered, clearAll: clearSeg } = useSegmentation(reconciliationSegDef, basePeriod)
-    const isFiltered = isTextFiltered || isSegFiltered
+    const { filters: segFilters } = useSegmentation(reconciliationSegDef, basePeriod)
     const allFilters = { ...textFilters, ...segFilters }
 
     // Synchronize smart search filters to query parameters
@@ -200,10 +193,6 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
             }))
         })
     }, [allFilters])
-
-    const router = useRouter()
-    const pathname = usePathname()
-    const searchParams = useSearchParams()
 
     const [selectedMovement, setSelectedMovement] = useState<{ id: number | string, type: string } | null>(null)
     const [detailsOpen, setDetailsOpen] = useState(false)
@@ -250,7 +239,6 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
     const autoMatchMutation = useAutoMatchMutation(statementId)
     const excludeMutation = useExcludeMutation(statementId)
     const bulkExcludeMutation = useBulkExcludeMutation(statementId)
-    const unmatchMutation = useUnmatchMutation(statementId, treasuryAccountId)
     const restoreMutation = useRestoreMutation(statementId)
 
     const loading = loadingLines || loadingPayments || loadingReconciled
@@ -297,7 +285,7 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
     // S4.8: Async auto-match progress state
     const [autoMatchProgressOpen, setAutoMatchProgressOpen] = useState(false)
 
-    const [sidebarOpen, setSidebarOpen] = useState(false)
+    const [, setSidebarOpen] = useState(false)
     const [intelOpen, setIntelOpen] = useState(false)
 
     const sensors = useSensors(
@@ -354,7 +342,7 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
 
     // ─── Matching Logic ───────────────────────────────────────────────────────
 
-    const handleMatch = async (lineId: number, paymentId: number, isBatch: boolean = false, force: boolean = false) => {
+    const handleMatch = async (lineId: number, paymentId: number, force: boolean = false) => {
         if (!force) {
             const suggestion = suggestions.find((s: PaymentSuggestion) => (s.is_batch ? s.batch_data?.id : s.payment_data?.id) === paymentId)
             const diffAmount = suggestion ? parseFloat(suggestion.difference) : 0
@@ -645,7 +633,6 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                 const isSuggested = suggestions.some((s: PaymentSuggestion) =>
                     s.is_batch ? s.batch_data?.id === row.original.terminal_batch_id : s.payment_data?.id === row.original.id
                 )
-                const isSettlement = row.original.terminal_batch_id != null
                 return (
                     <div className="flex flex-col gap-0.5 max-w-[220px] justify-center h-full py-1">
                         <span className={cn("text-xs font-bold truncate", isSuggested && "text-warning")}>
@@ -1173,7 +1160,7 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                                     <CancelButton onClick={() => setDiffDialog(prev => ({ ...prev, open: false }))} />
                                     <Button
                                         disabled={!diffDateValid || matching}
-                                        onClick={() => diffDialog.isGroup ? handleGroupMatch(true) : handleMatch(diffDialog.lineId, diffDialog.paymentId, false, true)}
+                                        onClick={() => diffDialog.isGroup ? handleGroupMatch(true) : handleMatch(diffDialog.lineId, diffDialog.paymentId, true)}
                                         className=""
                                     >
                                         Confirmar con Ajuste
@@ -1250,7 +1237,7 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                     onOpenChange={(open) => {
                         setAutoMatchProgressOpen(open)
                     }}
-                    onSuccess={(matchedCount, totalUnreconciled) => {
+                    onSuccess={(matchedCount) => {
                         setAutoMatchProgressOpen(false)
                         // Invalidate queries so the tables reflect the new matches
                         setBankParams(prev => ({ ...prev }))

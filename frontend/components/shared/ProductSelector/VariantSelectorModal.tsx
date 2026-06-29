@@ -4,6 +4,7 @@
 // Extracted from @/features/pos/components/POSVariantSelectorModal (PR-3)
 
 import React, { useEffect, useState } from "react"
+import Image from "next/image"
 
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Package, ImageIcon } from "lucide-react"
@@ -111,10 +112,11 @@ export function VariantSelectorModal({
                                         {/* Variant Image or Placeholder */}
                                         <div className="w-16 h-16 rounded-md bg-muted flex items-center justify-center overflow-hidden flex-shrink-0">
                                             {v.image || product.image ? (
-                                                <img
+                                                <Image
                                                     src={resolveMediaUrl(v.image || product.image) ?? ""}
                                                     alt={v.variant_display_name || v.name}
-                                                    className="w-full h-full object-cover"
+                                                    fill
+                                                    className="object-cover"
                                                 />
                                             ) : (
                                                 <ImageIcon className="h-6 w-6 text-muted-foreground/40" />

@@ -2,7 +2,7 @@
 import { formatPlainDate } from "@/lib/utils";
 
 import { useState } from "react"
-import { useRouter } from "next/navigation"
+
 import { toast } from "sonner"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
@@ -23,7 +23,7 @@ import { cn } from "@/lib/utils"
 import {
     Loader2, User, ShieldCheck, KeyRound, Mail,
     Building2, Briefcase, Calendar, CreditCard, Wallet,
-    Download, Clock, CheckCircle2, FileText,
+    Download, Clock, FileText,
     ChevronDown, ChevronRight, Sun, Moon, Monitor
 } from "lucide-react"
 import { EmptyState, LabeledInput, SegmentationBar } from "@/components/shared"
@@ -44,7 +44,6 @@ interface ProfileViewProps {
 }
 
 export function ProfileView({ activeTab, activeSubTab = "employee", initialProfile }: ProfileViewProps) {
-    const router = useRouter()
     const profile = initialProfile
     const [selectedPayrolls, setSelectedPayrolls] = useState<number[]>([])
     const [downloadingAll, setDownloadingAll] = useState(false)
@@ -75,7 +74,7 @@ export function ProfileView({ activeTab, activeSubTab = "employee", initialProfi
         <Tabs value={activeTab} className="w-full h-full flex flex-col">
             <div className="pt-0 flex-1 min-h-0">
                 <TabsContent value="account" className="mt-0 outline-none space-y-6">
-                    <AccountTab user={profile.user} activeSubTab={activeSubTab} />
+                    <AccountTab activeSubTab={activeSubTab} />
                 </TabsContent>
 
                 <TabsContent value="personal" className="mt-0 outline-none space-y-6">
@@ -102,10 +101,7 @@ export function ProfileView({ activeTab, activeSubTab = "employee", initialProfi
 // ============================================
 // TAB 1: ACCOUNT
 // ============================================
-function AccountTab({ user, activeSubTab }: { user: MyProfile['user']; activeSubTab?: string }) {
-    const systemRoles = ['ADMIN', 'MANAGER', 'OPERATOR', 'READ_ONLY']
-    const primaryRole = user.groups?.find(g => systemRoles.includes(g)) || 'Sin Rol'
-    const functionalGroups = user.groups?.filter(g => !systemRoles.includes(g)) || []
+function AccountTab({ activeSubTab }: { activeSubTab?: string }) {
 
     return (
         <div className="w-full h-full space-y-8">
@@ -316,7 +312,6 @@ function PersonalTab({
     downloadingAll: boolean
     activeSubTab?: string
 }) {
-    const router = useRouter()
     const { employee, payrolls, advances, payments } = profile
 
     const [previewPayrollId, setPreviewPayrollId] = useState<number | null>(null)

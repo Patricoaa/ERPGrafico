@@ -171,8 +171,7 @@ export function WorkOrderWizard({ mode, open, onOpenChange, onSuccess }: WorkOrd
     showPOPreview, outsourcedPending,
     rectificationAdjustments, rectificationProducedQty, rectificationOutsourcedAdjustments,
     // Creation flow state
-    chosenOtType, selectedSaleOrder, selectedSaleLine, selectedProduct, mfgConfig,
-    selectedContact, quantity, uomId, startDate, dueDate, internalNotes,
+    chosenOtType,
     setOrder, setLoading, setViewingStepIndex, navigateToStep,
     setTaskNote, setTaskFile,
     setIsAnnulModalOpen, setIsDeleteModalOpen, setIsBackwardModalOpen, setPendingPrevStage,
@@ -372,7 +371,7 @@ export function WorkOrderWizard({ mode, open, onOpenChange, onSuccess }: WorkOrd
         const blocked = pendingTasks.some((t) => !canUserCompleteTask(t)) ||
           (STAGES[viewingStepIndex]?.id === 'MATERIAL_APPROVAL' && order?.materials?.some((m: WorkOrderMaterial) => !m.is_available))
         if (!blocked) {
-          nextStage.id === 'FINISHED' ? finishConfirm.requestConfirm(nextStage.id) : handleTransition(nextStage.id)
+          if (nextStage.id === 'FINISHED') { finishConfirm.requestConfirm(nextStage.id) } else { handleTransition(nextStage.id) }
         }
       }
       if (e.key === 'ArrowLeft' && viewingStepIndex > 0) {

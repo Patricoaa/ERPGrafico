@@ -8,8 +8,6 @@ import { Step1_Customer } from "./Step1_Customer"
 import { Step2_DTE } from "./Step2_DTE"
 import { Step2_Payment } from "./Step2_Payment"
 import { useVatRate } from '@/hooks/useVatRate'
-import { useTreasuryAccounts } from "@/hooks/useTreasuryAccounts"
-import { useAllowedPaymentMethods } from "@/hooks/useAllowedPaymentMethods"
 import { Step3_Delivery } from "./Step3_Delivery"
 import { Step2_ManufacturingDetails } from "./Step2_ManufacturingDetails"
 import { OrderSummaryCard } from "./OrderSummaryCard"
@@ -17,12 +15,11 @@ import { useHubPanel } from "@/components/providers/HubPanelProvider"
 import { ProcessSummarySidebar } from "./ProcessSummarySidebar"
 import { toast } from "sonner"
 import { useContact, useContactCreditLedger } from "@/features/contacts"
-import { useAccountingSettings } from "@/features/accounting"
 import { useInvoices } from "@/features/billing"
 import { getTask } from "@/features/workflow"
 import { formatMoney } from "@/lib/money"
 
-import {Check, ChevronRight, ChevronLeft, Loader2, ShoppingCart, AlertCircle, ShieldAlert, CheckCircle2, FileWarning, Truck} from "lucide-react"
+import {Loader2, ShoppingCart, AlertCircle, ShieldAlert, CheckCircle2, FileWarning, Truck} from "lucide-react"
 import {User} from "lucide-react"
 import {BaseModal, FormSection} from '@/components/shared'
 import { cn } from "@/lib/utils"
@@ -32,7 +29,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { useServerDate } from "@/hooks/useServerDate"
 
 import { PINPadModal } from "@/features/pos/components/PINPadModal"
-import {type SaleOrder, type SaleOrderLine, type CheckoutDTEData, type CheckoutPaymentData, type CheckoutDeliveryData, type CheckoutResponse, type CreditApprovalTask} from "../../types"
+import {type SaleOrder, type SaleOrderLine, type CheckoutDTEData, type CheckoutPaymentData, type CheckoutDeliveryData, type CheckoutResponse} from "../../types"
 import { type Contact } from "@/features/contacts/types"
 import { ManualTerminalNotice, type ManualTerminalReason } from "@/features/treasury"
 
@@ -90,11 +87,9 @@ export interface SalesCheckoutWizardContentHandle {
 export const SalesCheckoutWizardContent = forwardRef<SalesCheckoutWizardContentHandle, SalesCheckoutWizardContentProps>(function SalesCheckoutWizardContent({
     order,
     orderLines: initialOrderLines,
-    total: initialTotal,
     totalDiscountAmount = 0,
     onComplete,
     onCancel,
-    onSuspend,
     initialCustomerName = "",
     initialCustomerId = "",
     channel = "POS",
@@ -115,8 +110,8 @@ export const SalesCheckoutWizardContent = forwardRef<SalesCheckoutWizardContentH
     isSessionHost = false,
     touchMode = false
 }: SalesCheckoutWizardContentProps, ref) {
-    const { dateString, serverDate } = useServerDate()
-    const { openHub, isHubOpen } = useHubPanel()
+    const { dateString } = useServerDate()
+    const { isHubOpen } = useHubPanel()
     const { hasPermission } = useAuth()
     const { rate } = useVatRate()
     const { posCheckout, requestCredit } = useInvoices()
@@ -242,7 +237,7 @@ export const SalesCheckoutWizardContent = forwardRef<SalesCheckoutWizardContentH
     const [isWaitingApproval, setIsWaitingApproval] = useState(initialIsWaitingApproval || false)
     const [approvalTaskId, setApprovalTaskId] = useState<number | null>(initialApprovalTaskId || null)
     const [creditApprovalRequired, setCreditApprovalRequired] = useState(!!initialIsWaitingApproval || !!initialIsApproved)
-    const [approvedTaskData, setApprovedTaskData] = useState<CreditApprovalTask | null>(null)
+
     const [securityErrorMessage, setSecurityErrorMessage] = useState<string | null>(null)
     const [isApproved, setIsApproved] = useState(initialIsApproved || false)
     const [creditApprovalReason, setCreditApprovalReason] = useState<string | null>(null)
@@ -251,11 +246,10 @@ export const SalesCheckoutWizardContent = forwardRef<SalesCheckoutWizardContentH
     const [manualTerminalReason, setManualTerminalReason] = useState<ManualTerminalReason | null>(null)
     const [manualTerminalFailureReason, setManualTerminalFailureReason] = useState<string | null>(null)
     const [showInvoiceReminder, setShowInvoiceReminder] = useState(false)
-    const [checkoutResponse, setCheckoutResponse] = useState<CheckoutResponse | null>(null)
 
     // Solo fetcheamos credit ledger si el cliente tiene saldo a usar.
     const creditLedgerEnabled = !!selectedCustomer && Number(selectedCustomer.credit_balance_used || 0) > 0
-    const { data: pendingDebts = null, isLoading: loadingDebts, refetch: refreshDebts } =
+    const { refetch: refreshDebts } =
         useContactCreditLedger(creditLedgerEnabled ? selectedCustomer?.id ?? null : null)
 
     // Sync debts when Hub closes (after potential payments)
@@ -267,7 +261,6 @@ export const SalesCheckoutWizardContent = forwardRef<SalesCheckoutWizardContentH
         prevHubOpenRef.current = isHubOpen
     }, [isHubOpen, refreshDebts])
 
-    const { data: salesSettings = null } = useAccountingSettings()
     const { data: customerDetails } = useContact(selectedCustomerId ? Number(selectedCustomerId) : null)
 
     useEffect(() => {
@@ -302,16 +295,7 @@ export const SalesCheckoutWizardContent = forwardRef<SalesCheckoutWizardContentH
         }
     }, [step, dteData, paymentData, deliveryData, approvalTaskId, isWaitingApproval, isApproved, loading, quickSale, onStateChange, selectedCustomerId, selectedCustomerName, totalSteps])
 
-    const { accounts } = useTreasuryAccounts({
-        context: terminalId ? 'POS' : 'GENERAL',
-        terminalId
-    })
 
-    const { methods: allowedMethods, loading: loadingMethods } = useAllowedPaymentMethods({
-        terminalId,
-        operation: 'sales',
-        enabled: true
-    })
 
     const renderStep = () => {
         const currentStepDef = steps[step - 1];
@@ -736,7 +720,6 @@ export const SalesCheckoutWizardContent = forwardRef<SalesCheckoutWizardContentH
             if (task.status === 'COMPLETED') {
                 if (pollingIntervalRef.current) clearInterval(pollingIntervalRef.current)
                 if (!silent) toast.success("¡Crédito aprobado!") // only explicitly toast if manual check
-                setApprovedTaskData(task.data as CreditApprovalTask)
                 setIsWaitingApproval(false)
                 setIsApproved(true)
                 return 'COMPLETED'

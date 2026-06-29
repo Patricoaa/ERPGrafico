@@ -3,7 +3,7 @@
 import { Skeleton, StatCard } from "@/components/shared"
 import {useProductionMetrics} from "../hooks/useProductionQueries"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { AlertCircle, CheckCircle2, Clock, Activity, Printer } from "lucide-react"
+import { Printer } from "lucide-react"
 import Link from "next/link"
 
 export function ProductionMetricsCard() {

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import Image from "next/image";
 import { useSaleOrderSearch } from "@/features/orders/hooks/useSaleOrderSearch";
 import { useSaleOrderManufacturableLines } from "../../hooks/useSaleOrderManufacturableLines";
 import { FileText, Trash2 } from "lucide-react";
@@ -267,10 +268,12 @@ export function SaleOrderProductStep({
                           <div className="flex h-full w-full p-4 space-x-3">
                             <div className="flex-shrink-0">
                               {prod?.image_thumbnail ? (
-                                <img
+                                <Image
                                   src={resolveMediaUrl(prod.image_thumbnail) ?? ""}
                                   alt={prod?.name || ""}
-                                  className="h-10 w-10 rounded object-cover"
+                                  width={40}
+                                  height={40}
+                                  className="rounded object-cover"
                                 />
                               ) : (
                                 <div className="h-10 w-10 flex items-center justify-center rounded bg-muted/20">

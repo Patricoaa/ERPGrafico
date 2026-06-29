@@ -270,8 +270,8 @@ export function UserActions({ isInboxOpen, onInboxToggle }: UserActionsProps) {
                         </TooltipContent>
                     </Tooltip>
                     <DropdownMenuContent className="w-56 border-sidebar-border shadow-overlay" align="end" sideOffset={12}>
-                        <DropdownMenuLabel className="font-normal px-2 py-1.5">
-                            <div className="flex items-center gap-2 rounded-sm bg-muted pr-1.5 py-1.5 pl-0">
+                        <DropdownMenuLabel className="font-normal">
+                            <div className="flex items-center gap-2 rounded-lg bg-muted p-1.5">
                                 <Avatar className="h-7 w-7 rounded-full">
                                     <AvatarFallback className="font-heading font-black text-[10px]">
                                         {user?.username?.substring(0, 2).toUpperCase() || 'US'}

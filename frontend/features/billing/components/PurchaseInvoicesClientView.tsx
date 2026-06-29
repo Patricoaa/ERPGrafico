@@ -2,7 +2,6 @@
 
 import { showApiError, getErrorMessage } from "@/lib/errors"
 import React, { useState, useRef } from "react"
-import { useRouter, useSearchParams, usePathname } from "next/navigation"
 import { type ColumnDef } from "@tanstack/react-table"
 import {ActionConfirmModal, DocumentCompletionModal, SmartSearchBar, useSmartSearch, SegmentationBar, useSegmentation} from '@/components/shared'
 import { purchaseInvoiceSearchDef } from '../searchDef'
@@ -36,9 +35,6 @@ export function PurchaseInvoicesClientView() {
     const [receivingDoc, setReceivingDoc] = useState<Invoice | null>(null)
     const [notingDoc, setNotingDoc] = useState<Invoice | null>(null)
     const [completingDoc, setCompletingDoc] = useState<Invoice | null>(null)
-    const router = useRouter()
-    const searchParams = useSearchParams()
-    const pathname = usePathname()
 
     const { openHub, closeHub, hubConfig, isHubOpen } = useHubPanel()
 
@@ -52,8 +48,6 @@ export function PurchaseInvoicesClientView() {
             showApiError(error, "No se pudo eliminar el documento")
         }
     })
-
-    const handleDelete = (id: number) => deleteConfirm.requestConfirm(id)
 
     // El motivo se captura en el modal de anulación y se reutiliza en el force-retry
     const annulReasonRef = useRef('')
@@ -85,8 +79,6 @@ export function PurchaseInvoicesClientView() {
             toast.error(errorMessage || "Error al anular el documento.")
         }
     })
-
-    const handleAnnul = (id: number) => annulConfirm.requestConfirm(id)
 
     const handlePayment = async (data: Record<string, unknown>) => {
         if (!payingDoc) return

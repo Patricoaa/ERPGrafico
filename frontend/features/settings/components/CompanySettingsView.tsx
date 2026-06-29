@@ -1,6 +1,7 @@
 "use client"
 
 import React, { useEffect, useCallback, useState } from "react"
+import Image from "next/image"
 import { useForm, type Resolver, type Control } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { toast } from "sonner"
@@ -379,10 +380,11 @@ export function CompanySettingsView({ activeTab }: { activeTab: string }) {
                                                     <Loader2 className="h-8 w-8 animate-spin text-primary" />
                                                 ) : settings?.logo ? (
                                                     <div className="relative w-full h-full">
-                                                        <img
-                                                            src={resolveMediaUrl(settings.logo) || undefined}
+                                                        <Image
+                                                            src={resolveMediaUrl(settings.logo) || ""}
                                                             alt="Logo"
-                                                            className="max-h-full max-w-full object-contain p-2 w-full h-full"
+                                                            fill
+                                                            className="object-contain p-2"
                                                         />
                                                         <div className="absolute inset-0 bg-overlay/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
                                                             <Button

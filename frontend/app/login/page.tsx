@@ -1,5 +1,6 @@
 "use client"
 
+import Image from "next/image"
 import { LoginForm } from "@/features/auth"
 import { GuestGuard } from "@/components/auth"
 import { useBranding } from "@/contexts/BrandingProvider"
@@ -20,11 +21,14 @@ export default function LoginPage() {
                         {/* Logo */}
                         <div className="mb-8 flex flex-col items-center">
                             {logo ? (
-                                <img
-                                    src={logo}
-                                    alt={companyName || "Logo"}
-                                    className="h-14 w-auto object-contain mb-3"
-                                />
+                                <div className="relative h-14 w-40 mb-3">
+                                    <Image
+                                        src={logo}
+                                        alt={companyName || "Logo"}
+                                        fill
+                                        className="object-contain"
+                                    />
+                                </div>
                             ) : (
                                 <div className="w-14 h-14 rounded-md flex items-center justify-center bg-primary text-primary-foreground font-black text-lg mb-3">
                                     {initials}

@@ -15,3 +15,4 @@ export type {
 export { ordersApi } from './api/ordersApi'
 
 export { getHubStatuses, getNoteHubStatuses } from './utils/status'
+export { GlobalHubPanel } from './components/GlobalHubPanel'

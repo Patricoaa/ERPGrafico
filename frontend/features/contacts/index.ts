@@ -1,7 +1,7 @@
 export type { Contact, ContactFilters, ContactPayload, InsightsData } from './types'
 export type { ContactActionsCtx } from './contactActions'
 export { contactActions } from './contactActions'
-export { contactsApi } from './api/contactsApi'
+export { contactsApi, partnersApi } from './api'
 export type { PendingDebt } from './hooks/useContacts'
 export { CONTACTS_KEYS, useContact, useContactCreditLedger, useContactInsights, useContactMutations, useContacts } from './hooks/useContacts'
 export { PARTNERS_KEYS, usePartners } from './hooks/usePartners'

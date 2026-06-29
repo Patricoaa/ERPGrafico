@@ -9,7 +9,7 @@ interface UseFormWithToastProps<T extends FieldValues> extends Omit<UseFormProps
 }
 
 export function useFormWithToast<T extends FieldValues>({ schema, ...props }: UseFormWithToastProps<T>) {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+     
     const form = useForm<T>({
         ...(schema ? { resolver: zodResolver(schema as any) } : {}),
         ...props

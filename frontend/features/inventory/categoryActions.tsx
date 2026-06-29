@@ -1,5 +1,5 @@
 import { DataCell, createEntityActions } from '@/components/shared'
-import type { Category } from '@/features/inventory/hooks/useCategories'
+import type { Category } from './hooks/useCategories'
 
 export interface CategoryActionsCtx {
     onEdit: (id: number) => void

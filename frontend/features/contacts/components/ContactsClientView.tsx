@@ -1,6 +1,6 @@
 "use client"
 
-import { useRouter, useSearchParams, usePathname } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 import React, { useState, useEffect, lazy, Suspense } from "react"
 import { type ColumnDef } from "@tanstack/react-table"
 import { Building2, User as UserIcon, Banknote } from "lucide-react"
@@ -12,7 +12,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { DataCell, Chip, EntityCard } from '@/components/shared'
 import { contactActions, type ContactActionsCtx } from "@/features/contacts/contactActions"
 import { useContacts, type Contact } from "@/features/contacts"
-import { LoadingFallback, SmartSearchBar, SegmentationBar, StatusBadge, useSmartSearch, useSegmentation } from "@/components/shared"
+import { LoadingFallback, SmartSearchBar, SegmentationBar, useSmartSearch, useSegmentation } from "@/components/shared"
 import { contactSearchDef } from "@/features/contacts/searchDef"
 import { contactSegDef } from "@/features/contacts/segmentationDef"
 import type { ContactFilters } from "@/features/contacts/types"
@@ -31,8 +31,8 @@ interface ContactsClientViewProps {
 }
 
 export function ContactsClientView({ isNewModalOpen = false, createAction, initialContacts }: ContactsClientViewProps) {
-    const { filters: smartFilters, isFiltered: isTextFiltered, clearAll: clearText } = useSmartSearch(contactSearchDef)
-    const { filters: segFilters, isFiltered: isSegFiltered, clearAll: clearSeg } = useSegmentation(contactSegDef)
+    const { filters: smartFilters, isFiltered: isTextFiltered } = useSmartSearch(contactSearchDef)
+    const { filters: segFilters, isFiltered: isSegFiltered } = useSegmentation(contactSegDef)
     const isFiltered = isTextFiltered || isSegFiltered
     const allFilters = { ...smartFilters, ...segFilters }
     const { contacts, isLoading, isRefetching, deleteContact } = useContacts({
@@ -45,8 +45,6 @@ export function ContactsClientView({ isNewModalOpen = false, createAction, initi
     const [contactToDelete, setContactToDelete] = useState<Contact | null>(null)
     const router = useRouter()
     const searchParams = useSearchParams()
-    const pathname = usePathname()
-
     const { openSelected } = useEntityRouteActions()
 
     const { entity: selectedFromUrl, clearSelection } = useSelectedEntity<Contact>({
@@ -100,10 +98,6 @@ export function ContactsClientView({ isNewModalOpen = false, createAction, initi
         } catch {
             // Error handling is done in the hook
         }
-    }
-
-    const getContactTypeBadge = (type: string) => {
-        return <StatusBadge status={type} size="sm" />
     }
 
     const actionsCtx: ContactActionsCtx = {
