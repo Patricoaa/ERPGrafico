@@ -199,7 +199,7 @@ export function FinancialStatementsReport({ activeTab }: FinancialStatementsRepo
 
     if (isError) {
         return (
-            <PageContainer scrollable>
+        <PageContainer scrollable className="px-0">
                 <div className="w-full pt-4">
                     <EmptyState
                         context="finance"
