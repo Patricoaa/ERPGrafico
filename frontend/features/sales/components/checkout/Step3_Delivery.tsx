@@ -77,7 +77,7 @@ export function Step3_Delivery({ deliveryData, setDeliveryData, orderLines }: St
     if (isServiceMode) {
         return (
             <div className="space-y-6">
-                <div className="flex items-start gap-3 p-4 bg-primary/5 border border-primary/20 rounded-md">
+                <div className="flex items-start gap-3 p-4 bg-primary/5 border border-primary/20 rounded-md shadow-card shadow-black/5">
                     <Calendar className="h-5 w-5 shrink-0 mt-0.5 text-primary" />
                     <div className="space-y-1">
                         <p className="text-xs font-bold uppercase tracking-wider">Cumplimiento de Servicios</p>
@@ -137,7 +137,7 @@ export function Step3_Delivery({ deliveryData, setDeliveryData, orderLines }: St
                 <Label
                     htmlFor="del-immediate"
                     className={cn(
-                        "card-accent-cmyk relative overflow-hidden flex items-center gap-4 rounded-md border bg-card p-4 hover:shadow-elevated transition-all cursor-pointer",
+                        "card-accent-cmyk relative overflow-hidden flex items-center gap-4 rounded-md border border-border/50 bg-card p-4 hover:shadow-elevated transition-all cursor-pointer shadow-card shadow-black/5",
                         "focus-visible:border-2 focus-visible:border-primary",
                         deliveryData.type === 'IMMEDIATE' ? "border-2 border-primary accent-visible" : "border",
                         hasRestrictedItems && "opacity-50 pointer-events-none grayscale"
@@ -159,7 +159,7 @@ export function Step3_Delivery({ deliveryData, setDeliveryData, orderLines }: St
                 <Label
                     htmlFor="del-scheduled"
                     className={cn(
-                        "card-accent-cmyk relative overflow-hidden flex items-center gap-4 rounded-md border bg-card p-4 hover:shadow-elevated transition-all cursor-pointer",
+                        "card-accent-cmyk relative overflow-hidden flex items-center gap-4 rounded-md border border-border/50 bg-card p-4 hover:shadow-elevated transition-all cursor-pointer shadow-card shadow-black/5",
                         "focus-visible:border-2 focus-visible:border-primary",
                         deliveryData.type === 'SCHEDULED' ? "border-2 border-primary accent-visible" : "border"
                     )}
@@ -182,7 +182,7 @@ export function Step3_Delivery({ deliveryData, setDeliveryData, orderLines }: St
                 <Label
                     htmlFor="del-partial"
                     className={cn(
-                        "card-accent-cmyk relative overflow-hidden flex items-center gap-4 rounded-md border bg-card p-4 hover:shadow-elevated transition-all cursor-pointer",
+                        "card-accent-cmyk relative overflow-hidden flex items-center gap-4 rounded-md border border-border/50 bg-card p-4 hover:shadow-elevated transition-all cursor-pointer shadow-card shadow-black/5",
                         "focus-visible:border-2 focus-visible:border-primary",
                         deliveryData.type === 'PARTIAL' ? "border-2 border-primary accent-visible" : "border"
                     )}
@@ -210,7 +210,7 @@ export function Step3_Delivery({ deliveryData, setDeliveryData, orderLines }: St
                             {isMixedMode && " Los servicios se cumplen en su totalidad según la fecha."}
                         </p>
                     </div>
-                    <div className="max-h-80 overflow-y-auto rounded-md border">
+                    <div className="max-h-80 overflow-y-auto rounded-md border border-border/50 shadow-card shadow-black/5">
                         <Table>
                             <TableHeader>
                                 <TableRow>

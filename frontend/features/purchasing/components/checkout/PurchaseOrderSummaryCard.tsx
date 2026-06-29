@@ -24,7 +24,7 @@ export function PurchaseOrderSummaryCard({
     const tax = isExempt ? 0 : PricingUtils.extractTax(total);
 
     return (
-        <div className="h-full flex flex-col bg-muted/20 border-l">
+        <div className="h-full flex flex-col bg-muted/20 border border-border/50 shadow-card shadow-black/5 rounded-md">
             <div className="flex-1 overflow-auto custom-scrollbar">
                 <div className="p-6 space-y-6">
                     <div className="space-y-4">
