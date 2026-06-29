@@ -1,16 +1,10 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { financeApi } from '../api/financeApi'
+import { financeApi, type Budget } from '../api/financeApi'
 import { toast } from 'sonner'
 import { FINANCE_KEYS } from './queryKeys'
 import { useRealtime } from '@/features/realtime'
 
-export interface Budget {
-    id: number
-    name: string
-    start_date: string
-    end_date: string
-    description?: string
-}
+export type { Budget }
 
 export function useBudgetDetailData(id: number | null) {
     return useQuery({
@@ -40,7 +34,7 @@ export function useBudgets() {
     const queryClient = useQueryClient()
     const { markLocalMutation } = useRealtime()
 
-    const { data: budgets, isLoading, refetch } = useQuery({
+    const { data, isLoading, refetch } = useQuery({
         queryKey: FINANCE_KEYS.budgets.lists(),
         queryFn: financeApi.getBudgets,
         staleTime: 5 * 60 * 1000,
@@ -74,7 +68,8 @@ export function useBudgets() {
     })
 
     return {
-        budgets: budgets ?? [],
+        page: data,
+        budgets: data?.results ?? [],
         isLoading,
         refetch,
         createBudget: createMutation.mutateAsync,

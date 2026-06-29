@@ -1,4 +1,13 @@
 import api, { pollTask } from '@/lib/api'
+import { toPage, type Page } from '@/lib/pagination'
+
+export interface Budget {
+    id: number
+    name: string
+    start_date: string
+    end_date: string
+    description?: string
+}
 
 export interface StatementParams {
     start_date?: string
@@ -24,8 +33,10 @@ async function fetchStatement(endpoint: string, params: StatementParams) {
 
 export const financeApi = {
     // ── Budgets ──
-    getBudgets: () =>
-        api.get('/accounting/budgets/').then(r => r.data),
+    getBudgets: async (): Promise<Page<Budget>> => {
+        const { data } = await api.get('/accounting/budgets/')
+        return toPage<Budget>(data, 1, 50)
+    },
     createBudget: (payload: Record<string, unknown>) =>
         api.post('/accounting/budgets/', payload).then(r => r.data),
     updateBudget: (id: number, payload: Record<string, unknown>) =>
