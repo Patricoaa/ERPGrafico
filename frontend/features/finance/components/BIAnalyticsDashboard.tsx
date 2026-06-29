@@ -5,12 +5,10 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { useBIAnalytics } from "../hooks/useBIAnalytics";
 import {TrendingUp, Package, DollarSign, ShoppingCart} from 'lucide-react';
 import { EmptyState, MoneyDisplay, SkeletonShell, StatCard, LineChart, BarChart, PieChart } from '@/components/shared';
-;
+
 import { formatCurrency } from "@/lib/money";
 import { type DateRange } from "react-day-picker";
 import { format } from "date-fns";
-
-import { PageContainer } from "@/components/shared"
 
 interface BIAnalyticsDashboardProps {
     date?: DateRange;
@@ -62,7 +60,6 @@ export const BIAnalyticsDashboard: React.FC<BIAnalyticsDashboardProps> = ({ date
 
     return (
         <SkeletonShell isLoading={isLoading} ariaLabel="Cargando analytics de negocio">
-            <PageContainer>
             {/* KPI Overview Cards */}
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
                 <StatCard
@@ -235,7 +232,6 @@ export const BIAnalyticsDashboard: React.FC<BIAnalyticsDashboardProps> = ({ date
                     </CardContent>
                 </Card>
             </div>
-        </PageContainer>
         </SkeletonShell>
     );
 };
