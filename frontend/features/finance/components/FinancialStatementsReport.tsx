@@ -212,7 +212,7 @@ export function FinancialStatementsReport({ activeTab }: FinancialStatementsRepo
     if (isError) {
         return (
             <PageContainer scrollable>
-                <div className="max-w-5xl mx-auto w-full pt-4">
+                <div className="w-full pt-4">
                     <EmptyState
                         context="finance"
                         title="Error al cargar estados financieros"
@@ -267,7 +267,7 @@ export function FinancialStatementsReport({ activeTab }: FinancialStatementsRepo
 
     return (
         <PageContainer scrollable>
-            <div className="max-w-5xl mx-auto w-full pt-4">
+            <div className="w-full pt-4">
                 <div className="flex flex-wrap items-center justify-between gap-4 mb-6 bg-card/60 backdrop-blur-md p-4 rounded-md border border-border/50 shadow-card shadow-black/5 transition-all">
                     <div className="flex items-center gap-3">
                         {/* ButtonGroup for Mapeo and Vista */}
