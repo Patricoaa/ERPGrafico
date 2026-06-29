@@ -274,7 +274,7 @@ export function TaskInbox() {
             <Card
                 key={task.id}
                 className={cn(
-                    "card-interactive card-accent-cmyk p-3 cursor-pointer backdrop-blur-sm group rounded-md flex flex-col gap-3 border border-border",
+                    "card-interactive card-accent-cmyk p-3 cursor-pointer backdrop-blur-sm group rounded-md flex flex-col gap-3 border border-border/50 shadow-card shadow-black/5",
                     isCompleted && "opacity-50 grayscale-[0.5]"
                 )}
                 onClick={() => navigateToTask(task)}

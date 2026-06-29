@@ -109,7 +109,7 @@ export function PhaseCard({
 
     return (
         <Card className={cn(
-            "card-interactive card-accent-cmyk flex flex-col transition-all duration-300 relative group/card bg-card/50 backdrop-blur-sm rounded-md py-2 gap-2 border border-border",
+            "card-interactive card-accent-cmyk flex flex-col transition-all duration-300 relative group/card bg-card/50 backdrop-blur-sm rounded-md py-2 gap-2 border border-border/50 shadow-card shadow-black/5",
             open && collapsible && "accent-visible",
             isSuccess && "opacity-80 grayscale-[0.3] hover:opacity-100 hover:grayscale-0",
             isActive && "border-primary/30 bg-primary/5 shadow-primary/5",
