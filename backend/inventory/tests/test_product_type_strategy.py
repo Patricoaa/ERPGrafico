@@ -92,11 +92,11 @@ class TestStrategyProperties:
     @pytest.mark.parametrize(
         "strategy_cls,expected",
         [
-            (ConsumableStrategy, {"tracks_inventory": False, "can_have_bom": False, "requires_manufacturing_profile": False, "allows_stock_moves": False, "costing_method": "none", "supports_returns": True, "capitalizes_purchase_tax": True}),
-            (StorableStrategy, {"tracks_inventory": True, "can_have_bom": False, "requires_manufacturing_profile": False, "allows_stock_moves": True, "costing_method": "average", "supports_returns": True, "capitalizes_purchase_tax": True}),
-            (ManufacturableStrategy, {"tracks_inventory": True, "can_have_bom": True, "requires_manufacturing_profile": True, "allows_stock_moves": True, "costing_method": "average", "supports_returns": True, "capitalizes_purchase_tax": True}),
-            (ServiceStrategy, {"tracks_inventory": False, "can_have_bom": False, "requires_manufacturing_profile": False, "allows_stock_moves": False, "costing_method": "none", "supports_returns": False, "capitalizes_purchase_tax": False}),
-            (SubscriptionStrategy, {"tracks_inventory": False, "can_have_bom": False, "requires_manufacturing_profile": False, "allows_stock_moves": False, "costing_method": "none", "supports_returns": False, "capitalizes_purchase_tax": False}),
+            (ConsumableStrategy, {"tracks_inventory": False, "can_have_bom": False, "requires_manufacturing_profile": False, "allows_stock_moves": False, "costing_method": "none", "supports_returns": True}),
+            (StorableStrategy, {"tracks_inventory": True, "can_have_bom": False, "requires_manufacturing_profile": False, "allows_stock_moves": True, "costing_method": "average", "supports_returns": True}),
+            (ManufacturableStrategy, {"tracks_inventory": True, "can_have_bom": True, "requires_manufacturing_profile": True, "allows_stock_moves": True, "costing_method": "average", "supports_returns": True}),
+            (ServiceStrategy, {"tracks_inventory": False, "can_have_bom": False, "requires_manufacturing_profile": False, "allows_stock_moves": False, "costing_method": "none", "supports_returns": False}),
+            (SubscriptionStrategy, {"tracks_inventory": False, "can_have_bom": False, "requires_manufacturing_profile": False, "allows_stock_moves": False, "costing_method": "none", "supports_returns": False}),
         ],
     )
     def test_bool_properties(self, strategy_cls, expected):
@@ -238,4 +238,3 @@ class TestProductStrategyDelegation:
         strat = product.strategy
         assert isinstance(strat, ServiceStrategy)
         assert strat.supports_returns is False
-        assert strat.capitalizes_purchase_tax is False

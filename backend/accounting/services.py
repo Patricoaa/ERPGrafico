@@ -1437,53 +1437,32 @@ class AccountingMapper:
 
         if not is_tax_exempt:
             if is_boleta:
-                # BOLETAS: Tax is capitalized into inventory, Net goes to bridge
-                # Distribute tax by product type: inventory → asset, services → expense
+                # BOLETAS: Tax follows product cost flow — each strategy's
+                # get_asset_account() or get_expense_account() determines destination.
                 if invoice.total_tax > 0:
-                    product_tax = Decimal("0")
-                    service_tax = Decimal("0")
+                    tax_by_account: dict[int, dict] = {}
+
                     for line in order.lines.all():
                         line_tax = (line.subtotal * (line.tax_rate / Decimal("100.0"))).quantize(
                             Decimal("1"), rounding="ROUND_HALF_UP"
                         )
-                        if hasattr(line, "product") and not line.product.strategy.capitalizes_purchase_tax:
-                            service_tax += line_tax
-                        else:
-                            product_tax += line_tax
+                        if line_tax > 0 and hasattr(line, "product"):
+                            strategy = line.product.strategy
+                            account = strategy.get_asset_account(line.product)
+                            if account is not None:
+                                label = "IVA Capitalizado - Productos"
+                            else:
+                                account = strategy.get_expense_account(line.product) or settings.default_expense_account
+                                label = "IVA No Recuperable - Servicios"
+                            if account:
+                                key = account.pk
+                                if key not in tax_by_account:
+                                    tax_by_account[key] = {"account": account, "debit": Decimal("0"), "label": label}
+                                tax_by_account[key]["debit"] += line_tax
 
-                    if product_tax > 0:
-                        inv_account = (
-                            settings.storable_inventory_account
-                            or settings.manufacturable_inventory_account
-                        )
-                        if not inv_account:
-                            raise ValidationError(
-                                "Falta cuenta de inventario para capitalizar IVA de Boleta. "
-                                "Configure storable_inventory_account o manufacturable_inventory_account."
-                            )
-                        items.append(
-                            {
-                                "account": inv_account,
-                                "debit": product_tax,
-                                "credit": Decimal("0.00"),
-                                "label": "IVA Capitalizado - Productos",
-                            }
-                        )
-
-                    if service_tax > 0:
-                        exp_account = (
-                            settings.default_service_expense_account
-                            or settings.default_expense_account
-                        )
-                        if exp_account:
-                            items.append(
-                                {
-                                    "account": exp_account,
-                                    "debit": service_tax,
-                                    "credit": Decimal("0.00"),
-                                    "label": "IVA No Recuperable - Servicios",
-                                }
-                            )
+                    for entry in tax_by_account.values():
+                        if entry["debit"] > 0:
+                            items.append(entry)
             else:
                 # FACTURAS: Record VAT as tax receivable
                 if invoice.total_tax > 0 and tax_account:

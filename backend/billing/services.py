@@ -603,9 +603,9 @@ class BillingService:
         # Tax-exempt boletas have no IVA to capitalize
         if dte_type == Invoice.DTEType.BOLETA:
             for line in order.lines.all():
-                # Skip services/subscriptions — IVA on non-inventory products
-                # goes to expense, not capitalized into inventory
-                if not line.product.strategy.capitalizes_purchase_tax:
+                # Skip products without an asset account (services/subscriptions)
+                # — IVA goes to expense, not capitalized into inventory
+                if line.product.strategy.get_asset_account(line.product) is None:
                     continue
                 line_tax = (line.subtotal * (line.tax_rate / Decimal("100.0"))).quantize(
                     Decimal("1"), rounding="ROUND_HALF_UP"
