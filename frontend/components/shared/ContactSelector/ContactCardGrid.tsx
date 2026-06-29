@@ -57,7 +57,7 @@ export function ContactCardGrid({ selectedId, onSelect, placeholder = "Buscar co
                             <Card
                                 key={contact.id}
                                 className={cn(
-                                    "border hover:shadow-elevated transition-all overflow-hidden flex flex-col rounded-md bg-card card-accent-cmyk cursor-pointer",
+                                    "border border-border/50 hover:shadow-elevated transition-all overflow-hidden flex flex-col rounded-md bg-card card-accent-cmyk cursor-pointer shadow-card shadow-black/5",
                                     "focus-visible:border-2 focus-visible:border-primary",
                                     isSelected
                                         ? "border-2 border-primary accent-visible"

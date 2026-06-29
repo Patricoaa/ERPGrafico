@@ -269,7 +269,7 @@ export function PaymentMethodSelector({
                             <label
                                 htmlFor={`method-${m.id}`}
                                 className={cn(
-                                    "card-accent-cmyk relative overflow-hidden flex flex-col rounded-md border bg-card hover:shadow-elevated transition-all h-full cursor-pointer",
+                                    "card-accent-cmyk relative overflow-hidden flex flex-col rounded-md border border-border/50 bg-card hover:shadow-elevated transition-all h-full cursor-pointer shadow-card shadow-black/5",
                                     "focus-visible:border-2 focus-visible:border-primary",
                                     "[&:has([data-state=checked])]:border-2 [&:has([data-state=checked])]:border-primary",
                                     paymentData.method === m.id ? 'border-2 border-primary accent-visible' : 'border',
