@@ -6,7 +6,7 @@ import { usePOS } from '../contexts/POSProvider'
 import { posApi } from '../api/posApi'
 import type { Product, StockLimits, Category } from '../types'
 import { toast } from 'sonner'
-import { useRealtime } from '@/features/realtime'
+import { useRealtime, useEntitySubscription } from '@/features/realtime'
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { inventoryApi } from '@/features/inventory'
@@ -28,13 +28,25 @@ export function useProducts() {
     } = usePOS()
     const { markLocalMutation } = useRealtime()
 
+    useEntitySubscription('inventory.product', [
+        POS_KEYS.products.all,
+    ])
+
+    useEntitySubscription('inventory.productcategory', [
+        POS_KEYS.categories.all,
+    ])
+
+    useEntitySubscription('inventory.uom', [
+        POS_KEYS.uoms.all,
+    ])
+
     const [searchTerm, setSearchTerm] = useState("")
     const [selectedCategoryId, setSelectedCategoryId] = useState<number | null>(null)
     const [limits, setLimits] = useState<StockLimits>({})
 
     // 1. Fetch Products with React Query (Shared Cache)
     const { data: products = EMPTY_ARRAY, isLoading: loadingProducts } = useQuery({
-        queryKey: ['products', { is_active: true, can_be_sold: true }],
+        queryKey: POS_KEYS.products.list({ is_active: true, can_be_sold: true }),
         queryFn: async () => {
             const page = await inventoryApi.getProducts({
                 is_active: true,
@@ -119,7 +131,7 @@ export function useProducts() {
     const refreshProducts = useCallback(async (silent = false) => {
         if (!silent) setLoading(true)
         try {
-            await queryClient.invalidateQueries({ queryKey: ['products'] })
+            await queryClient.invalidateQueries({ queryKey: POS_KEYS.products.all })
             if (!silent) {
                 toast.success("Productos actualizados")
             }
@@ -138,9 +150,7 @@ export function useProducts() {
             markLocalMutation()
             const isFavorite = (data as Record<string, unknown>).is_favorite as boolean
             
-            // Standard FSD invalidation
-            queryClient.invalidateQueries({ queryKey: POS_KEYS.products.lists() })
-            queryClient.invalidateQueries({ queryKey: POS_KEYS.products.details() })
+            queryClient.invalidateQueries({ queryKey: POS_KEYS.products.all })
             
             toast.success(isFavorite ? "Añadido a favoritos" : "Eliminado de favoritos")
         },
