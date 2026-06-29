@@ -341,6 +341,8 @@ class TreasuryService:
 
         amount = movement.amount
         allocated = getattr(movement, "allocated_to", None)
+        if allocated is None:
+            allocated = movement.purchase_order or movement.sale_order or movement.invoice
         is_sale = allocated is not None and allocated.is_sale_document()
 
         if movement.movement_type == TreasuryMovement.Type.INBOUND:
