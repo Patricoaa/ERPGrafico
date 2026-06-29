@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
-import { EmptyState, MoneyDisplay, PageContainer, PieChart, BarChart, LineChart, SkeletonShell, StatCard } from '@/components/shared'
+import { EmptyState, MoneyDisplay, PieChart, BarChart, LineChart, SkeletonShell, StatCard } from '@/components/shared'
 import { formatMoney } from "@/lib/money"
 import { useAnalysis } from "../hooks/useAnalysis";
 import { type DateRange } from "react-day-picker";
@@ -91,7 +91,6 @@ export const RatiosDashboard: React.FC<RatiosDashboardProps> = ({ date, showComp
 
     return (
         <SkeletonShell isLoading={isLoading} ariaLabel="Cargando ratios financieros">
-            <PageContainer>
             {/* Key Metrics Cards */}
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
                 <StatCard
@@ -306,7 +305,6 @@ export const RatiosDashboard: React.FC<RatiosDashboardProps> = ({ date, showComp
                     </CardContent>
                 </Card>
             </div>
-        </PageContainer>
         </SkeletonShell>
     );
 };
