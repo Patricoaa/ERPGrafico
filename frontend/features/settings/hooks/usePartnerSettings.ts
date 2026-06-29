@@ -2,14 +2,14 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import { settingsApi } from '../api/settingsApi'
 import { ACCOUNTING_SETTINGS_QUERY_KEY } from './useAccountingSettings'
-import type { PartnerSettings, PartnerSettingsUpdatePayload } from '../types'
+import type { PartnerSettings, PartnerSettingsUpdatePayload, AccountingSettings } from '../types'
 import { useRealtime } from '@/features/realtime'
 
 interface UsePartnerSettingsReturn {
     settings: PartnerSettings
     isLoading: boolean
     saving: boolean
-    updateSettings: (payload: PartnerSettingsUpdatePayload) => Promise<void>
+    updateSettings: (payload: PartnerSettingsUpdatePayload) => Promise<AccountingSettings>
     refetch: () => Promise<unknown>
 }
 
