@@ -2,7 +2,6 @@
 
 import React, { useState, useEffect } from "react"
 
-import { Card, CardContent } from "@/components/ui/card"
 import { EmptyState, FadeIn, MoneyDisplay, ReportTable, SkeletonShell, ReportToolbar } from '@/components/shared'
 import { PageContainer } from "@/components/shared"
 import { formatMoney } from "@/lib/money"
@@ -272,10 +271,9 @@ export function FinancialStatementsReport({ activeTab }: FinancialStatementsRepo
                 <FadeIn key={activeTab}>
                     <div className="mt-0 outline-none ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
                         {activeTab === "bs" && (
-                            <Card className="rounded-md border bg-card/60 backdrop-blur-md shadow-elevated shadow-black/5 ring-1 ring-border/50 overflow-hidden transition-all duration-300">
-                                <CardContent className="p-6 md:p-10 pt-10">
-                                    <ReportHeader title="Situación Financiera" dateRange={date} compDateRange={compDate} showComparison={showComparison} headerFormat={headerFormat} accent="primary" />
-                                    {bsData ? (
+                            <>
+                                <ReportHeader title="Situación Financiera" dateRange={date} compDateRange={compDate} showComparison={showComparison} headerFormat={headerFormat} accent="primary" />
+                                {bsData ? (
                                         <div className="space-y-8">
                                             <div className="space-y-8">
                                                 {(() => {
@@ -332,17 +330,15 @@ export function FinancialStatementsReport({ activeTab }: FinancialStatementsRepo
                                             </div>
                                         </SkeletonShell>
                                     )}
-                                </CardContent>
-                            </Card>
-                        )}
+                                </>
+                            )}
                     </div>
 
                     <div className="mt-0 outline-none ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
                         {activeTab === "pl" && (
-                            <Card className="rounded-md border bg-card/60 backdrop-blur-md shadow-elevated shadow-black/5 ring-1 ring-border/50 overflow-hidden transition-all duration-300">
-                                <CardContent className="p-6 md:p-10 pt-10">
-                                    <ReportHeader title="Estado de Resultados" dateRange={date} compDateRange={compDate} showComparison={showComparison} headerFormat={headerFormat} accent="success" />
-                                    {plData ? (
+                            <>
+                                <ReportHeader title="Estado de Resultados" dateRange={date} compDateRange={compDate} showComparison={showComparison} headerFormat={headerFormat} accent="success" />
+                                {plData ? (
                                         <div className="space-y-8">
                                             {(() => {
                                                 const d = plData as PLData;
@@ -397,17 +393,15 @@ export function FinancialStatementsReport({ activeTab }: FinancialStatementsRepo
                                             </div>
                                         </SkeletonShell>
                                     )}
-                                </CardContent>
-                            </Card>
-                        )}
+                                </>
+                            )}
                     </div>
 
                     <div className="mt-0 outline-none ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
                         {activeTab === "cf" && (
-                            <Card className="rounded-md border bg-card/60 backdrop-blur-md shadow-elevated shadow-black/5 ring-1 ring-border/50 overflow-hidden transition-all duration-300">
-                                <CardContent className="p-6 md:p-10 pt-10">
-                                    <ReportHeader title="Estado de Flujo de Efectivo" dateRange={date} compDateRange={compDate} showComparison={showComparison} headerFormat={headerFormat} accent="info" />
-                                    {cfData ? (
+                            <>
+                                <ReportHeader title="Estado de Flujo de Efectivo" dateRange={date} compDateRange={compDate} showComparison={showComparison} headerFormat={headerFormat} accent="info" />
+                                {cfData ? (
                                         <CashFlowTable
                                             data={cfData as CashFlowData}
                                             embedded
@@ -423,9 +417,8 @@ export function FinancialStatementsReport({ activeTab }: FinancialStatementsRepo
                                             </div>
                                         </SkeletonShell>
                                     )}
-                                </CardContent>
-                            </Card>
-                        )}
+                                </>
+                            )}
                     </div>
                 </FadeIn>
             </div>
