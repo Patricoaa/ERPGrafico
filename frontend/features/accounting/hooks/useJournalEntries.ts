@@ -81,6 +81,36 @@ export function useJournalEntries(filters?: FilterState & { page?: number; page_
     }
 }
 
+export function usePostJournalEntry(options?: { onSuccess?: () => void }) {
+    const queryClient = useQueryClient()
+    const { markLocalMutation } = useRealtime()
+    return useMutation({
+        mutationFn: (id: number) => accountingApi.postEntry(id),
+        onSuccess: () => {
+            markLocalMutation()
+            queryClient.invalidateQueries({ queryKey: JOURNAL_ENTRIES_QUERY_KEY })
+            toast.success('Asiento publicado exitosamente')
+            options?.onSuccess?.()
+        },
+        onError: (error: Error) => showApiError(error, 'Error al publicar el asiento'),
+    })
+}
+
+export function useReverseJournalEntry(options?: { onSuccess?: () => void }) {
+    const queryClient = useQueryClient()
+    const { markLocalMutation } = useRealtime()
+    return useMutation({
+        mutationFn: (id: number) => accountingApi.reverseEntry(id),
+        onSuccess: () => {
+            markLocalMutation()
+            queryClient.invalidateQueries({ queryKey: JOURNAL_ENTRIES_QUERY_KEY })
+            toast.success('Asiento de reversión creado exitosamente')
+            options?.onSuccess?.()
+        },
+        onError: (error: Error) => showApiError(error, 'Error al reversar el asiento'),
+    })
+}
+
 export function useDeleteJournalEntry(options?: { onSuccess?: () => void }) {
     const queryClient = useQueryClient()
     const { markLocalMutation } = useRealtime()

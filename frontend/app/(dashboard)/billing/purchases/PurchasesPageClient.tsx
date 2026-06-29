@@ -8,7 +8,6 @@ import { type ColumnDef } from "@tanstack/react-table"
 import { Button } from "@/components/ui/button"
 import { ActionConfirmModal, Chip, DocumentCompletionModal, MoneyDisplay } from '@/components/shared'
 import { FileBadge, History, FileEdit, MoreVertical } from "lucide-react"
-import api from "@/lib/api"
 
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 import { toast } from "sonner"
@@ -71,7 +70,7 @@ interface PurchasesPageClientProps {
 export default function PurchasesPageClient({ initialInvoices }: PurchasesPageClientProps) {
     const { filters, clearAll, isFiltered } = useSmartSearch(purchaseInvoiceSearchDef)
 
-    const { invoices, isLoading: isDataLoading, isRefetching, refetch } = usePurchaseInvoices({
+    const { invoices, isLoading: isDataLoading, isRefetching, refetch, annulInvoice, confirmInvoice, makePayment, deleteInvoice } = usePurchaseInvoices({
         filters,
         initialData: initialInvoices,
     })
@@ -123,9 +122,7 @@ export default function PurchasesPageClient({ initialInvoices }: PurchasesPageCl
 
     const deleteConfirm = useConfirmAction<number>(async (id) => {
         try {
-            await api.delete(`/billing/invoices/${id}/`)
-            toast.success("Documento eliminado correctamente")
-            refetch()
+            await deleteInvoice(id)
         } catch (error: unknown) {
             console.error("Error deleting document:", error)
             showApiError(error, "No se pudo eliminar el documento")
@@ -136,9 +133,7 @@ export default function PurchasesPageClient({ initialInvoices }: PurchasesPageCl
 
     const forceAnnulConfirm = useConfirmAction<number>(async (id) => {
         try {
-            await api.post(`/billing/invoices/${id}/annul/`, { force: true })
-            toast.success("Documento anulado correctamente.")
-            refetch()
+            await annulInvoice({ id, force: true })
         } catch (error: unknown) {
             toast.error(getErrorMessage(error) || "Error al anular el documento.")
         }
@@ -146,9 +141,7 @@ export default function PurchasesPageClient({ initialInvoices }: PurchasesPageCl
 
     const annulConfirm = useConfirmAction<number>(async (id) => {
         try {
-            await api.post(`/billing/invoices/${id}/annul/`, { force: false })
-            toast.success("Documento anulado correctamente.")
-            refetch()
+            await annulInvoice({ id, force: false })
         } catch (error: unknown) {
             console.error("Error annulling invoice:", error)
             const errorMessage = getErrorMessage(error) || ""
@@ -189,10 +182,8 @@ export default function PurchasesPageClient({ initialInvoices }: PurchasesPageCl
             if (data.documentDate) formData.append('document_date', data.documentDate)
             if (data.documentAttachment) formData.append('document_attachment', data.documentAttachment as Blob)
 
-            await api.post('/treasury/payments/', formData)
-            toast.success("Operación registrada correctamente")
+            await makePayment(formData)
             setPayingDoc(null)
-            refetch()
         } catch (error: unknown) {
             console.error("Error registering payment:", error)
             showApiError(error, "Error al registrar la operación")
@@ -480,9 +471,7 @@ export default function PurchasesPageClient({ initialInvoices }: PurchasesPageCl
                         invoiceId={completingDoc.id}
                         invoiceType={completingDoc.dte_type}
                         onComplete={async (invoiceId, formData) => {
-                            await api.post(`/billing/invoices/${invoiceId}/confirm/`, formData, {
-                                headers: { 'Content-Type': 'multipart/form-data' }
-                            })
+                            await confirmInvoice({ id: invoiceId, payload: formData })
                         }}
                         onSuccess={refetch}
                     />

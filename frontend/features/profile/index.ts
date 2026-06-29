@@ -1,4 +1,7 @@
-export * from './components'
+export { EmployeePayrollPreview, PartnerProfileTab, ProfileView, ProfileSidePanel } from './components'
+
+export type { ProfileSidePanelProps } from './components'
+
 export { useThemeSync } from './hooks/useThemeSync'
 export { useProfile } from './hooks/useProfile'
 export { usePartnerStatement } from './hooks/usePartnerStatement'

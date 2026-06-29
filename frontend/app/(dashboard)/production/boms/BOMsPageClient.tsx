@@ -7,15 +7,11 @@ import { type ColumnDef } from "@tanstack/react-table"
 import { ActionConfirmModal, DataTableColumnHeader, DataTableView, EntityCard, StatusBadge, Chip } from '@/components/shared'
 import { DataCell } from '@/components/shared'
 import { Layers } from "lucide-react"
-import api from "@/lib/api"
-import { BOMDrawer } from "@/features/production"
-import { toast } from "sonner"
+import { BOMDrawer, useAllBOMs, useBOM, useDeleteBomMutation } from "@/features/production"
 import { bomActions, type BOMActionsCtx } from "./bomActions"
 
 import { ToolbarCreateButton, SmartSearchBar, useSmartSearch, SegmentationBar, useSegmentation } from "@/components/shared"
 import { useConfirmAction } from "@/hooks/useConfirmAction"
-
-import { useAllBOMs } from "@/features/production"
 import { bomSearchDef } from "@/features/production/searchDef"
 import { bomSegDef } from "@/features/production/segmentationDef"
 
@@ -35,7 +31,10 @@ interface BOMsPageClientProps {
 
 export default function BOMsPageClient({ initialBoms }: BOMsPageClientProps) {
     const [isFormOpen, setIsFormOpen] = useState(false)
-    const [editingBom, setEditingBom] = useState<BOM | null>(null)
+    const [editingBomId, setEditingBomId] = useState<number | null>(null)
+    const deleteBomMutation = useDeleteBomMutation()
+    const { data: editingBomData } = useBOM(editingBomId ?? undefined)
+
     const searchParams = useSearchParams()
     const router = useRouter()
     const isNewModalOpen = searchParams.get("modal") === "new"
@@ -50,7 +49,7 @@ export default function BOMsPageClient({ initialBoms }: BOMsPageClientProps) {
         if (isNewModalOpen) {
             requestAnimationFrame(() => {
                 setIsFormOpen(true)
-                setEditingBom(null)
+                setEditingBomId(null)
             })
         }
     }, [isNewModalOpen])
@@ -58,7 +57,7 @@ export default function BOMsPageClient({ initialBoms }: BOMsPageClientProps) {
     const handleFormClose = (open: boolean) => {
         setIsFormOpen(open)
         if (!open) {
-            setEditingBom(null)
+            setEditingBomId(null)
             if (isNewModalOpen) {
                 const params = new URLSearchParams(searchParams.toString())
                 params.delete("modal")
@@ -68,25 +67,15 @@ export default function BOMsPageClient({ initialBoms }: BOMsPageClientProps) {
     }
 
     const deleteConfirm = useConfirmAction<number>(async (id) => {
-        try {
-            await api.delete(`/production/boms/${id}/`)
-            toast.success("Lista de Materiales eliminada correctamente")
-            refetchBoms()
-        } catch {
-            toast.error("Error al eliminar Lista de Materiales")
-        }
+        await deleteBomMutation.mutateAsync(id)
+        refetchBoms()
     })
 
     const handleDelete = (id: number) => deleteConfirm.requestConfirm(id)
 
-    const handleEdit = async (id: number) => {
-        try {
-            const response = await api.get(`/production/boms/${id}/`)
-            setEditingBom(response.data)
-            setIsFormOpen(true)
-        } catch {
-            toast.error("Error al cargar detalles de la Lista de Materiales")
-        }
+    const handleEdit = (id: number) => {
+        setEditingBomId(id)
+        setIsFormOpen(true)
     }
 
     const actionsCtx: BOMActionsCtx = {
@@ -221,11 +210,11 @@ export default function BOMsPageClient({ initialBoms }: BOMsPageClientProps) {
                 open={isFormOpen}
                 onOpenChange={handleFormClose}
                 onSuccess={refetchBoms}
-                bomToEdit={editingBom || undefined}
-                product={editingBom ? {
-                    id: editingBom.product,
-                    name: (editingBom as BOMListItem).product_name,
-                    code: (editingBom as BOMListItem).product_code
+                bomToEdit={editingBomData as BOM | undefined}
+                product={editingBomData ? {
+                    id: (editingBomData as unknown as { product: number }).product,
+                    name: (editingBomData as unknown as BOMListItem).product_name,
+                    code: (editingBomData as unknown as BOMListItem).product_code
                 } as unknown as ProductMinimal : undefined}
             />
 

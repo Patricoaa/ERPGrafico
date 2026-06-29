@@ -1,3 +1,17 @@
-export * from './types'
-export * from './api/ordersApi'
+export type {
+  WorkOrderSummary,
+  InvoiceSummary,
+  DeliverySummary,
+  StockMoveSummary,
+  NoteSummary,
+  OrderLine,
+  Payment,
+  WorkOrder,
+  RelatedDocuments,
+  PhaseDocument,
+  Order,
+} from './types'
+
+export { ordersApi } from './api/ordersApi'
+
 export { getHubStatuses, getNoteHubStatuses } from './utils/status'

@@ -26,6 +26,7 @@ export interface AccountFilters {
 }
 
 export interface LedgerData {
+    account?: { id: number, code: string, name: string }
     movements: LedgerMovement[]
     opening_balance: number
     closing_balance: number

@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import api from '@/lib/api'
 import { toast } from 'sonner'
 import { type BOM, type ProductMinimal } from '../types'
+import { productionApi } from '../api/productionApi'
 import { BOMS_QUERY_KEY, PRODUCTS_QUERY_KEY } from '@/features/inventory'
 import { useRealtime } from '@/features/realtime'
 import type { FilterState } from '@/components/shared'
@@ -11,6 +12,31 @@ export const ALL_BOMS_QUERY_KEY = ['all-boms']
 // Re-export for backward compat
 export { BOMS_QUERY_KEY }
 export const VARIANTS_QUERY_KEY = ['product-variants']
+
+export function useBOM(id: number | undefined) {
+    return useQuery({
+        queryKey: [...ALL_BOMS_QUERY_KEY, 'detail', id],
+        queryFn: () => productionApi.getBOM(id!),
+        enabled: !!id,
+        staleTime: 2 * 60 * 1000,
+    })
+}
+
+export function useDeleteBomMutation() {
+    const queryClient = useQueryClient()
+    const { markLocalMutation } = useRealtime()
+    return useMutation({
+        mutationFn: (id: number) => productionApi.deleteBom(id),
+        onSuccess: () => {
+            markLocalMutation()
+            queryClient.invalidateQueries({ queryKey: BOMS_QUERY_KEY })
+            queryClient.invalidateQueries({ queryKey: ALL_BOMS_QUERY_KEY })
+            queryClient.invalidateQueries({ queryKey: PRODUCTS_QUERY_KEY })
+            toast.success('Lista de Materiales eliminada')
+        },
+        onError: () => toast.error('Error al eliminar Lista de Materiales'),
+    })
+}
 
 export function useBOMs(params: { product_id?: string | number, parent_id?: string | number }) {
     const queryClient = useQueryClient()

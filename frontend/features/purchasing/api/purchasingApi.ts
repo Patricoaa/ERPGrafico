@@ -83,6 +83,10 @@ export const purchasingApi = {
         await api.delete(`/purchasing/orders/${id}/`)
     },
 
+    annulOrder: async (id: number, payload: { force: boolean, reason?: string }): Promise<void> => {
+        await api.post(`/purchasing/orders/${id}/annul/`, payload)
+    },
+
     partialReceive: async (orderId: number, payload: PartialReceivePayload): Promise<void> => {
         await api.post(`/purchasing/orders/${orderId}/partial_receive/`, payload)
     },

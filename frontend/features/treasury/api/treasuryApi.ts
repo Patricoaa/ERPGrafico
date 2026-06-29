@@ -303,6 +303,14 @@ export const treasuryApi = {
         return response.data
     },
 
+    unmatchStatementLine: async (lineId: number): Promise<void> => {
+        await api.post(`/treasury/statement-lines/${lineId}/unmatch/`)
+    },
+
+    confirmStatement: async (id: number): Promise<void> => {
+        await api.post(`/treasury/statements/${id}/confirm/`)
+    },
+
     // ========== Unbilled Charges (Credit Card) ==========
 
     getUnbilledCharges: async (

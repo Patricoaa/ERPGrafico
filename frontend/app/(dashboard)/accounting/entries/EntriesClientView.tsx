@@ -6,8 +6,7 @@ import {
 } from "@tanstack/react-table"
 
 import { toast } from "sonner"
-import { JournalEntryDrawer } from "@/features/accounting"
-import api from "@/lib/api"
+import { JournalEntryDrawer, usePostJournalEntry, useReverseJournalEntry, useDeleteJournalEntry } from "@/features/accounting"
 
 import { DataTableView, DataTableColumnHeader, EntityCard } from '@/components/shared'
 import { DataCell, Chip } from '@/components/shared'
@@ -120,39 +119,25 @@ export default function EntriesPage({ externalOpen, onExternalOpenChange, create
         }
     }
 
+    const postMutation = usePostJournalEntry()
+    const deleteMutation = useDeleteJournalEntry()
+    const reverseMutation = useReverseJournalEntry()
+
     const handlePost = async (id: number) => {
-        try {
-            await api.post(`/accounting/entries/${id}/post_entry/`)
-            toast.success("Asiento publicado exitosamente")
-            refetch()
-        } catch (error) {
-            console.error("Error posting entry:", error)
-            toast.error("Error al publicar el asiento")
-        }
+        await postMutation.mutateAsync(id)
+        refetch()
     }
 
     const handleDelete = async (id: number) => {
         if (!confirm("¿Está seguro de eliminar este asiento?")) return
-        try {
-            await api.delete(`/accounting/entries/${id}/`)
-            toast.success("Asiento eliminado exitosamente")
-            refetch()
-        } catch (error) {
-            console.error("Error deleting entry:", error)
-            toast.error("Error al eliminar el asiento")
-        }
+        await deleteMutation.mutateAsync(id)
+        refetch()
     }
 
     const handleReverse = async (id: number) => {
         if (!confirm("¿Está seguro de reversar este asiento? Se creará un asiento de reversión.")) return
-        try {
-            await api.post(`/accounting/entries/${id}/reverse_entry/`)
-            toast.success("Asiento de reversión creado exitosamente")
-            refetch()
-        } catch (error) {
-            console.error("Error reversing entry:", error)
-            toast.error("Error al reversar el asiento")
-        }
+        await reverseMutation.mutateAsync(id)
+        refetch()
     }
 
     const journalEntryActionsCtx: JournalEntryActionsCtx = {

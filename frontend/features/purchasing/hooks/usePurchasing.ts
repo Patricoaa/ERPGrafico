@@ -40,6 +40,19 @@ export function usePurchasingOrders(filters?: FilterState & { page?: number, pag
         },
     })
 
+    const annulMutation = useMutation({
+        mutationFn: ({ id, force, reason }: { id: number, force: boolean, reason?: string }) =>
+            purchasingApi.annulOrder(id, { force, reason }),
+        onSuccess: () => {
+            markLocalMutation()
+            queryClient.invalidateQueries({ queryKey: PURCHASING_KEYS.all })
+            toast.success('Orden de Compra anulada correctamente.')
+        },
+        onError: (error: Error) => {
+            console.error("Error annulling order", error)
+        }
+    })
+
     return {
         page: query.data,
         orders,
@@ -47,6 +60,8 @@ export function usePurchasingOrders(filters?: FilterState & { page?: number, pag
         isRefetching,
         refetch,
         deleteOrder: deleteMutation.mutateAsync,
+        annulOrder: annulMutation.mutateAsync,
+        isAnnulling: annulMutation.isPending,
     }
 }
 

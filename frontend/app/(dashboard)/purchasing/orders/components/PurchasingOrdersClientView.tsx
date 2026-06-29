@@ -9,8 +9,8 @@ import type { AnalyticsPanelConfig } from '@/components/shared'
 import { type ColumnDef } from "@tanstack/react-table"
 import { Button } from "@/components/ui/button"
 import { ArrowRight, ArrowLeft, BarChart3, Building2, DollarSign, Wallet, CreditCard, ShoppingBag, Hash } from "lucide-react"
-import api from "@/lib/api"
 import { PurchaseOrderModal, DocumentRegistrationModal, PurchaseCheckoutWizard, usePurchasingOrders, usePurchasingNotes, purchaseOrderSearchDef, usePurchasingAnalyticsData } from "@/features/purchasing"
+import { billingApi } from "@/features/billing"
 import { purchaseOrderSegDef } from "@/features/purchasing/segmentationDef"
 import type { PurchaseOrderAPI } from "@/features/purchasing"
 import type { Page } from '@/lib/pagination'
@@ -55,7 +55,7 @@ export function PurchasingOrdersClientView({ viewMode, externalOpenCheckout, cre
     const isFiltered = isTextFiltered || isSegFiltered
     const [pageState, setPageState] = useState({ pageIndex: 0, pageSize: 20 })
     const allFilters = { ...(textFilters as any), ...(segFilters as any), page: pageState.pageIndex + 1, page_size: pageState.pageSize }
-    const { page, orders, isLoading: isLoadingOrders, isRefetching, refetch: fetchOrders, deleteOrder } = usePurchasingOrders(allFilters, initialOrders ? { results: initialOrders, count: initialOrders.length } as Page<PurchaseOrderAPI> : undefined)
+    const { page, orders, isLoading: isLoadingOrders, isRefetching, refetch: fetchOrders, deleteOrder, annulOrder } = usePurchasingOrders(allFilters, initialOrders ? { results: initialOrders, count: initialOrders.length } as Page<PurchaseOrderAPI> : undefined)
     // TODO: migrate purchasing notes to Page<T>
     const { notes, isLoading: isLoadingNotes } = usePurchasingNotes(initialNotes)
 
@@ -348,9 +348,7 @@ export function PurchasingOrdersClientView({ viewMode, externalOpenCheckout, cre
 
     const forceAnnulConfirm = useConfirmAction<number>(async (id) => {
         try {
-            await api.post(`/purchasing/orders/${id}/annul/`, { force: true })
-            toast.success("Orden de Compra anulada correctamente.")
-            fetchOrders()
+            await annulOrder({ id, force: true })
         } catch (error: unknown) {
             toast.error(getErrorMessage(error) || "Error al anular la orden de compra.")
         }
@@ -358,9 +356,7 @@ export function PurchasingOrdersClientView({ viewMode, externalOpenCheckout, cre
 
     const annulConfirm = useConfirmAction<number>(async (id) => {
         try {
-            await api.post(`/purchasing/orders/${id}/annul/`, { force: false })
-            toast.success("Orden de Compra anulada correctamente.")
-            fetchOrders()
+            await annulOrder({ id, force: false })
         } catch (error: unknown) {
             console.error("Error annulling order:", error)
             const errorMessage = getErrorMessage(error) || ""
@@ -651,9 +647,7 @@ export function PurchasingOrdersClientView({ viewMode, externalOpenCheckout, cre
                         contactId={invoicingOrder?.supplier || ((orders as unknown as PurchaseOrder[]).find((o) => o.related_documents?.invoices?.some((i: Record<string, unknown>) => i.id === completingInvoice.id))?.supplier ?? undefined)}
                         isPurchase={true}
                         onComplete={async (invoiceId, formData) => {
-                            await api.post(`/billing/invoices/${invoiceId}/confirm/`, formData, {
-                                headers: { 'Content-Type': 'multipart/form-data' }
-                            })
+                            await billingApi.confirmInvoice(invoiceId, formData)
                         }}
                         onSuccess={fetchOrders}
                     />
@@ -687,9 +681,7 @@ export function PurchasingOrdersClientView({ viewMode, externalOpenCheckout, cre
                         contactId={invoicingOrder?.supplier || ((orders as unknown as PurchaseOrder[]).find((o) => o.related_documents?.invoices?.some((i: Record<string, unknown>) => i.id === selectedInvoice.id))?.supplier ?? undefined)}
                         isPurchase={true}
                         onComplete={async (invoiceId, formData) => {
-                            await api.post(`/billing/invoices/${invoiceId}/confirm/`, formData, {
-                                headers: { 'Content-Type': 'multipart/form-data' }
-                            })
+                            await billingApi.confirmInvoice(invoiceId, formData)
                         }}
                         onSuccess={fetchOrders}
                     />
