@@ -11,7 +11,7 @@ import { posSessionActions, type POSSessionActionsCtx } from "@/features/sales/p
 import { toast } from "sonner"
 import { POSReport, type POSReportData } from "@/features/pos/components/POSReport"
 import { SessionCloseModal } from "@/features/pos/components/SessionCloseModal"
-import type { POSSession as POSSessionModal } from "@/types/pos"
+import type { POSSession as POSSessionModal } from "@/features/pos"
 import { fetchPOSSessionSummary } from "@/features/pos/hooks/usePOSSessions"
 
 export interface POSSession {

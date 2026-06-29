@@ -1,7 +1,7 @@
 // Validation Utilities
 // Validation rules and helpers for POS
 
-import type { CartItem, Product } from '@/types/pos'
+import type { CartItem, Product } from '../types'
 
 /**
  * Validate and sanitize quantity input

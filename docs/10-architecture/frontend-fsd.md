@@ -64,6 +64,52 @@ frontend/
 
 Promotion requires: (a) stable API signature, (b) tests, (c) entry in component-contracts or hook-contracts.
 
+## Sub-folder within a feature
+
+A feature may grow a sub-folder when the sub-domain has enough internal complexity to warrant its own boundary. This is not a license to nest arbitrarily — use the criteria below.
+
+### Criteria — all 3 must be met
+
+1. **≥3 hooks** specific to the sub-domain (not general feature hooks).
+2. **≥5 components** that are only meaningful within the sub-domain (not shared across the feature).
+3. **Own lifecycle or state machine** — the sub-domain has internal transitions (e.g. `draft → confirmed → reconciled`) distinct from the parent feature.
+
+### Current cases
+
+| Sub-folder | Feature | Meets criteria? | Notes |
+|------------|---------|----------------|-------|
+| `finance/bank-reconciliation/` | `finance` | ✅ | Own hooks, components, reconciliation state machine |
+| `treasury/card-statements/` | `treasury` | ✅ | Card statement lifecycle separate from treasury core |
+| `treasury/credit-lines/` | `treasury` | ✅ | Credit line approval workflow distinct |
+
+### What a sub-folder MUST include
+
+```
+features/treasury/
+├── card-statements/
+│   ├── components/
+│   ├── hooks/
+│   ├── types/
+│   └── index.ts          ← barrel explicit
+├── credit-lines/
+│   ├── components/
+│   ├── hooks/
+│   ├── types/
+│   └── index.ts          ← barrel explicit
+├── components/
+├── hooks/
+├── types/
+└── index.ts              ← re-exports sub-folder barrels
+```
+
+The parent feature barrel re-exports the sub-folder barrels. Consumers always import from the parent barrel — never directly from `features/treasury/card-statements/index.ts`.
+
+### What a sub-folder MUST NOT do
+
+- Import from another sub-folder within the same feature (extract shared logic to parent `lib/` or `components/`).
+- Have its own `api/` directory — API calls belong to the parent feature's `api/`. The sub-folder hooks import from the parent `api/`.
+- Skip the parent barrel — all public symbols must flow through `features/[feature]/index.ts`.
+
 ## Aggregator pattern (read-only feature without root barrel)
 
 A feature may aggregate other features for purely visual purposes. This is a legitimate pattern — not an illegal exception. It has strict rules.

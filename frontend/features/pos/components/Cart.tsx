@@ -13,7 +13,7 @@ import { formatCurrency } from "@/lib/money"
 import { useVatRate } from '@/hooks/useVatRate'
 import { useDeviceContext } from '@/hooks/useDeviceContext'
 import { useTouchMode } from '@/hooks/useTouchMode'
-import type { CartItem as CartItemType, Product, UoM, StockLimits } from '@/types/pos'
+import type { CartItem as CartItemType, Product, UoM, StockLimits } from '../types'
 import { useSalesSettings } from '@/features/settings'
 
 interface CartProps {

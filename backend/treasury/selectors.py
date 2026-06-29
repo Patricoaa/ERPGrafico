@@ -12,6 +12,7 @@ from .models import (
     Check,
     CreditCardStatement,
     LoanInstallment,
+    POSSession,
     TreasuryAccount,
     TreasuryMovement,
 )

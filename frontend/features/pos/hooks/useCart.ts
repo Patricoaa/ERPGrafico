@@ -3,7 +3,7 @@
 
 import { useCallback } from 'react'
 import { usePOS } from '../contexts/POSProvider'
-import type { Product, CartItem } from '@/types/pos'
+import type { Product, CartItem } from '../types'
 import { toast } from 'sonner'
 import * as CartUtils from '@/features/pos/utils/cart-utils'
 import * as Validation from '@/features/pos/utils/validation'
