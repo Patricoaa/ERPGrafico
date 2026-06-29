@@ -255,18 +255,13 @@ export function UserActions({ isInboxOpen, onInboxToggle }: UserActionsProps) {
                         <TooltipTrigger asChild>
                             <DropdownMenuTrigger asChild>
                                 <button
-                                    className="flex items-center gap-2 rounded-xl bg-muted px-2 py-1.5 pr-3 hover:bg-accent transition-all duration-200 active:scale-95"
+                                    className="relative h-10 w-10 flex items-center justify-center rounded-md text-foreground/50 hover:bg-accent hover:text-accent-foreground transition-all duration-200 active:scale-95 bg-transparent border border-border/60"
                                 >
-                                    <Avatar className="h-7 w-7 rounded-full">
-                                        <AvatarFallback className="font-heading font-black text-[10px]">
+                                    <Avatar className="h-full w-full rounded-md bg-transparent">
+                                        <AvatarFallback className="bg-transparent text-current font-heading font-black text-[10px] rounded-md">
                                             {user?.username?.substring(0, 2).toUpperCase() || 'US'}
                                         </AvatarFallback>
                                     </Avatar>
-                                    <div className="flex flex-col items-start leading-tight">
-                                        <span className="text-xs font-bold text-foreground">
-                                            {[user?.first_name, user?.last_name].filter(Boolean).join(' ') || user?.username || 'Usuario'}
-                                        </span>
-                                    </div>
                                 </button>
                             </DropdownMenuTrigger>
                         </TooltipTrigger>
@@ -275,18 +270,18 @@ export function UserActions({ isInboxOpen, onInboxToggle }: UserActionsProps) {
                         </TooltipContent>
                     </Tooltip>
                     <DropdownMenuContent className="w-56 border-sidebar-border shadow-overlay" align="end" sideOffset={12}>
-                        <DropdownMenuLabel className="font-normal py-3">
-                            <div className="flex items-center gap-3 rounded-xl bg-muted p-2">
-                                <Avatar className="h-9 w-9 rounded-full">
-                                    <AvatarFallback className="font-heading font-black text-xs">
+                        <DropdownMenuLabel className="font-normal px-2 py-1.5">
+                            <div className="flex items-center gap-2 rounded-sm bg-muted pr-1.5 py-1.5 pl-0">
+                                <Avatar className="h-7 w-7 rounded-full">
+                                    <AvatarFallback className="font-heading font-black text-[10px]">
                                         {user?.username?.substring(0, 2).toUpperCase() || 'US'}
                                     </AvatarFallback>
                                 </Avatar>
                                 <div className="flex flex-col">
-                                    <p className="text-sm font-bold text-foreground">
+                                    <p className="text-xs font-bold text-foreground leading-tight">
                                         {[user?.first_name, user?.last_name].filter(Boolean).join(' ') || user?.username || 'Usuario'}
                                     </p>
-                                    <p className="text-[10px] uppercase text-muted-foreground">{user?.groups?.[0] || 'Sin Rol'}</p>
+                                    <p className="text-[9px] uppercase text-muted-foreground leading-tight">{user?.groups?.[0] || 'Sin Rol'}</p>
                                 </div>
                             </div>
                         </DropdownMenuLabel>
