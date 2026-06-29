@@ -36,7 +36,6 @@ class ProductTypeStrategy(ABC):
     allows_stock_moves: bool = False
     costing_method: str = "none"
     supports_returns: bool = True
-    capitalizes_purchase_tax: bool = True
 
     @abstractmethod
     def get_asset_account(self, product):
@@ -194,7 +193,6 @@ class ServiceStrategy(ProductTypeStrategy):
     allows_stock_moves = False
     costing_method = "none"
     supports_returns = False
-    capitalizes_purchase_tax = False
 
     def get_asset_account(self, product):
         return None  # Servicios no tienen cuenta de activo
@@ -232,7 +230,6 @@ class SubscriptionStrategy(ProductTypeStrategy):
     allows_stock_moves = False
     costing_method = "none"
     supports_returns = False
-    capitalizes_purchase_tax = False
 
     def get_asset_account(self, product):
         return None

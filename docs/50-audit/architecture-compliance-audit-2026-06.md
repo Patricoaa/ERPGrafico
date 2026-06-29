@@ -865,7 +865,7 @@ Se migraron ~37 de 69 ocurrencias a `ProductTypeStrategy`. Las 32 restantes son 
 | Fase | Archivos modificados | Impacto |
 |------|---------------------|---------|
 | **A** — Delegación en modelo | `inventory/models.py` | Propiedad `strategy` + 3 métodos `get_*_account` delegan a strategy |
-| **B** — Extensión del strategy | `inventory/strategies/product_type.py` | Nuevos bools: `supports_returns`, `capitalizes_purchase_tax` |
+| **B** — Extensión del strategy | `inventory/strategies/product_type.py` | Nuevo bool: `supports_returns` |
 | **C1** — Sales services | `sales/services.py` | 13/15 migrados (2 COGS fallback mantenidos) |
 | **C2** — Accounting services | `accounting/services.py` | 7/7 migrados |
 | **C3** — Billing note checkout | `billing/note_checkout_service.py` | 4/7 migrados (3 account-routing ya delegados) |
@@ -884,7 +884,9 @@ Se migraron ~37 de 69 ocurrencias a `ProductTypeStrategy`. Las 32 restantes son 
 | `allows_stock_moves` | ✗ | ✓ | ✓ | ✗ | ✗ |
 | `costing_method` | none | average | average | none | none |
 | `supports_returns` | ✓ | ✓ | ✓ | ✗ | ✗ |
-| `capitalizes_purchase_tax` | ✓ | ✓ | ✓ | ✗ | ✗ |
+| `capitalizes_purchase_tax`¹ | ✓ | ✓ | ✓ | ✗ | ✗ |
+
+> ¹ Deprecado en la refactorización de jun 2026. Eliminado del strategy; el routing del IVA ahora usa `get_asset_account()` / `get_expense_account()` por estrategia.
 
 #### Cómo agregar un nuevo tipo de producto
 
