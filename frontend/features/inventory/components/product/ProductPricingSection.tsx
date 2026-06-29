@@ -129,7 +129,7 @@ export function ProductPricingSection({ form, canBeSold, uoms }: ProductPricingS
                         <FormField<ProductFormValues>
                             control={form.control}
                             name="sale_uom"
-                            render={({ field, fieldState }) => (
+                            render={({ field }) => (
                                 <LabeledSelect
                                     label="Unidad Base de Venta"
                                     placeholder={allowedSaleUomsOptions.length === 0 ? "Configure en Logística" : "Seleccione UoM..."}

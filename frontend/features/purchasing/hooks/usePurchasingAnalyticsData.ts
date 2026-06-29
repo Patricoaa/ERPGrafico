@@ -47,10 +47,7 @@ const PAYMENT_METHOD_LABELS: Record<string, string> = {
     OTHER: "Otro",
 }
 
-const CATEGORICAL = [
-    "#3b82f6", "#22c55e", "#f59e0b", "#ef4444",
-    "#8b5cf6", "#06b6d4", "#f97316", "#ec4899",
-]
+
 
 // ── Helpers ───────────────────────────────────────────────
 
@@ -79,7 +76,6 @@ function formatDay(dateStr: string): string {
     const d = parseDateOnly(dateStr)
     const dd = String(d.getDate()).padStart(2, "0")
     const mm = String(d.getMonth() + 1).padStart(2, "0")
-    const yyyy = d.getFullYear()
     return `${dd}/${mm}`
 }
 

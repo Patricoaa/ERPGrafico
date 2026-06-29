@@ -45,7 +45,7 @@ interface POSSessionsClientViewProps {
 import { usePOSSessions } from "@/features/pos/hooks/usePOSSessions"
 import { posSessionSegDef } from "@/features/pos/segmentationDef"
 
-export const POSSessionsClientView = ({ hideHeader = false }: POSSessionsClientViewProps) => {
+export const POSSessionsClientView = ({}: POSSessionsClientViewProps) => {
     const router = useRouter()
     const pathname = usePathname()
     const searchParams = useSearchParams()
@@ -101,7 +101,7 @@ export const POSSessionsClientView = ({ hideHeader = false }: POSSessionsClientV
     }
 
     const actionsCtx: POSSessionActionsCtx = {
-        onReport: (session, type) => {
+        onReport: (session) => {
             const params = new URLSearchParams(searchParams.toString())
             params.set('selected', String(session.id))
             router.push(`${pathname}?${params.toString()}`, { scroll: false })

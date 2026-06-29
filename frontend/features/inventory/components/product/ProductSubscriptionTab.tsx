@@ -6,7 +6,6 @@ import { type UseFormReturn } from "react-hook-form"
 import { type ProductFormValues } from "./schema"
 import {CalendarClock, DollarSign, Calendar, Wallet} from "lucide-react"
 import { AdvancedContactSelector } from "@/components/selectors/AdvancedContactSelector"
-import { AccountSelector } from "@/components/selectors/AccountSelector"
 import { cn } from "@/lib/utils"
 
 interface ProductSubscriptionTabProps {
@@ -45,7 +44,7 @@ export function ProductSubscriptionTab({ form, isEditing }: ProductSubscriptionT
                             <FormField
                                 control={form.control}
                                 name="subscription_start_date"
-                                render={({ field, fieldState }) => (
+                                render={({ field }) => (
                                     <PeriodValidationDateInput
                                         date={field.value ? new Date(field.value + 'T12:00:00') : undefined}
                                         onDateChange={(date) => {
@@ -227,7 +226,7 @@ export function ProductSubscriptionTab({ form, isEditing }: ProductSubscriptionT
                                     <FormField
                                         control={form.control}
                                         name="contract_end_date"
-                                        render={({ field, fieldState }) => (
+                                        render={({ field }) => (
                                             <PeriodValidationDateInput
                                                 date={field.value ? new Date(field.value + 'T12:00:00') : undefined}
                                                 onDateChange={(date) => {

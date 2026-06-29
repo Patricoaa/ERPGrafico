@@ -13,7 +13,7 @@ import { toast } from "sonner"
 import { WorkOrderBasicInfo } from "./WorkOrderBasicInfo"
 import { OriginSelectionStep } from "../../steps/OriginSelectionStep"
 import { ManufacturingSpecsEditor, emptyManufacturingData, type ManufacturingData } from '@/components/shared'
-import {workOrderSchema, type WorkOrderFormValues, type WorkOrderInitialData } from "@/types/forms"
+import {workOrderSchema, type WorkOrderFormValues } from "@/types/forms"
 import { LabeledInput, SkeletonShell } from "@/components/shared"
 import type { Contact } from "@/features/contacts/types"
 import type { ProductMinimal } from "../../../types"
@@ -55,7 +55,7 @@ export function WorkOrderBasicStep({
             ? chosenOtType
             : (initialData ? (initialData.sale_order ? "LINKED" : "NONE") : (defaultOtType || null))
     )
-    const [loading, setLoading] = useState(false)
+    const [, setLoading] = useState(false)
     const [mfgData, setMfgData] = useState<ManufacturingData>(emptyManufacturingData())
     const [selectedContact, setSelectedContact] = useState<Contact | null>(null)
     const [selectedManualProduct, setSelectedManualProduct] = useState<ProductMinimal | null>(null)

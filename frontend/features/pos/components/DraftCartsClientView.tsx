@@ -92,7 +92,8 @@ export function DraftCartsClientView({
     const [deletingId, setDeletingId] = useState<number | null>(null)
     const [confirmDeleteId, setConfirmDeleteId] = useState<number | null>(null)
     const [confirmDeleteName, setConfirmDeleteName] = useState("")
-    const [prevDraftIds, setPrevDraftIds] = useState<Set<number>>(new Set())
+    const [, setPrevDraftIds] = useState<Set<number>>(new Set())
+
 
     // Lock info from syncDrafts (WebSocket, real-time) + fallback to HTTP drafts data
     const resolveLockInfo = useCallback((draftId: number): LockInfo => {

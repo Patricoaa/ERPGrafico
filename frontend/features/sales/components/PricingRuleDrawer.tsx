@@ -67,7 +67,7 @@ interface PricingRuleDrawerProps {
     mode?: DrawerMode
 }
 
-export function PricingRuleDrawer({ auditSidebar, initialData, onSuccess, open, onOpenChange, productId, productName, mode: modeProp }: PricingRuleDrawerProps) {
+export function PricingRuleDrawer({ auditSidebar, initialData, onSuccess, open, onOpenChange, productId, mode: modeProp }: PricingRuleDrawerProps) {
     const { uoms, isUoMsLoading } = useUoMs()
     const { savePricingRule } = usePricingRuleMutations()
     const isFetchingInitialData = open && isUoMsLoading

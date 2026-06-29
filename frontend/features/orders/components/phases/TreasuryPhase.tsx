@@ -10,7 +10,7 @@ import { formatEntity } from '@/features/orders/utils/status'
 import { cn } from "@/lib/utils"
 import { toast } from "sonner"
 import { useCancelPayment, useAnnulPayment } from "../../hooks/useOrdersMutations"
-import { ActionConfirmModal, BaseModal, CancelButton, LabeledInput } from '@/components/shared'
+import { ActionConfirmModal, BaseModal, CancelButton } from '@/components/shared'
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { PaymentMethodSelector, type PaymentData } from "@/features/treasury"

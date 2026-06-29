@@ -4,7 +4,7 @@ import { useState, useMemo } from "react"
 import { Button } from "@/components/ui/button"
 import { AlertTriangle, Loader2, Check, ArrowRight, Eye, X } from "lucide-react"
 import { cn } from "@/lib/utils"
-import { ActionConfirmModal, FormFooter, CancelButton } from "@/components/shared"
+import { ActionConfirmModal, FormFooter } from "@/components/shared"
 
 import type { WorkOrder, WorkOrderTask, WorkOrderStage, WizardStepMode } from "../types"
 
@@ -53,7 +53,6 @@ export function WizardStickyFooter({
     hasMaterials,
     isRectificationStep = false,
     onRectifyAndFinish,
-    isBasicInfoStep = false,
     isCreating = false,
     isBasicInfoEditable = false,
     chosenOtType = null,

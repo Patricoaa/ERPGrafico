@@ -50,7 +50,7 @@ interface ProductDrawerProps {
     mode?: DrawerMode
 }
 
-export function ProductDrawer({ sidebar, open, onOpenChange, initialData, onSuccess, lockedType, variantMode = false, inline = false, onLoadingChange, mode: modeProp }: ProductDrawerProps) {
+export function ProductDrawer({ open, onOpenChange, initialData, onSuccess, lockedType, variantMode = false, inline = false, onLoadingChange, mode: modeProp }: ProductDrawerProps) {
     const { saveProduct, products, isLoading: isLoadingProducts } = useProducts()
     const { uoms, isUoMsLoading: isLoadingUoMs } = useUoMs()
     const { warehouses, isLoading: isLoadingWarehouses } = useWarehouses()
@@ -63,7 +63,7 @@ export function ProductDrawer({ sidebar, open, onOpenChange, initialData, onSucc
     const [imagePreview, setImagePreview] = useState<string | null>(null)
     const [selectedPricingRule, setSelectedPricingRule] = useState<any | null>(null)
     const [pricingRuleDialogOpen, setPricingRuleDialogOpen] = useState(false)
-    const [variantsRefreshKey, setVariantsRefreshKey] = useState(0)
+    const [variantsRefreshKey] = useState(0)
     const [confirmCloseOpen, setConfirmCloseOpen] = useState(false)
 
     // Compuesto desde los hooks de reads — el padre lo expone como prop para

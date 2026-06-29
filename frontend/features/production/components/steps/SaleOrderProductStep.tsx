@@ -36,7 +36,7 @@ export function SaleOrderProductStep({
   onChooseProduct,
   initialOtType
 }: SaleOrderProductStepProps) {
-  const [otType, setOtType] = useState<"LINKED" | "NONE" | null>(
+  const [otType] = useState<"LINKED" | "NONE" | null>(
     initialOtType ?? null
   );
   const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);

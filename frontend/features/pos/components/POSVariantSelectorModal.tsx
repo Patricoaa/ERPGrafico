@@ -10,7 +10,7 @@ import { VariantSelectorModal } from '@/components/shared'
 import { isPOSProductDisabled } from '@/features/pos/utils/product-availability'
 import type { Product, Variant, CartItem } from '../types'
 import type { BaseProduct } from '@/features/inventory'
-import { usePOS } from '@/features/pos/contexts/POSProvider'
+
 
 export interface POSVariantSelectorModalProps {
     open: boolean
@@ -22,7 +22,7 @@ export interface POSVariantSelectorModalProps {
     items: CartItem[]
     bomCache: Record<number, Record<string, unknown>>
     componentCache: Record<number, { stock: number, uom: number }>
-    calculateMaxQty: (product: Variant, currentQty?: number, cartItemId?: string) => Promise<number>
+    calculateMaxQty: (product: Variant, cartItemId?: string) => Promise<number>
 }
 
 export function POSVariantSelectorModal({
@@ -32,8 +32,6 @@ export function POSVariantSelectorModal({
     onSelect,
     calculateMaxQty
 }: POSVariantSelectorModalProps) {
-    const { currentSession } = usePOS()
-
     // Pass the session ID to filter active/session specific variants if needed
     const extraParams = useMemo<Record<string, string> | undefined>(() => {
         const storedSessionId = typeof window !== 'undefined' ? localStorage.getItem('shared_pos_session_id') : null

@@ -45,7 +45,7 @@ function BarChartRenderer(props: BarChartConfig) {
 
     const legendItems = props.lineOverlay && showLegend
         ? [
-            ...(props.keys ?? []).map((key, i) => ({
+            ...(props.keys ?? []).map((key) => ({
                 id: key,
                 label: key.charAt(0).toUpperCase() + key.slice(1),
                 color: undefined,

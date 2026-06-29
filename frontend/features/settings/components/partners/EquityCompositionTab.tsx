@@ -9,12 +9,6 @@ import {
 } from "lucide-react"
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
 
-import {
-    DropdownMenuItem,
-
-} from "@/components/ui/dropdown-menu"
-
-
 import { partnersApi } from "@/features/contacts/api/partnersApi"
 import { type Partner, type PartnerSummary } from "@/features/contacts/types/partner"
 import { toast } from "sonner"
@@ -306,35 +300,13 @@ export function EquityCompositionTab({
                 isLoading={loading}
                 variant="embedded"
                 createAction={createAction}
-                toolbarAction={
-                    <>
-                        {!hasPartners ? (
-                            <DropdownMenuItem
-                                onClick={() => setIsInitialSetupOpen(true)}
-                                className="flex items-center px-3 py-2 text-[10px] font-black uppercase tracking-widest text-primary focus:bg-primary/10 focus:text-primary cursor-pointer transition-colors"
-                            >
-                                <Plus className="h-4 w-4 mr-2" />
-                                Configuración Inicial
-                            </DropdownMenuItem>
-                        ) : (
-                            <>
-                                <DropdownMenuItem
-                                    onClick={() => setIsSubscriptionOpen(true)}
-                                    className="flex items-center px-3 py-2 text-[10px] font-black uppercase tracking-widest text-primary focus:bg-primary/10 focus:text-primary cursor-pointer transition-colors"
-                                >
-                                    <Plus className="h-4 w-4 mr-2" />
-                                    Nueva Suscripción
-                                </DropdownMenuItem>
-                                <DropdownMenuItem
-                                    onClick={() => setIsTransferOpen(true)}
-                                    className="flex items-center px-3 py-2 text-[10px] font-black uppercase tracking-widest text-primary focus:bg-primary/10 focus:text-primary cursor-pointer transition-colors"
-                                >
-                                    <MoveHorizontal className="h-4 w-4 mr-2" />
-                                    Transferencia
-                                </DropdownMenuItem>
-                            </>
-                        )}
-                    </>
+                toolbarActions={
+                    !hasPartners
+                        ? [{ key: 'initial-setup', label: 'Configuración Inicial', icon: Plus, onClick: () => setIsInitialSetupOpen(true), intent: 'primary' }]
+                        : [
+                            { key: 'new-subscription', label: 'Nueva Suscripción', icon: Plus, onClick: () => setIsSubscriptionOpen(true), intent: 'primary' },
+                            { key: 'transfer', label: 'Transferencia', icon: MoveHorizontal, onClick: () => setIsTransferOpen(true), intent: 'primary' },
+                        ]
                 }
             />
             </div>

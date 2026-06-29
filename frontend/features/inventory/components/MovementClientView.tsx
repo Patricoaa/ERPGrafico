@@ -4,11 +4,11 @@ import { useState, useMemo, useEffect } from "react"
 import { useRouter, usePathname, useSearchParams } from "next/navigation"
 import { BaseModal, Chip, DataTableView } from '@/components/shared'
 import { DataTableColumnHeader } from '@/components/shared'
-import { DataCell, EntityCard, CardActions } from '@/components/shared'
+import { DataCell, EntityCard } from '@/components/shared'
 import { stockMoveActions, type StockMoveActionsCtx } from "@/features/inventory/stockMoveActions"
 import { type ColumnDef } from "@tanstack/react-table"
 
-import {Eye, ArrowRightLeft} from "lucide-react"
+import {ArrowRightLeft} from "lucide-react"
 
 import { LazyDrawer, type TransactionType } from "@/features/_shared/transaction-drawer"
 import { AdjustmentForm } from "@/features/inventory/components/AdjustmentForm"

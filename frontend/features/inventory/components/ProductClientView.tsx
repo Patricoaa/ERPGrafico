@@ -211,12 +211,6 @@ export function ProductClientView({ externalOpen, onExternalOpenChange, createAc
         }
     }, [selectedFromUrl])
 
-    const clearSelection = () => {
-        const params = new URLSearchParams(searchParams.toString())
-        params.delete('selected')
-        const query = params.toString()
-        router.replace(query ? `${pathname}?${query}` : pathname, { scroll: false })
-    }
 
     const actionsCtx: ProductActionsCtx = {
         onEdit: (id) => {

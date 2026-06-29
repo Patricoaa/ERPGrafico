@@ -35,7 +35,7 @@ function getStepMetadata(stepLabel: string, wizardState: WizardState | null): st
 }
 
 export function POSCheckoutHeader() {
-    const { posMode, setPosMode, wizardState, items } = usePOS()
+    const { posMode, wizardState, items } = usePOS()
 
     const currentStep = posMode === 'SHOPPING' ? 1 : (wizardState?.step ?? 1) + 1
     const hasManufacturing = items.some(line =>

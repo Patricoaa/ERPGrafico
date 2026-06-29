@@ -17,7 +17,7 @@ interface PurchaseOrderDrawerProps extends TransactionDrawerProps {
   purchaseOrderId?: number
 }
 
-export function PurchaseOrderDrawer({ id, open, onOpenChange, mode = 'view', purchaseOrderId }: PurchaseOrderDrawerProps) {
+export function PurchaseOrderDrawer({ id, open, onOpenChange, purchaseOrderId }: PurchaseOrderDrawerProps) {
   const entityId = id ?? purchaseOrderId ?? null
   const { data: order, isLoading } = usePurchaseOrderDetail(entityId)
   const printRef = useRef<HTMLDivElement>(null)

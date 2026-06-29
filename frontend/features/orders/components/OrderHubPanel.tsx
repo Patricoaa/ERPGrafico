@@ -19,7 +19,7 @@ import { useOrderHubData } from "@/hooks/useOrderHubData"
 import { OrderHubIntegrated, type OrderHubData } from "./OrderHubIntegrated"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import {
-    StatusBadge, PanelHeader
+    PanelHeader
 } from "@/components/shared"
 
 export interface OrderHubPanelProps {
@@ -48,7 +48,7 @@ export function OrderHubPanel({
     const hubData = useOrderHubData({ orderId, invoiceId, type, enabled: true })
     const { activeDoc, activeInvoice, isNoteMode, fetchOrderDetails } = hubData
 
-    const { setHubTemporarilyHidden } = useHubPanel()
+    useHubPanel()
     const { openEntity } = useGlobalModals()
 
     const [detailsModal, setDetailsModal] = useState<{ open: boolean, type: string, id: number | string }>({ open: false, type: 'sale_order', id: 0 })
@@ -133,7 +133,6 @@ export function OrderHubPanel({
         )
     }
 
-    const StatusIcon = globalStatus.icon
     const TopLeftIcon = (() => {
         if (activeDoc?.dte_type === 'NOTA_CREDITO' || activeDoc?.dte_type === 'NOTA_DEBITO') return Receipt
         if (activeInvoice || type === 'purchase' || type === 'obligation') return FileText

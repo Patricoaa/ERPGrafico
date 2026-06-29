@@ -4,7 +4,7 @@ import React, { forwardRef } from "react"
 import { formatCurrency } from "@/lib/money"
 import type { TransactionData, TransactionLine } from "@/types/transactions"
 import { useBranding } from "@/contexts/BrandingProvider"
-import { formatPlainDate, parseDateOnly } from "@/lib/utils"
+import { formatPlainDate } from "@/lib/utils"
 
 interface PrintableReceiptProps {
     data: TransactionData & { terminal_name?: string }

@@ -2,7 +2,7 @@
 import { formatCurrency } from "@/lib/money"
 
 import { showApiError } from "@/lib/errors"
-import { useState, useEffect, useMemo } from "react"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
@@ -17,7 +17,7 @@ import { cn } from "@/lib/utils"
 import { POSReport, type POSReportData } from "./POSReport"
 
 import type { POSSession, POSSessionAudit, AccountingSettings, TreasuryAccount } from "@/types/pos"
-import { CLOSE_DEFICIT_OPTIONS, CLOSE_SURPLUS_OPTIONS, type JustifyOption } from "@/features/pos/utils/reasons"
+import { CLOSE_DEFICIT_OPTIONS, CLOSE_SURPLUS_OPTIONS } from "@/features/pos/utils/reasons"
 
 interface SessionCloseModalProps {
     open: boolean

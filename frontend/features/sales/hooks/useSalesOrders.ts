@@ -62,7 +62,7 @@ export function useSalesOrders({ filters, initialData }: { filters?: SaleOrderFi
             toast.success('Nota de venta eliminada')
             queryClient.invalidateQueries({ queryKey: SALES_KEYS.all })
         },
-        onError: (error: Error) => {
+        onError: () => {
             toast.error('Error al eliminar')
         }
     })

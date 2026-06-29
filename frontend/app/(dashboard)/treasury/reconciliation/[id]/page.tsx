@@ -71,8 +71,8 @@ export default function StatementDetailPage({ params }: { params: Promise<{ id: 
 
     const { statement, isLoading, refetch } = useBankStatement<BankStatement>(Number(id))
     const [unmatchDialog, setUnmatchDialog] = useState<{ open: boolean, lineId: number | null }>({ open: false, lineId: null })
-    const [confirming, setConfirming] = useState(false)
-    const [paymentModal, setPaymentModal] = useState<{ open: boolean, id: number }>({ open: false, id: 0 })
+    const [, setConfirming] = useState(false)
+    const [, setPaymentModal] = useState<{ open: boolean, id: number }>({ open: false, id: 0 })
 
     const statementLineUnmatchActionsCtx: StatementLineUnmatchActionsCtx = {
         onUnmatch: (lineId) => setUnmatchDialog({ open: true, lineId }),

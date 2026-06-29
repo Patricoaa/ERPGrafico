@@ -37,7 +37,6 @@ interface WorkOrderBasicInfoProps {
 export function WorkOrderBasicInfo({
     initialData,
     isAutoCreated,
-    linkedSaleOrder,
     saleLines,
     loadingLines,
     uoms,

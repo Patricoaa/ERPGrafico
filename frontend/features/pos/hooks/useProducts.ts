@@ -18,12 +18,6 @@ export function useProducts() {
     const queryClient = useQueryClient()
     const {
         setProducts: setGlobalProducts,
-        setCategories: setGlobalCategories,
-        setUoms: setGlobalUoms,
-        currentSession,
-        currentDraftId,
-        updateBomCache,
-        updateComponentCache,
         setLoading
     } = usePOS()
     const { markLocalMutation } = useRealtime()
@@ -146,7 +140,7 @@ export function useProducts() {
 
     const toggleFavoriteMutation = useMutation({
         mutationFn: posApi.toggleFavorite,
-        onSuccess: (data, variables) => {
+        onSuccess: (data) => {
             markLocalMutation()
             const isFavorite = (data as Record<string, unknown>).is_favorite as boolean
             

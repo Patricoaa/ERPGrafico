@@ -35,7 +35,7 @@ export function OrderSummaryCard({
 
     // Calculate totals
     const lineDiscounts = orderLines.reduce((acc, line) => acc + (line.discount_amount || 0), 0);
-    const totalDiscount = lineDiscounts + totalDiscountAmount;
+
     const net = isExempt ? total : PricingUtils.grossToNet(total);
     const tax = isExempt ? 0 : PricingUtils.extractTax(total);
 

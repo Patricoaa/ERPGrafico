@@ -3,7 +3,7 @@
 import React, { useMemo } from "react"
 import dynamic from "next/dynamic"
 import { Skeleton } from "@/components/ui/skeleton"
-import type { BarDatum, BarLegendProps, ComputedDatum } from "@nivo/bar"
+import type { BarDatum, BarLegendProps } from "@nivo/bar"
 import {
     nivoTheme,
     barDefaults,

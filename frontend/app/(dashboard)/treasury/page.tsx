@@ -5,7 +5,7 @@ interface PageProps {
 }
 
 export default async function TreasuryPage({ searchParams }: PageProps) {
-    const { view, sub, tab } = await searchParams
+    const { view, sub } = await searchParams
 
     if (view === 'accounts') redirect(sub ? `/treasury/operaciones/${sub}` : '/treasury/operaciones/accounts')
     if (view === 'reconciliation') redirect('/treasury/reconciliation')
