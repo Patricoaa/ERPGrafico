@@ -57,7 +57,7 @@ export function AnalysisDashboard({ activeTab }: AnalysisDashboardProps) {
     }
 
     return (
-        <PageContainer scrollable>
+        <PageContainer scrollable className="px-0">
             <ReportToolbar
                 headerFormat={headerFormat}
                 onHeaderFormatChange={setHeaderFormat}
