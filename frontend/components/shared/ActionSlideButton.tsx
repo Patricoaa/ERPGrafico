@@ -34,12 +34,13 @@ export const ActionSlideButton = React.forwardRef<HTMLButtonElement, ActionSlide
         const isDisabled = disabled || loading;
 
         return (
+            <div className="flex items-center h-7">
             <button
                 ref={ref}
                 disabled={isDisabled}
                 className={cn(
-                    "relative inline-flex items-center justify-center overflow-hidden z-10 transition-all duration-300 ease-out",
-                    "h-9 px-5 text-[10px] font-black tracking-widest uppercase rounded-sm shadow-card",
+                    "relative inline-flex items-center justify-center overflow-hidden z-10 transition-all duration-300 ease-out cursor-pointer",
+                    "h-7 px-4 text-[10px] font-black tracking-widest uppercase rounded-sm shadow-card",
                     "border",
                     isPrimary && "text-primary hover:text-primary-foreground bg-primary/5 border-primary",
                     isDestructive && "border-destructive text-destructive hover:text-destructive-foreground bg-destructive/5",
@@ -83,6 +84,7 @@ export const ActionSlideButton = React.forwardRef<HTMLButtonElement, ActionSlide
                     {children}
                 </span>
             </button>
+        </div>
         );
     }
 );

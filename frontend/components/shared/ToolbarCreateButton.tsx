@@ -32,7 +32,7 @@ export function ToolbarCreateButton({
         <div className="flex items-center shrink-0 bg-background rounded-sm px-1 h-9">
             <Button
                 className={cn(
-                    "h-7 px-4 rounded-sm text-[9px] font-black uppercase tracking-widest",
+                    "h-7 px-4 rounded-sm text-[9px] font-black uppercase tracking-widest cursor-pointer",
                     className
                 )}
                 {...props}
