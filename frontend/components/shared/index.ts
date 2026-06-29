@@ -89,6 +89,7 @@ export type { UseSegmentationReturn, SegmentationFilterState } from './Segmentat
 // Filters & Inputs
 export * from './DatePicker';
 export * from './DateRangeFilter';
+export * from './ReportToolbar';
 export * from './FacetedFilter';
 export * from './FolioValidationInput';
 export * from './LabeledInput';
