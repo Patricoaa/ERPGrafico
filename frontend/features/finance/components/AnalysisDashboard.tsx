@@ -71,7 +71,7 @@ export function AnalysisDashboard({ activeTab }: AnalysisDashboardProps) {
                 onMapeoClick={() => openMappingDrawer()}
             />
 
-            <div className="max-w-6xl mx-auto w-full pt-4">
+            <div className="w-full pt-4">
                 <FadeIn key={activeTab}>
                     {activeTab === "ratios" && (
                         <RatiosDashboard date={date} showComparison={showComparison} compDate={compDate} />
