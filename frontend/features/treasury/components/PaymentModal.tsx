@@ -285,7 +285,6 @@ export function PaymentModal({
                             total={pendingAmount}
                             paymentData={paymentData}
                             onPaymentDataChange={setPaymentData}
-                            compactMode={true}
                             customerCreditBalance={customerCreditBalance}
                             allowCreditBalanceAccumulation={allowCreditBalanceAccumulation}
                             labels={{

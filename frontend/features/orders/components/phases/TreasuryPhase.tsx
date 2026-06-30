@@ -262,7 +262,6 @@ export function TreasuryPhase({
                         total={annulPaymentState.paymentAmount}
                         paymentData={annulPaymentData}
                         onPaymentDataChange={setAnnulPaymentData}
-                        compactMode={true}
                         labels={{
                             totalLabel: 'Total del Pago',
                             amountLabel: 'Monto a Devolver',

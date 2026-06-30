@@ -111,7 +111,6 @@ export function PaymentForm({
                         total={paymentData.amount}
                         paymentData={paymentData}
                         onPaymentDataChange={setPaymentData}
-                        compactMode
                         labels={{
                             totalLabel: paymentType === "INBOUND" ? "Total a Cobrar" : "Total a Pagar",
                             amountLabel: paymentType === "INBOUND" ? "Monto Recibido" : "Monto a Pagar",
