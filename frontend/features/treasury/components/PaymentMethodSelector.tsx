@@ -8,6 +8,7 @@ import { useState, useMemo, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { BaseModal, Numpad } from '@/components/shared'
 
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 import { FormSection, LabeledInput, LabeledSelect, MoneyDisplay } from "@/components/shared"
 import { formatMoney } from "@/lib/money"
 
@@ -384,7 +385,7 @@ export function PaymentMethodSelector({
         )
     }
 
-    const methodCardClass = "card-accent-cmyk relative overflow-hidden rounded-sm border bg-card p-8 shadow-card transition-all h-full text-left flex flex-col items-start hover:shadow-elevated focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+    const methodCardClass = "card-accent-cmyk relative overflow-hidden rounded-md border border-border/50 bg-card p-8 shadow-card shadow-black/5 transition-all h-full text-left flex flex-col items-start hover:shadow-elevated focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
 
     const renderMethodGrid = () => {
         if (!isMultiPayment) {
@@ -403,10 +404,11 @@ export function PaymentMethodSelector({
             const gridCols = Math.min(allMethods.length, 4)
 
             return (
-                <div
-                    className="grid gap-3"
-                    style={{ gridTemplateColumns: `repeat(${gridCols}, minmax(0, 1fr))` }}
-                >
+                <>
+                    <div
+                        className="grid gap-3"
+                        style={{ gridTemplateColumns: `repeat(${gridCols}, minmax(0, 1fr))` }}
+                    >
                     {allMethods.map((m) => {
                         const Icon = m.icon
                         const isSingleSelected = !m.isMultiple && paymentData.method === m.id
@@ -490,6 +492,24 @@ export function PaymentMethodSelector({
                         )
                     })}
                 </div>
+
+                {/* Crédito Asignado — delta no cubierto en single mode */}
+                {paymentData.amount > 0 && paymentData.amount < total && (
+                    <div className={cn(methodCardClass, "self-start h-auto border-border/50 opacity-70")}>
+                        <div className="flex items-center justify-between w-full gap-3">
+                            <div className="flex items-center gap-3 min-w-0">
+                                <Wallet className="h-9 w-9 shrink-0 text-muted-foreground" />
+                                <div className="min-w-0">
+                                    <div className="text-base font-semibold leading-tight text-muted-foreground">Crédito Asignado</div>
+                                    <div className="text-sm text-muted-foreground leading-tight tabular-nums">
+                                        <MoneyDisplay amount={total - paymentData.amount} showColor={false} />
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                )}
+                </>
             )
         }
 
@@ -515,7 +535,7 @@ export function PaymentMethodSelector({
 
                 {/* Unified grid: all methods in strict columns */}
                 <div
-                    className="grid gap-3"
+                    className="grid gap-3 items-start"
                     style={{ gridTemplateColumns: `repeat(${gridCols}, minmax(0, 1fr))` }}
                 >
                     {availableMethods.map((m) => {
@@ -528,7 +548,7 @@ export function PaymentMethodSelector({
                             return (
                                 <div
                                     key={m.id}
-                                    className={cn(methodCardClass, "relative border-border/50")}
+                                    className={cn(methodCardClass, "self-start h-auto border-2 border-primary accent-visible")}
                                 >
                                     <div className="flex items-center justify-between w-full gap-3">
                                         <div className="flex items-center gap-3 min-w-0">
@@ -541,36 +561,51 @@ export function PaymentMethodSelector({
                                             </div>
                                         </div>
                                         <div className="flex items-center gap-2 shrink-0 ml-auto">
-                                            <button
-                                                type="button"
-                                                onClick={() => handleEditAmount(allocIndex)}
-                                                className="p-1.5 rounded-sm hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
-                                                aria-label="Editar monto"
-                                            >
-                                                <Pencil className="h-5 w-5" />
-                                            </button>
+                                            <Tooltip>
+                                                <TooltipTrigger asChild>
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => handleEditAmount(allocIndex)}
+                                                        className="p-1.5 rounded-sm hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
+                                                        aria-label="Editar monto"
+                                                    >
+                                                        <Pencil className="h-5 w-5" />
+                                                    </button>
+                                                </TooltipTrigger>
+                                                <TooltipContent side="top">Editar monto</TooltipContent>
+                                            </Tooltip>
                                             {hasAdditionalFieldsForMethod(m.id) && (
-                                                <button
-                                                    type="button"
-                                                    onClick={() => setShowFieldsForIndex(showFieldsForIndex === allocIndex ? null : allocIndex)}
-                                                    className="p-1.5 rounded-sm hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
-                                                    aria-label="Campos adicionales"
-                                                >
-                                                    <Layers className="h-5 w-5" />
-                                                </button>
+                                                <Tooltip>
+                                                    <TooltipTrigger asChild>
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => setShowFieldsForIndex(showFieldsForIndex === allocIndex ? null : allocIndex)}
+                                                            className="p-1.5 rounded-sm hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
+                                                            aria-label="Campos adicionales"
+                                                        >
+                                                            <Layers className="h-5 w-5" />
+                                                        </button>
+                                                    </TooltipTrigger>
+                                                    <TooltipContent side="top">Campos adicionales</TooltipContent>
+                                                </Tooltip>
                                             )}
-                                            <button
-                                                type="button"
-                                                onClick={() => removePayment(allocIndex)}
-                                                className="p-1.5 rounded-sm hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors"
-                                                aria-label="Eliminar pago"
-                                            >
-                                                <Trash2 className="h-5 w-5" />
-                                            </button>
+                                            <Tooltip>
+                                                <TooltipTrigger asChild>
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => removePayment(allocIndex)}
+                                                        className="p-1.5 rounded-sm hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors"
+                                                        aria-label="Eliminar pago"
+                                                    >
+                                                        <Trash2 className="h-5 w-5" />
+                                                    </button>
+                                                </TooltipTrigger>
+                                                <TooltipContent side="top">Eliminar pago</TooltipContent>
+                                            </Tooltip>
                                         </div>
                                     </div>
                                     {showFieldsForIndex === allocIndex && hasAdditionalFieldsForMethod(m.id) && (
-                                        <div className="pt-2 border-t mt-2 w-full">
+                                        <div className="w-full">
                                             {renderAdditionalFields(m.id, alloc, (updates) => updatePaymentAtIndex(allocIndex, updates))}
                                         </div>
                                     )}
@@ -586,7 +621,7 @@ export function PaymentMethodSelector({
                                 disabled={!m.isAllowed}
                                 className={cn(
                                     methodCardClass,
-                                    "border-border/50",
+                                    "self-start h-auto border-border/50",
                                     !m.isAllowed && "opacity-40 grayscale cursor-not-allowed"
                                 )}
                             >
@@ -607,6 +642,22 @@ export function PaymentMethodSelector({
                 {isFullyPaid && (
                     <div className="text-center py-2">
                         <span className="text-xs font-semibold text-success uppercase tracking-wider">Total cubierto</span>
+                    </div>
+                )}
+
+                {!isFullyPaid && remaining > 0 && (
+                    <div className={cn(methodCardClass, "self-start h-auto border-border/50 opacity-70")}>
+                        <div className="flex items-center justify-between w-full gap-3">
+                            <div className="flex items-center gap-3 min-w-0">
+                                <Wallet className="h-9 w-9 shrink-0 text-muted-foreground" />
+                                <div className="min-w-0">
+                                    <div className="text-base font-semibold leading-tight text-muted-foreground">Crédito Asignado</div>
+                                    <div className="text-sm text-muted-foreground leading-tight tabular-nums">
+                                        <MoneyDisplay amount={remaining} showColor={false} />
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 )}
             </div>
