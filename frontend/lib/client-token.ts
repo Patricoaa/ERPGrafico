@@ -1,6 +1,6 @@
 const ACCESS_KEY = "access_token";
 const REFRESH_KEY = "refresh_token";
-const COOKIE_MAX_AGE = 365 * 24 * 60 * 60;
+const COOKIE_MAX_AGE = 24 * 60 * 60; // matches SIMPLE_JWT ACCESS_TOKEN_LIFETIME
 
 function setCookie(name: string, value: string, maxAge: number): void {
   document.cookie = `${name}=${encodeURIComponent(value)}; path=/; max-age=${maxAge}; SameSite=Lax`;
