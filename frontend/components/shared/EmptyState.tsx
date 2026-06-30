@@ -108,7 +108,7 @@ export function EmptyState({
             </div>
 
             {/* Content Section */}
-            <div className="flex max-w-md flex-col items-center space-y-2 text-center">
+            <div className="flex max-w-md flex-col items-center space-y-2 text-center whitespace-normal">
                 <h3 className={cn(
                     "w-full text-center font-heading font-black uppercase tracking-tighter text-foreground/90",
                     variant === 'full' ? "text-lg" : "text-sm"
@@ -118,7 +118,7 @@ export function EmptyState({
 
                 {description && (
                     <p className={cn(
-                        "w-full text-center text-muted-foreground leading-relaxed",
+                        "w-full text-center text-muted-foreground leading-relaxed break-words",
                         variant === 'full' ? "text-sm" : "text-[11px]"
                     )}>
                         {description}
