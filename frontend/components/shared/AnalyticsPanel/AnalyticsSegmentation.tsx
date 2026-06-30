@@ -1,7 +1,16 @@
 "use client"
 
 import React, { useMemo } from "react"
-import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select"
+import { ChevronDown } from "lucide-react"
+import { cn } from "@/lib/utils"
+import { Button } from "@/components/ui/button"
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuTrigger,
+    DropdownMenuRadioGroup,
+    DropdownMenuRadioItem,
+} from "@/components/ui/dropdown-menu"
 import type { Granularity } from "./types"
 
 interface Props {
@@ -74,77 +83,154 @@ export function AnalyticsSegmentation({
 
     if (!hasAny) return null
 
+    const accountLabel = cardAccountId
+        ? cardAccounts?.find(a => a.id === cardAccountId)?.name
+        : null
+
     return (
-        <div className="flex items-center justify-center gap-5 px-6 py-2 border-t border-border shrink-0 flex-wrap">
+        <div className="flex items-center justify-center gap-1 px-1 py-1.5 border-t border-border shrink-0 flex-wrap">
             {cardAccounts && cardAccounts.length > 0 && onCardAccountChange && (
                 <>
-                    <span className="text-xs text-muted-foreground font-medium">Tarjeta:</span>
-                    <Select
-                        value={String(cardAccountId ?? cardAccounts[0]?.id ?? "")}
-                        onValueChange={(v) => onCardAccountChange(Number(v))}
-                    >
-                        <SelectTrigger className="w-[180px] h-8 text-xs">
-                            <SelectValue placeholder="Seleccionar tarjeta" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            {cardAccounts.map((acct) => (
-                                <SelectItem key={acct.id} value={String(acct.id)} className="text-xs">
-                                    {acct.name}
-                                </SelectItem>
-                            ))}
-                        </SelectContent>
-                    </Select>
+                <span className="text-[9px] font-black tracking-widest uppercase text-muted-foreground">Tarjeta:</span>
+                <div className="flex items-center shrink-0 bg-background rounded-sm px-1 h-9">
+                    <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                            <Button
+                                variant="ghost"
+                                size="sm"
+                                className={cn(
+                                    "h-7 px-2 text-[9px] uppercase font-black tracking-widest gap-1 rounded-sm shrink-0",
+                                    accountLabel
+                                        ? "bg-accent/50 text-foreground"
+                                        : "text-muted-foreground hover:text-foreground"
+                                )}
+                            >
+                                <span className="truncate max-w-[140px]">{accountLabel ?? "Seleccionar"}</span>
+                                <ChevronDown className="h-3 w-3 shrink-0" />
+                            </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="start" className="w-[220px] p-1">
+                            <DropdownMenuRadioGroup
+                                value={String(cardAccountId ?? "")}
+                                onValueChange={(v) => onCardAccountChange(Number(v))}
+                            >
+                                {cardAccounts.map((acct) => (
+                                    <DropdownMenuRadioItem
+                                        key={acct.id}
+                                        value={String(acct.id)}
+                                        className="text-[9px] uppercase font-black tracking-widest cursor-pointer"
+                                    >
+                                        {acct.name}
+                                    </DropdownMenuRadioItem>
+                                ))}
+                            </DropdownMenuRadioGroup>
+                        </DropdownMenuContent>
+                    </DropdownMenu>
+                </div>
                 </>
             )}
+
             {scope && onScopeChange && (
                 <>
-                    <span className="text-xs text-muted-foreground font-medium">Alcance:</span>
-                    <Select value={scope} onValueChange={(v) => onScopeChange(v as "month" | "all")}>
-                        <SelectTrigger className="w-[160px] h-8 text-xs">
-                            <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="month" className="text-xs">Cargos del mes</SelectItem>
-                            <SelectItem value="all" className="text-xs">Todos los cargos</SelectItem>
-                        </SelectContent>
-                    </Select>
+                <span className="text-[9px] font-black tracking-widest uppercase text-muted-foreground">Alcance:</span>
+                <div className="flex items-center shrink-0 bg-background rounded-sm px-1 h-9">
+                    <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                            <Button
+                                variant="ghost"
+                                size="sm"
+                                className={cn(
+                                    "h-7 px-2 text-[9px] uppercase font-black tracking-widest gap-1 rounded-sm shrink-0",
+                                    "bg-accent/50 text-foreground"
+                                )}
+                            >
+                                {scope === "month" ? "Cargos del mes" : "Todos los cargos"}
+                                <ChevronDown className="h-3 w-3 shrink-0" />
+                            </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="start" className="w-[180px] p-1">
+                            <DropdownMenuRadioGroup value={scope} onValueChange={(v) => onScopeChange(v as "month" | "all")}>
+                                <DropdownMenuRadioItem value="month" className="text-[9px] uppercase font-black tracking-widest cursor-pointer">
+                                    Cargos del mes
+                                </DropdownMenuRadioItem>
+                                <DropdownMenuRadioItem value="all" className="text-[9px] uppercase font-black tracking-widest cursor-pointer">
+                                    Todos los cargos
+                                </DropdownMenuRadioItem>
+                            </DropdownMenuRadioGroup>
+                        </DropdownMenuContent>
+                    </DropdownMenu>
+                </div>
                 </>
             )}
+
             {granularity && onGranularityChange && (
                 <>
-                    <span className="text-xs text-muted-foreground font-medium">Rango de fechas:</span>
-                    <Select
-                        value={activePreset}
-                        onValueChange={(key) => {
-                            const preset = SEGMENTATION_PRESETS.find(p => p.key === key)
-                            if (preset) onDateRangeChange?.(preset.range())
-                        }}
-                    >
-                        <SelectTrigger className="w-[140px] h-8 text-xs">
-                            <SelectValue placeholder="Seleccionar" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            {SEGMENTATION_PRESETS.map((preset) => (
-                                <SelectItem key={preset.key} value={preset.key} className="text-xs">
-                                    {preset.label}
-                                </SelectItem>
-                            ))}
-                        </SelectContent>
-                    </Select>
-                    <span className="text-xs text-muted-foreground font-medium">Agrupar por:</span>
-                    <Select
-                        value={granularity}
-                        onValueChange={(v) => onGranularityChange(v as "day" | "month" | "year")}
-                    >
-                        <SelectTrigger className="w-[120px] h-8 text-xs">
-                            <SelectValue placeholder="Seleccionar" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="day" className="text-xs">Día</SelectItem>
-                            <SelectItem value="month" className="text-xs">Mes</SelectItem>
-                            <SelectItem value="year" className="text-xs">Año</SelectItem>
-                        </SelectContent>
-                    </Select>
+                    <span className="text-[9px] font-black tracking-widest uppercase text-muted-foreground">Rango:</span>
+                    <div className="flex items-center shrink-0 bg-background rounded-sm px-1 h-9">
+                        <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                                <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    className={cn(
+                                        "h-7 px-2 text-[9px] uppercase font-black tracking-widest gap-1 rounded-sm shrink-0",
+                                        activePreset !== "all"
+                                            ? "bg-accent/50 text-foreground"
+                                            : "text-muted-foreground hover:text-foreground"
+                                    )}
+                                >
+                                    {SEGMENTATION_PRESETS.find(p => p.key === activePreset)?.label ?? "Seleccionar"}
+                                    <ChevronDown className="h-3 w-3 shrink-0" />
+                                </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="start" className="w-[140px] p-1">
+                                <DropdownMenuRadioGroup value={activePreset} onValueChange={(key) => {
+                                    const preset = SEGMENTATION_PRESETS.find(p => p.key === key)
+                                    if (preset) onDateRangeChange?.(preset.range())
+                                }}>
+                                    {SEGMENTATION_PRESETS.map((preset) => (
+                                        <DropdownMenuRadioItem key={preset.key} value={preset.key} className="text-[9px] uppercase font-black tracking-widest cursor-pointer">
+                                            {preset.label}
+                                        </DropdownMenuRadioItem>
+                                    ))}
+                                </DropdownMenuRadioGroup>
+                            </DropdownMenuContent>
+                        </DropdownMenu>
+                    </div>
+
+                    <span className="text-[9px] font-black tracking-widest uppercase text-muted-foreground">Agrupar:</span>
+                    <div className="flex items-center shrink-0 bg-background rounded-sm px-1 h-9">
+                        <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                                <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    className={cn(
+                                        "h-7 px-2 text-[9px] uppercase font-black tracking-widest gap-1 rounded-sm shrink-0",
+                                        granularity
+                                            ? "bg-accent/50 text-foreground"
+                                            : "text-muted-foreground hover:text-foreground"
+                                    )}
+                                >
+                                    {granularity === "day" ? "Día" : granularity === "month" ? "Mes" : granularity === "year" ? "Año" : "Seleccionar"}
+                                    <ChevronDown className="h-3 w-3 shrink-0" />
+                                </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="start" className="w-[120px] p-1">
+                                <DropdownMenuRadioGroup value={granularity} onValueChange={(v) => onGranularityChange(v as "day" | "month" | "year")}>
+                                    <DropdownMenuRadioItem value="day" className="text-[9px] uppercase font-black tracking-widest cursor-pointer">
+                                        Día
+                                    </DropdownMenuRadioItem>
+                                    <DropdownMenuRadioItem value="month" className="text-[9px] uppercase font-black tracking-widest cursor-pointer">
+                                        Mes
+                                    </DropdownMenuRadioItem>
+                                    <DropdownMenuRadioItem value="year" className="text-[9px] uppercase font-black tracking-widest cursor-pointer">
+                                        Año
+                                    </DropdownMenuRadioItem>
+                                </DropdownMenuRadioGroup>
+                            </DropdownMenuContent>
+                        </DropdownMenu>
+                    </div>
                 </>
             )}
         </div>

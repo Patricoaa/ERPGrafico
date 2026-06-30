@@ -172,7 +172,7 @@ export function TabBar({
         if (isToolbar) {
             return (
                 <div className={cn(
-                    "flex items-center shrink-0 bg-background rounded-sm px-1 h-9",
+                    "flex items-center justify-center shrink-0 bg-background rounded-sm px-1 h-9",
                     containerClassName
                 )}>
                     {list}
@@ -243,7 +243,7 @@ export function TabBar({
             onValueChange={onValueChange}
             className={cn("flex-1 flex flex-col overflow-hidden", className)}
         >
-            <div className="relative">
+            <div className="relative flex justify-center pt-3">
                 {renderTabsList()}
             </div>
 
