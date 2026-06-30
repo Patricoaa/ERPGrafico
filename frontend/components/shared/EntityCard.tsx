@@ -37,7 +37,7 @@ function EntityCardRoot({
                 }
             }}
             className={cn(
-                "card-interactive card-accent-cmyk group flex flex-col rounded-md border border-border/50 shadow-card shadow-black/5",
+                "card-interactive card-accent-cmyk group flex flex-col rounded-md border border-border shadow-card shadow-black/5",
                 "bg-card text-foreground",
                 variant === "compact" ? "gap-1.5 p-3" : "gap-3 p-4",
                 isSelected && "accent-visible",
@@ -206,7 +206,7 @@ function EntityCardFooter({ children, className }: EntityCardFooterProps) {
     return (
         <div
             className={cn(
-                "flex items-center justify-end gap-1.5 border-t border-border/30 pt-2.5",
+                "flex items-center justify-end gap-1.5 border-t border-border pt-2.5",
                 className
             )}
         >
@@ -301,7 +301,7 @@ function EntityCardSkeleton({
                 />
             )}
             {showBody && (
-                <EntityCardBody className="flex items-start justify-between gap-4 pt-2 border-t border-border/30 mt-1">
+                <EntityCardBody className="flex items-start justify-between gap-4 pt-2 border-t border-border mt-1">
                     <div className="flex flex-wrap gap-x-4 gap-y-2 flex-1">
                         <Skeleton className="h-3 w-32" />
                         <Skeleton className="h-3 w-40" />
