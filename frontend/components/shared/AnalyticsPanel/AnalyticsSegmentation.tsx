@@ -2,6 +2,7 @@
 
 import React, { useMemo } from "react"
 import { ChevronDown } from "lucide-react"
+import { SEG_TRIGGER, SEG_DROPDOWN_ITEM, SEG_ACTIVE, SEG_INACTIVE } from '../SegmentationBar/styles'
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import {
@@ -91,7 +92,7 @@ export function AnalyticsSegmentation({
         <div className="flex items-center justify-center gap-1 px-1 py-1.5 border-t border-border shrink-0 flex-wrap">
             {cardAccounts && cardAccounts.length > 0 && onCardAccountChange && (
                 <>
-                <span className="text-[9px] font-black tracking-widest uppercase text-muted-foreground">Tarjeta:</span>
+                <span className="text-xs font-semibold tracking-tight text-muted-foreground">Tarjeta:</span>
                 <div className="flex items-center shrink-0 bg-background rounded-sm px-1 h-9">
                     <DropdownMenu>
                         <DropdownMenuTrigger asChild>
@@ -99,10 +100,8 @@ export function AnalyticsSegmentation({
                                 variant="ghost"
                                 size="sm"
                                 className={cn(
-                                    "h-7 px-2 text-[9px] uppercase font-black tracking-widest gap-1 rounded-sm shrink-0",
-                                    accountLabel
-                                        ? "bg-accent/50 text-foreground"
-                                        : "text-muted-foreground hover:text-foreground"
+                                    SEG_TRIGGER,
+                                    accountLabel ? SEG_ACTIVE : SEG_INACTIVE,
                                 )}
                             >
                                 <span className="truncate max-w-[140px]">{accountLabel ?? "Seleccionar"}</span>
@@ -118,7 +117,7 @@ export function AnalyticsSegmentation({
                                     <DropdownMenuRadioItem
                                         key={acct.id}
                                         value={String(acct.id)}
-                                        className="text-[9px] uppercase font-black tracking-widest cursor-pointer"
+                                        className={`${SEG_DROPDOWN_ITEM} cursor-pointer`}
                                     >
                                         {acct.name}
                                     </DropdownMenuRadioItem>
@@ -132,7 +131,7 @@ export function AnalyticsSegmentation({
 
             {scope && onScopeChange && (
                 <>
-                <span className="text-[9px] font-black tracking-widest uppercase text-muted-foreground">Alcance:</span>
+                <span className="text-xs font-semibold tracking-tight text-muted-foreground">Alcance:</span>
                 <div className="flex items-center shrink-0 bg-background rounded-sm px-1 h-9">
                     <DropdownMenu>
                         <DropdownMenuTrigger asChild>
@@ -140,8 +139,8 @@ export function AnalyticsSegmentation({
                                 variant="ghost"
                                 size="sm"
                                 className={cn(
-                                    "h-7 px-2 text-[9px] uppercase font-black tracking-widest gap-1 rounded-sm shrink-0",
-                                    "bg-accent/50 text-foreground"
+                                    SEG_TRIGGER,
+                                    SEG_ACTIVE
                                 )}
                             >
                                 {scope === "month" ? "Cargos del mes" : "Todos los cargos"}
@@ -150,10 +149,10 @@ export function AnalyticsSegmentation({
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="start" className="w-[180px] p-1">
                             <DropdownMenuRadioGroup value={scope} onValueChange={(v) => onScopeChange(v as "month" | "all")}>
-                                <DropdownMenuRadioItem value="month" className="text-[9px] uppercase font-black tracking-widest cursor-pointer">
+                                <DropdownMenuRadioItem value="month" className={`${SEG_DROPDOWN_ITEM} cursor-pointer`}>
                                     Cargos del mes
                                 </DropdownMenuRadioItem>
-                                <DropdownMenuRadioItem value="all" className="text-[9px] uppercase font-black tracking-widest cursor-pointer">
+                                <DropdownMenuRadioItem value="all" className={`${SEG_DROPDOWN_ITEM} cursor-pointer`}>
                                     Todos los cargos
                                 </DropdownMenuRadioItem>
                             </DropdownMenuRadioGroup>
@@ -165,7 +164,7 @@ export function AnalyticsSegmentation({
 
             {granularity && onGranularityChange && (
                 <>
-                    <span className="text-[9px] font-black tracking-widest uppercase text-muted-foreground">Rango:</span>
+                    <span className="text-xs font-semibold tracking-tight text-muted-foreground">Rango:</span>
                     <div className="flex items-center shrink-0 bg-background rounded-sm px-1 h-9">
                         <DropdownMenu>
                             <DropdownMenuTrigger asChild>
@@ -173,10 +172,8 @@ export function AnalyticsSegmentation({
                                     variant="ghost"
                                     size="sm"
                                     className={cn(
-                                        "h-7 px-2 text-[9px] uppercase font-black tracking-widest gap-1 rounded-sm shrink-0",
-                                        activePreset !== "all"
-                                            ? "bg-accent/50 text-foreground"
-                                            : "text-muted-foreground hover:text-foreground"
+                                        SEG_TRIGGER,
+                                        activePreset !== "all" ? SEG_ACTIVE : SEG_INACTIVE,
                                     )}
                                 >
                                     {SEGMENTATION_PRESETS.find(p => p.key === activePreset)?.label ?? "Seleccionar"}
@@ -189,7 +186,7 @@ export function AnalyticsSegmentation({
                                     if (preset) onDateRangeChange?.(preset.range())
                                 }}>
                                     {SEGMENTATION_PRESETS.map((preset) => (
-                                        <DropdownMenuRadioItem key={preset.key} value={preset.key} className="text-[9px] uppercase font-black tracking-widest cursor-pointer">
+                                        <DropdownMenuRadioItem key={preset.key} value={preset.key} className={`${SEG_DROPDOWN_ITEM} cursor-pointer`}>
                                             {preset.label}
                                         </DropdownMenuRadioItem>
                                     ))}
@@ -198,7 +195,7 @@ export function AnalyticsSegmentation({
                         </DropdownMenu>
                     </div>
 
-                    <span className="text-[9px] font-black tracking-widest uppercase text-muted-foreground">Agrupar:</span>
+                    <span className="text-xs font-semibold tracking-tight text-muted-foreground">Agrupar:</span>
                     <div className="flex items-center shrink-0 bg-background rounded-sm px-1 h-9">
                         <DropdownMenu>
                             <DropdownMenuTrigger asChild>
@@ -206,10 +203,8 @@ export function AnalyticsSegmentation({
                                     variant="ghost"
                                     size="sm"
                                     className={cn(
-                                        "h-7 px-2 text-[9px] uppercase font-black tracking-widest gap-1 rounded-sm shrink-0",
-                                        granularity
-                                            ? "bg-accent/50 text-foreground"
-                                            : "text-muted-foreground hover:text-foreground"
+                                        SEG_TRIGGER,
+                                        granularity ? SEG_ACTIVE : SEG_INACTIVE,
                                     )}
                                 >
                                     {granularity === "day" ? "Día" : granularity === "month" ? "Mes" : granularity === "year" ? "Año" : "Seleccionar"}
@@ -218,13 +213,13 @@ export function AnalyticsSegmentation({
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="start" className="w-[120px] p-1">
                                 <DropdownMenuRadioGroup value={granularity} onValueChange={(v) => onGranularityChange(v as "day" | "month" | "year")}>
-                                    <DropdownMenuRadioItem value="day" className="text-[9px] uppercase font-black tracking-widest cursor-pointer">
+                                    <DropdownMenuRadioItem value="day" className={`${SEG_DROPDOWN_ITEM} cursor-pointer`}>
                                         Día
                                     </DropdownMenuRadioItem>
-                                    <DropdownMenuRadioItem value="month" className="text-[9px] uppercase font-black tracking-widest cursor-pointer">
+                                    <DropdownMenuRadioItem value="month" className={`${SEG_DROPDOWN_ITEM} cursor-pointer`}>
                                         Mes
                                     </DropdownMenuRadioItem>
-                                    <DropdownMenuRadioItem value="year" className="text-[9px] uppercase font-black tracking-widest cursor-pointer">
+                                    <DropdownMenuRadioItem value="year" className={`${SEG_DROPDOWN_ITEM} cursor-pointer`}>
                                         Año
                                     </DropdownMenuRadioItem>
                                 </DropdownMenuRadioGroup>

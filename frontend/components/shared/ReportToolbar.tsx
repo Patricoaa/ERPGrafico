@@ -5,6 +5,7 @@ import { DateRangeFilter } from "@/components/shared"
 import type { DateRange } from "react-day-picker"
 import { Button } from "@/components/ui/button"
 import { SlidersHorizontal, ChevronDown, GitCompare } from "lucide-react"
+import { SEG_TRIGGER, SEG_DROPDOWN_ITEM } from './SegmentationBar/styles'
 import { cn } from "@/lib/utils"
 import {
     DropdownMenu,
@@ -41,7 +42,7 @@ export function ReportToolbar({
 }: ReportToolbarProps) {
     const headerFormatLabel = headerFormat === 'year' ? 'Año' : headerFormat === 'month-year' ? 'Mes/Año' : 'Día/Mes/Año'
 
-    const btnBase = "h-7 px-2 text-[9px] uppercase font-black tracking-widest gap-1 rounded-sm shrink-0 transition-colors"
+    const btnBase = `${SEG_TRIGGER} transition-colors`
 
     return (
         <div className="flex flex-wrap items-center justify-between shrink-0 h-9 bg-background rounded-sm px-1 mb-3">
@@ -71,13 +72,13 @@ export function ReportToolbar({
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="start" className="w-[180px] p-1">
                         <DropdownMenuRadioGroup value={headerFormat} onValueChange={(val) => onHeaderFormatChange(val as 'year' | 'month-year' | 'day-month-year')}>
-                            <DropdownMenuRadioItem value="year" className="text-[9px] uppercase font-black tracking-widest cursor-pointer">
+                            <DropdownMenuRadioItem value="year" className={`${SEG_DROPDOWN_ITEM} cursor-pointer`}>
                                 Año
                             </DropdownMenuRadioItem>
-                            <DropdownMenuRadioItem value="month-year" className="text-[9px] uppercase font-black tracking-widest cursor-pointer">
+                            <DropdownMenuRadioItem value="month-year" className={`${SEG_DROPDOWN_ITEM} cursor-pointer`}>
                                 Mes/Año
                             </DropdownMenuRadioItem>
-                            <DropdownMenuRadioItem value="day-month-year" className="text-[9px] uppercase font-black tracking-widest cursor-pointer">
+                            <DropdownMenuRadioItem value="day-month-year" className={`${SEG_DROPDOWN_ITEM} cursor-pointer`}>
                                 Día/Mes/Año
                             </DropdownMenuRadioItem>
                         </DropdownMenuRadioGroup>

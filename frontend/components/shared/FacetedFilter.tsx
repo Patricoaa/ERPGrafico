@@ -3,6 +3,7 @@
 import * as React from "react"
 import { Check, PlusCircle } from "lucide-react"
 
+import { SEG_TEXT, SEG_DROPDOWN_ITEM, SEG_MENU_ITEM, SEG_CHECKBOX } from './SegmentationBar/styles'
 import { cn } from "@/lib/utils"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -35,7 +36,7 @@ export function FacetedFilter({
     return (
         <Popover>
             <PopoverTrigger asChild>
-                <Button variant="ghost" className="h-9 px-3 rounded-none text-[9px] uppercase font-black tracking-widest hover:bg-muted/50 transition-all border-0 ring-0 focus-visible:ring-0">
+                <Button variant="ghost" className={`h-9 px-3 rounded-none ${SEG_TEXT} tracking-widest hover:bg-muted/50 transition-all border-0 ring-0 focus-visible:ring-0`}>
                     <PlusCircle className="mr-2 h-3.5 w-3.5 opacity-50" />
                     <span>{title}</span>
                     {selectedSet.size > 0 && (
@@ -43,7 +44,7 @@ export function FacetedFilter({
                             <Separator orientation="vertical" className="mx-2 h-4" />
                             <Badge
                                 variant="secondary"
-                                className="rounded-sm px-1 font-black text-[9px] lg:hidden bg-primary text-primary-foreground"
+                                                className={`rounded-sm px-1 ${SEG_TEXT} lg:hidden bg-primary text-primary-foreground`}
                             >
                                 {selectedSet.size}
                             </Badge>
@@ -51,7 +52,7 @@ export function FacetedFilter({
                                 {selectedSet.size > 2 ? (
                                     <Badge
                                         variant="secondary"
-                                        className="rounded-sm px-1 font-black text-[9px] bg-primary text-primary-foreground tracking-tighter"
+                                        className={`rounded-sm px-1 ${SEG_TEXT} bg-primary text-primary-foreground tracking-tighter`}
                                     >
                                         {selectedSet.size}
                                     </Badge>
@@ -62,7 +63,7 @@ export function FacetedFilter({
                                             <Badge
                                                 variant="secondary"
                                                 key={option.value}
-                                                className="rounded-sm px-1 font-black text-[9px] bg-primary/10 text-primary tracking-tighter"
+                                                className={`rounded-sm px-1 ${SEG_TEXT} bg-primary/10 text-primary tracking-tighter`}
                                             >
                                                 {option.label}
                                             </Badge>
@@ -81,7 +82,7 @@ export function FacetedFilter({
                             <div
                                 key={option.value}
                                 className={cn(
-                                    "relative flex cursor-pointer select-none items-center rounded-sm px-2 py-1.5 text-[9px] uppercase font-black tracking-tight outline-none hover:bg-accent hover:text-accent-foreground transition-colors",
+                                    SEG_MENU_ITEM,
                                     isSelected ? "bg-accent/50 text-primary" : "text-muted-foreground"
                                 )}
                                 onClick={() => {
@@ -94,15 +95,15 @@ export function FacetedFilter({
                                     onSelect(Array.from(newSelected))
                                 }}
                             >
-                                <div
-                                    className={cn(
-                                        "mr-2 flex h-3.5 w-3.5 items-center justify-center rounded-sm border border-primary/50 transition-all",
-                                        isSelected
-                                            ? "bg-primary text-primary-foreground border-primary"
-                                            : "opacity-50 [&_svg]:invisible"
-                                    )}
-                                >
-                                    <Check className={cn("h-3 w-3")} />
+                            <div
+                                className={cn(
+                                    SEG_CHECKBOX + " border-primary/50",
+                                    isSelected
+                                        ? "bg-primary text-primary-foreground border-primary"
+                                        : "opacity-50 [&_svg]:invisible"
+                                )}
+                            >
+                                <Check className="h-3 w-3" />
                                 </div>
                                 {option.icon && (
                                     <option.icon className="mr-2 h-3.5 w-3.5 opacity-70" />
@@ -118,7 +119,7 @@ export function FacetedFilter({
                         <div className="p-1">
                             <Button
                                 variant="ghost"
-                                className="w-full justify-center text-[9px] font-black uppercase tracking-widest h-8 hover:bg-destructive/10 hover:text-destructive rounded-sm"
+                                className={`w-full justify-center ${SEG_DROPDOWN_ITEM} h-8 hover:bg-destructive/10 hover:text-destructive rounded-sm`}
                                 onClick={() => onSelect([])}
                             >
                                 Limpiar filtros

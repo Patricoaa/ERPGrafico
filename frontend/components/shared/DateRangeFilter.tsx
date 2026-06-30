@@ -6,6 +6,7 @@ import { format } from "date-fns"
 import { es } from "date-fns/locale"
 import { type DateRange } from "react-day-picker"
 
+import { SEG_TRIGGER } from './SegmentationBar/styles'
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Calendar } from "@/components/ui/calendar"
@@ -65,10 +66,10 @@ export function DateRangeFilter({
           size="sm"
           onClick={() => handleOpenChange(true)}
           className={cn(
-            "justify-start text-left font-bold uppercase tracking-wider transition-all group",
+            "justify-start text-left transition-all group",
             variant === 'outline'
-              ? "w-full text-[10px] bg-background/50 backdrop-blur-sm border-border/60 rounded-md hover:bg-muted/50 h-9 px-3"
-              : "text-[9px] h-7 px-2 rounded-sm hover:bg-accent/30 tracking-widest",
+              ? "w-full text-xs font-semibold tracking-tight bg-background/50 backdrop-blur-sm border-border/60 rounded-md hover:bg-muted/50 h-9 px-3"
+              : SEG_TRIGGER,
             !date && "text-muted-foreground",
             className
           )}
