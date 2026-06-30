@@ -237,6 +237,11 @@ export function StatementsList({ externalOpen = false, createAction, bankId, acc
                     isLoading={isLoading}
                     isFiltered={isFiltered}
                     showReset={isFiltered}
+                    emptyState={{
+                        context: 'finance',
+                        title: 'No hay cartolas importadas',
+                        description: 'Importa una cartola bancaria para comenzar la conciliación.',
+                    }}
                     onReset={handleReset}
                     smartSearch={<SmartSearchBar searchDef={statementsSearchDef} placeholder="Buscar cartola..." />}
                     segmentation={
