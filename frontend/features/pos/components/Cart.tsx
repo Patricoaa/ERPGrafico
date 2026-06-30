@@ -7,7 +7,7 @@ import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 
 import {ShoppingCart, Zap, Clock, ChevronLeft, ChevronRight, Check, Repeat} from 'lucide-react'
-import { cn, translatePaymentMethod } from '@/lib/utils'
+import { cn } from '@/lib/utils'
 import { CartItem } from './CartItem'
 import { formatCurrency } from "@/lib/money"
 import { useVatRate } from '@/hooks/useVatRate'
@@ -93,9 +93,6 @@ export function Cart({
     onSuspend,
     isLastStep = false,
     checkoutLoading = false,
-    paymentMethod,
-    paymentAmount,
-    payments,
 }: CartProps) {
     const { rate } = useVatRate()
     const { isTouchPOS } = useDeviceContext()
@@ -218,46 +215,6 @@ export function Cart({
                             <span>Total</span>
                             <span>{formatCurrency(totals.total_gross)}</span>
                         </div>
-
-                        {/* Payment Summary — visible on checkout payment step */}
-                        {posMode === 'CHECKOUT' && isLastStep && (paymentAmount || 0) > 0 && (
-                            <>
-                                <div className="border-t my-1.5" />
-                                {payments && payments.length > 1 ? (
-                                    <div className="space-y-1">
-                                        {payments.map((p, i) => (
-                                            <div key={i} className="flex justify-between text-xs text-muted-foreground">
-                                                <span>{translatePaymentMethod(p.method)}</span>
-                                                <span className="font-bold text-foreground">{formatCurrency(p.amount)}</span>
-                                            </div>
-                                        ))}
-                                        <div className="border-t pt-1 flex justify-between text-xs font-bold">
-                                            <span>Total</span>
-                                            <span>{formatCurrency(paymentAmount || 0)}</span>
-                                        </div>
-                                    </div>
-                                ) : (
-                                    <>
-                                        <div className="flex justify-between text-xs text-muted-foreground">
-                                            <span>Monto Recibido</span>
-                                            <span className="font-bold text-foreground">{formatCurrency(paymentAmount || 0)}</span>
-                                        </div>
-                                        <div className="flex justify-between text-xs text-muted-foreground">
-                                            <span>Método</span>
-                                            <span className="font-bold text-foreground">{translatePaymentMethod(paymentMethod)}</span>
-                                        </div>
-                                    </>
-                                )}
-                                {(paymentAmount || 0) !== totals.total_gross && (
-                                    <div className="flex justify-between text-xs text-muted-foreground">
-                                        <span>{(paymentAmount || 0) > totals.total_gross ? 'Vuelto' : 'Crédito Asignado'}</span>
-                                        <span className={cn("font-bold", (paymentAmount || 0) > totals.total_gross ? "text-success" : "text-warning")}>
-                                            {formatCurrency(Math.abs((paymentAmount || 0) - totals.total_gross))}
-                                        </span>
-                                    </div>
-                                )}
-                            </>
-                        )}
                         </div>
                     </div>
 
