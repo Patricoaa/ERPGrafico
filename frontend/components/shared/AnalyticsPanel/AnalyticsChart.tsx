@@ -136,6 +136,7 @@ function PieChartRenderer(props: PieChartConfig) {
                 enableArcLinkLabels={props.enableArcLinkLabels}
                 enableArcLabels={props.enableLabels}
                 arcLabel={props.arcLabel}
+                centerLabel={props.centerLabel}
                 legends={showLegend ? [{ ...defaultLegend }] : []}
                 margin={{ top: pit + legendPad, right: pit, bottom: pit, left: pit }}
                 renderTooltip={
