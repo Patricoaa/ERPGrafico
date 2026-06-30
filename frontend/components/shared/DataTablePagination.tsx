@@ -46,7 +46,7 @@ export function DataTablePagination<TData>({
                             table.setPageSize(Number(value))
                         }}
                     >
-                        <SelectTrigger className="h-9 w-[70px] rounded-sm bg-background/30 border-border/10 focus:bg-accent/30 transition-all text-[10px] font-bold font-sans">
+                        <SelectTrigger className="h-7! w-[70px] rounded-sm border-0 bg-transparent shadow-none text-xs font-semibold tracking-tight text-muted-foreground hover:bg-accent hover:text-accent-foreground px-2 gap-1">
                             <SelectValue placeholder={table.getState().pagination.pageSize} />
                         </SelectTrigger>
                         <SelectContent side="top">
@@ -65,8 +65,7 @@ export function DataTablePagination<TData>({
                 <div className={SEG_WRAPPER}>
                     <Button
                         variant="ghost"
-                        size="icon"
-                        className="h-7 w-7 hidden lg:flex"
+                        className="h-7 w-7 shrink-0 p-0 hover:bg-accent/50 hover:text-foreground hidden lg:flex"
                         onClick={() => table.setPageIndex(0)}
                         disabled={!table.getCanPreviousPage()}
                     >
@@ -75,8 +74,7 @@ export function DataTablePagination<TData>({
                     </Button>
                     <Button
                         variant="ghost"
-                        size="icon"
-                        className="h-7 w-7"
+                        className="h-7 w-7 shrink-0 p-0 hover:bg-accent/50 hover:text-foreground"
                         onClick={() => table.previousPage()}
                         disabled={!table.getCanPreviousPage()}
                     >
@@ -85,8 +83,7 @@ export function DataTablePagination<TData>({
                     </Button>
                     <Button
                         variant="ghost"
-                        size="icon"
-                        className="h-7 w-7"
+                        className="h-7 w-7 shrink-0 p-0 hover:bg-accent/50 hover:text-foreground"
                         onClick={() => table.nextPage()}
                         disabled={!table.getCanNextPage()}
                     >
@@ -95,8 +92,7 @@ export function DataTablePagination<TData>({
                     </Button>
                     <Button
                         variant="ghost"
-                        size="icon"
-                        className="h-7 w-7 hidden lg:flex"
+                        className="h-7 w-7 shrink-0 p-0 hover:bg-accent/50 hover:text-foreground hidden lg:flex"
                         onClick={() => table.setPageIndex(table.getPageCount() - 1)}
                         disabled={!table.getCanNextPage()}
                     >
