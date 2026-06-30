@@ -306,10 +306,10 @@ export const ActionCategory = forwardRef(({
         <>
             {!headless && (
                 <div className={cn(
-                    layout === 'grid' ? "space-y-0" : (ghost || layout === 'flex' ? "space-y-2" : "p-4 space-y-4 rounded-md border bg-card/50 shadow-card")
+                    layout === 'grid' ? "space-y-0" : (ghost || layout === 'flex' ? "space-y-2" : "p-4 space-y-4 rounded-md border bg-card/50 hover:shadow-elevated transition-shadow")
                 )}>
                     {layout === 'list' && (category.icon || category.label) && (
-                        <div className="flex items-center gap-2 pb-2 border-b border-border/50">
+                        <div className="flex items-center gap-2 pb-2 border-b border-border">
                             {category.icon && (
                                 <div className="p-1.5 rounded bg-primary/10 text-primary border border-primary/10">
                                     <category.icon className="h-4 w-4" />

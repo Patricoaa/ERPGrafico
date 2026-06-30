@@ -274,7 +274,7 @@ export function TaskInbox() {
             <Card
                 key={task.id}
                 className={cn(
-                    "card-interactive card-accent-cmyk p-3 cursor-pointer backdrop-blur-sm group rounded-md flex flex-col gap-3 border border-border/50 shadow-card shadow-black/5",
+                    "card-base p-3 cursor-pointer backdrop-blur-sm group flex flex-col gap-3",
                     isCompleted && "opacity-50 grayscale-[0.5]"
                 )}
                 onClick={() => navigateToTask(task)}
@@ -297,7 +297,7 @@ export function TaskInbox() {
                             task.title
                         )}
                     </h3>
-                    <Avatar className="h-8 w-8 shrink-0 border border-border/50">
+                    <Avatar className="h-8 w-8 shrink-0 border border-border">
                         <AvatarFallback className="text-xs bg-muted text-muted-foreground font-bold">
                             {initials}
                         </AvatarFallback>
@@ -377,7 +377,7 @@ export function TaskInbox() {
 
                 {/* Row 3: Inline Actions for Credit Requests */}
                 {task.task_type === 'CREDIT_POS_REQUEST' && !isCompleted && task.status !== 'REJECTED' && (
-                    <div className="pt-2 border-t border-border/50 flex flex-col gap-3">
+                    <div className="pt-2 border-t border-border flex flex-col gap-3">
                         <div className="flex items-center justify-between">
                             <button
                                 className="text-[10px] font-bold text-muted-foreground uppercase flex items-center gap-2 hover:text-primary transition-colors group/name"

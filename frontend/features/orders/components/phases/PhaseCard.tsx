@@ -109,7 +109,7 @@ export function PhaseCard({
 
     return (
         <Card className={cn(
-            "card-interactive card-accent-cmyk flex flex-col transition-all duration-300 relative group/card bg-card/50 backdrop-blur-sm rounded-md py-2 gap-2 border border-border/50 shadow-card shadow-black/5",
+            "card-base flex flex-col duration-300 relative group/card bg-card/50 backdrop-blur-sm py-2 gap-2",
             open && collapsible && "accent-visible",
             isSuccess && "opacity-80 grayscale-[0.3] hover:opacity-100 hover:grayscale-0",
             isActive && "border-primary/30 bg-primary/5 shadow-primary/5",
@@ -138,14 +138,14 @@ export function PhaseCard({
             >
                 <div className={cn(
                     "transition-all duration-300",
-                    "p-1 flex items-center justify-center rounded-md h-7 w-7 shrink-0 border border-border/50 bg-muted/50 shadow-card shadow-black/5"
+                    "p-1 flex items-center justify-center rounded-md h-7 w-7 shrink-0 border border-border bg-muted/50"
                 )}>
                     <div className="relative flex items-center justify-center w-full h-full">
                         <Icon className={cn("h-4 w-4", iconStyles[isSuccess ? 'success' : (isActive ? 'active' : 'neutral')])} />
 
                         {/* Mini Status Badge - Simplified to a Small Dot */}
                         <div className={cn(
-                            "absolute -top-1 -right-1 h-2 w-2 rounded-full border shadow-card",
+                            "absolute -top-1 -right-1 h-2 w-2 rounded-full border",
                             isSuccess && "bg-success border-background",
                             isActive && "bg-primary border-background",
                             variant === 'destructive' && "bg-destructive border-background",

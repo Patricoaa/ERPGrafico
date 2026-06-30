@@ -84,7 +84,7 @@ export function Step2_DTE({
                         key={opt.id}
                         htmlFor={`type-${opt.id.toLowerCase().replace("_", "-")}`}
                         className={cn(
-                            "card-accent-cmyk relative overflow-hidden flex items-center gap-4 rounded-md border border-border/50 bg-card py-3 px-4 hover:shadow-elevated transition-all cursor-pointer shadow-card shadow-black/5",
+                            "card-base flex items-center gap-4 bg-card py-3 px-4 cursor-pointer shadow-card shadow-black/5",
                             "focus-visible:border-2 focus-visible:border-primary",
                             "[&:has([data-state=checked])]:border-2 [&:has([data-state=checked])]:border-primary",
                             dteData.type === opt.id ? "border-2 border-primary accent-visible" : "border"

@@ -45,7 +45,7 @@ function KanbanCard({ order, onManage, onDuplicate, onAnnul, onDelete }: { order
         <Card
             onClick={() => onManage(order.id)}
             className={cn(
-                "card-interactive card-accent-cmyk cursor-pointer rounded-md",
+                "card-base cursor-pointer",
                 "active:scale-95"
             )}
         >

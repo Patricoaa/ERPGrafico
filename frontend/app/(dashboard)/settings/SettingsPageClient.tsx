@@ -81,7 +81,7 @@ export default function SettingsPageClient() {
                         <Link 
                             key={mod.id} 
                             href={mod.url}
-                            className="card-interactive card-accent-cmyk group relative flex flex-col justify-between p-5 h-32 bg-background rounded-md"
+                            className="card-base group relative flex flex-col justify-between p-5 h-32 bg-background"
                             style={{ animationDelay: `${index * 50}ms`, animationFillMode: 'backwards' }}
                         >
                             <div className="flex items-center justify-between">
