@@ -31,7 +31,7 @@ import { useCategories } from "@/features/inventory/hooks/useCategories"
 import { type Product, type Restriction, type ProductFilters } from "@/features/inventory/types"
 import { productActions, type ProductActionsCtx } from "@/features/inventory/productActions"
 import { useSelectedEntity } from "@/hooks/useSelectedEntity"
-import { Chip, SmartSearchBar, useSmartSearch, SegmentationBar, useSegmentation } from "@/components/shared"
+import { SEG_TRIGGER, SEG_DROPDOWN_ITEM, SEG_ACTIVE, SEG_INACTIVE, SEG_WRAPPER, Chip, SmartSearchBar, useSmartSearch, SegmentationBar, useSegmentation } from "@/components/shared"
 import { productSearchDef } from "@/features/inventory/searchDef"
 import { productSegDef } from "@/features/inventory/segmentationDef"
 import { useQueryState, parseAsString } from "nuqs"
@@ -631,17 +631,15 @@ function CategoryFilter({ categories, value, onChange }: CategoryFilterProps) {
         : null
 
     return (
-        <div className="flex items-center shrink-0 bg-background rounded-sm px-1 h-9">
+        <div className={SEG_WRAPPER}>
             <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                     <Button
                         variant="ghost"
                         size="sm"
                         className={cn(
-                            'h-7 px-2 text-[10px] uppercase font-bold tracking-widest gap-1 rounded-sm shrink-0',
-                            value
-                                ? 'bg-accent/50 text-foreground'
-                                : 'text-muted-foreground hover:text-foreground',
+                            SEG_TRIGGER,
+                            value ? SEG_ACTIVE : SEG_INACTIVE,
                         )}
                     >
                         {currentLabel ?? 'Categoría'}
@@ -653,20 +651,20 @@ function CategoryFilter({ categories, value, onChange }: CategoryFilterProps) {
                         value={value ?? ''}
                         onValueChange={(v) => onChange(v === '' ? null : v)}
                     >
-                        <DropdownMenuRadioItem value="" className="text-[10px] uppercase tracking-widest">
+                        <DropdownMenuRadioItem value="" className={SEG_DROPDOWN_ITEM}>
                             Todas
                         </DropdownMenuRadioItem>
                         {categories.map((cat) => (
                             <DropdownMenuRadioItem
                                 key={cat.id}
                                 value={String(cat.id)}
-                                className="text-[10px] uppercase tracking-widest"
+                                className={SEG_DROPDOWN_ITEM}
                             >
                                 {cat.name}
                             </DropdownMenuRadioItem>
                         ))}
                         {categories.length === 0 && (
-                            <DropdownMenuRadioItem value="" disabled className="text-[10px] uppercase tracking-widest text-muted-foreground/40">
+                            <DropdownMenuRadioItem value="" disabled className={`${SEG_DROPDOWN_ITEM} text-muted-foreground/40`}>
                                 Sin categorías
                             </DropdownMenuRadioItem>
                         )}

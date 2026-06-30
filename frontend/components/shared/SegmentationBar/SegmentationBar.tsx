@@ -6,6 +6,7 @@ import { es } from 'date-fns/locale'
 import { Calendar as CalendarIcon, X, ChevronDown, Check } from 'lucide-react'
 import type { DateRange } from 'react-day-picker'
 import type { Table } from '@tanstack/react-table'
+import { SEG_TEXT, SEG_WRAPPER, SEG_TRIGGER, SEG_ACTIVE, SEG_INACTIVE, SEG_DROPDOWN_ITEM, SEG_MENU_ITEM, SEG_CHECKBOX, SEG_INPUT } from './styles'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -50,7 +51,7 @@ export function SegmentationBar<TData>({ def, basePeriod, table: explicitTable }
   return (
     <>
       {basePeriod && (
-        <div className="flex items-center shrink-0 bg-background rounded-sm px-1 h-9">
+        <div className={SEG_WRAPPER}>
           <BasePeriodSegment
             serverParamFrom={basePeriod.serverParamFrom}
             serverParamTo={basePeriod.serverParamTo}
@@ -61,7 +62,7 @@ export function SegmentationBar<TData>({ def, basePeriod, table: explicitTable }
         </div>
       )}
       {def.segments.map((segment) => (
-        <div key={segment.key} className="flex items-center shrink-0 bg-background rounded-sm px-1 h-9">
+        <div key={segment.key} className={SEG_WRAPPER}>
           <SegmentItem
             segment={segment}
             filters={filters}
@@ -137,7 +138,7 @@ function TabsSegment({ def, filters, apply, remove }: TabsSegmentProps) {
         {!def.defaultValue && (
           <TabsTrigger
             value=""
-            className="h-7 px-2 text-[9px] uppercase font-black tracking-widest gap-1 data-[state=active]:bg-accent/50 data-[state=active]:shadow-none rounded-sm hover:bg-accent/30 transition-all duration-150"
+            className={SEG_TRIGGER + " data-[state=active]:bg-accent/50 data-[state=active]:shadow-none rounded-sm hover:bg-accent/30 transition-all duration-150"}
           >
             Todos
           </TabsTrigger>
@@ -146,7 +147,7 @@ function TabsSegment({ def, filters, apply, remove }: TabsSegmentProps) {
           <TabsTrigger
             key={opt.value}
             value={opt.value}
-            className="h-7 px-2 text-[9px] uppercase font-black tracking-widest gap-1 data-[state=active]:bg-accent/50 data-[state=active]:shadow-none rounded-sm hover:bg-accent/30 transition-all duration-150"
+            className={SEG_TRIGGER + " data-[state=active]:bg-accent/50 data-[state=active]:shadow-none rounded-sm hover:bg-accent/30 transition-all duration-150"}
           >
             {opt.label}
           </TabsTrigger>
@@ -178,10 +179,8 @@ function DropdownSegment({ def, filters, apply, remove }: DropdownSegmentProps) 
           variant="ghost"
           size="sm"
           className={cn(
-            'h-7 px-2 text-[9px] uppercase font-black tracking-widest gap-1 rounded-sm shrink-0',
-            currentValue
-              ? 'bg-accent/50 text-foreground'
-              : 'text-muted-foreground hover:text-foreground',
+            SEG_TRIGGER,
+            currentValue ? SEG_ACTIVE : SEG_INACTIVE,
           )}
         >
           {currentLabel ?? def.label}
@@ -199,7 +198,7 @@ function DropdownSegment({ def, filters, apply, remove }: DropdownSegmentProps) 
             }
           }}
         >
-          <DropdownMenuRadioItem value="" className="text-[9px] uppercase font-black tracking-widest">
+          <DropdownMenuRadioItem value="" className={SEG_DROPDOWN_ITEM}>
             Todos
           </DropdownMenuRadioItem>
           {def.options.map((opt) => {
@@ -208,7 +207,7 @@ function DropdownSegment({ def, filters, apply, remove }: DropdownSegmentProps) 
               <DropdownMenuRadioItem
                 key={opt.value}
                 value={opt.value}
-                className="text-[9px] uppercase font-black tracking-widest"
+                className={SEG_DROPDOWN_ITEM}
               >
                 {Icon && <Icon className="mr-2 h-3.5 w-3.5 opacity-70 shrink-0" />}
                 {opt.label}
@@ -289,7 +288,7 @@ function PeriodSegment({ def, filters, apply, remove }: PeriodSegmentProps) {
       <TabsList className="h-7 p-0 gap-0 bg-transparent border-border/60 shrink-0">
         <TabsTrigger
           value=""
-          className="h-7 px-2 text-[9px] uppercase font-black tracking-widest gap-1 data-[state=active]:bg-accent/50 data-[state=active]:shadow-none rounded-sm hover:bg-accent/30 transition-all duration-150"
+          className={SEG_TRIGGER + " data-[state=active]:bg-accent/50 data-[state=active]:shadow-none rounded-sm hover:bg-accent/30 transition-all duration-150"}
         >
           Todos
         </TabsTrigger>
@@ -297,7 +296,7 @@ function PeriodSegment({ def, filters, apply, remove }: PeriodSegmentProps) {
           <TabsTrigger
             key={opt.value}
             value={opt.value}
-            className="h-7 px-2 text-[9px] uppercase font-black tracking-widest gap-1 data-[state=active]:bg-accent/50 data-[state=active]:shadow-none rounded-sm hover:bg-accent/30 transition-all duration-150"
+            className={SEG_TRIGGER + " data-[state=active]:bg-accent/50 data-[state=active]:shadow-none rounded-sm hover:bg-accent/30 transition-all duration-150"}
           >
             {opt.label}
           </TabsTrigger>
@@ -380,10 +379,8 @@ function BasePeriodSegment({ serverParamFrom, serverParamTo, filters, apply, rem
 
   const btnClass = (isActive: boolean) =>
     cn(
-      'h-7 px-2 text-[9px] uppercase font-black tracking-widest gap-1 rounded-sm shrink-0',
-      isActive
-        ? 'bg-accent/50 text-foreground shadow-none'
-        : 'text-muted-foreground hover:text-foreground',
+      SEG_TRIGGER,
+      isActive ? `${SEG_ACTIVE} shadow-none` : SEG_INACTIVE,
     )
 
   return (
@@ -460,7 +457,7 @@ function BasePeriodSegment({ serverParamFrom, serverParamTo, filters, apply, rem
               <Button
                 variant="outline"
                 size="sm"
-                className="h-7 text-[9px] uppercase font-black tracking-widest"
+                className={`h-7 ${SEG_DROPDOWN_ITEM}`}
                 onClick={handleRangeClear}
                 disabled={!fromVal && !toVal}
               >
@@ -470,14 +467,14 @@ function BasePeriodSegment({ serverParamFrom, serverParamTo, filters, apply, rem
                 <Button
                   variant="outline"
                   size="sm"
-                  className="h-7 text-[9px] uppercase font-black tracking-widest"
+                  className={`h-7 ${SEG_DROPDOWN_ITEM}`}
                   onClick={() => setRangeOpen(false)}
                 >
                   Cancelar
                 </Button>
                 <Button
                   size="sm"
-                  className="h-7 text-[9px] uppercase font-black tracking-widest"
+                  className={`h-7 ${SEG_DROPDOWN_ITEM}`}
                   onClick={handleRangeApply}
                   disabled={!tempRange?.from}
                 >
@@ -553,10 +550,8 @@ function RangeSegment({ def, filters, apply, remove }: RangeSegmentProps) {
           variant="ghost"
           size="sm"
           className={cn(
-            'h-7 px-2 text-[9px] uppercase font-black tracking-widest gap-1 rounded-sm shrink-0',
-            hasValue
-              ? 'bg-accent/50 text-foreground'
-              : 'text-muted-foreground hover:text-foreground',
+            SEG_TRIGGER,
+            hasValue ? SEG_ACTIVE : SEG_INACTIVE,
           )}
         >
           <span className="truncate max-w-[160px]">{label ?? def.label}</span>
@@ -580,16 +575,16 @@ function RangeSegment({ def, filters, apply, remove }: RangeSegmentProps) {
               value={tempFrom}
               onChange={(e) => setTempFrom(e.target.value)}
               placeholder={def.placeholderFrom ?? 'Desde'}
-              className="h-7 w-24 text-[9px] font-black rounded-sm border-border/60 px-2 [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+              className={`${SEG_INPUT} w-24 [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none`}
               onKeyDown={(e) => { if (e.key === 'Enter') handleApply() }}
             />
-            <span className="text-[9px] font-black text-muted-foreground/50">—</span>
+            <span className={`${SEG_TEXT} text-muted-foreground/50`}>—</span>
             <Input
               type="number"
               value={tempTo}
               onChange={(e) => setTempTo(e.target.value)}
               placeholder={def.placeholderTo ?? 'Hasta'}
-              className="h-7 w-24 text-[9px] font-black rounded-sm border-border/60 px-2 [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+              className={`${SEG_INPUT} w-24 [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none`}
               onKeyDown={(e) => { if (e.key === 'Enter') handleApply() }}
             />
           </div>
@@ -597,7 +592,7 @@ function RangeSegment({ def, filters, apply, remove }: RangeSegmentProps) {
             <Button
               variant="outline"
               size="sm"
-              className="h-7 text-[9px] uppercase font-black tracking-widest"
+              className={`h-7 ${SEG_DROPDOWN_ITEM}`}
               onClick={handleClear}
               disabled={!hasValue}
             >
@@ -607,14 +602,14 @@ function RangeSegment({ def, filters, apply, remove }: RangeSegmentProps) {
               <Button
                 variant="outline"
                 size="sm"
-                className="h-7 text-[9px] uppercase font-black tracking-widest"
+                className={`h-7 ${SEG_DROPDOWN_ITEM}`}
                 onClick={() => setOpen(false)}
               >
                 Cancelar
               </Button>
               <Button
                 size="sm"
-                className="h-7 text-[9px] uppercase font-black tracking-widest"
+                className={`h-7 ${SEG_DROPDOWN_ITEM}`}
                 onClick={handleApply}
               >
                 Aplicar
@@ -663,10 +658,8 @@ function MultiSelectSegment({ def, filters, apply, remove }: MultiSelectSegmentP
           variant="ghost"
           size="sm"
           className={cn(
-            'h-7 px-2 text-[9px] uppercase font-black tracking-widest gap-1 rounded-sm shrink-0',
-            selectedValues.length > 0
-              ? 'bg-accent/50 text-foreground'
-              : 'text-muted-foreground hover:text-foreground',
+            SEG_TRIGGER,
+            selectedValues.length > 0 ? SEG_ACTIVE : SEG_INACTIVE,
           )}
         >
           <span className="truncate max-w-[120px]">{currentLabel ?? def.label}</span>
@@ -684,13 +677,13 @@ function MultiSelectSegment({ def, filters, apply, remove }: MultiSelectSegmentP
                 role="option"
                 aria-selected={isSelected}
                 className={cn(
-                  'relative flex cursor-pointer select-none items-center rounded-sm px-2 py-1.5 text-[9px] uppercase font-black tracking-tight outline-none hover:bg-accent hover:text-accent-foreground transition-colors',
+                  SEG_MENU_ITEM,
                   isSelected ? 'bg-primary/5 text-primary' : 'text-muted-foreground',
                 )}
                 onClick={() => toggleOption(opt.value)}
               >
                 <div className={cn(
-                  'mr-2 flex h-3.5 w-3.5 items-center justify-center rounded-sm border transition-all',
+                  SEG_CHECKBOX,
                   isSelected ? 'bg-primary text-primary-foreground border-primary' : 'bg-background border-border',
                 )}>
                   {isSelected && <Check className="h-2.5 w-2.5" />}
@@ -704,7 +697,7 @@ function MultiSelectSegment({ def, filters, apply, remove }: MultiSelectSegmentP
         {selectedValues.length > 0 && (
           <div
             role="button"
-            className="w-full flex items-center justify-center text-[9px] font-black uppercase tracking-[0.1em] h-7 mt-1 hover:bg-destructive/10 hover:text-destructive transition-colors rounded-sm text-muted-foreground/60 cursor-pointer"
+            className={`w-full flex items-center justify-center ${SEG_TEXT} tracking-[0.1em] h-7 mt-1 hover:bg-destructive/10 hover:text-destructive transition-colors rounded-sm text-muted-foreground/60 cursor-pointer`}
             onClick={async () => { await remove(def.serverParam); setOpen(false) }}
           >
             Limpiar
@@ -777,10 +770,8 @@ function DynamicMultiSelectSegment<TData>({ def, filters, apply, remove, table }
           variant="ghost"
           size="sm"
           className={cn(
-            'h-7 px-2 text-[9px] uppercase font-black tracking-widest gap-1 rounded-sm shrink-0',
-            selectedValues.length > 0
-              ? 'bg-accent/50 text-foreground'
-              : 'text-muted-foreground hover:text-foreground',
+            SEG_TRIGGER,
+            selectedValues.length > 0 ? SEG_ACTIVE : SEG_INACTIVE,
           )}
         >
           <span className="truncate max-w-[120px]">{currentLabel ?? def.label}</span>
@@ -798,13 +789,13 @@ function DynamicMultiSelectSegment<TData>({ def, filters, apply, remove, table }
                 role="option"
                 aria-selected={isSelected}
                 className={cn(
-                  'relative flex cursor-pointer select-none items-center rounded-sm px-2 py-1.5 text-[9px] uppercase font-black tracking-tight outline-none hover:bg-accent hover:text-accent-foreground transition-colors',
+                  SEG_MENU_ITEM,
                   isSelected ? 'bg-primary/5 text-primary' : 'text-muted-foreground',
                 )}
                 onClick={() => toggleOption(opt.value)}
               >
                 <div className={cn(
-                  'mr-2 flex h-3.5 w-3.5 items-center justify-center rounded-sm border transition-all',
+                  SEG_CHECKBOX,
                   isSelected ? 'bg-primary text-primary-foreground border-primary' : 'bg-background border-border',
                 )}>
                   {isSelected && <Check className="h-2.5 w-2.5" />}
@@ -818,7 +809,7 @@ function DynamicMultiSelectSegment<TData>({ def, filters, apply, remove, table }
         {selectedValues.length > 0 && (
           <div
             role="button"
-            className="w-full flex items-center justify-center text-[9px] font-black uppercase tracking-[0.1em] h-7 mt-1 hover:bg-destructive/10 hover:text-destructive transition-colors rounded-sm text-muted-foreground/60 cursor-pointer"
+            className={`w-full flex items-center justify-center ${SEG_TEXT} tracking-[0.1em] h-7 mt-1 hover:bg-destructive/10 hover:text-destructive transition-colors rounded-sm text-muted-foreground/60 cursor-pointer`}
             onClick={async () => { syncColumn([]); await remove(def.serverParam); setOpen(false) }}
           >
             Limpiar
@@ -937,10 +928,8 @@ function DateSegment({ def, filters, apply, remove }: DateSegmentProps) {
           variant="ghost"
           size="sm"
           className={cn(
-            'h-7 px-2 text-[9px] uppercase font-black tracking-widest gap-1 rounded-sm shrink-0',
-            mode !== 'all'
-              ? 'bg-accent/50 text-foreground'
-              : 'text-muted-foreground hover:text-foreground',
+            SEG_TRIGGER,
+            mode !== 'all' ? SEG_ACTIVE : SEG_INACTIVE,
           )}
         >
           <CalendarIcon className="h-3 w-3" />
@@ -967,10 +956,8 @@ function DateSegment({ def, filters, apply, remove }: DateSegmentProps) {
               size="sm"
               onClick={() => setTempMode('all')}
               className={cn(
-                'h-7 px-2 text-[9px] uppercase font-black tracking-widest rounded-sm',
-                tempMode === 'all'
-                  ? 'bg-accent/50 text-foreground'
-                  : 'text-muted-foreground hover:text-foreground',
+                SEG_TRIGGER,
+                tempMode === 'all' ? SEG_ACTIVE : SEG_INACTIVE,
               )}
             >
               Todos
@@ -980,10 +967,8 @@ function DateSegment({ def, filters, apply, remove }: DateSegmentProps) {
               size="sm"
               onClick={() => setTempMode('single')}
               className={cn(
-                'h-7 px-2 text-[9px] uppercase font-black tracking-widest rounded-sm',
-                tempMode === 'single'
-                  ? 'bg-accent/50 text-foreground'
-                  : 'text-muted-foreground hover:text-foreground',
+                SEG_TRIGGER,
+                tempMode === 'single' ? SEG_ACTIVE : SEG_INACTIVE,
               )}
             >
               Fecha única
@@ -993,10 +978,8 @@ function DateSegment({ def, filters, apply, remove }: DateSegmentProps) {
               size="sm"
               onClick={() => setTempMode('range')}
               className={cn(
-                'h-7 px-2 text-[9px] uppercase font-black tracking-widest rounded-sm',
-                tempMode === 'range'
-                  ? 'bg-accent/50 text-foreground'
-                  : 'text-muted-foreground hover:text-foreground',
+                SEG_TRIGGER,
+                tempMode === 'range' ? SEG_ACTIVE : SEG_INACTIVE,
               )}
             >
               Rango
@@ -1033,7 +1016,7 @@ function DateSegment({ def, filters, apply, remove }: DateSegmentProps) {
             <Button
               variant="outline"
               size="sm"
-              className="h-7 text-[9px] uppercase font-black tracking-widest"
+              className={`h-7 ${SEG_DROPDOWN_ITEM}`}
               onClick={async () => {
                 if (def.serverParamDate) await remove(def.serverParamDate)
                 if (def.serverParamFrom) await remove(def.serverParamFrom)
@@ -1048,14 +1031,14 @@ function DateSegment({ def, filters, apply, remove }: DateSegmentProps) {
               <Button
                 variant="outline"
                 size="sm"
-                className="h-7 text-[9px] uppercase font-black tracking-widest"
+                className={`h-7 ${SEG_DROPDOWN_ITEM}`}
                 onClick={() => setOpen(false)}
               >
                 Cancelar
               </Button>
               <Button
                 size="sm"
-                className="h-7 text-[9px] uppercase font-black tracking-widest"
+                className={`h-7 ${SEG_DROPDOWN_ITEM}`}
                 onClick={handleApply}
                 disabled={
                   (tempMode === 'single' && !tempSingle) ||

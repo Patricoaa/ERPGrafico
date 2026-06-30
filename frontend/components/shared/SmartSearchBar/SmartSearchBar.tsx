@@ -2,6 +2,7 @@
 
 import { useRef, useState, useCallback, useEffect, type KeyboardEvent, useMemo } from 'react'
 import { Search, X, CornerDownLeft } from 'lucide-react'
+import { SEG_TEXT, SEG_DROPDOWN_ITEM } from '../SegmentationBar/styles'
 import { cn } from '@/lib/utils'
 import type { SearchDefinition, FieldDef, TextFieldDef } from '@/types/search'
 import { useSmartSearch } from './useSmartSearch'
@@ -258,7 +259,7 @@ export function SmartSearchBar({ searchDef, placeholder = 'Buscar...', className
           }}
           onKeyDown={handleKeyDown}
           placeholder={hasActiveFilters ? '' : placeholder}
-          className="flex-1 h-7 min-w-[80px] bg-transparent border-none outline-none text-[9px] font-black text-muted-foreground placeholder:text-muted-foreground/40 py-0"
+          className={`flex-1 h-7 min-w-[80px] bg-transparent border-none outline-none ${SEG_TEXT} text-muted-foreground placeholder:text-muted-foreground/40 py-0`}
           role="combobox"
           aria-expanded={isOpen}
           aria-haspopup="listbox"
@@ -268,7 +269,7 @@ export function SmartSearchBar({ searchDef, placeholder = 'Buscar...', className
         />
 
         {showEnterHint && (
-          <span className="inline-flex items-center text-[9px] font-black text-muted-foreground/40 shrink-0 select-none">
+          <span className={`inline-flex items-center ${SEG_TEXT} text-muted-foreground/40 shrink-0 select-none`}>
             <CornerDownLeft className="h-2.5 w-2.5" />
           </span>
         )}
@@ -309,18 +310,18 @@ export function SmartSearchBar({ searchDef, placeholder = 'Buscar...', className
                   >
                     <Search className="h-3.5 w-3.5 text-muted-foreground/60 shrink-0" />
                     <div className="flex-1 min-w-0">
-                      <p className="text-[9px] font-black text-foreground truncate">
-                        Buscar <span className="font-black">«{inputValue.trim()}»</span>
+                      <p className={`${SEG_TEXT} text-foreground truncate`}>
+                        Buscar <span className={SEG_TEXT}>«{inputValue.trim()}»</span>
                       </p>
-                      <p className="text-[9px] font-black text-muted-foreground/60">Búsqueda general en todos los campos</p>
+                      <p className={`${SEG_TEXT} text-muted-foreground/60`}>Búsqueda general en todos los campos</p>
                     </div>
-                    <span className="inline-flex items-center gap-1 text-[9px] font-black text-muted-foreground/50 uppercase tracking-widest shrink-0">
+                    <span className={`inline-flex items-center gap-1 ${SEG_TEXT} text-muted-foreground/50 tracking-tight shrink-0`}>
                       Enter
                       <CornerDownLeft className="h-2.5 w-2.5" />
                     </span>
                   </button>
                 ) : (
-                  <p className="px-3 py-2 text-[9px] font-black text-muted-foreground uppercase tracking-widest">Sin coincidencias</p>
+                  <p className={`px-3 py-2 ${SEG_TEXT} text-muted-foreground tracking-tight`}>Sin coincidencias</p>
                 )
               ) : (
                 filteredFields.map((field, i) => (
@@ -331,11 +332,11 @@ export function SmartSearchBar({ searchDef, placeholder = 'Buscar...', className
                     role="option"
                     aria-selected={i === focusedIndex}
                     onClick={() => handleFieldSelect(field)}
-                    className={cn(
-                      'w-full flex items-center justify-between px-2.5 py-2 text-left transition-colors rounded-sm',
-                      'text-[9px] font-black uppercase tracking-widest',
-                      i === focusedIndex ? 'bg-primary/10 text-primary' : 'hover:bg-primary/5 text-foreground',
-                    )}
+                      className={cn(
+                        'w-full flex items-center justify-between px-2.5 py-2 text-left transition-colors rounded-sm',
+                        SEG_DROPDOWN_ITEM,
+                        i === focusedIndex ? 'bg-primary/10 text-primary' : 'hover:bg-primary/5 text-foreground',
+                      )}
                   >
                     <span>{field.label}</span>
                   </button>
@@ -348,11 +349,11 @@ export function SmartSearchBar({ searchDef, placeholder = 'Buscar...', className
           {activeSuggestionsUrl && (
             <div className="p-1">
               {suggestionQuery.length < 2 ? (
-                <p className="px-3 py-2 text-[9px] font-black text-muted-foreground/60">Escribe 2 o más caracteres para ver sugerencias</p>
+                <p className={`px-3 py-2 ${SEG_TEXT} text-muted-foreground/60`}>Escribe 2 o más caracteres para ver sugerencias</p>
               ) : isSuggestionsLoading ? (
-                <p className="px-3 py-2 text-[9px] font-black text-muted-foreground/60">Buscando...</p>
+                <p className={`px-3 py-2 ${SEG_TEXT} text-muted-foreground/60`}>Buscando...</p>
               ) : suggestions.length === 0 ? (
-                <p className="px-3 py-2 text-[9px] font-black text-muted-foreground/60">Sin coincidencias</p>
+                <p className={`px-3 py-2 ${SEG_TEXT} text-muted-foreground/60`}>Sin coincidencias</p>
               ) : (
                 <div>
                   {suggestions.map((value, i) => (
@@ -365,7 +366,7 @@ export function SmartSearchBar({ searchDef, placeholder = 'Buscar...', className
                       onClick={() => parsedActiveFieldInfo && handleSuggestionSelect(parsedActiveFieldInfo.field, value)}
                       className={cn(
                         'w-full flex items-center px-2.5 py-1.5 text-left transition-colors rounded-sm',
-                        'text-[9px] font-black',
+                        SEG_DROPDOWN_ITEM,
                         i === focusedIndex ? 'bg-primary/10 text-primary' : 'hover:bg-primary/5 text-foreground',
                       )}
                     >

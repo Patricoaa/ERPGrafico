@@ -5,6 +5,7 @@ import Link from "next/link"
 import { Plus, type LucideIcon } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { DynamicIcon } from '@/components/shared'
+import { SEG_WRAPPER, SEG_TRIGGER } from './SegmentationBar/styles'
 import { cn } from "@/lib/utils"
 
 interface ToolbarCreateButtonProps extends Omit<React.ComponentProps<typeof Button>, "children"> {
@@ -29,10 +30,10 @@ export function ToolbarCreateButton({
     }
 
     const buttonContent = (
-        <div className="flex items-center shrink-0 bg-background rounded-sm px-1 h-9">
+        <div className={SEG_WRAPPER}>
             <Button
                 className={cn(
-                    "h-7 px-4 rounded-sm text-[9px] font-black uppercase tracking-widest cursor-pointer",
+                    SEG_TRIGGER + " px-4 cursor-pointer",
                     className
                 )}
                 {...props}

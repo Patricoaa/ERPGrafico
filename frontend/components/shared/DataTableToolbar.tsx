@@ -4,6 +4,7 @@ import React, { useState, useMemo } from "react"
 import { ArrowUpDown, ArrowUp, ArrowDown, X, LayoutDashboard } from "lucide-react"
 import { type Table } from "@tanstack/react-table"
 
+import { SEG_TRIGGER, SEG_DROPDOWN_ITEM, TOOLBAR_MENU_ITEM, TOOLBAR_ICON_BTN } from './SegmentationBar/styles'
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 import {
@@ -147,7 +148,7 @@ export function DataTableToolbar<TData>(props: DataTableToolbarProps<TData>) {
                                     <Button
                                         variant="ghost"
                                         size="sm"
-                                        className="h-7 px-2 text-[9px] uppercase font-black tracking-widest gap-1"
+                                        className={SEG_TRIGGER}
                                     >
                                         Acciones
                                     </Button>
@@ -161,7 +162,7 @@ export function DataTableToolbar<TData>(props: DataTableToolbarProps<TData>) {
                                             key={action.key}
                                             onClick={action.onClick}
                                             className={cn(
-                                                "flex items-center px-3 py-2 text-[9px] font-black uppercase tracking-widest cursor-pointer transition-colors",
+                                                SEG_DROPDOWN_ITEM + " flex items-center px-3 py-2 cursor-pointer transition-colors",
                                                 action.intent === 'success' && "text-success focus:bg-success/10 focus:text-success",
                                                 action.intent === 'destructive' && "text-destructive focus:bg-destructive/10 focus:text-destructive",
                                                 (!action.intent || action.intent === 'default' || action.intent === 'primary') && "text-primary focus:bg-primary/10 focus:text-primary",
@@ -190,7 +191,7 @@ export function DataTableToolbar<TData>(props: DataTableToolbarProps<TData>) {
                                     <Button
                                         variant="ghost"
                                         size="icon"
-                                        className="h-9 w-9 shrink-0"
+                                        className={TOOLBAR_ICON_BTN}
                                         onClick={handleAnalyticsClick}
                                     >
                                         <LayoutDashboard className="h-4 w-4" />
@@ -215,7 +216,7 @@ export function DataTableToolbar<TData>(props: DataTableToolbarProps<TData>) {
                                             <Button
                                                 variant="ghost"
                                                 size="icon"
-                                                className="h-9 w-9 shrink-0"
+                                                className={TOOLBAR_ICON_BTN}
                                             >
                                                 <ArrowUpDown className="h-4 w-4" />
                                             </Button>
@@ -233,7 +234,7 @@ export function DataTableToolbar<TData>(props: DataTableToolbarProps<TData>) {
                                             <div
                                                 key={column.id}
                                                 className={cn(
-                                                    "relative flex cursor-pointer select-none items-center rounded-sm px-3 py-1.5 text-[9px] uppercase font-black tracking-tight outline-none transition-colors",
+                                                    TOOLBAR_MENU_ITEM,
                                                     isSorted
                                                         ? "bg-accent/50 text-primary"
                                                         : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"

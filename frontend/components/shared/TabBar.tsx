@@ -2,6 +2,7 @@
 
 import * as React from "react"
 import { type LucideIcon } from "lucide-react"
+import { SEG_TEXT, TAB_TOOLBAR_TRIGGER } from './SegmentationBar/styles'
 import { cn } from "@/lib/utils"
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
 
@@ -55,7 +56,7 @@ export function TabBar({
     const isUnderline = variant === "underline" && !isVertical
     const triggerStyles = isToolbar
         ? cn(
-            "h-7 px-2.5 text-[9px] uppercase font-black tracking-widest gap-1.5",
+            TAB_TOOLBAR_TRIGGER,
             "data-[state=active]:bg-accent/50 data-[state=active]:shadow-none rounded-sm",
             "data-[state=inactive]:text-muted-foreground hover:text-foreground hover:bg-accent/30",
             "transition-all duration-150",
@@ -127,8 +128,8 @@ export function TabBar({
                                 )}
                                 <span
                                     className={cn(
-                                        "font-black uppercase leading-tight",
-                                        dense ? "text-[9px] font-black tracking-wide" : "text-[9px] font-black tracking-widest",
+                                        SEG_TEXT + " leading-tight",
+                                        dense ? "tracking-wide" : "tracking-widest",
                                         "whitespace-nowrap text-center",
                                         isVertical && "group-data-[state=inactive]:hidden group-hover:!block"
                                     )}

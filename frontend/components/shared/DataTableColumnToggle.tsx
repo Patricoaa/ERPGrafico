@@ -4,6 +4,7 @@ import React from "react"
 import { Check, Columns3 } from "lucide-react"
 import { type Table } from "@tanstack/react-table"
 
+import { TOOLBAR_MENU_ITEM, TOOLBAR_ICON_BTN, SEG_CHECKBOX } from './SegmentationBar/styles'
 import { Button } from "@/components/ui/button"
 import { cn, translateFieldName } from "@/lib/utils"
 import {
@@ -49,7 +50,7 @@ export function DataTableColumnToggle<TData>({ table }: DataTableColumnTogglePro
                         <Button
                             variant="ghost"
                             size="icon"
-                            className="h-9 w-9 shrink-0"
+                            className={TOOLBAR_ICON_BTN}
                         >
                             <Columns3 className="h-4 w-4" />
                         </Button>
@@ -72,7 +73,7 @@ export function DataTableColumnToggle<TData>({ table }: DataTableColumnTogglePro
                         <div
                             key={column.id}
                             className={cn(
-                                "relative flex cursor-pointer select-none items-center rounded-sm px-3 py-1.5 text-[9px] uppercase font-black tracking-tight outline-none transition-colors",
+                                TOOLBAR_MENU_ITEM,
                                 column.getIsVisible()
                                     ? "bg-accent/50 text-primary"
                                     : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
@@ -83,7 +84,7 @@ export function DataTableColumnToggle<TData>({ table }: DataTableColumnTogglePro
                         >
                             <div
                                 className={cn(
-                                    "mr-3 flex h-3.5 w-3.5 items-center justify-center rounded-sm border border-primary/50 transition-all",
+                                    SEG_CHECKBOX + " border-primary/50",
                                     column.getIsVisible()
                                         ? "bg-primary text-primary-foreground border-primary"
                                         : "opacity-50 [&_svg]:invisible"
