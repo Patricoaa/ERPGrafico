@@ -244,7 +244,7 @@ export function TabBar({
             onValueChange={onValueChange}
             className={cn("flex-1 flex flex-col overflow-hidden", className)}
         >
-            <div className="relative flex justify-center pt-3">
+            <div className={cn("relative flex justify-center", isToolbar && !isVertical ? "pt-0" : "pt-3")}>
                 {renderTabsList()}
             </div>
 
