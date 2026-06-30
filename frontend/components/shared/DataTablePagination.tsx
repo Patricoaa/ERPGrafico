@@ -1,22 +1,18 @@
 "use client"
 
-import {
-    ChevronLeftIcon,
-    ChevronRightIcon,
-    ChevronsLeft,
-    ChevronsRight,
-} from "lucide-react"
+import { ChevronDown, ChevronLeftIcon, ChevronRightIcon, ChevronsLeft, ChevronsRight } from "lucide-react"
 import { type Table } from "@tanstack/react-table"
 
 import { Button } from "@/components/ui/button"
 import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from "@/components/ui/select"
-import { SEG_WRAPPER } from './SegmentationBar/styles'
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuTrigger,
+    DropdownMenuRadioGroup,
+    DropdownMenuRadioItem,
+} from "@/components/ui/dropdown-menu"
+import { cn } from "@/lib/utils"
+import { SEG_WRAPPER, SEG_TRIGGER, SEG_INACTIVE, SEG_DROPDOWN_ITEM } from './SegmentationBar/styles'
 
 interface DataTablePaginationProps<TData> {
     table: Table<TData>
@@ -40,23 +36,30 @@ export function DataTablePagination<TData>({
             <div className="flex items-center space-x-6 lg:space-x-8">
                 <div className="flex items-center space-x-2">
                     <p className="text-[10px] uppercase font-bold font-heading tracking-widest text-muted-foreground/60 hidden sm:inline">Registros por página</p>
-                    <Select
-                        value={`${table.getState().pagination.pageSize}`}
-                        onValueChange={(value) => {
-                            table.setPageSize(Number(value))
-                        }}
-                    >
-                        <SelectTrigger className="h-7! w-[70px] rounded-sm border-0 bg-transparent shadow-none text-xs font-semibold tracking-tight text-muted-foreground hover:bg-accent hover:text-accent-foreground px-2 gap-1">
-                            <SelectValue placeholder={table.getState().pagination.pageSize} />
-                        </SelectTrigger>
-                        <SelectContent side="top">
-                            {pageSizeOptions.map((pageSize) => (
-                                <SelectItem key={pageSize} value={`${pageSize}`}>
-                                    {pageSize}
-                                </SelectItem>
-                            ))}
-                        </SelectContent>
-                    </Select>
+                    <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                            <Button
+                                variant="ghost"
+                                size="sm"
+                                className={cn(SEG_TRIGGER, SEG_INACTIVE)}
+                            >
+                                <span>{table.getState().pagination.pageSize}</span>
+                                <ChevronDown className="h-3 w-3" />
+                            </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="start" className="w-[70px] min-w-0 p-1">
+                            <DropdownMenuRadioGroup
+                                value={`${table.getState().pagination.pageSize}`}
+                                onValueChange={(value) => table.setPageSize(Number(value))}
+                            >
+                                {pageSizeOptions.map((pageSize) => (
+                                    <DropdownMenuRadioItem key={pageSize} value={`${pageSize}`} className={SEG_DROPDOWN_ITEM}>
+                                        {pageSize}
+                                    </DropdownMenuRadioItem>
+                                ))}
+                            </DropdownMenuRadioGroup>
+                        </DropdownMenuContent>
+                    </DropdownMenu>
                 </div>
                 <div className="flex w-[100px] items-center justify-center text-[10px] uppercase font-bold font-heading tracking-widest">
                     Página {table.getState().pagination.pageIndex + 1} de{" "}
@@ -65,39 +68,43 @@ export function DataTablePagination<TData>({
                 <div className={SEG_WRAPPER}>
                     <Button
                         variant="ghost"
-                        className="h-7 w-7 shrink-0 p-0 hover:bg-accent/50 hover:text-foreground hidden lg:flex"
+                        size="icon"
+                        className="h-7 w-7 hidden lg:flex"
                         onClick={() => table.setPageIndex(0)}
                         disabled={!table.getCanPreviousPage()}
                     >
                         <span className="sr-only">Ir a la primera página</span>
-                        <ChevronsLeft className="h-3.5 w-3.5" />
+                        <ChevronsLeft className="h-4 w-4" />
                     </Button>
                     <Button
                         variant="ghost"
-                        className="h-7 w-7 shrink-0 p-0 hover:bg-accent/50 hover:text-foreground"
+                        size="icon"
+                        className="h-7 w-7"
                         onClick={() => table.previousPage()}
                         disabled={!table.getCanPreviousPage()}
                     >
                         <span className="sr-only">Ir a la página anterior</span>
-                        <ChevronLeftIcon className="h-3.5 w-3.5" />
+                        <ChevronLeftIcon className="h-4 w-4" />
                     </Button>
                     <Button
                         variant="ghost"
-                        className="h-7 w-7 shrink-0 p-0 hover:bg-accent/50 hover:text-foreground"
+                        size="icon"
+                        className="h-7 w-7"
                         onClick={() => table.nextPage()}
                         disabled={!table.getCanNextPage()}
                     >
                         <span className="sr-only">Ir a la página siguiente</span>
-                        <ChevronRightIcon className="h-3.5 w-3.5" />
+                        <ChevronRightIcon className="h-4 w-4" />
                     </Button>
                     <Button
                         variant="ghost"
-                        className="h-7 w-7 shrink-0 p-0 hover:bg-accent/50 hover:text-foreground hidden lg:flex"
+                        size="icon"
+                        className="h-7 w-7 hidden lg:flex"
                         onClick={() => table.setPageIndex(table.getPageCount() - 1)}
                         disabled={!table.getCanNextPage()}
                     >
                         <span className="sr-only">Ir a la última página</span>
-                        <ChevronsRight className="h-3.5 w-3.5" />
+                        <ChevronsRight className="h-4 w-4" />
                     </Button>
                 </div>
             </div>
