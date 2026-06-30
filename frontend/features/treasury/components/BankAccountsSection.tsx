@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation"
 import { Landmark, CreditCard, Wallet } from "lucide-react"
-import { MoneyDisplay, EmptyState } from "@/components/shared"
+import { MoneyDisplay, EmptyState, SectionHeader } from "@/components/shared"
 import { useBranding } from "@/contexts/BrandingProvider"
 import { cn } from "@/lib/utils"
 import type { BankOverviewData } from "../hooks/useBankOverview"
@@ -47,10 +47,7 @@ export function BankAccountsSection({ data, bankId }: BankAccountsSectionProps) 
             <div className={cn("grid gap-5", colClass)}>
                 {hasChecking && (
                     <div>
-                        <h2 className="text-[10px] font-black uppercase tracking-widest text-muted-foreground mb-3 flex items-center gap-1.5">
-                            <Landmark className="h-3 w-3" />
-                            Cuentas Corrientes
-                        </h2>
+                        <SectionHeader icon={Landmark} title="Cuentas Corrientes" />
                         <div className="divide-y divide-border/40 -my-0.5">
                             {checking.map(acc => {
                                 const creditLine = acc.credit_line_credit_limit ?? 0
@@ -96,10 +93,7 @@ export function BankAccountsSection({ data, bankId }: BankAccountsSectionProps) 
 
                 {hasCards && (
                     <div>
-                        <h2 className="text-[10px] font-black uppercase tracking-widest text-muted-foreground mb-3 flex items-center gap-1.5">
-                            <CreditCard className="h-3 w-3" />
-                            Tarjetas de Crédito
-                        </h2>
+                        <SectionHeader icon={CreditCard} title="Tarjetas de Crédito" />
                         <div className="space-y-3">
                             {cards.map((card, idx) => {
                                 const available = card.credit_limit != null
