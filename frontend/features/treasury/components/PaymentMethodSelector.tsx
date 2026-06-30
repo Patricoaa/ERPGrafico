@@ -1,9 +1,7 @@
 "use client"
 
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Banknote, CreditCard, Building2, ClipboardList, Wallet } from "lucide-react"
 import { cn } from "@/lib/utils"
-import { Checkbox } from "@/components/ui/checkbox"
 import { useAllowedPaymentMethods, type PaymentMethod } from "@/hooks/useAllowedPaymentMethods"
 import { useBanks } from '../hooks/useMasterData'
 import { useState, useMemo, useEffect } from "react"
@@ -44,7 +42,6 @@ interface PaymentMethodCardSelectorProps {
         amountModalTitle?: string
         amountModalDescription?: string
     }
-    compactMode?: boolean
     customerCreditBalance?: number
     allowCreditBalanceAccumulation?: boolean
     /** Componente renderizado entre los labels de resumen y los métodos de pago */
@@ -58,7 +55,6 @@ export function PaymentMethodSelector({
     paymentData,
     onPaymentDataChange,
     labels = {},
-    compactMode = false,
     customerCreditBalance = 0,
     allowCreditBalanceAccumulation = false,
     methodTitle
@@ -107,22 +103,6 @@ export function PaymentMethodSelector({
     const [isAmountModalOpen, setIsAmountModalOpen] = useState(false)
     const [tempAmount, setTempAmount] = useState("")
 
-    const handleMethodChange = (val: string) => {
-        const isReClick = paymentData.method === val
-        const isTerminalIntegration = val === 'CARD_TERMINAL'
-        onPaymentDataChange({
-            ...paymentData,
-            method: val as PaymentData['method'],
-            isTerminalIntegration,
-        })
-        if (isReClick) {
-            openAmountModal()
-        } else {
-            setTempAmount((paymentData.amount || 0).toString())
-            setIsAmountModalOpen(true)
-        }
-    }
-
     const handleAmountConfirm = () => {
         const parsed = parseFloat(tempAmount)
         let finalAmount = parsed || 0
@@ -148,6 +128,24 @@ export function PaymentMethodSelector({
     const openAmountModal = () => {
         setTempAmount((paymentData.amount || 0).toString())
         setIsAmountModalOpen(true)
+    }
+
+    const handleCardClick = (methodId: string) => {
+        const isReClick = paymentData.method === methodId
+        const isTerminalIntegration = methodId === 'CARD_TERMINAL'
+
+        onPaymentDataChange({
+            ...paymentData,
+            method: methodId as PaymentData['method'],
+            isTerminalIntegration,
+        })
+
+        if (!isReClick) {
+            setTempAmount((paymentData.amount || 0).toString())
+            setIsAmountModalOpen(true)
+        } else if (methodId !== 'TRANSFER' && methodId !== 'CREDIT_BALANCE') {
+            openAmountModal()
+        }
     }
 
     const methodsForType = useMemo<PaymentMethod[]>(() => {
@@ -191,56 +189,56 @@ export function PaymentMethodSelector({
     const methods = useMemo(() => {
         const availableMethods = [
             {
-                id: 'CASH',
+                id: 'CASH' as const,
                 label: 'Efectivo',
                 icon: Banknote,
                 color: 'text-success',
                 isAllowed: isMethodAllowed('CASH')
             },
             {
-                id: 'CARD',
+                id: 'CARD' as const,
                 label: 'Tarjeta',
                 icon: CreditCard,
                 color: 'text-primary',
                 isAllowed: isMethodAllowed('CARD')
             },
             {
-                id: 'CREDIT_CARD',
+                id: 'CREDIT_CARD' as const,
                 label: 'T. Crédito',
                 icon: CreditCard,
                 color: 'text-primary',
                 isAllowed: isMethodAllowed('CREDIT_CARD')
             },
             {
-                id: 'DEBIT_CARD',
+                id: 'DEBIT_CARD' as const,
                 label: 'T. Débito',
                 icon: CreditCard,
                 color: 'text-primary',
                 isAllowed: isMethodAllowed('DEBIT_CARD')
             },
             {
-                id: 'CARD_TERMINAL',
+                id: 'CARD_TERMINAL' as const,
                 label: 'Tarjeta TUU',
                 icon: CreditCard,
                 color: 'text-primary',
                 isAllowed: isMethodAllowed('CARD_TERMINAL')
             },
             {
-                id: 'TRANSFER',
+                id: 'TRANSFER' as const,
                 label: 'Transferencia',
                 icon: Building2,
                 color: 'text-primary',
                 isAllowed: isMethodAllowed('TRANSFER')
             },
             {
-                id: 'CHECK',
+                id: 'CHECK' as const,
                 label: 'Cheque',
                 icon: ClipboardList,
                 color: 'text-warning',
                 isAllowed: isMethodAllowed('CHECK')
             },
             {
-                id: 'CREDIT_BALANCE',
+                id: 'CREDIT_BALANCE' as const,
                 label: 'Saldo a Favor',
                 icon: Wallet,
                 color: 'text-primary',
@@ -267,66 +265,80 @@ export function PaymentMethodSelector({
             {/* Account Details Form */}
             <div className="space-y-4">
                 {methodTitle}
-                <RadioGroup
-                    value={paymentData.method || ''}
-                    onValueChange={handleMethodChange}
+                <div
                     className="grid gap-4"
                     style={{
                         gridTemplateColumns: `repeat(${methods.length}, minmax(0, 1fr))`
                     }}
                 >
-                    {methods.map((m) => (
-                        <div key={m.id} className="relative group h-full">
-                            <label
-                                htmlFor={`method-${m.id}`}
+                    {methods.map((m) => {
+                        const isSelected = paymentData.method === m.id
+
+                        return (
+                            <button
+                                key={m.id}
+                                type="button"
+                                onClick={() => handleCardClick(m.id)}
+                                disabled={!m.isAllowed}
                                 className={cn(
-                                    "card-accent-cmyk relative overflow-hidden flex flex-col rounded-md border border-border/50 bg-card hover:shadow-elevated transition-all h-full cursor-pointer shadow-card shadow-black/5",
-                                    "focus-visible:border-2 focus-visible:border-primary",
-                                    "[&:has([data-state=checked])]:border-2 [&:has([data-state=checked])]:border-primary",
-                                    paymentData.method === m.id ? 'border-2 border-primary accent-visible' : 'border',
-                                    !m.isAllowed ? 'opacity-50 grayscale cursor-not-allowed' : '',
-                                    compactMode ? "gap-2 p-3" : "gap-4 p-6"
+                                    "card-accent-cmyk relative overflow-hidden rounded-xl border bg-card p-5 shadow-card transition-all h-full text-left flex flex-col items-start",
+                                    "hover:shadow-elevated",
+                                    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary",
+                                    isSelected
+                                        ? "border-2 border-primary accent-visible"
+                                        : "border-border/50",
+                                    !m.isAllowed && "opacity-40 grayscale cursor-not-allowed"
                                 )}
-                                onClick={(e) => {
-                                    if (!m.isAllowed) {
-                                        e.preventDefault()
-                                        return
-                                    }
-                                    if (paymentData.method === m.id && m.id !== 'TRANSFER' && m.id !== 'CREDIT_BALANCE') {
-                                        openAmountModal()
-                                    }
-                                }}
+                                aria-pressed={isSelected}
                             >
-                                <RadioGroupItem value={m.id} id={`method-${m.id}`} className="sr-only" disabled={!m.isAllowed} />
-                                <div className="flex flex-col items-center justify-center gap-4 h-full">
-                                    <div className={cn(
-                                        "rounded-md bg-background border-2 shadow-card flex items-center justify-center relative",
-                                        m.color,
-                                        compactMode ? "p-3" : "p-6"
-                                    )}>
-                                        {m.id === 'CREDIT_BALANCE' && operation === 'sales' && (
-                                            <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-primary text-primary-foreground px-3 py-1 rounded-full text-xs font-black shadow-elevated border-2 border-background animate-in zoom-in duration-300 z-10 whitespace-nowrap">
-                                                <MoneyDisplay amount={customerCreditBalance} inline className="text-primary-foreground" />
-                                            </div>
-                                        )}
-                                        <m.icon className={cn(
-                                            compactMode ? "h-6 w-6" : "h-10 w-10"
-                                        )} />
+                                {/* Main row: Icon + Name + Amount */}
+                                <div className="flex items-start justify-between gap-4 w-full">
+                                    <div className="flex items-center gap-3 min-w-0">
+                                        <m.icon className={cn("h-10 w-10 shrink-0", m.color)} />
+                                        <span className="text-lg font-semibold">{m.label}</span>
                                     </div>
-                                    <div className="flex flex-col items-center gap-1">
-                                        <span className={cn(
-                                            "font-black uppercase tracking-tight text-center",
-                                            compactMode ? "text-xs" : "text-sm"
-                                        )}>{m.label}</span>
-                                        {!m.isAllowed && (
-                                            <span className="text-[10px] font-black text-destructive uppercase tracking-widest">No Disponible</span>
+
+                                    <div className="shrink-0">
+                                        {isSelected && (
+                                            m.id === 'CREDIT_BALANCE' ? (
+                                                <div className="flex items-start gap-4 text-right">
+                                                    {paymentData.amount > 0 && (
+                                                        <div>
+                                                            <div className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">MONTO</div>
+                                                            <div className="text-base font-semibold tabular-nums whitespace-nowrap">
+                                                                <MoneyDisplay amount={paymentData.amount} showColor={false} />
+                                                            </div>
+                                                        </div>
+                                                    )}
+                                                    <div>
+                                                        <div className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">DISP.</div>
+                                                        <div className="text-base font-semibold tabular-nums whitespace-nowrap">
+                                                            <MoneyDisplay amount={customerCreditBalance} showColor={false} />
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            ) : paymentData.amount > 0 ? (
+                                                <div className="text-right">
+                                                    <div className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">MONTO</div>
+                                                    <div className="text-base font-semibold tabular-nums whitespace-nowrap">
+                                                        <MoneyDisplay amount={paymentData.amount} showColor={false} />
+                                                    </div>
+                                                </div>
+                                            ) : null
                                         )}
                                     </div>
                                 </div>
-                            </label>
-                        </div>
-                    ))}
-                </RadioGroup>
+
+                                {/* No disponible */}
+                                {!m.isAllowed && (
+                                    <div className="text-[10px] font-black text-destructive uppercase tracking-widest mt-3">
+                                        NO DISPONIBLE
+                                    </div>
+                                )}
+                            </button>
+                        )
+                    })}
+                </div>
 
                 {hasAdditionalFields && (
                     <div className="space-y-4 animate-in fade-in slide-in-from-top-2">

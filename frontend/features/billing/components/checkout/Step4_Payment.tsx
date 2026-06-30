@@ -95,7 +95,6 @@ export function Step4_Payment({
                 total={total}
                 paymentData={paymentData}
                 onPaymentDataChange={handlePaymentDataChange}
-                compactMode={false}
                 allowCreditBalanceAccumulation={isCreditNote}
                 labels={{
                     totalLabel: "Total Documento",

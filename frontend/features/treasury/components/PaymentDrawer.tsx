@@ -317,7 +317,6 @@ export function PaymentDrawer({
                                             total={paymentDataState.amount}
                                             paymentData={paymentDataState}
                                             onPaymentDataChange={setPaymentDataState}
-                                            compactMode
                                             labels={{
                                                 totalLabel: paymentType === "INBOUND" ? "Total a Cobrar" : "Total a Pagar",
                                                 amountLabel: paymentType === "INBOUND" ? "Monto Recibido" : "Monto a Pagar",

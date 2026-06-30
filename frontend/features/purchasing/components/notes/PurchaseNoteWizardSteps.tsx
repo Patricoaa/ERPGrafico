@@ -444,7 +444,6 @@ export function Step4_Payment({
                 total={total}
                 paymentData={paymentData}
                 onPaymentDataChange={setPaymentData}
-                compactMode={false}
                 labels={{
                     totalLabel: "Monto Total Nota",
                     amountLabel: noteType === 'NOTA_CREDITO' ? "Monto Reembolsado" : "Monto a Pagar",
