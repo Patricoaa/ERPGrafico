@@ -71,11 +71,17 @@ export interface DTEData {
     isPending?: boolean
 }
 
+export interface PaymentDisplayItem {
+    method: string
+    amount: number
+}
+
 export interface PaymentData {
     method: 'CASH' | 'CARD' | 'TRANSFER' | 'CREDIT' | string
     amount: number
     transaction_number?: string
     details?: Record<string, unknown>
+    payments?: PaymentDisplayItem[]
 }
 
 export interface DeliveryData {

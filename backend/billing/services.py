@@ -71,6 +71,18 @@ class BillingService:
         if check_bank_id:
             check_bank_id = int(check_bank_id)
 
+        payments_raw = data.get("payments")
+        payments = None
+        if payments_raw:
+            import json
+            if isinstance(payments_raw, str):
+                try:
+                    payments_raw = json.loads(payments_raw)
+                except (json.JSONDecodeError, TypeError):
+                    pass
+            if isinstance(payments_raw, list):
+                payments = payments_raw
+
         return {
             "order_data": data.get("order_data"),
             "dte_type": data.get("dte_type"),
@@ -99,6 +111,7 @@ class BillingService:
             "checkbook_id": data.get("checkbook_id"),
             "credit_approval_task_id": data.get("credit_approval_task_id"),
             "draft_id": data.get("draft_id"),
+            "payments": payments,
             "user": request.user,
         }
 
@@ -138,6 +151,7 @@ class BillingService:
             check_issue_date=params["check_issue_date"],
             check_due_date=params["check_due_date"],
             checkbook_id=params["checkbook_id"],
+            payments=params["payments"],
         )
 
     @staticmethod
@@ -753,6 +767,7 @@ class BillingService:
         check_issue_date=None,
         check_due_date=None,
         checkbook_id=None,
+        payments=None,
     ):
         """
         Complete POS checkout: Create Order -> Confirm -> Invoice -> Payment -> (Optional) Delivery.
@@ -857,12 +872,20 @@ class BillingService:
 
         # --- CREDIT VALIDATION ---
         # Determine the amount paid versus the order total
-        # If no amount is explicitly provided, we assume the full total is being paid UNLESS payment_method is CREDIT
-        paid_amount = (
-            Decimal(str(amount))
-            if (amount is not None and str(amount) != "")
-            else (Decimal("0") if payment_method == "CREDIT" else order.total)
-        )
+        use_multi_payment = payments and isinstance(payments, list) and len(payments) > 0
+        if use_multi_payment:
+            # Multi-payment: sum amounts from all allocations (exclude CREDIT)
+            paid_amount = sum(
+                Decimal(str(p.get("amount", 0)))
+                for p in payments
+                if p.get("method") != "CREDIT"
+            )
+        else:
+            paid_amount = (
+                Decimal(str(amount))
+                if (amount is not None and str(amount) != "")
+                else (Decimal("0") if payment_method == "CREDIT" else order.total)
+            )
         required_credit = max(Decimal("0"), order.total - paid_amount)
 
         # Credit bypass by approved task
@@ -1112,128 +1135,227 @@ class BillingService:
                 invoice.document_attachment = document_attachment
             invoice.save()
 
-        # 4. Create Payment (if not credit)
-        if payment_method not in ("CREDIT", "CREDIT_BALANCE"):
-            received_amount = (
-                Decimal(str(amount)) if amount is not None and str(amount) != "" else order.total
-            )
-            payment_amount = min(received_amount, order.total)
+        # 4. Create Payment(s)
+        movement_date = (
+            invoice.date if invoice is not None else (document_date or timezone.now().date())
+        )
 
-            movement_date = (
-                invoice.date if invoice is not None else (document_date or timezone.now().date())
-            )
+        # Determine which payment allocations to process
+        use_multi_payment = payments and isinstance(payments, list) and len(payments) > 0
+        has_credit_balance = False
 
-            # Resolve PaymentMethod FK — required for PaymentOrchestrator path.
-            payment_method_inst = None
-            if payment_method_id:
-                from treasury.models import PaymentMethod as PM
+        if use_multi_payment:
+            # Multi-payment flow: iterate each allocation
+            total_received = sum(Decimal(str(p.get("amount", 0))) for p in payments)
+            payment_amount = min(total_received, order.total)
 
-                payment_method_inst = PM.objects.filter(id=payment_method_id).first()
+            for alloc in payments:
+                p_method = alloc.get("method", payment_method)
+                p_amount = Decimal(str(alloc.get("amount", 0)))
+                p_amount = min(p_amount, order.total)
+                p_payment_method_id = alloc.get("payment_method_id")
+                p_installments = alloc.get("installments", installments)
+                p_check_number = alloc.get("check_number") or check_number
+                p_check_bank_id = alloc.get("check_bank_id") or check_bank_id
+                p_check_issue_date = alloc.get("check_issue_date") or check_issue_date
+                p_check_due_date = alloc.get("check_due_date") or check_due_date
+                p_checkbook_id = alloc.get("checkbook_id") or checkbook_id
+                p_transaction_number = alloc.get("transaction_number") or transaction_number
+                p_is_pending = alloc.get("isPending", payment_is_pending)
+                p_is_terminal = alloc.get("isTerminalIntegration", False)
+                p_treasury_account_id = alloc.get("treasury_account_id") or treasury_account_id
 
-            # Asegurar que installments sea int
-            if not isinstance(installments, int):
-                try:
-                    installments = int(installments) if installments is not None else 1
-                except (ValueError, TypeError):
-                    installments = 1
-
-            if payment_method_inst is not None:
-                # E2: la tarjeta de crédito propia (método CREDIT_CARD) es un
-                # medio de pago de COMPRAS — usarla genera pasivo de TC. NO es
-                # un medio de COBRO de ventas: cobrar una venta con ella crearía
-                # deuda de tarjeta propia (antes esta rama instanciaba
-                # create_card_purchase → un OUTBOUND D=cliente / H=pasivo TC,
-                # contablemente incorrecto). Coincide con el filtro
-                # `allow_for_sales` del frontend, que ya oculta estos métodos en
-                # el checkout de ventas; esto lo hace cumplir también en backend.
-                if (
-                    payment_method_inst.method_type == "CREDIT_CARD"
-                    and payment_type == TreasuryMovement.Type.INBOUND
-                ):
-                    raise ValidationError(
-                        "La tarjeta de crédito propia no es un medio de cobro de "
-                        "ventas. Para cobros con tarjeta use un medio de tipo "
-                        "Tarjeta o terminal."
+                if p_method == "CREDIT_BALANCE":
+                    has_credit_balance = True
+                    contact = order.customer
+                    if contact.credit_balance < p_amount:
+                        raise ValidationError(
+                            f"Saldo a favor insuficiente. Disponible: ${contact.credit_balance:,.0f}, Requerido: ${p_amount:,.0f}"
+                        )
+                    TreasuryService.create_movement(
+                        amount=p_amount,
+                        movement_type="INBOUND",
+                        payment_method="CREDIT_BALANCE",
+                        reference=f"Consumo Saldo NV-{order.number}",
+                        partner=contact,
+                        invoice=invoice,
+                        date=movement_date,
+                        sale_order=order,
+                        from_account=None,
+                        to_account=None,
+                        transaction_number=p_transaction_number,
+                        is_pending_registration=p_is_pending,
+                        pos_session_id=pos_session_id,
+                        created_by=user,
                     )
-                from treasury.orchestrator import PaymentOrchestrator
+                elif p_method in ("CREDIT",):
+                    continue
+                else:
+                    p_inst = None
+                    if p_payment_method_id:
+                        from treasury.models import PaymentMethod as PM
+                        p_inst = PM.objects.filter(id=p_payment_method_id).first()
 
-                PaymentOrchestrator.create_movement(
-                    payment_method_obj=payment_method_inst,
-                    amount=payment_amount,
-                    movement_type=payment_type,
-                    reference=f"NV-{order.number}",
-                    partner=order.customer,
-                    invoice=invoice,
-                    date=movement_date,
-                    sale_order=order,
-                    pos_session_id=pos_session_id,
-                    transaction_number=transaction_number or None,
-                    is_pending_registration=payment_is_pending,
-                    created_by=user,
-                    # Check-specific params (only used when method_type == 'CHECK')
-                    check_number=check_number,
-                    check_bank_id=check_bank_id,
-                    check_issue_date=check_issue_date,
-                    check_due_date=check_due_date,
-                    checkbook_id=checkbook_id,
+                    if p_inst is not None:
+                        if p_inst.method_type == "CREDIT_CARD" and payment_type == TreasuryMovement.Type.INBOUND:
+                            raise ValidationError(
+                                "La tarjeta de crédito propia no es un medio de cobro de "
+                                "ventas. Para cobros con tarjeta use un medio de tipo "
+                                "Tarjeta o terminal."
+                            )
+                        from treasury.orchestrator import PaymentOrchestrator
+
+                        PaymentOrchestrator.create_movement(
+                            payment_method_obj=p_inst,
+                            amount=p_amount,
+                            movement_type=payment_type,
+                            reference=f"NV-{order.number}",
+                            partner=order.customer,
+                            invoice=invoice,
+                            date=movement_date,
+                            sale_order=order,
+                            pos_session_id=pos_session_id,
+                            transaction_number=p_transaction_number or None,
+                            is_pending_registration=p_is_pending,
+                            created_by=user,
+                            check_number=p_check_number,
+                            check_bank_id=p_check_bank_id,
+                            check_issue_date=p_check_issue_date,
+                            check_due_date=p_check_due_date,
+                            checkbook_id=p_checkbook_id,
+                        )
+                    else:
+                        treasury_account = (
+                            TreasuryAccount.objects.filter(id=p_treasury_account_id).first()
+                            if p_treasury_account_id
+                            else None
+                        )
+                        from_acc = (
+                            treasury_account if payment_type != TreasuryMovement.Type.INBOUND else None
+                        )
+                        to_acc = treasury_account if payment_type == TreasuryMovement.Type.INBOUND else None
+                        TreasuryService.create_movement(
+                            amount=p_amount,
+                            movement_type=payment_type,
+                            payment_method=p_method,
+                            reference=f"NV-{order.number}",
+                            partner=order.customer,
+                            invoice=invoice,
+                            date=movement_date,
+                            sale_order=order,
+                            from_account=from_acc,
+                            to_account=to_acc,
+                            transaction_number=p_transaction_number,
+                            is_pending_registration=p_is_pending,
+                            pos_session_id=pos_session_id,
+                            created_by=user,
+                        )
+        else:
+            # Legacy single-payment flow
+            if payment_method not in ("CREDIT", "CREDIT_BALANCE"):
+                received_amount = (
+                    Decimal(str(amount)) if amount is not None and str(amount) != "" else order.total
                 )
-            else:
-                # Fallback legacy path: payment_method_id not provided (non-POS flows).
-                treasury_account = (
-                    TreasuryAccount.objects.filter(id=treasury_account_id).first()
-                    if treasury_account_id
-                    else None
+                payment_amount = min(received_amount, order.total)
+
+                payment_method_inst = None
+                if payment_method_id:
+                    from treasury.models import PaymentMethod as PM
+
+                    payment_method_inst = PM.objects.filter(id=payment_method_id).first()
+
+                if not isinstance(installments, int):
+                    try:
+                        installments = int(installments) if installments is not None else 1
+                    except (ValueError, TypeError):
+                        installments = 1
+
+                if payment_method_inst is not None:
+                    if (
+                        payment_method_inst.method_type == "CREDIT_CARD"
+                        and payment_type == TreasuryMovement.Type.INBOUND
+                    ):
+                        raise ValidationError(
+                            "La tarjeta de crédito propia no es un medio de cobro de "
+                            "ventas. Para cobros con tarjeta use un medio de tipo "
+                            "Tarjeta o terminal."
+                        )
+                    from treasury.orchestrator import PaymentOrchestrator
+
+                    PaymentOrchestrator.create_movement(
+                        payment_method_obj=payment_method_inst,
+                        amount=payment_amount,
+                        movement_type=payment_type,
+                        reference=f"NV-{order.number}",
+                        partner=order.customer,
+                        invoice=invoice,
+                        date=movement_date,
+                        sale_order=order,
+                        pos_session_id=pos_session_id,
+                        transaction_number=transaction_number or None,
+                        is_pending_registration=payment_is_pending,
+                        created_by=user,
+                        check_number=check_number,
+                        check_bank_id=check_bank_id,
+                        check_issue_date=check_issue_date,
+                        check_due_date=check_due_date,
+                        checkbook_id=checkbook_id,
+                    )
+                else:
+                    treasury_account = (
+                        TreasuryAccount.objects.filter(id=treasury_account_id).first()
+                        if treasury_account_id
+                        else None
+                    )
+                    from_acc = (
+                        treasury_account if payment_type != TreasuryMovement.Type.INBOUND else None
+                    )
+                    to_acc = treasury_account if payment_type == TreasuryMovement.Type.INBOUND else None
+                    TreasuryService.create_movement(
+                        amount=payment_amount,
+                        movement_type=payment_type,
+                        payment_method=payment_method,
+                        reference=f"NV-{order.number}",
+                        partner=order.customer,
+                        invoice=invoice,
+                        date=movement_date,
+                        sale_order=order,
+                        from_account=from_acc,
+                        to_account=to_acc,
+                        transaction_number=transaction_number,
+                        is_pending_registration=payment_is_pending,
+                        pos_session_id=pos_session_id,
+                        created_by=user,
+                    )
+            elif payment_method == "CREDIT_BALANCE":
+                has_credit_balance = True
+                contact = order.customer
+                received_amount = (
+                    Decimal(str(amount)) if amount is not None and str(amount) != "" else order.total
                 )
-                from_acc = (
-                    treasury_account if payment_type != TreasuryMovement.Type.INBOUND else None
-                )
-                to_acc = treasury_account if payment_type == TreasuryMovement.Type.INBOUND else None
+                payment_amount = min(received_amount, order.total)
+
+                if contact.credit_balance < payment_amount:
+                    raise ValidationError(
+                        f"Saldo a favor insuficiente. Disponible: ${contact.credit_balance:,.0f}, Requerido: ${payment_amount:,.0f}"
+                    )
+
                 TreasuryService.create_movement(
                     amount=payment_amount,
-                    movement_type=payment_type,
-                    payment_method=payment_method,
-                    reference=f"NV-{order.number}",
-                    partner=order.customer,
+                    movement_type="INBOUND",
+                    payment_method="CREDIT_BALANCE",
+                    reference=f"Consumo Saldo NV-{order.number}",
+                    partner=contact,
                     invoice=invoice,
                     date=movement_date,
                     sale_order=order,
-                    from_account=from_acc,
-                    to_account=to_acc,
+                    from_account=None,
+                    to_account=None,
                     transaction_number=transaction_number,
                     is_pending_registration=payment_is_pending,
                     pos_session_id=pos_session_id,
                     created_by=user,
                 )
-        elif payment_method == "CREDIT_BALANCE":
-            contact = order.customer
-            received_amount = (
-                Decimal(str(amount)) if amount is not None and str(amount) != "" else order.total
-            )
-            payment_amount = min(received_amount, order.total)
-
-            if contact.credit_balance < payment_amount:
-                raise ValidationError(
-                    f"Saldo a favor insuficiente. Disponible: ${contact.credit_balance:,.0f}, Requerido: ${payment_amount:,.0f}"
-                )
-
-            # Create INBOUND on the sale invoice to balance the Sale order
-            # This counts as a "Consumption" of the virtual balance.
-            TreasuryService.create_movement(
-                amount=payment_amount,
-                movement_type="INBOUND",
-                payment_method="CREDIT_BALANCE",
-                reference=f"Consumo Saldo NV-{order.number}",
-                partner=contact,
-                invoice=invoice,
-                date=invoice.date,
-                sale_order=order,
-                from_account=None,
-                to_account=None,
-                transaction_number=transaction_number,
-                is_pending_registration=payment_is_pending,
-                pos_session_id=pos_session_id,
-                created_by=user,
-            )
         # 5. Atomic Draft Removal (NEW)
         if draft_id:
             from sales.models import DraftCart
