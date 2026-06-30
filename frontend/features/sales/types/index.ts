@@ -139,6 +139,8 @@ export interface CheckoutDTEData {
     isPending: boolean
 }
 
+import type { PaymentAllocation } from "@/features/treasury"
+
 export interface CheckoutPaymentData {
     method: string | null
     amount: number
@@ -154,6 +156,8 @@ export interface CheckoutPaymentData {
     checkBankId?: number | null
     /** CHECK: fecha de vencimiento del cheque (ISO date string) */
     checkDueDate?: string
+    /** Multi-pago: lista de pagos asignados */
+    payments?: PaymentAllocation[]
 }
 
 export interface CheckoutDeliveryData {

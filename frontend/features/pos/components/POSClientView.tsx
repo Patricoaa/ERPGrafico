@@ -663,6 +663,7 @@ export function POSClientView() {
                         checkoutLoading={false}
                         paymentMethod={wizardState?.paymentData?.method}
                         paymentAmount={wizardState?.paymentData?.amount}
+                        payments={wizardState?.paymentData?.payments?.map((p: { method: string; amount: number }) => ({ method: p.method, amount: p.amount }))}
                     />
                 </div>
             </div>

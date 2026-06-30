@@ -401,38 +401,83 @@ export const SalesCheckoutWizardContent = forwardRef<SalesCheckoutWizardContentH
                 case 'delivery':
                     return { isValid: true }
 
-                case 'payment':
-                    if (!paymentData.method) {
-                        toast.error("Debe seleccionar un método de pago.")
-                        return { isValid: false }
-                    }
-                    if (paymentData.method !== 'CREDIT' && paymentData.method !== 'CREDIT_BALANCE' && paymentData.amount > 0) {
-                        if (!paymentData.treasuryAccountId) {
-                            toast.error("Debe seleccionar una cuenta de destino.")
+                case 'payment': {
+                    const multiPayments = paymentData.payments
+                    const hasMultiPayment = Array.isArray(multiPayments) && multiPayments.length > 0
+
+                    if (hasMultiPayment) {
+                        if (multiPayments.length < 2) {
+                            toast.error("Seleccione al menos 2 formas de pago o use un único método.")
                             return { isValid: false }
                         }
-                    }
-                    if (paymentData.method === 'CHECK' && paymentData.amount > 0 && !paymentData.checkNumber) {
-                        toast.error("Debe ingresar el N° de Cheque para registrar el pago.")
-                        return { isValid: false }
-                    }
-                    if (paymentData.method === 'CHECK' && paymentData.amount > 0 && !paymentData.checkBankId) {
-                        toast.error("Debe seleccionar el banco emisor del cheque.")
-                        return { isValid: false }
-                    }
-                    if (!approvalTaskId && !isApproved) {
-                        const amountPaid = paymentData.amount || 0;
-                        if (amountPaid < currentTotal) {
-                            const requiredCredit = currentTotal - amountPaid;
-                            const creditAvailable = Number(selectedCustomer?.credit_available || 0);
-                            if (requiredCredit > creditAvailable) {
-                                setCreditApprovalReason(`Crédito insuficiente (Disponible: ${formatMoney(creditAvailable)}).`);
-                                setCreditApprovalRequired(true);
-                                return { isValid: false, requireApproval: true };
+                        const totalPaid = multiPayments.reduce((s: number, p: { amount: number }) => s + (p.amount || 0), 0)
+
+                        for (const [i, p] of multiPayments.entries()) {
+                            if (!p.method) {
+                                toast.error(`Pago #${i + 1}: método no especificado.`)
+                                return { isValid: false }
+                            }
+                            if (p.method !== 'CREDIT' && p.method !== 'CREDIT_BALANCE') {
+                                if (!p.treasuryAccountId && !p.checkNumber) {
+                                    toast.error(`Pago #${i + 1}: debe seleccionar una cuenta de destino.`)
+                                    return { isValid: false }
+                                }
+                            }
+                            if (p.method === 'CHECK' && p.amount > 0 && !p.checkNumber) {
+                                toast.error(`Pago #${i + 1}: debe ingresar el N° de Cheque.`)
+                                return { isValid: false }
+                            }
+                            if (p.method === 'CHECK' && p.amount > 0 && !p.checkBankId) {
+                                toast.error(`Pago #${i + 1}: debe seleccionar el banco emisor.`)
+                                return { isValid: false }
+                            }
+                        }
+
+                        if (!approvalTaskId && !isApproved) {
+                            if (totalPaid < currentTotal) {
+                                const requiredCredit = currentTotal - totalPaid;
+                                const creditAvailable = Number(selectedCustomer?.credit_available || 0);
+                                if (requiredCredit > creditAvailable) {
+                                    setCreditApprovalReason(`Crédito insuficiente (Disponible: ${formatMoney(creditAvailable)}).`);
+                                    setCreditApprovalRequired(true);
+                                    return { isValid: false, requireApproval: true };
+                                }
+                            }
+                        }
+                    } else {
+                        if (!paymentData.method) {
+                            toast.error("Debe seleccionar un método de pago.")
+                            return { isValid: false }
+                        }
+                        if (paymentData.method !== 'CREDIT' && paymentData.method !== 'CREDIT_BALANCE' && paymentData.amount > 0) {
+                            if (!paymentData.treasuryAccountId) {
+                                toast.error("Debe seleccionar una cuenta de destino.")
+                                return { isValid: false }
+                            }
+                        }
+                        if (paymentData.method === 'CHECK' && paymentData.amount > 0 && !paymentData.checkNumber) {
+                            toast.error("Debe ingresar el N° de Cheque para registrar el pago.")
+                            return { isValid: false }
+                        }
+                        if (paymentData.method === 'CHECK' && paymentData.amount > 0 && !paymentData.checkBankId) {
+                            toast.error("Debe seleccionar el banco emisor del cheque.")
+                            return { isValid: false }
+                        }
+                        if (!approvalTaskId && !isApproved) {
+                            const amountPaid = paymentData.amount || 0;
+                            if (amountPaid < currentTotal) {
+                                const requiredCredit = currentTotal - amountPaid;
+                                const creditAvailable = Number(selectedCustomer?.credit_available || 0);
+                                if (requiredCredit > creditAvailable) {
+                                    setCreditApprovalReason(`Crédito insuficiente (Disponible: ${formatMoney(creditAvailable)}).`);
+                                    setCreditApprovalRequired(true);
+                                    return { isValid: false, requireApproval: true };
+                                }
                             }
                         }
                     }
                     return { isValid: true }
+                }
 
                 default:
                     return { isValid: true }
@@ -519,20 +564,30 @@ export const SalesCheckoutWizardContent = forwardRef<SalesCheckoutWizardContentH
             if (dteData.number) formData.append('document_number', dteData.number)
             if (dteData.date) formData.append('document_date', dteData.date)
             if (dteData.attachment) formData.append('document_attachment', dteData.attachment)
-            const finalPaymentMethod = paymentData.amount === 0 ? 'CREDIT' : (paymentData.method || "NOT_SET")
-            formData.append('payment_method', finalPaymentMethod)
-            if (paymentData.paymentMethodId && paymentData.amount > 0) {
-                formData.append('payment_method_id', paymentData.paymentMethodId.toString())
+            const multiPayments = paymentData.payments
+            const hasMultiPayment = Array.isArray(multiPayments) && multiPayments.length > 0
+
+            if (hasMultiPayment) {
+                formData.append('payments', JSON.stringify(multiPayments))
+                const totalPaid = multiPayments.reduce((s: number, p: { amount: number }) => s + (p.amount || 0), 0)
+                formData.append('payment_method', multiPayments[0].method || 'NOT_SET')
+                formData.append('amount', totalPaid.toString())
+            } else {
+                const finalPaymentMethod = paymentData.amount === 0 ? 'CREDIT' : (paymentData.method || "NOT_SET")
+                formData.append('payment_method', finalPaymentMethod)
+                if (paymentData.paymentMethodId && paymentData.amount > 0) {
+                    formData.append('payment_method_id', paymentData.paymentMethodId.toString())
+                }
+                formData.append('amount', paymentData.amount.toString())
+                if (paymentData.treasuryAccountId && paymentData.amount > 0) formData.append('treasury_account_id', paymentData.treasuryAccountId.toString())
+                if (paymentData.method === 'CHECK' && paymentData.checkNumber) formData.append('check_number', paymentData.checkNumber)
+                if (paymentData.method === 'CHECK' && paymentData.checkBankId) formData.append('check_bank_id', paymentData.checkBankId.toString())
+                if (paymentData.method === 'CHECK' && paymentData.checkDueDate) formData.append('check_due_date', paymentData.checkDueDate)
+                if (paymentData.installments && paymentData.installments > 1) {
+                    formData.append('installments', paymentData.installments.toString())
+                }
             }
-            formData.append('amount', paymentData.amount.toString())
             formData.append('payment_is_pending', paymentData.isPending.toString())
-            if (paymentData.treasuryAccountId && paymentData.amount > 0) formData.append('treasury_account_id', paymentData.treasuryAccountId.toString())
-            if (paymentData.method === 'CHECK' && paymentData.checkNumber) formData.append('check_number', paymentData.checkNumber)
-            if (paymentData.method === 'CHECK' && paymentData.checkBankId) formData.append('check_bank_id', paymentData.checkBankId.toString())
-            if (paymentData.method === 'CHECK' && paymentData.checkDueDate) formData.append('check_due_date', paymentData.checkDueDate)
-            if (paymentData.installments && paymentData.installments > 1) {
-                formData.append('installments', paymentData.installments.toString())
-            }
             formData.append('payment_type', 'INBOUND')
 
             formData.append('delivery_type', deliveryData.type)
