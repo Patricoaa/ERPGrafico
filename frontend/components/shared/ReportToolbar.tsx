@@ -101,14 +101,10 @@ export function ReportToolbar({
             </div>
 
             <div className="flex items-center gap-1">
-                <div className="flex items-center gap-1">
-                    <span className="text-[9px] uppercase font-black text-muted-foreground tracking-widest">Período Actual</span>
-                    <DateRangeFilter date={date} onDateChange={onDateChange} label="Período Actual" variant="ghost" className="!h-7 !px-2 !text-[9px] !tracking-widest !gap-1 !rounded-sm hover:!bg-accent/30" />
-                </div>
+                <DateRangeFilter date={date} onDateChange={onDateChange} label="Período Actual" variant="ghost" />
                 {showComparison && (
-                    <div className="flex items-center gap-1 border-l border-border/60 pl-2 ml-1">
-                        <span className="text-[9px] uppercase font-black text-muted-foreground tracking-widest">Período Comparativo</span>
-                        <DateRangeFilter date={compDate} onDateChange={onCompDateChange} label="Período Comparativo" variant="ghost" className="!h-7 !px-2 !text-[9px] !tracking-widest !gap-1 !rounded-sm hover:!bg-accent/30" />
+                    <div className="flex items-center border-l border-border/60 pl-2 ml-1">
+                        <DateRangeFilter date={compDate} onDateChange={onCompDateChange} label="Período Comparativo" variant="ghost" />
                     </div>
                 )}
             </div>

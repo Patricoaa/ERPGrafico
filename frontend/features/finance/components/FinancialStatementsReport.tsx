@@ -254,7 +254,7 @@ export function FinancialStatementsReport({ activeTab }: FinancialStatementsRepo
     }
 
     return (
-        <PageContainer scrollable>
+        <PageContainer scrollable className="px-0">
             <div className="w-full pt-4">
                 <ReportToolbar
                     headerFormat={headerFormat}

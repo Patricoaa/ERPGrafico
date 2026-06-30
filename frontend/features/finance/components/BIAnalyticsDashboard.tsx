@@ -1,7 +1,6 @@
 "use client"
 
 import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { useBIAnalytics } from "../hooks/useBIAnalytics";
 import {TrendingUp, Package, DollarSign, ShoppingCart} from 'lucide-react';
 import { EmptyState, MoneyDisplay, SkeletonShell, StatCard, LineChart, BarChart, PieChart } from '@/components/shared';
@@ -93,12 +92,10 @@ export const BIAnalyticsDashboard: React.FC<BIAnalyticsDashboardProps> = ({ date
             </div>
 
             {/* Sales Trend */}
-            <Card className="rounded-none shadow-elevated ring-1 ring-border bg-card">
-                <CardHeader>
-                    <CardTitle>Tendencia de Ventas</CardTitle>
-                    <CardDescription>Evolución mensual de ventas</CardDescription>
-                </CardHeader>
-                <CardContent className="h-[350px]">
+            <div className="flex flex-col">
+                <h3 className="text-[9px] font-black uppercase tracking-widest text-muted-foreground">Tendencia de Ventas</h3>
+                <span className="text-[10px] text-muted-foreground/70 mb-3">Evolución mensual de ventas</span>
+                <div className="h-[350px]">
                         <LineChart
                             data={[{ id: "Ventas Mensuales", data: (sales.monthly_trend || []).map((m: { month: string; sales: number }) => ({ x: m.month, y: m.sales })) }]}
                             margin={{ top: 20, right: 20, bottom: 50, left: 60 }}
@@ -119,18 +116,16 @@ export const BIAnalyticsDashboard: React.FC<BIAnalyticsDashboardProps> = ({ date
                                 symbolSize: 12,
                             }]}
                         />
-                </CardContent>
-            </Card>
+                </div>
+            </div>
 
             {/* Two column layout for detailed insights */}
             <div className="grid gap-6 md:grid-cols-2">
                 {/* Top Customers */}
-                <Card className="rounded-none shadow-elevated ring-1 ring-border bg-card">
-                    <CardHeader>
-                        <CardTitle>Top 5 Clientes</CardTitle>
-                        <CardDescription>Por volumen de ventas</CardDescription>
-                    </CardHeader>
-                    <CardContent className="h-[300px]">
+                <div className="flex flex-col">
+                    <h3 className="text-[9px] font-black uppercase tracking-widest text-muted-foreground">Top 5 Clientes</h3>
+                    <span className="text-[10px] text-muted-foreground/70 mb-3">Por volumen de ventas</span>
+                    <div className="h-[300px]">
                         <BarChart
                             data={(sales.top_customers || []).map((c: { name: string; amount: number }) => ({ name: c.name, amount: c.amount }))}
                             keys={["amount"]}
@@ -146,16 +141,14 @@ export const BIAnalyticsDashboard: React.FC<BIAnalyticsDashboardProps> = ({ date
                                 tickPadding: 12,
                             }}
                         />
-                    </CardContent>
-                </Card>
+                    </div>
+                </div>
 
                 {/* Inventory Distribution */}
-                <Card className="rounded-none shadow-elevated ring-1 ring-border bg-card">
-                    <CardHeader>
-                        <CardTitle>Distribución de Inventario</CardTitle>
-                        <CardDescription>Por categoría de producto</CardDescription>
-                    </CardHeader>
-                    <CardContent className="h-[300px]">
+                <div className="flex flex-col">
+                    <h3 className="text-[9px] font-black uppercase tracking-widest text-muted-foreground">Distribución de Inventario</h3>
+                    <span className="text-[10px] text-muted-foreground/70 mb-3">Por categoría de producto</span>
+                    <div className="h-[300px]">
                         <PieChart
                             data={(inventory.stock_distribution || []).map((d: { category: string; value: number }) => ({ id: d.category, value: d.value }))}
                             legends={[{
@@ -166,71 +159,55 @@ export const BIAnalyticsDashboard: React.FC<BIAnalyticsDashboardProps> = ({ date
                             }]}
 
                         />
-                    </CardContent>
-                </Card>
+                    </div>
+                </div>
             </div>
 
             {/* Performance Insights Section */}
-            <div className="grid gap-6 md:grid-cols-3">
-                <Card className="rounded-none shadow-elevated ring-1 ring-border bg-card">
-                    <CardHeader>
-                        <CardTitle className="text-base">Análisis de Compras</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <div className="space-y-2">
-                            <div className="flex justify-between items-center">
-                                <span className="text-sm text-muted-foreground">Volumen de Compra:</span>
-                                <span className="font-semibold"><MoneyDisplay amount={performance.purchase_total} /></span>
-                            </div>
+            <div className="grid gap-6 md:grid-cols-4">
+                <div className="flex flex-col">
+                    <h3 className="text-[9px] font-black uppercase tracking-widest text-muted-foreground mb-2">Análisis de Compras</h3>
+                    <div className="space-y-2">
+                        <div className="flex justify-between items-center">
+                            <span className="text-xs text-muted-foreground">Volumen de Compra:</span>
+                            <span className="text-xs font-semibold"><MoneyDisplay amount={performance.purchase_total} /></span>
                         </div>
-                    </CardContent>
-                </Card>
+                    </div>
+                </div>
 
-                <Card className="rounded-none shadow-elevated ring-1 ring-border bg-card">
-                    <CardHeader>
-                        <CardTitle className="text-base">Eficiencia Producción</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <div className="space-y-2">
-                            <div className="flex justify-between items-center">
-                                <span className="text-sm text-muted-foreground">OTs Completadas:</span>
-                                <span className="font-semibold">{production.finished_wo} / {production.total_wo}</span>
-                            </div>
-                            <div className="flex justify-between items-center">
-                                <span className="text-sm text-muted-foreground">Eficiencia:</span>
-                                <span className="font-semibold text-success">{production.efficiency}%</span>
-                            </div>
+                <div className="flex flex-col">
+                    <h3 className="text-[9px] font-black uppercase tracking-widest text-muted-foreground mb-2">Eficiencia Producción</h3>
+                    <div className="space-y-1">
+                        <div className="flex justify-between items-center">
+                            <span className="text-xs text-muted-foreground">OTs Completadas:</span>
+                            <span className="text-xs font-semibold">{production.finished_wo} / {production.total_wo}</span>
                         </div>
-                    </CardContent>
-                </Card>
+                        <div className="flex justify-between items-center">
+                            <span className="text-xs text-muted-foreground">Eficiencia:</span>
+                            <span className="text-xs font-semibold text-success">{production.efficiency}%</span>
+                        </div>
+                    </div>
+                </div>
 
-                <Card className="rounded-none shadow-elevated ring-1 ring-border bg-card">
-                    <CardHeader>
-                        <CardTitle className="text-base">Cuentas por Cobrar</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <div className="space-y-2">
-                            <div className="flex justify-between items-center">
-                                <span className="text-sm text-muted-foreground">Saldo Pendiente:</span>
-                                <span className="font-semibold text-primary"><MoneyDisplay amount={performance.ar_total} /></span>
-                            </div>
+                <div className="flex flex-col">
+                    <h3 className="text-[9px] font-black uppercase tracking-widest text-muted-foreground mb-2">Cuentas por Cobrar</h3>
+                    <div className="space-y-2">
+                        <div className="flex justify-between items-center">
+                            <span className="text-xs text-muted-foreground">Saldo Pendiente:</span>
+                            <span className="text-xs font-semibold text-primary"><MoneyDisplay amount={performance.ar_total} /></span>
                         </div>
-                    </CardContent>
-                </Card>
+                    </div>
+                </div>
 
-                <Card className="card-interactive card-accent-cmyk rounded-none shadow-elevated ring-1 ring-border bg-card">
-                    <CardHeader>
-                        <CardTitle className="text-base">Cuentas por Pagar</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <div className="space-y-2">
-                            <div className="flex justify-between items-center">
-                                <span className="text-sm text-muted-foreground">Saldo Pendiente:</span>
-                                <span className="font-semibold text-liability"><MoneyDisplay amount={performance.ap_total} /></span>
-                            </div>
+                <div className="flex flex-col">
+                    <h3 className="text-[9px] font-black uppercase tracking-widest text-muted-foreground mb-2">Cuentas por Pagar</h3>
+                    <div className="space-y-2">
+                        <div className="flex justify-between items-center">
+                            <span className="text-xs text-muted-foreground">Saldo Pendiente:</span>
+                            <span className="text-xs font-semibold text-liability"><MoneyDisplay amount={performance.ap_total} /></span>
                         </div>
-                    </CardContent>
-                </Card>
+                    </div>
+                </div>
             </div>
         </SkeletonShell>
     );

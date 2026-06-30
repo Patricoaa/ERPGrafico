@@ -1,7 +1,6 @@
 "use client"
 
 import React from 'react';
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { EmptyState, MoneyDisplay, PieChart, BarChart, LineChart, SkeletonShell, StatCard } from '@/components/shared'
 import { formatMoney } from "@/lib/money"
 import { useAnalysis } from "../hooks/useAnalysis";
@@ -183,12 +182,10 @@ export const RatiosDashboard: React.FC<RatiosDashboardProps> = ({ date, showComp
             {/* Charts Section */}
             <div className="grid gap-6 md:grid-cols-2">
                 {/* Debt Structure */}
-                <Card className="rounded-none shadow-elevated ring-1 ring-border bg-card border-t-success ring-0">
-                    <CardHeader>
-                        <CardTitle>Estructura de Financiamiento</CardTitle>
-                        <CardDescription>Distribución entre Deuda y Patrimonio</CardDescription>
-                    </CardHeader>
-                    <CardContent className="h-[300px]">
+                <div className="flex flex-col">
+                    <h3 className="text-[9px] font-black uppercase tracking-widest text-muted-foreground">Estructura de Financiamiento</h3>
+                    <span className="text-[10px] text-muted-foreground/70 mb-3">Distribución entre Deuda y Patrimonio</span>
+                    <div className="h-[300px]">
                         <PieChart
                             data={structureData}
                             legends={[
@@ -203,16 +200,14 @@ export const RatiosDashboard: React.FC<RatiosDashboardProps> = ({ date, showComp
                                 },
                             ]}
                         />
-                    </CardContent>
-                </Card>
+                    </div>
+                </div>
 
                 {/* Assets Composition */}
-                <Card className="rounded-none shadow-elevated ring-1 ring-border bg-card border-t-info ring-0">
-                    <CardHeader>
-                        <CardTitle>Composición de Activos</CardTitle>
-                        <CardDescription>Corrientes vs No Corrientes</CardDescription>
-                    </CardHeader>
-                    <CardContent className="h-[300px]">
+                <div className="flex flex-col">
+                    <h3 className="text-[9px] font-black uppercase tracking-widest text-muted-foreground">Composición de Activos</h3>
+                    <span className="text-[10px] text-muted-foreground/70 mb-3">Corrientes vs No Corrientes</span>
+                    <div className="h-[300px]">
                         <PieChart
                             data={assetsDistribution}
                             legends={[
@@ -227,8 +222,8 @@ export const RatiosDashboard: React.FC<RatiosDashboardProps> = ({ date, showComp
                                 },
                             ]}
                         />
-                    </CardContent>
-                </Card>
+                    </div>
+                </div>
 
                 {/* Ratios Trend - Only show if comparison enabled */}
                 {showComparison && trendData && (() => {
@@ -244,12 +239,10 @@ export const RatiosDashboard: React.FC<RatiosDashboardProps> = ({ date, showComp
                         data: trendData.map((d) => ({ x: d.period, y: d[key as keyof typeof d] as number })),
                     }))
                     return (
-                        <Card className="rounded-none shadow-elevated ring-1 ring-border bg-card md:col-span-2 border-t-primary/50 ring-0">
-                            <CardHeader>
-                                <CardTitle>Evolución de Ratios Financieros</CardTitle>
-                                <CardDescription>Comparación período actual vs anterior</CardDescription>
-                            </CardHeader>
-                            <CardContent className="h-[300px]">
+                        <div className="flex flex-col md:col-span-2">
+                            <h3 className="text-[9px] font-black uppercase tracking-widest text-muted-foreground">Evolución de Ratios Financieros</h3>
+                            <span className="text-[10px] text-muted-foreground/70 mb-3">Comparación período actual vs anterior</span>
+                            <div className="h-[300px]">
                                 <LineChart
                                     data={lineChartData}
                                     margin={{ top: 20, right: 20, bottom: 50, left: 60 }}
@@ -273,18 +266,16 @@ export const RatiosDashboard: React.FC<RatiosDashboardProps> = ({ date, showComp
                                         },
                                     ]}
                                 />
-                            </CardContent>
-                        </Card>
+                            </div>
+                        </div>
                     )
                 })()}
 
                 {/* Working Capital Bar Chart */}
-                <Card className="rounded-none shadow-elevated ring-1 ring-border bg-card md:col-span-2 border-t-muted ring-0">
-                    <CardHeader>
-                        <CardTitle>Análisis de Capital de Trabajo</CardTitle>
-                        <CardDescription>Activos y Pasivos Corrientes</CardDescription>
-                    </CardHeader>
-                    <CardContent className="h-[300px]">
+                <div className="flex flex-col md:col-span-2">
+                    <h3 className="text-[9px] font-black uppercase tracking-widest text-muted-foreground">Análisis de Capital de Trabajo</h3>
+                    <span className="text-[10px] text-muted-foreground/70 mb-3">Activos y Pasivos Corrientes</span>
+                    <div className="h-[300px]">
                         <BarChart
                             data={[
                                 { name: 'Activos Corrientes', value: d.liquidity.current_assets },
@@ -302,8 +293,8 @@ export const RatiosDashboard: React.FC<RatiosDashboardProps> = ({ date, showComp
                                                 format: (v: number) => formatMoney(v),
                             }}
                         />
-                    </CardContent>
-                </Card>
+                    </div>
+                </div>
             </div>
         </SkeletonShell>
     );

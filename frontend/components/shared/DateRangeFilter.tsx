@@ -58,23 +58,23 @@ export function DateRangeFilter({
   }
 
   return (
-    <div className={cn("grid gap-2", className)}>
+    <div className={variant === 'ghost' ? "inline-flex items-center" : "grid gap-2"}>
         <Button
           id="date"
-          variant={"outline"}
+          variant={variant === 'ghost' ? 'ghost' : 'outline'}
           size="sm"
           onClick={() => handleOpenChange(true)}
           className={cn(
-            "w-full justify-start text-left font-bold uppercase tracking-wider text-[10px] transition-all group",
+            "justify-start text-left font-bold uppercase tracking-wider transition-all group",
             variant === 'outline'
-              ? "bg-background/50 backdrop-blur-sm border-border/60 rounded-md hover:bg-muted/50 h-9 px-3"
-              : "h-[1.5rem] border-0 bg-transparent hover:bg-transparent shadow-none px-3",
+              ? "w-full text-[10px] bg-background/50 backdrop-blur-sm border-border/60 rounded-md hover:bg-muted/50 h-9 px-3"
+              : "text-[9px] h-7 px-2 rounded-sm hover:bg-accent/30 tracking-widest",
             !date && "text-muted-foreground",
             className
           )}
         >
-          <CalendarIcon className="mr-2 h-4 w-4 opacity-50" />
-          <span className="truncate flex-1">
+          <CalendarIcon className="mr-1.5 h-3.5 w-3.5 shrink-0 opacity-50" />
+          <span className={cn("truncate", variant !== 'ghost' && "flex-1")}>
             {date?.from ? (
               date.to ? (
                 <>
@@ -91,7 +91,7 @@ export function DateRangeFilter({
           {date && (
             <div
               onClick={clearDate}
-              className="ml-2 p-0.5 rounded-sm hover:bg-destructive/10 hover:text-destructive transition-colors opacity-0 group-hover:opacity-100"
+              className="ml-1.5 p-0.5 rounded-sm hover:bg-destructive/10 hover:text-destructive transition-colors opacity-0 group-hover:opacity-100"
             >
               <X className="h-3 w-3" />
             </div>
