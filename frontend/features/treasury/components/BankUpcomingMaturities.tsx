@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation"
 import { HandCoins, FileCheck, CreditCard, ArrowRight, Calendar } from "lucide-react"
-import { MoneyDisplay, EmptyState } from "@/components/shared"
+import { MoneyDisplay, EmptyState, SectionHeader } from "@/components/shared"
 import { useServerDate } from '@/hooks/useServerDate'
 import { cn, parseDateOnly } from "@/lib/utils"
 import type { BankOverviewData, BankOverviewMaturityItem } from "../hooks/useBankOverview"
@@ -54,7 +54,7 @@ export function BankUpcomingMaturities({ data, bankId }: BankUpcomingMaturitiesP
     if (!upcoming_maturities || upcoming_maturities.length === 0) {
         return (
             <section className="py-4">
-                <SectionHeader total={0} />
+                <SectionHeader icon={Calendar} title="Próximos Vencimientos" />
                 <p className="text-xs text-muted-foreground italic py-2">Sin vencimientos próximos</p>
             </section>
         )
@@ -69,9 +69,13 @@ export function BankUpcomingMaturities({ data, bankId }: BankUpcomingMaturitiesP
     return (
         <section className="py-4">
             <SectionHeader
-                total={upcoming_maturities.length}
+                icon={Calendar}
+                title="Próximos Vencimientos"
+                count={upcoming_maturities.length}
+                countLabel="items"
                 totalAmount={totalAmount}
-                bankId={hasMultipleTypes ? bankId : undefined}
+                href={hasMultipleTypes ? `/treasury/bank-center/${bankId}/movements` : undefined}
+                variant="list"
             />
 
             <div className="space-y-0.5">
@@ -116,30 +120,4 @@ export function BankUpcomingMaturities({ data, bankId }: BankUpcomingMaturitiesP
     )
 }
 
-function SectionHeader({ total, totalAmount, bankId }: { total: number; totalAmount?: number; bankId?: number }) {
-    const router = useRouter()
-    return (
-        <div className="flex items-center justify-between mb-3">
-            <h2 className="text-[10px] font-black uppercase tracking-widest text-muted-foreground flex items-center gap-1.5">
-                <Calendar className="h-3 w-3" />
-                Próximos Vencimientos
-                <span className="font-normal text-border/60 mx-1">·</span>
-                {total} item{total !== 1 ? "s" : ""}
-                {totalAmount != null && (
-                    <>
-                        <span className="font-normal text-border/60 mx-1">·</span>
-                        <MoneyDisplay amount={totalAmount} showColor={false} className="text-[11px]" />
-                    </>
-                )}
-            </h2>
-            {bankId && (
-                <button
-                    onClick={() => router.push(`/treasury/operaciones/movements`)}
-                    className="text-[10px] font-medium text-muted-foreground hover:text-foreground transition-colors"
-                >
-                    Ver todos →
-                </button>
-            )}
-        </div>
-    )
-}
+

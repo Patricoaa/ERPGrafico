@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation"
 import { TrendingDown, TrendingUp, ArrowLeftRight, Receipt, ArrowRight } from "lucide-react"
-import { MoneyDisplay, EmptyState } from "@/components/shared"
+import { MoneyDisplay, EmptyState, SectionHeader } from "@/components/shared"
 import { cn, parseDateOnly } from "@/lib/utils"
 import type { BankOverviewData } from "../hooks/useBankOverview"
 
@@ -19,18 +19,12 @@ export function BankRecentActivity({ data, bankId }: BankRecentActivityProps) {
 
     return (
         <section className="py-4">
-            <div className="flex items-center justify-between mb-3">
-                <h2 className="text-[10px] font-black uppercase tracking-widest text-muted-foreground flex items-center gap-1.5">
-                    <Receipt className="h-3 w-3" />
-                    Movimientos Recientes
-                </h2>
-                <button
-                    onClick={() => router.push(`/treasury/bank-center/${bankId}/movements`)}
-                    className="text-[10px] font-medium text-muted-foreground hover:text-foreground transition-colors"
-                >
-                    Ver todos →
-                </button>
-            </div>
+            <SectionHeader
+                icon={Receipt}
+                title="Movimientos Recientes"
+                href={`/treasury/bank-center/${bankId}/movements`}
+                variant="list"
+            />
 
             <div className="divide-y divide-border/40">
                 {recent_movements.map(mov => {
