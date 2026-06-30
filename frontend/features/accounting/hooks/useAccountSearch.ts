@@ -15,8 +15,8 @@ export function useAccountSearch(search: string = "", isLeaf: boolean = false, e
             if (isLeaf) params.append("is_leaf", "true")
             if (search) params.append("limit", "50")
 
-            const res = await api.get<{ results: Account[] }>(`/accounting/accounts/?${params.toString()}`, { signal })
-            return res.data.results
+            const res = await api.get<Account[] | { results: Account[] }>(`/accounting/accounts/?${params.toString()}`, { signal })
+            return Array.isArray(res.data) ? res.data : res.data.results
         },
         enabled,
         staleTime: 5 * 60 * 1000, // 5 min
