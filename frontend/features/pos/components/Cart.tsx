@@ -103,7 +103,7 @@ export function Cart({
     const showTotalDiscounts = canApplyGlobalDiscount
 
     return (
-        <Card className="flex-1 flex flex-col overflow-hidden border border-border/50 bg-card dot-grid-surface shadow-card shadow-black/5 rounded-md">
+        <Card className="flex-1 flex flex-col overflow-hidden border border-border bg-card dot-grid-surface shadow-card shadow-black/5 rounded-md">
             <CardContent className="p-0 flex-1 flex flex-col overflow-hidden">
                 {/* Header */}
                 <div className="px-4 py-1.5 border-b bg-transparent shrink-0">

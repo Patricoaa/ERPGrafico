@@ -385,7 +385,7 @@ export function PaymentMethodSelector({
         )
     }
 
-    const methodCardClass = "card-accent-cmyk relative overflow-hidden rounded-md border border-border/50 bg-card p-8 shadow-card shadow-black/5 transition-all h-full text-left flex flex-col items-start hover:shadow-elevated focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+    const methodCardClass = "card-accent-cmyk relative overflow-hidden rounded-md border border-border bg-card p-8 shadow-card shadow-black/5 transition-all h-full text-left flex flex-col items-start hover:shadow-elevated focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
 
     const renderMethodGrid = () => {
         if (!isMultiPayment) {
@@ -441,7 +441,7 @@ export function PaymentMethodSelector({
                                 disabled={!m.isAllowed}
                                 className={cn(
                                     methodCardClass,
-                                    isSingleSelected ? "border-2 border-primary accent-visible" : "border-border/50",
+                                    isSingleSelected ? "border-2 border-primary accent-visible" : undefined,
                                     isMultiCard && "hover:border-primary",
                                     !m.isAllowed && "opacity-40 grayscale cursor-not-allowed"
                                 )}
@@ -495,7 +495,7 @@ export function PaymentMethodSelector({
 
                 {/* Crédito Asignado — delta no cubierto en single mode */}
                 {paymentData.amount > 0 && paymentData.amount < total && (
-                    <div className={cn(methodCardClass, "self-start h-auto border-border/50 opacity-70")}>
+                    <div className={cn(methodCardClass, "self-start h-auto opacity-70")}>
                         <div className="flex items-center justify-between w-full gap-3">
                             <div className="flex items-center gap-3 min-w-0">
                                 <Wallet className="h-9 w-9 shrink-0 text-muted-foreground" />
@@ -621,7 +621,7 @@ export function PaymentMethodSelector({
                                 disabled={!m.isAllowed}
                                 className={cn(
                                     methodCardClass,
-                                    "self-start h-auto border-border/50",
+                                    "self-start h-auto",
                                     !m.isAllowed && "opacity-40 grayscale cursor-not-allowed"
                                 )}
                             >
@@ -646,7 +646,7 @@ export function PaymentMethodSelector({
                 )}
 
                 {!isFullyPaid && remaining > 0 && (
-                    <div className={cn(methodCardClass, "self-start h-auto border-border/50 opacity-70")}>
+                    <div className={cn(methodCardClass, "self-start h-auto opacity-70")}>
                         <div className="flex items-center justify-between w-full gap-3">
                             <div className="flex items-center gap-3 min-w-0">
                                 <Wallet className="h-9 w-9 shrink-0 text-muted-foreground" />
