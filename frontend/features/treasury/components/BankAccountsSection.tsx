@@ -1,7 +1,7 @@
 "use client"
 
 import { useRouter } from "next/navigation"
-import { Landmark, CreditCard, Wallet } from "lucide-react"
+import { Landmark, CreditCard, Wallet, ArrowRight } from "lucide-react"
 import { MoneyDisplay, EmptyState, SectionHeader } from "@/components/shared"
 import { useBranding } from "@/contexts/BrandingProvider"
 import { cn } from "@/lib/utils"
@@ -48,7 +48,7 @@ export function BankAccountsSection({ data, bankId }: BankAccountsSectionProps) 
                 {hasChecking && (
                     <div>
                         <SectionHeader icon={Landmark} title="Cuentas Corrientes" />
-                        <div className="divide-y divide-border/40 -my-0.5">
+                        <div className="divide-y divide-border/40">
                             {checking.map(acc => {
                                 const creditLine = acc.credit_line_credit_limit ?? 0
                                 const available = creditLine > 0
@@ -58,12 +58,12 @@ export function BankAccountsSection({ data, bankId }: BankAccountsSectionProps) 
                                     <button
                                         key={acc.id}
                                         onClick={() => router.push(`/treasury/bank-center/${bankId}/movements?account=${acc.id}`)}
-                                        className="w-full flex items-center justify-between gap-3 py-2.5 text-left hover:bg-muted/30 transition-colors rounded-sm px-1 -mx-1"
+                                        className="w-full flex items-center gap-3 py-2 px-1 -mx-1 text-left hover:bg-muted/30 transition-colors rounded-sm group"
                                     >
                                         <div className="min-w-0 flex-1">
                                             <div className="flex items-center gap-2">
                                                 <Wallet className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
-                                                <span className="text-sm font-medium truncate">{acc.name}</span>
+                                                <span className="text-xs font-medium truncate">{acc.name}</span>
                                                 {acc.account_number && (
                                                     <span className="text-[11px] font-mono text-muted-foreground truncate">
                                                         {acc.account_number}
@@ -74,16 +74,17 @@ export function BankAccountsSection({ data, bankId }: BankAccountsSectionProps) 
                                         <div className="flex items-baseline gap-3 text-xs shrink-0">
                                             {creditLine > 0 && (
                                                 <span className="text-muted-foreground">
-                                                    Línea <MoneyDisplay amount={creditLine} className="text-xs font-semibold" showColor={false} />
+                                                    Línea <MoneyDisplay amount={creditLine} className="text-xs font-bold tabular-nums" showColor={false} />
                                                 </span>
                                             )}
                                             <span>
-                                                <MoneyDisplay amount={acc.current_balance} className="text-xs font-bold" />
+                                                <MoneyDisplay amount={acc.current_balance} className="text-xs font-bold tabular-nums" />
                                             </span>
                                             <span className="font-semibold text-muted-foreground">
-                                                Disp. <MoneyDisplay amount={available} className="text-xs font-semibold" showColor={available >= 0} />
+                                                Disp. <MoneyDisplay amount={available} className="text-xs font-bold tabular-nums" showColor={available >= 0} />
                                             </span>
                                         </div>
+                                        <ArrowRight className="h-3 w-3 text-muted-foreground/0 group-hover:text-muted-foreground transition-all shrink-0" />
                                     </button>
                                 )
                             })}

@@ -55,7 +55,7 @@ export function BankUpcomingMaturities({ data, bankId }: BankUpcomingMaturitiesP
         return (
             <section className="py-4">
                 <SectionHeader icon={Calendar} title="Próximos Vencimientos" />
-                <p className="text-xs text-muted-foreground italic py-2">Sin vencimientos próximos</p>
+                <p className="text-xs text-muted-foreground py-2">Sin vencimientos próximos</p>
             </section>
         )
     }
@@ -78,7 +78,7 @@ export function BankUpcomingMaturities({ data, bankId }: BankUpcomingMaturitiesP
                 variant="list"
             />
 
-            <div className="space-y-0.5">
+            <div className="divide-y divide-border/40">
                 {displayItems.map((item, idx) => {
                     const config = TYPE_CONFIG[item.type as keyof typeof TYPE_CONFIG]
                     if (!config) return null
@@ -98,7 +98,7 @@ export function BankUpcomingMaturities({ data, bankId }: BankUpcomingMaturitiesP
                                 {timeLabel}
                             </span>
                             <Icon className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
-                            <span className="flex-1 text-xs truncate">{item.label}</span>
+                            <span className="flex-1 text-xs font-medium truncate">{item.label}</span>
                             <span className="text-xs font-bold tabular-nums shrink-0">
                                 <MoneyDisplay amount={item.amount} showColor={false} />
                             </span>
