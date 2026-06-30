@@ -9,6 +9,7 @@ export interface SubTabConfig {
     label: string
     href: string
     iconName?: string
+    permission?: string
     subTabs?: SubTabConfig[]
 }
 
@@ -17,6 +18,7 @@ export interface NavigationTabConfig {
     label: string
     iconName?: string
     href: string
+    permission?: string
     subTabs?: SubTabConfig[]
 }
 
