@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation"
 import { CreditCard } from "lucide-react"
-import { MoneyDisplay } from "@/components/shared"
+import { MoneyDisplay, SectionHeader } from "@/components/shared"
 import { useBranding } from "@/contexts/BrandingProvider"
 import { cn } from "@/lib/utils"
 import type { BankOverviewData } from "../hooks/useBankOverview"
@@ -29,66 +29,61 @@ export function BankOverviewCreditCards({ data, bankId }: Props) {
     const router = useRouter()
     const { company } = useBranding()
     const companyName = company?.trade_name || company?.name || ""
-
     const cards = data.accounts.filter(a => a.account_type === "CREDIT_CARD")
 
     if (cards.length === 0) return null
 
     return (
         <section>
-            <h2 className="text-[10px] font-black uppercase tracking-widest text-muted-foreground mb-3 flex items-center gap-1.5">
-                <CreditCard className="h-3 w-3" />
-                Tarjetas de Crédito
-                <span className="font-normal text-border/60 mx-1">·</span>
-                <span className="font-normal">{cards.length}</span>
-            </h2>
+            <SectionHeader
+                icon={CreditCard}
+                title="Tarjetas de Crédito"
+                count={cards.length}
+                href={`/treasury/bank-center/${bankId}/cards/unbilled`}
+                variant="card"
+            />
 
             <div className="space-y-3">
                 {cards.map((card, idx) => {
                     const available = card.credit_limit != null
                         ? card.credit_limit - Math.abs(card.current_balance)
-                        : null
+                        : 0
                     return (
                         <button
                             key={card.id}
                             onClick={() => router.push(`/treasury/bank-center/${bankId}/cards/unbilled?card=${card.id}`)}
                             className={cn(
-                                "relative w-full rounded-xl bg-gradient-to-br p-4 text-white shadow-lg overflow-hidden text-left transition-all hover:brightness-110",
+                                "relative w-full rounded-md bg-gradient-to-br px-4 pb-4 pt-3 text-white shadow-lg overflow-hidden text-left transition-all hover:brightness-110",
                                 GRADIENTS[idx % GRADIENTS.length]
                             )}
                         >
-                            <div className="flex items-center justify-between mb-4">
-                                <div className="w-8 h-6 rounded bg-warning/30 flex items-center justify-center">
-                                    <div className="w-6 h-4 rounded border border-warning/50" />
+                            <div className="flex items-center justify-between mb-3">
+                                <div className="flex items-center gap-3">
+                                    <div className="w-8 h-6 rounded bg-warning/30 flex items-center justify-center">
+                                        <div className="w-6 h-4 rounded border border-warning/50" />
+                                    </div>
+                                    <span className="font-mono text-sm tracking-widest">
+                                        {formatCardNumber(card.card_number || card.account_number || card.code)}
+                                    </span>
                                 </div>
                                 <CreditCard className="h-4 w-4 opacity-60" />
                             </div>
-                            <div className="font-mono text-sm tracking-widest mb-3">
-                                {formatCardNumber(card.card_number || card.account_number || card.code)}
+                            <div className="text-[11px] font-mono text-white/70 mb-3">
+                                {companyName}
                             </div>
-                            <div className="text-[10px] opacity-70 mb-0.5">Titular</div>
-                            <div className="text-sm font-medium mb-3">{companyName}</div>
-                            <div className="flex items-center justify-between text-xs">
+                            <div className="grid grid-cols-3 gap-2 pt-2 border-t border-white/20">
                                 <div>
-                                    <div className="opacity-70 mb-0.5">Cupo</div>
-                                    <div className="font-semibold">
-                                        <MoneyDisplay amount={card.credit_limit || 0} showColor={false} className="text-white" />
-                                    </div>
+                                    <span className="text-[10px] text-white/70 block mb-0.5">Cupo</span>
+                                    <MoneyDisplay amount={card.credit_limit || 0} showColor={false} className="text-white text-sm font-semibold" />
                                 </div>
                                 <div className="text-right">
-                                    <div className="opacity-70 mb-0.5">Utilizado</div>
-                                    <div className="font-semibold">
-                                        <MoneyDisplay amount={Math.abs(card.current_balance)} showColor={false} className="text-white" />
-                                    </div>
+                                    <span className="text-[10px] text-white/70 block mb-0.5">Utilizado</span>
+                                    <MoneyDisplay amount={Math.abs(card.current_balance)} showColor={false} className="text-white text-sm font-semibold" />
                                 </div>
-                                {available != null && (
-                                    <div className="text-right">
-                                        <div className="opacity-70 mb-0.5">Disponible</div>
-                                        <div className="font-semibold">
-                                            <MoneyDisplay amount={available} showColor={false} className="text-white" />
-                                        </div>
-                                    </div>
-                                )}
+                                <div className="text-right">
+                                    <span className="text-[10px] text-white/70 block mb-0.5">Disponible</span>
+                                    <MoneyDisplay amount={available} showColor={false} className="text-white text-sm font-semibold" />
+                                </div>
                             </div>
                         </button>
                     )

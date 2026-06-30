@@ -1,8 +1,8 @@
 "use client"
 
 import { useRouter } from "next/navigation"
-import { FileCheck, ArrowRight } from "lucide-react"
-import { MoneyDisplay } from "@/components/shared"
+import { FileCheck } from "lucide-react"
+import { MoneyDisplay, SectionHeader } from "@/components/shared"
 import { useServerDate } from '@/hooks/useServerDate'
 import { cn, parseDateOnly } from "@/lib/utils"
 import type { BankOverviewData } from "../hooks/useBankOverview"
@@ -21,20 +21,13 @@ export function BankOverviewCheckCards({ data, bankId }: Props) {
 
     return (
         <section>
-            <button
-                onClick={() => router.push(`/treasury/bank-center/${bankId}/checks`)}
-                className="w-full flex items-center justify-between group mb-3"
-            >
-                <h2 className="text-[10px] font-black uppercase tracking-widest text-muted-foreground flex items-center gap-1.5">
-                    <FileCheck className="h-3 w-3" />
-                    Cheques Girados
-                    <span className="font-normal text-border/60 mx-1">·</span>
-                    <span className="font-normal">{issued_checks_list.length}</span>
-                </h2>
-                <span className="text-[10px] font-medium text-muted-foreground/0 group-hover:text-muted-foreground transition-all flex items-center gap-0.5">
-                    Ver todos <ArrowRight className="h-3 w-3" />
-                </span>
-            </button>
+            <SectionHeader
+                icon={FileCheck}
+                title="Cheques Girados"
+                count={issued_checks_list.length}
+                href={`/treasury/bank-center/${bankId}/checks`}
+                variant="card"
+            />
 
             <div className="space-y-2">
                 {issued_checks_list.map(chk => {
