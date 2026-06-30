@@ -1,12 +1,15 @@
 "use client"
 
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useMemo, useCallback } from 'react'
 import type { ColumnDef } from '@tanstack/react-table'
-import { Plus, AlertTriangle } from 'lucide-react'
+import { AlertTriangle } from 'lucide-react'
 import {
     DataTableView, DataTableColumnHeader, DataCell,
     StatusBadge, MoneyDisplay, Skeleton, EmptyState,
+    ToolbarCreateButton,
+    SmartSearchBar, useClientSearch,
 } from '@/components/shared'
+import { creditLineSearchDef } from './searchDef'
 import { Button } from '@/components/ui/button'
 import { useCreditLines, useCreditLineMutations } from './hooks'
 import { CreditLineDrawer } from './CreditLineDrawer'
@@ -24,6 +27,9 @@ export function CreditLinesClientView({ bankId }: Props) {
     const [drawerOpen, setDrawerOpen] = useState(false)
     const [editingLine, setEditingLine] = useState<CreditLine | null>(null)
     const [bankCheckingAccounts, setBankCheckingAccounts] = useState<TreasuryAccount[]>([])
+
+    const { filterFn, isFiltered: isTextFiltered, clearAll: clearText } = useClientSearch<CreditLine>(creditLineSearchDef)
+    const filteredData = useMemo(() => filterFn(creditLines ?? []), [filterFn, creditLines])
 
     useEffect(() => {
         if (bankId && !editingLine) {
@@ -123,20 +129,26 @@ export function CreditLinesClientView({ bankId }: Props) {
         setDrawerOpen(true)
     }
 
+    const handleReset = useCallback(() => {
+        clearText()
+    }, [clearText])
+
     return (
         <div className="space-y-4">
-            <div className="flex justify-between items-center">
-                <h2 className="text-lg font-semibold">Líneas de Crédito</h2>
-                <Button onClick={handleNewLine}>
-                    <Plus className="h-4 w-4 mr-2" />
-                    Nueva Línea
-                </Button>
-            </div>
-
             <DataTableView
                 columns={columns}
-                data={creditLines ?? []}
+                data={filteredData}
                 entityLabel="treasury.creditline"
+                createAction={
+                    <ToolbarCreateButton
+                        label="Nueva Línea"
+                        onClick={handleNewLine}
+                    />
+                }
+                isFiltered={isTextFiltered}
+                showReset={isTextFiltered}
+                onReset={handleReset}
+                smartSearch={<SmartSearchBar searchDef={creditLineSearchDef} placeholder="Buscar por código, cuenta o límite..." />}
             />
 
             <CreditLineDrawer

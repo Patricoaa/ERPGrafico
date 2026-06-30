@@ -3,14 +3,15 @@
 import React, { useMemo, useCallback } from 'react'
 import { useRouter, usePathname, useSearchParams } from 'next/navigation'
 import type { ColumnDef } from '@tanstack/react-table'
-import { FileText, AlertTriangle, Plus } from 'lucide-react'
+import { FileText, AlertTriangle } from 'lucide-react'
 import {
     DataTableView, DataTableColumnHeader, DataCell,
     StatusBadge, MoneyDisplay, Skeleton, EmptyState, EntityCard,
-    SegmentationBar,
+    SegmentationBar, ToolbarCreateButton,
+    SmartSearchBar, useClientSearch,
 } from '@/components/shared'
 import { loanStatusSegDef } from './segmentationDef'
-import { Button } from '@/components/ui/button'
+import { loanSearchDef } from './searchDef'
 import { useLoans } from './hooks'
 import { LoanRegisterDrawer } from './LoanRegisterDrawer'
 import { LoanViewDrawer } from './LoanViewDrawer'
@@ -29,14 +30,20 @@ export function LoansClientView({ bankId: bankIdProp }: { bankId?: number } = {}
         bankId ? { lender: String(bankId) } : undefined,
     )
 
+    const { filterFn, isFiltered: isTextFiltered, clearAll: clearText } = useClientSearch<BankLoan>(loanSearchDef)
+
     const loanStatusParam = searchParams.get("loan_status")
+    const isFiltered = isTextFiltered || !!loanStatusParam
     const filteredLoans = useMemo(() => {
         const statusFilter = loanStatusParam ?? "active"
+        let result = loans
         if (statusFilter === "completed") {
-            return loans.filter(l => l.status === "PAID" || l.status === "DEFAULTED")
+            result = loans.filter(l => l.status === "PAID" || l.status === "DEFAULTED")
+        } else {
+            result = loans.filter(l => l.status === "ACTIVE")
         }
-        return loans.filter(l => l.status === "ACTIVE")
-    }, [loans, loanStatusParam])
+        return filterFn(result)
+    }, [loans, filterFn, loanStatusParam])
 
     const selectedId = searchParams.get("selected") ? Number(searchParams.get("selected")) : null
     const action = searchParams.get("action")
@@ -63,6 +70,10 @@ export function LoansClientView({ bankId: bankIdProp }: { bankId?: number } = {}
         }
     }, [router, pathname, searchParams])
 
+    const handleReset = useCallback(() => {
+        clearText()
+    }, [clearText])
+
     const openLoan = useCallback((id: number, actionType: string) => {
         const params = new URLSearchParams(searchParams.toString())
         params.set("selected", String(id))
@@ -86,14 +97,14 @@ export function LoansClientView({ bankId: bankIdProp }: { bankId?: number } = {}
     }
 
     const registerAction = (
-        <Button onClick={() => {
-            const params = new URLSearchParams(searchParams.toString())
-            params.set("modal", "new")
-            router.replace(`${pathname}?${params.toString()}`, { scroll: false })
-        }}>
-            <Plus className="h-4 w-4 mr-2" />
-            Registrar Crédito
-        </Button>
+        <ToolbarCreateButton
+            label="Registrar Crédito"
+            onClick={() => {
+                const params = new URLSearchParams(searchParams.toString())
+                params.set("modal", "new")
+                router.replace(`${pathname}?${params.toString()}`, { scroll: false })
+            }}
+        />
     )
 
     const actionsCtx: LoanActionsCtx = {
@@ -182,6 +193,10 @@ export function LoansClientView({ bankId: bankIdProp }: { bankId?: number } = {}
                     data={filteredLoans}
                     variant="embedded"
                     createAction={registerAction}
+                    isFiltered={isFiltered}
+                    showReset={isFiltered}
+                    onReset={handleReset}
+                    smartSearch={<SmartSearchBar searchDef={loanSearchDef} placeholder="Buscar por ID, N° préstamo o banco..." />}
                     segmentation={<SegmentationBar def={loanStatusSegDef} />}
                     emptyState={{
                         context: 'treasury',

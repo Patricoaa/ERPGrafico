@@ -4,10 +4,9 @@ import { useMemo, useState, useEffect } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import {
-    Plus, Receipt, CreditCard,
+    Receipt, CreditCard,
     Gauge,
 } from 'lucide-react'
-import { Button } from '@/components/ui/button'
 import type { ColumnDef } from '@tanstack/react-table'
 import {
     DataTableView,
@@ -24,6 +23,8 @@ import {
     SummaryTable,
     Skeleton,
     EmptyState,
+    ToolbarCreateButton,
+    type ToolbarActionItem,
 } from '@/components/shared'
 import type { SegmentationDefinition } from '@/types/segmentation'
 import type { SearchDefinition } from '@/types/search'
@@ -340,23 +341,14 @@ export function UnbilledChargesView({
         },
     ]
 
-    const actionButtons = (
-        <div className="flex items-center gap-2">
-            <Button
-                variant="outline"
-                className="rounded-md border-0 h-10 text-[10px] font-black uppercase tracking-widest"
-                disabled={!summary || summary.count === 0}
-                onClick={() => setShowBillCharges(true)}
-            >
-                <Receipt className="h-3.5 w-3.5 mr-2" />
-                Facturar Cargos
-            </Button>
-            <Button className="rounded-md h-10 text-[10px] font-black uppercase tracking-widest" onClick={handleAddChargeClick}>
-                <Plus className="h-3.5 w-3.5 mr-2" />
-                Agregar Cargo
-            </Button>
-        </div>
-    )
+    const toolbarActions: ToolbarActionItem[] = [
+        ...(summary && summary.count > 0 ? [{
+            key: 'bill',
+            label: 'Facturar Cargos',
+            icon: Receipt,
+            onClick: () => setShowBillCharges(true),
+        }] : []),
+    ]
 
     const fmt = (n: number) => new Intl.NumberFormat('es-CL', { maximumFractionDigits: 0 }).format(n)
 
@@ -543,7 +535,8 @@ export function UnbilledChargesView({
                         },
                     }}
                     segmentation={<SegmentationBar def={segDef} basePeriod={basePeriod} />}
-                    createAction={actionButtons}
+                    createAction={<ToolbarCreateButton label="Agregar Cargo" onClick={handleAddChargeClick} />}
+                    toolbarActions={toolbarActions}
                     emptyState={{
                         context: 'treasury',
                         icon: CreditCard,
