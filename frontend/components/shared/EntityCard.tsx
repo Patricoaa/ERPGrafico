@@ -37,7 +37,7 @@ function EntityCardRoot({
                 }
             }}
             className={cn(
-                "card-interactive card-accent-cmyk group flex flex-col rounded-md border border-border shadow-card shadow-black/5",
+                "card-base group flex flex-col",
                 "bg-card text-foreground",
                 variant === "compact" ? "gap-1.5 p-3" : "gap-3 p-4",
                 isSelected && "accent-visible",

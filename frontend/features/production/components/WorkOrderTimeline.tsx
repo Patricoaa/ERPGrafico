@@ -88,7 +88,7 @@ export function WorkOrderTimeline({ orders, onManage, isLoading }: TimelineProps
                                 <Card
                                     key={order.id}
                                     onClick={() => onManage(order.id)}
-                                    className="card-interactive card-accent-cmyk cursor-pointer rounded-md active:scale-95"
+                                    className="card-base cursor-pointer active:scale-95"
                                 >
                                     <CardContent className="p-3 space-y-2">
                                         <div className="flex items-center justify-between">

@@ -61,7 +61,7 @@ export default function JobsPageClient() {
             
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {jobs.map((job) => (
-                    <Card key={job.id} className="card-interactive card-accent-cmyk relative overflow-hidden">
+                    <Card key={job.id} className="card-base relative overflow-hidden">
                         {job.status === "PROCESSING" && (
                             <Progress 
                                 value={job.progress_percent} 

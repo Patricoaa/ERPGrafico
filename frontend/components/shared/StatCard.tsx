@@ -124,8 +124,8 @@ export function StatCard({
 
   const interactiveClasses = isInteractive
     ? variant === "minimal" || variant === "fill"
-      ? "card-interactive card-accent-cmyk cursor-pointer hover:brightness-95 dark:hover:brightness-125"
-      : "card-interactive card-accent-cmyk cursor-pointer"
+        ? "card-base cursor-pointer hover:brightness-95 dark:hover:brightness-125"
+        : "card-base cursor-pointer"
     : ""
 
   const containerProps =

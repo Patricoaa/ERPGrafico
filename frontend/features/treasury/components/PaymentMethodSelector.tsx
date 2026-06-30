@@ -385,7 +385,7 @@ export function PaymentMethodSelector({
         )
     }
 
-    const methodCardClass = "card-accent-cmyk relative overflow-hidden rounded-md border border-border bg-card p-8 shadow-card shadow-black/5 transition-all h-full text-left flex flex-col items-start hover:shadow-elevated focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+    const methodCardClass = "card-base bg-card p-8 shadow-card shadow-black/5 h-full text-left flex flex-col items-start"
 
     const renderMethodGrid = () => {
         if (!isMultiPayment) {

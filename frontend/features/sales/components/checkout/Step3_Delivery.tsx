@@ -137,7 +137,7 @@ export function Step3_Delivery({ deliveryData, setDeliveryData, orderLines }: St
                 <Label
                     htmlFor="del-immediate"
                     className={cn(
-                        "card-accent-cmyk relative overflow-hidden flex items-center gap-4 rounded-md border border-border/50 bg-card p-4 hover:shadow-elevated transition-all cursor-pointer shadow-card shadow-black/5",
+                        "card-base flex items-center gap-4 bg-card p-4 cursor-pointer shadow-card shadow-black/5",
                         "focus-visible:border-2 focus-visible:border-primary",
                         deliveryData.type === 'IMMEDIATE' ? "border-2 border-primary accent-visible" : "border",
                         hasRestrictedItems && "opacity-50 pointer-events-none grayscale"
@@ -159,7 +159,7 @@ export function Step3_Delivery({ deliveryData, setDeliveryData, orderLines }: St
                 <Label
                     htmlFor="del-scheduled"
                     className={cn(
-                        "card-accent-cmyk relative overflow-hidden flex items-center gap-4 rounded-md border border-border/50 bg-card p-4 hover:shadow-elevated transition-all cursor-pointer shadow-card shadow-black/5",
+                        "card-base flex items-center gap-4 bg-card p-4 cursor-pointer shadow-card shadow-black/5",
                         "focus-visible:border-2 focus-visible:border-primary",
                         deliveryData.type === 'SCHEDULED' ? "border-2 border-primary accent-visible" : "border"
                     )}
@@ -182,7 +182,7 @@ export function Step3_Delivery({ deliveryData, setDeliveryData, orderLines }: St
                 <Label
                     htmlFor="del-partial"
                     className={cn(
-                        "card-accent-cmyk relative overflow-hidden flex items-center gap-4 rounded-md border border-border/50 bg-card p-4 hover:shadow-elevated transition-all cursor-pointer shadow-card shadow-black/5",
+                        "card-base flex items-center gap-4 bg-card p-4 cursor-pointer shadow-card shadow-black/5",
                         "focus-visible:border-2 focus-visible:border-primary",
                         deliveryData.type === 'PARTIAL' ? "border-2 border-primary accent-visible" : "border"
                     )}

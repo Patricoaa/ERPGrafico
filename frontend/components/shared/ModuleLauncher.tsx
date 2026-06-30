@@ -103,7 +103,7 @@ export function ModuleLauncher({ open, onClose }: ModuleLauncherProps) {
                                                 href={getModuleDefaultUrl(id)}
                                                 onClick={onClose}
                                                 className={cn(
-                                                    "card-interactive card-accent-cmyk group relative flex flex-col items-center justify-center gap-2 p-[clamp(0.75rem,2vw,1.25rem)] rounded-md",
+                                                    "card-base group relative flex flex-col items-center justify-center gap-2 p-[clamp(0.75rem,2vw,1.25rem)]",
                                                     isActive && "accent-visible",
                                                     isActive
                                                         ? "bg-primary/5 border-primary/20"

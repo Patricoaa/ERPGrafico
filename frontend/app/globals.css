@@ -550,6 +550,26 @@
 }
 
 /*
+ * CARD BASE — Standard interactive card pattern
+ * Apply via className="card-base".
+ * Provides:
+ *   - card-accent-cmyk: CMY gradient accent on hover/focus
+ *   - rounded-md, border border-border (15% opacity via --border token)
+ *   - hover:border-primary (primary border on hover)
+ *   - hover:shadow-elevated
+ *   - focus-visible:ring-2 focus-visible:ring-primary
+ *   - outline-none, transition-all
+ *
+ * Each card adds its own padding, background, and cursor.
+ * Add shadow-card shadow-black/5 if base shadow is needed.
+ */
+@utility card-base {
+  @apply card-accent-cmyk rounded-md border border-border outline-none transition-all;
+  @apply hover:border-primary hover:shadow-elevated;
+  @apply focus-visible:ring-2 focus-visible:ring-primary;
+}
+
+/*
  * TAB UNDERLINE CMY — Bottom border for underline variant
  * Applied via className="tab-underline-cmyk" on TabsTrigger when variant="underline"
  * Uses ::after pseudo-element for active (CMY gradient), focus-visible (ring), and hover (muted).
