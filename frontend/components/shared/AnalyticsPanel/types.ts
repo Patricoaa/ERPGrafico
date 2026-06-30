@@ -65,6 +65,7 @@ export interface PieChartConfig {
     compact?: boolean
     arcLabel?: (d: { id: string; value: number }) => string
     valueFormat?: "currency" | "number"
+    centerLabel?: { value: string | number; label?: string }
 }
 
 export type ChartConfig = BarChartConfig | LineChartConfig | PieChartConfig
