@@ -23,8 +23,8 @@ export default async function PurchaseOrdersPage({ searchParams }: PageProps) {
                 params: { page_size: '200' },
                 revalidate: 10,
             })
-        } catch {
-            // Client-side fetch handles fallback
+        } catch (e) {
+            console.warn('[PurchasingPage] serverFetch orders failed, client will refetch:', e)
         }
 
         try {
@@ -36,8 +36,8 @@ export default async function PurchaseOrdersPage({ searchParams }: PageProps) {
                 },
                 revalidate: 10,
             })
-        } catch {
-            // Client-side fetch handles fallback
+        } catch (e) {
+            console.warn('[PurchasingPage] serverFetch notes failed, client will refetch:', e)
         }
     }
 
