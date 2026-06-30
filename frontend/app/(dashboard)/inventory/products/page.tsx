@@ -25,12 +25,13 @@ export default async function ProductsPage({ searchParams }: PageProps) {
     let initialProducts: Product[] | undefined
     if (!hasActiveFilters) {
         try {
-            initialProducts = await serverFetch<Product[]>('inventory/products/', {
+            const data = await serverFetch<{ results: Product[] }>('inventory/products/', {
                 params: {
                     page_size: '200',
                 },
                 revalidate: 10,
             })
+            initialProducts = data.results
         } catch {
             // Client-side fetch handles fallback
         }
