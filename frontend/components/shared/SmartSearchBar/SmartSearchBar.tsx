@@ -290,7 +290,7 @@ export function SmartSearchBar({ searchDef, placeholder = 'Buscar...', className
       {isOpen && (
         <div
           className={cn(
-            'absolute z-50 left-0 right-0 mt-1',
+            'absolute z-50 left-0 right-0 top-full mt-1',
             'bg-popover/95 backdrop-blur-md rounded-sm shadow-floating',
             'overflow-hidden',
           )}
