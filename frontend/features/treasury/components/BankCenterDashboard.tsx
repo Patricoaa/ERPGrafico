@@ -41,7 +41,7 @@ export function BankCenterDashboard({ bankId, subtab }: { bankId: number; subtab
     }, [activeTab, bankId])
 
     return (
-        <div className="h-full flex flex-col overflow-y-auto custom-scrollbar">
+        <div className="flex-1 min-h-0 flex flex-col overflow-y-auto custom-scrollbar">
             <PageSectionHeader title={bankName} tabs={getSubViewTabs(bankId)} subTabs={cardSubTabs} />
             {activeTab === "overview" && isLoading && <OverviewSkeleton />}
             {activeTab === "overview" && !isLoading && (
@@ -77,17 +77,17 @@ export function BankCenterDashboard({ bankId, subtab }: { bankId: number; subtab
             )}
 
             {activeTab === "movements" && (
-                <div className="flex-1 min-h-0">
+                <div className="flex-1 min-h-0 flex flex-col">
                     <BankMovementsClientView bankId={bankId} />
                 </div>
             )}
             {activeTab === "checks" && (
-                <div className="flex-1 min-h-0">
+                <div className="flex-1 min-h-0 flex flex-col">
                     <ChecksClientView bankId={bankId} direction="ISSUED" />
                 </div>
             )}
             {activeTab === "loans" && (
-                <div className="flex-1 min-h-0">
+                <div className="flex-1 min-h-0 flex flex-col">
                     <LoansClientView bankId={bankId} />
                 </div>
             )}

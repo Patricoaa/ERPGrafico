@@ -1,20 +1,18 @@
 "use client"
 
-import React, { useState, useEffect, useMemo } from "react"
+import React, { useState, useEffect, useMemo, useCallback } from "react"
 import { useRouter } from "next/navigation"
 import { Upload } from "lucide-react"
 import { useStatementsQuery } from "../hooks/useReconciliationQueries"
 import { useSelectedEntity } from "@/hooks/useSelectedEntity"
 import type { BankStatement } from "../types"
 import { StatementImportModal } from "@/features/finance"
-import { DataTableView, StatusBadge, SmartSearchBar, SegmentationBar, useClientSearch, useSegmentation, EntityCard } from '@/components/shared'
+import { DataTableView, StatusBadge, SmartSearchBar, SegmentationBar, useClientSearch, useSegmentation, EntityCard, ToolbarCreateButton } from '@/components/shared'
 import { DataTableColumnHeader } from '@/components/shared'
 import type { ColumnDef } from "@tanstack/react-table"
 import { DataCell } from '@/components/shared'
 import { statementActions, type StatementActionsCtx } from './statementActions'
 import { Progress } from "@/components/ui/progress"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Button } from "@/components/ui/button"
 import type { SearchDefinition } from '@/types/search'
 import type { SegmentationDefinition } from '@/types/segmentation'
 
@@ -57,16 +55,19 @@ interface StatementsListProps {
 export function StatementsList({ externalOpen = false, createAction, bankId, accounts, detailBasePath }: StatementsListProps) {
     const statementDetailUrl = (id: number) => detailBasePath ? `${detailBasePath}/${id}` : `/treasury/reconciliation/${id}`
     const router = useRouter()
-    const [selectedAccountId, setSelectedAccountId] = useState<number | null>(null)
     const [importModalOpen, setImportModalOpen] = useState(false)
 
-    const { filterFn, isFiltered: isTextFiltered } = useClientSearch<BankStatement>(statementsSearchDef)
-    const { filters: segFilters, isFiltered: isSegFiltered } = useSegmentation(statementsSegDef)
+    const { filterFn, isFiltered: isTextFiltered, clearAll: clearText } = useClientSearch<BankStatement>(statementsSearchDef)
+    const { filters: segFilters, isFiltered: isSegFiltered, clearAll: clearSeg } = useSegmentation(statementsSegDef)
     const isFiltered = isTextFiltered || isSegFiltered
+    const handleReset = useCallback(() => {
+        clearText()
+        clearSeg()
+    }, [clearText, clearSeg])
 
     const { data: statements = [], isLoading, refetch } = useStatementsQuery(
-        selectedAccountId
-            ? { treasury_account: String(selectedAccountId) }
+        segFilters.account && segFilters.account !== 'all'
+            ? { treasury_account: segFilters.account }
             : bankId
             ? { bank: String(bankId) }
             : undefined,
@@ -218,13 +219,11 @@ export function StatementsList({ externalOpen = false, createAction, bankId, acc
     ]
 
     const internalImportButton = accounts !== undefined ? (
-        <Button
-            className="h-9 px-4 rounded-md text-[10px] font-black uppercase tracking-widest shadow-card bg-primary text-primary-foreground hover:bg-primary/90"
+        <ToolbarCreateButton
+            label="Importar Cartola"
+            icon={Upload}
             onClick={() => setImportModalOpen(true)}
-        >
-            <Upload className="h-3.5 w-3.5 mr-2" />
-            Importar Cartola
-        </Button>
+        />
     ) : undefined
 
     return (
@@ -237,40 +236,26 @@ export function StatementsList({ externalOpen = false, createAction, bankId, acc
                     variant="embedded"
                     isLoading={isLoading}
                     isFiltered={isFiltered}
+                    showReset={isFiltered}
+                    onReset={handleReset}
+                    smartSearch={<SmartSearchBar searchDef={statementsSearchDef} placeholder="Buscar cartola..." />}
                     segmentation={
                         <SegmentationBar def={{
                             ...statementsSegDef,
                             segments: [
                                 ...statementsSegDef.segments,
-                                {
+                                ...(accounts ? [{
                                     key: 'account',
                                     label: 'Cuenta',
-                                    type: 'custom',
-                                    render: () => accounts !== undefined ? (
-                                        accounts.length > 0 ? (
-                                            <Select
-                                                value={selectedAccountId?.toString() || 'all'}
-                                                onValueChange={(v) => setSelectedAccountId(v === 'all' ? null : Number(v))}
-                                            >
-                                                <SelectTrigger className="h-7 w-[180px] shrink-0 text-[10px] font-black uppercase tracking-widest">
-                                                    <SelectValue placeholder="Todas las cuentas" />
-                                                </SelectTrigger>
-                                                <SelectContent>
-                                                    <SelectItem value="all" className="text-[10px] font-bold uppercase">Todas las cuentas</SelectItem>
-                                                    {accounts.map(acc => (
-                                                        <SelectItem key={acc.id} value={acc.id.toString()} className="text-[10px] font-bold uppercase">
-                                                            {acc.name}
-                                                        </SelectItem>
-                                                    ))}
-                                                </SelectContent>
-                                            </Select>
-                                        ) : (
-                                            <div className="h-7 flex items-center px-3 rounded-md border border-border/50 bg-muted/20 shrink-0 gap-2">
-                                                <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/50">Sin cuentas bancarias</span>
-                                            </div>
-                                        )
-                                    ) : null,
-                                },
+                                    type: 'tabs' as const,
+                                    variant: 'dropdown' as const,
+                                    serverParam: 'account',
+                                    defaultValue: 'all',
+                                    options: [
+                                        { label: 'Todas las cuentas', value: 'all' },
+                                        ...accounts.map(a => ({ label: a.name, value: String(a.id) })),
+                                    ],
+                                }] : []),
                             ],
                         }} />
                     }
@@ -297,7 +282,7 @@ export function StatementsList({ externalOpen = false, createAction, bankId, acc
                 open={importModalOpen}
                 onOpenChange={handleModalChange}
                 onSuccess={handleImportSuccess}
-                defaultAccountId={selectedAccountId || undefined}
+                defaultAccountId={segFilters.account && segFilters.account !== 'all' ? Number(segFilters.account) : undefined}
                 allowedAccountIds={accounts?.map(a => a.id)}
             />
         </div>
