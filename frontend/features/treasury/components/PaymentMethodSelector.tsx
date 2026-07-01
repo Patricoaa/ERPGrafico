@@ -495,15 +495,19 @@ export function PaymentMethodSelector({
 
                 {/* Crédito Asignado — delta no cubierto en single mode */}
                 {paymentData.amount > 0 && paymentData.amount < total && (
-                    <div className={cn(methodCardClass, "self-start h-auto opacity-70")}>
+                    <div className={cn(
+                        methodCardClass,
+                        "self-start h-auto border-2 border-primary accent-visible"
+                    )}>
                         <div className="flex items-center justify-between w-full gap-3">
                             <div className="flex items-center gap-3 min-w-0">
-                                <Wallet className="h-9 w-9 shrink-0 text-muted-foreground" />
-                                <div className="min-w-0">
-                                    <div className="text-base font-semibold leading-tight text-muted-foreground">Crédito Asignado</div>
-                                    <div className="text-sm text-muted-foreground leading-tight tabular-nums">
-                                        <MoneyDisplay amount={total - paymentData.amount} showColor={false} />
-                                    </div>
+                                <Wallet className="h-9 w-9 shrink-0 text-warning" />
+                                <span className="text-base font-semibold text-foreground">Crédito Asignado</span>
+                            </div>
+                            <div className="text-right shrink-0">
+                                <div className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">MONTO</div>
+                                <div className="text-base font-semibold tabular-nums text-warning">
+                                    <MoneyDisplay amount={total - paymentData.amount} showColor={false} />
                                 </div>
                             </div>
                         </div>
@@ -646,15 +650,19 @@ export function PaymentMethodSelector({
                 )}
 
                 {!isFullyPaid && remaining > 0 && (
-                    <div className={cn(methodCardClass, "self-start h-auto opacity-70")}>
+                    <div className={cn(
+                        methodCardClass,
+                        "self-start h-auto border-2 border-primary accent-visible"
+                    )}>
                         <div className="flex items-center justify-between w-full gap-3">
                             <div className="flex items-center gap-3 min-w-0">
-                                <Wallet className="h-9 w-9 shrink-0 text-muted-foreground" />
-                                <div className="min-w-0">
-                                    <div className="text-base font-semibold leading-tight text-muted-foreground">Crédito Asignado</div>
-                                    <div className="text-sm text-muted-foreground leading-tight tabular-nums">
-                                        <MoneyDisplay amount={remaining} showColor={false} />
-                                    </div>
+                                <Wallet className="h-9 w-9 shrink-0 text-warning" />
+                                <span className="text-base font-semibold text-foreground">Crédito Asignado</span>
+                            </div>
+                            <div className="text-right shrink-0">
+                                <div className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">MONTO</div>
+                                <div className="text-base font-semibold tabular-nums text-warning">
+                                    <MoneyDisplay amount={remaining} showColor={false} />
                                 </div>
                             </div>
                         </div>
