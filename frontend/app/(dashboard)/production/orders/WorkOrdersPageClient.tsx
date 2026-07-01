@@ -108,19 +108,19 @@ export default function WorkOrdersPageClient({ initialOrders }: WorkOrdersPageCl
         await deleteOrder({ id })
     })
 
-    const handleDelete = (id: number) => deleteConfirm.requestConfirm(id)
+    const handleDelete = useCallback((id: number) => deleteConfirm.requestConfirm(id), [deleteConfirm])
 
     const cancelConfirm = useConfirmAction<number>(async (id) => {
         await annulOrder({ id })
     })
 
-    const handleCancel = (id: number) => cancelConfirm.requestConfirm(id)
+    const handleCancel = useCallback((id: number) => cancelConfirm.requestConfirm(id), [cancelConfirm])
 
     const duplicateConfirm = useConfirmAction<number>(async (id) => {
         await duplicateOrder({ id })
     })
 
-    const handleDuplicate = (id: number) => duplicateConfirm.requestConfirm(id)
+    const handleDuplicate = useCallback((id: number) => duplicateConfirm.requestConfirm(id), [duplicateConfirm])
 
     const workOrderActionsCtx: WorkOrderActionsCtx = {
         onEdit: (id) => {
@@ -252,7 +252,7 @@ export default function WorkOrdersPageClient({ initialOrders }: WorkOrdersPageCl
             meta: { title: "Fecha Entrega" },
         },
         workOrderActions.column(workOrderActionsCtx) as ColumnDef<WorkOrder>,
-    ], [handleDuplicate, handleCancel, handleDelete, searchParams, router, pathname])
+    ], [handleDuplicate, handleCancel, handleDelete, searchParams, router, pathname, workOrderActionsCtx])
 
     const renderKanbanView = useCallback((table: Table<WorkOrder>) => (
         <div className="relative">

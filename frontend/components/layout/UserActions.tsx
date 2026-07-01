@@ -96,7 +96,7 @@ export function UserActions({ isInboxOpen, onInboxToggle }: UserActionsProps) {
             if (!cancelled) fetchData()
         }, 120000)
         return () => { cancelled = true; clearInterval(interval) }
-    }, [user])
+    }, [user, fetchData])
 
     const handleNotificationClick = async (notification: Notification) => {
         if (!notification.read) {

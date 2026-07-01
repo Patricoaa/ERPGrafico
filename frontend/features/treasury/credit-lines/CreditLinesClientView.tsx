@@ -37,6 +37,15 @@ export function CreditLinesClientView({ bankId }: Props) {
         }
     }, [bankId, editingLine])
 
+    const handleNewLine = () => {
+        setEditingLine(null)
+        setDrawerOpen(true)
+    }
+
+    const handleReset = useCallback(() => {
+        clearText()
+    }, [clearText])
+
     if (isLoading) {
         return <Skeleton className="h-full" />
     }
@@ -123,15 +132,6 @@ export function CreditLinesClientView({ bankId }: Props) {
             ),
         },
     ]
-
-    const handleNewLine = () => {
-        setEditingLine(null)
-        setDrawerOpen(true)
-    }
-
-    const handleReset = useCallback(() => {
-        clearText()
-    }, [clearText])
 
     return (
         <div className="space-y-4">
