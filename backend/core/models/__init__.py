@@ -13,6 +13,7 @@ from core.validators import validate_file_extension, validate_file_size, validat
 
 from .abstracts import AuditedModel, TimeStampedModel, TransactionalDocument
 from .idempotency import IdempotencyRecord
+from .period_reopen_log import PeriodReopenLog
 from .search import GlobalSearchIndex
 from .user_preference import UserPreference
 from .jobs import BackgroundJob
@@ -28,6 +29,7 @@ __all__ = [
     "TransactionalDocument",
     "GlobalSearchIndex",
     "IdempotencyRecord",
+    "PeriodReopenLog",
     "UserPreference",
     "BackgroundJob",
 ]

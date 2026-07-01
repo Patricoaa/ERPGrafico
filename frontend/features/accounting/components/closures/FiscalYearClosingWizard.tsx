@@ -194,7 +194,7 @@ export function FiscalYearClosingWizard({
                     <div className="bg-muted/30 border border-border rounded-sm overflow-hidden text-center">
                         <div className="p-5 space-y-4">
                             <div>
-                                <p className="text-[10px] font-black uppercase text-muted-foreground tracking-[0.2em] mb-1">Año Fiscal a Cerrar</p>
+                                <p className="text-[10px] font-black uppercase text-muted-foreground tracking-[0.2em] mb-1">Ejercicio Fiscal a Cerrar</p>
                                 <p className="text-4xl font-heading font-black tabular-nums">{year}</p>
                             </div>
                             <div className="h-[1px] bg-border w-24 mx-auto" />
@@ -285,7 +285,7 @@ export function FiscalYearClosingWizard({
             onOpenChange={setShowTrialBalance}
             icon={Scale}
             title={`Balance de Comprobación - Ejercicio ${year}`}
-            description="Resumen de sumas y saldos del ejercicio contable."
+            description="Resumen de sumas y saldos del ejercicio fiscal."
             size="xl"
             hideScrollArea={true}
             contentClassName="p-0"

@@ -31,7 +31,7 @@ interface DeclarationWizardProps {
     existingPeriods?: TaxPeriod[]
 }
 
-export function DeclarationWizard({ isOpen, onOpenChange, periodId, onSuccess, existingPeriods = [] }: DeclarationWizardProps) {
+export function DeclarationWizard({ isOpen, onOpenChange, periodId, onSuccess, existingPeriods: existingPeriodsProp }: DeclarationWizardProps) {
     const { year: currentYear, month: currentMonth, dateString, serverDate } = useServerDate()
     const { openHub } = useHubPanel()
     const { rate } = useVatRate()
@@ -45,6 +45,7 @@ export function DeclarationWizard({ isOpen, onOpenChange, periodId, onSuccess, e
     })
     const [isPreLoading, setIsPreLoading] = useState(false)
     const [wizardInitialStep, setWizardInitialStep] = useState(0)
+    const existingPeriods = useMemo(() => existingPeriodsProp ?? [], [existingPeriodsProp]);
     const [manualFields, setManualFields] = useState({
         ppm_amount: 0,
         withholding_tax: 0,

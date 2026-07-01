@@ -48,6 +48,7 @@ export function GenericWizard({
     onClose,
     initialStep = 0,
     completeButtonLabel = "Finalizar",
+    completeButtonIcon,
     isCompleting = false,
     isLoading = false,
     successContent,
@@ -130,7 +131,7 @@ export function GenericWizard({
                         onClick={() => startTransition(handleNext)}
                         disabled={currentStepData.isValid === false || isCompleting || isStepTransitioning}
                         loading={isCompleting || isStepTransitioning}
-                        icon={isCompleting || isStepTransitioning ? undefined : CheckCircle2}
+                        icon={isCompleting || isStepTransitioning ? undefined : (completeButtonIcon ?? CheckCircle2)}
                     >
                         {completeButtonLabel}
                     </ActionSlideButton>

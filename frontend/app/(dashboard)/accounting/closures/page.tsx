@@ -10,7 +10,7 @@ export default async function ClosuresPage({ searchParams }: PageProps) {
 
     return (
         <>
-            <PageSectionHeader title="Cierres Contables" description="Cierres de período y ejercicio fiscal" />
+            <PageSectionHeader title="Cierres" description="Cierres de período y ejercicio fiscal" />
             <AccountingClosuresClientView externalOpen={modal === 'fy'} />
         </>)
 }

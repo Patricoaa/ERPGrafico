@@ -60,8 +60,8 @@ export function NewFiscalYearDrawer({
             defaultSize={formDrawerWidth("simple", false)}
             contentClassName="p-0"
             icon={Calendar}
-            title="Inicializar Año Fiscal"
-            subtitle="Apertura de nuevos periodos contables."
+            title="Inicializar Ejercicio Fiscal"
+            subtitle="Creación del periodo contable inicial para el nuevo año."
             footer={
                 <FormFooter
                     actions={
@@ -90,7 +90,7 @@ export function NewFiscalYearDrawer({
                         <div className="space-y-1">
                             <p className="text-xs font-bold text-destructive uppercase tracking-wider">Acción Bloqueada</p>
                             <p className="text-xs text-destructive/80 leading-relaxed font-medium">
-                                No se puede inicializar un nuevo año fiscal mientras existan periodos mensuales <strong>ABIERTOS</strong>.
+                                No se puede inicializar un nuevo ejercicio fiscal mientras existan periodos mensuales <strong>ABIERTOS</strong>.
                                 Por favor, cierra todos los meses anteriores antes de continuar.
                             </p>
                         </div>
@@ -98,7 +98,7 @@ export function NewFiscalYearDrawer({
                 )}
 
                 <LabeledContainer
-                    label="Seleccione el Año Fiscal"
+                    label="Seleccione el Ejercicio Fiscal"
                     labelClassName="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground ml-1"
                 >
                     <div className="grid grid-cols-4 gap-3 p-1">
@@ -138,11 +138,13 @@ export function NewFiscalYearDrawer({
                 <div className="p-4 rounded-md bg-info/5 border border-info/10 flex gap-4 items-start">
                     <AlertCircle className="h-5 w-5 text-info shrink-0 mt-0.5" />
                     <div className="space-y-1">
-                        <p className="text-xs font-bold text-info uppercase tracking-wider">Nota de Apertura</p>
-                        <p className="text-xs text-info/70 leading-relaxed font-medium">
-                            Esta acción creará automáticamente el periodo de <strong>Enero {selectedYear}</strong> como abierto.
-                            Podrás inicializar los meses siguientes una vez que registres actividad en el periodo actual.
-                        </p>
+                            <p className="text-xs font-bold text-info uppercase tracking-wider">¿Qué se crea?</p>
+                            <p className="text-xs text-info/70 leading-relaxed font-medium">
+                                Se crea el periodo contable de <strong>Enero {selectedYear}</strong> como abierto.
+                                Los meses siguientes se habilitan automáticamente al registrar el primer asiento contable en cada periodo,
+                                y los períodos tributarios (F29) se activan al iniciar la primera declaración mensual.
+                                El registro del ejercicio fiscal se genera al ejecutar el cierre anual.
+                            </p>
                     </div>
                 </div>
             </div>
