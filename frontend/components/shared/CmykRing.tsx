@@ -16,31 +16,24 @@ const SIZE_MAP: Record<RingSize, string> = {
   lg: "h-8 w-8",
 }
 
+const CMYK_WHEEL =
+  'conic-gradient(from 0deg, var(--color-cyan) 0deg 90deg, var(--color-magenta) 90deg 180deg, var(--color-yellow) 180deg 270deg, var(--color-black) 270deg 360deg)'
+
 /**
- * CmykRing — Registration‑target concentric circles in C / M / Y / K.
+ * CmykRing — Four‑quadrant process‑colour wheel (C / M / Y / K).
  *
- * Four concentric rings from centre out: Cyan → Magenta → Yellow → Black.
- * References the prepress registration targets used to verify ink
- * registration (套准标记) on press sheets.
+ * A conic gradient split evenly into cyan, magenta, yellow and black.
+ * References the circular process‑colour control patches found on
+ * prepress proofing bars and colour‑density measurement targets.
  *
  * Sizes: sm (16px), md (24px), lg (32px). Pass className to add rings,
  * shadows, or other adornments.
  */
 export function CmykRing({ size = "md", className }: CmykRingProps) {
   return (
-    <svg
-      viewBox="0 0 24 24"
-      className={cn("shrink-0", SIZE_MAP[size], className)}
-      aria-hidden="true"
-    >
-      {/* K — outer ring */}
-      <circle cx="12" cy="12" r="10" fill="none" stroke="var(--color-black)" strokeWidth="2" />
-      {/* Y — ring 2 */}
-      <circle cx="12" cy="12" r="7" fill="none" stroke="var(--color-yellow)" strokeWidth="2" />
-      {/* M — ring 3 */}
-      <circle cx="12" cy="12" r="4" fill="none" stroke="var(--color-magenta)" strokeWidth="2" />
-      {/* C — centre dot */}
-      <circle cx="12" cy="12" r="1.5" fill="var(--color-cyan)" />
-    </svg>
+    <div
+      className={cn("rounded-full shrink-0", SIZE_MAP[size], className)}
+      style={{ background: CMYK_WHEEL }}
+    />
   )
 }
