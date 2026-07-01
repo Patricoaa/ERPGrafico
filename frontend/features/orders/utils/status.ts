@@ -266,7 +266,7 @@ export const formatEntity = (prefix: string, number: string | number, displayId?
     // Standardize prefixes to match registry
     let standardPrefix = prefix
     if (prefix === 'OC') standardPrefix = 'OCS'
-    if (prefix === 'FACT') standardPrefix = 'FAC'
+    if (prefix === 'FACT') standardPrefix = 'FACV'
 
     const numStr = String(number || '')
     const cleanPrefix = standardPrefix.replace('-', '')

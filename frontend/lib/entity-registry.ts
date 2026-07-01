@@ -719,9 +719,27 @@ export function formatEntityDisplay(label: string, data: Record<string, unknown>
     template = `${prefix}-{number}`;
   }
 
+  // Strip legacy embedded prefix from data.number (e.g. "FACT-1002" → "1002")
+  const cleanData = { ...data }
+  if (label === 'billing.invoice' && dteType) {
+    const rawNumber = String(data.number ?? '')
+    const allPrefixes = Object.values(DTE_CONFIG).map(c => c.prefix)
+    const prefixVariants = allPrefixes.flatMap(p => [p, p.replace(/-/g, '')])
+    const legacyPrefixes = ['FACT', 'FACC']
+    const allVariants = [...new Set([...prefixVariants, ...legacyPrefixes])]
+    
+    const matchedPrefix = allVariants.find(p =>
+      rawNumber.toUpperCase().startsWith(p.toUpperCase()) && rawNumber.length > p.length
+    )
+    
+    if (matchedPrefix) {
+      cleanData.number = rawNumber.slice(matchedPrefix.length).replace(/^[-]+/, '')
+    }
+  }
+
   return template.replace(/{([^}]+)}/g, (_match, key: string) => {
     const [path, format] = key.split(':');
-    let value: unknown = data;
+    let value: unknown = cleanData;
     
     for (const part of path.split('.')) {
       if (value !== null && typeof value === 'object') {

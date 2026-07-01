@@ -89,10 +89,10 @@ export const getHubStatuses = (order: OrderBase) => {
     const showLogistics = lines.length > 0 && !lines.every((l) => l.product_type === 'SUBSCRIPTION')
 
     let logStatus = 'neutral'
+    let logisticsProgress = 0
     if (!showLogistics) logStatus = 'not_applicable'
     else {
         const totalOrdered = lines.reduce((acc, line) => acc + (parseFloat(String(line.quantity)) || 0), 0)
-        let logisticsProgress = 0
         if (totalOrdered > 0) {
             const totalProcessed = lines.reduce((acc, line) => {
                 const processed = (line.quantity_delivered || line.quantity_received || 0)
@@ -130,13 +130,19 @@ export const getHubStatuses = (order: OrderBase) => {
     if (order.status === 'CANCELLED') originStatus = 'destructive'
     else if (order.status !== 'DRAFT') originStatus = 'success'
 
+    const totalVal = parseFloat(String(order.total || 0))
+    const treasuryProgress = totalVal > 0 ? Math.min(100, Math.round((1 - (pending / totalVal)) * 100)) : 0
+
     return {
         production: prodStatus,
         logistics: logStatus,
         billing: billingStatus,
         treasury: treasuryStatus,
         origin: originStatus,
-        hasPendingTransactions: false
+        hasPendingTransactions: false,
+        productionProgress: Math.round(totalOTProgress),
+        logisticsProgress,
+        treasuryProgress,
     }
 }
 
@@ -186,12 +192,15 @@ export const getNoteHubStatuses = (note: NoteBase) => {
     if (isPaid) treasuryStatus = 'success'
     else if (pendingAmount < totalAmount || payments.length > 0) treasuryStatus = 'active'
 
+    const treasuryProgress = totalAmount > 0 ? Math.min(100, Math.round((1 - (pendingAmount / totalAmount)) * 100)) : 0
+
     return {
         origin: originStatus,
         logistics: logStatus,
         billing: billingStatus,
         treasury: treasuryStatus,
         logisticsProgress,
+        treasuryProgress,
         hasPendingTransactions: false,
         isComplete: logStatus === 'success' && billingStatus === 'success' && treasuryStatus === 'success'
     }
@@ -248,12 +257,15 @@ export const getInvoiceHubStatuses = (invoice: InvoiceBase) => {
     if (isPaid) treasuryStatus = 'success'
     else if (pendingAmount < totalAmount || payments.length > 0) treasuryStatus = 'active'
 
+    const treasuryProgress = totalAmount > 0 ? Math.min(100, Math.round((1 - (pendingAmount / totalAmount)) * 100)) : 0
+
     return {
         origin: originStatus,
         logistics: logStatus,
         billing: billingStatus,
         treasury: treasuryStatus,
         logisticsProgress,
+        treasuryProgress,
         hasPendingTransactions: false
     }
 }
@@ -296,6 +308,9 @@ export const getPurchaseHubStatuses = (order: OrderBase) => {
     if (receptionProgress === 100) logStatus = 'success'
     else if (receptionProgress > 0) logStatus = 'active'
 
+    const totalVal = parseFloat(String(order.total || 0))
+    const treasuryProgress = totalVal > 0 ? Math.min(100, Math.round((1 - (pending / totalVal)) * 100)) : 0
+
     return {
         origin: originStatus,
         billing: billingStatus,
@@ -303,6 +318,7 @@ export const getPurchaseHubStatuses = (order: OrderBase) => {
         logistics: logStatus,
         reception: logStatus,
         receptionProgress,
+        treasuryProgress,
         hasPendingTransactions: false
     }
 }

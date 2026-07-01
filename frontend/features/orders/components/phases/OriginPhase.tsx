@@ -131,6 +131,7 @@ export function OriginPhase({
             title="Origen"
             icon={TrendingUp}
             variant={(isNoteMode ? noteStatuses.origin : (activeDoc.status === 'CANCELLED' ? 'destructive' : 'success')) as 'success' | 'active' | 'neutral' | 'destructive'}
+            progress={isNoteMode ? undefined : (activeDoc.status === 'CANCELLED' ? 0 : 100)}
             isComplete={isNoteMode && noteStatuses.origin === 'success'}
             documents={documents}
             onViewDetail={openDetails}

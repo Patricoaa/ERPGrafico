@@ -137,6 +137,7 @@ export function BillingPhase({
                 title="Facturación"
                 icon={FileText}
                 variant={(isNoteMode ? noteStatuses.billing : (billingIsComplete ? 'success' : (invoices.length > 0 ? 'active' : 'neutral'))) as 'success' | 'active' | 'neutral' | 'destructive'}
+                progress={isNoteMode ? undefined : (billingIsComplete ? 100 : 0)}
                 documents={[
                     ...(isNoteMode ? [{
                         type: activeDoc.dte_type_display || 'Nota',

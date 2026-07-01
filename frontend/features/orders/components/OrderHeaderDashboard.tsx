@@ -51,23 +51,29 @@ export function OrderHeaderDashboard({
         { id: 'treasury', label: 'Tesorería', icon: Banknote, status: phasesStatus.treasury },
     ]
 
-    const getStepStatusColor = (status: string) => {
-        switch (status) {
-            case 'success': return 'text-success bg-success/10 border-success/20'
-            case 'active': return 'text-primary bg-primary/10 border-primary/20 animate-pulse'
-            case 'neutral': return 'text-muted-foreground bg-muted/10 border-border'
-            case 'destructive': return 'text-destructive bg-destructive/10 border-destructive/20'
-            case 'not_applicable': return 'text-muted-foreground/30 bg-muted/5 border-transparent opacity-50'
-            default: return 'text-muted-foreground'
-        }
-    }
-
     const getStepIconColor = (status: string) => {
         switch (status) {
             case 'success': return 'text-success'
             case 'active': return 'text-primary'
             case 'destructive': return 'text-destructive'
             default: return 'text-muted-foreground/50'
+        }
+    }
+
+    const getStepProgress = (status: string) => {
+        switch (status) {
+            case 'success': return 100
+            case 'active': return 50
+            default: return 0
+        }
+    }
+
+    const getStepRingColor = (status: string) => {
+        switch (status) {
+            case 'success': return 'text-success'
+            case 'active': return 'text-primary'
+            case 'destructive': return 'text-destructive'
+            default: return 'text-muted-foreground/30'
         }
     }
 
@@ -110,13 +116,21 @@ export function OrderHeaderDashboard({
 
                             return (
                                 <div key={step.id} className={cn("relative z-10 flex flex-col items-center gap-2 group", step.status === 'not_applicable' && "hidden sm:flex")}>
-                                    <div className={cn(
-                                        "w-8 h-8 rounded-full flex items-center justify-center border-2 transition-all duration-300 shadow-card bg-background",
-                                        getStepStatusColor(step.status),
-                                        isActive && "scale-110 ",
-                                        step.status === 'not_applicable' && "bg-transparent border-dashed",
-                                    )}>
-                                        <step.icon className={cn("h-3.5 w-3.5", getStepIconColor(step.status))} />
+                                    <div className="relative flex items-center justify-center w-8 h-8 shrink-0">
+                                        <step.icon className={cn("h-4 w-4", getStepIconColor(step.status))} />
+                                        {getStepProgress(step.status) > 0 && (
+                                            <svg className="absolute inset-0 w-full h-full -rotate-90" viewBox="0 0 24 24">
+                                                <circle
+                                                    cx="12" cy="12" r="10.5"
+                                                    fill="none"
+                                                    stroke="currentColor"
+                                                    strokeWidth="2"
+                                                    strokeDasharray={`${2 * Math.PI * 10.5}`}
+                                                    strokeDashoffset={2 * Math.PI * 10.5 * (1 - getStepProgress(step.status) / 100)}
+                                                    className={getStepRingColor(step.status)}
+                                                />
+                                            </svg>
+                                        )}
                                     </div>
                                     <span className={cn(
                                         "text-[10px] font-bold uppercase tracking-wider transition-colors duration-300 hidden sm:block",

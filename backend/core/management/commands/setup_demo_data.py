@@ -2560,7 +2560,7 @@ class Command(BaseCommand):
                 dte_type=Invoice.DTEType.FACTURA,
                 payment_method="TRANSFER",
                 date=today,
-                number="FACT-1002",
+                number="1002",
             )
             TreasuryService.create_movement(
                 amount=inv1.total,
@@ -2669,7 +2669,7 @@ class Command(BaseCommand):
                 dte_type=Invoice.DTEType.FACTURA,
                 payment_method="CHECK",
                 date=today,
-                number="FACT-1003",
+                number="1003",
             )
             CheckService.receive(
                 bank_id=chile_bank.pk,

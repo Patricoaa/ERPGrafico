@@ -135,6 +135,14 @@ export function TreasuryPhase({
                         (parseFloat(String(activeDoc.pending_amount || '0')) <= 0 ? 'success' :
                             (payments.length > 0 ? 'active' : 'neutral'))) as 'success' | 'active' | 'neutral' | 'destructive'
                 }
+                progress={
+                    isNoteMode ? undefined :
+                    (() => {
+                        const total = parseFloat(String(activeDoc.total || '0'))
+                        const pending = parseFloat(String(activeDoc.pending_amount || '0'))
+                        return total > 0 ? Math.round(((total - pending) / total) * 100) : 0
+                    })()
+                }
                 documents={payments.map((p: Payment) => {
                     const isWriteOff = p.payment_method === 'WRITE_OFF'
                     return {

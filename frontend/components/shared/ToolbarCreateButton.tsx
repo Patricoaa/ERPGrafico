@@ -20,6 +20,7 @@ export function ToolbarCreateButton({
     iconName,
     href,
     className,
+    size: _size,
     ...props
 }: ToolbarCreateButtonProps) {
     const renderIcon = () => {
@@ -30,8 +31,9 @@ export function ToolbarCreateButton({
 
     const buttonContent = (
         <Button
+            size="sm"
             className={cn(
-                "h-9 px-4 text-xs font-semibold tracking-tight gap-1 rounded-sm shrink-0 cursor-pointer",
+                "px-4 font-semibold tracking-tight gap-1 rounded-sm shrink-0 cursor-pointer",
                 className
             )}
             {...props}
