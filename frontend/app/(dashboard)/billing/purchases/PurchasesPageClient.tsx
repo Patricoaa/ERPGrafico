@@ -23,7 +23,6 @@ import { getDtePrefix } from "@/lib/entity-registry"
 import { useConfirmAction } from "@/hooks/useConfirmAction"
 
 import { usePurchaseInvoices, purchaseInvoiceSearchDef } from "@/features/billing"
-import type { Invoice } from "@/features/billing"
 
 interface PurchaseDocument {
     id: number
@@ -63,16 +62,11 @@ interface PurchasePaymentData {
     documentAttachment?: Blob | string
 }
 
-interface PurchasesPageClientProps {
-    initialInvoices?: Invoice[]
-}
-
-export default function PurchasesPageClient({ initialInvoices }: PurchasesPageClientProps) {
+export default function PurchasesPageClient() {
     const { filters, clearAll, isFiltered } = useSmartSearch(purchaseInvoiceSearchDef)
 
     const { invoices, isLoading: isDataLoading, isRefetching, refetch, annulInvoice, confirmInvoice, makePayment, deleteInvoice } = usePurchaseInvoices({
         filters,
-        initialData: initialInvoices,
     })
 
     const [payingDoc, setPayingDoc] = useState<PurchaseDocument | null>(null)

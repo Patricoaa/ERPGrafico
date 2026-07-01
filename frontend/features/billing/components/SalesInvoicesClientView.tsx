@@ -22,12 +22,12 @@ import { useConfirmAction } from "@/hooks/useConfirmAction"
 
 import { getDtePrefix } from "@/lib/entity-registry"
 
-export function SalesInvoicesClientView({ initialInvoices }: { initialInvoices?: Invoice[] }) {
+export function SalesInvoicesClientView() {
     const { filters: textFilters, isFiltered: isTextFiltered, clearAll: clearText } = useSmartSearch(invoiceSearchDef)
     const basePeriod = { serverParamFrom: 'date_from', serverParamTo: 'date_to' }
     const { filters: segFilters, isFiltered: isSegFiltered, clearAll: clearSeg } = useSegmentation(invoiceSegDef, basePeriod)
     const isFiltered = isTextFiltered || isSegFiltered
-    const { invoices, isLoading, isRefetching, refetch, annulInvoice } = useInvoices({ filters: { ...(textFilters as InvoiceFilters), ...(segFilters as Record<string, string>), mode: 'sale' }, initialData: initialInvoices })
+    const { invoices, isLoading, isRefetching, refetch, annulInvoice } = useInvoices({ filters: { ...(textFilters as InvoiceFilters), ...(segFilters as Record<string, string>), mode: 'sale' } })
     const { openHub, closeHub, hubConfig, isHubOpen } = useHubPanel()
     const [notingInvoice, setNotingInvoice] = useState<Invoice | null>(null)
     const [payingInv, setPayingInv] = useState<Invoice | null>(null)

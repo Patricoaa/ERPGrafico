@@ -4,13 +4,8 @@ import { useEffect, useRef } from "react"
 import { useSearchParams, useRouter, usePathname } from "next/navigation"
 import { useHubPanel } from "@/components/providers/HubPanelProvider"
 import { SalesInvoicesClientView } from "@/features/billing"
-import type { Invoice } from "@/features/billing"
 
-interface SalesInvoicesPageClientProps {
-    initialInvoices?: Invoice[]
-}
-
-export default function SalesInvoicesPageClient({ initialInvoices }: SalesInvoicesPageClientProps) {
+export default function SalesInvoicesPageClient() {
     const searchParams = useSearchParams()
     const router = useRouter()
     const pathname = usePathname()
@@ -41,5 +36,5 @@ export default function SalesInvoicesPageClient({ initialInvoices }: SalesInvoic
         }
     }, [isHubOpen, selectedId, pathname, searchParams, router])
 
-    return <SalesInvoicesClientView initialInvoices={initialInvoices} />
+    return <SalesInvoicesClientView />
 }
