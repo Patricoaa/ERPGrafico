@@ -127,6 +127,7 @@ export * from './DataTableCells';
 export * from './DynamicIcon'
 export * from './ErrorBoundary'
 export * from './CmykRing'
+export * from './PrepressPanel'
 export * from './entity-actions'
 export * from './Numpad'
 

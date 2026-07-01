@@ -372,7 +372,6 @@
    * GRAPHIC INDUSTRY — Canvas prepress tokens
    */
   --mark-color: oklch(0.40 0.01 240 / 0.40);
-  --mark-color-active: var(--primary);
   --grid-line-color: oklch(0.12 0.02 240 / 0.06);
 
   /*
@@ -984,45 +983,18 @@ table [data-notched-field] {
 
 
   /*
-   * GRAPHIC INDUSTRY — Canvas Prepress with Registration Marks (⊕)
-   * Combines the dot grid pattern with prepress registration marks (⊕)
-   * in the four corners, perfect for main workspaces, panels, and cards.
-   * Usage: <div className="canvas-prepress"> ... </div>
+   * GRAPHIC INDUSTRY — Canvas Prepress (dot‑grid background)
+   * Apply via className="canvas-prepress" on any container.
+   * Renders a faint dot grid pattern for industrial/prepress texture.
+   *
+   * Registration marks (círculos concéntricos) are now rendered by the
+   * <PrepressPanel> React component using <CmykRing /> in each corner.
    */
   .canvas-prepress {
     position: relative;
     background-image: radial-gradient(var(--grid-line-color) 1px, transparent 0);
     background-size: 24px 24px;
     background-position: -19px -19px;
-  }
-
-  .canvas-prepress::before {
-    content: '';
-    position: absolute;
-    inset: 16px;
-    pointer-events: none;
-    z-index: 1;
-    opacity: 0.8;
-    background:
-      /* Top-Left ⊕ */
-      radial-gradient(circle at center, transparent 4px, var(--mark-color) 4.5px, var(--mark-color) 5.5px, transparent 6px) 0 0 / 16px 16px no-repeat,
-      linear-gradient(var(--mark-color), var(--mark-color)) 8px 0 / 1px 16px no-repeat,
-      linear-gradient(var(--mark-color), var(--mark-color)) 0 8px / 16px 1px no-repeat,
-
-      /* Top-Right ⊕ */
-      radial-gradient(circle at center, transparent 4px, var(--mark-color) 4.5px, var(--mark-color) 5.5px, transparent 6px) 100% 0 / 16px 16px no-repeat,
-      linear-gradient(var(--mark-color), var(--mark-color)) calc(100% - 8px) 0 / 1px 16px no-repeat,
-      linear-gradient(var(--mark-color), var(--mark-color)) 100% 8px / 16px 1px no-repeat,
-
-      /* Bottom-Left ⊕ */
-      radial-gradient(circle at center, transparent 4px, var(--mark-color) 4.5px, var(--mark-color) 5.5px, transparent 6px) 0 100% / 16px 16px no-repeat,
-      linear-gradient(var(--mark-color), var(--mark-color)) 8px 100% / 1px 16px no-repeat,
-      linear-gradient(var(--mark-color), var(--mark-color)) 0 calc(100% - 8px) / 16px 1px no-repeat,
-
-      /* Bottom-Right ⊕ */
-      radial-gradient(circle at center, transparent 4px, var(--mark-color) 4.5px, var(--mark-color) 5.5px, transparent 6px) 100% 100% / 16px 16px no-repeat,
-      linear-gradient(var(--mark-color), var(--mark-color)) calc(100% - 8px) 100% / 1px 16px no-repeat,
-      linear-gradient(var(--mark-color), var(--mark-color)) 100% calc(100% - 8px) / 16px 1px no-repeat;
   }
 
   /*
