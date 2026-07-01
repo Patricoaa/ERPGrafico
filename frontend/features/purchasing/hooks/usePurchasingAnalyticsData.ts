@@ -53,6 +53,7 @@ const PAYMENT_METHOD_LABELS: Record<string, string> = {
 
 function groupBy<T>(items: T[], keyFn: (item: T) => string): Record<string, T[]> {
     const map: Record<string, T[]> = {}
+    if (!Array.isArray(items)) return map
     for (const item of items) {
         const key = keyFn(item)
         if (!map[key]) map[key] = []
@@ -152,7 +153,8 @@ export function usePurchasingAnalyticsData(
 ): PurchasingAnalyticsData {
     return useMemo(() => {
         // ── Filter by date range ───────────────────────────
-        let filtered = orders
+        const safeOrders = Array.isArray(orders) ? orders : []
+        let filtered = safeOrders
         if (dateRange) {
             filtered = filtered.filter((o) => {
                 if (!o.date) return false
@@ -200,7 +202,7 @@ export function usePurchasingAnalyticsData(
             .sort((a, b) => b.value - a.value)
 
         // ── Receiving status distribution ──────────────────
-        const receivingGroups = groupBy(orders, (o) => o.receiving_status || "PENDING")
+        const receivingGroups = groupBy(safeOrders, (o) => o.receiving_status || "PENDING")
         const receivingDistribution = Object.entries(receivingGroups)
             .map(([id, items]) => ({
                 id,
@@ -339,20 +341,20 @@ export function usePurchasingAnalyticsData(
         const inCurr = (o: PurchaseOrderAPI) => inPeriod(o, currPeriod, g)
         const inPrev = (o: PurchaseOrderAPI) => inPeriod(o, prevPeriod, g)
 
-        const currVol = orders.filter(inCurr).reduce((s, o) => s + Number(o.total || 0), 0)
-        const prevVol = orders.filter(inPrev).reduce((s, o) => s + Number(o.total || 0), 0)
+        const currVol = safeOrders.filter(inCurr).reduce((s, o) => s + Number(o.total || 0), 0)
+        const prevVol = safeOrders.filter(inPrev).reduce((s, o) => s + Number(o.total || 0), 0)
         const volumeTrend: TrendData = { direction: currVol >= prevVol ? "up" : "down", value: prevVol > 0 ? `${Math.round(((currVol - prevVol) / prevVol) * 100)}%` : "—" }
 
-        const currPaid = orders.filter(inCurr).reduce((s, o) => s + Number(o.total_paid || 0), 0)
-        const prevPaid = orders.filter(inPrev).reduce((s, o) => s + Number(o.total_paid || 0), 0)
+        const currPaid = safeOrders.filter(inCurr).reduce((s, o) => s + Number(o.total_paid || 0), 0)
+        const prevPaid = safeOrders.filter(inPrev).reduce((s, o) => s + Number(o.total_paid || 0), 0)
         const paidTrend: TrendData = { direction: currPaid >= prevPaid ? "up" : "down", value: prevPaid > 0 ? `${Math.round(((currPaid - prevPaid) / prevPaid) * 100)}%` : "—" }
 
-        const currPend = orders.filter(inCurr).reduce((s, o) => s + Number(o.pending_amount || 0), 0)
-        const prevPend = orders.filter(inPrev).reduce((s, o) => s + Number(o.pending_amount || 0), 0)
+        const currPend = safeOrders.filter(inCurr).reduce((s, o) => s + Number(o.pending_amount || 0), 0)
+        const prevPend = safeOrders.filter(inPrev).reduce((s, o) => s + Number(o.pending_amount || 0), 0)
         const pendingTrend: TrendData = { direction: currPend >= prevPend ? "up" : "down", value: prevPend > 0 ? `${Math.round(((currPend - prevPend) / prevPend) * 100)}%` : "—" }
 
-        const currCnt = orders.filter(inCurr).length
-        const prevCnt = orders.filter(inPrev).length
+        const currCnt = safeOrders.filter(inCurr).length
+        const prevCnt = safeOrders.filter(inPrev).length
         const orderCountTrend: TrendData = { direction: currCnt >= prevCnt ? "up" : "down", value: prevCnt > 0 ? `${Math.round(((currCnt - prevCnt) / prevCnt) * 100)}%` : "—" }
 
         const currAvg = currCnt > 0 ? currVol / currCnt : 0
