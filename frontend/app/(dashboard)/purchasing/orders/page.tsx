@@ -19,10 +19,11 @@ export default async function PurchaseOrdersPage({ searchParams }: PageProps) {
 
     if (!hasActiveFilters) {
         try {
-            initialOrders = await serverFetch<PurchaseOrderAPI[]>('purchasing/orders/', {
+            const ordersResponse = await serverFetch<{ results: PurchaseOrderAPI[] }>('purchasing/orders/', {
                 params: { page_size: '200' },
                 revalidate: 10,
             })
+            initialOrders = ordersResponse.results
         } catch (e) {
             console.warn('[PurchasingPage] serverFetch orders failed, client will refetch:', e)
         }
