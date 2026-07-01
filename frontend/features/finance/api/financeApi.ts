@@ -15,6 +15,7 @@ export interface StatementParams {
     comp_start_date?: string
     comp_end_date?: string
     showComparison?: boolean
+    fiscal_year_id?: number
 }
 
 async function fetchStatement(endpoint: string, params: StatementParams) {
@@ -26,6 +27,9 @@ async function fetchStatement(endpoint: string, params: StatementParams) {
     if (params.showComparison && params.comp_start_date && params.comp_end_date) {
         queryParams.comp_start_date = params.comp_start_date
         queryParams.comp_end_date = params.comp_end_date
+    }
+    if (params.fiscal_year_id) {
+        queryParams.fiscal_year_id = params.fiscal_year_id
     }
     const res = await api.get(endpoint, { params: queryParams })
     return res.data.task_id ? pollTask(res.data.task_id) : res.data

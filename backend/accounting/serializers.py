@@ -6,6 +6,7 @@ from .models import (
     Budget,
     BudgetItem,
     FiscalYear,
+    FiscalYearAccountMapping,
     JournalEntry,
     JournalItem,
 )
@@ -243,3 +244,20 @@ class FiscalYearPreviewSerializer(serializers.Serializer):
     result_account_code = serializers.CharField(allow_null=True)
     result_account_name = serializers.CharField(allow_null=True)
     is_balanced = serializers.BooleanField(default=True)
+
+
+class FiscalYearMappingSerializer(serializers.ModelSerializer):
+    account_code = serializers.CharField(source="account.code", read_only=True)
+    account_name = serializers.CharField(source="account.name", read_only=True)
+
+    class Meta:
+        model = FiscalYearAccountMapping
+        fields = [
+            "id",
+            "account",
+            "account_code",
+            "account_name",
+            "is_category",
+            "bs_category",
+            "cf_category",
+        ]

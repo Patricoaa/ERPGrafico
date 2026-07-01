@@ -3,6 +3,7 @@ export { AccountingClosuresClientView, AccountsClientView, ClosuresSkeleton, Jou
 export type { Account, AccountFilters, AccountPayload, AccountingPeriod } from './types'
 export { accountSegDef, fiscalYearSegDef, journalEntrySegDef } from './segmentationDef'
 export { useAccountingSettings, ACCOUNTING_SETTINGS_QUERY_KEY } from './hooks/useAccountingSettings'
+export { useFiscalYears } from './hooks/useFiscalYears'
 export { useAccountMutations } from './hooks/useAccountMutations'
 export { useJournalEntry, useJournalEntries, useDeleteJournalEntry, usePostJournalEntry, useReverseJournalEntry, type JournalEntry } from './hooks/useJournalEntries'
 export { useAccountingAccounts } from './hooks/useAccounts'

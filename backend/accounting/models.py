@@ -1556,6 +1556,38 @@ class FiscalYear(models.Model):
         return self.net_result is not None and self.net_result < 0
 
 
+# --- Fiscal Year Account Mapping Snapshot ---
+
+
+class FiscalYearAccountMapping(models.Model):
+    fiscal_year = models.ForeignKey(
+        FiscalYear, on_delete=models.CASCADE, related_name="account_mappings"
+    )
+    account = models.ForeignKey(
+        Account, on_delete=models.CASCADE, related_name="fiscal_year_mappings"
+    )
+    is_category = models.CharField(
+        _("Categoría ER (snapshot)"), max_length=30, choices=ISCategory.choices, null=True, blank=True
+    )
+    bs_category = models.CharField(
+        _("Categoría Balance (snapshot)"), max_length=30, choices=BSCategory.choices, null=True, blank=True
+    )
+    cf_category = models.CharField(
+        _("Categoría Flujo Caja (snapshot)"), max_length=30, choices=CFCategory.choices, null=True, blank=True
+    )
+
+    class Meta:
+        unique_together = [("fiscal_year", "account")]
+        indexes = [
+            models.Index(fields=["fiscal_year", "account"]),
+        ]
+        verbose_name = _("Mapeo de cuenta por ejercicio")
+        verbose_name_plural = _("Mapeos de cuentas por ejercicio")
+
+    def __str__(self):
+        return f"FY{self.fiscal_year.year} - {self.account.code}"
+
+
 # --- Budgeting Models ---
 
 
