@@ -51,7 +51,7 @@ export function DomainCard({
     const Icon = useMemo(() => iconOverride ?? getEntityIcon(label), [label, iconOverride])
     
     // ─── Identity ─────────────────────────────────────────────────────────────
-    const d = data as { display_id?: string; total?: number; effective_total?: number; balance?: number; pending_amount?: number; date?: string; pos_session?: number; dte_type?: string; lines?: Array<Record<string, unknown>>; items?: Array<Record<string, unknown>>; adjustments?: Array<Record<string, unknown>>; work_orders?: Array<Record<string, unknown>>; [key: string]: unknown }
+    const d = data as { display_id?: string; total?: number; effective_total?: number; balance?: number; pending_amount?: number; date?: string; delivery_date?: string; receipt_date?: string; pos_session?: number; dte_type?: string; lines?: Array<Record<string, unknown>>; items?: Array<Record<string, unknown>>; adjustments?: Array<Record<string, unknown>>; work_orders?: Array<Record<string, unknown>>; [key: string]: unknown }
     const partnerName = getPartnerName(label, d)
     const displayId = d.display_id || formatEntityDisplay(label, d)
     
@@ -153,25 +153,37 @@ export function DomainCard({
             {/* ROW 2: Product Lines & Totals */}
             {(d.lines || d.items || []).length > 0 && (
                 <EntityCard.Body className="flex items-start justify-between gap-4 pt-2 border-t border-border/30 mt-1">
-                    <div className="flex flex-wrap gap-x-6 gap-y-1 flex-1">
+                    <div className="flex flex-wrap gap-x-6 gap-y-1.5 flex-1">
                         {(d.lines || d.items || []).map((raw, idx: number) => {
                             const line = raw as { quantity?: number | string; product_name?: string; description?: string }
                             return (
-                            <span key={idx} className="text-sm text-foreground/70 flex items-center gap-1.5">
-                                <span className="font-medium text-foreground">
-                                    {Math.round(parseFloat(String(line.quantity || 0)))}
+                            <div key={idx} className="text-sm text-foreground/70 flex flex-col leading-tight min-w-0">
+                                <span>
+                                    <span className="font-medium text-foreground">
+                                        {Math.round(parseFloat(String(line.quantity || 0)))}
+                                    </span>
+                                    <span className="text-muted-foreground/40 mx-1">×</span>
                                 </span>
-                                <span className="text-muted-foreground/40">×</span>
-                                <span className="text-foreground/70 truncate max-w-[240px]">
+                                <span className="text-foreground/70 truncate max-w-[220px]">
                                     {line.product_name || line.description || 'Producto'}
                                 </span>
-                            </span>
+                            </div>
                             )
                         })}
                     </div>
 
                     {visibleColumns?.total !== false && (
                         <div className={cn("flex items-start gap-4 shrink-0", !isDetailView && "pr-9")}>
+                            {(d.delivery_date || d.receipt_date) && visibleColumns?.delivery_date !== false && (
+                                <div className="flex flex-col items-end min-w-[80px]">
+                                    <span className="text-[9px] text-muted-foreground uppercase tracking-widest font-extrabold mb-0.5">
+                                        {label === 'purchasing.purchaseorder' ? 'Recepción' : 'Entrega'}
+                                    </span>
+                                    <span className="text-sm font-heading tracking-tight whitespace-nowrap">
+                                        {formatPlainDate(d.delivery_date || d.receipt_date)}
+                                    </span>
+                                </div>
+                            )}
                             {hasPending && visibleColumns?.payment_status !== false && (
                                 <div className="flex flex-col items-end min-w-[80px]">
                                     <span className="text-[9px] text-warning/80 uppercase tracking-widest font-extrabold mb-0.5">
