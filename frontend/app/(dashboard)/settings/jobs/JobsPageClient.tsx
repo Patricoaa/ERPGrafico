@@ -102,7 +102,7 @@ export default function JobsPageClient() {
                                 <Button 
                                     className="w-full mt-4" 
                                     variant="default"
-                                    onClick={() => window.open(job.result_file_url!, '_blank')}
+                                    onClick={() => window.open(job.result_file_url ?? '', '_blank')}
                                 >
                                     <Download className="w-4 h-4 mr-2" />
                                     Descargar Archivo

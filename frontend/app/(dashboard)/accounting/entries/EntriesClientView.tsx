@@ -199,7 +199,7 @@ export default function EntriesPage({ externalOpen, onExternalOpenChange, create
             enableSorting: false,
         },
         journalEntryActions.column(journalEntryActionsCtx),
-    ], [openSelected, openDetail, handlePost, handleDelete, handleReverse])
+    ], [openSelected, openDetail, handlePost, handleDelete, handleReverse, journalEntryActionsCtx])
 
 
     return (
