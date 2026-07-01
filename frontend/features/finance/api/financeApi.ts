@@ -63,8 +63,10 @@ export const financeApi = {
     // ── Payments ──
     getPayments: (params?: Record<string, unknown>) =>
         api.get('/treasury/payments/', { params }).then(r => r.data),
-    registerPayment: (payload: Record<string, unknown>) =>
-        api.post('/treasury/payments/register_movement/', payload).then(r => r.data),
+    registerPayment: (payload: Record<string, unknown>, idempotencyKey?: string) =>
+        api.post('/treasury/payments/register_movement/', payload, {
+            headers: idempotencyKey ? { 'Idempotency-Key': idempotencyKey } : undefined,
+        }).then(r => r.data),
     updatePayment: (id: number, payload: Record<string, unknown>) =>
         api.patch(`/treasury/payments/${id}/`, payload).then(r => r.data),
     getPaymentMethods: (params?: Record<string, unknown>) =>
