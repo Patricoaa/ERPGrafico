@@ -6,7 +6,6 @@ import { Skeleton, EmptyState, PageSectionHeader } from "@/components/shared"
 import { useMemo } from "react"
 import { useBankOverview, type BankOverviewData } from "../hooks/useBankOverview"
 import { getSubViewTabs } from "../constants"
-import { BankMasthead } from "./BankMasthead"
 import { BankUpcomingMaturities } from "./BankUpcomingMaturities"
 import { BankRecentActivity } from "./BankRecentActivity"
 import { BankOverviewCheckingCards } from "./BankOverviewCheckingCards"
@@ -55,8 +54,6 @@ export function BankCenterDashboard({ bankId, subtab }: { bankId: number; subtab
                     </div>
                 ) : overviewData ? (
                     <div>
-                        <BankMasthead data={overviewData} />
-                        <div className="border-b border-border/40" />
                         <section className="py-4">
                             <div className="flex flex-col lg:flex-row gap-5">
                                 <div className="flex-1 grid grid-cols-1 lg:grid-cols-2 gap-5">
@@ -69,9 +66,12 @@ export function BankCenterDashboard({ bankId, subtab }: { bankId: number; subtab
                             </div>
                         </section>
                         <div className="border-b border-border/40" />
-                        <BankUpcomingMaturities data={overviewData} bankId={bankId} />
-                        <div className="border-b border-border/40" />
-                        <BankRecentActivity data={overviewData} bankId={bankId} />
+                        <section className="py-4">
+                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+                                <BankUpcomingMaturities data={overviewData} bankId={bankId} />
+                                <BankRecentActivity data={overviewData} bankId={bankId} />
+                            </div>
+                        </section>
                     </div>
                 ) : null
             )}
@@ -112,12 +112,6 @@ export function BankCenterDashboard({ bankId, subtab }: { bankId: number; subtab
 function OverviewSkeleton() {
     return (
         <div className="space-y-0">
-            <div className="py-4 space-y-3">
-                <Skeleton className="h-7 w-48" />
-                <Skeleton className="h-9 w-full" />
-                <Skeleton className="h-4 w-full" />
-            </div>
-            <div className="border-b border-border/40" />
             <div className="py-4">
                 <div className="flex flex-col lg:flex-row gap-5">
                     <div className="flex-1 grid grid-cols-1 lg:grid-cols-2 gap-5">
