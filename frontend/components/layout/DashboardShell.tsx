@@ -11,7 +11,7 @@ import { UserActions } from "@/components/layout/UserActions"
 import { useHeader } from "@/components/providers/HeaderProvider"
 
 import { Skeleton } from "@/components/ui/skeleton"
-import { HeaderNavDropdowns, PageHeaderSkeleton, ModuleLauncher } from '@/components/shared'
+import { HeaderNavDropdowns, PageHeaderSkeleton, ModuleLauncher, PrepressPanel } from '@/components/shared'
 import { Loader2, Menu } from "lucide-react"
 import { DynamicIcon } from '@/components/shared'
 
@@ -150,9 +150,9 @@ function DashboardShellInner({ children }: { children: React.ReactNode }) {
                     marginRight: `${totalSheetsWidth}px`,
                 }}
             >
-                <main
+                <PrepressPanel
                     id="main-content"
-                    className="flex-1 flex flex-col overflow-hidden relative canvas-prepress panel-surface"
+                    className="flex-1 flex flex-col overflow-hidden relative panel-surface"
                 >
                     <div
                         className="w-full flex-1 flex flex-col min-h-0 animate-in fade-in ease-premium fill-mode-both motion-reduce:animate-none motion-reduce:opacity-100"
@@ -163,7 +163,7 @@ function DashboardShellInner({ children }: { children: React.ReactNode }) {
                     >
                         {children}
                     </div>
-                </main>
+                </PrepressPanel>
             </div>
 
             {/* Task Inbox Sidebar (Right) */}

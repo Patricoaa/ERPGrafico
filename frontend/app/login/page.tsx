@@ -4,6 +4,7 @@ import Image from "next/image"
 import { LoginForm } from "@/features/auth"
 import { GuestGuard } from "@/components/auth"
 import { useBranding } from "@/contexts/BrandingProvider"
+import { PrepressPanel } from "@/components/shared"
 import { getFrontendVersion } from "@/lib/version"
 
 export default function LoginPage() {
@@ -17,7 +18,7 @@ export default function LoginPage() {
                 <div
                     className="w-full max-w-sm relative z-10 mx-6 animate-in fade-in slide-in-from-bottom-3 ease-premium fill-mode-both duration-[600ms]"
                 >
-                    <div className="rounded-xl border bg-card shadow-card p-8 canvas-prepress">
+                    <PrepressPanel className="rounded-xl border bg-card shadow-card p-8">
                         {/* Logo */}
                         <div className="mb-8 flex flex-col items-center">
                             {logo ? (
@@ -50,7 +51,7 @@ export default function LoginPage() {
                                 v{getFrontendVersion()}
                             </p>
                         </div>
-                    </div>
+                    </PrepressPanel>
                 </div>
             </div>
         </GuestGuard>
