@@ -2,7 +2,7 @@
 
 import React from "react"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { CollapsibleSheet, Chip, SkeletonShell } from "@/components/shared"
+import { CollapsibleSheet, Chip, SkeletonShell, CmykRing } from "@/components/shared"
 import type { MyProfile } from "@/types/profile"
 import { User } from "lucide-react"
 
@@ -27,7 +27,13 @@ export function ProfileSidePanel({ profile, open = true, onOpenChange }: Profile
                 tabIcon={User}
                 fullWidth={320}
             >
-                <div className="flex-1 overflow-y-auto overflow-x-hidden p-6">
+                <div className="flex-1 overflow-y-auto overflow-x-hidden p-6 canvas-prepress relative">
+                    <div className="absolute inset-4 pointer-events-none z-[1]">
+                        <CmykRing size="sm" className="absolute top-0 left-0 opacity-80" />
+                        <CmykRing size="sm" className="absolute top-0 right-0 opacity-80" />
+                        <CmykRing size="sm" className="absolute bottom-0 left-0 opacity-80" />
+                        <CmykRing size="sm" className="absolute bottom-0 right-0 opacity-80" />
+                    </div>
                     <SkeletonShell isLoading={true} ariaLabel="Cargando perfil">
                         <div className="flex-1 h-full">
                             <div className="flex flex-col items-center justify-center py-12 gap-4 border-b border-border">
@@ -114,7 +120,13 @@ export function ProfileSidePanel({ profile, open = true, onOpenChange }: Profile
             tabIcon={User}
             fullWidth={320}
         >
-            <div className="flex-1 overflow-y-auto overflow-x-hidden text-foreground ">
+            <div className="flex-1 overflow-y-auto overflow-x-hidden text-foreground canvas-prepress relative">
+                <div className="absolute inset-4 pointer-events-none z-[1]">
+                    <CmykRing size="sm" className="absolute top-0 left-0 opacity-80" />
+                    <CmykRing size="sm" className="absolute top-0 right-0 opacity-80" />
+                    <CmykRing size="sm" className="absolute bottom-0 left-0 opacity-80" />
+                    <CmykRing size="sm" className="absolute bottom-0 right-0 opacity-80" />
+                </div>
                 {/* Header / Avatar Area */}
                 <div className="flex flex-col items-center justify-center py-10 px-6 gap-5 border-border/10 relative overflow-hidden">
                     <Avatar className="h-24 w-24 border-2 border-primary/20 shadow-elevated ring-4 ring-background relative z-10">

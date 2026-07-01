@@ -3,16 +3,19 @@
 import { useMemo, useState, type ReactNode } from "react"
 import { usePathname } from "next/navigation"
 import { PageContainer, PageHeader } from '@/components/shared'
-import { ProfileProvider, useMyProfile, useProfile, ProfileSidePanel } from "@/features/profile"
+import { ProfileProvider, useProfile, ProfileSidePanel } from "@/features/profile"
 
-function ProfileNavigation({ children }: { children: ReactNode }) {
+export function ProfileLayoutClient({ children }: { children: ReactNode }) {
+    const { data: profile, isLoading, isError } = useProfile()
     const pathname = usePathname()
-    const { profile, isPartner } = useMyProfile()
     const [panelOpen, setPanelOpen] = useState(true)
 
     const segments = pathname.split('/').filter(Boolean)
     const activeTab = segments[1] === 'partner' ? 'partner' : segments[1] === 'personal' ? 'personal' : 'account'
     const activeSubTab = segments[2] || (activeTab === 'account' ? 'preferences' : 'employee')
+
+    const contactDetail = profile?.contact_detail || profile?.employee?.contact_detail
+    const isPartner = !!contactDetail?.is_partner
 
     const tabs = useMemo(() => {
         const base = [
@@ -82,38 +85,22 @@ function ProfileNavigation({ children }: { children: ReactNode }) {
             <PageContainer className="flex flex-col">
                 <PageHeader title={title} description={description} iconName={iconName} variant="minimal" navigation={navigation} />
                 <div className="h-full flex flex-col">
-                    {children}
+                    {isLoading ? (
+                        <div className="flex items-center justify-center h-64">
+                            <p className="text-muted-foreground text-sm">Cargando perfil...</p>
+                        </div>
+                    ) : isError || !profile ? (
+                        <div className="p-8 text-center text-muted-foreground">
+                            Error al cargar el perfil. Intente nuevamente.
+                        </div>
+                    ) : (
+                        <ProfileProvider profile={profile}>
+                            {children}
+                        </ProfileProvider>
+                    )}
                 </div>
             </PageContainer>
-            <ProfileSidePanel profile={profile} open={panelOpen} onOpenChange={setPanelOpen} />
+            <ProfileSidePanel profile={profile ?? null} open={panelOpen} onOpenChange={setPanelOpen} />
         </>
-    )
-}
-
-export function ProfileLayoutClient({ children }: { children: ReactNode }) {
-    const { data: profile, isLoading, isError } = useProfile()
-
-    if (isLoading) {
-        return (
-            <div className="flex items-center justify-center h-64">
-                <p className="text-muted-foreground text-sm">Cargando perfil...</p>
-            </div>
-        )
-    }
-
-    if (isError || !profile) {
-        return (
-            <div className="p-8 text-center text-muted-foreground">
-                Error al cargar el perfil. Intente nuevamente.
-            </div>
-        )
-    }
-
-    return (
-        <ProfileProvider profile={profile}>
-            <ProfileNavigation>
-                {children}
-            </ProfileNavigation>
-        </ProfileProvider>
     )
 }
