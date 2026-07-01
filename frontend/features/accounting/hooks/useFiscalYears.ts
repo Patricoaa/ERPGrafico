@@ -17,7 +17,7 @@ export function useFiscalYears() {
         queryKey: FISCAL_YEARS_QUERY_KEY,
         queryFn: async () => {
             const response = await api.get('/accounting/fiscal-years/?ordering=-year');
-            return response.data.results;
+            return response.data;
         },
         staleTime: 10 * 60 * 1000, // 10 min
     });

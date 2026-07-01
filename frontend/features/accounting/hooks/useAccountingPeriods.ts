@@ -17,7 +17,7 @@ export function useAccountingPeriods() {
         queryKey: ACCOUNTING_PERIODS_QUERY_KEY,
         queryFn: async () => {
             const response = await api.get('/tax/accounting-periods/?ordering=-year,-month');
-            return response.data.results;
+            return response.data;
         },
         staleTime: 10 * 60 * 1000, // 10 min
     });
