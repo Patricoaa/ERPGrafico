@@ -16,28 +16,31 @@ const SIZE_MAP: Record<RingSize, string> = {
   lg: "h-8 w-8",
 }
 
-const RINGS =
-  'repeating-radial-gradient(circle at center, transparent 0, transparent 1px, var(--mark-color) 1px, var(--mark-color) 2.5px, transparent 2.5px, transparent 4.5px)'
-
 /**
- * CmykRing — Concentric registration‑target rings (círculos concéntricos).
+ * CmykRing — Registration‑target concentric circles in C / M / Y / K.
  *
- * Renders repeating prepress registration rings using the same
- * `radial‑gradient` technique and `--mark-color` token as the
- * `.canvas‑prepress` registration marks (⊕) in globals.css.
- *
- * Intended as a reusable visual token — drop it anywhere an element
- * needs a graphic‑industry badge, registration marker, or process‑
- * control accent.
+ * Four concentric rings from centre out: Cyan → Magenta → Yellow → Black.
+ * References the prepress registration targets used to verify ink
+ * registration (套准标记) on press sheets.
  *
  * Sizes: sm (16px), md (24px), lg (32px). Pass className to add rings,
  * shadows, or other adornments.
  */
 export function CmykRing({ size = "md", className }: CmykRingProps) {
   return (
-    <div
-      className={cn("rounded-full shrink-0", SIZE_MAP[size], className)}
-      style={{ background: RINGS }}
-    />
+    <svg
+      viewBox="0 0 24 24"
+      className={cn("shrink-0", SIZE_MAP[size], className)}
+      aria-hidden="true"
+    >
+      {/* K — outer ring */}
+      <circle cx="12" cy="12" r="10" fill="none" stroke="var(--color-black)" strokeWidth="2" />
+      {/* Y — ring 2 */}
+      <circle cx="12" cy="12" r="7" fill="none" stroke="var(--color-yellow)" strokeWidth="2" />
+      {/* M — ring 3 */}
+      <circle cx="12" cy="12" r="4" fill="none" stroke="var(--color-magenta)" strokeWidth="2" />
+      {/* C — centre dot */}
+      <circle cx="12" cy="12" r="1.5" fill="var(--color-cyan)" />
+    </svg>
   )
 }
