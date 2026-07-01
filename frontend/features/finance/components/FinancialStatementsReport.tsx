@@ -35,59 +35,6 @@ function SkeletonReportSection() {
     )
 }
 
-function ReportHeader({ title, dateRange, compDateRange, showComparison, headerFormat, accent = 'primary' }: { title: string, dateRange?: DateRange, compDateRange?: DateRange, showComparison?: boolean, headerFormat: 'year' | 'month-year' | 'day-month-year', accent?: 'primary' | 'success' | 'info' }) {
-    const getPeriodLabel = (range: DateRange | undefined) => {
-        if (!range?.from || !range?.to) return ""
-        const fromDate = range.from
-        const toDate = range.to
-
-        if (headerFormat === 'year') {
-            const fromYear = fromDate.getFullYear()
-            const toYear = toDate.getFullYear()
-            if (fromYear === toYear) return `${fromYear}`
-            return `${fromYear}-${toYear}`
-        }
-
-        if (headerFormat === 'month-year') {
-            const fromStr = format(fromDate, 'MMM yyyy', { locale: es })
-            const toStr = format(toDate, 'MMM yyyy', { locale: es })
-            if (fromStr === toStr) return fromStr
-            if (fromDate.getFullYear() === toDate.getFullYear()) {
-                return `${format(fromDate, 'MMM', { locale: es })}-${format(toDate, 'MMM yyyy', { locale: es })}`
-            }
-            return `${format(fromDate, 'MMM yyyy', { locale: es })}-${format(toDate, 'MMM yyyy', { locale: es })}`
-        }
-
-        const fromStr = format(fromDate, 'dd/MM/yyyy')
-        const toStr = format(toDate, 'dd/MM/yyyy')
-        if (fromStr === toStr) return fromStr
-        return `${fromStr} - ${toStr}`
-    }
-
-    return (
-        <div className="flex flex-col items-start text-left space-y-1 mb-8 pb-6 border-b w-full relative">
-            <h2 className="text-2xl font-black uppercase tracking-tight text-foreground dark:text-foreground">{title}</h2>
-            {dateRange?.from && dateRange?.to && (
-                <p className="text-xs text-muted-foreground font-semibold flex items-center gap-1.5 flex-wrap">
-                    <span>Período:</span>
-                    <span className="font-bold text-foreground bg-foreground/5 px-2 py-0.5 rounded-sm border border-border/20">{getPeriodLabel(dateRange)}</span>
-                    {showComparison && compDateRange?.from && compDateRange?.to && (
-                        <>
-                            <span className="text-[10px] text-muted-foreground/60 font-black uppercase px-0.5">vs</span>
-                            <span className="font-bold text-foreground bg-foreground/5 px-2 py-0.5 rounded-sm border border-border/20">{getPeriodLabel(compDateRange)}</span>
-                        </>
-                    )}
-                </p>
-            )}
-            <div className={cn(
-                "absolute bottom-0 left-0 w-16 h-1 rounded-full",
-                accent === 'primary' ? 'bg-primary' :
-                    accent === 'success' ? 'bg-success' : 'bg-info'
-            )} />
-        </div>
-    )
-}
-
 interface FinancialStatementsReportProps {
     activeTab: string
     onPeriodLabelChange?: (label: string) => void
@@ -201,6 +148,33 @@ export function FinancialStatementsReport({ activeTab, onPeriodLabelChange }: Fi
         return <DistributionBar segments={segments} className="mb-6" />
     }
 
+    const renderPLDistribution = (d: PLData) => {
+        const sections = d.sections || []
+        const incomeTotal = sections
+            .filter(s => s.name.toLowerCase().includes('ingreso'))
+            .reduce((sum, s) => sum + Math.abs(s.total || 0), 0)
+        const expenseTotal = sections
+            .filter(s => s.name.toLowerCase().includes('gasto') || s.name.toLowerCase().includes('costo'))
+            .reduce((sum, s) => sum + Math.abs(s.total || 0), 0)
+
+        if (incomeTotal === 0 && expenseTotal === 0) return null
+
+        const segments = [
+            ...(incomeTotal > 0 ? [{ label: "Ingresos", value: incomeTotal, bgClass: "bg-income" as const, textClass: "text-income-foreground" as const }] : []),
+            ...(expenseTotal > 0 ? [{ label: "Costos y Gastos", value: expenseTotal, bgClass: "bg-expense" as const, textClass: "text-expense-foreground" as const }] : []),
+        ]
+        return <DistributionBar segments={segments} className="mb-6" />
+    }
+
+    const renderCFDistribution = (d: CashFlowData) => {
+        const segments = [
+            { label: "Operativo", value: Math.abs(d.total_operating || 0), bgClass: "bg-asset", textClass: "text-asset-foreground" },
+            { label: "Inversión", value: Math.abs(d.total_investing || 0), bgClass: "bg-liability", textClass: "text-liability-foreground" },
+            { label: "Financiamiento", value: Math.abs(d.total_financing || 0), bgClass: "bg-primary", textClass: "text-primary-foreground" },
+        ]
+        return <DistributionBar segments={segments} className="mb-6" />
+    }
+
     return (
         <PageContainer scrollable className="px-0">
             <div className="w-full pt-4">
@@ -286,12 +260,14 @@ export function FinancialStatementsReport({ activeTab, onPeriodLabelChange }: Fi
                     <div className="mt-0 outline-none ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
                         {activeTab === "pl" && (
                             <>
-                                <ReportHeader title="Estado de Resultados" dateRange={date} compDateRange={compDate} showComparison={showComparison} headerFormat={headerFormat} accent="success" />
                                 {plData ? (
-                                    <div className="space-y-8">
+                                    <div className="space-y-6">
                                         {(() => {
                                             const d = plData as PLData;
-                                            return (d.sections || []).map((section: PLSection, idx: number) => (
+                                            return (
+                                                <>
+                                                    {renderPLDistribution(d)}
+                                                    {(d.sections || []).map((section: PLSection, idx: number) => (
                                                 section.is_total ? (
                                                     <div key={idx} className={cn(
                                                         "py-6 px-4 flex justify-between items-center rounded-md my-4 transition-colors",
@@ -331,8 +307,10 @@ export function FinancialStatementsReport({ activeTab, onPeriodLabelChange }: Fi
                                                         embedded
                                                     />
                                                 )
-                                            ))
-                                        })()}
+                                            ))}
+                                        </>
+                                    );
+                                })()}
                                     </div>
                                 ) : (
                                     <SkeletonShell isLoading ariaLabel="Cargando estado de resultados">
@@ -350,8 +328,9 @@ export function FinancialStatementsReport({ activeTab, onPeriodLabelChange }: Fi
                     <div className="mt-0 outline-none ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
                         {activeTab === "cf" && (
                             <>
-                                <ReportHeader title="Estado de Flujo de Efectivo" dateRange={date} compDateRange={compDate} showComparison={showComparison} headerFormat={headerFormat} accent="info" />
                                 {cfData ? (
+                                    <div className="space-y-6">
+                                        {renderCFDistribution(cfData as CashFlowData)}
                                         <CashFlowTable
                                             data={cfData as CashFlowData}
                                             embedded
@@ -359,6 +338,7 @@ export function FinancialStatementsReport({ activeTab, onPeriodLabelChange }: Fi
                                             periodLabel={periodLabel}
                                             compPeriodLabel={compPeriodLabel}
                                         />
+                                    </div>
                                     ) : (
                                         <SkeletonShell isLoading ariaLabel="Cargando flujo de efectivo">
                                             <div className="space-y-8">
