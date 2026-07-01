@@ -5,7 +5,9 @@ from django.db.models import Count, Q, Sum
 from django.db.models.functions import TruncMonth
 from django.utils import timezone
 
-from accounting.models import Account, AccountType, JournalItem
+from accounting.models import Account, AccountType, JournalEntry, JournalItem
+
+MAPPING_TYPE_MAP = {"is": "is_category", "cf": "cf_category", "bs": "bs_category"}
 
 
 class FinanceService:
@@ -16,7 +18,7 @@ class FinanceService:
         For Balance Sheet accounts (ASSET, LIABILITY, EQUITY), we usually want the accumulated balance up to end_date.
         For P&L accounts (INCOME, EXPENSE), we want the movement between start_date and end_date.
         """
-        filters = Q(entry__status="POSTED")
+        filters = Q(entry__status__in=JournalEntry.balance_affecting_statuses())
 
         if end_date:
             filters &= Q(entry__date__lte=end_date)
@@ -38,8 +40,38 @@ class FinanceService:
             return credit - debit
 
     @staticmethod
+    def _resolve_category(account, report_type, fiscal_year_id=None):
+        """Resuelve la categoría de reporte para una cuenta.
+
+        Si fiscal_year_id se provee, consulta el snapshot histórico.
+        Si no, usa el valor efectivo vivo (con herencia del padre).
+        """
+        if fiscal_year_id is not None:
+            from accounting.models import FiscalYearAccountMapping
+            try:
+                mapping = FiscalYearAccountMapping.objects.get(
+                    fiscal_year_id=fiscal_year_id, account=account
+                )
+                return getattr(mapping, MAPPING_TYPE_MAP[report_type])
+            except FiscalYearAccountMapping.DoesNotExist:
+                return None
+        return getattr(account, f"effective_{report_type}_category")
+
+    @staticmethod
+    def _get_accounts_by_cf_category(category_value, fiscal_year_id=None):
+        """Retorna cuentas con la cf_category indicada, viva o histórica."""
+        if fiscal_year_id is not None:
+            from accounting.models import FiscalYearAccountMapping
+            account_ids = FiscalYearAccountMapping.objects.filter(
+                fiscal_year_id=fiscal_year_id, cf_category=category_value
+            ).values_list("account_id", flat=True)
+            return Account.objects.filter(id__in=account_ids)
+        return Account.objects.filter(cf_category=category_value)
+
+    @staticmethod
     def _get_aggregated_balance(
-        account, category_type=None, category_value=None, start_date=None, end_date=None
+        account, category_type=None, category_value=None, start_date=None, end_date=None,
+        fiscal_year_id=None,
     ):
         """
         Calculates balance including descendants.
@@ -51,7 +83,7 @@ class FinanceService:
         # If it's a leaf account, just get its balance
         if not account.children.exists():
             if category_type:
-                eff = getattr(account, f"effective_{category_type}_category")
+                eff = FinanceService._resolve_category(account, category_type, fiscal_year_id)
                 if eff == category_value:
                     return FinanceService._get_account_balance(account, start_date, end_date)
                 return Decimal("0.00")
@@ -61,7 +93,8 @@ class FinanceService:
         # If it's a group, sum up children
         for child in account.children.all():
             total += FinanceService._get_aggregated_balance(
-                child, category_type, category_value, start_date, end_date
+                child, category_type, category_value, start_date, end_date,
+                fiscal_year_id=fiscal_year_id,
             )
 
         return total
@@ -75,6 +108,7 @@ class FinanceService:
         end_date=None,
         comp_start=None,
         comp_end=None,
+        fiscal_year_id=None,
     ):
         """
         Builds a hierarchical tree of accounts.
@@ -85,12 +119,14 @@ class FinanceService:
 
         def process_account(account):
             balance = FinanceService._get_aggregated_balance(
-                account, category_type, category_value, start_date, end_date
+                account, category_type, category_value, start_date, end_date,
+                fiscal_year_id=fiscal_year_id,
             )
             comp_balance = Decimal("0.00")
             if comp_end:
                 comp_balance = FinanceService._get_aggregated_balance(
-                    account, category_type, category_value, comp_start, comp_end
+                    account, category_type, category_value, comp_start, comp_end,
+                    fiscal_year_id=fiscal_year_id,
                 )
 
             node = {
@@ -109,10 +145,10 @@ class FinanceService:
                 # In category mode, only include if child or descendants are in category
                 if category_type:
                     child_balance = FinanceService._get_aggregated_balance(
-                        child, category_type, category_value, start_date, end_date
+                        child, category_type, category_value, start_date, end_date,
+                        fiscal_year_id=fiscal_year_id,
                     )
-                    att_name = "is_category" if category_type == "is" else "cf_category"
-                    explicit_cat = getattr(child, att_name)
+                    explicit_cat = FinanceService._resolve_category(child, category_type, fiscal_year_id)
 
                     if child_balance != 0 or (explicit_cat == category_value):
                         if explicit_cat and explicit_cat != category_value:
@@ -121,12 +157,14 @@ class FinanceService:
                 else:
                     # In normal mode (Balance Sheet), only include if there's a balance or comparison balance
                     b = FinanceService._get_aggregated_balance(
-                        child, start_date=start_date, end_date=end_date
+                        child, start_date=start_date, end_date=end_date,
+                        fiscal_year_id=fiscal_year_id,
                     )
                     cb = Decimal("0.00")
                     if comp_end:
                         cb = FinanceService._get_aggregated_balance(
-                            child, start_date=comp_start, end_date=comp_end
+                            child, start_date=comp_start, end_date=comp_end,
+                            fiscal_year_id=fiscal_year_id,
                         )
 
                     if b != 0 or cb != 0:
@@ -136,19 +174,25 @@ class FinanceService:
 
         # Identify starting accounts
         if category_type:
-            all_in_cat = accounts.filter(
-                **{f"{'is_category' if category_type == 'is' else 'cf_category'}": category_value}
-            )
+            if fiscal_year_id is not None:
+                from accounting.models import FiscalYearAccountMapping
+                cat_field = MAPPING_TYPE_MAP[category_type]
+                account_ids = FiscalYearAccountMapping.objects.filter(
+                    fiscal_year_id=fiscal_year_id, **{cat_field: category_value}
+                ).values_list("account_id", flat=True)
+                all_in_cat = accounts.filter(id__in=account_ids)
+            else:
+                all_in_cat = accounts.filter(
+                    **{f"{'is_category' if category_type == 'is' else 'cf_category'}": category_value}
+                )
 
             start_accounts = []
             for acc in all_in_cat:
                 has_parent_mapped_same = False
                 curr = acc.parent
                 while curr:
-                    if (
-                        getattr(curr, "is_category" if category_type == "is" else "cf_category")
-                        == category_value
-                    ):
+                    parent_cat = FinanceService._resolve_category(curr, category_type, fiscal_year_id)
+                    if parent_cat == category_value:
                         has_parent_mapped_same = True
                         break
                     curr = curr.parent
@@ -164,14 +208,15 @@ class FinanceService:
         return tree
 
     @staticmethod
-    def get_balance_sheet(end_date, start_date=None, comp_end=None, comp_start=None):
+    def get_balance_sheet(end_date, start_date=None, comp_end=None, comp_start=None, fiscal_year_id=None):
         """
         Returns the Balance Sheet structure.
         """
         # Assets
         assets = Account.objects.filter(account_type=AccountType.ASSET)
         asset_tree = FinanceService.build_account_tree(
-            assets, end_date=end_date, comp_start=comp_start, comp_end=comp_end
+            assets, end_date=end_date, comp_start=comp_start, comp_end=comp_end,
+            fiscal_year_id=fiscal_year_id,
         )
         total_assets = sum(node["balance"] for node in asset_tree)
         total_assets_comp = sum(node["comp_balance"] for node in asset_tree)
@@ -179,7 +224,8 @@ class FinanceService:
         # Liabilities
         liabilities = Account.objects.filter(account_type=AccountType.LIABILITY)
         liability_tree = FinanceService.build_account_tree(
-            liabilities, end_date=end_date, comp_start=comp_start, comp_end=comp_end
+            liabilities, end_date=end_date, comp_start=comp_start, comp_end=comp_end,
+            fiscal_year_id=fiscal_year_id,
         )
         total_liabilities = sum(node["balance"] for node in liability_tree)
         total_liabilities_comp = sum(node["comp_balance"] for node in liability_tree)
@@ -187,7 +233,8 @@ class FinanceService:
         # Equity
         equity = Account.objects.filter(account_type=AccountType.EQUITY)
         equity_tree = FinanceService.build_account_tree(
-            equity, end_date=end_date, comp_start=comp_start, comp_end=comp_end
+            equity, end_date=end_date, comp_start=comp_start, comp_end=comp_end,
+            fiscal_year_id=fiscal_year_id,
         )
 
         # Calculate Current Year Earnings (Net Income)
@@ -249,7 +296,7 @@ class FinanceService:
         }
 
     @staticmethod
-    def get_income_statement(start_date, end_date, comp_start=None, comp_end=None):
+    def get_income_statement(start_date, end_date, comp_start=None, comp_end=None, fiscal_year_id=None):
         """
         Returns a structured Income Statement based on ISCategory mapping.
         """
@@ -258,7 +305,8 @@ class FinanceService:
         def get_cat_data(cat):
             accounts = Account.objects.all()  # We need all to find mapping roots
             tree = FinanceService.build_account_tree(
-                accounts, "is", cat, start_date, end_date, comp_start, comp_end
+                accounts, "is", cat, start_date, end_date, comp_start, comp_end,
+                fiscal_year_id=fiscal_year_id,
             )
             total = sum(item["balance"] for item in tree)
             total_comp = sum(item["comp_balance"] for item in tree)
@@ -364,7 +412,7 @@ class FinanceService:
         }
 
     @staticmethod
-    def get_cash_flow(start_date, end_date, comp_start=None, comp_end=None):
+    def get_cash_flow(start_date, end_date, comp_start=None, comp_end=None, fiscal_year_id=None):
         """
         Returns Cash Flow Statement (Indirect Method) using CFCategory mapping.
         Integrates with Treasury (1.1.01 prefix) for baseline reconciliation.
@@ -400,12 +448,12 @@ class FinanceService:
         actual_net_increase_comp = ending_cash_comp - beginning_cash_comp
 
         # 1. Activities Calculation (Indirect Method)
-        is_report = FinanceService.get_income_statement(start_date, end_date)
+        is_report = FinanceService.get_income_statement(start_date, end_date, fiscal_year_id=fiscal_year_id)
         net_income = is_report["net_income"]
 
         net_income_comp = 0
         if comp_start and comp_end:
-            is_report_comp = FinanceService.get_income_statement(comp_start, comp_end)
+            is_report_comp = FinanceService.get_income_statement(comp_start, comp_end, fiscal_year_id=fiscal_year_id)
             net_income_comp = is_report_comp["net_income"]
 
         operating_activities = [
@@ -417,7 +465,7 @@ class FinanceService:
         ]
 
         # Adjustments to Net Income (Non-cash)
-        dep_accs = Account.objects.filter(cf_category=CFCategory.DEP_AMORT)
+        dep_accs = FinanceService._get_accounts_by_cf_category(CFCategory.DEP_AMORT, fiscal_year_id)
         for acc in dep_accs:
             val = float(FinanceService._get_account_balance(acc, start_date, end_date))
             val_comp = 0
@@ -433,7 +481,7 @@ class FinanceService:
                 )
 
         # Working Capital & Other Operating
-        op_accs = Account.objects.filter(cf_category=CFCategory.OPERATING).exclude(
+        op_accs = FinanceService._get_accounts_by_cf_category(CFCategory.OPERATING, fiscal_year_id).exclude(
             id__in=cash_pool_ids
         )
         op_roots = []
@@ -441,7 +489,7 @@ class FinanceService:
             has_parent = False
             curr = acc.parent
             while curr:
-                if curr.cf_category == CFCategory.OPERATING:
+                if FinanceService._resolve_category(curr, "cf", fiscal_year_id) == CFCategory.OPERATING:
                     has_parent = True
                     break
                 curr = curr.parent
@@ -452,14 +500,16 @@ class FinanceService:
             # We use aggregated balance but ensuring we don't include cash pool internals
             val = float(
                 FinanceService._get_aggregated_balance(
-                    acc, "cf", CFCategory.OPERATING, start_date, end_date
+                    acc, "cf", CFCategory.OPERATING, start_date, end_date,
+                    fiscal_year_id=fiscal_year_id,
                 )
             )
             val_comp = 0
             if comp_start and comp_end:
                 val_comp = float(
                     FinanceService._get_aggregated_balance(
-                        acc, "cf", CFCategory.OPERATING, comp_start, comp_end
+                        acc, "cf", CFCategory.OPERATING, comp_start, comp_end,
+                        fiscal_year_id=fiscal_year_id,
                     )
                 )
 
@@ -475,7 +525,7 @@ class FinanceService:
 
         # 2. Investing Activities
         investing_activities = []
-        inv_accs = Account.objects.filter(cf_category=CFCategory.INVESTING).exclude(
+        inv_accs = FinanceService._get_accounts_by_cf_category(CFCategory.INVESTING, fiscal_year_id).exclude(
             id__in=cash_pool_ids
         )
         inv_roots = []
@@ -483,7 +533,7 @@ class FinanceService:
             has_parent = False
             curr = acc.parent
             while curr:
-                if curr.cf_category == CFCategory.INVESTING:
+                if FinanceService._resolve_category(curr, "cf", fiscal_year_id) == CFCategory.INVESTING:
                     has_parent = True
                     break
                 curr = curr.parent
@@ -493,14 +543,16 @@ class FinanceService:
         for acc in inv_roots:
             val = float(
                 FinanceService._get_aggregated_balance(
-                    acc, "cf", CFCategory.INVESTING, start_date, end_date
+                    acc, "cf", CFCategory.INVESTING, start_date, end_date,
+                    fiscal_year_id=fiscal_year_id,
                 )
             )
             val_comp = 0
             if comp_start and comp_end:
                 val_comp = float(
                     FinanceService._get_aggregated_balance(
-                        acc, "cf", CFCategory.INVESTING, comp_start, comp_end
+                        acc, "cf", CFCategory.INVESTING, comp_start, comp_end,
+                        fiscal_year_id=fiscal_year_id,
                     )
                 )
             if val != 0 or val_comp != 0:
@@ -518,7 +570,7 @@ class FinanceService:
 
         # 3. Financing Activities
         financing_activities = []
-        fin_accs = Account.objects.filter(cf_category=CFCategory.FINANCING).exclude(
+        fin_accs = FinanceService._get_accounts_by_cf_category(CFCategory.FINANCING, fiscal_year_id).exclude(
             id__in=cash_pool_ids
         )
         fin_roots = []
@@ -526,7 +578,7 @@ class FinanceService:
             has_parent = False
             curr = acc.parent
             while curr:
-                if curr.cf_category == CFCategory.FINANCING:
+                if FinanceService._resolve_category(curr, "cf", fiscal_year_id) == CFCategory.FINANCING:
                     has_parent = True
                     break
                 curr = curr.parent
@@ -536,14 +588,16 @@ class FinanceService:
         for acc in fin_roots:
             val = float(
                 FinanceService._get_aggregated_balance(
-                    acc, "cf", CFCategory.FINANCING, start_date, end_date
+                    acc, "cf", CFCategory.FINANCING, start_date, end_date,
+                    fiscal_year_id=fiscal_year_id,
                 )
             )
             val_comp = 0
             if comp_start and comp_end:
                 val_comp = float(
                     FinanceService._get_aggregated_balance(
-                        acc, "cf", CFCategory.FINANCING, comp_start, comp_end
+                        acc, "cf", CFCategory.FINANCING, comp_start, comp_end,
+                        fiscal_year_id=fiscal_year_id,
                     )
                 )
             if val != 0 or val_comp != 0:
@@ -566,9 +620,16 @@ class FinanceService:
         culprit_accounts = []
         if abs(discrepancy) > 0.01:
             # Find accounts with movements that are NOT mapped and NOT in cash pool
-            unmapped_accs = Account.objects.filter(cf_category__isnull=True).exclude(
-                pk__in=cash_pool_ids
-            )
+            if fiscal_year_id is not None:
+                from accounting.models import FiscalYearAccountMapping
+                mapped_ids = FiscalYearAccountMapping.objects.filter(
+                    fiscal_year_id=fiscal_year_id, cf_category__isnull=True
+                ).values_list("account_id", flat=True)
+                unmapped_accs = Account.objects.filter(id__in=mapped_ids).exclude(pk__in=cash_pool_ids)
+            else:
+                unmapped_accs = Account.objects.filter(cf_category__isnull=True).exclude(
+                    pk__in=cash_pool_ids
+                )
             for acc in unmapped_accs:
                 if not acc.is_selectable:
                     continue  # parent accounts logic
@@ -603,8 +664,8 @@ class FinanceService:
         }
 
     @staticmethod
-    def get_financial_analysis(start_date=None, end_date=None):
-        bs = FinanceService.get_balance_sheet(end_date, start_date)
+    def get_financial_analysis(start_date=None, end_date=None, fiscal_year_id=None):
+        bs = FinanceService.get_balance_sheet(end_date, start_date, fiscal_year_id=fiscal_year_id)
 
         total_assets = bs["total_assets"]
         total_liabilities = bs["total_liabilities"]
@@ -669,7 +730,7 @@ class FinanceService:
         solvency_ratio = (total_assets / total_liabilities) if total_liabilities else 0
 
         # Extract income statement totals for margin calculations
-        is_res = FinanceService.get_income_statement(start_date, end_date)
+        is_res = FinanceService.get_income_statement(start_date, end_date, fiscal_year_id=fiscal_year_id)
 
         total_revenue = is_res.get("total_revenue", 0)
         gross_profit = is_res.get("gross_profit", 0)

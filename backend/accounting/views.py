@@ -43,6 +43,7 @@ from .serializers import (
     AccountSerializer,
     BudgetItemSerializer,
     BudgetSerializer,
+    FiscalYearMappingSerializer,
     FiscalYearPreviewSerializer,
     FiscalYearSerializer,
     JournalEntrySerializer,
@@ -334,6 +335,16 @@ class FiscalYearViewSet(viewsets.ModelViewSet):
                 {"error": str(e.message if hasattr(e, "message") else e)},
                 status=status.HTTP_400_BAD_REQUEST,
             )
+
+    @action(detail=False, methods=["get"], url_path="(?P<year>[0-9]{4})/mappings")
+    def list_mappings(self, request, year=None):
+        from .models import FiscalYear
+        try:
+            fy = FiscalYear.objects.get(year=year)
+        except FiscalYear.DoesNotExist:
+            return Response({"error": f"No existe el ejercicio fiscal {year}."}, status=404)
+        mappings = fy.account_mappings.select_related("account").all()
+        return Response(FiscalYearMappingSerializer(mappings, many=True).data)
 
     @action(detail=False, methods=["post"], url_path="(?P<year>[0-9]{4})/generate-opening")
     def generate_opening(self, request, year=None):

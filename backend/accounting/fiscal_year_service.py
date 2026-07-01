@@ -18,7 +18,15 @@ from django.utils import timezone
 
 from finances.services import FinanceService
 
-from .models import Account, AccountingSettings, AccountType, FiscalYear, JournalEntry, JournalItem
+from .models import (
+    Account,
+    AccountingSettings,
+    AccountType,
+    FiscalYear,
+    FiscalYearAccountMapping,
+    JournalEntry,
+    JournalItem,
+)
 from .services import JournalEntryService
 
 
@@ -164,6 +172,7 @@ class FiscalYearClosingService:
             status=JournalEntry.Status.DRAFT,
         )
         closing_entry._is_system_closing_entry = True
+        closing_entry.is_manual = True
         closing_entry.save()
 
         items = []
@@ -228,6 +237,20 @@ class FiscalYearClosingService:
 
         # Post the entry
         JournalEntryService.post_entry(closing_entry)
+
+        # Snapshot account→report category mappings for historical reports
+        leaf_accounts = Account.objects.filter(children__isnull=True)
+        mapping_records = [
+            FiscalYearAccountMapping(
+                fiscal_year=fiscal_year,
+                account=account,
+                is_category=account.effective_is_category,
+                bs_category=account.effective_bs_category,
+                cf_category=account.effective_cf_category,
+            )
+            for account in leaf_accounts
+        ]
+        FiscalYearAccountMapping.objects.bulk_create(mapping_records, ignore_conflicts=True)
 
         # Update FiscalYear
         fiscal_year.status = FiscalYear.Status.CLOSED
@@ -315,6 +338,9 @@ class FiscalYearClosingService:
                     fiscal_year.closing_entry, description=f"Reverso Cierre Ejercicio {year}"
                 )
             fiscal_year.closing_entry = None
+
+        # Remove historical mapping snapshot
+        fiscal_year.account_mappings.all().delete()
 
         # Clean up metadata
         fiscal_year.net_result = None
@@ -487,7 +513,7 @@ class FiscalYearClosingService:
         for account in leaf_accounts:
             agg = JournalItem.objects.filter(
                 account=account,
-                entry__status=JournalEntry.Status.POSTED,
+                entry__status__in=JournalEntry.balance_affecting_statuses(),
                 entry__date__gte=start_date,
                 entry__date__lte=end_date,
             ).aggregate(

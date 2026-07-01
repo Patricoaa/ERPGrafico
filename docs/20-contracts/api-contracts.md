@@ -193,8 +193,9 @@ Response key fields:
 ### periods/ (fiscal years)
 
 ```
-GET    /api/accounting/fiscal-years/           list
+GET    /api/accounting/fiscal-years/              list
 POST   /api/accounting/fiscal-years/{id}/close/   close fiscal year (action)
+GET    /api/accounting/fiscal-years/{year}/mappings/  snapshot de mapeos históricos (ver ADR-NNNN)
 ```
 
 ---
@@ -947,6 +948,7 @@ GET /api/finances/report-status/{task_id}/  Polling de reportes async
 - `end_date` o `date` (YYYY-MM-DD): Fecha de fin
 - `comp_start_date` / `comp_end_date`: Fechas para columna de comparación
 - `is_async=true`: Dispara ejecución en Celery y devuelve `{ "task_id": "...", "status": "PENDING" }`
+- `fiscal_year_id` (int): ID del año fiscal para usar mapeos históricos (snapshot tomado al cierre). Si el año no está cerrado o no tiene snapshot, cae a mapeos vivos.
 
 **Comportamiento Sync:**
 Devuelve el JSON del reporte directamente. Los reportes se cachean 90 segundos vía `core.cache.cache_report`. No usan serializers DRF, devuelven el diccionario construido por `FinanceService`.
