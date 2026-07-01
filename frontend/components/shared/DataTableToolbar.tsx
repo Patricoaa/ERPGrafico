@@ -4,7 +4,7 @@ import React, { useState, useMemo } from "react"
 import { ArrowUpDown, ArrowUp, ArrowDown, X, LayoutDashboard } from "lucide-react"
 import { type Table } from "@tanstack/react-table"
 
-import { SEG_TRIGGER, SEG_DROPDOWN_ITEM, TOOLBAR_MENU_ITEM, TOOLBAR_ICON_BTN } from './SegmentationBar/styles'
+import { SEG_DROPDOWN_ITEM, TOOLBAR_MENU_ITEM, TOOLBAR_ICON_BTN } from './SegmentationBar/styles'
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 import {
@@ -110,14 +110,11 @@ export function DataTableToolbar<TData>(props: DataTableToolbarProps<TData>) {
     return (
         <SegmentationTableContext.Provider value={table as Table<unknown>}>
             <div className="w-full space-y-4">
-                {/* ── ROW 1: Vistas + Segmentación + Acciones ── */}
-                <div className="flex items-center h-9 w-full">
-                    {/* Left: view tabs + segmentation */}
+                {/* ── ROW 1: Segmentación ── */}
+                <div className="flex items-center h-9 w-full gap-1">
                     <div className="flex items-center gap-1.5 flex-1 min-w-0 overflow-x-auto">
-                        {/* Segmentation filters (status tabs, date picker, etc.) */}
                         {segmentation}
 
-                        {/* Reset button */}
                         {(showReset || hasActiveFilters) && (
                             <Tooltip>
                                 <TooltipTrigger asChild>
@@ -138,45 +135,6 @@ export function DataTableToolbar<TData>(props: DataTableToolbarProps<TData>) {
                                 <TooltipContent side="bottom">Limpiar filtros</TooltipContent>
                             </Tooltip>
                         )}
-                    </div>
-
-                    {/* Right: Acciones + Create */}
-                    <div className="flex items-center gap-1 shrink-0">
-                        {toolbarActions && toolbarActions.length > 0 && (
-                            <DropdownMenu>
-                                <DropdownMenuTrigger asChild>
-                                    <Button
-                                        variant="ghost"
-                                        size="sm"
-                                        className={SEG_TRIGGER}
-                                    >
-                                        Acciones
-                                    </Button>
-                                </DropdownMenuTrigger>
-                                <DropdownMenuContent
-                                    align="end"
-                                    className="w-[200px] p-1 border-border/80 shadow-floating"
-                                >
-                                    {toolbarActions.map((action) => (
-                                        <DropdownMenuItem
-                                            key={action.key}
-                                            onClick={action.onClick}
-                                            className={cn(
-                                                SEG_DROPDOWN_ITEM + " flex items-center px-3 py-2 cursor-pointer transition-colors",
-                                                action.intent === 'success' && "text-success focus:bg-success/10 focus:text-success",
-                                                action.intent === 'destructive' && "text-destructive focus:bg-destructive/10 focus:text-destructive",
-                                                (!action.intent || action.intent === 'default' || action.intent === 'primary') && "text-primary focus:bg-primary/10 focus:text-primary",
-                                            )}
-                                        >
-                                            {action.icon && <action.icon className="h-4 w-4 mr-2" />}
-                                            {action.label}
-                                        </DropdownMenuItem>
-                                    ))}
-                                </DropdownMenuContent>
-                            </DropdownMenu>
-                        )}
-
-                        {createAction && <React.Fragment key="toolbar-create">{createAction}</React.Fragment>}
                     </div>
                 </div>
 
@@ -274,6 +232,43 @@ export function DataTableToolbar<TData>(props: DataTableToolbarProps<TData>) {
                                 <div className="hidden" />
                             </TabBar>
                         )}
+
+                        {/* Acciones + Create */}
+                        {toolbarActions && toolbarActions.length > 0 && (
+                            <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                    <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        className="h-9 px-2 text-xs font-semibold tracking-tight gap-1 rounded-sm shrink-0"
+                                    >
+                                        Acciones
+                                    </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent
+                                    align="end"
+                                    className="w-[200px] p-1 border-border/80 shadow-floating"
+                                >
+                                    {toolbarActions.map((action) => (
+                                        <DropdownMenuItem
+                                            key={action.key}
+                                            onClick={action.onClick}
+                                            className={cn(
+                                                SEG_DROPDOWN_ITEM + " flex items-center px-3 py-2 cursor-pointer transition-colors",
+                                                action.intent === 'success' && "text-success focus:bg-success/10 focus:text-success",
+                                                action.intent === 'destructive' && "text-destructive focus:bg-destructive/10 focus:text-destructive",
+                                                (!action.intent || action.intent === 'default' || action.intent === 'primary') && "text-primary focus:bg-primary/10 focus:text-primary",
+                                            )}
+                                        >
+                                            {action.icon && <action.icon className="h-4 w-4 mr-2" />}
+                                            {action.label}
+                                        </DropdownMenuItem>
+                                    ))}
+                                </DropdownMenuContent>
+                            </DropdownMenu>
+                        )}
+
+                        {createAction}
                     </div>
                 </div>
             </div>
