@@ -634,6 +634,7 @@ class JournalItem(TimeStampedModel):
             )
 
     def save(self, *args, **kwargs):
+        self.clean()
         super().save(*args, **kwargs)
 
     def delete(self, *args, **kwargs):
