@@ -519,16 +519,16 @@ class PartnerService:
             debit=amount,
             credit=0,
         )
-        # Cr: Partner Specific Capital Account (Equity)
-        contribution_account = settings.partner_capital_contribution_account
-        if not contribution_account:
+        # Cr: Capital Social (Equity)
+        social_account = settings.partner_capital_social_account
+        if not social_account:
             raise ValidationError(
-                "La cuenta de Aportes de Capital no está configurada globalmente."
+                "La cuenta de Capital Social no está configurada globalmente."
             )
 
         JournalItem.objects.create(
             entry=entry,
-            account=contribution_account,
+            account=social_account,
             partner=partner,
             label=GlosaBuilder.item(Roles.CAPITAL_SOCIAL, partner.name, partner.display_id),
             debit=0,
@@ -600,16 +600,16 @@ class PartnerService:
             status=JournalEntry.Status.POSTED,
         )
 
-        # Dr: Partner Specific Capital Account (Equity)
-        contribution_account = settings.partner_capital_contribution_account
-        if not contribution_account:
+        # Dr: Capital Social (Equity reduction)
+        social_account = settings.partner_capital_social_account
+        if not social_account:
             raise ValidationError(
-                "La cuenta de Aportes de Capital no está configurada globalmente."
+                "La cuenta de Capital Social no está configurada globalmente."
             )
 
         JournalItem.objects.create(
             entry=entry,
-            account=contribution_account,
+            account=social_account,
             partner=partner,
             label=GlosaBuilder.item(Roles.CAPITAL_SOCIAL, f"Reducción {partner.name}", partner.display_id),
             debit=amount,

@@ -648,6 +648,7 @@ class Command(BaseCommand):
             "vat_credit": Account.objects.get(code="1.1.04.01"),
             "vat_debit": Account.objects.get(code="2.1.02.01"),
             "capital": Account.objects.get(code="3.1.01"),
+            "partner_receivable": Account.objects.get(code="1.1.05.01"),
             "sales_product": Account.objects.get(code="4.1.01"),
             "sales_service": Account.objects.get(code="4.1.02"),
             "cogs_product": Account.objects.get(code="5.1.01"),
@@ -724,9 +725,9 @@ class Command(BaseCommand):
             return acc
 
         # Socio A: Administrador
-        get_or_create_subaccount("3.1.01", "Socio A", "001")
+        socio_a_capital = get_or_create_subaccount("3.1.01", "Socio A", "001")
         get_or_create_subaccount("3.2.01", "Socio A", "001")
-        get_or_create_subaccount("1.1.05.01", "Socio A", "001")
+        socio_a_receivable = get_or_create_subaccount("1.1.05.01", "Socio A", "001")
         get_or_create_subaccount("2.1.07", "Socio A", "001")
 
         socio_a, _ = Contact.objects.get_or_create(
@@ -744,9 +745,9 @@ class Command(BaseCommand):
             )
 
         # Socio B: Capitalista
-        get_or_create_subaccount("3.1.01", "Socio B", "002")
+        socio_b_capital = get_or_create_subaccount("3.1.01", "Socio B", "002")
         get_or_create_subaccount("3.2.01", "Socio B", "002")
-        get_or_create_subaccount("1.1.05.01", "Socio B", "002")
+        socio_b_receivable = get_or_create_subaccount("1.1.05.01", "Socio B", "002")
         get_or_create_subaccount("2.1.07", "Socio B", "002")
 
         socio_b, _ = Contact.objects.get_or_create(
@@ -762,6 +763,11 @@ class Command(BaseCommand):
             PartnerEquityStake.objects.create(
                 partner=socio_b, percentage=Decimal("50.00"), effective_from=timezone.now().date()
             )
+
+        owner_accounts = {
+            socio_a.id: {"capital": socio_a_capital, "receivable": socio_a_receivable},
+            socio_b.id: {"capital": socio_b_capital, "receivable": socio_b_receivable},
+        }
 
         # 3. Regular Customers and Suppliers
         c1, _ = Contact.objects.get_or_create(
@@ -789,6 +795,7 @@ class Command(BaseCommand):
         return {
             "default_customer": c_default,
             "owners": [socio_a, socio_b],
+            "owner_accounts": owner_accounts,
             "customers": [c1, c2],
             "suppliers": [s1, s2, s3],
         }
@@ -1286,11 +1293,14 @@ class Command(BaseCommand):
             total_subscription = total_bank + total_stock_value
             sub_per_owner = (total_subscription / num_owners).quantize(Decimal("1"))
 
-            for owner in owners:
-                owner_capital_account = accounts["capital"]
-                owner_recv_account = accounts["receivable"]
+            owner_accounts = partners.get("owner_accounts", {})
 
-                # Debit: Cuentas por Cobrar Socios
+            for owner in owners:
+                per_owner_accounts = owner_accounts.get(owner.id, {})
+                owner_capital_account = per_owner_accounts.get("capital", accounts["capital"])
+                owner_recv_account = per_owner_accounts.get("receivable", accounts["partner_receivable"])
+
+                # Debit: Capital por Cobrar Socios (per-partner sub-account 1.1.05.01.00X)
                 JournalItem.objects.create(
                     entry=entry,
                     account=owner_recv_account,
@@ -1299,7 +1309,7 @@ class Command(BaseCommand):
                     label=f"Suscripción de Capital - {owner.name}",
                     partner=owner,
                 )
-                # Credit: Capital Social
+                # Credit: Capital Social (per-partner sub-account 3.1.01.00X)
                 JournalItem.objects.create(
                     entry=entry,
                     account=owner_capital_account,
@@ -1332,12 +1342,13 @@ class Command(BaseCommand):
             diff = total_bank - total_distributed
 
             for i, owner in enumerate(owners):
-                owner_recv_account = accounts["receivable"]
+                per_owner_accounts = owner_accounts.get(owner.id, {})
+                owner_recv_account = per_owner_accounts.get("receivable", accounts["partner_receivable"])
                 val = val_per_owner
                 if i == 0:
                     val += diff
 
-                # Credit: Cuentas por Cobrar Socios (reduces debt)
+                # Credit: Capital por Cobrar Socios (reduces debt, per-partner sub-account 1.1.05.01.00X)
                 JournalItem.objects.create(
                     entry=entry,
                     account=owner_recv_account,
@@ -1561,6 +1572,8 @@ class Command(BaseCommand):
             )
             move._is_system_closing_entry = True
             move.save()
+            move.journal_entry = entry
+            move.save(update_fields=["journal_entry"])
 
             # Update product cost PMP - single save with update_fields to track only cost change
             # First, remove the $0 history entry created on product creation (before cost was set)
@@ -1588,14 +1601,16 @@ class Command(BaseCommand):
             if owners:
                 per_owner_value = (total_value / len(owners)).quantize(Decimal("1"))
                 allocated_value = Decimal("0")
+                owner_accounts = partners.get("owner_accounts", {})
 
                 for i, owner in enumerate(owners):
                     val = per_owner_value if i < len(owners) - 1 else total_value - allocated_value
                     allocated_value += val
 
-                    owner_recv_account = accounts["receivable"]
+                    per_owner_accounts = owner_accounts.get(owner.id, {})
+                    owner_recv_account = per_owner_accounts.get("receivable", accounts["partner_receivable"])
 
-                    # Credit: Cuentas por Cobrar Socios (reduces debt)
+                    # Credit: Capital por Cobrar Socios (reduces debt, per-partner sub-account 1.1.05.01.00X)
                     JournalItem.objects.create(
                         entry=entry,
                         account=owner_recv_account,

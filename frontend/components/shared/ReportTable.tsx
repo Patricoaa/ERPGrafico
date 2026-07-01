@@ -9,12 +9,10 @@ import {
     TableHeader,
     TableRow
 } from "@/components/ui/table";
-import { ChevronRight, ChevronDown } from "lucide-react";
+import { ChevronRight, ChevronDown, TrendingUp, TrendingDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { EmptyState, MoneyDisplay, SkeletonShell } from '@/components/shared';
 import { Skeleton } from "@/components/ui/skeleton";
-;
-;
 
 export interface ReportNode {
     id: number | string;
@@ -39,6 +37,7 @@ interface ReportTableProps {
     compPeriodLabel?: string;
     mode?: 'tree' | 'flat';
     accentColor?: 'primary' | 'success' | 'info' | 'destructive' | 'income' | 'expense' | 'asset' | 'liability';
+    varianceDirection?: 'higher-is-better' | 'lower-is-better';
 }
 
 const RowIcon = ({ isExpanded, hasChildren }: { isExpanded: boolean, hasChildren: boolean, level: number }) => {
@@ -52,12 +51,14 @@ const ReportRow = ({
     node, 
     level = 0, 
     showComparison, 
-    mode = 'tree' 
+    mode = 'tree',
+    varianceDirection = 'higher-is-better'
 }: { 
     node: ReportNode, 
     level?: number, 
     showComparison?: boolean,
-    mode?: 'tree' | 'flat'
+    mode?: 'tree' | 'flat',
+    varianceDirection?: 'higher-is-better' | 'lower-is-better'
 }) => {
     const [expanded, setExpanded] = React.useState(true);
     const hasChildren = mode === 'tree' && node.children && node.children.length > 0;
@@ -111,7 +112,29 @@ const ReportRow = ({
                         </TableCell>
                         <TableCell className="text-right py-2.5 px-4">
                              <div className="flex flex-col items-end">
-                                <MoneyDisplay amount={node.variance} className="font-mono text-xs font-bold" />
+                                <div className="flex items-center gap-1">
+                                    {node.variance !== undefined && node.variance !== 0 && (
+                                        node.variance > 0 ? (
+                                            <TrendingUp className={cn(
+                                                "h-3 w-3",
+                                                varianceDirection === 'higher-is-better' ? "text-success" : "text-destructive"
+                                            )} />
+                                        ) : (
+                                            <TrendingDown className={cn(
+                                                "h-3 w-3",
+                                                varianceDirection === 'higher-is-better' ? "text-destructive" : "text-success"
+                                            )} />
+                                        )
+                                    )}
+                                    <MoneyDisplay amount={node.variance} className={cn(
+                                        "font-mono text-xs font-bold",
+                                        node.variance !== undefined && node.variance > 0
+                                            ? (varianceDirection === 'higher-is-better' ? "text-success" : "text-destructive")
+                                            : node.variance !== undefined && node.variance < 0
+                                                ? (varianceDirection === 'higher-is-better' ? "text-destructive" : "text-success")
+                                                : ""
+                                    )} />
+                                </div>
                                 {node.comp_balance ? (
                                     <span className="text-[10px] text-muted-foreground font-black">
                                         {(((node.balance - node.comp_balance) / Math.abs(node.comp_balance)) * 100).toFixed(1)}%
@@ -123,7 +146,7 @@ const ReportRow = ({
                 )}
             </TableRow>
             {hasChildren && expanded && node.children?.map(child => (
-                <ReportRow key={child.id} node={child} level={level + 1} showComparison={showComparison} mode={mode} />
+                <ReportRow key={child.id} node={child} level={level + 1} showComparison={showComparison} mode={mode} varianceDirection={varianceDirection} />
             ))}
         </>
     );
@@ -195,7 +218,8 @@ export const ReportTable: React.FC<ReportTableProps> = ({
     periodLabel,
     compPeriodLabel,
     mode = 'tree',
-    accentColor = 'primary'
+    accentColor = 'primary',
+    varianceDirection = 'higher-is-better'
 }) => {
     const displayData = isLoading ? SKELETON_DATA : data;
 
@@ -214,7 +238,7 @@ export const ReportTable: React.FC<ReportTableProps> = ({
     const tableContent = (
         <div className="relative group">
             <Table>
-                <TableHeader className="bg-muted/30">
+                <TableHeader className="bg-muted/30 sticky top-0 z-10 shadow-sm">
                     <TableRow className={cn(
                         "border-b-2",
                         accentBorderColor[accentColor]
@@ -231,11 +255,11 @@ export const ReportTable: React.FC<ReportTableProps> = ({
                 </TableHeader>
                 <TableBody>
                     {displayData?.map(node => (
-                        <ReportRow key={node.id} node={node} showComparison={showComparison} mode={mode} />
+                        <ReportRow key={node.id} node={node} showComparison={showComparison} mode={mode} varianceDirection={varianceDirection} />
                     ))}
                     {(totalLabel || isLoading) && (
                         <TableRow className={cn(
-                            "font-black border-t-2 shadow-card relative z-10",
+                            "font-black border-t-2 shadow-card sticky bottom-0 z-10",
                             accentBgColor[accentColor]
                         )}>
                             <TableCell className="p-5 text-foreground uppercase tracking-tighter text-sm font-black italic">

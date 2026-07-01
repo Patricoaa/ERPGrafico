@@ -6,14 +6,17 @@ export {
   BIAnalyticsDashboard,
   BudgetEditor,
   CashFlowTable,
-  FinancialStatementTable,
   RatiosDashboard,
   FinancialStatementsReport,
   AccountDrawer,
+  AccountingEquation,
+  BalanceSheetKPIs,
+  DistributionBar,
   TransactionNumberDrawer,
 } from './components'
 
 export type { CashFlowData } from './components'
+export type { BalanceSheetData, PLData, PLSection } from './types'
 
 export {
   StatementsList,
