@@ -53,7 +53,7 @@ export function BankUpcomingMaturities({ data, bankId }: BankUpcomingMaturitiesP
 
     if (!upcoming_maturities || upcoming_maturities.length === 0) {
         return (
-            <section className="py-4">
+            <section>
                 <SectionHeader icon={Calendar} title="Próximos Vencimientos" />
                 <p className="text-xs text-muted-foreground py-2">Sin vencimientos próximos</p>
             </section>
@@ -67,7 +67,7 @@ export function BankUpcomingMaturities({ data, bankId }: BankUpcomingMaturitiesP
     const hasMultipleTypes = new Set(upcoming_maturities.map(m => m.type)).size > 1
 
     return (
-        <section className="py-4">
+        <section>
             <SectionHeader
                 icon={Calendar}
                 title="Próximos Vencimientos"

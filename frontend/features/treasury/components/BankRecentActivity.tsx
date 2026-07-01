@@ -18,7 +18,7 @@ export function BankRecentActivity({ data, bankId }: BankRecentActivityProps) {
     if (!recent_movements || recent_movements.length === 0) return null
 
     return (
-        <section className="py-4">
+        <section>
             <SectionHeader
                 icon={Receipt}
                 title="Movimientos Recientes"
@@ -69,7 +69,7 @@ export function BankRecentActivity({ data, bankId }: BankRecentActivityProps) {
                                 <span className="text-[10px] text-muted-foreground uppercase tracking-wider">
                                     {mov.payment_method_display}
                                 </span>
-                                <MoneyDisplay amount={mov.amount} className="text-xs font-bold tabular-nums" />
+                                <MoneyDisplay amount={mov.movement_type === "OUTBOUND" ? -Math.abs(mov.amount) : mov.amount} className="text-xs font-bold tabular-nums" />
                             </div>
                             <ArrowRight className="h-3 w-3 text-muted-foreground/0 group-hover:text-muted-foreground transition-all shrink-0" />
                         </button>
