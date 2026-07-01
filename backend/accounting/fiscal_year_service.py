@@ -548,7 +548,7 @@ class FiscalYearClosingService:
         Runs all pre-closing validations and returns a dict of results.
         Each validation: {key: {passed: bool, message: str}}
         """
-        from tax.models import AccountingPeriod
+        from tax.models import AccountingPeriod, TaxPeriod
 
         start_date = date(year, 1, 1)
         end_date = date(year, 12, 31)
@@ -619,6 +619,27 @@ class FiscalYearClosingService:
             )
             if not has_result_account
             else "Cuenta de resultado configurada.",
+        }
+
+        # 5. Check all TaxPeriods for the year are CLOSED
+        tax_total = TaxPeriod.objects.filter(year=year).count()
+        tax_closed = TaxPeriod.objects.filter(
+            year=year, status=TaxPeriod.Status.CLOSED
+        ).count()
+        tax_all_closed = (tax_closed == tax_total) and tax_total > 0
+
+        validations["tax_periods_closed"] = {
+            "passed": tax_all_closed,
+            "message": (
+                f"Solo {tax_closed} de {tax_total} periodos tributarios (F29) "
+                "están cerrados. Todos los periodos tributarios deben estar "
+                "cerrados antes del cierre anual."
+            )
+            if not tax_all_closed
+            else (
+                f"Todos los {tax_closed} periodos tributarios del año "
+                "están cerrados."
+            ),
         }
 
         return validations

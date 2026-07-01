@@ -57,6 +57,19 @@ export function useClosePeriod() {
   })
 }
 
+export function useReopenPeriod() {
+  const queryClient = useQueryClient()
+  const { markLocalMutation } = useRealtime()
+
+  return useMutation({
+    mutationFn: (id: number) => taxApi.reopenPeriod(id),
+    onSuccess: () => {
+      markLocalMutation()
+      queryClient.invalidateQueries({ queryKey: TAX_KEYS.periods.all() })
+    }
+  })
+}
+
 export function useCreateTaxPayment() {
   const queryClient = useQueryClient()
   const { markLocalMutation } = useRealtime()

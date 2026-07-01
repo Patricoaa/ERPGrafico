@@ -5,6 +5,7 @@ export interface TaxPeriod {
     year: number
     month: number
     status: TaxPeriodStatus
+    status_display?: string
     month_display?: string
     closed_at?: string
     closed_by_name?: string

@@ -18,8 +18,7 @@ export function AccountingHeader() {
     const tabs = [
         { value: "ledger", label: "Plan de Cuentas", iconName: getEntityIconName('accounting.account'), href: getViewModeUrl('accounting.account', "/accounting/ledger") },
         { value: "entries", label: "Asientos", iconName: getEntityIconName('accounting.journalentry'), href: getViewModeUrl('accounting.journalentry', "/accounting/entries") },
-        { value: "closures", label: "Cierre Contable", iconName: getEntityIconName('accounting.fiscalyear'), href: getViewModeUrl('accounting.fiscalyear', "/accounting/closures") },
-        { value: "tax", label: "Impuestos mensuales (F29)", iconName: "landmark", href: getViewModeUrl('tax.taxperiod', "/accounting/tax") },
+        { value: "closures", label: "Cierres", iconName: getEntityIconName('accounting.fiscalyear'), href: getViewModeUrl('accounting.fiscalyear', "/accounting/closures") },
         {
             value: "config",
             label: "Configuración",
@@ -42,8 +41,7 @@ export function AccountingHeader() {
     const getHeaderConfig = () => {
         if (activeValue === 'ledger') return { title: "Plan de Cuentas", description: "Estructura contable y clasificación de cuentas.", iconName: getEntityIconName('accounting.account') }
         if (activeValue === 'entries') return { title: "Asientos Contables", description: "Libro diario y registro cronológico de transacciones.", iconName: getEntityIconName('accounting.journalentry') }
-        if (activeValue === 'closures') return { title: "Gestión de Cierres", description: "Control de validación mensual y cierres de ejercicios anuales.", iconName: getEntityIconName('accounting.fiscalyear') }
-        if (activeValue === 'tax') return { title: "Cumplimiento Tributario", description: "Declaraciones F29 y gestión de periodos fiscales.", iconName: getEntityIconName('accounting.account') ?? "calculator" }
+        if (activeValue === 'closures') return { title: "Gestión de Cierres", description: "Periodos tributarios (F29), cierres contables mensuales y cierre de ejercicios anuales.", iconName: getEntityIconName('accounting.fiscalyear') }
         if (activeValue === 'config') return { title: "Configuración de Contabilidad", description: "Gestión de tasas de IVA y parámetros contables.", iconName: "settings" }
         return { title: "Contabilidad", description: "", iconName: getEntityIconName('accounting.account') ?? "calculator" }
     }

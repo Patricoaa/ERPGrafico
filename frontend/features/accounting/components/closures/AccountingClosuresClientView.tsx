@@ -1,21 +1,22 @@
 "use client";
 
-import React, { useEffect, useState, useMemo } from 'react';
+import React, { useEffect, useState, useMemo, useCallback } from 'react';
 import { useFiscalYears } from '../../hooks/useFiscalYears';
 import { useAccountingPeriods } from '../../hooks/useAccountingPeriods';
 import { FiscalYearCard } from './FiscalYearCard';
 import { FiscalYearClosingWizard } from './FiscalYearClosingWizard';
 import { NewFiscalYearDrawer } from './NewFiscalYearDrawer';
-;
-import { type AccountingPeriod, type FiscalYearPreviewResult, type FiscalYear } from '../../types';
+import { type AccountingPeriod, type FiscalYearPreviewResult, type FiscalYear, type TaxPeriod } from '../../types';
+import { useTaxPeriods } from '@/features/tax/hooks/useTaxQueries';
+import { useClosePeriod as useCloseTaxPeriod, useReopenPeriod as useReopenTaxPeriod } from '@/features/tax/hooks/useTaxMutations';
+import { DeclarationWizard } from '@/features/tax';
 
 import { useSearchParams, useRouter, usePathname } from 'next/navigation';
 import { useSelectedEntity } from '@/hooks/useSelectedEntity';
 import { DataTableView, EmptyState, StatusBadge } from '@/components/shared';
 import { type ColumnDef } from '@tanstack/react-table';
 import { DataTableColumnHeader } from '@/components/shared';
-import { DataCell } from '@/components/shared';
-import { fiscalYearActions, type FiscalYearActionsCtx, type FiscalYearRow } from './fiscalYearActions';
+import { fiscalYearActions, type FiscalYearActionsCtx } from './fiscalYearActions';
 import { ToolbarCreateButton, SmartSearchBar, useClientSearch, useSegmentation, SegmentationBar } from '@/components/shared';
 import { ClosuresSkeleton } from './ClosuresSkeleton';
 import { fiscalYearSearchDef } from '../../searchDef';
@@ -36,7 +37,6 @@ export function AccountingClosuresClientView({ externalOpen, onExternalOpenChang
         isLoading: isLoadingYr,
         isActionLoading: actionLoadingYr,
         refetch: fetchFiscalYears,
-        previewClosing,
         closeFiscalYear,
         reopenFiscalYear,
         generateOpeningEntry
@@ -56,11 +56,23 @@ export function AccountingClosuresClientView({ externalOpen, onExternalOpenChang
         createPeriod
     } = useAccountingPeriods();
 
+    const { data: taxPeriodsRaw, isLoading: isLoadingTax, refetch: refetchTaxPeriods } = useTaxPeriods();
+    const taxPeriods: TaxPeriod[] = useMemo(
+        () => ((taxPeriodsRaw as { results?: TaxPeriod[] })?.results ?? []) as TaxPeriod[],
+        [taxPeriodsRaw]
+    );
+    const closeTaxPeriod = useCloseTaxPeriod();
+    const reopenTaxPeriod = useReopenTaxPeriod();
+    const isLoadingTaxAction = closeTaxPeriod.isPending || reopenTaxPeriod.isPending;
+
     const [previewModalOpen, setPreviewModalOpen] = useState(false);
     const [newFYModalOpen, setNewFYModalOpen] = useState(false);
     const [previewData, setPreviewData] = useState<FiscalYearPreviewResult | null>(null);
-    const [previewLoading, setPreviewLoading] = useState(false);
     const [activeYearToClose, setActiveYearToClose] = useState<number | null>(null);
+    const [declarationPeriodId, setDeclarationPeriodId] = useState<number | undefined>(undefined);
+    const [declarationWizardOpen, setDeclarationWizardOpen] = useState(false);
+
+    const isLoading = isLoadingYr || isLoadingPeriods || isLoadingTax;
 
     useEffect(() => {
         if (externalOpen) {
@@ -79,15 +91,6 @@ export function AccountingClosuresClientView({ externalOpen, onExternalOpenChang
 
     const clearSelection = () => {
         clearUrlSelection();
-    };
-
-    const fetchPreviewData = async (year: number) => {
-        setActiveYearToClose(year);
-        setPreviewLoading(true);
-        setPreviewModalOpen(true);
-        const data = await previewClosing(year);
-        setPreviewData(data);
-        setPreviewLoading(false);
     };
 
     useEffect(() => {
@@ -115,37 +118,32 @@ export function AccountingClosuresClientView({ externalOpen, onExternalOpenChang
     };
 
     const groupedData = useMemo(() => {
-        const grouped = new Map<number, AccountingPeriod[]>();
+        const acctGrouped = new Map<number, AccountingPeriod[]>();
+        const taxGrouped = new Map<number, TaxPeriod[]>();
 
-        // Group periods by year
         periods.forEach(p => {
-            const arr = grouped.get(p.year) ?? [];
+            const arr = acctGrouped.get(p.year) ?? [];
             arr.push(p);
-            grouped.set(p.year, arr);
+            acctGrouped.set(p.year, arr);
         });
 
-        // Add any fiscal years that might not have periods (rare)
-        fiscalYears.forEach(fy => {
-            if (!grouped.has(fy.year)) {
-                grouped.set(fy.year, []);
-            }
+        taxPeriods.forEach(p => {
+            const arr = taxGrouped.get(p.year) ?? [];
+            arr.push(p);
+            taxGrouped.set(p.year, arr);
         });
 
-        // Convert to array sorted by year descending
-        return Array.from(grouped.entries())
-            .map(([year, yearPeriods]) => {
-                // Sort periods by month ascending
-                const sortedPeriods = [...yearPeriods].sort((a, b) => a.month - b.month);
+        const allYears = new Set([...acctGrouped.keys(), ...taxGrouped.keys(), ...fiscalYears.map(fy => fy.year)]);
+
+        return Array.from(allYears)
+            .map(year => {
+                const sortedPeriods = (acctGrouped.get(year) ?? []).sort((a, b) => a.month - b.month);
+                const sortedTaxPeriods = (taxGrouped.get(year) ?? []).sort((a, b) => a.month - b.month);
                 const fyModel = fiscalYears.find(fy => fy.year === year);
-
-                return {
-                    year,
-                    periods: sortedPeriods,
-                    fiscalYear: fyModel
-                };
+                return { year, periods: sortedPeriods, taxPeriods: sortedTaxPeriods, fiscalYear: fyModel };
             })
             .sort((a, b) => b.year - a.year);
-    }, [periods, fiscalYears]);
+    }, [periods, taxPeriods, fiscalYears]);
 
     const handlePreviewClosing = (year: number) => {
         const params = new URLSearchParams(searchParams.toString());
@@ -159,12 +157,36 @@ export function AccountingClosuresClientView({ externalOpen, onExternalOpenChang
             setPreviewModalOpen(false);
             setActiveYearToClose(null);
             clearSelection();
-            // Re-fetch periods to update their UI as well if needed
             fetchPeriods();
+            refetchTaxPeriods();
         }
     };
 
-    const { filterFn, isFiltered: isTextFiltered, clearAll: clearText } = useClientSearch<{ year: number; periods: AccountingPeriod[]; fiscalYear: FiscalYear | undefined; status: string }>(fiscalYearSearchDef)
+    const handleOpenDeclaration = useCallback((id: number) => {
+        setDeclarationPeriodId(id);
+        setDeclarationWizardOpen(true);
+    }, []);
+
+    const handleDeclarationSuccess = useCallback(() => {
+        setDeclarationWizardOpen(false);
+        setDeclarationPeriodId(undefined);
+        refetchTaxPeriods();
+        fetchPeriods();
+    }, [refetchTaxPeriods, fetchPeriods]);
+
+    const handleCloseTaxPeriod = useCallback(async (id: number) => {
+        await closeTaxPeriod.mutateAsync(id);
+        refetchTaxPeriods();
+        fetchPeriods();
+    }, [closeTaxPeriod, refetchTaxPeriods, fetchPeriods]);
+
+    const handleReopenTaxPeriod = useCallback(async (id: number) => {
+        await reopenTaxPeriod.mutateAsync(id);
+        refetchTaxPeriods();
+        fetchPeriods();
+    }, [reopenTaxPeriod, refetchTaxPeriods, fetchPeriods]);
+
+    const { filterFn, isFiltered: isTextFiltered, clearAll: clearText } = useClientSearch<{ year: number; periods: AccountingPeriod[]; taxPeriods: TaxPeriod[]; fiscalYear: FiscalYear | undefined; status: string }>(fiscalYearSearchDef)
     const { filters: segFilters, isFiltered: isSegFiltered, clearAll: clearSeg } = useSegmentation(fiscalYearSegDef)
     const isFiltered = isTextFiltered || isSegFiltered
 
@@ -174,7 +196,7 @@ export function AccountingClosuresClientView({ externalOpen, onExternalOpenChang
         return filterFn(result.map(r => ({ ...r, status: r.fiscalYear?.status ?? 'OPEN' })))
     }, [groupedData, segFilters.status, filterFn])
 
-    if (isLoadingYr || isLoadingPeriods) {
+    if (isLoading) {
         return <ClosuresSkeleton />;
     }
 
@@ -228,7 +250,11 @@ export function AccountingClosuresClientView({ externalOpen, onExternalOpenChang
         {
             id: "periods",
             header: ({ column }) => <DataTableColumnHeader column={column} title="Periodos" />,
-            cell: ({ row }) => <div className="text-muted-foreground">{row.original.periods.length} meses registrados</div>,
+            cell: ({ row }) => {
+                const acctCount = row.original.periods.length;
+                const taxCount = row.original.taxPeriods.length;
+                return <div className="text-muted-foreground">F29: {taxCount} · Contable: {acctCount}</div>;
+            },
         },
         fiscalYearActions.column(fiscalYearActionsCtx) as ColumnDef<typeof groupedData[0]>
     ];
@@ -240,8 +266,8 @@ export function AccountingClosuresClientView({ externalOpen, onExternalOpenChang
                     entityLabel="accounting.fiscalyear"
                     columns={columns}
                     data={filteredGrouped}
-                    isLoading={actionLoadingYr || actionLoadingPeriod}
-                    variant="standalone"
+                    isLoading={actionLoadingYr || actionLoadingPeriod || isLoadingTaxAction}
+                    variant="embedded"
                     smartSearch={<SmartSearchBar searchDef={fiscalYearSearchDef} placeholder="Buscar ejercicio..." className="w-full" />}
                     segmentation={<SegmentationBar def={fiscalYearSegDef} />}
                     showReset={isFiltered}
@@ -250,22 +276,27 @@ export function AccountingClosuresClientView({ externalOpen, onExternalOpenChang
                     createAction={
                         <ToolbarCreateButton
                             href="/accounting/closures?modal=fy"
-                            label="Nuevo Año Fiscal"
+                            label="Nuevo Ejercicio Fiscal"
                         />
                     }
                     renderCustomView={(table) => (
                         <div className="space-y-6 pt-4">
                             {table.getRowModel().rows.map(row => {
-                                const { year, periods: yearPeriods, fiscalYear } = row.original;
+                                const { year, periods: yearPeriods, taxPeriods: yearTaxPeriods, fiscalYear } = row.original;
                                 return (
                                     <FiscalYearCard
                                         key={`year-${year}`}
                                         year={year}
                                         fiscalYear={fiscalYear}
                                         periods={yearPeriods}
+                                        taxPeriods={yearTaxPeriods}
                                         onClosePeriod={closePeriod}
                                         onReopenPeriod={reopenPeriod}
                                         isPeriodActionLoading={actionLoadingPeriod}
+                                        onCloseTaxPeriod={handleCloseTaxPeriod}
+                                        onReopenTaxPeriod={handleReopenTaxPeriod}
+                                        onOpenDeclaration={handleOpenDeclaration}
+                                        isTaxActionLoading={isLoadingTaxAction}
                                         onPreviewClosing={handlePreviewClosing}
                                         onReopenFiscalYear={reopenFiscalYear}
                                         onGenerateOpening={generateOpeningEntry}
@@ -287,7 +318,19 @@ export function AccountingClosuresClientView({ externalOpen, onExternalOpenChang
                 onConfirm={handleConfirmClosing}
                 year={activeYearToClose || 0}
                 preview={previewData}
-                isLoading={previewLoading}
+                isLoading={!previewData && previewModalOpen}
+            />
+
+            <DeclarationWizard
+                isOpen={declarationWizardOpen}
+                onOpenChange={(open) => {
+                    if (!open) {
+                        setDeclarationWizardOpen(false);
+                        setDeclarationPeriodId(undefined);
+                    }
+                }}
+                periodId={declarationPeriodId}
+                onSuccess={handleDeclarationSuccess}
             />
 
             <NewFiscalYearDrawer

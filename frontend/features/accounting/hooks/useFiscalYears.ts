@@ -29,9 +29,9 @@ export function useFiscalYears() {
             queryClient.invalidateQueries({ queryKey: FISCAL_YEARS_QUERY_KEY });
             // Closing a year changes period states within it
             queryClient.invalidateQueries({ queryKey: ACCOUNTING_PERIODS_QUERY_KEY });
-            toast.success(`Año contable ${year} cerrado exitosamente.`);
+            toast.success(`Ejercicio fiscal ${year} cerrado exitosamente.`);
         },
-        onError: (error, year) => showApiError(error, `Error al cerrar el año contable ${year}`),
+        onError: (error, year) => showApiError(error, `Error al cerrar el ejercicio fiscal ${year}`),
     });
 
     const reopenMutation = useMutation({
@@ -41,9 +41,9 @@ export function useFiscalYears() {
             queryClient.invalidateQueries({ queryKey: FISCAL_YEARS_QUERY_KEY });
             // Reopening a year also changes period states
             queryClient.invalidateQueries({ queryKey: ACCOUNTING_PERIODS_QUERY_KEY });
-            toast.success(`Año contable ${year} reabierto exitosamente.`);
+            toast.success(`Ejercicio fiscal ${year} reabierto exitosamente.`);
         },
-        onError: (error, year) => showApiError(error, `Error al reabrir el año contable ${year}`),
+        onError: (error, year) => showApiError(error, `Error al reabrir el ejercicio fiscal ${year}`),
     });
 
     const generateOpeningMutation = useMutation({

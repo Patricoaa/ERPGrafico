@@ -140,6 +140,8 @@ export interface TrialBalanceItem {
     saldo_acreedor: number;
 }
 
+export type { TaxPeriod } from '@/features/tax'
+
 export interface TrialBalanceReport {
     accounts: TrialBalanceItem[];
     total_debit: number;
