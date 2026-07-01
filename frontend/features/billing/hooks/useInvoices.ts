@@ -11,10 +11,9 @@ export { INVOICES_QUERY_KEY }
 
 interface UseInvoicesProps {
     filters?: InvoiceFilters
-    initialData?: Invoice[]
 }
 
-export function useInvoices({ filters, initialData }: UseInvoicesProps = {}) {
+export function useInvoices({ filters }: UseInvoicesProps = {}) {
     const queryClient = useQueryClient()
     const { markLocalMutation } = useRealtime()
 
@@ -22,7 +21,6 @@ export function useInvoices({ filters, initialData }: UseInvoicesProps = {}) {
         queryKey: [...INVOICES_QUERY_KEY, filters],
         queryFn: () => billingApi.getInvoices(filters),
         staleTime: 2 * 60 * 1000, // 2 min — TODO Fase 2: eliminar client-side filter
-        initialData,
         placeholderData: (prev) => prev,
     })
 

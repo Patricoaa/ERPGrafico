@@ -11,10 +11,9 @@ export { PURCHASE_INVOICES_QUERY_KEY }
 
 interface UsePurchaseInvoicesProps {
     filters?: Omit<InvoiceFilters, 'mode'>
-    initialData?: Invoice[]
 }
 
-export function usePurchaseInvoices({ filters, initialData }: UsePurchaseInvoicesProps = {}) {
+export function usePurchaseInvoices({ filters }: UsePurchaseInvoicesProps = {}) {
     const queryClient = useQueryClient()
     const { markLocalMutation } = useRealtime()
 
@@ -22,7 +21,6 @@ export function usePurchaseInvoices({ filters, initialData }: UsePurchaseInvoice
         queryKey: [...PURCHASE_INVOICES_QUERY_KEY, filters],
         queryFn: () => billingApi.getInvoices({ ...filters, mode: 'purchase' }),
         staleTime: 2 * 60 * 1000,
-        initialData,
         placeholderData: (prev) => prev,
     })
 
