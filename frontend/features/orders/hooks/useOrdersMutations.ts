@@ -134,7 +134,8 @@ export function useRegisterPaymentMovement() {
     const queryClient = useQueryClient()
     const { markLocalMutation } = useRealtime()
     return useMutation({
-        mutationFn: (data: Record<string, unknown>) => ordersApi.registerPaymentMovement(data),
+        mutationFn: ({ data, idempotencyKey }: { data: Record<string, unknown>; idempotencyKey?: string }) =>
+            ordersApi.registerPaymentMovement(data, idempotencyKey),
         onSuccess: () => {
             markLocalMutation()
             toast.success('Operación de tesorería registrada')

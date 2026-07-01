@@ -44,6 +44,7 @@ Estos endpoints **DEBEN** validar `Idempotency-Key`. Agregar uno requiere ADR.
 | `POST` | `/api/accounting/entries/` | Asiento manual — descuadra libros si duplica |
 | `POST` | `/api/treasury/payment-requests/` | Cobro al provider (idempotency_key reenviado al provider) |
 | `POST` | `/api/treasury/movements/` | Movimiento bancario manual |
+| `POST` | `/api/treasury/payments/register_movement/` | Registro rápido de pago/cobro desde formularios de órdenes y tesorería |
 | `POST` | `/api/treasury/reconciliations/{id}/run/` | Ejecución de matching automático — costosa, evita reruns |
 | `POST` | `/api/{module}/import/commit/` | Importación bulk — ver [import-csv-xlsx.md](import-csv-xlsx.md) |
 

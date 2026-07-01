@@ -201,6 +201,7 @@ export const ActionCategory = forwardRef(({
 
     const handlePaymentConfirm = async (data: Record<string, unknown>) => {
         setIsProcessing(true)
+        const idempotencyKey = crypto.randomUUID?.() ?? 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => { const r = (Math.random() * 16) | 0; const v = c === 'x' ? r : (r & 0x3) | 0x8; return v.toString(16) })
         try {
             // ── Return flow (register-payment-return) ──────────────────────
             if (activeModal === 'register-payment-return') {
@@ -215,7 +216,7 @@ export const ActionCategory = forwardRef(({
                         ...(posSessionId ? { pos_session_id: posSessionId } : {})
                     };
                     (payload as Record<string, unknown>).invoice = order.id
-                    await registerPaymentMovement.mutateAsync(payload)
+                    await registerPaymentMovement.mutateAsync({ data: payload, idempotencyKey })
                 } else {
                     // DRAFT invoice + posted payments: return the first posted payment
                     const payments = order?.related_documents?.payments || []
@@ -271,7 +272,7 @@ export const ActionCategory = forwardRef(({
                 } else {
                     (payload as Record<string, unknown>)[isSale ? 'sale_order' : 'purchase_order'] = order?.id
                 }
-                await registerPaymentMovement.mutateAsync(payload)
+                await registerPaymentMovement.mutateAsync({ data: payload, idempotencyKey })
             }
 
             closeModal()

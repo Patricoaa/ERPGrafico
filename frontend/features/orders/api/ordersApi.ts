@@ -48,8 +48,10 @@ export const ordersApi = {
         api.post(`/purchasing/returns/${id}/annul/`, { reason }).then(r => r.data),
 
     // ── Treasury ──
-    registerPaymentMovement: (data: Record<string, unknown>) =>
-        api.post('/treasury/payments/register_movement/', data).then(r => r.data),
+    registerPaymentMovement: (data: Record<string, unknown>, idempotencyKey?: string) =>
+        api.post('/treasury/payments/register_movement/', data, {
+            headers: idempotencyKey ? { 'Idempotency-Key': idempotencyKey } : undefined,
+        }).then(r => r.data),
     cancelPayment: (id: number, reason: string = '') =>
         api.post(`/treasury/payments/${id}/cancel/`, { reason }).then(r => r.data),
     annulPayment: (id: number, reason: string = '', treasuryAccountId?: number, amount?: number) =>
