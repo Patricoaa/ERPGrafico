@@ -59,7 +59,7 @@ export function useOrderHubData({ orderId, invoiceId, type, enabled = true }: Us
 
     const { order, activeInvoice } = data || { order: null, activeInvoice: null }
 
-    const activeDoc = activeInvoice || order
+    const activeDoc = order || activeInvoice
     const isNoteMode = activeInvoice && ['NOTA_CREDITO', 'NOTA_DEBITO'].includes(activeInvoice.dte_type)
     const isSale = type === 'sale'
     const isCreditNote = activeInvoice?.dte_type === 'NOTA_CREDITO'

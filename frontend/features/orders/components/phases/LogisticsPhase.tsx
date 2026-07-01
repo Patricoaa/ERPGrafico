@@ -177,6 +177,7 @@ export function LogisticsPhase({
                 title={title}
                 icon={Package}
                 variant={(isNoteMode ? noteStatuses.logistics : (logisticsProgress === 100 ? 'success' : logisticsProgress > 0 ? 'active' : 'neutral')) as 'success' | 'active' | 'neutral' | 'destructive'}
+                progress={isNoteMode ? undefined : logisticsProgress}
                 documents={logisticsDocs}
                 onViewDetail={openDetails}
                 actions={(isNoteMode ? (registry[isSale ? 'deliveries' : 'receptions']?.actions || registry.returns?.actions || []) : (registry[isSale ? 'deliveries' : 'receptions']?.actions || [])).filter((a: { id: string }) => !a.id.includes('view-'))}

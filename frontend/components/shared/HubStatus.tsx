@@ -1,7 +1,7 @@
 "use client"
 
 import React from "react"
-import { ClipboardList, Package, Receipt, Banknote, FileText } from "lucide-react"
+import { ClipboardList, Package, TrendingUp, Banknote, FileText } from "lucide-react"
 import { StatusBadge } from "./StatusBadge"
 import { TooltipProvider } from "@/components/ui/tooltip"
 import { getEntityMetadata, getDtePrefix } from "@/lib/entity-registry"
@@ -22,6 +22,14 @@ export interface HubStatusData {
         treasury?: string
         logistics?: string
     }
+    /** Optional progress percentages (0-100) for each stage — enables SVG ring fill */
+    progress?: {
+        origin?: number
+        production?: number
+        billing?: number
+        treasury?: number
+        logistics?: number
+    }
 }
 
 interface HubStatusProps {
@@ -34,57 +42,62 @@ interface HubStatusProps {
  * Renders the canonical 5-stage workflow status indicators.
  */
 export function HubStatus({ statuses, className }: HubStatusProps) {
-    const { tooltips = {} } = statuses
+    const { tooltips = {}, progress = {} } = statuses
 
     return (
-        <div className={className || "flex items-center gap-1.5"}>
+        <div className={className || "flex items-center gap-2"}>
             <TooltipProvider delayDuration={0}>
                 {/* 1. Origin */}
                 <StatusBadge
                     variant="hub"
-                    size="sm"
-                    icon={FileText}
+                    size="lg"
+                    icon={TrendingUp}
                     status={statuses.origin || 'info'}
                     tooltip={tooltips.origin}
+                    progress={progress.origin}
                 />
 
                 {/* 2. Production (Optional) */}
                 {statuses.production && statuses.production !== 'not_applicable' && (
                     <StatusBadge
                         variant="hub"
-                        size="sm"
+                        size="lg"
                         icon={ClipboardList}
                         status={statuses.production}
                         tooltip={tooltips.production}
+                        progress={progress.production}
                     />
                 )}
 
                 {/* 3. Billing */}
                 <StatusBadge
                     variant="hub"
-                    size="sm"
-                    icon={Receipt}
+                    size="lg"
+                    icon={FileText}
                     status={statuses.billing || 'info'}
                     tooltip={tooltips.billing}
+                    progress={progress.billing}
                 />
 
                 {/* 4. Treasury */}
                 <StatusBadge
                     variant="hub"
-                    size="sm"
+                    size="lg"
                     icon={Banknote}
                     status={statuses.treasury || 'info'}
                     tooltip={tooltips.treasury}
+                    progress={progress.treasury}
                 />
 
                 {/* 5. Logistics */}
                 {statuses.logistics !== 'not_applicable' && (
                     <StatusBadge
                         variant="hub"
-                        size="sm"
+                        size="lg"
                         icon={Package}
                         status={statuses.logistics || 'info'}
                         tooltip={tooltips.logistics}
+                        progress={progress.logistics}
                     />
                 )}
             </TooltipProvider>
@@ -135,8 +148,6 @@ export function DomainHubStatus({ label, data, className }: DomainHubStatusProps
     if (meta.workflowType === 'order') {
         const d = data as HubOrderShape
         const s = getHubStatuses(d)
-        statuses = s
-
         const pendingAmount = parseFloat(String(d.pending_amount || 0))
         const total = parseFloat(String(d.total || 0))
         const paidPct = total > 0 ? ((1 - (pendingAmount / total)) * 100).toFixed(0) : "0"
@@ -152,6 +163,17 @@ export function DomainHubStatus({ label, data, className }: DomainHubStatusProps
             logisticsProgress = Math.min(100, Math.round((totalProcessed / totalOrdered) * 100))
         }
 
+        statuses = {
+            ...s,
+            progress: {
+                origin: d.status && d.status !== 'DRAFT' ? 100 : 0,
+                production: s.productionProgress ?? totalOTProgress,
+                billing: s.billing === 'success' ? 100 : 0,
+                treasury: s.treasuryProgress ?? 0,
+                logistics: s.logisticsProgress ?? logisticsProgress,
+            }
+        }
+
         tooltips = {
             origin: `Origen: ${translateStatus(d.status)}`,
             billing: s.billing === 'success' ? "Facturado" : "Pendiente de Facturación",
@@ -163,7 +185,17 @@ export function DomainHubStatus({ label, data, className }: DomainHubStatusProps
         const d = data as HubInvoiceShape
         const isNote = ['NOTA_CREDITO', 'NOTA_DEBITO'].includes(d.dte_type ?? '')
         const s = isNote ? getNoteHubStatuses(d) : getInvoiceHubStatuses(d)
-        statuses = s
+        const hasFolio = d.number && d.number !== 'Draft'
+
+        statuses = {
+            ...s,
+            progress: {
+                origin: isNote ? 100 : s.origin === 'success' || s.origin === 'destructive' ? 100 : s.origin === 'active' ? 50 : 0,
+                billing: hasFolio ? 100 : 0,
+                treasury: s.treasuryProgress ?? 0,
+                logistics: s.logisticsProgress ?? 0,
+            }
+        }
 
         tooltips = {
             origin: (() => {
@@ -191,7 +223,9 @@ export function DomainHubStatus({ label, data, className }: DomainHubStatusProps
             billing: (() => {
                 if (isNote && d.number && d.number !== 'Draft') {
                     const prefix = getDtePrefix(d.dte_type ?? '')
-                    const num = d.number.toString().includes(prefix) ? d.number : `${prefix}-${d.number}`
+                    const rawNum = d.number.toString()
+                    const knownPrefixes = [prefix, prefix.replace('-', ''), ...(prefix.includes('-') ? [prefix.split('-')[0]] : [])]
+                    const num = knownPrefixes.some((p) => rawNum.toUpperCase().startsWith(p.toUpperCase())) ? rawNum : `${prefix}-${rawNum}`
                     return `Facturación: ${num}`
                 }
                 return s.billing === 'success' ? "Folio Generado" : "Pendiente de Folio"

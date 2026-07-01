@@ -2,7 +2,7 @@ import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 import { DataCell, StatusBadge } from "@/components/shared"
-import { CheckCircle2, ChevronDown } from "lucide-react"
+import { ChevronDown } from "lucide-react"
 import { useHubPanel } from "@/components/providers/HubPanelProvider"
 import { useState, useEffect, useId } from "react"
 import { Card } from "@/components/ui/card"
@@ -29,6 +29,8 @@ interface PhaseCardProps {
     isTimeline?: boolean
     onModalChange?: (isOpen: boolean) => void
     className?: string
+    /** Optional progress percentage (0-100) for SVG ring. Derived from variant when omitted. */
+    progress?: number
     // Accordion props
     collapsible?: boolean
     isOpen?: boolean
@@ -48,6 +50,7 @@ export function PhaseCard({
     emptyMessage = "No disponible",
     isComplete = false,
     className,
+    progress,
     // Accordion props
     collapsible = false,
     isOpen: controlledOpen,
@@ -56,6 +59,7 @@ export function PhaseCard({
     const { triggerAction } = useHubPanel()
     const isSuccess = variant === 'success' || isComplete
     const isActive = variant === 'active'
+    const progressValue = progress ?? (isSuccess ? 100 : isActive ? 50 : 0)
 
     // Internal open state for accordion (used only when collapsible=true)
     const [internalOpen, setInternalOpen] = useState(true)
@@ -111,8 +115,6 @@ export function PhaseCard({
         <Card className={cn(
             "card-base flex flex-col duration-300 relative group/card bg-card/50 backdrop-blur-sm py-2 gap-2",
             open && collapsible && "accent-visible",
-            isSuccess && "opacity-80 grayscale-[0.3] hover:opacity-100 hover:grayscale-0",
-            isActive && "border-primary/30 bg-primary/5 shadow-primary/5",
             className
         )}>
 
@@ -136,22 +138,25 @@ export function PhaseCard({
                     collapsible && "cursor-pointer select-none"
                 )}
             >
-                <div className={cn(
-                    "transition-all duration-300",
-                    "p-1 flex items-center justify-center rounded-md h-7 w-7 shrink-0 border border-border bg-muted/50"
-                )}>
-                    <div className="relative flex items-center justify-center w-full h-full">
-                        <Icon className={cn("h-4 w-4", iconStyles[isSuccess ? 'success' : (isActive ? 'active' : 'neutral')])} />
-
-                        {/* Mini Status Badge - Simplified to a Small Dot */}
-                        <div className={cn(
-                            "absolute -top-1 -right-1 h-2 w-2 rounded-full border",
-                            isSuccess && "bg-success border-background",
-                            isActive && "bg-primary border-background",
-                            variant === 'destructive' && "bg-destructive border-background",
-                            variant === 'neutral' && !isActive && !isSuccess && "bg-muted-foreground border-background"
-                        )} />
-                    </div>
+                <div className="relative flex items-center justify-center w-7 h-7 shrink-0">
+                    <Icon className={cn("h-4 w-4", iconStyles[isSuccess ? 'success' : (isActive ? 'active' : 'neutral')])} />
+                    {progressValue > 0 && (
+                        <svg className="absolute inset-0 w-full h-full -rotate-90" viewBox="0 0 24 24">
+                            <circle
+                                cx="12" cy="12" r="10.5"
+                                fill="none"
+                                stroke="currentColor"
+                                strokeWidth="2"
+                                strokeDasharray={`${2 * Math.PI * 10.5}`}
+                                strokeDashoffset={2 * Math.PI * 10.5 * (1 - progressValue / 100)}
+                                className={cn(
+                                    isSuccess && "text-success",
+                                    isActive && "text-primary",
+                                    variant === 'destructive' && "text-destructive"
+                                )}
+                            />
+                        </svg>
+                    )}
                 </div>
                 <div className="flex-1 flex items-center gap-2">
                     <h3 className={cn(
@@ -160,9 +165,6 @@ export function PhaseCard({
                     )}>
                         {title}
                     </h3>
-                    {isSuccess && (
-                        <CheckCircle2 className="h-3.5 w-3.5 text-success shrink-0" />
-                    )}
                 </div>
 
                 {/* Unified Action Icons — Primary + Shortcuts */}

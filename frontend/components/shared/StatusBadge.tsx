@@ -33,6 +33,8 @@ export interface StatusBadgeProps {
     tooltip?: string
     /** Size — controls height and font size. Default: 'md' (h-6, tables). */
     size?: 'xs' | 'sm' | 'md' | 'lg' | 'xl'
+    /** Progress percentage (0-100) for hub variant — renders SVG progress ring */
+    progress?: number
     /** Layout/position only. Never typography or colors. */
     className?: string
 }
@@ -44,6 +46,7 @@ export function StatusBadge({
     icon: Icon,
     tooltip,
     size = 'sm',
+    progress,
     className,
 }: StatusBadgeProps) {
     const { intent, label: resolvedLabel } = resolveStatus(status)
@@ -56,6 +59,7 @@ export function StatusBadge({
                 icon={Icon}
                 tooltip={tooltip}
                 size={size === 'xl' || size === 'lg' ? 'md' : 'sm'}
+                progress={progress}
                 className={className}
             />
         )

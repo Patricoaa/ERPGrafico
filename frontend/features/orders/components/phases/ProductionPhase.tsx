@@ -100,6 +100,7 @@ export function ProductionPhase({
                 title="Producción"
                 icon={ClipboardList}
                 variant={totalOTs === 0 ? 'neutral' : (totalOTProgress === 100 ? 'success' : 'active')}
+                progress={totalOTProgress}
                 documents={activeDoc.work_orders?.map((ot: WorkOrder) => ({
                     type: 'Orden de Trabajo',
                     number: formatEntityDisplay('production.workorder', ot),
