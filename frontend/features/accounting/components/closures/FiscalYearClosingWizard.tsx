@@ -15,12 +15,11 @@ import {
     Settings2,
     PieChart,
     Wallet,
-    ClipboardList,
 } from 'lucide-react';
 import { type FiscalYearPreviewResult } from '../../types';
 import { cn } from '@/lib/utils';
-import { fetchChecklist, updateChecklistItem, type ChecklistItem } from '../../api/closingChecklistApi';
-import { useQuery } from '@tanstack/react-query';
+import { type ChecklistItem } from '../../api/closingChecklistApi';
+import { useClosingChecklist } from '../../hooks/useClosingChecklist';
 
 // Lazy load TrialBalanceReport
 const TrialBalanceReport = lazy(() => import('../reports/TrialBalanceReport').then(m => ({ default: m.TrialBalanceReport })));
@@ -45,11 +44,12 @@ export function FiscalYearClosingWizard({
     const [showTrialBalance, setShowTrialBalance] = useState(false);
     const [isClosed, setIsClosed] = useState(false);
 
-    const { data: checklistItems, isLoading: isChecklistLoading, refetch: refetchChecklist } = useQuery({
-        queryKey: ['closing-checklist', year],
-        queryFn: () => fetchChecklist(year),
-        enabled: isOpen && year > 0,
-    });
+    const {
+        items: checklistItems,
+        isLoading: isChecklistLoading,
+        toggleItem: handleToggleChecklist,
+        checklistPassed,
+    } = useClosingChecklist(year, isOpen);
 
     // Reset state when modal opens
     useEffect(() => {
@@ -57,16 +57,6 @@ export function FiscalYearClosingWizard({
             requestAnimationFrame(() => setIsClosed(false));
         }
     }, [isOpen]);
-
-    const handleToggleChecklist = useCallback(async (item: ChecklistItem) => {
-        await updateChecklistItem(year, item.id, {
-            is_completed: !item.is_completed,
-        });
-        refetchChecklist();
-    }, [year, refetchChecklist]);
-
-    const requiredIncomplete = checklistItems?.filter(i => i.is_required && !i.is_completed) ?? [];
-    const checklistPassed = requiredIncomplete.length === 0;
 
     const handleConfirm = async () => {
         await onConfirm();
