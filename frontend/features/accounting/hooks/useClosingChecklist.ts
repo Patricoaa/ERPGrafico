@@ -8,6 +8,9 @@ export function useClosingChecklist(year: number, enabled: boolean) {
         queryKey: ['closing-checklist', year],
         queryFn: () => fetchChecklist(year),
         enabled: enabled && year > 0,
+        // Don't retry on errors (e.g. 404 when FiscalYear doesn't exist yet)
+        // to avoid an infinite loading spinner.
+        retry: false,
     })
 
     const toggleItem = async (item: ChecklistItem) => {
@@ -23,9 +26,11 @@ export function useClosingChecklist(year: number, enabled: boolean) {
     return {
         items: query.data ?? [],
         isLoading: query.isLoading,
+        isError: query.isError,
         refetch: query.refetch,
         toggleItem,
         requiredIncomplete,
         checklistPassed,
     }
 }
+
