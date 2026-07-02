@@ -1,6 +1,6 @@
 "use client"
 import { formatPlainDate } from "@/lib/utils";
-import { useState, useEffect, useMemo, useCallback } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { getTasks, type Task } from '@/features/workflow/api/workflowApi'
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -23,25 +23,6 @@ const HUB_STAGE_LABELS: Record<string, string> = {
     logistics: 'Logística',
     billing: 'Facturación',
     treasury: 'Tesorería',
-}
-
-type TaskGroup = 'hub' | 'document' | 'credit' | 'accounting' | 'other'
-
-const GROUP_LABELS: Record<TaskGroup, string> = {
-    hub: 'Procesar Etapa',
-    document: 'Aprobar Documento',
-    credit: 'Evaluar Crédito',
-    accounting: 'Cierre Contable',
-    other: 'Otras Acciones',
-}
-
-function getTaskGroup(task: Task): TaskGroup {
-    const t = task.task_type || ''
-    if (t.startsWith('HUB_')) return 'hub'
-    if (t.startsWith('OT_') || t.startsWith('OV_') || t.startsWith('OC_') || t.startsWith('NC_') || t.startsWith('ND_')) return 'document'
-    if (t === 'CREDIT_POS_REQUEST') return 'credit'
-    if (t.startsWith('F29_') || t === 'PERIOD_CLOSE') return 'accounting'
-    return 'other'
 }
 
 const CollapsibleSection = ({
@@ -102,9 +83,6 @@ export function TaskInbox({ onCountChange }: TaskInboxProps) {
     const [approvalsExpanded, setApprovalsExpanded] = useState(true)
     const [completedExpanded, setCompletedExpanded] = useState(false)
     const [hubExpandedTasks, setHubExpandedTasks] = useState<Set<number>>(new Set())
-    const [groupExpanded, setGroupExpanded] = useState<Record<TaskGroup, boolean>>({
-        hub: true, document: true, credit: true, accounting: true, other: true,
-    })
     const { openEntity } = useGlobalModalActions()
     const { openHub } = useHubPanel()
     const { user } = useAuth()
@@ -177,14 +155,6 @@ export function TaskInbox({ onCountChange }: TaskInboxProps) {
             tasks: operationalTasks.length,
         })
     }, [approvalsPending.length, operationalTasks.length, onCountChange])
-
-    const groupedOperational = useMemo(() => {
-        const groups: Record<TaskGroup, Task[]> = { hub: [], document: [], credit: [], accounting: [], other: [] }
-        for (const task of operationalTasks) {
-            groups[getTaskGroup(task)].push(task)
-        }
-        return Object.entries(groups).filter(([, tasks]) => tasks.length > 0) as [TaskGroup, Task[]][]
-    }, [operationalTasks])
 
     const navigateToTask = (task: Task) => {
         if (!task.object_id) {
@@ -522,21 +492,11 @@ export function TaskInbox({ onCountChange }: TaskInboxProps) {
                              <ListTodo className="h-8 w-8 mb-2 opacity-20" />
                              <p className="text-xs">No tienes tareas pendientes</p>
                          </div>
-                     ) : (
-                         <div className="space-y-3">
-                             {groupedOperational.map(([group, tasks]) => (
-                                 <CollapsibleSection
-                                     key={group}
-                                     title={GROUP_LABELS[group]}
-                                     count={tasks.length}
-                                     expanded={groupExpanded[group]}
-                                     onToggle={() => setGroupExpanded(prev => ({ ...prev, [group]: !prev[group] }))}
-                                 >
-                                     {tasks.map(task => renderTaskCard(task))}
-                                 </CollapsibleSection>
-                             ))}
-                         </div>
-                     )}
+                      ) : (
+                          <div className="space-y-2">
+                              {operationalTasks.map(task => renderTaskCard(task))}
+                          </div>
+                      )}
                  </TabBarContent>
              </TabBar>
          </div>
