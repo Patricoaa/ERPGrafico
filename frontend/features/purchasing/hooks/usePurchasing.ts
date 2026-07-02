@@ -3,6 +3,7 @@ import { toast } from 'sonner'
 import type { FilterState } from '@/components/shared'
 import type { Invoice } from '@/features/billing'
 import { useRealtime } from '@/features/realtime'
+import { useAuth } from '@/contexts/AuthContext'
 
 import { purchasingApi } from '../api/purchasingApi'
 import type { PurchaseOrderAPI } from '../types'
@@ -14,6 +15,7 @@ export { PURCHASING_KEYS }
 export function usePurchasingOrders(filters?: FilterState & { page?: number, page_size?: number }, initialData?: Page<PurchaseOrderAPI>) {
     const queryClient = useQueryClient()
     const { markLocalMutation } = useRealtime()
+    const { isAuthenticated } = useAuth()
 
     const { page = 1, page_size = 50, ...restFilters } = filters || {}
     const activeFilters = { page, page_size, ...restFilters }
@@ -22,6 +24,7 @@ export function usePurchasingOrders(filters?: FilterState & { page?: number, pag
         queryKey: [...PURCHASING_KEYS.orders(), activeFilters],
         queryFn: () => purchasingApi.getOrders(activeFilters),
         staleTime: 2 * 60 * 1000,
+        enabled: isAuthenticated,
         initialData,
         placeholderData: (prev) => prev,
     })
@@ -66,10 +69,13 @@ export function usePurchasingOrders(filters?: FilterState & { page?: number, pag
 }
 
 export function usePurchasingNotes(initialData?: Invoice[]) {
+    const { isAuthenticated } = useAuth()
+
     const query = useQuery({
         queryKey: PURCHASING_KEYS.notes(),
         queryFn: () => purchasingApi.getNotes(),
         staleTime: 2 * 60 * 1000,
+        enabled: isAuthenticated,
         initialData,
         placeholderData: (prev) => prev,
     })

@@ -4,6 +4,7 @@ import { toast } from 'sonner'
 import type { Invoice, InvoiceFilters } from '../types'
 import { PURCHASING_KEYS } from '@/features/purchasing'
 import { useRealtime } from '@/features/realtime'
+import { useAuth } from '@/contexts/AuthContext'
 
 import { PURCHASE_INVOICES_QUERY_KEY } from './queryKeys'
 
@@ -16,11 +17,13 @@ interface UsePurchaseInvoicesProps {
 export function usePurchaseInvoices({ filters }: UsePurchaseInvoicesProps = {}) {
     const queryClient = useQueryClient()
     const { markLocalMutation } = useRealtime()
+    const { isAuthenticated } = useAuth()
 
     const query = useQuery({
         queryKey: [...PURCHASE_INVOICES_QUERY_KEY, filters],
         queryFn: () => billingApi.getInvoices({ ...filters, mode: 'purchase' }),
         staleTime: 2 * 60 * 1000,
+        enabled: isAuthenticated,
         placeholderData: (prev) => prev,
     })
 
