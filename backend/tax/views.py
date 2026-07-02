@@ -51,8 +51,13 @@ class TaxPeriodViewSet(viewsets.ModelViewSet):
     def reopen(self, request, pk=None):
         """Reopen a closed tax period"""
         period = self.get_object()
+        reason = request.data.get("reason", "")
+        x_forwarded_for = request.META.get("HTTP_X_FORWARDED_FOR")
+        ip_address = x_forwarded_for.split(",")[0] if x_forwarded_for else request.META.get("REMOTE_ADDR")
         try:
-            updated_period = TaxPeriodService.reopen_period(period.year, period.month, request.user)
+            updated_period = TaxPeriodService.reopen_period(
+                period.year, period.month, request.user, reason=reason, ip_address=ip_address
+            )
             serializer = self.get_serializer(updated_period)
             return Response(serializer.data)
         except DjangoValidationError as e:
@@ -186,8 +191,11 @@ class AccountingPeriodViewSet(viewsets.ModelViewSet):
         try:
             AccountingPeriodService.validate_can_reopen(request.user)
             period = self.get_object()
+            reason = request.data.get("reason", "")
+            x_forwarded_for = request.META.get("HTTP_X_FORWARDED_FOR")
+            ip_address = x_forwarded_for.split(",")[0] if x_forwarded_for else request.META.get("REMOTE_ADDR")
             updated_period = AccountingPeriodService.reopen_period(
-                period.year, period.month, request.user
+                period.year, period.month, request.user, reason=reason, ip_address=ip_address
             )
             serializer = self.get_serializer(updated_period)
             return Response(serializer.data)

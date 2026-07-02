@@ -624,7 +624,7 @@ class TaxPeriodService:
 
     @staticmethod
     @transaction.atomic
-    def reopen_period(year: int, month: int, user) -> TaxPeriod:
+    def reopen_period(year: int, month: int, user, reason="", ip_address=None) -> TaxPeriod:
         """
         Reopen a closed tax period.
 
@@ -632,7 +632,11 @@ class TaxPeriodService:
         - User must have can_reopen_tax_period permission
         - Period must be currently closed
         - Accounting period must not be closed (symmetry)
+
+        Audit: creates a PeriodReopenLog entry.
         """
+        from core.models import PeriodReopenLog
+
         from .models import AccountingPeriod
 
         TaxPeriodService.validate_can_reopen(user)
@@ -653,11 +657,26 @@ class TaxPeriodService:
         except AccountingPeriod.DoesNotExist:
             pass
 
+        status_before = period.status
+
         # Reopen the period
         period.status = TaxPeriod.Status.OPEN
         period.closed_at = None
         period.closed_by = None
         period.save()
+
+        # Audit trail
+        PeriodReopenLog.objects.create(
+            user=user,
+            period_type=PeriodReopenLog.PeriodType.TAX,
+            year=year,
+            month=month,
+            period_id=period.pk,
+            reason=reason,
+            status_before=status_before,
+            status_after=period.status,
+            ip_address=ip_address,
+        )
 
         # Signal will handle unmarking invoices
 
@@ -957,16 +976,20 @@ class AccountingPeriodService:
 
     @staticmethod
     @transaction.atomic
-    def reopen_period(year: int, month: int, user):
+    def reopen_period(year: int, month: int, user, reason="", ip_address=None):
         """
         Reopen a closed accounting period.
 
         This should be restricted to users with special permissions.
         Cannot reopen if the corresponding tax period is closed.
 
+        Audit: creates a PeriodReopenLog entry.
+
         Returns:
             AccountingPeriod instance
         """
+        from core.models import PeriodReopenLog
+
         from .models import AccountingPeriod, TaxPeriod
 
         period = AccountingPeriod.objects.get(year=year, month=month)
@@ -986,11 +1009,26 @@ class AccountingPeriodService:
             # No tax period exists, safe to reopen
             pass
 
+        status_before = period.status
+
         # Reopen the period
         period.status = AccountingPeriod.Status.OPEN
         period.closed_at = None
         period.closed_by = None
         period.save()
+
+        # Audit trail
+        PeriodReopenLog.objects.create(
+            user=user,
+            period_type=PeriodReopenLog.PeriodType.ACCOUNTING,
+            year=year,
+            month=month,
+            period_id=period.pk,
+            reason=reason,
+            status_before=status_before,
+            status_after=period.status,
+            ip_address=ip_address,
+        )
 
         # Signal will handle unmarking entries
 
