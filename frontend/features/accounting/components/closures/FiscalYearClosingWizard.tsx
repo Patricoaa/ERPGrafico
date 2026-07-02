@@ -40,6 +40,7 @@ export function FiscalYearClosingWizard({
     isLoading
 }: FiscalYearClosingWizardProps) {
     const [showTrialBalance, setShowTrialBalance] = useState(false);
+    const [showIncomeStatement, setShowIncomeStatement] = useState(false);
     const [isClosed, setIsClosed] = useState(false);
 
     // Reset state when modal opens
@@ -150,6 +151,20 @@ export function FiscalYearClosingWizard({
                             {parseFloat(preview.net_result || '0') >= 0 ? "Utilidad" : "Pérdida"}
                         </div>
                     </Card>
+                    
+                    <Alert variant="primary">
+                        <AlertTitle className="font-bold uppercase">Estado de Resultados</AlertTitle>
+                        <AlertDescription className="text-primary/80 font-medium flex items-center justify-between gap-3 text-xs">
+                            <p>Visualice el detalle completo de ingresos, costos y gastos del ejercicio {year}.</p>
+                            <Button
+                                variant="outline" size="sm"
+                                className="w-fit h-7 text-[10px] font-black uppercase tracking-widest bg-primary/10 border-primary/30 hover:bg-primary/20 text-primary"
+                                onClick={() => setShowIncomeStatement(true)}
+                            >
+                                <PieChart className="w-3 h-3 mr-2" /> Ver Estado de Resultados
+                            </Button>
+                        </AlertDescription>
+                    </Alert>
                 </div>
             ) : null
         },
@@ -294,6 +309,24 @@ export function FiscalYearClosingWizard({
                 <div className="flex-1 min-h-0 overflow-y-auto p-4">
                     <Suspense fallback={<SkeletonShell isLoading ariaLabel="Cargando..." />}>
                         <FinancialStatementsReport activeTab="bs" hideToolbar hideChart />
+                    </Suspense>
+                </div>
+            </BaseModal>
+
+            {/* Income Statement Detail Modal */}
+            <BaseModal
+                open={showIncomeStatement}
+                onOpenChange={setShowIncomeStatement}
+                icon={PieChart}
+                title={`Estado de Resultados - Ejercicio ${year}`}
+                description="Resumen de ingresos, costos y gastos del ejercicio fiscal."
+                size="xl"
+                hideScrollArea={true}
+                contentClassName="p-0"
+            >
+                <div className="flex-1 min-h-0 overflow-y-auto p-4">
+                    <Suspense fallback={<SkeletonShell isLoading ariaLabel="Cargando..." />}>
+                        <FinancialStatementsReport activeTab="pl" hideToolbar hideChart />
                     </Suspense>
                 </div>
             </BaseModal>
