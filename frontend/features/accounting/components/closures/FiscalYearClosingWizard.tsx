@@ -2,7 +2,7 @@
 
 import { formatCurrency } from "@/lib/money"
 import React, { useState, useEffect, Suspense, lazy, useMemo, useCallback } from 'react';
-import { SkeletonShell, LabeledContainer, CancelButton, SubmitButton, BaseModal, GenericWizard, type WizardStep } from '@/components/shared';
+import { SkeletonShell, LabeledContainer, CancelButton, SubmitButton, BaseModal, Drawer, GenericWizard, type WizardStep } from '@/components/shared';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
@@ -229,13 +229,13 @@ export function FiscalYearClosingWizard({
 
     if (isClosed) {
         return (
-            <BaseModal
+            <Drawer
                 open={isOpen}
                 onOpenChange={onClose}
-                size="xl"
-                showCloseButton={false}
-                hideScrollArea={true}
-                contentClassName="p-0"
+                defaultSize="45%"
+                minSize={500}
+                side="right"
+                boundary="embedded"
                 title=""
                 footer={
                     <div className="flex flex-col gap-3 w-full">
@@ -258,17 +258,17 @@ export function FiscalYearClosingWizard({
                     </div>
                 }
             >
-                <div className="flex flex-col items-center justify-center p-12 text-center space-y-6 animate-in zoom-in-95 duration-500">
+                <div className="flex flex-col items-center justify-center h-full p-12 text-center space-y-6 animate-in zoom-in-95 duration-500">
                     <ShieldCheck className="w-10 h-10 text-muted-foreground" />
                     <div>
                         <h3 className="text-2xl font-heading font-black uppercase tracking-tighter">¡Ejercicio {year} Cerrado!</h3>
-                        <p className="text-sm text-muted-foreground mt-1 px-10">
+                        <p className="text-sm text-muted-foreground mt-1 px-4">
                             La contabilidad ha sido sellada y el asiento de cierre ha sido generado con éxito.
                             Ahora puedes proceder con la distribución de utilidades a los socios.
                         </p>
                     </div>
                 </div>
-            </BaseModal>
+            </Drawer>
         );
     }
 
@@ -287,6 +287,9 @@ export function FiscalYearClosingWizard({
                 completeButtonIcon={<Wallet className="h-4 w-4 mr-2" />}
                 size="xl"
                 isLoading={!preview && isLoading}
+                surface="drawer"
+                drawerSide="right"
+                drawerBoundary="embedded"
             />
 
             {/* Financial Statements Detail Modal */}
