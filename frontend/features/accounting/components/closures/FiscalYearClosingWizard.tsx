@@ -293,7 +293,7 @@ export function FiscalYearClosingWizard({
             >
                 <div className="h-full flex flex-col p-4">
                     <Suspense fallback={<SkeletonShell isLoading ariaLabel="Cargando..." />}>
-                        <FinancialStatementsReport activeTab="bs" />
+                        <FinancialStatementsReport activeTab="bs" hideToolbar hideChart />
                     </Suspense>
                 </div>
             </BaseModal>
