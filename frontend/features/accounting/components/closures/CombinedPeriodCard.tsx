@@ -3,7 +3,7 @@
 import React from 'react'
 import { Card } from '@/components/ui/card'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
-import { Calendar, Lock, LockOpen, FileText, DollarSign } from 'lucide-react'
+import { Calendar, Lock, LockOpen, FileText, FileCheck, Undo2, DollarSign } from 'lucide-react'
 import { IconButton, StatusBadge } from '@/components/shared'
 import { type AccountingPeriod, type TaxPeriod } from '../../types'
 import { useReopenConfirm } from '../../hooks/useReopenConfirm'
@@ -56,14 +56,13 @@ export function CombinedPeriodCard({
                         <Calendar className="w-3 h-3 text-muted-foreground" />
                         <span className="font-heading font-bold text-xs uppercase">{MONTHS[month - 1]}</span>
                     </div>
-                    <span className="text-[9px] text-muted-foreground font-mono">{String(month).padStart(2, '0')}/{year}</span>
                 </div>
 
                 <div className="space-y-1">
                     {/* Contable row */}
-                    <div className="flex items-center justify-between py-1 px-1.5 rounded-sm min-h-[26px]">
+                    <div className="flex items-center justify-between py-1 px-1.5 rounded-sm border-l-2 border-l-primary/10 pl-2 min-h-[28px]">
                         <div className="flex items-center gap-1.5 min-w-0">
-                            <span className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground w-11 shrink-0">Cont</span>
+                            <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground w-11 shrink-0">Cont</span>
                             {acct ? (
                                 <StatusBadge status={acct.status} label={acct.status_display} variant="dot" size="xs" />
                             ) : (
@@ -73,8 +72,8 @@ export function CombinedPeriodCard({
                         {acct && !acctClosed && (
                             <Tooltip>
                                 <TooltipTrigger asChild>
-                                    <IconButton className="h-6 w-6 text-muted-foreground hover:text-warning" onClick={() => onClosePeriod(acct.id)} disabled={isPeriodActionLoading}>
-                                        <Lock className="w-3 h-3" />
+                                    <IconButton className="h-7 w-7 text-muted-foreground hover:text-warning" onClick={() => onClosePeriod(acct.id)} disabled={isPeriodActionLoading}>
+                                        <Lock className="w-3.5 h-3.5" />
                                     </IconButton>
                                 </TooltipTrigger>
                                 <TooltipContent side="top"><p className="text-xs">Cerrar periodo contable</p></TooltipContent>
@@ -83,8 +82,8 @@ export function CombinedPeriodCard({
                         {acct && acctClosed && !taxFrozen && (
                             <Tooltip>
                                 <TooltipTrigger asChild>
-                                    <IconButton className="h-6 w-6 text-muted-foreground hover:text-foreground" onClick={() => confirmReopenAcct(acct.id)} disabled={isPeriodActionLoading}>
-                                        <LockOpen className="w-3 h-3" />
+                                    <IconButton className="h-7 w-7 text-muted-foreground hover:text-foreground" onClick={() => confirmReopenAcct(acct.id)} disabled={isPeriodActionLoading}>
+                                        <LockOpen className="w-3.5 h-3.5" />
                                     </IconButton>
                                 </TooltipTrigger>
                                 <TooltipContent side="top"><p className="text-xs">Reabrir periodo contable</p></TooltipContent>
@@ -93,8 +92,8 @@ export function CombinedPeriodCard({
                         {acct && acctClosed && taxFrozen && (
                             <Tooltip>
                                 <TooltipTrigger asChild>
-                                    <div className="h-6 w-6 flex items-center justify-center text-muted-foreground/40 cursor-not-allowed">
-                                        <Lock className="w-3 h-3" />
+                                    <div className="h-7 w-7 flex items-center justify-center text-muted-foreground/40 cursor-not-allowed">
+                                        <Lock className="w-3.5 h-3.5" />
                                     </div>
                                 </TooltipTrigger>
                                 <TooltipContent side="top"><p className="text-xs">Bloqueado por cierre F29</p></TooltipContent>
@@ -103,9 +102,9 @@ export function CombinedPeriodCard({
                     </div>
 
                     {/* F29 row */}
-                    <div className="flex items-center justify-between py-1 px-1.5 rounded-sm min-h-[26px]">
+                    <div className="flex items-center justify-between py-1 px-1.5 rounded-sm border-l-2 border-l-warning/10 pl-2 min-h-[28px]">
                         <div className="flex items-center gap-1.5 min-w-0">
-                            <span className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground w-11 shrink-0">F29</span>
+                            <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground w-11 shrink-0">F29</span>
                             {tax ? (
                                 <StatusBadge
                                     status={taxClosed ? 'CLOSED' : hasDeclaration ? 'UNDER_REVIEW' : 'OPEN'}
@@ -120,8 +119,8 @@ export function CombinedPeriodCard({
                         {tax && !taxClosed && !hasDeclaration && (
                             <Tooltip>
                                 <TooltipTrigger asChild>
-                                    <IconButton className="h-6 w-6 text-muted-foreground hover:text-info" onClick={() => onOpenDeclaration(tax.id)} disabled={isTaxActionLoading}>
-                                        <FileText className="w-3 h-3" />
+                                    <IconButton className="h-7 w-7 text-muted-foreground hover:text-info" onClick={() => onOpenDeclaration(tax.id)} disabled={isTaxActionLoading}>
+                                        <FileText className="w-3.5 h-3.5" />
                                     </IconButton>
                                 </TooltipTrigger>
                                 <TooltipContent side="top"><p className="text-xs">Declarar F29</p></TooltipContent>
@@ -130,8 +129,8 @@ export function CombinedPeriodCard({
                         {tax && !taxClosed && hasDeclaration && !isFullyPaid && requiresPayment && (
                             <Tooltip>
                                 <TooltipTrigger asChild>
-                                    <IconButton className="h-6 w-6 text-success hover:text-success/80" onClick={() => onPayF29?.(tax.id)} disabled={isTaxActionLoading}>
-                                        <DollarSign className="w-3 h-3" />
+                                    <IconButton className="h-7 w-7 text-success hover:text-success/80" onClick={() => onPayF29?.(tax.id)} disabled={isTaxActionLoading}>
+                                        <DollarSign className="w-3.5 h-3.5" />
                                     </IconButton>
                                 </TooltipTrigger>
                                 <TooltipContent side="top"><p className="text-xs">Pagar F29 antes de cerrar</p></TooltipContent>
@@ -140,8 +139,8 @@ export function CombinedPeriodCard({
                         {tax && !taxClosed && hasDeclaration && (isFullyPaid || !requiresPayment) && (
                             <Tooltip>
                                 <TooltipTrigger asChild>
-                                    <IconButton className="h-6 w-6 text-muted-foreground hover:text-warning" onClick={() => onCloseTaxPeriod(tax.id)} disabled={isTaxActionLoading}>
-                                        <Lock className="w-3 h-3" />
+                                    <IconButton className="h-7 w-7 text-muted-foreground hover:text-warning" onClick={() => onCloseTaxPeriod(tax.id)} disabled={isTaxActionLoading}>
+                                        <FileCheck className="w-3.5 h-3.5" />
                                     </IconButton>
                                 </TooltipTrigger>
                                 <TooltipContent side="top"><p className="text-xs">Cerrar F29</p></TooltipContent>
@@ -150,8 +149,8 @@ export function CombinedPeriodCard({
                         {tax && taxClosed && !acctClosed && (
                             <Tooltip>
                                 <TooltipTrigger asChild>
-                                    <IconButton className="h-6 w-6 text-muted-foreground hover:text-foreground" onClick={() => confirmReopenTax(tax.id)} disabled={isTaxActionLoading}>
-                                        <LockOpen className="w-3 h-3" />
+                                    <IconButton className="h-7 w-7 text-muted-foreground hover:text-foreground" onClick={() => confirmReopenTax(tax.id)} disabled={isTaxActionLoading}>
+                                        <Undo2 className="w-3.5 h-3.5" />
                                     </IconButton>
                                 </TooltipTrigger>
                                 <TooltipContent side="top"><p className="text-xs">Reabrir F29</p></TooltipContent>
@@ -160,8 +159,8 @@ export function CombinedPeriodCard({
                         {tax && taxClosed && acctClosed && (
                             <Tooltip>
                                 <TooltipTrigger asChild>
-                                    <div className="h-6 w-6 flex items-center justify-center text-muted-foreground/40 cursor-not-allowed">
-                                        <Lock className="w-3 h-3" />
+                                    <div className="h-7 w-7 flex items-center justify-center text-muted-foreground/40 cursor-not-allowed">
+                                        <Lock className="w-3.5 h-3.5" />
                                     </div>
                                 </TooltipTrigger>
                                 <TooltipContent side="top"><p className="text-xs">Periodo completamente cerrado</p></TooltipContent>
