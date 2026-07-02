@@ -25,6 +25,11 @@ export async function serverFetch<T>(
     opts?: ServerFetchOptions
 ): Promise<T> {
     const token = (await cookies()).get('access_token')?.value
+    // If there is no token, bail out immediately rather than sending an
+    // unauthenticated request that would result in a 401 on the backend.
+    if (!token) {
+        throw new ServerFetchError(401, 'No access token available for server-side prefetch')
+    }
 
     const cleanPath = path.replace(/^\//, '')
     let url = `${API_URL}${cleanPath}`
@@ -41,7 +46,7 @@ export async function serverFetch<T>(
         ...opts?.init,
         headers: {
             'Content-Type': 'application/json',
-            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+            Authorization: `Bearer ${token}`,
             ...(opts?.init?.headers as unknown as Record<string, string>),
         },
         next: { revalidate: opts?.revalidate ?? 0, tags: opts?.tags },
