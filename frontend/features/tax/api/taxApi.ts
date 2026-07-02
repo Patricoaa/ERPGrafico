@@ -9,8 +9,10 @@ export const taxApi = {
     },
     getPeriod: (id: number | string) =>
         api.get(`/tax/periods/${id}/`).then(r => r.data),
-    closePeriod: (id: number) =>
-        api.post(`/tax/periods/${id}/close/`).then(r => r.data),
+    closePeriod: (id: number, idempotencyKey?: string) =>
+        api.post(`/tax/periods/${id}/close/`, undefined, {
+            headers: idempotencyKey ? { 'Idempotency-Key': idempotencyKey } : undefined,
+        }).then(r => r.data),
     reopenPeriod: (params: { id: number; reason?: string }) =>
         api.post(`/tax/periods/${params.id}/reopen/`, { reason: params.reason }).then(r => r.data),
     checkPeriodClosed: (date: string) =>

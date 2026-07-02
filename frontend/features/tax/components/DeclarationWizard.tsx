@@ -155,7 +155,10 @@ export function DeclarationWizard({ isOpen, onOpenChange, periodId, onSuccess, e
                     (regError as { response?: { data?: { error?: string } } })?.response?.data?.error?.includes("ya ha sido registrada")
                 if (!isAlreadyRegistered) throw regError
             }
-            if (currentTaxPeriodId) await closePeriodMutation.mutateAsync(currentTaxPeriodId)
+            if (currentTaxPeriodId) await closePeriodMutation.mutateAsync({
+                id: currentTaxPeriodId,
+                idempotencyKey: idempotencyKeyRef.current,
+            })
             toast.success("Ciclo tributario finalizado exitosamente")
             setIsClosed(true)
             onSuccess();

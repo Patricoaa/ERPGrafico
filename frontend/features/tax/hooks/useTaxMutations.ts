@@ -49,7 +49,8 @@ export function useClosePeriod() {
   const { markLocalMutation } = useRealtime()
 
   return useMutation({
-    mutationFn: (id: number) => taxApi.closePeriod(id),
+    mutationFn: ({ id, idempotencyKey }: { id: number; idempotencyKey?: string }) =>
+        taxApi.closePeriod(id, idempotencyKey),
     onSuccess: () => {
       markLocalMutation()
       queryClient.invalidateQueries({ queryKey: TAX_KEYS.periods.all() })

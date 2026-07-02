@@ -263,6 +263,8 @@ Si dudás de si tu endpoint debe estar en la lista cerrada: pregunta “¿una do
 | `treasury.reconciliation.run` | `POST /api/treasury/reconciliations/{id}/run/` |
 | `purchasing.order.checkout` | `POST /api/purchasing/orders/purchase_checkout/` |
 | `tax.f29.register` | `POST /api/tax/declarations/{id}/register/` |
+| `tax.period.close` | `POST /api/tax/periods/{id}/close/` |
+| `tax.period.close` | `POST /api/tax/accounting-periods/{id}/close/` |
 | `{module}.import.commit` | `POST /api/{module}/import/commit/` |
 
 ## Referencias
