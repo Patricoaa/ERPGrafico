@@ -11,6 +11,7 @@ from .models import (
     AccountingSettings,
     Budget,
     BudgetItem,
+    ClosingChecklistInstance,
     FiscalYear,
     JournalEntry,
 )
@@ -43,6 +44,7 @@ from .serializers import (
     AccountSerializer,
     BudgetItemSerializer,
     BudgetSerializer,
+    ClosingChecklistInstanceSerializer,
     FiscalYearMappingSerializer,
     FiscalYearPreviewSerializer,
     FiscalYearSerializer,
@@ -362,3 +364,49 @@ class FiscalYearViewSet(viewsets.ModelViewSet):
                 {"error": str(e.message if hasattr(e, "message") else e)},
                 status=status.HTTP_400_BAD_REQUEST,
             )
+
+    @action(detail=False, methods=["get"], url_path="(?P<year>[0-9]{4})/checklist")
+    def checklist(self, request, year=None):
+        """List all ClosingChecklistInstance items for the fiscal year."""
+        try:
+            fy = FiscalYear.objects.get(year=year)
+        except FiscalYear.DoesNotExist:
+            return Response(
+                {"error": f"No existe el ejercicio fiscal {year}."}, status=404
+            )
+        instances = fy.checklist_instances.select_related("template").order_by("template__order")
+        serializer = ClosingChecklistInstanceSerializer(instances, many=True)
+        return Response(serializer.data)
+
+    @action(detail=False, methods=["patch"], url_path="(?P<year>[0-9]{4})/checklist/(?P<item_pk>[0-9]+)")
+    def complete_checklist_item(self, request, year=None, item_pk=None):
+        """Mark a checklist item as completed or incomplete."""
+        try:
+            fy = FiscalYear.objects.get(year=year)
+        except FiscalYear.DoesNotExist:
+            return Response(
+                {"error": f"No existe el ejercicio fiscal {year}."}, status=404
+            )
+        try:
+            instance = fy.checklist_instances.get(pk=item_pk)
+        except ClosingChecklistInstance.DoesNotExist:
+            return Response(
+                {"error": "Item de checklist no encontrado."}, status=404
+            )
+
+        is_completed = request.data.get("is_completed")
+        if is_completed is None:
+            return Response(
+                {"error": "El campo 'is_completed' es requerido."}, status=400
+            )
+
+        import django.utils.timezone as timezone
+
+        instance.is_completed = bool(is_completed)
+        instance.completed_at = timezone.now() if instance.is_completed else None
+        instance.completed_by = request.user if instance.is_completed else None
+        instance.notes = request.data.get("notes", instance.notes)
+        instance.save()
+
+        serializer = ClosingChecklistInstanceSerializer(instance)
+        return Response(serializer.data)

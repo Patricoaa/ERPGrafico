@@ -5,6 +5,7 @@ from .models import (
     AccountingSettings,
     Budget,
     BudgetItem,
+    ClosingChecklistInstance,
     FiscalYear,
     FiscalYearAccountMapping,
     JournalEntry,
@@ -260,4 +261,50 @@ class FiscalYearMappingSerializer(serializers.ModelSerializer):
             "is_category",
             "bs_category",
             "cf_category",
+        ]
+
+
+class ClosingChecklistInstanceSerializer(serializers.ModelSerializer):
+    code = serializers.CharField(source="template.code", read_only=True)
+    name = serializers.CharField(source="template.name", read_only=True)
+    description = serializers.CharField(source="template.description", read_only=True)
+    category = serializers.CharField(source="template.category", read_only=True)
+    category_display = serializers.CharField(source="template.get_category_display", read_only=True)
+    is_required = serializers.BooleanField(source="template.is_required", read_only=True)
+    order = serializers.IntegerField(source="template.order", read_only=True)
+    completed_by_username = serializers.CharField(
+        source="completed_by.username", read_only=True, default=None
+    )
+
+    class Meta:
+        model = ClosingChecklistInstance
+        fields = [
+            "id",
+            "fiscal_year",
+            "code",
+            "name",
+            "description",
+            "category",
+            "category_display",
+            "is_required",
+            "order",
+            "is_completed",
+            "completed_at",
+            "completed_by",
+            "completed_by_username",
+            "notes",
+        ]
+        read_only_fields = [
+            "id",
+            "fiscal_year",
+            "code",
+            "name",
+            "description",
+            "category",
+            "category_display",
+            "is_required",
+            "order",
+            "completed_at",
+            "completed_by",
+            "completed_by_username",
         ]
