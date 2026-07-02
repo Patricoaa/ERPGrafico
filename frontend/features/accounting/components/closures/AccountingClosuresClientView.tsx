@@ -175,7 +175,14 @@ export function AccountingClosuresClientView({ externalOpen, onExternalOpenChang
     }, [refetchTaxPeriods, fetchPeriods]);
 
     const handleCloseTaxPeriod = useCallback(async (id: number) => {
-        await closeTaxPeriod.mutateAsync(id);
+        const key = typeof crypto !== 'undefined' && crypto.randomUUID
+            ? crypto.randomUUID()
+            : 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
+                const r = (Math.random() * 16) | 0
+                const v = c === 'x' ? r : (r & 0x3) | 0x8
+                return v.toString(16)
+            })
+        await closeTaxPeriod.mutateAsync({ id, idempotencyKey: key });
         refetchTaxPeriods();
         fetchPeriods();
     }, [closeTaxPeriod, refetchTaxPeriods, fetchPeriods]);

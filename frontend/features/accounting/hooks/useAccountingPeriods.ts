@@ -23,7 +23,18 @@ export function useAccountingPeriods() {
     });
 
     const closeMutation = useMutation({
-        mutationFn: (periodId: number) => api.post(`/tax/accounting-periods/${periodId}/close/`),
+        mutationFn: (periodId: number) => {
+            const key = typeof crypto !== 'undefined' && crypto.randomUUID
+                ? crypto.randomUUID()
+                : 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
+                    const r = (Math.random() * 16) | 0
+                    const v = c === 'x' ? r : (r & 0x3) | 0x8
+                    return v.toString(16)
+                })
+            return api.post(`/tax/accounting-periods/${periodId}/close/`, undefined, {
+                headers: { 'Idempotency-Key': key },
+            })
+        },
         onSuccess: () => {
             markLocalMutation();
             queryClient.invalidateQueries({ queryKey: ACCOUNTING_PERIODS_QUERY_KEY });
