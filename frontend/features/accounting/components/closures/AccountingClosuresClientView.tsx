@@ -180,8 +180,8 @@ export function AccountingClosuresClientView({ externalOpen, onExternalOpenChang
         fetchPeriods();
     }, [closeTaxPeriod, refetchTaxPeriods, fetchPeriods]);
 
-    const handleReopenTaxPeriod = useCallback(async (id: number) => {
-        await reopenTaxPeriod.mutateAsync(id);
+    const handleReopenTaxPeriod = useCallback(async (params: { id: number; reason?: string }) => {
+        await reopenTaxPeriod.mutateAsync(params);
         refetchTaxPeriods();
         fetchPeriods();
     }, [reopenTaxPeriod, refetchTaxPeriods, fetchPeriods]);

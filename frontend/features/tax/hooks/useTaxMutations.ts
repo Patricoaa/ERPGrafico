@@ -62,7 +62,7 @@ export function useReopenPeriod() {
   const { markLocalMutation } = useRealtime()
 
   return useMutation({
-    mutationFn: (id: number) => taxApi.reopenPeriod(id),
+    mutationFn: (params: { id: number; reason?: string }) => taxApi.reopenPeriod(params),
     onSuccess: () => {
       markLocalMutation()
       queryClient.invalidateQueries({ queryKey: TAX_KEYS.periods.all() })

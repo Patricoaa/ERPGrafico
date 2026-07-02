@@ -11,8 +11,8 @@ export const taxApi = {
         api.get(`/tax/periods/${id}/`).then(r => r.data),
     closePeriod: (id: number) =>
         api.post(`/tax/periods/${id}/close/`).then(r => r.data),
-    reopenPeriod: (id: number) =>
-        api.post(`/tax/periods/${id}/reopen/`).then(r => r.data),
+    reopenPeriod: (params: { id: number; reason?: string }) =>
+        api.post(`/tax/periods/${params.id}/reopen/`, { reason: params.reason }).then(r => r.data),
     checkPeriodClosed: (date: string) =>
         api.get(`tax/periods/check_closed/?date=${date}`).then(r => r.data),
 

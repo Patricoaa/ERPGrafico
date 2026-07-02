@@ -6,6 +6,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { Calendar, Lock, LockOpen, FileText } from 'lucide-react'
 import { IconButton, StatusBadge } from '@/components/shared'
 import { type AccountingPeriod, type TaxPeriod } from '../../types'
+import { useReopenConfirm } from '../../hooks/useReopenConfirm'
 
 const MONTHS = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre']
 
@@ -15,10 +16,10 @@ interface CombinedPeriodCardProps {
     accountingPeriod?: AccountingPeriod
     taxPeriod?: TaxPeriod
     onClosePeriod: (id: number) => void
-    onReopenPeriod: (id: number) => void
+    onReopenPeriod: (params: { id: number; reason?: string }) => Promise<unknown>
     isPeriodActionLoading: boolean
     onCloseTaxPeriod: (id: number) => Promise<void>
-    onReopenTaxPeriod: (id: number) => Promise<void>
+    onReopenTaxPeriod: (params: { id: number; reason?: string }) => Promise<unknown>
     onOpenDeclaration: (id: number) => void
     isTaxActionLoading: boolean
 }
@@ -33,6 +34,16 @@ export function CombinedPeriodCard({
     const taxClosed = tax?.status === 'CLOSED'
     const taxFrozen = !!(acct?.tax_period_id && acct?.tax_period_status === 'CLOSED')
     const hasDeclaration = !!tax?.declaration_summary
+
+    const {
+        confirmAndExecute: confirmReopenAcct,
+        dialog: reopenAcctDialog,
+    } = useReopenConfirm(onReopenPeriod, { periodType: 'contable' })
+
+    const {
+        confirmAndExecute: confirmReopenTax,
+        dialog: reopenTaxDialog,
+    } = useReopenConfirm(onReopenTaxPeriod, { periodType: 'tributario (F29)' })
 
     return (
         <TooltipProvider>
@@ -69,7 +80,7 @@ export function CombinedPeriodCard({
                         {acct && acctClosed && !taxFrozen && (
                             <Tooltip>
                                 <TooltipTrigger asChild>
-                                    <IconButton className="h-6 w-6 text-muted-foreground hover:text-foreground" onClick={() => onReopenPeriod(acct.id)} disabled={isPeriodActionLoading}>
+                                    <IconButton className="h-6 w-6 text-muted-foreground hover:text-foreground" onClick={() => confirmReopenAcct(acct.id)} disabled={isPeriodActionLoading}>
                                         <LockOpen className="w-3 h-3" />
                                     </IconButton>
                                 </TooltipTrigger>
@@ -126,7 +137,7 @@ export function CombinedPeriodCard({
                         {tax && taxClosed && !acctClosed && (
                             <Tooltip>
                                 <TooltipTrigger asChild>
-                                    <IconButton className="h-6 w-6 text-muted-foreground hover:text-foreground" onClick={() => onReopenTaxPeriod(tax.id)} disabled={isTaxActionLoading}>
+                                    <IconButton className="h-6 w-6 text-muted-foreground hover:text-foreground" onClick={() => confirmReopenTax(tax.id)} disabled={isTaxActionLoading}>
                                         <LockOpen className="w-3 h-3" />
                                     </IconButton>
                                 </TooltipTrigger>
@@ -146,6 +157,9 @@ export function CombinedPeriodCard({
                     </div>
                 </div>
             </Card>
+
+            {reopenAcctDialog}
+            {reopenTaxDialog}
         </TooltipProvider>
     )
 }
