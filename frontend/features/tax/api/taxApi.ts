@@ -25,8 +25,10 @@ export const taxApi = {
         api.post('/tax/declarations/', data).then(r => r.data),
     calculateDeclaration: (data: { year: number; month: number }) =>
         api.post('/tax/declarations/calculate/', data).then(r => r.data),
-    registerDeclaration: (id: number, data: { declaration_date: string }) =>
-        api.post(`/tax/declarations/${id}/register/`, data).then(r => r.data),
+    registerDeclaration: (id: number, data: { declaration_date: string }, idempotencyKey?: string) =>
+        api.post(`/tax/declarations/${id}/register/`, data, {
+            headers: idempotencyKey ? { 'Idempotency-Key': idempotencyKey } : undefined,
+        }).then(r => r.data),
     getF29Detail: (id: number | string) =>
         api.get(`/tax/f29/${id}/`).then(r => r.data),
 

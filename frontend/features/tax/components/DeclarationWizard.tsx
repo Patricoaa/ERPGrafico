@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useMemo } from "react"
+import { useState, useEffect, useMemo, useRef } from "react"
 import { Button } from "@/components/ui/button"
 
 import { BaseModal, FormSection, GenericWizard, LabeledInput, MoneyDisplay, type WizardStep } from '@/components/shared'
@@ -39,6 +39,7 @@ export function DeclarationWizard({ isOpen, onOpenChange, periodId, onSuccess, e
     const [calcData, setCalcData] = useState<TaxCalculationData | null>(null)
     const [taxPeriodId, setTaxPeriodId] = useState<number | null>(periodId || null)
     const [isClosed, setIsClosed] = useState(false)
+    const idempotencyKeyRef = useRef<string | null>(null)
     const [period, setPeriod] = useState({
         year: currentYear || new Date().getFullYear(),
         month: currentMonth || new Date().getMonth() + 1
@@ -125,6 +126,15 @@ export function DeclarationWizard({ isOpen, onOpenChange, periodId, onSuccess, e
 
     const handleSaveAndClose = async () => {
         setIsLoading(true)
+        if (!idempotencyKeyRef.current) {
+            idempotencyKeyRef.current = typeof crypto !== 'undefined' && crypto.randomUUID
+                ? crypto.randomUUID()
+                : 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
+                    const r = (Math.random() * 16) | 0
+                    const v = c === 'x' ? r : (r & 0x3) | 0x8
+                    return v.toString(16)
+                })
+        }
         try {
             const declarationData = await createDeclarationMutation.mutateAsync({
                 tax_period_year: period.year,
@@ -136,7 +146,8 @@ export function DeclarationWizard({ isOpen, onOpenChange, periodId, onSuccess, e
             try {
                 await registerDeclarationMutation.mutateAsync({
                     id: declarationId,
-                    data: { declaration_date: dateString || "" }
+                    data: { declaration_date: dateString || "" },
+                    idempotencyKey: idempotencyKeyRef.current
                 })
             } catch (regError: unknown) {
                 const isAlreadyRegistered =
