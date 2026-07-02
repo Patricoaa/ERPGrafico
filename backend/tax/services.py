@@ -573,15 +573,28 @@ class TaxPeriodService:
         return {"is_closed": TaxPeriodService.is_period_closed(parsed), "date": date_str}
 
     @staticmethod
+    def validate_can_close(user):
+        if not user.has_perm("tax.can_close_tax_period"):
+            raise ValidationError("No tiene permisos para cerrar períodos tributarios.")
+
+    @staticmethod
+    def validate_can_reopen(user):
+        if not user.has_perm("tax.can_reopen_tax_period"):
+            raise ValidationError("No tiene permisos para reabrir períodos tributarios.")
+
+    @staticmethod
     @transaction.atomic
     def close_period(year: int, month: int, user) -> TaxPeriod:
         """
         Close a tax period after validations.
 
         Validations:
+        - User must have can_close_tax_period permission
         - Must have a registered F29 declaration
         - Must not be already closed
         """
+        TaxPeriodService.validate_can_close(user)
+
         period = TaxPeriod.objects.get(year=year, month=month)
 
         if period.status == TaxPeriod.Status.CLOSED:
@@ -615,12 +628,30 @@ class TaxPeriodService:
         """
         Reopen a closed tax period.
 
-        This should be restricted to users with special permissions.
+        Validations:
+        - User must have can_reopen_tax_period permission
+        - Period must be currently closed
+        - Accounting period must not be closed (symmetry)
         """
+        from .models import AccountingPeriod
+
+        TaxPeriodService.validate_can_reopen(user)
+
         period = TaxPeriod.objects.get(year=year, month=month)
 
         if period.status != TaxPeriod.Status.CLOSED:
             raise ValidationError("El período no está cerrado.")
+
+        # Symmetry: cannot reopen tax period if accounting period is closed
+        try:
+            acc_period = AccountingPeriod.objects.get(year=year, month=month)
+            if acc_period.status == AccountingPeriod.Status.CLOSED:
+                raise ValidationError(
+                    "No se puede reabrir el período tributario porque "
+                    "el período contable está cerrado. Primero debe reabrir el período contable."
+                )
+        except AccountingPeriod.DoesNotExist:
+            pass
 
         # Reopen the period
         period.status = TaxPeriod.Status.OPEN

@@ -52,6 +52,10 @@ class TaxPeriod(models.Model):
             models.Index(fields=["year", "month"]),
             models.Index(fields=["status"]),
         ]
+        permissions = [
+            ("can_close_tax_period", "Puede cerrar período tributario (F29)"),
+            ("can_reopen_tax_period", "Puede reabrir período tributario (F29)"),
+        ]
 
     def __str__(self):
         return f"{self.get_month_display()} {self.year}"
