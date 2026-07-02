@@ -10,6 +10,29 @@ class TaxConfig(AppConfig):
         import tax.signals  # noqa
 
         try:
+            from core.permissions import PermissionRegistry
+
+            PermissionRegistry.register(
+                "tax",
+                [
+                    ("view_taxperiod", "Can view tax period"),
+                    ("add_taxperiod", "Can add tax period"),
+                    ("change_taxperiod", "Can change tax period"),
+                    ("delete_taxperiod", "Can delete tax period"),
+                    ("can_close_tax_period", "Puede cerrar período tributario (F29)"),
+                    ("can_reopen_tax_period", "Puede reabrir período tributario (F29)"),
+                    ("view_accountingperiod", "Can view accounting period"),
+                    ("add_accountingperiod", "Can add accounting period"),
+                    ("change_accountingperiod", "Can change accounting period"),
+                    ("delete_accountingperiod", "Can delete accounting period"),
+                    ("can_close_accounting_period", "Can close accounting period"),
+                    ("can_reopen_accounting_period", "Can reopen accounting period"),
+                ],
+            )
+        except ImportError:
+            pass
+
+        try:
             from core.registry import SearchableEntity, UniversalRegistry
             from tax.models import TaxPeriod
 
