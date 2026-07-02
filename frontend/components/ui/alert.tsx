@@ -5,21 +5,21 @@ import { Info, AlertTriangle, CheckCircle2 } from "lucide-react"
 import type { LucideIcon } from "lucide-react"
 
 const alertVariants = cva(
-    "relative w-full rounded-md border p-4 flex items-start gap-3",
+    "relative w-full rounded-sm border p-4 flex items-start gap-3 ",
     {
         variants: {
             variant: {
                 default: "bg-background text-foreground",
                 destructive:
-                    "border-destructive/50 text-destructive",
+                    "border-destructive/50 text-foreground bg-destructive/5 [&>svg]:text-destructive",
                 warning:
-                    "border-warning/50 text-warning",
+                    "border-warning/50 text-foreground bg-warning/5 [&>svg]:text-warning",
                 info:
-                    "border-info/50 text-info",
+                    "border-info/50 text-foreground bg-info/5 [&>svg]:text-info",
                 success:
-                    "border-success/50 text-success",
+                    "border-success/50 text-foreground bg-success/5 [&>svg]:text-success",
                 primary:
-                    "border-primary/50 text-primary",
+                    "border-primary/50 text-foreground bg-primary/5 [&>svg]:text-primary",
             },
         },
         defaultVariants: {
@@ -38,7 +38,7 @@ const variantIcons: Record<string, LucideIcon | null> = {
 
 interface AlertProps
     extends React.HTMLAttributes<HTMLDivElement>,
-        VariantProps<typeof alertVariants> {
+    VariantProps<typeof alertVariants> {
     icon?: LucideIcon | null
 }
 
