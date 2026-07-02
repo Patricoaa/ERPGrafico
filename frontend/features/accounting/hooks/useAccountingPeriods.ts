@@ -33,7 +33,8 @@ export function useAccountingPeriods() {
     });
 
     const reopenMutation = useMutation({
-        mutationFn: (periodId: number) => api.post(`/tax/accounting-periods/${periodId}/reopen/`),
+        mutationFn: (params: { id: number; reason?: string }) =>
+            api.post(`/tax/accounting-periods/${params.id}/reopen/`, { reason: params.reason }),
         onSuccess: () => {
             markLocalMutation();
             queryClient.invalidateQueries({ queryKey: ACCOUNTING_PERIODS_QUERY_KEY });
