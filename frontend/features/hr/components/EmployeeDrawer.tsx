@@ -37,7 +37,7 @@ export const employeeSchema = z.object({
     base_salary: z.string().min(1, "Sueldo base requerido"),
     status: z.enum(["ACTIVE", "INACTIVE"]),
     contract_type: z.enum(["INDEFINIDO", "PLAZO_FIJO"]),
-    afp: z.string().nullable(),
+    afp: z.string().min(1, "Institución Previsional requerida"),
     salud_type: z.enum(["FONASA", "ISAPRE"]),
     isapre_amount_uf: z.string(),
     jornada_type: z.enum(["ORDINARIA_22", "PARCIAL_40BIS", "EXENTA_22", "EXTRAORDINARIA_30"]),
@@ -91,7 +91,7 @@ export function EmployeeDrawer({ open, onOpenChange, employee, onSaved, trigger,
             base_salary: "0",
             status: "ACTIVE",
             contract_type: "INDEFINIDO",
-            afp: null,
+            afp: "",
             salud_type: "FONASA",
             isapre_amount_uf: "0",
             jornada_type: "ORDINARIA_22",
@@ -123,7 +123,7 @@ export function EmployeeDrawer({ open, onOpenChange, employee, onSaved, trigger,
                 base_salary: String(employee.base_salary),
                 status: employee.status,
                 contract_type: employee.contract_type,
-                afp: employee.afp ? String(employee.afp) : null,
+                afp: employee.afp ? String(employee.afp) : "",
                 salud_type: employee.salud_type,
                 isapre_amount_uf: String(employee.isapre_amount_uf || "0"),
                 jornada_type: (employee.jornada_type as EmployeeFormValues["jornada_type"]) || "ORDINARIA_22",
@@ -148,7 +148,7 @@ export function EmployeeDrawer({ open, onOpenChange, employee, onSaved, trigger,
                 base_salary: "0",
                 status: "ACTIVE",
                 contract_type: "INDEFINIDO",
-                afp: null,
+                afp: "",
                 salud_type: "FONASA",
                 isapre_amount_uf: "0",
                 jornada_type: "ORDINARIA_22",
@@ -504,6 +504,7 @@ export function EmployeeDrawer({ open, onOpenChange, employee, onSaved, trigger,
                                                             <FormField control={form.control} name="afp" render={({ field, fieldState }) => (
                                                                 <LabeledSelect
                                                                     label="Institución Previsional (AFP)"
+                                                                    required
                                                                     value={field.value || ""}
                                                                     onChange={field.onChange}
                                                                     error={fieldState.error?.message}
