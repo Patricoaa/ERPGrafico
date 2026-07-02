@@ -1495,13 +1495,13 @@ class BillingService:
 
     @staticmethod
     def check_folio_from_request(request):
-        from .selectors import InvoiceSelector
+        from .selectors import InvoiceSelectorExt
 
         num = request.query_params.get('number')
         dte = request.query_params.get('dte_type')
         if not num or not dte:
             raise ValidationError('Faltan parametros')
-        return InvoiceSelector.check_folio_uniqueness(
+        return InvoiceSelectorExt.check_folio_uniqueness(
             number=num,
             dte_type=dte,
             exclude_id=request.query_params.get('exclude_id'),
