@@ -548,17 +548,25 @@ class FiscalYearClosingService:
     @staticmethod
     @staticmethod
     def _auto_create_checklist_instances(year: int) -> None:
-        """Create ClosingChecklistInstance for all active templates and this fiscal year."""
+        """Create ClosingChecklistInstance for all active templates and this fiscal year.
+
+        If no FiscalYear record exists for the given year, it is auto-created here
+        (same pattern as close_fiscal_year) so that the checklist endpoint
+        GET /fiscal-years/<year>/checklist/ can always find the record.
+        """
         from accounting.models import (
             ClosingChecklistInstance,
             ClosingChecklistTemplate,
             FiscalYear,
         )
 
-        try:
-            fiscal_year = FiscalYear.objects.get(year=year)
-        except FiscalYear.DoesNotExist:
-            return
+        fiscal_year, _ = FiscalYear.objects.get_or_create(
+            year=year,
+            defaults={
+                "start_date": date(year, 1, 1),
+                "end_date": date(year, 12, 31),
+            },
+        )
 
         active_templates = ClosingChecklistTemplate.objects.filter(is_active=True)
         for template in active_templates:
