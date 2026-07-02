@@ -15,11 +15,11 @@ import {
 import { showApiError } from "@/lib/errors"
 import { toast } from "sonner"
 import { useTaxCalculation, useCreateDeclaration, useRegisterDeclaration, useClosePeriod } from "../hooks/useTaxMutations"
-import { cn } from "@/lib/utils"
 import { useVatRate } from '@/hooks/useVatRate'
 import { useServerDate } from "@/hooks/useServerDate"
 
 import { type TaxPeriod, type TaxCalculationData } from "../types"
+import { taxApi } from "../api/taxApi"
 import { useHubPanel } from "@/components/providers/HubPanelProvider"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 
@@ -43,9 +43,9 @@ export function DeclarationWizard({ isOpen, onOpenChange, periodId, onSuccess, e
         year: currentYear || new Date().getFullYear(),
         month: currentMonth || new Date().getMonth() + 1
     })
-    const [isPreLoading, setIsPreLoading] = useState(false)
     const [wizardInitialStep, setWizardInitialStep] = useState(0)
     const existingPeriods = useMemo(() => existingPeriodsProp ?? [], [existingPeriodsProp]);
+    const isPreLoading = periodId != null && isOpen && calcData === null
     const [manualFields, setManualFields] = useState({
         ppm_amount: 0,
         withholding_tax: 0,
@@ -90,56 +90,38 @@ export function DeclarationWizard({ isOpen, onOpenChange, periodId, onSuccess, e
         const initializeWizard = async () => {
             if (isOpen) {
                 setIsClosed(false)
-                
-                // If we have a periodId, try to find it and skip step 1
-                if (periodId && existingPeriods.length > 0) {
-                    const targetPeriod = existingPeriods.find(p => p.id === periodId)
-                    if (targetPeriod) {
-                        // 1. Sync local period state
-                        setPeriod({ year: targetPeriod.year, month: targetPeriod.month })
-                        
-                        // 2. Pre-load data
-                        setIsPreLoading(true)
-                        const success = await calculateDataForPeriod(targetPeriod.year, targetPeriod.month)
-                        
-                        if (success) {
-                            setWizardInitialStep(1)
-                        } else {
-                            setWizardInitialStep(0)
+                let targetPeriod: TaxPeriod | undefined
+                let year: number | undefined
+                let month: number | undefined
+
+                // If we have a periodId, resolve period and skip step 1
+                if (periodId) {
+                    // Try existingPeriods first (fast path), otherwise fetch from API
+                    targetPeriod = existingPeriods.find(p => p.id === periodId)
+                    if (!targetPeriod) {
+                        try {
+                            targetPeriod = await taxApi.getPeriod(periodId)
+                        } catch {
+                            // fall through to default below
                         }
-                        setIsPreLoading(false)
-                        return
+                    }
+                    if (targetPeriod) {
+                        year = targetPeriod.year
+                        month = targetPeriod.month
                     }
                 }
 
-                // Default fallback: Start at step 0 with current date
-                setWizardInitialStep(0)
-                if (serverDate && currentYear !== null && currentMonth !== null) {
-                    setPeriod({ year: currentYear, month: currentMonth })
+                if (year && month) {
+                    setPeriod({ year, month })
+                    setCalcData(null)
+                    await calculateDataForPeriod(year, month)
+                    setWizardInitialStep(0)
                 }
             }
         }
 
         initializeWizard()
     }, [isOpen, periodId, existingPeriods, serverDate, currentYear, currentMonth])
-
-    const isPeriodDisabled = (y: number, m: number) => {
-        const targetDate = new Date(y, m - 1)
-        const currentDate = serverDate || new Date()
-        if (targetDate > currentDate) return true
-        const closedPeriods = existingPeriods.filter(p => p.status === 'CLOSED')
-        if (closedPeriods.length > 0) {
-            closedPeriods.sort((a, b) => (a.year !== b.year ? b.year - a.year : b.month - a.month))
-            const lastClosed = closedPeriods[0]
-            const lastClosedDate = new Date(lastClosed.year, lastClosed.month - 1)
-            if (targetDate <= lastClosedDate) return true
-        }
-        return false
-    }
-
-    const calculateData = async () => {
-        return calculateDataForPeriod(period.year, period.month)
-    }
 
     const handleSaveAndClose = async () => {
         setIsLoading(true)
@@ -186,65 +168,6 @@ export function DeclarationWizard({ isOpen, onOpenChange, periodId, onSuccess, e
 
     const steps: WizardStep[] = useMemo(() => [
         {
-            id: 1,
-            title: "Selección de Período",
-            isValid: !!period.year && !!period.month,
-            onNext: calculateData,
-            component: (
-                <div className="space-y-12 max-w-4xl mx-auto py-4">
-                    <div className="text-center space-y-3">
-                        <h3 className="text-2xl font-black tracking-tight uppercase text-foreground/80">Período de Declaración</h3>
-                        <p className="text-sm text-muted-foreground max-w-sm mx-auto">
-                            Seleccione el mes y año tributario para generar el F29.
-                        </p>
-                    </div>
-                    <div className="space-y-8">
-                        <div className="space-y-4">
-                            <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground ml-1">Año Tributario</p>
-                            <div className="grid grid-cols-4 gap-3">
-                                {[2024, 2025, 2026].map(y => (
-                                    <div
-                                        key={y}
-                                        className={cn(
-                                            "cursor-pointer rounded-md border border-transparent px-4 py-5 text-center transition-all duration-200",
-                                            period.year === y ? "bg-primary/10 border-primary/20 scale-[1.02] shadow-card shadow-primary/5" : "bg-muted/5 hover:bg-muted/10 text-muted-foreground"
-                                        )}
-                                        onClick={() => setPeriod(p => ({ ...p, year: y }))}
-                                    >
-                                        <div className={cn("text-sm font-bold tracking-wider", period.year === y ? "text-primary" : "")}>{y}</div>
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-                        <div className="space-y-4">
-                            <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground ml-1">Mes de Declaración</p>
-                            <div className="grid grid-cols-4 gap-3">
-                                {Array.from({ length: 12 }, (_, i) => i + 1).map(m => {
-                                    const disabled = isPeriodDisabled(period.year, m)
-                                    const isSelected = !disabled && period.month === m
-                                    return (
-                                        <div
-                                            key={m}
-                                            className={cn(
-                                                "rounded-md border border-transparent px-2 py-4 text-center transition-all duration-200",
-                                                disabled ? "opacity-20 cursor-not-allowed grayscale" : "cursor-pointer",
-                                                isSelected ? "bg-primary/10 border-primary/20 scale-[1.05] shadow-elevated shadow-primary/5 z-10" : (!disabled ? "bg-muted/5 hover:bg-muted/10" : "")
-                                            )}
-                                            onClick={() => !disabled && setPeriod(p => ({ ...p, month: m }))}
-                                        >
-                                            <div className={cn("text-[11px] font-black tracking-widest uppercase", isSelected ? "text-primary" : "text-muted-foreground/70")}>
-                                                {new Date(2000, m - 1, 1).toLocaleString('es-CL', { month: 'short' })}
-                                            </div>
-                                        </div>
-                                    )
-                                })}
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            )
-        },
-        {
             id: 2,
             title: "Auditoría de Documentos (IVA)",
             isValid: true,
@@ -254,37 +177,69 @@ export function DeclarationWizard({ isOpen, onOpenChange, periodId, onSuccess, e
                         <section className="space-y-8">
                             <FormSection title="Débito Fiscal" icon={ArrowUpRight} />
                             <div className="space-y-4 bg-muted/5 p-6 rounded-md border border-border/50">
-                                <div className="flex justify-between items-center text-xs uppercase font-bold text-muted-foreground/70">
-                                    <span>Ventas Afectas</span>
-                                    <MoneyDisplay amount={calcData?.sales_taxed} showColor={false} className="font-bold" />
+                                <div>
+                                    <div className="flex justify-between items-center text-xs uppercase font-bold text-muted-foreground/70">
+                                        <span>Ventas Afectas</span>
+                                        <MoneyDisplay amount={calcData?.sales_taxed} showColor={false} className="font-bold" />
+                                    </div>
+                                    {calcData?.sales_taxed_by_dte?.map(item => (
+                                        <div key={item.dte_type} className="flex justify-between items-center text-[11px] text-muted-foreground/50 pl-4 mt-0.5">
+                                            <span>{item.dte_type_display} ({item.count})</span>
+                                            <MoneyDisplay amount={item.total} showColor={false} className="font-bold" />
+                                        </div>
+                                    ))}
                                 </div>
-                                <div className="flex justify-between items-center text-xs uppercase font-bold text-muted-foreground/70">
-                                    <span>Ventas Exentas</span>
-                                    <MoneyDisplay amount={calcData?.sales_exempt} showColor={false} className="font-bold" />
+                                <div>
+                                    <div className="flex justify-between items-center text-xs uppercase font-bold text-muted-foreground/70">
+                                        <span>Ventas Exentas</span>
+                                        <MoneyDisplay amount={calcData?.sales_exempt} showColor={false} className="font-bold" />
+                                    </div>
+                                    {calcData?.sales_exempt_by_dte?.map(item => (
+                                        <div key={item.dte_type} className="flex justify-between items-center text-[11px] text-muted-foreground/50 pl-4 mt-0.5">
+                                            <span>{item.dte_type_display} ({item.count})</span>
+                                            <MoneyDisplay amount={item.total} showColor={false} className="font-bold" />
+                                        </div>
+                                    ))}
                                 </div>
                                 <div className="pt-4 space-y-2 border-t border-border/30">
-                                    <div className="flex justify-between items-end p-4 rounded-md bg-primary/5 border border-primary/10">
-                                        <span className="text-xs font-black uppercase text-primary/80">IVA Débito ({manualFields.tax_rate}%)</span>
-                                        <MoneyDisplay amount={calcData?.vat_debit} className="text-2xl font-black text-primary" />
+                                    <div className="flex justify-between items-end">
+                                        <span className="text-xs font-black uppercase text-foreground">IVA Débito ({manualFields.tax_rate}%)</span>
+                                        <MoneyDisplay amount={calcData?.vat_debit} className="text-2xl font-black text-expense" />
                                     </div>
                                 </div>
                             </div>
                         </section>
                         <section className="space-y-8">
                             <FormSection title="Crédito Fiscal" icon={ArrowDownLeft} />
-                            <div className="space-y-4 bg-primary/5 p-6 rounded-md border border-primary/10">
-                                <div className="flex justify-between items-center text-xs uppercase font-bold text-primary/50">
-                                    <span>Compras Afectas</span>
-                                    <MoneyDisplay amount={calcData?.purchases_taxed} showColor={false} className="font-bold" />
+                            <div className="space-y-4 bg-transparent p-6 rounded-md border border-border/50">
+                                <div>
+                                    <div className="flex justify-between items-center text-xs uppercase font-bold text-muted-foreground/70">
+                                        <span>Compras Afectas</span>
+                                        <MoneyDisplay amount={calcData?.purchases_taxed} showColor={false} className="font-bold" />
+                                    </div>
+                                    {calcData?.purchases_taxed_by_dte?.map(item => (
+                                        <div key={item.dte_type} className="flex justify-between items-center text-[11px] text-muted-foreground/50 pl-4 mt-0.5">
+                                            <span>{item.dte_type_display} ({item.count})</span>
+                                            <MoneyDisplay amount={item.total} showColor={false} className="font-bold" />
+                                        </div>
+                                    ))}
                                 </div>
-                                <div className="flex justify-between items-center text-xs uppercase font-bold text-primary/50">
-                                    <span>Compras Exentas</span>
-                                    <MoneyDisplay amount={calcData?.purchases_exempt} showColor={false} className="font-bold" />
+                                <div>
+                                    <div className="flex justify-between items-center text-xs uppercase font-bold text-muted-foreground/70">
+                                        <span>Compras Exentas</span>
+                                        <MoneyDisplay amount={calcData?.purchases_exempt} showColor={false} className="font-bold" />
+                                    </div>
+                                    {calcData?.purchases_exempt_by_dte?.map(item => (
+                                        <div key={item.dte_type} className="flex justify-between items-center text-[11px] text-muted-foreground/50 pl-4 mt-0.5">
+                                            <span>{item.dte_type_display} ({item.count})</span>
+                                            <MoneyDisplay amount={item.total} showColor={false} className="font-bold" />
+                                        </div>
+                                    ))}
                                 </div>
-                                <div className="pt-4 space-y-2 border-t border-primary/10">
-                                    <div className="flex justify-between items-end p-4 rounded-md bg-primary/10 border border-primary/20 text-primary">
-                                        <span className="text-xs font-black uppercase">IVA Crédito ({manualFields.tax_rate}%)</span>
-                                        <MoneyDisplay amount={calcData?.vat_credit} className="text-2xl font-black" />
+                                <div className="pt-4 space-y-2 border-t border-border/30">
+                                    <div className="flex justify-between items-end">
+                                        <span className="text-xs font-black uppercase text-foreground">IVA Crédito ({manualFields.tax_rate}%)</span>
+                                        <MoneyDisplay amount={calcData?.vat_credit} className="text-2xl font-black text-income" />
                                     </div>
                                 </div>
                             </div>
@@ -380,31 +335,29 @@ export function DeclarationWizard({ isOpen, onOpenChange, periodId, onSuccess, e
             title: "Resumen y Declaración",
             isValid: true,
             component: (
-                <div className="max-w-4xl mx-auto pb-6 space-y-8">
-                    <div className="bg-card border border-border/50 rounded-md p-8 space-y-6">
-                        <div className="flex justify-between items-center text-sm font-medium">
-                            <span className="text-muted-foreground">IVA Determinado</span>
-                            <MoneyDisplay amount={vatToPay} showColor={false} className="font-bold" />
+                <div className="max-w-4xl mx-auto pb-6 space-y-0">
+                    <div className="flex justify-between items-center py-5 border-b border-border/30">
+                        <span className="text-sm text-muted-foreground">IVA Determinado</span>
+                        <MoneyDisplay amount={vatToPay} showColor={false} className="text-lg font-bold" />
+                    </div>
+                    <div className="flex justify-between items-center py-5 border-b border-border/30">
+                        <span className="text-sm text-muted-foreground">PPM + Retenciones</span>
+                        <MoneyDisplay amount={otherTaxes} showColor={false} className="text-lg font-bold" />
+                    </div>
+                    {vatRemanent > 0 && (
+                        <div className="flex justify-between items-center py-5 border-b border-border/30">
+                            <span className="text-xs font-black uppercase text-success">Nuevo Remanente a Favor</span>
+                            <MoneyDisplay amount={vatRemanent} className="font-black text-success" />
                         </div>
-                        <div className="flex justify-between items-center text-sm font-medium">
-                            <span className="text-muted-foreground">PPM + Retenciones</span>
-                            <MoneyDisplay amount={otherTaxes} showColor={false} className="font-bold" />
-                        </div>
-                        {vatRemanent > 0 && (
-                            <div className="flex justify-between items-center p-3 rounded-md bg-success/5 border border-success/10">
-                                <span className="text-success text-xs font-black uppercase">Nuevo Remanente a Favor</span>
-                                <MoneyDisplay amount={vatRemanent} className="font-black text-success" />
-                            </div>
-                        )}
-                        <div className="flex flex-col items-center justify-center p-8 rounded-md bg-primary/5 border-2 border-primary/20">
-                            <span className="text-[10px] font-black uppercase tracking-[0.3em] text-primary/60 mb-2">Total a Pagar SII</span>
-                            <MoneyDisplay amount={finalToPay} className="text-4xl font-black text-primary" />
-                        </div>
+                    )}
+                    <div className="flex flex-col items-center justify-center py-10">
+                        <span className="text-[10px] font-black uppercase tracking-[0.3em] text-primary/60 mb-3">Total a Pagar SII</span>
+                        <MoneyDisplay amount={finalToPay} className="text-5xl font-black text-primary" />
                     </div>
                 </div>
             )
         }
-    ], [period, calcData, manualFields, taxPeriodId, vatToPay, otherTaxes, vatRemanent, finalToPay])
+    ], [calcData, manualFields, taxPeriodId, vatToPay, otherTaxes, vatRemanent, finalToPay])
 
     if (isClosed) {
         return (
