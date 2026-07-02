@@ -234,7 +234,7 @@ export function FiscalYearClosingWizard({
                 onOpenChange={onClose}
                 defaultSize="45%"
                 minSize={500}
-                side="right"
+                side="left"
                 boundary="embedded"
                 title=""
                 footer={
@@ -288,7 +288,7 @@ export function FiscalYearClosingWizard({
                 size="xl"
                 isLoading={!preview && isLoading}
                 surface="drawer"
-                drawerSide="right"
+                drawerSide="left"
                 drawerBoundary="embedded"
             />
 
