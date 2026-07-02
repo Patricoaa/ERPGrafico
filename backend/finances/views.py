@@ -68,7 +68,7 @@ def get_trial_balance_data(request):
     return _handle_report_request(
         request,
         "trial_balance",
-        lambda start, end, cs, ce: FinanceService.get_trial_balance(start, end),
+        lambda start, end, cs, ce, **kwargs: FinanceService.get_trial_balance(start, end),
         default_end=timezone.now().date(),
     )
 
@@ -91,7 +91,7 @@ def get_financial_analysis_data(request):
     return _handle_report_request(
         request,
         "financial_analysis",
-        lambda start, end, cs, ce: FinanceService.get_financial_analysis(start, end),
+        lambda start, end, cs, ce, **kwargs: FinanceService.get_financial_analysis(start, end),
         default_end=timezone.now().date(),
     )
 
@@ -102,5 +102,5 @@ def get_bi_analytics_data(request):
     return _handle_report_request(
         request,
         "bi_analytics",
-        lambda start, end, cs, ce: FinanceService.get_bi_analytics(start, end),
+        lambda start, end, cs, ce, **kwargs: FinanceService.get_bi_analytics(start, end),
     )

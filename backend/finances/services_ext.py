@@ -19,4 +19,5 @@ class FinanceServiceExt:
         cache_params = {'start': str(start) if start else None, 'end': str(end) if end else None, 'comp_start': str(cstart) if cstart else None, 'comp_end': str(cend) if cend else None}
         if fy_id:
             cache_params['fy'] = str(fy_id)
-        return cache_report(module='finances', endpoint=report_type, params=cache_params, timeout=90, generator=lambda: generator_func(_to_date(start), _to_date(end), _to_date(cstart), _to_date(cend), fiscal_year_id=fy_id))
+        extra_kw = {'fiscal_year_id': fy_id} if fy_id is not None else {}
+        return cache_report(module='finances', endpoint=report_type, params=cache_params, timeout=90, generator=lambda: generator_func(_to_date(start), _to_date(end), _to_date(cstart), _to_date(cend), **extra_kw))
