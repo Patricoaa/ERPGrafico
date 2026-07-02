@@ -1,3 +1,4 @@
+import { useCallback } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { fetchChecklist, updateChecklistItem, type ChecklistItem } from '../api/closingChecklistApi'
 
@@ -13,12 +14,12 @@ export function useClosingChecklist(year: number, enabled: boolean) {
         retry: false,
     })
 
-    const toggleItem = async (item: ChecklistItem) => {
+    const toggleItem = useCallback(async (item: ChecklistItem) => {
         await updateChecklistItem(year, item.id, {
             is_completed: !item.is_completed,
         })
         queryClient.invalidateQueries({ queryKey: ['closing-checklist', year] })
-    }
+    }, [year, queryClient])
 
     const requiredIncomplete = query.data?.filter(i => i.is_required && !i.is_completed) ?? []
     const checklistPassed = requiredIncomplete.length === 0

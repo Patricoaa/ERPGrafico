@@ -320,7 +320,7 @@ export function FiscalYearClosingWizard({
                 </div>
             ) : null
         }
-    ], [preview, year]);
+    ], [preview, year, isChecklistLoading, isChecklistError, checklistItems, checklistPassed, handleToggleChecklist]);
 
     if (isClosed) {
         return (
