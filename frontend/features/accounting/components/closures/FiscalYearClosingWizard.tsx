@@ -2,7 +2,7 @@
 
 import { formatCurrency } from "@/lib/money"
 import React, { useState, useEffect, Suspense, lazy, useMemo, useCallback } from 'react';
-import {SkeletonShell, LabeledContainer, CancelButton, SubmitButton, BaseModal, GenericWizard, type WizardStep} from '@/components/shared';
+import { SkeletonShell, LabeledContainer, CancelButton, SubmitButton, BaseModal, GenericWizard, type WizardStep } from '@/components/shared';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
@@ -18,7 +18,6 @@ import {
 } from 'lucide-react';
 import { type FiscalYearPreviewResult } from '../../types';
 import { cn } from '@/lib/utils';
-import { type ChecklistItem } from '../../api/closingChecklistApi';
 import { useClosingChecklist } from '../../hooks/useClosingChecklist';
 
 // Lazy load TrialBalanceReport
@@ -88,8 +87,8 @@ export function FiscalYearClosingWizard({
                                             item.is_completed
                                                 ? "border-success/30 bg-success/5"
                                                 : item.is_required
-                                                ? "border-border"
-                                                : "border-dashed border-border/50"
+                                                    ? "border-border"
+                                                    : "border-dashed border-border/50"
                                         )}
                                         onClick={() => handleToggleChecklist(item)}
                                     >
@@ -166,8 +165,8 @@ export function FiscalYearClosingWizard({
                             <AlertTitle className="font-bold uppercase">Error de Cuadratura</AlertTitle>
                             <AlertDescription className="font-medium mt-1 flex flex-col gap-3 text-xs">
                                 <p>El Balance de Comprobación presenta descuadres. No se puede proceder con el cierre.</p>
-                                <Button 
-                                    variant="outline" size="sm" 
+                                <Button
+                                    variant="outline" size="sm"
                                     className="w-fit h-7 text-[10px] font-black uppercase tracking-widest bg-destructive/10 border-destructive/30 hover:bg-destructive/20 text-destructive"
                                     onClick={() => setShowTrialBalance(true)}
                                 >
@@ -180,8 +179,8 @@ export function FiscalYearClosingWizard({
                             <AlertTitle className="font-bold uppercase">Balance Cuadrado</AlertTitle>
                             <AlertDescription className="text-success/80 font-medium flex flex-col gap-3 text-xs">
                                 <p>Se ha verificado la integridad de la partida doble para el ejercicio {year}.</p>
-                                <Button 
-                                    variant="outline" size="sm" 
+                                <Button
+                                    variant="outline" size="sm"
                                     className="w-fit h-7 text-[10px] font-black uppercase tracking-widest bg-success/10 border-success/30 hover:bg-success/20 text-success"
                                     onClick={() => setShowTrialBalance(true)}
                                 >
@@ -192,25 +191,25 @@ export function FiscalYearClosingWizard({
                     ) : null}
 
                     {preview && (
-                    <div className="space-y-2">
-                        <p className="text-[10px] font-bold uppercase text-muted-foreground tracking-widest px-1">Validaciones Críticas</p>
-                        <div className="grid grid-cols-1 gap-2">
-                            {Object.entries(preview.validations).map(([key, val]: [string, { passed: boolean; message: string; is_warning?: boolean }]) => (
-                                <div key={key} className={cn(
-                                    "flex items-center justify-between p-3 border rounded-sm transition-colors",
-                                    val.passed ? (val.is_warning ? "bg-warning/5 border-warning/30" : "bg-muted/20 border-border/50") : "bg-destructive/5 border-destructive/20"
-                                )}>
-                                    <span className={cn(
-                                        "text-xs font-medium uppercase tracking-tight",
-                                        val.passed && val.is_warning && "text-warning"
-                                    )}>{val.message}</span>
-                                    {val.passed ? (
-                                        val.is_warning ? <AlertTriangle className="w-4 h-4 text-warning" /> : <CheckCircle2 className="w-4 h-4 text-success" />
-                                    ) : <AlertTriangle className="w-4 h-4 text-destructive" />}
-                                </div>
-                            ))}
+                        <div className="space-y-2">
+                            <p className="text-[10px] font-bold uppercase text-muted-foreground tracking-widest px-1">Validaciones Críticas</p>
+                            <div className="grid grid-cols-1 gap-2">
+                                {Object.entries(preview.validations).map(([key, val]: [string, { passed: boolean; message: string; is_warning?: boolean }]) => (
+                                    <div key={key} className={cn(
+                                        "flex items-center justify-between p-3 border rounded-sm transition-colors",
+                                        val.passed ? (val.is_warning ? "bg-warning/5 border-warning/30" : "bg-muted/20 border-border/50") : "bg-destructive/5 border-destructive/20"
+                                    )}>
+                                        <span className={cn(
+                                            "text-xs font-medium uppercase tracking-tight",
+                                            val.passed && val.is_warning && "text-warning"
+                                        )}>{val.message}</span>
+                                        {val.passed ? (
+                                            val.is_warning ? <AlertTriangle className="w-4 h-4 text-warning" /> : <CheckCircle2 className="w-4 h-4 text-success" />
+                                        ) : <AlertTriangle className="w-4 h-4 text-destructive" />}
+                                    </div>
+                                ))}
+                            </div>
                         </div>
-                    </div>
                     )}
                 </div>
             )
@@ -259,14 +258,14 @@ export function FiscalYearClosingWizard({
             isValid: true,
             component: preview ? (
                 <div className="space-y-6">
-                        <Alert variant="primary">
+                    <Alert variant="primary">
                         <AlertTitle className="font-bold uppercase">Asignación Automática</AlertTitle>
                         <AlertDescription className="text-foreground/80 font-medium text-xs">
                             El sistema identificó la cuenta patrimonial configurada para recibir el resultado.
                         </AlertDescription>
                     </Alert>
 
-                    <LabeledContainer 
+                    <LabeledContainer
                         label="Cuenta de Capital/Utilidades"
                         labelClassName="text-[10px] font-bold uppercase text-muted-foreground tracking-widest px-1"
                     >
@@ -274,10 +273,10 @@ export function FiscalYearClosingWizard({
                             <div className="flex items-center gap-4">
                                 <Scale className="w-5 h-5 text-muted-foreground" />
                                 {preview && (
-                                <div>
-                                    <p className="text-lg font-mono font-bold">{preview.result_account_code}</p>
-                                    <p className="text-xs font-medium text-muted-foreground uppercase tracking-tight">{preview.result_account_name}</p>
-                                </div>
+                                    <div>
+                                        <p className="text-lg font-mono font-bold">{preview.result_account_code}</p>
+                                        <p className="text-xs font-medium text-muted-foreground uppercase tracking-tight">{preview.result_account_name}</p>
+                                    </div>
                                 )}
                             </div>
                             <CheckCircle2 className="w-6 h-6 text-primary opacity-50" />
@@ -330,7 +329,7 @@ export function FiscalYearClosingWizard({
                 title=""
                 footer={
                     <div className="flex flex-col gap-3 w-full">
-                        <SubmitButton 
+                        <SubmitButton
                             className="bg-primary hover:bg-primary/90 text-primary-foreground font-bold uppercase tracking-widest text-[11px] h-11"
                             onClick={() => {
                                 onClose();
@@ -340,7 +339,7 @@ export function FiscalYearClosingWizard({
                         >
                             Iniciar Distribución de Utilidades
                         </SubmitButton>
-                        <CancelButton 
+                        <CancelButton
                             className="text-muted-foreground font-bold uppercase tracking-widest text-[10px]"
                             onClick={onClose}
                         >
@@ -354,7 +353,7 @@ export function FiscalYearClosingWizard({
                     <div>
                         <h3 className="text-2xl font-heading font-black uppercase tracking-tighter">¡Ejercicio {year} Cerrado!</h3>
                         <p className="text-sm text-muted-foreground mt-1 px-10">
-                            La contabilidad ha sido sellada y el asiento de cierre ha sido generado con éxito. 
+                            La contabilidad ha sido sellada y el asiento de cierre ha sido generado con éxito.
                             Ahora puedes proceder con la distribución de utilidades a los socios.
                         </p>
                     </div>
@@ -365,38 +364,38 @@ export function FiscalYearClosingWizard({
 
     return (
         <>
-        <GenericWizard
-            open={isOpen}
-            onOpenChange={onClose}
-            onClose={onClose}
-            icon={Settings2}
-            title={`Cierre del Ejercicio ${year}`}
-            steps={steps}
-            onComplete={handleConfirm}
-            isCompleting={isLoading}
-            completeButtonLabel="Ejecutar Cierre Definitivo"
-            completeButtonIcon={<Wallet className="h-4 w-4 mr-2" />}
-            size="xl"
-            isLoading={!preview && isLoading}
-        />
+            <GenericWizard
+                open={isOpen}
+                onOpenChange={onClose}
+                onClose={onClose}
+                icon={Settings2}
+                title={`Cierre del Ejercicio ${year}`}
+                steps={steps}
+                onComplete={handleConfirm}
+                isCompleting={isLoading}
+                completeButtonLabel="Ejecutar Cierre Definitivo"
+                completeButtonIcon={<Wallet className="h-4 w-4 mr-2" />}
+                size="xl"
+                isLoading={!preview && isLoading}
+            />
 
-        {/* Trial Balance Detail Modal */}
-        <BaseModal
-            open={showTrialBalance}
-            onOpenChange={setShowTrialBalance}
-            icon={Scale}
-            title={`Balance de Comprobación - Ejercicio ${year}`}
-            description="Resumen de sumas y saldos del ejercicio fiscal."
-            size="xl"
-            hideScrollArea={true}
-            contentClassName="p-0"
-        >
-            <div className="h-full flex flex-col p-4">
-                <Suspense fallback={<SkeletonShell isLoading ariaLabel="Cargando..." />}>
-                    <TrialBalanceReport />
-                </Suspense>
-            </div>
-        </BaseModal>
+            {/* Trial Balance Detail Modal */}
+            <BaseModal
+                open={showTrialBalance}
+                onOpenChange={setShowTrialBalance}
+                icon={Scale}
+                title={`Balance de Comprobación - Ejercicio ${year}`}
+                description="Resumen de sumas y saldos del ejercicio fiscal."
+                size="xl"
+                hideScrollArea={true}
+                contentClassName="p-0"
+            >
+                <div className="h-full flex flex-col p-4">
+                    <Suspense fallback={<SkeletonShell isLoading ariaLabel="Cargando..." />}>
+                        <TrialBalanceReport />
+                    </Suspense>
+                </div>
+            </BaseModal>
         </>
     );
 }

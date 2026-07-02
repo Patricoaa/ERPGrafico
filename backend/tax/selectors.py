@@ -10,6 +10,7 @@ class TaxSelectorExt:
             'id': d.id, 'vat_to_pay': due, 'total_paid': paid,
             'is_fully_paid': paid >= due and due > 0 or due == 0,
             'folio_number': d.folio_number,
+            'document': d.document.url if d.document else None,
             'payments': [{'id': p.id, 'payment_date': p.payment_date, 'amount': p.amount, 'payment_method_display': p.get_payment_method_display()} for p in pays]
         }
 

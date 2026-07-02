@@ -8,6 +8,9 @@ from simple_history.models import HistoricalRecords
 
 from accounting.models import JournalEntry
 from core.models import User
+from core.storages import PrivateMediaStorage
+from core.utils import generic_upload_path
+from core.validators import validate_file_extension, validate_file_size
 from treasury.models import TreasuryAccount
 
 
@@ -317,6 +320,15 @@ class F29Declaration(models.Model):
         verbose_name=_("Asiento Contable"),
     )
 
+    document = models.FileField(
+        _("Documento Declaración"),
+        upload_to=generic_upload_path('tax/f29_documents/'),
+        storage=PrivateMediaStorage(),
+        null=True, blank=True,
+        validators=[validate_file_size, validate_file_extension],
+        help_text=_("Formulario F29 (PDF) u otro comprobante")
+    )
+
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     history = HistoricalRecords()
@@ -402,7 +414,10 @@ class F29Payment(models.Model):
         TRANSFER = "TRANSFER", _("Transferencia")
         CHECK = "CHECK", _("Cheque")
         CASH = "CASH", _("Efectivo")
-        CARD = "CARD", _("Tarjeta")
+        CARD = "CARD", _("Tarjeta (Manual)")
+        DEBIT_CARD = "DEBIT_CARD", _("Tarjeta Débito Empresa")
+        CREDIT_CARD = "CREDIT_CARD", _("Tarjeta Crédito Empresa")
+        CARD_TERMINAL = "CARD_TERMINAL", _("Tarjeta (Terminal de cobro)")
         OTHER = "OTHER", _("Otro")
 
     declaration = models.ForeignKey(

@@ -94,3 +94,20 @@ export function useCheckPeriodClosed() {
     mutationFn: (date: string) => taxApi.checkPeriodClosed(date),
   })
 }
+
+export function useUploadF29Document(declarationId: number) {
+  const queryClient = useQueryClient()
+  const { markLocalMutation } = useRealtime()
+
+  return useMutation({
+    mutationFn: (file: File) => taxApi.attachDeclarationDocument(declarationId, file),
+    onSuccess: () => {
+      markLocalMutation()
+      queryClient.invalidateQueries({ queryKey: TAX_KEYS.periods.all() })
+      queryClient.invalidateQueries({ queryKey: TAX_KEYS.declarations.all() })
+    },
+    onError: (error: Error) => {
+      showApiError(error, 'Error al subir documento F29')
+    },
+  })
+}
