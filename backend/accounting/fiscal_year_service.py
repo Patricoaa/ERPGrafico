@@ -711,32 +711,6 @@ class FiscalYearClosingService:
             ),
         }
 
-        # 6. Check all required ClosingChecklist items are completed
-        from accounting.models import ClosingChecklistInstance, ClosingChecklistTemplate
-
-        incomplete_required = ClosingChecklistInstance.objects.filter(
-            fiscal_year__year=year,
-            template__is_required=True,
-            is_completed=False,
-        ).select_related("template")
-        incomplete_count = incomplete_required.count()
-
-        check_all_passed = incomplete_count == 0
-
-        if not check_all_passed:
-            pending_names = [i.template.name for i in incomplete_required]
-            check_message = (
-                "Los siguientes items requeridos del checklist de cierre "
-                "no están completados: " + ", ".join(pending_names) + "."
-            )
-        else:
-            check_message = "Todos los items del checklist de cierre están completados."
-
-        validations["checklist_completed"] = {
-            "passed": check_all_passed,
-            "message": check_message,
-        }
-
         return validations
 
     @staticmethod
