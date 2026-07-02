@@ -164,7 +164,7 @@ export function DomainCard({
                                     </span>
                                     <span className="text-muted-foreground/40 mx-1">×</span>
                                 </span>
-                                <span className="text-foreground/70 truncate max-w-[220px]">
+                                <span className="text-xs text-muted-foreground truncate max-w-[220px]">
                                     {line.product_name || line.description || 'Producto'}
                                 </span>
                             </div>
