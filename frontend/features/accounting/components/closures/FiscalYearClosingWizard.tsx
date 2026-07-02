@@ -1,11 +1,12 @@
 "use client"
 
 import { formatCurrency } from "@/lib/money"
-import React, { useState, useEffect, Suspense, lazy, useMemo } from 'react';
+import React, { useState, useEffect, Suspense, lazy, useMemo, useCallback } from 'react';
 import {SkeletonShell, LabeledContainer, CancelButton, SubmitButton, BaseModal, GenericWizard, type WizardStep} from '@/components/shared';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
     ShieldCheck,
     CheckCircle2,
@@ -13,10 +14,13 @@ import {
     Scale,
     Settings2,
     PieChart,
-    Wallet
+    Wallet,
+    ClipboardList,
 } from 'lucide-react';
 import { type FiscalYearPreviewResult } from '../../types';
 import { cn } from '@/lib/utils';
+import { fetchChecklist, updateChecklistItem, type ChecklistItem } from '../../api/closingChecklistApi';
+import { useQuery } from '@tanstack/react-query';
 
 // Lazy load TrialBalanceReport
 const TrialBalanceReport = lazy(() => import('../reports/TrialBalanceReport').then(m => ({ default: m.TrialBalanceReport })));
@@ -41,6 +45,12 @@ export function FiscalYearClosingWizard({
     const [showTrialBalance, setShowTrialBalance] = useState(false);
     const [isClosed, setIsClosed] = useState(false);
 
+    const { data: checklistItems, isLoading: isChecklistLoading, refetch: refetchChecklist } = useQuery({
+        queryKey: ['closing-checklist', year],
+        queryFn: () => fetchChecklist(year),
+        enabled: isOpen && year > 0,
+    });
+
     // Reset state when modal opens
     useEffect(() => {
         if (isOpen) {
@@ -48,12 +58,113 @@ export function FiscalYearClosingWizard({
         }
     }, [isOpen]);
 
+    const handleToggleChecklist = useCallback(async (item: ChecklistItem) => {
+        await updateChecklistItem(year, item.id, {
+            is_completed: !item.is_completed,
+        });
+        refetchChecklist();
+    }, [year, refetchChecklist]);
+
+    const requiredIncomplete = checklistItems?.filter(i => i.is_required && !i.is_completed) ?? [];
+    const checklistPassed = requiredIncomplete.length === 0;
+
     const handleConfirm = async () => {
         await onConfirm();
         setIsClosed(true);
     };
 
     const steps: WizardStep[] = useMemo(() => [
+        {
+            id: 0,
+            title: "Checklist de Cierre",
+            isValid: checklistPassed,
+            component: (
+                <div className="space-y-4">
+                    {isChecklistLoading ? (
+                        <div className="flex items-center justify-center py-8">
+                            <span className="text-xs text-muted-foreground">Cargando checklist...</span>
+                        </div>
+                    ) : checklistItems && checklistItems.length > 0 ? (
+                        <div className="space-y-3">
+                            <p className="text-[10px] font-bold uppercase text-muted-foreground tracking-widest px-1">
+                                Verifique que los siguientes items estén completados antes del cierre
+                            </p>
+                            <div className="space-y-1">
+                                {checklistItems.map((item) => (
+                                    <div
+                                        key={item.id}
+                                        className={cn(
+                                            "flex items-start gap-3 p-3 border rounded-sm transition-colors cursor-pointer hover:bg-muted/30",
+                                            item.is_completed
+                                                ? "border-success/30 bg-success/5"
+                                                : item.is_required
+                                                ? "border-border"
+                                                : "border-dashed border-border/50"
+                                        )}
+                                        onClick={() => handleToggleChecklist(item)}
+                                    >
+                                        <Checkbox
+                                            checked={item.is_completed}
+                                            onCheckedChange={() => handleToggleChecklist(item)}
+                                            className="mt-0.5"
+                                        />
+                                        <div className="flex-1 min-w-0">
+                                            <div className="flex items-center gap-2">
+                                                <span className={cn(
+                                                    "text-xs font-medium",
+                                                    item.is_completed && "line-through text-muted-foreground"
+                                                )}>
+                                                    {item.name}
+                                                </span>
+                                                <span className="text-[8px] uppercase tracking-wider px-1.5 py-0.5 rounded-sm bg-muted text-muted-foreground">
+                                                    {item.category_display}
+                                                </span>
+                                                {item.is_required && (
+                                                    <span className="text-[8px] uppercase tracking-wider text-destructive">*</span>
+                                                )}
+                                            </div>
+                                            {item.description && (
+                                                <p className="text-[10px] text-muted-foreground mt-0.5">{item.description}</p>
+                                            )}
+                                            {item.notes && (
+                                                <p className="text-[9px] text-muted-foreground/60 mt-1 italic">Nota: {item.notes}</p>
+                                            )}
+                                        </div>
+                                        {item.is_completed ? (
+                                            <CheckCircle2 className="w-4 h-4 text-success shrink-0 mt-0.5" />
+                                        ) : item.is_required ? (
+                                            <AlertTriangle className="w-4 h-4 text-muted-foreground/40 shrink-0 mt-0.5" />
+                                        ) : null}
+                                    </div>
+                                ))}
+                            </div>
+                            {!checklistPassed && (
+                                <Alert variant="warning" className="mt-4">
+                                    <AlertTriangle className="w-4 h-4" />
+                                    <AlertTitle className="text-xs font-bold uppercase">Checklist incompleto</AlertTitle>
+                                    <AlertDescription className="text-[10px]">
+                                        Complete todos los items requeridos antes de continuar con el cierre.
+                                    </AlertDescription>
+                                </Alert>
+                            )}
+                            {checklistPassed && (
+                                <Alert variant="success" className="mt-4">
+                                    <CheckCircle2 className="w-4 h-4" />
+                                    <AlertTitle className="text-xs font-bold uppercase">Checklist completado</AlertTitle>
+                                    <AlertDescription className="text-[10px]">
+                                        Todos los items requeridos están verificados. Puede continuar.
+                                    </AlertDescription>
+                                </Alert>
+                            )}
+                        </div>
+                    ) : (
+                        <div className="flex items-center justify-center py-8">
+                            <span className="text-xs text-muted-foreground">No hay items de checklist configurados.</span>
+                        </div>
+                    )}
+                </div>
+            ),
+        },
         {
             id: 1,
             title: "Auditoría de Integridad",
