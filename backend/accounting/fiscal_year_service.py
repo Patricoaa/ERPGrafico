@@ -235,11 +235,14 @@ class FiscalYearClosingService:
             )
         # If net_result == 0, no equity line needed (income == expenses)
 
-        # Bulk create items
-        JournalItem.objects.bulk_create(items)
-
-        # Post the entry
-        JournalEntryService.post_entry(closing_entry)
+        if items:
+            # Bulk create items and post the entry
+            JournalItem.objects.bulk_create(items)
+            JournalEntryService.post_entry(closing_entry)
+        else:
+            # No P&L movements to close — delete the empty draft and proceed without a closing entry
+            closing_entry.delete()
+            closing_entry = None
 
         # Snapshot account→report category mappings for historical reports
         leaf_accounts = Account.objects.filter(children__isnull=True)
