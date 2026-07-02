@@ -28,11 +28,11 @@ const HUB_STAGE_LABELS: Record<string, string> = {
 type TaskGroup = 'hub' | 'document' | 'credit' | 'accounting' | 'other'
 
 const GROUP_LABELS: Record<TaskGroup, string> = {
-    hub: 'Flujo Hub',
-    document: 'Documentos',
-    credit: 'Créditos',
-    accounting: 'Contabilidad',
-    other: 'Otras',
+    hub: 'Procesar Etapa',
+    document: 'Aprobar Documento',
+    credit: 'Evaluar Crédito',
+    accounting: 'Cierre Contable',
+    other: 'Otras Acciones',
 }
 
 function getTaskGroup(task: Task): TaskGroup {
