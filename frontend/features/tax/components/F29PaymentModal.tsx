@@ -80,7 +80,7 @@ export function F29PaymentModal({
                                 ? "bg-success/10 border-success/20"
                                 : "bg-primary/5 border-primary/10"
                         )}>
-                            <div className="text-[10px] uppercase font-bold text-muted-foreground tracking-wider mb-1">Salgo Pendiente</div>
+                            <div className="text-[10px] uppercase font-bold text-muted-foreground tracking-wider mb-1">Saldo Pendiente</div>
                             <div className={cn(
                                 "text-xl font-bold font-mono",
                                 isFullyPaid ? "text-success" : "text-primary"

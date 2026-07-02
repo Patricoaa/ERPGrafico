@@ -37,4 +37,13 @@ export const taxApi = {
     /* Payments */
     createPayment: (data: Record<string, unknown>) =>
         api.post('/tax/payments/', data).then(r => r.data),
+
+    /* Documents */
+    attachDeclarationDocument: (declarationId: number, file: File) => {
+        const formData = new FormData()
+        formData.append('document', file)
+        return api.post(`/tax/f29-declarations/${declarationId}/attach_document/`, formData, {
+            headers: { 'Content-Type': undefined },
+        }).then(r => r.data)
+    },
 }

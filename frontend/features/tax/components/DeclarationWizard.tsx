@@ -3,7 +3,7 @@
 import { useState, useEffect, useMemo, useRef } from "react"
 import { Button } from "@/components/ui/button"
 
-import { BaseModal, FormSection, GenericWizard, LabeledInput, MoneyDisplay, type WizardStep } from '@/components/shared'
+import { BaseModal, Drawer, FormSection, GenericWizard, LabeledInput, MoneyDisplay, type WizardStep } from '@/components/shared'
 import {
     Calculator,
     CheckCircle2,
@@ -203,7 +203,7 @@ export function DeclarationWizard({ isOpen, onOpenChange, periodId, onSuccess, e
             isValid: true,
             component: (
                 <div className="space-y-10 max-w-4xl mx-auto pb-6">
-                    <div className="grid grid-cols-2 gap-12">
+                    <div className="flex flex-col gap-12">
                         <section className="space-y-8">
                             <FormSection title="Débito Fiscal" icon={ArrowUpRight} />
                             <div className="space-y-4 bg-muted/5 p-6 rounded-md border border-border/50">
@@ -365,24 +365,29 @@ export function DeclarationWizard({ isOpen, onOpenChange, periodId, onSuccess, e
             title: "Resumen y Declaración",
             isValid: true,
             component: (
-                <div className="max-w-4xl mx-auto pb-6 space-y-0">
-                    <div className="flex justify-between items-center py-5 border-b border-border/30">
-                        <span className="text-sm text-muted-foreground">IVA Determinado</span>
-                        <MoneyDisplay amount={vatToPay} showColor={false} className="text-lg font-bold" />
-                    </div>
-                    <div className="flex justify-between items-center py-5 border-b border-border/30">
-                        <span className="text-sm text-muted-foreground">PPM + Retenciones</span>
-                        <MoneyDisplay amount={otherTaxes} showColor={false} className="text-lg font-bold" />
-                    </div>
-                    {vatRemanent > 0 && (
-                        <div className="flex justify-between items-center py-5 border-b border-border/30">
-                            <span className="text-xs font-black uppercase text-success">Nuevo Remanente a Favor</span>
-                            <MoneyDisplay amount={vatRemanent} className="font-black text-success" />
+                <div className="max-w-4xl mx-auto pb-6 space-y-8">
+                    <FormSection title="Resumen de Impuestos" icon={Calculator} />
+                    <div className="space-y-4 bg-muted/5 p-6 rounded-md border border-border/50">
+                        <div className="flex justify-between items-center">
+                            <span className="text-xs uppercase font-bold text-muted-foreground/70">IVA Determinado</span>
+                            <MoneyDisplay amount={vatToPay} showColor={false} className="font-bold" />
                         </div>
-                    )}
-                    <div className="flex flex-col items-center justify-center py-10">
-                        <span className="text-[10px] font-black uppercase tracking-[0.3em] text-primary/60 mb-3">Total a Pagar SII</span>
-                        <MoneyDisplay amount={finalToPay} className="text-5xl font-black text-primary" />
+                        <div className="flex justify-between items-center">
+                            <span className="text-xs uppercase font-bold text-muted-foreground/70">PPM + Retenciones</span>
+                            <MoneyDisplay amount={otherTaxes} showColor={false} className="font-bold" />
+                        </div>
+                        {vatRemanent > 0 && (
+                            <div className="flex justify-between items-center">
+                                <span className="text-xs font-black uppercase text-success">Nuevo Remanente a Favor</span>
+                                <MoneyDisplay amount={vatRemanent} className="font-black text-success" />
+                            </div>
+                        )}
+                        <div className="pt-4 space-y-2 border-t border-border/30">
+                            <div className="flex justify-between items-end">
+                                <span className="text-xs font-black uppercase text-foreground">Total a Pagar SII</span>
+                                <MoneyDisplay amount={finalToPay} className="text-2xl font-black text-primary" />
+                            </div>
+                        </div>
                     </div>
                 </div>
             )
@@ -391,12 +396,14 @@ export function DeclarationWizard({ isOpen, onOpenChange, periodId, onSuccess, e
 
     if (isClosed) {
         return (
-            <BaseModal 
+            <Drawer
                 open={isOpen} 
                 onOpenChange={onOpenChange} 
-                size="xl" 
-                showCloseButton={false}
+                defaultSize="600px"
+                side="left"
+                boundary="embedded"
                 title={hadPaymentDue ? "Declaración Registrada" : "Ciclo Finalizado"}
+                contentClassName="p-6"
             >
                 <div className="flex flex-col items-center justify-center py-20 text-center space-y-8 animate-in zoom-in-95 duration-500">
                     <CheckCircle2 className="h-12 w-12" />
@@ -413,7 +420,7 @@ export function DeclarationWizard({ isOpen, onOpenChange, periodId, onSuccess, e
                     </div>
                     <Button onClick={() => onOpenChange(false)} className="px-10 h-11 font-black uppercase tracking-widest text-[11px]">Finalizar Proceso</Button>
                 </div>
-            </BaseModal>
+            </Drawer>
         )
     }
 
@@ -436,7 +443,10 @@ export function DeclarationWizard({ isOpen, onOpenChange, periodId, onSuccess, e
             isCompleting={isLoading}
             completeButtonLabel="Registrar y Finalizar"
             completeButtonIcon={<CheckCircle2 className="h-4 w-4 mr-2" />}
-            size="xl"
+            size="md"
+            surface="drawer"
+            drawerSide="left"
+            drawerBoundary="embedded"
         />
     )
 }

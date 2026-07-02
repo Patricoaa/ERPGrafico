@@ -2,7 +2,8 @@ from core.api.pagination import StandardResultsSetPagination
 from core.idempotency import idempotent_endpoint
 from django.core.exceptions import ValidationError as DjangoValidationError
 from django.utils import timezone
-from rest_framework import status, viewsets
+from rest_framework import status, viewsets, exceptions
+from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework.decorators import action
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
@@ -134,6 +135,18 @@ class F29DeclarationViewSet(viewsets.ModelViewSet):
         from .selectors import TaxSelectorExt
         return Response(TaxSelectorExt.get_declaration_documents(self.get_object()))
 
+    @action(detail=True, methods=['post'], parser_classes=[MultiPartParser, FormParser])
+    def attach_document(self, request, pk=None):
+        instance = self.get_object()
+        uploaded_file = request.FILES.get('document')
+
+        if not uploaded_file:
+            return Response({'error': 'No file provided'}, status=status.HTTP_400_BAD_REQUEST)
+
+        instance.document = uploaded_file
+        instance.save(update_fields=['document'])
+        return Response(self.get_serializer(instance).data)
+
 
 class F29PaymentViewSet(viewsets.ModelViewSet):
     pagination_class = StandardResultsSetPagination
@@ -157,6 +170,8 @@ class F29PaymentViewSet(viewsets.ModelViewSet):
             return Response(
                 {"error": getattr(e, "detail", str(e))}, status=status.HTTP_400_BAD_REQUEST
             )
+        except exceptions.APIException:
+            raise
         except Exception as e:
             return Response({"error": f"Error inesperado: {str(e)}"}, status=status.HTTP_400_BAD_REQUEST)
 

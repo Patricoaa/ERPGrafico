@@ -15,6 +15,7 @@ export interface TaxPeriod {
         total_paid: number
         is_fully_paid: boolean
         folio_number?: string
+        document?: string | null
         payments?: TaxPayment[]
     }
 }
@@ -24,6 +25,7 @@ export interface TaxDeclaration {
     tax_period_year: number
     tax_period_month: number
     folio_number?: string
+    document?: string | null
     declaration_date?: string
     vat_to_pay: number
     total_paid: number
@@ -49,6 +51,13 @@ export interface TaxPayment {
     payment_method_display: string
 }
 
+export interface DteBreakdownItem {
+    dte_type: string
+    dte_type_display: string
+    total: number
+    count: number
+}
+
 export interface TaxCalculationData {
     year: number
     month: number
@@ -64,6 +73,10 @@ export interface TaxCalculationData {
     tax_rate: number
     credit_notes_taxed?: number
     purchase_credit_notes?: number
+    sales_taxed_by_dte?: DteBreakdownItem[]
+    sales_exempt_by_dte?: DteBreakdownItem[]
+    purchases_taxed_by_dte?: DteBreakdownItem[]
+    purchases_exempt_by_dte?: DteBreakdownItem[]
     drafts_summary?: {
         invoices: {
             id: number

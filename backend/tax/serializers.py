@@ -126,6 +126,7 @@ class F29DeclarationSerializer(serializers.ModelSerializer):
             "vat_credit_balance",
             "is_registered",
             # System
+            "document",
             "journal_entry",
             "created_at",
             "updated_at",

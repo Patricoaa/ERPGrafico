@@ -29,7 +29,7 @@ export function CombinedPeriodCard({
     month, year,
     accountingPeriod: acct, taxPeriod: tax,
     onClosePeriod, onReopenPeriod, isPeriodActionLoading,
-    onCloseTaxPeriod,     onReopenTaxPeriod, onOpenDeclaration, isTaxActionLoading, onPayF29,
+    onCloseTaxPeriod, onReopenTaxPeriod, onOpenDeclaration, isTaxActionLoading, onPayF29,
 }: CombinedPeriodCardProps) {
     const acctClosed = acct?.status === 'CLOSED'
     const taxClosed = tax?.status === 'CLOSED'
@@ -60,7 +60,7 @@ export function CombinedPeriodCard({
 
                 <div className="space-y-1">
                     {/* Contable row */}
-                    <div className="flex items-center justify-between py-1 px-1.5 rounded-sm border-l-2 border-l-primary/10 pl-2 min-h-[28px]">
+                    <div className="flex items-center justify-between py-1 px-1.5 rounded-sm min-h-[28px]">
                         <div className="flex items-center gap-1.5 min-w-0">
                             <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground w-11 shrink-0">Cont</span>
                             {acct ? (
@@ -102,13 +102,13 @@ export function CombinedPeriodCard({
                     </div>
 
                     {/* F29 row */}
-                    <div className="flex items-center justify-between py-1 px-1.5 rounded-sm border-l-2 border-l-warning/10 pl-2 min-h-[28px]">
+                    <div className="flex items-center justify-between py-1 px-1.5 rounded-sm min-h-[28px]">
                         <div className="flex items-center gap-1.5 min-w-0">
                             <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground w-11 shrink-0">F29</span>
                             {tax ? (
                                 <StatusBadge
-                                    status={taxClosed ? 'CLOSED' : hasDeclaration ? 'UNDER_REVIEW' : 'OPEN'}
-                                    label={taxClosed ? 'Cerrado' : hasDeclaration ? 'Declarado' : 'Pendiente'}
+                                    status={taxClosed ? 'CLOSED' : hasDeclaration ? (isFullyPaid && requiresPayment ? 'PAID' : 'UNDER_REVIEW') : 'OPEN'}
+                                    label={taxClosed ? 'Cerrado' : hasDeclaration ? (isFullyPaid && requiresPayment ? 'Pagado' : 'Declarado') : 'Pendiente'}
                                     variant="dot"
                                     size="xs"
                                 />
@@ -154,6 +154,16 @@ export function CombinedPeriodCard({
                                     </IconButton>
                                 </TooltipTrigger>
                                 <TooltipContent side="top"><p className="text-xs">Reabrir F29</p></TooltipContent>
+                            </Tooltip>
+                        )}
+                        {tax?.declaration_summary?.document && (
+                            <Tooltip>
+                                <TooltipTrigger asChild>
+                                    <a href={tax.declaration_summary.document} target="_blank" rel="noopener noreferrer" className="h-7 w-7 inline-flex items-center justify-center rounded-md hover:bg-accent hover:text-accent-foreground text-muted-foreground transition-colors">
+                                        <FileText className="w-3.5 h-3.5" />
+                                    </a>
+                                </TooltipTrigger>
+                                <TooltipContent side="top"><p className="text-xs">Ver comprobante F29</p></TooltipContent>
                             </Tooltip>
                         )}
                         {tax && taxClosed && acctClosed && (

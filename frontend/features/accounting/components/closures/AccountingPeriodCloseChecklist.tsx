@@ -175,8 +175,8 @@ export function AccountingPeriodCloseChecklistModal({
                                         item.passed
                                             ? "border-success/30 bg-success/5"
                                             : item.critical
-                                            ? "border-destructive/30 bg-destructive/5"
-                                            : "border-warning/30 bg-warning/5"
+                                                ? "border-destructive/30 bg-destructive/5"
+                                                : "border-warning/30 bg-warning/5"
                                     )}
                                 >
                                     {item.passed ? (
@@ -212,7 +212,7 @@ export function AccountingPeriodCloseChecklistModal({
 
                         {canClose ? (
                             <Alert variant="success" className="mt-2">
-                                <CheckCircle2 className="w-4 h-4" />
+
                                 <AlertTitle className="text-xs font-bold uppercase">Listo para cerrar</AlertTitle>
                                 <AlertDescription className="text-[10px]">
                                     Todos los requisitos obligatorios están cumplidos. Puede proceder con el cierre del período contable.
@@ -220,7 +220,7 @@ export function AccountingPeriodCloseChecklistModal({
                             </Alert>
                         ) : (
                             <Alert variant="warning" className="mt-2">
-                                <AlertTriangle className="w-4 h-4" />
+
                                 <AlertTitle className="text-xs font-bold uppercase">Hay pendientes que resolver</AlertTitle>
                                 <AlertDescription className="text-[10px]">
                                     Complete los items obligatorios marcados en rojo antes de cerrar el período.
