@@ -264,6 +264,10 @@ class FiscalYearClosingService:
         fiscal_year.notes = notes
         fiscal_year.save()
 
+        # Automáticamente generar el asiento de apertura para el siguiente ejercicio
+        # que re-clasificará las utilidades del ejercicio cerrado a resultados acumulados.
+        FiscalYearClosingService.generate_opening_entry(year, user)
+
         return fiscal_year
 
     # ---------------------------------------------------------------
@@ -412,6 +416,10 @@ class FiscalYearClosingService:
         opening_entry.is_manual = False
         opening_entry.save()
 
+        settings = AccountingSettings.get_solo()
+        current_earnings_acc = settings.partner_current_year_earnings_account
+        retained_earnings_acc = settings.partner_retained_earnings_account
+
         items = []
 
         for account in leaf_accounts:
@@ -431,6 +439,12 @@ class FiscalYearClosingService:
             if total_debit == 0 and total_credit == 0:
                 continue
 
+            target_account = retained_earnings_acc if account == current_earnings_acc and retained_earnings_acc else account
+            
+            label = f"Apertura {target_account.code} {target_account.name}"
+            if account == current_earnings_acc and retained_earnings_acc:
+                label = f"Traslado de Utilidad Ej. {year}"
+
             # For balance sheet accounts, the opening entry carries the
             # accumulated balance forward
             if account.account_type in [AccountType.ASSET]:
@@ -440,8 +454,8 @@ class FiscalYearClosingService:
                     items.append(
                         JournalItem(
                             entry=opening_entry,
-                            account=account,
-                            label=f"Apertura {account.code} {account.name}",
+                            account=target_account,
+                            label=label,
                             debit=net,
                             credit=Decimal("0"),
                         )
@@ -450,8 +464,8 @@ class FiscalYearClosingService:
                     items.append(
                         JournalItem(
                             entry=opening_entry,
-                            account=account,
-                            label=f"Apertura {account.code} {account.name}",
+                            account=target_account,
+                            label=label,
                             debit=Decimal("0"),
                             credit=abs(net),
                         )
@@ -463,8 +477,8 @@ class FiscalYearClosingService:
                     items.append(
                         JournalItem(
                             entry=opening_entry,
-                            account=account,
-                            label=f"Apertura {account.code} {account.name}",
+                            account=target_account,
+                            label=label,
                             debit=Decimal("0"),
                             credit=net,
                         )
@@ -473,8 +487,8 @@ class FiscalYearClosingService:
                     items.append(
                         JournalItem(
                             entry=opening_entry,
-                            account=account,
-                            label=f"Apertura {account.code} {account.name}",
+                            account=target_account,
+                            label=label,
                             debit=abs(net),
                             credit=Decimal("0"),
                         )
