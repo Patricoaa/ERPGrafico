@@ -172,7 +172,7 @@ export function TreasuryPhase({
                     }
                 }) as PhaseDocument[]}
                 onViewDetail={openDetails}
-                actions={(registry.payments?.actions || []).filter((a: { id: string }) => !a.id.includes('view-'))}
+                actions={(registry.payments?.actions || []).filter((a: { id: string }) => !a.id.includes('view-') && a.id !== 'payment-history')}
                 emptyMessage="Sin pagos registrados"
                 order={activeDoc}
                 userPermissions={userPermissions}

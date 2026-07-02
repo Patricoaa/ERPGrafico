@@ -167,95 +167,7 @@ export function PhaseCard({
                     </h3>
                 </div>
 
-                {/* Unified Action Icons — Primary + Shortcuts */}
-                <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
-                    {/* Primary actions — prominent style */}
-                    {!isSuccess && categorizedActions.primary.map((action: Action<Order>, idx: number) => {
-                        const disabled = action.isDisabled?.(order) || false
-                        let tooltipText = action.label
-                        if (disabled && action.disabledTooltip) {
-                            tooltipText = typeof action.disabledTooltip === 'function'
-                                ? action.disabledTooltip(order)
-                                : action.disabledTooltip
-                        }
 
-                        return (
-                            <Tooltip key={`p-${idx}`}>
-                                <TooltipTrigger asChild>
-                                    <div className={disabled ? "cursor-not-allowed opacity-50" : ""}>
-                                        <Button
-                                            variant="ghost"
-                                            size="icon"
-                                            disabled={disabled}
-                                            className={cn(
-                                                "h-7 w-7 rounded transition-all active:scale-90",
-                                                "border-2 border-primary/40 bg-primary/10 text-primary",
-                                                "hover:bg-primary/20 hover:border-primary/60",
-                                                action.variant === 'destructive' && "border-destructive/40 bg-destructive/10 text-destructive hover:bg-destructive/20 hover:border-destructive/60",
-                                                disabled && "pointer-events-none"
-                                            )}
-                                            onClick={(e) => {
-                                                e.stopPropagation();
-                                                triggerAction(action.id);
-                                            }}
-                                        >
-                                            <action.icon className="h-3.5 w-3.5" />
-                                        </Button>
-                                    </div>
-                                </TooltipTrigger>
-                                <TooltipContent>
-                                    <p>{tooltipText}</p>
-                                </TooltipContent>
-                            </Tooltip>
-                        )
-                    })}
-
-                    {/* Separator between primary and secondary if both exist */}
-                    {!isSuccess && categorizedActions.primary.length > 0 && categorizedActions.secondary.length > 0 && (
-                        <div className="h-4 w-[1px] bg-border/20 mx-0.5" />
-                    )}
-
-                    {/* Secondary/shortcut actions — ghost style */}
-                    {categorizedActions.secondary.map((action: Action<Order>, idx: number) => {
-                        const disabled = action.isDisabled?.(order) || false
-                        let tooltipText = action.label
-                        if (disabled && action.disabledTooltip) {
-                            tooltipText = typeof action.disabledTooltip === 'function'
-                                ? action.disabledTooltip(order)
-                                : action.disabledTooltip
-                        }
-
-                        return (
-                            <Tooltip key={`s-${idx}`}>
-                                <TooltipTrigger asChild>
-                                    <div className={disabled ? "cursor-not-allowed opacity-50" : ""}>
-                                        <Button
-                                            variant="ghost"
-                                            size="icon"
-                                            disabled={disabled}
-                                            className={cn(
-                                                "h-7 w-7 rounded transition-all active:scale-90 border border-border",
-                                                "bg-transparent hover:bg-accent",
-                                                (action.id.includes('note')) && "text-warning border-warning/20 hover:bg-warning/10 hover:border-warning/40",
-                                                action.id === 'payment-history' && "text-primary border-primary/20 hover:bg-primary/10 hover:border-primary/40",
-                                                disabled && "pointer-events-none"
-                                            )}
-                                            onClick={(e) => {
-                                                e.stopPropagation();
-                                                triggerAction(action.id);
-                                            }}
-                                        >
-                                            <action.icon className="h-3.5 w-3.5" />
-                                        </Button>
-                                    </div>
-                                </TooltipTrigger>
-                                <TooltipContent>
-                                    <p>{tooltipText}</p>
-                                </TooltipContent>
-                            </Tooltip>
-                        )
-                    })}
-                </div>
 
                 {/* Chevron for Accordion */}
                 {collapsible && (
@@ -376,6 +288,92 @@ export function PhaseCard({
                                 {children}
                             </div>
                         )}
+
+                        {/* Actions (Primary & Secondary, 1 row per action) */}
+                        <div className="flex flex-col gap-1 mt-1">
+                            {/* Primary Actions */}
+                            {!isSuccess && categorizedActions.primary.map((action: Action<Order>, idx: number) => {
+                                const disabled = action.isDisabled?.(order) || false
+                                let tooltipText = action.label
+                                if (disabled && action.disabledTooltip) {
+                                    tooltipText = typeof action.disabledTooltip === 'function'
+                                        ? action.disabledTooltip(order)
+                                        : action.disabledTooltip
+                                }
+
+                                return (
+                                    <Tooltip key={`p-${idx}`}>
+                                        <TooltipTrigger asChild>
+                                            <div className={disabled ? "cursor-not-allowed opacity-50 w-full" : "w-full"}>
+                                                <Button
+                                                    variant="ghost"
+                                                    size="sm"
+                                                    disabled={disabled}
+                                                    className={cn(
+                                                        "w-full justify-center gap-2 h-8 text-xs font-medium",
+                                                        "text-primary hover:bg-primary/10 hover:text-primary",
+                                                        action.variant === 'destructive' && "text-destructive hover:bg-destructive/10 hover:text-destructive",
+                                                        disabled && "pointer-events-none"
+                                                    )}
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        triggerAction(action.id);
+                                                    }}
+                                                >
+                                                    <action.icon className="h-4 w-4 shrink-0" />
+                                                    <span className="truncate">{action.label}</span>
+                                                </Button>
+                                            </div>
+                                        </TooltipTrigger>
+                                        <TooltipContent>
+                                            <p>{tooltipText}</p>
+                                        </TooltipContent>
+                                    </Tooltip>
+                                )
+                            })}
+
+                            {/* Secondary Actions */}
+                            {categorizedActions.secondary.map((action: Action<Order>, idx: number) => {
+                                const disabled = action.isDisabled?.(order) || false
+                                let tooltipText = action.label
+                                if (disabled && action.disabledTooltip) {
+                                    tooltipText = typeof action.disabledTooltip === 'function'
+                                        ? action.disabledTooltip(order)
+                                        : action.disabledTooltip
+                                }
+
+                                return (
+                                    <Tooltip key={`s-${idx}`}>
+                                        <TooltipTrigger asChild>
+                                            <div className={disabled ? "cursor-not-allowed opacity-50 w-full" : "w-full"}>
+                                                <Button
+                                                    variant="ghost"
+                                                    size="sm"
+                                                    disabled={disabled}
+                                                    className={cn(
+                                                        "w-full justify-center gap-2 h-8 text-xs text-muted-foreground hover:bg-accent hover:text-accent-foreground",
+                                                        action.id === 'create-credit-note' && "text-destructive hover:text-destructive hover:bg-destructive/10",
+                                                        action.id === 'create-debit-note' && "text-primary hover:text-primary hover:bg-primary/10",
+                                                        action.id === 'payment-history' && "text-primary hover:text-primary hover:bg-primary/10",
+                                                        disabled && "pointer-events-none"
+                                                    )}
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        triggerAction(action.id);
+                                                    }}
+                                                >
+                                                    <action.icon className="h-4 w-4 shrink-0" />
+                                                    <span className="truncate">{action.label}</span>
+                                                </Button>
+                                            </div>
+                                        </TooltipTrigger>
+                                        <TooltipContent>
+                                            <p>{tooltipText}</p>
+                                        </TooltipContent>
+                                    </Tooltip>
+                                )
+                            })}
+                        </div>
                     </div>
                 </div>
             </div>
