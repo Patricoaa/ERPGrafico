@@ -195,10 +195,10 @@ class InvoiceViewSet(NoDestroyModelMixin, viewsets.ModelViewSet, AuditHistoryMix
     @action(detail=True, methods=["get"])
     def cancel_impact(self, request, pk=None):
         """Preview what will happen when cancelling/annulling this invoice."""
-        from .selectors import InvoiceSelector
+        from .selectors import InvoiceSelectorExt
 
         invoice = self.get_object()
-        impact = InvoiceSelector.get_cancel_impact(invoice)
+        impact = InvoiceSelectorExt.get_cancel_impact(invoice)
         return Response(impact)
 
     @action(detail=True, methods=["post"])
