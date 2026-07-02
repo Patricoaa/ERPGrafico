@@ -151,7 +151,10 @@ export async function generateProformaPayroll(data: { employee: number; period_y
 }
 
 export async function triggerDraftPayrolls(): Promise<{ detail: string; task_id: string }> {
-  const res = await api.post('/hr/payrolls/create_draft_payrolls/')
+  const idempotencyKey = crypto.randomUUID()
+  const res = await api.post('/hr/payrolls/create_draft_payrolls/', undefined, {
+    headers: { 'Idempotency-Key': idempotencyKey },
+  })
   return res.data
 }
 
