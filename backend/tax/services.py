@@ -100,9 +100,11 @@ class F29CalculationService:
         net_taxed_sales = sales_taxed + debit_notes_taxed - credit_notes_taxed
         net_taxed_purchases = purchases_taxed + purchase_debit_notes - purchase_credit_notes
 
-        # Get accounting settings for VAT rate
+        # Get accounting settings for VAT rate and carryforward account
+        from accounting.models import AccountingSettings
         from accounting.utils import get_default_vat_rate
 
+        settings = AccountingSettings.get_solo()
         tax_rate = get_default_vat_rate()
 
         # Calculate VAT
