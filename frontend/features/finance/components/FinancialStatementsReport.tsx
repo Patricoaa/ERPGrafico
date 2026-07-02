@@ -38,11 +38,13 @@ function SkeletonReportSection() {
 interface FinancialStatementsReportProps {
     activeTab: string
     onPeriodLabelChange?: (label: string) => void
+    hideToolbar?: boolean
+    hideChart?: boolean
 }
 
 import { useStatements } from "@/features/finance/hooks/useStatements"
 
-export function FinancialStatementsReport({ activeTab, onPeriodLabelChange }: FinancialStatementsReportProps) {
+export function FinancialStatementsReport({ activeTab, onPeriodLabelChange, hideToolbar, hideChart }: FinancialStatementsReportProps) {
     const [showComparison, setShowComparison] = useState(false)
     const { open: mappingOpen, onOpenChange: setMappingOpen, resolvedMappingType, openDrawer: openMappingDrawer } = useMappingDrawer(
         activeTab === 'pl' ? 'is' : activeTab === 'cf' ? 'cf' : 'bs'
@@ -178,18 +180,20 @@ export function FinancialStatementsReport({ activeTab, onPeriodLabelChange }: Fi
     return (
         <PageContainer scrollable className="px-0">
             <div className="w-full pt-4">
-                <ReportToolbar
-                    headerFormat={headerFormat}
-                    onHeaderFormatChange={setHeaderFormat}
-                    date={date}
-                    onDateChange={setDate}
-                    showComparison={showComparison}
-                    onShowComparisonChange={setShowComparison}
-                    compDate={compDate}
-                    onCompDateChange={setCompDate}
-                    showMapeo
-                    onMapeoClick={() => openMappingDrawer()}
-                />
+                {!hideToolbar && (
+                    <ReportToolbar
+                        headerFormat={headerFormat}
+                        onHeaderFormatChange={setHeaderFormat}
+                        date={date}
+                        onDateChange={setDate}
+                        showComparison={showComparison}
+                        onShowComparisonChange={setShowComparison}
+                        compDate={compDate}
+                        onCompDateChange={setCompDate}
+                        showMapeo
+                        onMapeoClick={() => openMappingDrawer()}
+                    />
+                )}
                 <FadeIn key={activeTab}>
                     <div className="mt-0 outline-none ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
                         {activeTab === "bs" && (
@@ -200,7 +204,7 @@ export function FinancialStatementsReport({ activeTab, onPeriodLabelChange }: Fi
                                             const d = bsData as BalanceSheetData;
                                             return (
                                                 <>
-                                                    {renderBSDistribution(d)}
+                                                    {!hideChart && renderBSDistribution(d)}
                                                     <ReportTable
                                                         title="Activos"
                                                         data={d.assets}
@@ -266,7 +270,7 @@ export function FinancialStatementsReport({ activeTab, onPeriodLabelChange }: Fi
                                             const d = plData as PLData;
                                             return (
                                                 <>
-                                                    {renderPLDistribution(d)}
+                                                    {!hideChart && renderPLDistribution(d)}
                                                     {(d.sections || []).map((section: PLSection, idx: number) => (
                                                 section.is_total ? (
                                                     <div key={idx} className={cn(
@@ -330,7 +334,7 @@ export function FinancialStatementsReport({ activeTab, onPeriodLabelChange }: Fi
                             <>
                                 {cfData ? (
                                     <div className="space-y-6">
-                                        {renderCFDistribution(cfData as CashFlowData)}
+                                        {!hideChart && renderCFDistribution(cfData as CashFlowData)}
                                         <CashFlowTable
                                             data={cfData as CashFlowData}
                                             embedded
