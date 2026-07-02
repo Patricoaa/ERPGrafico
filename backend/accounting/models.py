@@ -1647,3 +1647,82 @@ class BudgetItem(TimeStampedModel):
 
     def __str__(self):
         return f"{self.budget.name} - {self.account.name} ({self.year}/{self.month}): {self.amount}"
+
+
+# --- Fiscal Year Closing Checklist ---
+
+
+class ClosingChecklistTemplate(models.Model):
+    class Category(models.TextChoices):
+        RECONCILIATION = "RECONCILIATION", _("Conciliación")
+        VALUATION = "VALUATION", _("Valorización")
+        ADJUSTMENT = "ADJUSTMENT", _("Ajuste")
+        DOCUMENT = "DOCUMENT", _("Documentación")
+        OTHER = "OTHER", _("Otro")
+
+    code = models.SlugField(unique=True)
+    name = models.CharField(max_length=100)
+    description = models.TextField(blank=True)
+    category = models.CharField(max_length=30, choices=Category.choices)
+    is_required = models.BooleanField(default=True)
+    order = models.PositiveSmallIntegerField(default=0)
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["order", "code"]
+        verbose_name = _("Plantilla de Item de Cierre")
+        verbose_name_plural = _("Plantillas de Items de Cierre")
+
+    def __str__(self):
+        return self.name
+
+
+class ClosingChecklistInstance(models.Model):
+    fiscal_year = models.ForeignKey(
+        FiscalYear, on_delete=models.CASCADE, related_name="checklist_instances"
+    )
+    template = models.ForeignKey(
+        ClosingChecklistTemplate, on_delete=models.CASCADE, related_name="instances"
+    )
+    is_completed = models.BooleanField(default=False)
+    completed_at = models.DateTimeField(null=True, blank=True)
+    completed_by = models.ForeignKey(
+        "core.User",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="completed_checklist_items",
+    )
+    notes = models.TextField(blank=True)
+
+    class Meta:
+        unique_together = [["fiscal_year", "template"]]
+        verbose_name = _("Item de Checklist de Cierre")
+        verbose_name_plural = _("Items de Checklist de Cierre")
+
+    def __str__(self):
+        return f"{self.fiscal_year} - {self.template.name}: {'✓' if self.is_completed else '○'}"
+
+
+class FiscalYearClosingChecklist(models.Model):
+    fiscal_year = models.OneToOneField(
+        FiscalYear, on_delete=models.CASCADE, related_name="closing_checklist"
+    )
+    items = models.JSONField(default=list)
+    is_mandatory = models.BooleanField(default=True)
+    completed_at = models.DateTimeField(null=True, blank=True)
+    completed_by = models.ForeignKey(
+        "core.User",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="completed_fiscal_year_checklists",
+    )
+
+    class Meta:
+        verbose_name = _("Checklist de Cierre de Ejercicio")
+        verbose_name_plural = _("Checklists de Cierre de Ejercicio")
+
+    def __str__(self):
+        return f"Checklist {self.fiscal_year}"
