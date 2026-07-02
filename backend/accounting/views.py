@@ -323,7 +323,8 @@ class FiscalYearViewSet(viewsets.ModelViewSet):
         try:
             FiscalYearClosingService.validate_can_close(request.user, year)
             return Response(self.get_serializer(FiscalYearClosingService.close_fiscal_year(year=int(year), user=request.user, notes=request.data.get('notes', ''))).data)
-        except ValidationError as e: return Response({'error': str(e.message if hasattr(e, 'message') else e)}, status=400)
+        except ValidationError as e:
+            return Response({'error': str(e.message if hasattr(e, 'message') else e)}, status=400)
 
     @action(detail=False, methods=["post"], url_path="(?P<year>[0-9]{4})/reopen")
     def reopen(self, request, year=None):

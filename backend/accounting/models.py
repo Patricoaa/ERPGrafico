@@ -463,8 +463,13 @@ class JournalEntry(AuditedModel):
         return f"AS-{self.number}"
 
     def check_balance(self):
-        debit = sum(item.debit for item in self.items.all())
-        credit = sum(item.credit for item in self.items.all())
+        from django.db.models import Sum
+        agg = self.items.aggregate(
+            total_debit=Sum("debit"),
+            total_credit=Sum("credit"),
+        )
+        debit = agg["total_debit"] or Decimal("0")
+        credit = agg["total_credit"] or Decimal("0")
         if debit != credit:
             raise ValidationError(
                 _("El asiento no está cuadrado. Debe: %(debit)s, Haber: %(credit)s")
