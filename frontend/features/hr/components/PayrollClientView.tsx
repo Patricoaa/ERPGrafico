@@ -94,8 +94,10 @@ export function PayrollClientView({ initialPayrolls }: PayrollClientViewProps) {
                         const res = await triggerDraftPayrolls()
                         toast.success(res.detail)
                         fetchPayrolls()
-                    } catch {
-                        toast.error("Error al iniciar tarea")
+                    } catch (err) {
+                        console.error('[PayrollClientView] Error al generar borradores:', err)
+                        const apiMsg = (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail
+                        toast.error(apiMsg || "Error al iniciar tarea")
                     } finally {
                         const params = new URLSearchParams(searchParams.toString())
                         params.delete("action")
