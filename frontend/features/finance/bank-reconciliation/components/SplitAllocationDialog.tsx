@@ -176,7 +176,7 @@ export function SplitAllocationDialog({ open, onOpenChange, payment, treasuryAcc
                                                                 </SelectTrigger>
                                                             </FormControl>
                                                             <SelectContent>
-                                                                {(invoices as InvoiceItem[]).map((inv: InvoiceItem) => (
+                                                                {(invoices as unknown as InvoiceItem[]).map((inv: InvoiceItem) => (
                                                                     <SelectItem key={inv.id} value={String(inv.id)}>
                                                                         {inv.display_id} - {inv.contact_name} - {formatCurrency(safeParseFloat(inv.total))}
                                                                     </SelectItem>

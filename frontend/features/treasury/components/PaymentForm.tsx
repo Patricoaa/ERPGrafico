@@ -63,7 +63,7 @@ export function PaymentForm({
 
     const orders: Array<{ id: number; dte_type_display: string; number: string | null; total: number }> = useMemo(() => {
         if (!allInvoicesData) return []
-        const results = (allInvoicesData as { results: Array<Record<string, unknown>> }).results || (allInvoicesData as Array<Record<string, unknown>>) || []
+        const results = allInvoicesData as Array<Record<string, unknown>>
         if (paymentType === "INBOUND" && customerId) {
             return results
                 .filter((i) => (i as Record<string, unknown>).sale_order && (i as Record<string, unknown>).sale_order && (i as Record<string, unknown>).status === 'POSTED')

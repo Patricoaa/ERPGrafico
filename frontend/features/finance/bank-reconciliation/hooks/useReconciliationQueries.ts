@@ -75,9 +75,8 @@ export function useUnreconciledPaymentsQuery(treasuryAccountId: number, params: 
                 amount_max: params.amount_max,
                 direction: params.type,
             })
-            const rawResults = (paymentsData as Record<string, unknown>)?.results as unknown[] | undefined
-            const results = Array.isArray(paymentsData) ? paymentsData : (rawResults ?? [])
-            const payments = Array.isArray(results) ? results.map((p: Record<string, unknown>) => {
+            const rawResults = paymentsData.results
+            const payments = rawResults.map((p) => {
                 let contactName = (p.partner_name as string) || 'Particular'
                 if (p.movement_type === 'TRANSFER') {
                     contactName = p.is_inbound ? ((p.from_account_name as string) || 'Cuenta Origen') : ((p.to_account_name as string) || 'Cuenta Destino')
@@ -85,10 +84,10 @@ export function useUnreconciledPaymentsQuery(treasuryAccountId: number, params: 
                     contactName = (p.justify_reason_display as string) || (p.notes as string) || 'Ajuste Manual'
                 }
                 return { ...p, contact_name: contactName }
-            }) : []
+            }) as ReconciliationSystemItem[]
             return {
-                results: payments as ReconciliationSystemItem[],
-                count: ((paymentsData as Record<string, unknown>).count as number) || payments.length
+                results: payments,
+                count: paymentsData.count || payments.length
             }
         },
         staleTime: 2 * 60 * 1000,

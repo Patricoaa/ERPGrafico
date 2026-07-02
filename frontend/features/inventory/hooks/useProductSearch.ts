@@ -56,8 +56,8 @@ export function useProductSearch(params: ProductSearchParams = {}, enabled: bool
                 }
             }
 
-            const res = await api.get<Product[]>(`/inventory/products/?${q.toString()}`, { signal })
-            const results = res.data
+            const res = await api.get<{ results: Product[] }>(`/inventory/products/?${q.toString()}`, { signal })
+            const results = res.data.results
             
             return await resolveVariants(results, limit)
         },

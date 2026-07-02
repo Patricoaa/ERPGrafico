@@ -65,8 +65,10 @@ export const financeApi = {
         api.get(`/accounting/accounts/${id}/`).then(r => r.data),
 
     // ── Payments ──
-    getPayments: (params?: Record<string, unknown>) =>
-        api.get('/treasury/payments/', { params }).then(r => r.data),
+    getPayments: async (params?: Record<string, unknown>): Promise<{ results: Record<string, unknown>[]; count: number }> => {
+        const { data } = await api.get<{ results: Record<string, unknown>[]; count: number }>('/treasury/payments/', { params })
+        return data
+    },
     registerPayment: (payload: Record<string, unknown>, idempotencyKey?: string) =>
         api.post('/treasury/payments/register_movement/', payload, {
             headers: idempotencyKey ? { 'Idempotency-Key': idempotencyKey } : undefined,
@@ -79,10 +81,14 @@ export const financeApi = {
         api.post(`/treasury/payments/${paymentId}/allocate/`, payload).then(r => r.data),
 
     // ── Invoices (billing) ──
-    getPendingInvoices: (params?: Record<string, unknown>) =>
-        api.get('/billing/invoices/', { params }).then(r => r.data),
-    getBillingInvoices: (params?: Record<string, unknown>) =>
-        api.get('/billing/invoices/', { params }).then(r => r.data),
+    getPendingInvoices: async (params?: Record<string, unknown>): Promise<Record<string, unknown>[]> => {
+        const { data } = await api.get<{ results: Record<string, unknown>[] }>('/billing/invoices/', { params })
+        return data.results
+    },
+    getBillingInvoices: async (params?: Record<string, unknown>): Promise<Record<string, unknown>[]> => {
+        const { data } = await api.get<{ results: Record<string, unknown>[] }>('/billing/invoices/', { params })
+        return data.results
+    },
 
     // ── BI Analytics ──
     getBIAnalytics: (params?: Record<string, unknown>) =>

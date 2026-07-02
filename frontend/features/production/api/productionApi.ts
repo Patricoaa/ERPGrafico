@@ -53,9 +53,9 @@ export const productionApi = {
     getBOMs: (params?: Record<string, unknown>) =>
         api.get('/production/boms/', { params }).then(r => r.data),
     getActiveBom: (productId: string | number) =>
-        api.get('/production/boms/', { params: { product_id: productId } }).then(r => {
-            const list = r.data
-            return Array.isArray(list) ? list.find((b: { active?: boolean }) => b.active) || null : null
+        api.get<{ results: Array<{ active?: boolean }> }>('/production/boms/', { params: { product_id: productId } }).then(r => {
+            const list = r.data.results
+            return list.find((b) => b.active) ?? null
         }),
     createBom: (payload: Record<string, unknown>) =>
         api.post('/production/boms/', payload).then(r => r.data),
