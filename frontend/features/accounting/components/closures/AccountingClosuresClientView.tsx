@@ -11,6 +11,11 @@ import { useTaxPeriods } from '@/features/tax/hooks/useTaxQueries';
 import { useClosePeriod as useCloseTaxPeriod, useReopenPeriod as useReopenTaxPeriod } from '@/features/tax/hooks/useTaxMutations';
 import { DeclarationWizard } from '@/features/tax';
 
+import { F29PaymentModal } from '@/features/tax';
+import { useCreateTaxPayment } from '@/features/tax/hooks/useTaxMutations';
+import type { TaxDeclaration, TaxPaymentData } from '@/features/tax/types';
+import { AccountingPeriodCloseChecklistModal } from './AccountingPeriodCloseChecklist';
+
 import { useSearchParams, useRouter, usePathname } from 'next/navigation';
 import { useSelectedEntity } from '@/hooks/useSelectedEntity';
 import { DataTableView, EmptyState, StatusBadge } from '@/components/shared';
@@ -71,6 +76,17 @@ export function AccountingClosuresClientView({ externalOpen, onExternalOpenChang
     const [activeYearToClose, setActiveYearToClose] = useState<number | null>(null);
     const [declarationPeriodId, setDeclarationPeriodId] = useState<number | undefined>(undefined);
     const [declarationWizardOpen, setDeclarationWizardOpen] = useState(false);
+
+    // Payment state
+    const [paymentPeriodId, setPaymentPeriodId] = useState<number | null>(null);
+    const [paymentDeclaration, setPaymentDeclaration] = useState<TaxDeclaration | null>(null);
+    const createTaxPayment = useCreateTaxPayment();
+
+    // Checklist state before closing accounting period
+    const [pendingClosePeriodId, setPendingClosePeriodId] = useState<number | null>(null);
+    const [pendingClosePeriodInfo, setPendingClosePeriodInfo] = useState<{ year: number; month: number } | null>(null);
+    const [checklistOpen, setChecklistOpen] = useState(false);
+    const [isClosingPeriod, setIsClosingPeriod] = useState(false);
 
     const isLoading = isLoadingYr || isLoadingPeriods || isLoadingTax;
 
@@ -193,6 +209,78 @@ export function AccountingClosuresClientView({ externalOpen, onExternalOpenChang
         fetchPeriods();
     }, [reopenTaxPeriod, refetchTaxPeriods, fetchPeriods]);
 
+    const handlePayF29 = useCallback((periodId: number) => {
+        const taxPeriod = taxPeriods.find(p => p.id === periodId)
+        if (taxPeriod?.declaration_summary) {
+            setPaymentPeriodId(periodId)
+            setPaymentDeclaration({
+                id: taxPeriod.declaration_summary.id,
+                vat_to_pay: taxPeriod.declaration_summary.vat_to_pay,
+                total_paid: taxPeriod.declaration_summary.total_paid,
+                is_fully_paid: taxPeriod.declaration_summary.is_fully_paid,
+                payments: taxPeriod.declaration_summary.payments || [],
+                folio_number: taxPeriod.declaration_summary.folio_number,
+                tax_period_display: `${taxPeriod.month_display} ${taxPeriod.year}`,
+                tax_period_year: taxPeriod.year,
+                tax_period_month: taxPeriod.month,
+                ppm_amount: 0,
+                withholding_tax: 0,
+                vat_credit_carryforward: 0,
+                vat_correction_amount: 0,
+                second_category_tax: 0,
+                loan_retention: 0,
+                ila_tax: 0,
+                vat_withholding: 0,
+                tax_rate: 0,
+            })
+        }
+    }, [taxPeriods])
+
+    const handlePaymentConfirm = useCallback(async (data: TaxPaymentData) => {
+        if (!paymentDeclaration) return
+        try {
+            const dateString = new Date().toISOString().split('T')[0]
+            await createTaxPayment.mutateAsync({
+                declaration: paymentDeclaration.id,
+                payment_date: data.documentDate || dateString,
+                amount: data.amount,
+                payment_method: data.paymentMethod,
+                reference: data.reference || '',
+                treasury_account: data.treasury_account_id,
+                notes: `Pago F29 - ${paymentDeclaration.tax_period_display}`,
+            })
+            setPaymentPeriodId(null)
+            setPaymentDeclaration(null)
+            refetchTaxPeriods()
+            fetchPeriods()
+        } catch {
+            // error handled by mutation
+        }
+    }, [paymentDeclaration, createTaxPayment, refetchTaxPeriods, fetchPeriods])
+
+    const handleClosePeriodWithChecklist = useCallback(async (periodId: number) => {
+        const period = periods.find(p => p.id === periodId)
+        if (!period) return
+        setPendingClosePeriodId(periodId)
+        setPendingClosePeriodInfo({ year: period.year, month: period.month })
+        setChecklistOpen(true)
+    }, [periods])
+
+    const handleChecklistConfirmed = useCallback(async () => {
+        if (!pendingClosePeriodId) return
+        setIsClosingPeriod(true)
+        try {
+            await closePeriod(pendingClosePeriodId)
+            setChecklistOpen(false)
+            setPendingClosePeriodId(null)
+            setPendingClosePeriodInfo(null)
+        } catch {
+            // error handled by mutation
+        } finally {
+            setIsClosingPeriod(false)
+        }
+    }, [pendingClosePeriodId, closePeriod])
+
     const { filterFn, isFiltered: isTextFiltered, clearAll: clearText } = useClientSearch<{ year: number; periods: AccountingPeriod[]; taxPeriods: TaxPeriod[]; fiscalYear: FiscalYear | undefined; status: string }>(fiscalYearSearchDef)
     const { filters: segFilters, isFiltered: isSegFiltered, clearAll: clearSeg } = useSegmentation(fiscalYearSegDef)
     const isFiltered = isTextFiltered || isSegFiltered
@@ -297,7 +385,7 @@ export function AccountingClosuresClientView({ externalOpen, onExternalOpenChang
                                         fiscalYear={fiscalYear}
                                         periods={yearPeriods}
                                         taxPeriods={yearTaxPeriods}
-                                        onClosePeriod={closePeriod}
+                                        onClosePeriod={handleClosePeriodWithChecklist}
                                         onReopenPeriod={reopenPeriod}
                                         isPeriodActionLoading={actionLoadingPeriod}
                                         onCloseTaxPeriod={handleCloseTaxPeriod}
@@ -308,6 +396,7 @@ export function AccountingClosuresClientView({ externalOpen, onExternalOpenChang
                                         onReopenFiscalYear={reopenFiscalYear}
                                         onGenerateOpening={generateOpeningEntry}
                                         isFiscalYearLoading={actionLoadingYr}
+                                        onPayF29={handlePayF29}
                                     />
                                 );
                             })}
@@ -347,6 +436,36 @@ export function AccountingClosuresClientView({ externalOpen, onExternalOpenChang
                 isLoading={actionLoadingPeriod}
                 existingYears={fiscalYears.map(fy => fy.year)}
                 hasOpenPeriods={periods.some(p => p.status === 'OPEN')}
+            />
+
+            {/* F29 Payment Modal */}
+            {paymentDeclaration && (
+                <F29PaymentModal
+                    isOpen={paymentPeriodId !== null}
+                    onOpenChange={(open) => {
+                        if (!open) {
+                            setPaymentPeriodId(null)
+                            setPaymentDeclaration(null)
+                        }
+                    }}
+                    declaration={paymentDeclaration}
+                    onConfirmPayment={handlePaymentConfirm}
+                />
+            )}
+
+            {/* Accounting Period Pre-Close Checklist */}
+            <AccountingPeriodCloseChecklistModal
+                isOpen={checklistOpen}
+                periodId={pendingClosePeriodId ?? 0}
+                year={pendingClosePeriodInfo?.year ?? 0}
+                month={pendingClosePeriodInfo?.month ?? 0}
+                onClose={() => {
+                    setChecklistOpen(false)
+                    setPendingClosePeriodId(null)
+                    setPendingClosePeriodInfo(null)
+                }}
+                onConfirm={handleChecklistConfirmed}
+                isLoading={isClosingPeriod}
             />
         </div>
     );

@@ -3,7 +3,7 @@
 import React from 'react'
 import { Card } from '@/components/ui/card'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
-import { Calendar, Lock, LockOpen, FileText } from 'lucide-react'
+import { Calendar, Lock, LockOpen, FileText, DollarSign } from 'lucide-react'
 import { IconButton, StatusBadge } from '@/components/shared'
 import { type AccountingPeriod, type TaxPeriod } from '../../types'
 import { useReopenConfirm } from '../../hooks/useReopenConfirm'
@@ -22,18 +22,21 @@ interface CombinedPeriodCardProps {
     onReopenTaxPeriod: (params: { id: number; reason?: string }) => Promise<unknown>
     onOpenDeclaration: (id: number) => void
     isTaxActionLoading: boolean
+    onPayF29?: (periodId: number) => void
 }
 
 export function CombinedPeriodCard({
     month, year,
     accountingPeriod: acct, taxPeriod: tax,
     onClosePeriod, onReopenPeriod, isPeriodActionLoading,
-    onCloseTaxPeriod, onReopenTaxPeriod, onOpenDeclaration, isTaxActionLoading,
+    onCloseTaxPeriod,     onReopenTaxPeriod, onOpenDeclaration, isTaxActionLoading, onPayF29,
 }: CombinedPeriodCardProps) {
     const acctClosed = acct?.status === 'CLOSED'
     const taxClosed = tax?.status === 'CLOSED'
     const taxFrozen = !!(acct?.tax_period_id && acct?.tax_period_status === 'CLOSED')
     const hasDeclaration = !!tax?.declaration_summary
+    const isFullyPaid = tax?.declaration_summary?.is_fully_paid ?? true
+    const requiresPayment = hasDeclaration && (tax?.declaration_summary?.vat_to_pay ?? 0) > 0
 
     const {
         confirmAndExecute: confirmReopenAcct,
@@ -124,7 +127,17 @@ export function CombinedPeriodCard({
                                 <TooltipContent side="top"><p className="text-xs">Declarar F29</p></TooltipContent>
                             </Tooltip>
                         )}
-                        {tax && !taxClosed && hasDeclaration && (
+                        {tax && !taxClosed && hasDeclaration && !isFullyPaid && requiresPayment && (
+                            <Tooltip>
+                                <TooltipTrigger asChild>
+                                    <IconButton className="h-6 w-6 text-success hover:text-success/80" onClick={() => onPayF29?.(tax.id)} disabled={isTaxActionLoading}>
+                                        <DollarSign className="w-3 h-3" />
+                                    </IconButton>
+                                </TooltipTrigger>
+                                <TooltipContent side="top"><p className="text-xs">Pagar F29 antes de cerrar</p></TooltipContent>
+                            </Tooltip>
+                        )}
+                        {tax && !taxClosed && hasDeclaration && (isFullyPaid || !requiresPayment) && (
                             <Tooltip>
                                 <TooltipTrigger asChild>
                                     <IconButton className="h-6 w-6 text-muted-foreground hover:text-warning" onClick={() => onCloseTaxPeriod(tax.id)} disabled={isTaxActionLoading}>

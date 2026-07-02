@@ -91,5 +91,10 @@ export const accountingApi = {
                 api.patch(`/accounting/accounts/${id}/`, { [field]: value })
             )
         )
-    }
+    },
+
+    getAccountingPeriodStatus: async (periodId: number): Promise<Record<string, unknown>> => {
+        const { data } = await api.get(`/tax/accounting-periods/${periodId}/status_check/`)
+        return data
+    },
 }
