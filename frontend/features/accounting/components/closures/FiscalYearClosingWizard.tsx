@@ -122,40 +122,10 @@ export function FiscalYearClosingWizard({
             isValid: true,
             component: preview ? (
                 <div className="space-y-6">
-                    <div className="grid grid-cols-2 gap-4">
-                        <Card className="rounded-none border-dashed bg-card/50 shadow-card p-5 border-t-2 border-t-income bg-income/5">
-                            <p className="text-[10px] font-bold uppercase text-income tracking-widest mb-2">Total Ingresos</p>
-                            <p className="text-2xl font-mono font-black text-income">
-                                {formatCurrency(parseFloat(preview.income_total || '0'))}
-                            </p>
-                        </Card>
-                        <Card className="rounded-none border-dashed bg-card/50 shadow-card p-5 border-t-2 border-t-expense bg-expense/5">
-                            <p className="text-[10px] font-bold uppercase text-expense tracking-widest mb-2">Total Egresos</p>
-                            <p className="text-2xl font-mono font-black text-expense">
-                                {formatCurrency(Math.abs(parseFloat(preview.expense_total || '0')))}
-                            </p>
-                        </Card>
-                    </div>
-
-                    <Card className="rounded-none shadow-elevated ring-1 ring-border bg-card p-6 bg-primary/5 border-primary/20 flex items-center justify-between">
-                        <div>
-                            <p className="text-xs font-bold uppercase text-muted-foreground tracking-widest mb-2">Resultado Neto Proyectado</p>
-                            <p className="text-3xl font-mono font-black text-foreground tabular-nums tracking-tighter">
-                                {formatCurrency(parseFloat(preview.net_result || '0'))}
-                            </p>
-                        </div>
-                        <div className={cn(
-                            "px-4 py-2 rounded-sm text-[10px] font-black uppercase tracking-[0.2em]",
-                            parseFloat(preview.net_result || '0') >= 0 ? "bg-success text-success-foreground" : "bg-destructive text-destructive-foreground"
-                        )}>
-                            {parseFloat(preview.net_result || '0') >= 0 ? "Utilidad" : "Pérdida"}
-                        </div>
-                    </Card>
-                    
-                    <Alert variant="primary">
+                    <Alert variant="primary" className="border-2">
                         <AlertTitle className="font-bold uppercase">Estado de Resultados</AlertTitle>
-                        <AlertDescription className="text-primary/80 font-medium flex items-center justify-between gap-3 text-xs">
-                            <p>Visualice el detalle completo de ingresos, costos y gastos del ejercicio {year}.</p>
+                        <AlertDescription className="text-primary/80 font-medium mt-1 flex items-center justify-between gap-3 text-xs">
+                            <p>Visualice el detalle de cuentas de resultados del ejercicio {year}.</p>
                             <Button
                                 variant="outline" size="sm"
                                 className="w-fit h-7 text-[10px] font-black uppercase tracking-widest bg-primary/10 border-primary/30 hover:bg-primary/20 text-primary"
@@ -163,6 +133,30 @@ export function FiscalYearClosingWizard({
                             >
                                 <PieChart className="w-3 h-3 mr-2" /> Ver Estado de Resultados
                             </Button>
+                        </AlertDescription>
+                    </Alert>
+
+                    <Alert variant={parseFloat(preview.net_result || '0') >= 0 ? "success" : "destructive"}>
+                        <AlertTitle className="font-bold uppercase">Resultado Neto Proyectado</AlertTitle>
+                        <AlertDescription className={cn(
+                            "font-medium flex items-center justify-between gap-3 text-xs mt-1",
+                            parseFloat(preview.net_result || '0') >= 0 ? "text-success/80" : "text-destructive/80"
+                        )}>
+                            <p>El ejercicio resultó en {parseFloat(preview.net_result || '0') >= 0 ? "una utilidad" : "una pérdida"} para la empresa.</p>
+                            <div className="flex items-center gap-4">
+                                <span className={cn(
+                                    "text-2xl font-mono font-black",
+                                    parseFloat(preview.net_result || '0') >= 0 ? "text-success" : "text-destructive"
+                                )}>
+                                    {formatCurrency(parseFloat(preview.net_result || '0'))}
+                                </span>
+                                <div className={cn(
+                                    "px-3 py-1.5 rounded-sm text-[10px] font-black uppercase tracking-[0.2em]",
+                                    parseFloat(preview.net_result || '0') >= 0 ? "bg-success text-success-foreground" : "bg-destructive text-destructive-foreground"
+                                )}>
+                                    {parseFloat(preview.net_result || '0') >= 0 ? "Utilidad" : "Pérdida"}
+                                </div>
+                            </div>
                         </AlertDescription>
                     </Alert>
                 </div>
