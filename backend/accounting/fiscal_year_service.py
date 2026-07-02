@@ -175,7 +175,7 @@ class FiscalYearClosingService:
             status=JournalEntry.Status.DRAFT,
         )
         closing_entry._is_system_closing_entry = True
-        closing_entry.is_manual = True
+        closing_entry.is_manual = False
         closing_entry.save()
 
         items = []
@@ -409,6 +409,7 @@ class FiscalYearClosingService:
             status=JournalEntry.Status.DRAFT,
         )
         opening_entry._is_system_closing_entry = True
+        opening_entry.is_manual = False
         opening_entry.save()
 
         items = []
