@@ -34,8 +34,8 @@ export function useRegisterDeclaration() {
   const { markLocalMutation } = useRealtime()
 
   return useMutation({
-    mutationFn: ({ id, data }: { id: number; data: { declaration_date: string } }) =>
-      taxApi.registerDeclaration(id, data),
+    mutationFn: ({ id, data, idempotencyKey }: { id: number; data: { declaration_date: string }; idempotencyKey?: string }) =>
+      taxApi.registerDeclaration(id, data, idempotencyKey),
     onSuccess: () => {
       markLocalMutation()
       queryClient.invalidateQueries({ queryKey: TAX_KEYS.declarations.all() })

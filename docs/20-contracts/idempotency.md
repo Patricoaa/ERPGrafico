@@ -47,6 +47,7 @@ Estos endpoints **DEBEN** validar `Idempotency-Key`. Agregar uno requiere ADR.
 | `POST` | `/api/treasury/payments/register_movement/` | Registro rápido de pago/cobro desde formularios de órdenes y tesorería |
 | `POST` | `/api/treasury/reconciliations/{id}/run/` | Ejecución de matching automático — costosa, evita reruns |
 | `POST` | `/api/purchasing/orders/purchase_checkout/` | Checkout de compra — crea/confirma orden + factura + pago + recepción en una transacción |
+| `POST` | `/api/tax/declarations/{id}/register/` | Registrar declaración F29 — crea registro oficial ante SII, no reversible |
 | `POST` | `/api/{module}/import/commit/` | Importación bulk — ver [import-csv-xlsx.md](import-csv-xlsx.md) |
 
 **Convención del header:** el cliente genera **UUIDv4** al crear la intención de acción (click del botón). Reenvío del header con el mismo valor en retries. Una nueva acción del usuario genera nuevo UUID.
@@ -261,6 +262,7 @@ Si dudás de si tu endpoint debe estar en la lista cerrada: pregunta “¿una do
 | `treasury.payment.register_movement` | `POST /api/treasury/payments/register_movement/` |
 | `treasury.reconciliation.run` | `POST /api/treasury/reconciliations/{id}/run/` |
 | `purchasing.order.checkout` | `POST /api/purchasing/orders/purchase_checkout/` |
+| `tax.f29.register` | `POST /api/tax/declarations/{id}/register/` |
 | `{module}.import.commit` | `POST /api/{module}/import/commit/` |
 
 ## Referencias
