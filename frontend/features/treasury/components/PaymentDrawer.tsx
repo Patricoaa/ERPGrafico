@@ -106,7 +106,7 @@ export function PaymentDrawer({
 
     const orders: InvoiceOption[] = useMemo(() => {
         if (!allInvoicesData) return []
-        const results: InvoiceOption[] = (allInvoicesData as unknown as { results: InvoiceOption[] }).results || (allInvoicesData as unknown as InvoiceOption[]) || []
+        const results: InvoiceOption[] = (allInvoicesData as unknown as InvoiceOption[]) ?? []
         if (paymentType === "INBOUND" && customerId) {
             return results.filter((i: InvoiceOption) => i.sale_order && i.sale_order.customer === parseInt(customerId) && i.status === 'POSTED')
         } else if (paymentType === "OUTBOUND" && supplierId) {

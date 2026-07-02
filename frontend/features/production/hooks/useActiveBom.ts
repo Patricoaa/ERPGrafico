@@ -15,8 +15,8 @@ export function useActiveBom(
   return useQuery<BomSuggestion | null>({
     queryKey: ['bom-suggestion', productId],
     queryFn: async () => {
-      const res = await api.get<BomSuggestion[]>(`/production/boms/?product_id=${productId}`)
-      return res.data.find((b) => b.active) ?? null
+      const res = await api.get<{ results: BomSuggestion[] }>(`/production/boms/?product_id=${productId}`)
+      return res.data.results.find((b) => b.active) ?? null
     },
     staleTime: 5 * 60 * 1000,
     enabled: (options.enabled ?? true) && !!productId,
