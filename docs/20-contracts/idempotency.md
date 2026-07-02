@@ -46,6 +46,7 @@ Estos endpoints **DEBEN** validar `Idempotency-Key`. Agregar uno requiere ADR.
 | `POST` | `/api/treasury/movements/` | Movimiento bancario manual |
 | `POST` | `/api/treasury/payments/register_movement/` | Registro rápido de pago/cobro desde formularios de órdenes y tesorería |
 | `POST` | `/api/treasury/reconciliations/{id}/run/` | Ejecución de matching automático — costosa, evita reruns |
+| `POST` | `/api/purchasing/orders/purchase_checkout/` | Checkout de compra — crea/confirma orden + factura + pago + recepción en una transacción |
 | `POST` | `/api/{module}/import/commit/` | Importación bulk — ver [import-csv-xlsx.md](import-csv-xlsx.md) |
 
 **Convención del header:** el cliente genera **UUIDv4** al crear la intención de acción (click del botón). Reenvío del header con el mismo valor en retries. Una nueva acción del usuario genera nuevo UUID.
@@ -245,6 +246,22 @@ Si dudás de si tu endpoint debe estar en la lista cerrada: pregunta “¿una do
 - [ ] Si dispara Celery: pasar el key como argumento de la tarea.
 - [ ] Tests de las 4 condiciones HTTP + (si aplica) re-encolado Celery.
 - [ ] Documentar el `scope` único en este doc.
+
+## Scopes registrados
+
+| Scope | Endpoint |
+|-------|----------|
+| `billing.invoice.create` | `POST /api/billing/invoices/` |
+| `billing.invoice.pos_checkout` | `POST /api/billing/invoices/pos_checkout/` |
+| `billing.invoice.issue` | `POST /api/billing/invoices/{id}/issue/` |
+| `billing.creditnote.create` | `POST /api/billing/credit-notes/` |
+| `accounting.entry.create` | `POST /api/accounting/entries/` |
+| `treasury.paymentrequest.create` | `POST /api/treasury/payment-requests/` |
+| `treasury.movement.create` | `POST /api/treasury/movements/` |
+| `treasury.payment.register_movement` | `POST /api/treasury/payments/register_movement/` |
+| `treasury.reconciliation.run` | `POST /api/treasury/reconciliations/{id}/run/` |
+| `purchasing.order.checkout` | `POST /api/purchasing/orders/purchase_checkout/` |
+| `{module}.import.commit` | `POST /api/{module}/import/commit/` |
 
 ## Referencias
 

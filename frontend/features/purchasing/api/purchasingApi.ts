@@ -71,8 +71,12 @@ export const purchasingApi = {
         return res.data
     },
 
-    createOrder: async (formData: FormData): Promise<void> => {
-        await api.post('/purchasing/orders/purchase_checkout/', formData)
+    createOrder: async (formData: FormData, idempotencyKey?: string): Promise<void> => {
+        const headers: Record<string, string> = { 'Content-Type': 'multipart/form-data' }
+        if (idempotencyKey) {
+            headers['Idempotency-Key'] = idempotencyKey
+        }
+        await api.post('/purchasing/orders/purchase_checkout/', formData, { headers })
     },
 
     updateOrder: async (id: number, data: Record<string, unknown>): Promise<void> => {

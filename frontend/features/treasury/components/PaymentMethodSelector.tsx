@@ -203,7 +203,12 @@ export function PaymentMethodSelector({
                 isTerminalIntegration: pendingMethod === 'CARD_TERMINAL',
             })
         } else {
-            onPaymentDataChange({ ...paymentData, amount: finalAmount })
+            onPaymentDataChange({
+                ...paymentData,
+                amount: finalAmount,
+                treasuryAccountId: pendingTreasuryAccountId,
+                paymentMethodId: pendingPaymentMethodId,
+            })
         }
     }
 
@@ -681,7 +686,18 @@ export function PaymentMethodSelector({
 
             {/* Single mode: additional fields shown below grid */}
             {!isMultiPayment && paymentData.method && hasAdditionalFieldsForMethod(paymentData.method) && (
-                renderAdditionalFields(paymentData.method)
+                renderAdditionalFields(paymentData.method, {
+                    method: paymentData.method ?? '',
+                    amount: paymentData.amount,
+                    paymentMethodId: paymentData.paymentMethodId,
+                    treasuryAccountId: paymentData.treasuryAccountId,
+                    checkNumber: paymentData.checkNumber,
+                    checkBankId: paymentData.checkBankId,
+                    checkDueDate: paymentData.checkDueDate,
+                    installments: paymentData.installments,
+                    isTerminalIntegration: paymentData.isTerminalIntegration,
+                    isPending: paymentData.isPending,
+                })
             )}
 
             {/* Numpad Modal */}
