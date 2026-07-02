@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
 import api from '@/lib/api'
+import { useAuth } from '@/contexts/AuthContext'
 
 interface VatRateResponse {
     rate: number
@@ -14,10 +15,13 @@ async function fetchVatRate(): Promise<VatRateResponse> {
 }
 
 export function useVatRate() {
+    const { isAuthenticated } = useAuth()
+
     const query = useQuery({
         queryKey: VAT_RATE_QUERY_KEY,
         queryFn: fetchVatRate,
         staleTime: Infinity,
+        enabled: isAuthenticated,
     })
 
     return {
