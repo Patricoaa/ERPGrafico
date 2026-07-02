@@ -291,7 +291,7 @@ export function FiscalYearClosingWizard({
                 hideScrollArea={true}
                 contentClassName="p-0"
             >
-                <div className="h-full flex flex-col p-4">
+                <div className="flex-1 min-h-0 overflow-y-auto p-4">
                     <Suspense fallback={<SkeletonShell isLoading ariaLabel="Cargando..." />}>
                         <FinancialStatementsReport activeTab="bs" hideToolbar hideChart />
                     </Suspense>
