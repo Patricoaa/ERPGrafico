@@ -607,20 +607,42 @@ class FiscalYearClosingService:
         ).count()
 
         all_closed = (closed_periods == total_periods) and total_periods > 0
+        partial_year = total_periods < 12
+
+        if total_periods == 0:
+            _periods_passed = True
+            _periods_warning = False
+            _periods_msg = "No hay periodos contables registrados para este ejercicio."
+        elif all_closed:
+            _periods_passed = True
+            _periods_warning = partial_year
+            _periods_msg = (
+                f"Todos los {closed_periods} periodos mensuales creados están cerrados."
+                + (" (Advertencia: Ejercicio con menos de 12 meses)" if partial_year else "")
+            )
+        elif partial_year:
+            # Partial year with some open periods: warning only (not a hard block)
+            _periods_passed = True
+            _periods_warning = True
+            _periods_msg = (
+                f"Solo {closed_periods} de {total_periods} periodos creados están cerrados. "
+                "Se recomienda cerrar todos los periodos antes del cierre anual."
+            )
+        else:
+            # Full 12-month year with unclosed periods: hard block
+            _periods_passed = False
+            _periods_warning = False
+            _periods_msg = (
+                f"Solo {closed_periods} de {total_periods} periodos están cerrados. "
+                "Todos los periodos deben estar cerrados antes del cierre anual."
+            )
 
         validations["periods_closed"] = {
-            "passed": all_closed,
-            "is_warning": all_closed and total_periods < 12,
-            "message": (
-                f"Solo {closed_periods} de {total_periods} periodos creados están cerrados. "
-                "Todos los periodos deben estar cerrados."
-            )
-            if not all_closed
-            else (
-                f"Todos los {closed_periods} periodos mensuales creados están cerrados."
-                + (" (Advertencia: Ejercicio con menos de 12 meses)" if total_periods < 12 else "")
-            ),
+            "passed": _periods_passed,
+            "is_warning": _periods_warning,
+            "message": _periods_msg,
         }
+
 
         # 3. Check no DRAFT journal entries in the year
         draft_count = JournalEntry.objects.filter(

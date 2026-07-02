@@ -46,6 +46,7 @@ export function FiscalYearClosingWizard({
     const {
         items: checklistItems,
         isLoading: isChecklistLoading,
+        isError: isChecklistError,
         toggleItem: handleToggleChecklist,
         checklistPassed,
     } = useClosingChecklist(year, isOpen);
@@ -72,6 +73,10 @@ export function FiscalYearClosingWizard({
                     {isChecklistLoading ? (
                         <div className="flex items-center justify-center py-8">
                             <span className="text-xs text-muted-foreground">Cargando checklist...</span>
+                        </div>
+                    ) : isChecklistError ? (
+                        <div className="flex items-center justify-center py-8">
+                            <span className="text-xs text-destructive">No se pudo cargar el checklist. Puede continuar con el cierre.</span>
                         </div>
                     ) : checklistItems && checklistItems.length > 0 ? (
                         <div className="space-y-3">
