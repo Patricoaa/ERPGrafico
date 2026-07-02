@@ -60,8 +60,8 @@ export function Step4_Receipt({ receiptData, setReceiptData, orderLines = [] }: 
                     purchasingApi.getUoms(),
                     purchasingApi.getWarehouses()
                 ])
-                setUoMs(uomsData as unknown as UoM[])
-                setWarehouses(warehousesData as unknown as Warehouse[])
+                setUoMs((uomsData ?? []) as unknown as UoM[])
+                setWarehouses((warehousesData ?? []) as unknown as Warehouse[])
             } catch (error) {
                 console.error("Failed to fetch receipt metadata", error)
             }

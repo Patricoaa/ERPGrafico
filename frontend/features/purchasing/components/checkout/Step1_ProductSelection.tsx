@@ -13,6 +13,7 @@ import { useForm, useFieldArray } from "react-hook-form"
 import { ProductSelector } from "@/components/selectors/ProductSelector"
 import { UoMSelector } from "@/components/selectors/UoMSelector"
 import { useVatRate } from '@/hooks/useVatRate'
+import { useUoMs } from '@/features/inventory'
 import { purchasingApi } from "../../api/purchasingApi"
 import { toast } from "sonner"
 
@@ -117,8 +118,9 @@ export function Step1_ProductSelection({
 }: Step1_ProductSelectionProps) {
     const { rate, multiplier } = useVatRate()
     const [products, setProducts] = useState<ProductMinimal[]>([])
-    const [uoms, setUoMs] = useState<UoM[]>([])
     const [loading, setLoading] = useState(true)
+    const { uoms: rawUoms, isLoading: isUoMsLoading } = useUoMs()
+    const uoms = rawUoms as unknown as UoM[]
 
     const defaultLine = useMemo<CheckoutLine>(() => ({
         product: "",
@@ -163,18 +165,14 @@ export function Step1_ProductSelection({
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [])
 
-    // Fetch products and UoMs
+    // Fetch products
     useEffect(() => {
         const fetchData = async () => {
             try {
-                const [allProducts, uomsData] = await Promise.all([
-                    purchasingApi.getPurchasableProducts(),
-                    purchasingApi.getUoms(),
-                ])
-                setProducts(allProducts as unknown as ProductMinimal[])
-                setUoMs(uomsData as unknown as UoM[])
+                const allProducts = await purchasingApi.getPurchasableProducts()
+                setProducts((allProducts ?? []) as unknown as ProductMinimal[])
             } catch (error) {
-                console.error("Error fetching data:", error)
+                console.error("Error fetching products:", error)
                 toast.error("Error al cargar productos")
             } finally {
                 setLoading(false)
@@ -214,7 +212,7 @@ export function Step1_ProductSelection({
             columns={COLUMNS}
             onAdd={() => append({ ...defaultLine })}
             addButtonText="Agregar Producto"
-            isLoading={loading}
+            isLoading={loading || isUoMsLoading}
             footer={<GrossToNetCalculator rate={rate} multiplier={multiplier} />}
         >
             <TableBody>
