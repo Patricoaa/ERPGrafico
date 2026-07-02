@@ -15,6 +15,16 @@ import { type PurchaseOrderAPI, type PurchaseOrderLineAPI, type CheckoutLine, ty
 import { type PaymentData } from "@/features/treasury"
 
 import { PricingUtils } from '@/lib/pricing-utils'
+
+function generateUUID(): string {
+    if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+        return crypto.randomUUID()
+    }
+    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
+        const r = (Math.random() * 16) | 0
+        return (c === 'x' ? r : (r & 0x3) | 0x8).toString(16)
+    })
+}
 import { Step0_Supplier } from "./checkout/Step0_Supplier"
 import { Step1_ProductSelection } from "./checkout/Step1_ProductSelection"
 import { Check, ChevronRight, ChevronLeft, Loader2, ShoppingCart } from "lucide-react"
@@ -22,6 +32,7 @@ import { useVatRate } from '@/hooks/useVatRate'
 import { useTreasuryAccounts } from "@/hooks/useTreasuryAccounts"
 import { useServerDate } from "@/hooks/useServerDate"
 import { BaseModal, CancelButton, FormFooter } from '@/components/shared'
+import { useRef } from "react"
 
 interface PurchaseCheckoutWizardProps {
     open: boolean
@@ -49,6 +60,7 @@ export function PurchaseCheckoutWizard({
     const [internalOrder, setInternalOrder] = useState<PurchaseOrderAPI | null>(order)
     const [step, setStep] = useState(1)
     const [loading, setLoading] = useState(false)
+    const idempotencyKeyRef = useRef<string>(generateUUID())
     const [currentOrderLines, setCurrentOrderLines] = useState<CheckoutLine[]>(orderLines)
     const [currentTotal, setCurrentTotal] = useState(total)
     const { dateString } = useServerDate()
@@ -375,7 +387,8 @@ export function PurchaseCheckoutWizard({
                 formData.append('receipt_data', JSON.stringify(receiptPayload))
             }
 
-            await purchasingApi.createOrder(formData)
+            await purchasingApi.createOrder(formData, idempotencyKeyRef.current)
+            idempotencyKeyRef.current = generateUUID()
 
             toast.success("Compra procesada correctamente")
             onComplete()
