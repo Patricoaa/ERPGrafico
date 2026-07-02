@@ -236,7 +236,6 @@ class FiscalYearClosingService:
         # If net_result == 0, no equity line needed (income == expenses)
 
         if items:
-            # Bulk create items and post the entry
             JournalItem.objects.bulk_create(items)
             JournalEntryService.post_entry(closing_entry)
         else:
