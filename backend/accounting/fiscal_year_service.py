@@ -690,25 +690,30 @@ class FiscalYearClosingService:
             else "Cuenta de resultado configurada.",
         }
 
-        # 5. Check all TaxPeriods for the year are CLOSED
+        # 5. Check all TaxPeriods for the year are CLOSED (warning only — not a hard block)
         tax_total = TaxPeriod.objects.filter(year=year).count()
         tax_closed = TaxPeriod.objects.filter(
             year=year, status=TaxPeriod.Status.CLOSED
         ).count()
-        tax_all_closed = (tax_closed == tax_total) and tax_total > 0
+        tax_all_closed = tax_total == 0 or (tax_closed == tax_total)
+
+        if tax_total == 0:
+            _tax_msg = "No hay periodos tributarios (F29) registrados para este año."
+            _tax_warning = True
+        elif tax_all_closed:
+            _tax_msg = f"Todos los {tax_closed} periodos tributarios del año están cerrados."
+            _tax_warning = False
+        else:
+            _tax_msg = (
+                f"Solo {tax_closed} de {tax_total} periodos tributarios (F29) "
+                "están cerrados. Se recomienda cerrarlos antes del cierre anual."
+            )
+            _tax_warning = True
 
         validations["tax_periods_closed"] = {
-            "passed": tax_all_closed,
-            "message": (
-                f"Solo {tax_closed} de {tax_total} periodos tributarios (F29) "
-                "están cerrados. Todos los periodos tributarios deben estar "
-                "cerrados antes del cierre anual."
-            )
-            if not tax_all_closed
-            else (
-                f"Todos los {tax_closed} periodos tributarios del año "
-                "están cerrados."
-            ),
+            "passed": True,
+            "is_warning": _tax_warning,
+            "message": _tax_msg,
         }
 
         return validations
