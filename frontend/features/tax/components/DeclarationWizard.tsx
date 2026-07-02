@@ -39,6 +39,7 @@ export function DeclarationWizard({ isOpen, onOpenChange, periodId, onSuccess, e
     const [calcData, setCalcData] = useState<TaxCalculationData | null>(null)
     const [taxPeriodId, setTaxPeriodId] = useState<number | null>(periodId || null)
     const [isClosed, setIsClosed] = useState(false)
+    const [hadPaymentDue, setHadPaymentDue] = useState(false)
     const idempotencyKeyRef = useRef<string | null>(null)
     const [period, setPeriod] = useState({
         year: currentYear || new Date().getFullYear(),
@@ -91,6 +92,7 @@ export function DeclarationWizard({ isOpen, onOpenChange, periodId, onSuccess, e
         const initializeWizard = async () => {
             if (isOpen) {
                 setIsClosed(false)
+                setHadPaymentDue(false)
                 let targetPeriod: TaxPeriod | undefined
                 let year: number | undefined
                 let month: number | undefined
@@ -155,11 +157,25 @@ export function DeclarationWizard({ isOpen, onOpenChange, periodId, onSuccess, e
                     (regError as { response?: { data?: { error?: string } } })?.response?.data?.error?.includes("ya ha sido registrada")
                 if (!isAlreadyRegistered) throw regError
             }
-            if (currentTaxPeriodId) await closePeriodMutation.mutateAsync({
-                id: currentTaxPeriodId,
-                idempotencyKey: idempotencyKeyRef.current,
-            })
-            toast.success("Ciclo tributario finalizado exitosamente")
+            // Determine if payment is needed before closing
+            const vatDebit = calcData?.vat_debit || 0
+            const vatCredit = calcData?.vat_credit || 0
+            const totalVATCredits = vatCredit + (manualFields.vat_credit_carryforward || 0) + (manualFields.vat_correction_amount || 0)
+            const computedVatToPay = Math.max(0, vatDebit - totalVATCredits)
+            const otherTaxes = (manualFields.withholding_tax || 0) + (manualFields.second_category_tax || 0) + (manualFields.ppm_amount || 0)
+            const finalToPay = computedVatToPay + otherTaxes
+            const needsPayment = finalToPay > 0
+
+            if (currentTaxPeriodId && !needsPayment) {
+                await closePeriodMutation.mutateAsync({
+                    id: currentTaxPeriodId,
+                    idempotencyKey: idempotencyKeyRef.current,
+                })
+                toast.success("Ciclo tributario finalizado exitosamente")
+            } else {
+                toast.success("Declaración F29 registrada correctamente. Debe realizar el pago antes de cerrar el período.")
+            }
+            setHadPaymentDue(needsPayment)
             setIsClosed(true)
             onSuccess();
             return true
@@ -380,13 +396,20 @@ export function DeclarationWizard({ isOpen, onOpenChange, periodId, onSuccess, e
                 onOpenChange={onOpenChange} 
                 size="xl" 
                 showCloseButton={false}
-                title="Ciclo Finalizado"
+                title={hadPaymentDue ? "Declaración Registrada" : "Ciclo Finalizado"}
             >
                 <div className="flex flex-col items-center justify-center py-20 text-center space-y-8 animate-in zoom-in-95 duration-500">
                     <CheckCircle2 className="h-12 w-12" />
                     <div className="space-y-3">
-                        <h3 className="text-3xl font-black uppercase tracking-tight">Ciclo Finalizado</h3>
-                        <p className="text-muted-foreground text-sm max-w-md px-10">La declaración F29 del periodo ha sido registrada y el ciclo bloqueado para futuros cambios.</p>
+                        <h3 className="text-3xl font-black uppercase tracking-tight">
+                            {hadPaymentDue ? "Declaración Registrada" : "Ciclo Finalizado"}
+                        </h3>
+                        <p className="text-muted-foreground text-sm max-w-md px-10">
+                            {hadPaymentDue
+                                ? "La declaración F29 ha sido registrada. Para completar el cierre del período, debe realizar el pago desde la vista de Cierres."
+                                : "La declaración F29 del periodo ha sido registrada y el ciclo bloqueado para futuros cambios."
+                            }
+                        </p>
                     </div>
                     <Button onClick={() => onOpenChange(false)} className="px-10 h-11 font-black uppercase tracking-widest text-[11px]">Finalizar Proceso</Button>
                 </div>

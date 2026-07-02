@@ -55,6 +55,20 @@ class F29CalculationService:
         purchase_debit_notes = Decimal("0")
         purchase_credit_notes = Decimal("0")
 
+        # Per-DTE-type breakdowns
+        sales_taxed_by_dte: dict[str, dict] = {}
+        sales_exempt_by_dte: dict[str, dict] = {}
+        purchases_taxed_by_dte: dict[str, dict] = {}
+        purchases_exempt_by_dte: dict[str, dict] = {}
+
+        def _accumulate(
+            store: dict[str, dict], dte_type: str, dte_type_display: str, total_net: Decimal
+        ) -> None:
+            if dte_type not in store:
+                store[dte_type] = {"dte_type": dte_type, "dte_type_display": dte_type_display, "total": Decimal("0"), "count": 0}
+            store[dte_type]["total"] += total_net
+            store[dte_type]["count"] += 1
+
         # Process each invoice
         for invoice in invoices:
             is_sale = invoice.sale_order_id is not None
@@ -74,8 +88,10 @@ class F29CalculationService:
                     # Regular invoices/boletas
                     if is_exempt:
                         sales_exempt += invoice.total_net
+                        _accumulate(sales_exempt_by_dte, invoice.dte_type, invoice.get_dte_type_display(), invoice.total_net)
                     else:
                         sales_taxed += invoice.total_net
+                        _accumulate(sales_taxed_by_dte, invoice.dte_type, invoice.get_dte_type_display(), invoice.total_net)
             else:
                 # Purchase documents
                 if invoice.dte_type == Invoice.DTEType.NOTA_CREDITO:
@@ -93,8 +109,10 @@ class F29CalculationService:
                         pass
                     elif is_exempt:
                         purchases_exempt += invoice.total_net
+                        _accumulate(purchases_exempt_by_dte, invoice.dte_type, invoice.get_dte_type_display(), invoice.total_net)
                     else:
                         purchases_taxed += invoice.total_net
+                        _accumulate(purchases_taxed_by_dte, invoice.dte_type, invoice.get_dte_type_display(), invoice.total_net)
 
         # Calculate net amounts
         net_taxed_sales = sales_taxed + debit_notes_taxed - credit_notes_taxed
@@ -151,6 +169,10 @@ class F29CalculationService:
             "purchases_exempt": purchases_exempt,
             "purchase_debit_notes": purchase_debit_notes,
             "purchase_credit_notes": purchase_credit_notes,
+            "sales_taxed_by_dte": [v for v in sales_taxed_by_dte.values()],
+            "sales_exempt_by_dte": [v for v in sales_exempt_by_dte.values()],
+            "purchases_taxed_by_dte": [v for v in purchases_taxed_by_dte.values()],
+            "purchases_exempt_by_dte": [v for v in purchases_exempt_by_dte.values()],
             "net_taxed_sales": net_taxed_sales,
             "net_taxed_purchases": net_taxed_purchases,
             "vat_debit": vat_debit,
@@ -614,6 +636,16 @@ class TaxPeriodService:
                 "Debe crear y registrar una declaración F29 antes de cerrar el período."
             )
 
+        # Validate payment if amount due
+        if declaration.total_amount_due > 0:
+            total_paid = sum(p.amount for p in declaration.payments.all())
+            if total_paid < declaration.total_amount_due:
+                pending = declaration.total_amount_due - total_paid
+                raise ValidationError(
+                    f"Debe registrar el pago del F29 antes de cerrar el período. "
+                    f"Saldo pendiente: ${pending:,.0f}"
+                )
+
         # Close the period
         period.status = TaxPeriod.Status.CLOSED
         period.closed_at = timezone.now()
@@ -816,7 +848,7 @@ class F29PaymentService:
         journal_entry = JournalEntry.objects.create(
             date=payment.payment_date,
             description=GlosaBuilder.build(
-                GlosaBuilder.PAGO_F29, doc_ref=doc_ref, extra=[period_label],
+                GlosaBuilder.PAGO_F29, doc_ref, amount=payment.amount, extra=[period_label],
             ),
             reference=f"Pago-{payment.reference}",
         )
@@ -1082,6 +1114,25 @@ class AccountingPeriodService:
             date__gte=start_date, date__lt=end_date, status=Invoice.Status.DRAFT
         ).count()
 
+        # Payroll check
+        from hr.models import Payroll
+        payroll_count = Payroll.objects.filter(
+            period_year=year, period_month=month
+        ).count()
+        payroll_posted_count = Payroll.objects.filter(
+            period_year=year, period_month=month, status=Payroll.Status.POSTED
+        ).count()
+
+        # Bank reconciliation check (CONFIRMED bank statements for the date range)
+        from treasury.models import BankStatement
+        reconciliation_count = BankStatement.objects.filter(
+            statement_date__gte=start_date, statement_date__lt=end_date,
+        ).count()
+        reconciliation_confirmed_count = BankStatement.objects.filter(
+            statement_date__gte=start_date, statement_date__lt=end_date,
+            status=BankStatement.Status.CONFIRMED,
+        ).count()
+
         # Build checklist
         checklist = {
             "period_exists": period is not None,
@@ -1089,6 +1140,10 @@ class AccountingPeriodService:
             "tax_period_closed": tax_closed,
             "draft_entries_count": draft_entries_count,
             "draft_invoices_count": draft_invoices_count,
+            "payroll_count": payroll_count,
+            "payroll_posted_count": payroll_posted_count,
+            "reconciliation_count": reconciliation_count,
+            "reconciliation_confirmed_count": reconciliation_confirmed_count,
             "is_fully_closable": tax_closed
             and draft_entries_count == 0
             and draft_invoices_count == 0,

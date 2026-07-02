@@ -28,6 +28,7 @@ interface FiscalYearCardProps {
     onReopenFiscalYear: (year: number) => void;
     onGenerateOpening: (year: number) => void;
     isFiscalYearLoading: boolean;
+    onPayF29?: (periodId: number) => void;
 }
 
 export function FiscalYearCard({
@@ -45,7 +46,8 @@ export function FiscalYearCard({
     onPreviewClosing,
     onReopenFiscalYear,
     onGenerateOpening,
-    isFiscalYearLoading
+    isFiscalYearLoading,
+    onPayF29,
 }: FiscalYearCardProps) {
     
     const status = fiscalYear?.status || 'OPEN';
@@ -160,6 +162,7 @@ export function FiscalYearCard({
                                 onReopenTaxPeriod={onReopenTaxPeriod}
                                 onOpenDeclaration={onOpenDeclaration}
                                 isTaxActionLoading={isTaxActionLoading}
+                                onPayF29={onPayF29}
                             />
                         );
                     })}
