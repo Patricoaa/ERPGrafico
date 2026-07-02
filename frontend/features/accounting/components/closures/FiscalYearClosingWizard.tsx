@@ -18,10 +18,9 @@ import {
 } from 'lucide-react';
 import { type FiscalYearPreviewResult } from '../../types';
 import { cn } from '@/lib/utils';
-import { useClosingChecklist } from '../../hooks/useClosingChecklist';
 
-// Lazy load TrialBalanceReport
-const TrialBalanceReport = lazy(() => import('../reports/TrialBalanceReport').then(m => ({ default: m.TrialBalanceReport })));
+// Lazy load FinancialStatementsReport
+const FinancialStatementsReport = lazy(() => import('@/features/finance/components/FinancialStatementsReport').then(m => ({ default: m.FinancialStatementsReport })));
 
 interface FiscalYearClosingWizardProps {
     isOpen: boolean;
@@ -43,14 +42,6 @@ export function FiscalYearClosingWizard({
     const [showTrialBalance, setShowTrialBalance] = useState(false);
     const [isClosed, setIsClosed] = useState(false);
 
-    const {
-        items: checklistItems,
-        isLoading: isChecklistLoading,
-        isError: isChecklistError,
-        toggleItem: handleToggleChecklist,
-        checklistPassed,
-    } = useClosingChecklist(year, isOpen);
-
     // Reset state when modal opens
     useEffect(() => {
         if (isOpen) {
@@ -66,101 +57,6 @@ export function FiscalYearClosingWizard({
     const steps: WizardStep[] = useMemo(() => [
         {
             id: 0,
-            title: "Checklist de Cierre",
-            isValid: checklistPassed,
-            component: (
-                <div className="space-y-4">
-                    {isChecklistLoading ? (
-                        <div className="flex items-center justify-center py-8">
-                            <span className="text-xs text-muted-foreground">Cargando checklist...</span>
-                        </div>
-                    ) : isChecklistError ? (
-                        <div className="flex items-center justify-center py-8">
-                            <span className="text-xs text-destructive">No se pudo cargar el checklist. Puede continuar con el cierre.</span>
-                        </div>
-                    ) : checklistItems && checklistItems.length > 0 ? (
-                        <div className="space-y-3">
-                            <p className="text-[10px] font-bold uppercase text-muted-foreground tracking-widest px-1">
-                                Verifique que los siguientes items estén completados antes del cierre
-                            </p>
-                            <div className="space-y-1">
-                                {checklistItems.map((item) => (
-                                    <div
-                                        key={item.id}
-                                        className={cn(
-                                            "flex items-start gap-3 p-3 border rounded-sm transition-colors cursor-pointer hover:bg-muted/30",
-                                            item.is_completed
-                                                ? "border-success/30 bg-success/5"
-                                                : item.is_required
-                                                    ? "border-border"
-                                                    : "border-dashed border-border/50"
-                                        )}
-                                        onClick={() => handleToggleChecklist(item)}
-                                    >
-                                        <Checkbox
-                                            checked={item.is_completed}
-                                            onCheckedChange={() => handleToggleChecklist(item)}
-                                            className="mt-0.5"
-                                        />
-                                        <div className="flex-1 min-w-0">
-                                            <div className="flex items-center gap-2">
-                                                <span className={cn(
-                                                    "text-xs font-medium",
-                                                    item.is_completed && "line-through text-muted-foreground"
-                                                )}>
-                                                    {item.name}
-                                                </span>
-                                                <span className="text-[8px] uppercase tracking-wider px-1.5 py-0.5 rounded-sm bg-muted text-muted-foreground">
-                                                    {item.category_display}
-                                                </span>
-                                                {item.is_required && (
-                                                    <span className="text-[8px] uppercase tracking-wider text-destructive">*</span>
-                                                )}
-                                            </div>
-                                            {item.description && (
-                                                <p className="text-[10px] text-muted-foreground mt-0.5">{item.description}</p>
-                                            )}
-                                            {item.notes && (
-                                                <p className="text-[9px] text-muted-foreground/60 mt-1 italic">Nota: {item.notes}</p>
-                                            )}
-                                        </div>
-                                        {item.is_completed ? (
-                                            <CheckCircle2 className="w-4 h-4 text-success shrink-0 mt-0.5" />
-                                        ) : item.is_required ? (
-                                            <AlertTriangle className="w-4 h-4 text-muted-foreground/40 shrink-0 mt-0.5" />
-                                        ) : null}
-                                    </div>
-                                ))}
-                            </div>
-                            {!checklistPassed && (
-                                <Alert variant="warning" className="mt-4">
-                                    <AlertTriangle className="w-4 h-4" />
-                                    <AlertTitle className="text-xs font-bold uppercase">Checklist incompleto</AlertTitle>
-                                    <AlertDescription className="text-[10px]">
-                                        Complete todos los items requeridos antes de continuar con el cierre.
-                                    </AlertDescription>
-                                </Alert>
-                            )}
-                            {checklistPassed && (
-                                <Alert variant="success" className="mt-4">
-                                    <CheckCircle2 className="w-4 h-4" />
-                                    <AlertTitle className="text-xs font-bold uppercase">Checklist completado</AlertTitle>
-                                    <AlertDescription className="text-[10px]">
-                                        Todos los items requeridos están verificados. Puede continuar.
-                                    </AlertDescription>
-                                </Alert>
-                            )}
-                        </div>
-                    ) : (
-                        <div className="flex items-center justify-center py-8">
-                            <span className="text-xs text-muted-foreground">No hay items de checklist configurados.</span>
-                        </div>
-                    )}
-                </div>
-            ),
-        },
-        {
-            id: 1,
             title: "Auditoría de Integridad",
             isValid: !!preview?.can_close && !!preview?.is_balanced,
             component: (
@@ -168,7 +64,7 @@ export function FiscalYearClosingWizard({
                     {preview && !preview.is_balanced ? (
                         <Alert variant="destructive" className="border-2">
                             <AlertTitle className="font-bold uppercase">Error de Cuadratura</AlertTitle>
-                            <AlertDescription className="font-medium mt-1 flex flex-col gap-3 text-xs">
+                            <AlertDescription className="font-medium mt-1 flex items-center justify-between gap-3 text-xs">
                                 <p>El Balance de Comprobación presenta descuadres. No se puede proceder con el cierre.</p>
                                 <Button
                                     variant="outline" size="sm"
@@ -182,7 +78,7 @@ export function FiscalYearClosingWizard({
                     ) : preview ? (
                         <Alert variant="success">
                             <AlertTitle className="font-bold uppercase">Balance Cuadrado</AlertTitle>
-                            <AlertDescription className="text-success/80 font-medium flex flex-col gap-3 text-xs">
+                            <AlertDescription className="text-success/80 font-medium flex items-center justify-between gap-3 text-xs">
                                 <p>Se ha verificado la integridad de la partida doble para el ejercicio {year}.</p>
                                 <Button
                                     variant="outline" size="sm"
@@ -220,7 +116,7 @@ export function FiscalYearClosingWizard({
             )
         },
         {
-            id: 2,
+            id: 1,
             title: "Resultado Económico",
             isValid: true,
             component: preview ? (
@@ -320,7 +216,7 @@ export function FiscalYearClosingWizard({
                 </div>
             ) : null
         }
-    ], [preview, year, isChecklistLoading, isChecklistError, checklistItems, checklistPassed, handleToggleChecklist]);
+    ], [preview, year]);
 
     if (isClosed) {
         return (
@@ -384,20 +280,20 @@ export function FiscalYearClosingWizard({
                 isLoading={!preview && isLoading}
             />
 
-            {/* Trial Balance Detail Modal */}
+            {/* Financial Statements Detail Modal */}
             <BaseModal
                 open={showTrialBalance}
                 onOpenChange={setShowTrialBalance}
                 icon={Scale}
-                title={`Balance de Comprobación - Ejercicio ${year}`}
-                description="Resumen de sumas y saldos del ejercicio fiscal."
+                title={`Balance General - Ejercicio ${year}`}
+                description="Resumen de activos, pasivos y patrimonio del ejercicio fiscal."
                 size="xl"
                 hideScrollArea={true}
                 contentClassName="p-0"
             >
                 <div className="h-full flex flex-col p-4">
                     <Suspense fallback={<SkeletonShell isLoading ariaLabel="Cargando..." />}>
-                        <TrialBalanceReport />
+                        <FinancialStatementsReport activeTab="bs" />
                     </Suspense>
                 </div>
             </BaseModal>
