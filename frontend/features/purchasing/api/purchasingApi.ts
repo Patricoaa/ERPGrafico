@@ -134,13 +134,15 @@ export const purchasingApi = {
     },
 
     getUoms: async (): Promise<Record<string, unknown>[]> => {
-        const res = await api.get<{ results: Record<string, unknown>[] }>('/inventory/uoms/')
-        return res.data.results
+        const res = await api.get<Record<string, unknown>[]>('/inventory/uoms/')
+        // eslint-disable-next-line pagination/no-raw-response-data -- master data, no pagination
+        return res.data
     },
 
     getWarehouses: async (): Promise<Record<string, unknown>[]> => {
-        const res = await api.get<{ results: Record<string, unknown>[] }>('/inventory/warehouses/')
-        return res.data.results
+        const res = await api.get<Record<string, unknown>[]>('/inventory/warehouses/')
+        // eslint-disable-next-line pagination/no-raw-response-data -- master data, no pagination
+        return res.data
     },
 
     getWarehouse: async (id: string): Promise<Record<string, unknown>> => {

@@ -132,8 +132,8 @@ export function PurchaseOrderModal({ onSuccess, initialData, open: openProp, onO
                 purchasingApi.getUoms(),
             ])
 
-            setProducts(allProducts as unknown as ProductMinimal[])
-            setUoMs(uomsData as unknown as UoM[])
+            setProducts((allProducts ?? []) as unknown as ProductMinimal[])
+            setUoMs((uomsData ?? []) as unknown as UoM[])
         } catch (error) {
             console.error("Error fetching data:", error)
         } finally {
