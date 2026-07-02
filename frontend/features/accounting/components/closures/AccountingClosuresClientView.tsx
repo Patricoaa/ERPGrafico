@@ -17,7 +17,7 @@ import type { TaxDeclaration, TaxPaymentData } from '@/features/tax/types';
 import { AccountingPeriodCloseChecklistModal } from './AccountingPeriodCloseChecklist';
 
 import { useSearchParams, useRouter, usePathname } from 'next/navigation';
-import { useSelectedEntity } from '@/hooks/useSelectedEntity';
+import { useSelectedFiscalYearPreview } from '../../hooks/useSelectedFiscalYearPreview';
 import { DataTableView, EmptyState, StatusBadge } from '@/components/shared';
 import { type ColumnDef } from '@tanstack/react-table';
 import { DataTableColumnHeader } from '@/components/shared';
@@ -48,9 +48,7 @@ export function AccountingClosuresClientView({ externalOpen, onExternalOpenChang
         generateOpeningEntry
     } = useFiscalYears();
 
-    const { entity: selectedFromUrl, clearSelection: clearUrlSelection } = useSelectedEntity<FiscalYearPreviewResult>({
-        endpoint: '/accounting/fiscal-years'
-    });
+    const { entity: selectedFromUrl, clearSelection: clearUrlSelection } = useSelectedFiscalYearPreview();
 
     const {
         data: periods,
