@@ -61,6 +61,9 @@ class FiscalYearClosingService:
         total_expenses = sum(a["balance"] for a in expense_accounts)
         net_result = total_income - total_expenses
 
+        # Auto-create checklist instances for this year
+        FiscalYearClosingService._auto_create_checklist_instances(year)
+
         # Run pre-closing validations
         validations = FiscalYearClosingService._run_preclosing_validations(year)
 
@@ -543,6 +546,27 @@ class FiscalYearClosingService:
         return results
 
     @staticmethod
+    @staticmethod
+    def _auto_create_checklist_instances(year: int) -> None:
+        """Create ClosingChecklistInstance for all active templates and this fiscal year."""
+        from accounting.models import (
+            ClosingChecklistInstance,
+            ClosingChecklistTemplate,
+            FiscalYear,
+        )
+
+        try:
+            fiscal_year = FiscalYear.objects.get(year=year)
+        except FiscalYear.DoesNotExist:
+            return
+
+        active_templates = ClosingChecklistTemplate.objects.filter(is_active=True)
+        for template in active_templates:
+            ClosingChecklistInstance.objects.get_or_create(
+                fiscal_year=fiscal_year, template=template
+            )
+
+    @staticmethod
     def _run_preclosing_validations(year: int) -> dict:
         """
         Runs all pre-closing validations and returns a dict of results.
@@ -640,6 +664,32 @@ class FiscalYearClosingService:
                 f"Todos los {tax_closed} periodos tributarios del año "
                 "están cerrados."
             ),
+        }
+
+        # 6. Check all required ClosingChecklist items are completed
+        from accounting.models import ClosingChecklistInstance, ClosingChecklistTemplate
+
+        incomplete_required = ClosingChecklistInstance.objects.filter(
+            fiscal_year__year=year,
+            template__is_required=True,
+            is_completed=False,
+        ).select_related("template")
+        incomplete_count = incomplete_required.count()
+
+        check_all_passed = incomplete_count == 0
+
+        if not check_all_passed:
+            pending_names = [i.template.name for i in incomplete_required]
+            check_message = (
+                "Los siguientes items requeridos del checklist de cierre "
+                "no están completados: " + ", ".join(pending_names) + "."
+            )
+        else:
+            check_message = "Todos los items del checklist de cierre están completados."
+
+        validations["checklist_completed"] = {
+            "passed": check_all_passed,
+            "message": check_message,
         }
 
         return validations
