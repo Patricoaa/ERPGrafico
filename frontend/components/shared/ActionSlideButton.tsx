@@ -34,12 +34,11 @@ export const ActionSlideButton = React.forwardRef<HTMLButtonElement, ActionSlide
         const isDisabled = disabled || loading;
 
         return (
-            <div className="flex items-center h-9">
             <button
                 ref={ref}
                 disabled={isDisabled}
                 className={cn(
-                    "relative inline-flex items-center justify-center overflow-hidden z-10 transition-all duration-300 ease-out cursor-pointer",
+                    "relative flex items-center justify-center overflow-hidden transition-all duration-300 ease-out cursor-pointer",
                     "h-9 px-4 text-[10px] font-black tracking-widest uppercase rounded-sm shadow-card",
                     "border",
                     isPrimary && "text-primary hover:text-primary-foreground bg-primary/5 border-primary",
@@ -52,13 +51,13 @@ export const ActionSlideButton = React.forwardRef<HTMLButtonElement, ActionSlide
                 )}
                 {...props}
             >
-                {/* 
+                {/*
                   Slide background: Starts at -100% X offset, slides to 0% on hover.
                   Uses slightly more than 100% (-101%) to prevent subpixel bleeding lines.
                 */}
                 <div
                     className={cn(
-                        "absolute inset-0 -z-10 transition-transform duration-300 ease-out transform -translate-x-[100%]",
+                        "absolute inset-0 transition-transform duration-300 ease-out transform -translate-x-[100%]",
                         "group-hover:translate-x-0 group-focus-visible:translate-x-0 group-active:translate-x-0",
                         isPrimary && "bg-primary",
                         isDestructive && "bg-destructive",
@@ -68,7 +67,7 @@ export const ActionSlideButton = React.forwardRef<HTMLButtonElement, ActionSlide
                 />
 
                 {/* Content wrapper to ensure text stays above the animated background */}
-                <span className="flex items-center justify-center gap-2">
+                <span className="relative z-10 flex items-center justify-center gap-2">
                     {loading ? (
                         <Loader2 className="h-3.5 w-3.5 animate-spin" />
                     ) : (
@@ -84,7 +83,6 @@ export const ActionSlideButton = React.forwardRef<HTMLButtonElement, ActionSlide
                     {children}
                 </span>
             </button>
-        </div>
         );
     }
 );
