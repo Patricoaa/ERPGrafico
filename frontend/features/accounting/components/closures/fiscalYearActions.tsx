@@ -11,7 +11,6 @@ export interface FiscalYearRow {
 export interface FiscalYearActionsCtx {
     onExecuteClosing: (year: number) => void
     onReopen: (year: number) => void
-    onGenerateOpening: (year: number) => void
 }
 
 export const fiscalYearActions = createEntityActions<FiscalYearRow, FiscalYearActionsCtx>((row, ctx) => {
@@ -27,20 +26,12 @@ export const fiscalYearActions = createEntityActions<FiscalYearRow, FiscalYearAc
                     disabled={row.periods.length === 0 || row.periods.some(p => p.status !== 'CLOSED')}
                 />
             ) : (
-                <>
-                    <DataCell.Action
-                        icon={LockOpen}
-                        title="Reabrir Ejercicio"
-                        className="text-warning"
-                        onClick={() => ctx.onReopen(row.year)}
-                    />
-                    <DataCell.Action
-                        icon={PlayCircle}
-                        title="Generar Asiento Apertura"
-                        className="text-success"
-                        onClick={() => ctx.onGenerateOpening(row.year)}
-                    />
-                </>
+                <DataCell.Action
+                    icon={LockOpen}
+                    title="Reabrir Ejercicio"
+                    className="text-warning"
+                    onClick={() => ctx.onReopen(row.year)}
+                />
             )}
         </>
     )

@@ -27,7 +27,6 @@ interface FiscalYearCardProps {
     isTaxActionLoading: boolean;
     onPreviewClosing: (year: number) => void;
     onReopenFiscalYear: (year: number) => void;
-    onGenerateOpening: (year: number) => void;
     isFiscalYearLoading: boolean;
     onPayF29?: (periodId: number) => void;
 }
@@ -47,7 +46,6 @@ export function FiscalYearCard({
     isTaxActionLoading,
     onPreviewClosing,
     onReopenFiscalYear,
-    onGenerateOpening,
     isFiscalYearLoading,
     onPayF29,
 }: FiscalYearCardProps) {
@@ -126,11 +124,6 @@ export function FiscalYearCard({
                                         <DropdownMenuItem onClick={() => onReopenFiscalYear(year)} disabled={isFiscalYearLoading}>
                                             <Lock className="w-4 h-4 mr-2 text-warning" />
                                             Reabrir Ejercicio
-                                        </DropdownMenuItem>
-                                        <DropdownMenuSeparator />
-                                        <DropdownMenuItem onClick={() => onGenerateOpening(year)} disabled={isFiscalYearLoading}>
-                                            <PlayCircle className="w-4 h-4 mr-2 text-success" />
-                                            Generar Asiento Apertura
                                         </DropdownMenuItem>
                                     </>
                                 ) : (

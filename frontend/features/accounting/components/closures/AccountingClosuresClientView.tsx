@@ -44,8 +44,7 @@ export function AccountingClosuresClientView({ externalOpen, onExternalOpenChang
         isActionLoading: actionLoadingYr,
         refetch: fetchFiscalYears,
         closeFiscalYear,
-        reopenFiscalYear,
-        generateOpeningEntry
+        reopenFiscalYear
     } = useFiscalYears();
 
     const { entity: selectedFromUrl, clearSelection: clearUrlSelection } = useSelectedFiscalYearPreview();
@@ -352,7 +351,6 @@ export function AccountingClosuresClientView({ externalOpen, onExternalOpenChang
     const fiscalYearActionsCtx: FiscalYearActionsCtx = {
         onExecuteClosing: (year) => handlePreviewClosing(year),
         onReopen: (year) => reopenFiscalYear(year),
-        onGenerateOpening: (year) => generateOpeningEntry(year),
     }
 
     const columns: ColumnDef<typeof groupedData[0]>[] = [
@@ -429,7 +427,6 @@ export function AccountingClosuresClientView({ externalOpen, onExternalOpenChang
                                         isTaxActionLoading={isLoadingTaxAction}
                                         onPreviewClosing={handlePreviewClosing}
                                         onReopenFiscalYear={reopenFiscalYear}
-                                        onGenerateOpening={generateOpeningEntry}
                                         isFiscalYearLoading={actionLoadingYr}
                                         onPayF29={handlePayF29}
                                     />
