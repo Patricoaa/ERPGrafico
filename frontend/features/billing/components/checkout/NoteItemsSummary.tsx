@@ -63,7 +63,7 @@ export function NoteItemsSummary({
                                             </div>
                                         </div>
                                         <p className="font-mono text-xs font-black whitespace-nowrap pt-0.5">
-                                            {formatCurrency((item.noteUnitPrice + (item.taxAmountPerUnit ?? 0)) * item.noteQuantity)}
+                                            {formatCurrency(item.noteUnitPrice * item.noteQuantity)}
                                         </p>
                                     </div>
                                 ))
