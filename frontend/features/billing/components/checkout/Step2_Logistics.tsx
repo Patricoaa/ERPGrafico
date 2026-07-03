@@ -184,7 +184,7 @@ export function Step2_Logistics({
             >
                 <div
                     className={cn(
-                        "flex flex-col items-center justify-center text-center gap-2 rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent cursor-pointer transition-all",
+                        "card-base flex flex-col items-center justify-center text-center gap-2 rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent cursor-pointer transition-all",
                         formData.delivery_type === 'IMMEDIATE' && "border-primary bg-primary/5",
                         hasRestrictedItems && "opacity-50 pointer-events-none grayscale"
                     )}
@@ -202,7 +202,7 @@ export function Step2_Logistics({
 
                 <div
                     className={cn(
-                        "flex flex-col items-center justify-center text-center gap-2 rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent cursor-pointer transition-all",
+                        "card-base flex flex-col items-center justify-center text-center gap-2 rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent cursor-pointer transition-all",
                         formData.delivery_type === 'SCHEDULED' && "border-primary bg-primary/5"
                     )}
                     onClick={() => setData({ ...formData, delivery_type: 'SCHEDULED' })}
@@ -219,7 +219,7 @@ export function Step2_Logistics({
 
                 <div
                     className={cn(
-                        "flex flex-col items-center justify-center text-center gap-2 rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent cursor-pointer transition-all",
+                        "card-base flex flex-col items-center justify-center text-center gap-2 rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent cursor-pointer transition-all",
                         formData.delivery_type === 'PARTIAL' && "border-primary bg-primary/5"
                     )}
                     onClick={() => setData({ ...formData, delivery_type: 'PARTIAL' })}
@@ -254,7 +254,8 @@ export function Step2_Logistics({
                                 </TableHeader>
                                 <TableBody>
                                     {selectedItems.map((i: Record<string, unknown>) => {
-                                        const item = i as unknown as { line_id: number; product_id: number; product_name: string; quantity: number; uom_id: number; product_type: string; has_bom: boolean; mfg_auto_finalize: boolean; creates_stock_move: boolean };
+                                        const item = i as unknown as { line_id: number; product_id: number; product_name: string; noteQuantity?: number; quantity?: number; uom_id: number; product_type: string; has_bom: boolean; mfg_auto_finalize: boolean; creates_stock_move: boolean };
+                                        const itemQty = (item.noteQuantity ?? item.quantity ?? 0) as number;
                                         const isRestricted = !isCreditNote &&
                                             (item.product_type === 'MANUFACTURABLE' || item.has_bom) &&
                                             !item.mfg_auto_finalize;
@@ -279,14 +280,14 @@ export function Step2_Logistics({
                                                     </div>
                                                 </TableCell>
                                                 <TableCell className="text-right font-semibold text-xs tabular-nums">
-                                                    {item.quantity.toLocaleString('es-CL') as string}
+                                                    {itemQty.toLocaleString('es-CL')}
                                                 </TableCell>
                                                 <TableCell>
                                                     <LabeledInput
                                                         type="number"
                                                         step="0.01"
                                                         min="0"
-                                                        max={item.quantity as number}
+                                                        max={itemQty}
                                                         value={currentVal}
                                                         disabled={!isEligible}
                                                         onChange={(e) => {
@@ -335,7 +336,6 @@ export function Step2_Logistics({
                     {(formData.delivery_type === 'PARTIAL' || formData.delivery_type === 'SCHEDULED') && (
                         <PeriodValidationDateInput
                             label={formData.delivery_type === 'PARTIAL' ? 'Fecha para el Resto' : 'Fecha de Operación'}
-                            icon={<Calendar className="h-3.5 w-3.5" />}
                             date={formData.date ? new Date(formData.date + 'T12:00:00') : undefined}
                             onDateChange={(d) => {
                                 if (!d) {
