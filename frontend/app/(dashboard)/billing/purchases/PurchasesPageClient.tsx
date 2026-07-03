@@ -13,7 +13,8 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip
 import { toast } from "sonner"
 import { LazyDrawer } from "@/features/_shared"
 import { PaymentModal } from "@/features/treasury"
-import { ReceiptModal, PurchaseNoteModal } from "@/features/purchasing"
+import { ReceiptModal } from "@/features/purchasing"
+import { UnifiedNoteWizard } from "@/features/notes"
 
 import { Progress } from "@/components/ui/progress"
 import { DataTableView, DataCell, DataTableColumnHeader, SegmentationBar } from '@/components/shared'
@@ -446,12 +447,64 @@ export default function PurchasesPageClient() {
 
             {
                 notingDoc && (
-                    <PurchaseNoteModal
+                    <UnifiedNoteWizard
                         open={!!notingDoc}
                         onOpenChange={(open: boolean) => !open && setNotingDoc(null)}
-                        orderId={notingDoc.purchase_order}
-                        orderNumber={notingDoc.purchase_order_number || notingDoc.purchase_order?.toString()}
-                        invoiceId={notingDoc.id}
+                        mode="purchase"
+                        initialType="NOTA_CREDITO"
+                        allowTypeChange={true}
+                        features={{ reviewStep: true }}
+                        supplierName={notingDoc.partner_name ?? undefined}
+                        orderReference={notingDoc.purchase_order_number?.toString() ?? notingDoc.purchase_order?.toString()}
+                        referenceLabel={notingDoc.purchase_order ? `OCS-${notingDoc.purchase_order_number ?? notingDoc.purchase_order}` : `Factura #${notingDoc.id}`}
+                        fetchSource={async () => {
+                            const { purchasingApi } = await import('@/features/purchasing/api/purchasingApi')
+                            const source = notingDoc.purchase_order
+                                ? (await purchasingApi.getOrder(notingDoc.purchase_order) as unknown) as Record<string, unknown>
+                                : (await purchasingApi.getInvoice(notingDoc.id) as unknown) as Record<string, unknown>
+                            const rawLines = (source.lines as Record<string, unknown>[]) || []
+                            const normLines = rawLines.map((l: Record<string, unknown>) => ({
+                                lineId: l.id as number,
+                                productId: l.product as number,
+                                productName: String(l.product_name || l.description || ''),
+                                productCode: l.product_code as string | undefined,
+                                uomName: l.uom_name as string | undefined,
+                                originalQuantity: Number(l.quantity) || 0,
+                                noteQuantity: 0,
+                                noteUnitPrice: parseFloat(String(l.unit_cost || l.unit_price || '0')),
+                            }))
+                            return {
+                                label: notingDoc.purchase_order ? `OCS-${source.number as string}` : `Factura #${notingDoc.id}`,
+                                isExempt: false,
+                                originalTotal: Number(source.total) || 0,
+                                supplierName: source.supplier_name as string | undefined,
+                                warehouseName: source.warehouse_name as string | undefined,
+                                contactId: typeof source.supplier === 'object' ? (source.supplier as Record<string, unknown>)?.id as number : source.supplier as number | undefined,
+                                lines: normLines,
+                            }
+                        }}
+                        onSubmit={async (payload) => {
+                            const { purchasingApi } = await import('@/features/purchasing/api/purchasingApi')
+                            const { PricingUtils } = await import('@/lib/pricing-utils')
+                            const formData = new FormData()
+                            formData.append('note_type', payload.noteType)
+                            formData.append('document_number', payload.registration.documentNumber)
+                            formData.append('document_date', payload.registration.documentDate)
+                            formData.append('amount_net', payload.totalNet.toString())
+                            formData.append('amount_tax', PricingUtils.calculateTax(payload.totalNet).toString())
+                            const returnItems = payload.lines
+                                .filter(l => l.noteQuantity > 0)
+                                .map(l => ({ product_id: l.productId, quantity: l.noteQuantity, unit_cost: l.noteUnitPrice }))
+                            formData.append('return_items', JSON.stringify(returnItems))
+                            if (payload.registration.attachment) formData.append('document_attachment', payload.registration.attachment)
+                            if (payload.payment.method || payload.payment.amount > 0) formData.append('payment_data', JSON.stringify(payload.payment))
+                            if (notingDoc.purchase_order) {
+                                formData.append('original_invoice_id', notingDoc.id.toString())
+                                await purchasingApi.registerNote(notingDoc.purchase_order, formData)
+                            } else {
+                                await purchasingApi.registerInvoiceNote(notingDoc.id, formData)
+                            }
+                        }}
                         onSuccess={refetch}
                     />
                 )
