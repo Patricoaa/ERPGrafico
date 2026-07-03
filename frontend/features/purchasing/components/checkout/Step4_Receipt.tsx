@@ -16,6 +16,8 @@ import { type ReceiptData, type CheckoutLine, type PartialReceiptLine } from "..
 import { type Warehouse, type UoM } from "@/types/entities"
 import { Package, Receipt, FileText, FileCheck } from "lucide-react"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
+import { Label } from "@/components/ui/label"
+import { cn } from "@/lib/utils"
 
 interface Step4_ReceiptProps {
     receiptData: ReceiptData
@@ -203,40 +205,37 @@ export function Step4_Receipt({ receiptData, setReceiptData, orderLines = [] }: 
         <div className="space-y-6">
             {/* Removed Warehouse Selector as per requirements */}
 
-            <LabeledContainer
-                label={
-                    <div className="flex items-center gap-2">
-                        <Package className="h-4 w-4" />
-                        <span>Tipo de {receiptLabel}</span>
-                    </div>
-                }
-                containerClassName="bg-primary/5 rounded-md"
-            >
+            <div className="space-y-2">
+                <div className="flex items-center gap-2 mb-2 text-sm font-bold uppercase tracking-widest text-muted-foreground">
+                    <Package className="h-4 w-4" />
+                    <span>Tipo de {receiptLabel}</span>
+                </div>
                 <RadioGroup
                     value={receiptData.type}
                     onValueChange={(val) => setReceiptData({ ...receiptData, type: val as ReceiptData['type'] })}
-                    className="space-y-3 w-full p-2"
+                    className="grid grid-cols-3 gap-3"
                 >
                     {receiptTypes.map((type) => (
-                        <div key={type.id} className="relative">
-                            <label
-                                htmlFor={`receipt-${type.id}`}
-                                className={`flex items-start gap-4 rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground cursor-pointer transition-all ${receiptData.type === type.id ? 'border-primary bg-primary/5' : ''
-                                    }`}
-                            >
-                                <RadioGroupItem value={type.id} id={`receipt-${type.id}`} className="mt-1" />
-                                <div className={`p-2 rounded-md bg-background border ${type.color}`}>
-                                    <type.icon className="h-5 w-5" />
-                                </div>
-                                <div className="flex-1">
-                                    <span className="text-sm font-semibold block">{type.label}</span>
-                                    <span className="text-xs text-muted-foreground">{type.description}</span>
-                                </div>
-                            </label>
-                        </div>
+                        <Label
+                            key={type.id}
+                            htmlFor={`receipt-${type.id}`}
+                            className={cn(
+                                "card-base flex items-center gap-4 bg-card p-4 cursor-pointer shadow-card shadow-black/5 hover:border-primary/50 transition-all",
+                                receiptData.type === type.id ? 'border-primary ring-1 ring-primary/20' : ''
+                            )}
+                        >
+                            <RadioGroupItem value={type.id} id={`receipt-${type.id}`} className="sr-only" />
+                            <div className={`p-2 rounded-md bg-background border ${type.color}`}>
+                                <type.icon className="h-5 w-5" />
+                            </div>
+                            <div className="flex-1">
+                                <span className="text-sm font-semibold block">{type.label}</span>
+                                <span className="text-[10px] uppercase font-black text-muted-foreground">{type.description}</span>
+                            </div>
+                        </Label>
                     ))}
                 </RadioGroup>
-            </LabeledContainer>
+            </div>
 
             {receiptData.type === 'PARTIAL' && orderLines.length > 0 && (
                 <div className="space-y-4 animate-in fade-in slide-in-from-top-2">
