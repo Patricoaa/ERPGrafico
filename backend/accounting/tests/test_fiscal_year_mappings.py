@@ -6,7 +6,7 @@ from decimal import Decimal
 from datetime import date
 
 from django.contrib.auth import get_user_model
-from django.test import TestCase
+from django.test import TestCase, TransactionTestCase
 
 from accounting.models import (
     Account,
@@ -51,10 +51,9 @@ def _create_balanced_entry(date_val, description, items_data, is_closing_system=
         JournalItem.objects.create(entry=entry, account=account, label=label, debit=debit, credit=credit)
 
     if total_debit != total_credit:
-        cash = Account.objects.filter(account_type=AccountType.ASSET).first()
-        if not cash:
-            cash = Account.objects.create(
-                code="1.1.01.001", name="Caja General", account_type=AccountType.ASSET,
+        cash, _ = Account.objects.get_or_create(
+                code="1.1.01.001",
+                defaults={"name": "Caja General", "account_type": AccountType.ASSET},
             )
         diff = total_credit - total_debit
         if diff > 0:
@@ -77,7 +76,7 @@ def _setup_periods(year):
     return periods
 
 
-class FiscalYearMappingSnapshotTest(TestCase):
+class FiscalYearMappingSnapshotTest(TransactionTestCase):
     def setUp(self):
         self.user = User.objects.create_user(username="testcloser", password="test")
         settings = AccountingSettings.get_solo()
@@ -86,7 +85,13 @@ class FiscalYearMappingSnapshotTest(TestCase):
             name="Utilidad del Ejercicio",
             account_type=AccountType.EQUITY,
         )
+        self.retained_earnings_account = Account.objects.create(
+            code="3.4.02",
+            name="Utilidades Retenidas",
+            account_type=AccountType.EQUITY,
+        )
         settings.partner_current_year_earnings_account = self.result_account
+        settings.partner_retained_earnings_account = self.retained_earnings_account
         settings.save()
 
         self.cash = Account.objects.create(
@@ -136,7 +141,7 @@ class FiscalYearMappingSnapshotTest(TestCase):
         self.assertFalse(FiscalYearAccountMapping.objects.filter(fiscal_year=fy).exists())
 
 
-class HistoricalCategoryResolutionTest(TestCase):
+class HistoricalCategoryResolutionTest(TransactionTestCase):
     def setUp(self):
         self.user = User.objects.create_user(username="testresolver", password="test")
         settings = AccountingSettings.get_solo()
@@ -145,7 +150,13 @@ class HistoricalCategoryResolutionTest(TestCase):
             name="Utilidad del Ejercicio",
             account_type=AccountType.EQUITY,
         )
+        self.retained_earnings_account = Account.objects.create(
+            code="3.5.01",
+            name="Utilidades Retenidas",
+            account_type=AccountType.EQUITY,
+        )
         settings.partner_current_year_earnings_account = self.result_account
+        settings.partner_retained_earnings_account = self.retained_earnings_account
         settings.save()
 
         self.cash = Account.objects.create(
@@ -196,7 +207,7 @@ class HistoricalCategoryResolutionTest(TestCase):
         self.assertNotIn(self.account, results)
 
 
-class HistoricalReportConsistencyTest(TestCase):
+class HistoricalReportConsistencyTest(TransactionTestCase):
     """End-to-end: remapping after close produces different results for live vs historical.
 
     Creates entries, creates the snapshot mapping directly (simulating close),
@@ -211,7 +222,13 @@ class HistoricalReportConsistencyTest(TestCase):
             name="Utilidad del Ejercicio",
             account_type=AccountType.EQUITY,
         )
+        self.retained_earnings_account = Account.objects.create(
+            code="3.6.01",
+            name="Utilidades Retenidas",
+            account_type=AccountType.EQUITY,
+        )
         settings.partner_current_year_earnings_account = self.result_account
+        settings.partner_retained_earnings_account = self.retained_earnings_account
         settings.save()
 
         self.cash = Account.objects.create(

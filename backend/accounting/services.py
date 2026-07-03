@@ -43,11 +43,11 @@ class JournalEntryService:
 
     @staticmethod
     @transaction.atomic
-    def reverse_entry(entry: JournalEntry, description=None):
+    def reverse_entry(entry: JournalEntry, description=None, allow_automatic=False):
         if entry.status not in [JournalEntry.State.POSTED, JournalEntry.State.CLOSED]:
             raise ValidationError("Solo se pueden reversar asientos publicados o cerrados.")
 
-        if not entry.is_manual:
+        if not entry.is_manual and not allow_automatic:
             raise ValidationError(
                 "No se puede revertir un asiento generado automáticamente. "
                 "Use el proceso de anulación del documento origen."
