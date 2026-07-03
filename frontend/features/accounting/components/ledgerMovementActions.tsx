@@ -4,7 +4,6 @@ import type { LedgerMovement } from '@/features/accounting/types'
 
 export interface LedgerMovementActionsCtx {
     onViewEntry: (entryId: number) => void
-    onDeleteEntry: (entryId: number) => void
 }
 
 export const ledgerMovementActions = createEntityActions<LedgerMovement, LedgerMovementActionsCtx>((mov, ctx) => (
@@ -14,12 +13,6 @@ export const ledgerMovementActions = createEntityActions<LedgerMovement, LedgerM
             title="Ver Asiento"
             color="text-primary"
             onClick={() => ctx.onViewEntry(mov.entry_id)}
-        />
-        <DataCell.Action
-            icon={Trash2}
-            title="Eliminar Asiento"
-            className="text-destructive"
-            onClick={() => ctx.onDeleteEntry(mov.entry_id)}
         />
     </>
 ))

@@ -198,6 +198,15 @@ class JournalEntryViewSet(viewsets.ModelViewSet, AuditHistory):
             return Response(self.get_serializer(inst).data)
         except Exception as e: return Response({'error': str(e)}, status=400)
 
+    def destroy(self, request, *args, **kwargs):
+        entry = self.get_object()
+        if entry.status != 'DRAFT':
+            return Response(
+                {"error": "Solo se pueden eliminar asientos en estado Borrador."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        return super().destroy(request, *args, **kwargs)
+
 
 # --- Budgeting ViewSets ---
 
