@@ -1,6 +1,6 @@
 "use client"
 
-import {User, CreditCard, ShoppingBag, CheckCircle2, Paintbrush, FileWarning} from "lucide-react"
+import {User, Wallet, Truck, CheckCircle2, Hammer, FileText} from "lucide-react"
 import { cn, formatPlainDate } from "@/lib/utils"
 import { MoneyDisplay } from "@/components/shared"
 
@@ -47,15 +47,15 @@ export function ProcessSummarySidebar({
     // Mirror the wizard's steps exactly
     const steps = [
         { id: 'customer', label: 'Cliente', icon: User },
-        { id: 'dte', label: 'Documento', icon: FileWarning },
+        { id: 'dte', label: 'Documento', icon: FileText },
     ]
 
     if (hasManufacturing) {
-        steps.push({ id: 'manufacturing', label: 'Fabricación', icon: Paintbrush })
+        steps.push({ id: 'manufacturing', label: 'Fabricación', icon: Hammer })
     }
 
-    steps.push({ id: 'delivery', label: 'Entrega', icon: ShoppingBag })
-    steps.push({ id: 'payment', label: 'Pago', icon: CreditCard })
+    steps.push({ id: 'delivery', label: 'Entrega', icon: Truck })
+    steps.push({ id: 'payment', label: 'Pago', icon: Wallet })
 
     return (
         <div className="w-64 border-r bg-muted/10 p-4 space-y-2 hidden md:block overflow-y-auto">

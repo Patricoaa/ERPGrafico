@@ -19,8 +19,7 @@ import { useInvoices } from "@/features/billing"
 import { getTask } from "@/features/workflow"
 import { formatMoney } from "@/lib/money"
 
-import {Loader2, ShoppingCart, AlertCircle, ShieldAlert, CheckCircle2, FileWarning, Truck} from "lucide-react"
-import {User} from "lucide-react"
+import {Loader2, Hammer, AlertCircle, ShieldAlert, CheckCircle2, FileWarning, Truck, User} from "lucide-react"
 import {BaseModal, FormSection} from '@/components/shared'
 import { cn } from "@/lib/utils"
 
@@ -330,7 +329,7 @@ export const SalesCheckoutWizardContent = forwardRef<SalesCheckoutWizardContentH
             case 'manufacturing':
                 return (
                     <div className="space-y-6">
-                        <FormSection title="Detalles de Fabricación" icon={ShoppingCart} />
+                        <FormSection title="Detalles de Fabricación" icon={Hammer} />
                         <Step2_ManufacturingDetails
                             orderLines={currentOrderLines}
                             setOrderLines={setCurrentOrderLines}

@@ -47,9 +47,9 @@ export function RadioCard({
                 />
             </div>
 
-            {/* Opcional: Ícono con fondo */}
+            {/* Opcional: Ícono sin fondo */}
             {icon && (
-                <div className={cn("p-1.5 rounded-md bg-background border shrink-0", iconColor)}>
+                <div className={cn("shrink-0 mt-0.5", iconColor)}>
                     {icon}
                 </div>
             )}
@@ -58,7 +58,7 @@ export function RadioCard({
             <div className="flex flex-col gap-1 min-w-0 flex-1 justify-center">
                 <span className="text-sm font-bold truncate leading-none">{label}</span>
                 {description && (
-                    <span className="text-[10px] uppercase font-black text-muted-foreground line-clamp-2 leading-tight mt-0.5">
+                    <span className="text-xs text-muted-foreground line-clamp-2 leading-tight mt-0.5">
                         {description}
                     </span>
                 )}
