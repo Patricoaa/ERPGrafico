@@ -204,15 +204,7 @@ function PortfolioContactPanel({ contact, onRefresh }: { contact: CreditContact,
                             {ledger.map((entry) => (
                                 <tr key={entry.id} className="text-[12px] group">
                                     <td className="py-2 pr-4 text-center">
-                                        <button
-                                            className="mx-auto block hover:opacity-85 transition-opacity"
-                                            onClick={(e) => {
-                                                e.stopPropagation()
-                                                openHub({ orderId: entry.id, type: 'sale' })
-                                            }}
-                                        >
-                                            <EntityBadge label="sales.saleorder" data={{ id: entry.id, number: entry.number }} link={false} size="sm" />
-                                        </button>
+                                        <DataCell.Entity entityLabel="sales.saleorder" data={entry as unknown as Record<string, unknown>} />
                                     </td>
                                     <td className="py-2 pr-4 text-center">
                                         <DataCell.Date value={entry.date} />

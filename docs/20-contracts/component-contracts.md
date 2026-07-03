@@ -229,7 +229,6 @@ Sistema central de tablas de datos y sus primitivas de vista.
 | `DataTable` (minimal) | Tabla display simple sin toolbar ni paginación | `variant="minimal"` |
 | `DataTable` (compact) | Tabla densa CSS Grid para modals/drawers | `variant="compact"` |
 | `EntityCard` | Shell estandarizado para vistas de tarjeta/grilla | `variant="default" | "compact"` |
-| `ExpandableTableRow` 🔴 | **Deprecado.** Usar `renderSubComponent` + `createExpandableRowView` | `onExpand`, `cellClassName` |
 
 ---
 

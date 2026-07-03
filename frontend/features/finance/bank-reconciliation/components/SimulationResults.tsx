@@ -109,13 +109,11 @@ export function SimulationResults({ rule }: { rule: Record<string, unknown> }) {
     ]
 
     return (
-        <div className="border rounded-sm border-border/40">
-            <DataTable
-                columns={columns}
-                data={results}
-                variant="embedded"
-                hidePagination
-            />
-        </div>
+        <DataTable
+            columns={columns}
+            data={results}
+            variant="minimal"
+            hidePagination
+        />
     )
 }

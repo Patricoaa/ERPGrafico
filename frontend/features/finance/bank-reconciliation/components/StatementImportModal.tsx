@@ -402,75 +402,68 @@ export default function StatementImportModal({ open, onOpenChange, onSuccess, de
                         </div>
                     )}
 
-                    <div className="rounded-md border border-border/40 overflow-hidden bg-background">
-                        <div className="max-h-[50vh] overflow-x-auto overflow-y-auto w-full relative custom-scrollbar">
-                            {previewData && (
-                                <Table className="w-max min-w-full border-separate border-spacing-0">
-                                    <TableHeader className="sticky top-0 z-20">
-                                        <TableRow className="bg-muted/80 backdrop-blur-md hover:bg-muted/80 border-none">
-                                            {previewData.columns.map((col, idx) => (
-                                                <TableHead key={idx} className="w-[280px] p-0 border-b border-border/40">
-                                                    <div className="flex flex-col gap-3 p-4">
-                                                        <div className="flex items-center justify-between">
-                                                            <span className="text-xs font-black text-muted-foreground/50 bg-muted/30 px-2 py-0.5 rounded border border-border/40">
-                                                                COLUMNA {idx + 1}
-                                                            </span>
-                                                        </div>
-                                                        <Tooltip>
-                                                            <TooltipTrigger asChild>
-                                                                <span className="text-xs font-black text-foreground/70 uppercase break-all line-clamp-1 min-h-4">
-                                                                    {String(col)}
-                                                                </span>
-                                                            </TooltipTrigger>
-                                                            <TooltipContent side="top">{String(col)}</TooltipContent>
-                                                        </Tooltip>
-                                                        <Select
-                                                            value={Object.entries(mapping).find((entry) => entry[1] === col)?.[0] || "ignore"}
-                                                            onValueChange={(val) => {
-                                                                const newMapping = { ...mapping }
-                                                                if (val !== 'ignore') {
-                                                                    newMapping[val] = col
-                                                                } else {
-                                                                    const entry = Object.entries(mapping).find((e) => e[1] === col)
-                                                                    if (entry) newMapping[entry[0]] = null
-                                                                }
-                                                                form.setValue("mapping", newMapping)
-                                                            }}
-                                                        >
-                                                            <SelectTrigger className="h-9 text-xs font-bold uppercase bg-background">
-                                                                <SelectValue placeholder="Ignorar Columna" />
-                                                            </SelectTrigger>
-                                                            <SelectContent>
-                                                                <SelectItem value="ignore" className="text-xs font-bold uppercase">Ignorar Columna</SelectItem>
-                                                                <SelectItem value="date" className="text-xs font-bold uppercase">Fecha Movimiento</SelectItem>
-                                                                <SelectItem value="description" className="text-xs font-bold uppercase">Descripción / Glosa</SelectItem>
-                                                                <SelectItem value="debit" className="text-xs font-bold uppercase text-expense">Cargos (Egresos)</SelectItem>
-                                                                <SelectItem value="credit" className="text-xs font-bold uppercase text-income">Abonos (Ingresos)</SelectItem>
-                                                                <SelectItem value="balance" className="text-xs font-bold uppercase">Saldo</SelectItem>
-                                                                <SelectItem value="reference" className="text-xs font-bold uppercase font-mono">Referencia / Doc</SelectItem>
-                                                                <SelectItem value="transaction_id" className="text-xs font-bold uppercase font-mono">ID Ext. Transacción</SelectItem>
-                                                            </SelectContent>
-                                                        </Select>
-                                                    </div>
-                                                </TableHead>
-                                            ))}
-                                        </TableRow>
-                                    </TableHeader>
-                                    <TableBody>
-                                        {previewData.rows.slice(0, 8).map((row, rIdx) => (
-                                            <TableRow key={rIdx} className="hover:bg-muted/30 transition-colors">
-                                                {row.map((cell, cIdx) => (
-                                                    <TableCell key={cIdx} className="text-xs py-3 px-4 border-r border-border/30 last:border-r-0 font-medium">
-                                                        {String(cell)}
-                                                    </TableCell>
-                                                ))}
-                                            </TableRow>
-                                        ))}
-                                    </TableBody>
-                                </Table>
-                            )}
+                    {previewData && (
+                        <div className="rounded-md border border-border/40 overflow-hidden bg-background">
+                            <DataTable
+                                columns={previewData.columns.map((col, idx) => ({
+                                    id: `col-${idx}`,
+                                    header: () => (
+                                        <div className="flex flex-col gap-3 p-2 min-w-[240px]">
+                                            <div className="flex items-center justify-between">
+                                                <span className="text-xs font-black text-muted-foreground/50 bg-muted/30 px-2 py-0.5 rounded border border-border/40">
+                                                    COLUMNA {idx + 1}
+                                                </span>
+                                            </div>
+                                            <Tooltip>
+                                                <TooltipTrigger asChild>
+                                                    <span className="text-xs font-black text-foreground/70 uppercase break-all line-clamp-1 min-h-4">
+                                                        {String(col)}
+                                                    </span>
+                                                </TooltipTrigger>
+                                                <TooltipContent side="top">{String(col)}</TooltipContent>
+                                            </Tooltip>
+                                            <Select
+                                                value={Object.entries(mapping).find((entry) => entry[1] === col)?.[0] || "ignore"}
+                                                onValueChange={(val) => {
+                                                    const newMapping = { ...mapping }
+                                                    if (val !== 'ignore') {
+                                                        newMapping[val] = col
+                                                    } else {
+                                                        const entry = Object.entries(mapping).find((e) => e[1] === col)
+                                                        if (entry) newMapping[entry[0]] = null
+                                                    }
+                                                    form.setValue("mapping", newMapping)
+                                                }}
+                                            >
+                                                <SelectTrigger className="h-9 text-xs font-bold uppercase bg-background">
+                                                    <SelectValue placeholder="Ignorar Columna" />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    <SelectItem value="ignore" className="text-xs font-bold uppercase">Ignorar Columna</SelectItem>
+                                                    <SelectItem value="date" className="text-xs font-bold uppercase">Fecha Movimiento</SelectItem>
+                                                    <SelectItem value="description" className="text-xs font-bold uppercase">Descripción / Glosa</SelectItem>
+                                                    <SelectItem value="debit" className="text-xs font-bold uppercase text-expense">Cargos (Egresos)</SelectItem>
+                                                    <SelectItem value="credit" className="text-xs font-bold uppercase text-income">Abonos (Ingresos)</SelectItem>
+                                                    <SelectItem value="balance" className="text-xs font-bold uppercase">Saldo</SelectItem>
+                                                    <SelectItem value="reference" className="text-xs font-bold uppercase font-mono">Referencia / Doc</SelectItem>
+                                                    <SelectItem value="transaction_id" className="text-xs font-bold uppercase font-mono">ID Ext. Transacción</SelectItem>
+                                                </SelectContent>
+                                            </Select>
+                                        </div>
+                                    ),
+                                    cell: ({ row }) => (
+                                        <DataCell.Text className="text-left whitespace-nowrap min-w-[240px] justify-start pl-2">
+                                            {String((row.original as Record<number, unknown>)[idx] ?? "")}
+                                        </DataCell.Text>
+                                    )
+                                }))}
+                                data={previewData.rows.slice(0, 8).map(row => ({ ...row }))}
+                                variant="minimal"
+                                hidePagination
+                                noBorder
+                            />
                         </div>
-                    </div>
+                    )}
 
                     <FormSection title="Estado de Mapeo" icon={TableIcon} />
 
