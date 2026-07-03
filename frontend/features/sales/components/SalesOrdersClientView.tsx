@@ -16,7 +16,7 @@ const SALES_ORDER_LIST_KEYS = [[...SALES_KEYS.all, 'orders']] as const
 const SalesCheckoutWizard = lazy(() => import("./SalesCheckoutWizard"))
 const DeliveryDrawer = lazy(() => import("./DeliveryDrawer"))
 const DocumentCompletionModal = lazy(() => import("@/components/shared/DocumentCompletionModal"))
-const SaleNoteModal = lazy(() => import("./SaleNoteModal"))
+const NoteCheckoutWizard = lazy(() => import("@/features/billing/components/NoteCheckoutWizard").then(m => ({ default: m.NoteCheckoutWizard })))
 
 interface SalesOrdersClientViewProps {
     viewMode: 'orders' | 'notes'
@@ -105,14 +105,14 @@ export function SalesOrdersClientView({ viewMode }: SalesOrdersClientViewProps) 
              )}
 
              {addingNote && (
-                 <SkeletonShell isLoading={true} ariaLabel="Cargando modal de nota de venta">
+                 <SkeletonShell isLoading={true} ariaLabel="Cargando wizard de nota de venta">
                      <Suspense fallback={<div />}>
-                         <SaleNoteModal
+                         <NoteCheckoutWizard
                              open={!!addingNote}
                              onOpenChange={(open: boolean) => !open && setAddingNote(null)}
-                             orderId={addingNote?.id}
-                             orderNumber={addingNote?.number}
-                             invoiceId={addingNote?.related_documents?.invoices?.[0]?.id}
+                             orderId={addingNote?.id ?? 0}
+                             invoiceId={addingNote?.related_documents?.invoices?.[0]?.id ?? 0}
+                             initialType="NOTA_CREDITO"
                              onSuccess={() => setAddingNote(null)}
                          />
                      </Suspense>

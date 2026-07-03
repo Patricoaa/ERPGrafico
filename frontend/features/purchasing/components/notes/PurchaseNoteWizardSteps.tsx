@@ -3,7 +3,9 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator"
 import {CheckCircle2, FileText, Package, AlertCircle} from "lucide-react"
 import { cn } from "@/lib/utils"
-import {DataCell, DocumentAttachmentDropzone, EmptyState, FolioValidationInput, LabeledContainer, PeriodValidationDateInput} from '@/components/shared'
+import {DataCell, DocumentAttachmentDropzone, EmptyState, FolioValidationInput, LabeledContainer, PeriodValidationDateInput, DataTable} from '@/components/shared'
+import { useMemo } from 'react'
+import { type ColumnDef } from '@tanstack/react-table'
 import { PaymentMethodSelector, type PaymentData } from "@/features/treasury"
 
 // --- STEP 1: General Information ---
@@ -158,6 +160,115 @@ export function Step2_LineItems({ lines, setLines, noteType }: Step2Props) {
         setLines(newLines)
     }
 
+    const columns = useMemo<ColumnDef<PurchaseNoteLine>[]>(() => [
+        {
+            header: "#",
+            cell: ({ row }) => <DataCell.Code>{row.index + 1}</DataCell.Code>,
+            meta: { align: "center" }
+        },
+        {
+            header: "Producto / Descripción",
+            cell: ({ row }) => {
+                const line = row.original;
+                return (
+                    <div className="flex items-center gap-3">
+                        <Package className="h-4 w-4 text-muted-foreground shrink-0" />
+                        <div className="flex flex-col gap-0.5 items-start text-left w-full">
+                            <DataCell.Text className="justify-start text-left font-bold text-sm text-foreground">
+                                {line.product_name}
+                            </DataCell.Text>
+                            <DataCell.Code className="justify-start text-left text-[10px] text-muted-foreground">
+                                {line.product_code || '-'}
+                            </DataCell.Code>
+                        </div>
+                    </div>
+                )
+            }
+        },
+        {
+            header: "UOM",
+            cell: ({ row }) => (
+                <DataCell.Chip size="xs" intent="neutral" className="font-bold text-muted-foreground justify-center w-full">
+                    {row.original.uom_name || 'UN'}
+                </DataCell.Chip>
+            ),
+            meta: { align: "center" }
+        },
+        {
+            header: "Cantidad Orig.",
+            cell: ({ row }) => <DataCell.Number value={row.original.quantity} className="font-mono text-sm text-muted-foreground justify-center" />,
+            meta: { align: "center" }
+        },
+        {
+            header: "Cantidad Nota",
+            cell: ({ row }) => {
+                const line = row.original;
+                const idx = row.index;
+                const isSelected = line.note_quantity > 0;
+                return (
+                    <Input
+                        type="number"
+                        className={cn(
+                            "h-9 text-center font-bold font-mono transition-all",
+                            isSelected
+                                ? (noteType === 'NOTA_CREDITO' ? "border-warning/20 ring-2 ring-warning/10" : "border-primary/20 ring-2 ring-primary/10")
+                                : "border-muted bg-muted/20"
+                        )}
+                        value={line.note_quantity}
+                        min={0}
+                        max={noteType === 'NOTA_CREDITO' ? line.quantity : undefined}
+                        onChange={(e) => {
+                            const val = parseFloat(e.target.value) || 0;
+                            if (val < 0) return;
+                            if (noteType === 'NOTA_DEBITO' || val <= line.quantity) {
+                                handleLineChange(idx, 'note_quantity', e.target.value)
+                            }
+                        }}
+                        onFocus={(e) => e.target.select()}
+                    />
+                )
+            },
+            meta: { align: "center" }
+        },
+        {
+            header: "Costo Unit.",
+            cell: ({ row }) => {
+                const line = row.original;
+                const idx = row.index;
+                return (
+                    <div className="relative">
+                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground">$</span>
+                        <Input
+                            type="number"
+                            className={cn(
+                                "h-9 pl-6 text-right font-mono font-medium",
+                                noteType === 'NOTA_CREDITO' ? "bg-muted/10" : "bg-background"
+                            )}
+                            value={line.note_unit_cost}
+                            readOnly={noteType === 'NOTA_CREDITO'}
+                            disabled={noteType === 'NOTA_CREDITO'}
+                            onChange={(e) => {
+                                const val = parseFloat(e.target.value) || 0;
+                                if (val < 0) return;
+                                handleLineChange(idx, 'note_unit_cost', e.target.value)
+                            }}
+                            onFocus={(e) => e.target.select()}
+                        />
+                    </div>
+                )
+            },
+            meta: { align: "right" }
+        },
+        {
+            header: "Subtotal",
+            cell: ({ row }) => {
+                const line = row.original;
+                return <DataCell.Currency value={line.note_quantity * line.note_unit_cost} className="font-black justify-end" />
+            },
+            meta: { align: "right" }
+        }
+    ], [noteType, handleLineChange])
+
     // Determine max quantities for validation
     // For Credit Notes: max is original quantity (cannot return more than bought)
     // For Debit Notes: typically no hard limit, but logically related to original
@@ -177,110 +288,29 @@ export function Step2_LineItems({ lines, setLines, noteType }: Step2Props) {
             </div>
 
             <div className="border rounded-md overflow-hidden shadow-card bg-card">
-                <table className="w-full text-sm">
-                    <thead className="bg-muted/30 border-b">
-                        <tr>
-                            <th className="px-4 py-3 text-left font-black text-[10px] uppercase tracking-widest text-muted-foreground w-[40px]">#</th>
-                            <th className="px-4 py-3 text-left font-black text-[10px] uppercase tracking-widest text-muted-foreground">Producto / Descripción</th>
-                            <th className="px-4 py-3 text-center font-black text-[10px] uppercase tracking-widest text-muted-foreground w-24">UOM</th>
-                            <th className="px-4 py-3 text-center font-black text-[10px] uppercase tracking-widest text-muted-foreground w-28">Cantidad Orig.</th>
-                            <th className="px-4 py-3 text-center font-black text-[10px] uppercase tracking-widest text-muted-foreground w-32">Cantidad Nota</th>
-                            <th className="px-4 py-3 text-right font-black text-[10px] uppercase tracking-widest text-muted-foreground w-40">Costo Unit.</th>
-                            <th className="px-4 py-3 text-right font-black text-[10px] uppercase tracking-widest text-muted-foreground w-40">Subtotal</th>
-                        </tr>
-                    </thead>
-                    <tbody className="divide-y">
-                        {lines.map((line, idx) => {
-                            const isSelected = line.note_quantity > 0
-                            return (
-                                <tr
-                                    key={line.id}
-                                    className={cn(
-                                        "transition-colors hover:bg-muted/20",
-                                        isSelected ? (noteType === 'NOTA_CREDITO' ? "bg-warning/10/40" : "bg-primary/10/40") : ""
-                                    )}
-                                >
-                                    <td className="px-4 py-3 text-center">
-                                        <DataCell.Code>{idx + 1}</DataCell.Code>
-                                    </td>
-                                    <td className="px-4 py-3">
-                                        <div className="flex items-center gap-3">
-                                            <Package className="h-4 w-4 text-muted-foreground shrink-0" />
-                                            <div className="flex flex-col gap-0.5 items-start text-left w-full">
-                                                <DataCell.Text className="justify-start text-left font-bold text-sm text-foreground">
-                                                    {line.product_name}
-                                                </DataCell.Text>
-                                                <DataCell.Code className="justify-start text-left text-[10px] text-muted-foreground">
-                                                    {line.product_code || '-'}
-                                                </DataCell.Code>
-                                            </div>
-                                        </div>
-                                    </td>
-                                    <td className="px-4 py-3 text-center">
-                                        <DataCell.Chip size="xs" intent="neutral" className="font-bold text-muted-foreground">
-                                            {line.uom_name || 'UN'}
-                                        </DataCell.Chip>
-                                    </td>
-                                    <td className="px-4 py-3 text-center">
-                                        <DataCell.Number value={line.quantity} className="font-mono text-sm text-muted-foreground justify-center" />
-                                    </td>
-                                    <td className="px-4 py-3">
-                                        <Input
-                                            type="number"
-                                            className={cn(
-                                                "h-9 text-center font-bold font-mono transition-all",
-                                                isSelected
-                                                    ? (noteType === 'NOTA_CREDITO' ? "border-warning/20 ring-2 ring-warning/10" : "border-primary/20 ring-2 ring-primary/10")
-                                                    : "border-muted bg-muted/20"
-                                            )}
-                                            value={line.note_quantity}
-                                            min={0}
-                                            max={noteType === 'NOTA_CREDITO' ? line.quantity : undefined}
-                                            onChange={(e) => {
-                                                const val = parseFloat(e.target.value) || 0;
-                                                // Prevent negative
-                                                if (val < 0) return;
-
-                                                if (noteType === 'NOTA_DEBITO' || val <= line.quantity) {
-                                                    handleLineChange(idx, 'note_quantity', e.target.value)
-                                                }
-                                            }}
-                                            onFocus={(e) => e.target.select()}
-                                        />
-                                    </td>
-                                    <td className="px-4 py-3">
-                                        <div className="relative">
-                                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground">$</span>
-                                            <Input
-                                                type="number"
-                                                className={cn(
-                                                    "h-9 pl-6 text-right font-mono font-medium",
-                                                    noteType === 'NOTA_CREDITO' ? "bg-muted/10" : "bg-background"
-                                                )}
-                                                value={line.note_unit_cost}
-                                                readOnly={noteType === 'NOTA_CREDITO'} // Usually credit notes maintain original price, but strictly speaking sometimes price adjustments happen.
-                                                // However, for simplified logic: Refund = Qty * Historic Price.
-                                                // If it's a price adjustment (same qty, price diff), that's a partial credit note but usually handled as "value".
-                                                // For now keeping readOnly for Credit Note as per original logic to avoid complexity.
-                                                onChange={(e) => handleLineChange(idx, 'note_unit_cost', e.target.value)}
-                                            />
-                                        </div>
-                                    </td>
-                                    <td className="px-4 py-3">
-                                        <DataCell.Currency
-                                            value={line.note_quantity * line.note_unit_cost}
-                                            className="justify-end font-black text-sm"
-                                        />
-                                    </td>
-                                </tr>
-                            )
-                        })}
-                    </tbody>
-                </table>
-
-                {lines.length === 0 && (
-                    <EmptyState context="inventory" variant="compact" description="No se encontraron líneas disponibles en la orden original" />
-                )}
+                <DataTable
+                    columns={columns}
+                    data={lines}
+                    variant="compact"
+                    gridTemplate="grid-cols-[3rem_1fr_5rem_6rem_7rem_8rem_8rem]"
+                    hidePagination
+                    noBorder
+                    emptyState={{
+                        title: "No hay productos",
+                        description: "No se encontraron líneas disponibles en el documento original."
+                    }}
+                    renderRow={(row, children) => {
+                        const isSelected = row.original.note_quantity > 0;
+                        return (
+                            <div className={cn(
+                                "transition-colors hover:bg-muted/20",
+                                isSelected ? (noteType === 'NOTA_CREDITO' ? "bg-warning/10/40 hover:bg-warning/10/60" : "bg-primary/10/40 hover:bg-primary/10/60") : ""
+                            )}>
+                                {children}
+                            </div>
+                        )
+                    }}
+                />
             </div>
 
             <div className="bg-primary/10/50 border border-primary/10 p-4 rounded-md flex gap-3 text-sm text-primary">
