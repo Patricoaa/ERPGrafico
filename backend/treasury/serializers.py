@@ -569,6 +569,7 @@ class BankStatementLineSerializer(serializers.ModelSerializer):
     reconciliation_group_data = serializers.SerializerMethodField()
 
     def get_reconciliation_group_data(self, obj):
+        from .selectors import ReconciliationMatchSelector
         return ReconciliationMatchSelector.get_group_data(obj)
 
     class Meta:

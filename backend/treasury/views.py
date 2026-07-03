@@ -26,6 +26,7 @@ from core.idempotency import idempotent_endpoint
 from .deletion_service import BankDeletionService
 
 # from .rule_service import RuleService
+from .selectors import BankStatementSelector
 from .difference_service import DifferenceService
 from .matching_service import MatchingService
 from .models import (

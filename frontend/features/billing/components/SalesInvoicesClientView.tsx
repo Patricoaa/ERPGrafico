@@ -15,7 +15,7 @@ import { treasuryApi } from "@/features/treasury/api/treasuryApi"
 import { useInvoices } from "@/features/billing/hooks/useInvoices"
 import { type Invoice, type InvoiceFilters } from "@/features/billing/types"
 import { toast } from "sonner"
-import { SaleNoteModal } from "@/features/sales"
+import { NoteCheckoutWizard } from "@/features/billing/components/NoteCheckoutWizard"
 import { PaymentModal } from "@/features/treasury/components/PaymentModal"
 import { useHubPanel } from "@/components/providers/HubPanelProvider"
 import { useConfirmAction } from "@/hooks/useConfirmAction"
@@ -189,12 +189,12 @@ export function SalesInvoicesClientView() {
             </div>
 
             {notingInvoice && (
-                <SaleNoteModal
+                <NoteCheckoutWizard
                     open={!!notingInvoice}
                     onOpenChange={(open) => !open && setNotingInvoice(null)}
-                    orderId={notingInvoice.sale_order || undefined}
-                    orderNumber={notingInvoice.sale_order_number || undefined}
+                    orderId={notingInvoice.sale_order || 0}
                     invoiceId={notingInvoice.id}
+                    initialType="NOTA_CREDITO"
                     onSuccess={refetch}
                 />
             )}

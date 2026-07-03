@@ -5,8 +5,8 @@ import { useSelectedEntity } from "@/hooks/useSelectedEntity"
 import { useRouter } from "next/navigation"
 import { type SaleOrder, SalesOrdersView } from "@/features/sales"
 
-const SaleNoteModal = lazy(() =>
-    import("@/features/sales").then(m => ({ default: m.SaleNoteModal }))
+const NoteCheckoutWizard = lazy(() =>
+    import("@/features/billing").then(m => ({ default: m.NoteCheckoutWizard }))
 )
 
 export default function ReturnsPageClient() {
@@ -22,14 +22,14 @@ export default function ReturnsPageClient() {
 
             <Suspense fallback={null}>
                 {(selectedOrder || isLoading) && (
-                    <SaleNoteModal
+                    <NoteCheckoutWizard
                         open={!!selectedOrder || isLoading}
                         onOpenChange={(open) => {
                             if (!open) clearSelection()
                         }}
-                        orderId={selectedOrder?.id as number}
-                        orderNumber={selectedOrder?.number}
-                        invoiceId={selectedOrder?.related_documents?.invoices?.[0]?.id}
+                        orderId={selectedOrder?.id as number || 0}
+                        invoiceId={selectedOrder?.related_documents?.invoices?.[0]?.id || 0}
+                        initialType="NOTA_CREDITO"
                         onSuccess={() => {
                             clearSelection()
                             router.refresh()

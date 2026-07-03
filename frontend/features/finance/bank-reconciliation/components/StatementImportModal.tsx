@@ -5,10 +5,11 @@ import * as z from "zod"
 import { useForm, type Resolver } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { getErrorMessage } from "@/lib/errors"
+import type { ColumnDef } from "@tanstack/react-table"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { LabeledSelect, GenericWizard, type WizardStep, FormSection, DocumentAttachmentDropzone, LabeledInput } from "@/components/shared"
+import { DataCell, DataTable, LabeledSelect, GenericWizard, type WizardStep, FormSection, DocumentAttachmentDropzone, LabeledInput } from "@/components/shared"
 import { TreasuryAccountSelector } from "@/components/selectors/TreasuryAccountSelector"
 import {FileUp, Columns, Table as TableIcon, CheckCircle2, FileSearch, Landmark, SlidersHorizontal} from "lucide-react"
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
@@ -405,23 +406,11 @@ export default function StatementImportModal({ open, onOpenChange, onSuccess, de
                     {previewData && (
                         <div className="rounded-md border border-border/40 overflow-hidden bg-background">
                             <DataTable
-                                columns={previewData.columns.map((col, idx) => ({
+                                columns={previewData.columns.map<ColumnDef<unknown[]>>((col, idx) => ({
                                     id: `col-${idx}`,
+                                    accessorFn: (row) => row?.[idx] ?? null,
                                     header: () => (
-                                        <div className="flex flex-col gap-3 p-2 min-w-[240px]">
-                                            <div className="flex items-center justify-between">
-                                                <span className="text-xs font-black text-muted-foreground/50 bg-muted/30 px-2 py-0.5 rounded border border-border/40">
-                                                    COLUMNA {idx + 1}
-                                                </span>
-                                            </div>
-                                            <Tooltip>
-                                                <TooltipTrigger asChild>
-                                                    <span className="text-xs font-black text-foreground/70 uppercase break-all line-clamp-1 min-h-4">
-                                                        {String(col)}
-                                                    </span>
-                                                </TooltipTrigger>
-                                                <TooltipContent side="top">{String(col)}</TooltipContent>
-                                            </Tooltip>
+                                        <div className="p-2 min-w-[240px]">
                                             <Select
                                                 value={Object.entries(mapping).find((entry) => entry[1] === col)?.[0] || "ignore"}
                                                 onValueChange={(val) => {
@@ -457,7 +446,7 @@ export default function StatementImportModal({ open, onOpenChange, onSuccess, de
                                         </DataCell.Text>
                                     )
                                 }))}
-                                data={previewData.rows.slice(0, 8).map(row => ({ ...row }))}
+                                data={previewData.rows.slice(0, 8) as unknown[][]}
                                 variant="minimal"
                                 hidePagination
                                 noBorder
