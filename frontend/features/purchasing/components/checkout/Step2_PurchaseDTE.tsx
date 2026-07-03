@@ -77,6 +77,8 @@ export function Step2_PurchaseDTE({
                             value={opt.id}
                             label={opt.label}
                             description={`Código SII: ${opt.code}`}
+                            icon={<opt.icon className="h-4 w-4" />}
+                            iconColor={opt.color}
                         />
                     ))}
                     </RadioGroup>

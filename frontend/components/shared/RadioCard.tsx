@@ -30,23 +30,22 @@ export function RadioCard({
         <Label
             htmlFor={id}
             className={cn(
-                // Base layout
-                "flex flex-row items-start gap-3 rounded-md border border-input p-3 transition-all h-full",
-                // Interacciones
+                "group flex flex-row items-start gap-3 rounded-md border border-input p-3 transition-all h-full",
                 !disabled && "cursor-pointer hover:border-primary/50 hover:bg-accent/50",
                 disabled && "opacity-50 cursor-not-allowed",
-                // Estado Checked (el padre responde al hijo clickeado)
                 "[&:has([data-state=checked])]:border-primary [&:has([data-state=checked])]:bg-primary/5 [&:has([data-state=checked])]:ring-1 [&:has([data-state=checked])]:ring-primary/20",
                 className
             )}
         >
-            {/* El Radio real visible (mt-0.5 para alinear con el texto/ícono) */}
-            <RadioGroupItem 
-                value={value} 
-                id={id} 
-                disabled={disabled}
-                className="mt-0.5 shrink-0" 
-            />
+            {/* Círculo decorativo que envuelve al Radio */}
+            <div className="flex shrink-0 items-center justify-center rounded-full border-2 border-muted bg-background p-0.5 mt-0.5 transition-colors group-has-[[data-state=checked]]:border-primary group-has-[[data-state=checked]]:bg-primary/10">
+                <RadioGroupItem 
+                    value={value} 
+                    id={id} 
+                    disabled={disabled}
+                    className="border-none shadow-none ring-0 focus-visible:ring-0" 
+                />
+            </div>
 
             {/* Opcional: Ícono con fondo */}
             {icon && (
