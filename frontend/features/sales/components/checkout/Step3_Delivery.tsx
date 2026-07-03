@@ -136,16 +136,14 @@ export function Step3_Delivery({ deliveryData, setDeliveryData, orderLines }: St
                 <RadioGroup
                     value={deliveryData.type}
                     onValueChange={(val) => setDeliveryData((prev: CheckoutDeliveryData) => ({ ...prev, type: val as 'IMMEDIATE' | 'SCHEDULED' | 'PARTIAL' }))}
-                    className="grid grid-cols-3 gap-3"
+                    className="grid grid-cols-1 md:grid-cols-3 gap-3 w-full"
                 >
                 <RadioCard
                     id="del-immediate"
                     value="IMMEDIATE"
                     label={isMixedMode ? "Despacho y Cumplimiento Inmediato" : "Despacho Inmediato"}
                     description="Rebajar stock y entregar ahora mismo."
-                    icon={<Package className="h-4 w-4" />}
                     disabled={hasRestrictedItems}
-                    iconColor="text-primary"
                 />
 
                 <RadioCard
@@ -153,8 +151,6 @@ export function Step3_Delivery({ deliveryData, setDeliveryData, orderLines }: St
                     value="SCHEDULED"
                     label={isMixedMode ? "Programar Entrega y Cumplimiento" : "Programar Entrega"}
                     description="Reservar para fecha futura."
-                    icon={<Calendar className="h-4 w-4" />}
-                    iconColor="text-primary"
                 />
 
                 <RadioCard
@@ -162,8 +158,6 @@ export function Step3_Delivery({ deliveryData, setDeliveryData, orderLines }: St
                     value="PARTIAL"
                     label="Despacho Parcial"
                     description="Entregar disponibles hoy."
-                    icon={<Truck className="h-4 w-4" />}
-                    iconColor="text-primary"
                 />
                 </RadioGroup>
             </LabeledContainer>
