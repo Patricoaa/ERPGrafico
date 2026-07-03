@@ -13,6 +13,7 @@ import {
     History,
 } from "lucide-react"
 import { showApiError } from "@/lib/errors"
+import { formDrawerWidth } from "@/lib/form-widths"
 import { toast } from "sonner"
 import { useTaxCalculation, useCreateDeclaration, useRegisterDeclaration, useClosePeriod } from "../hooks/useTaxMutations"
 import { useVatRate } from '@/hooks/useVatRate'
@@ -401,7 +402,7 @@ export function DeclarationWizard({ isOpen, onOpenChange, periodId, year: propYe
             <Drawer
                 open={isOpen} 
                 onOpenChange={onOpenChange} 
-                defaultSize="600px"
+                defaultSize={formDrawerWidth("complex", false)}
                 side="left"
                 boundary="embedded"
                 title={hadPaymentDue ? "Declaración Registrada" : "Ciclo Finalizado"}

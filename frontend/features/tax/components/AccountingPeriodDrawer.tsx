@@ -3,6 +3,7 @@
 import { Drawer, SkeletonShell, StatusBadge } from "@/components/shared"
 import { Calendar } from "lucide-react"
 import { useTaxPeriod } from "../hooks/useTaxQueries"
+import { formDrawerWidth } from "@/lib/form-widths"
 
 interface AccountingPeriodDrawerProps {
     periodId: number | null
@@ -20,7 +21,8 @@ export function AccountingPeriodDrawer({ periodId, open, onOpenChange }: Account
             onOpenChange={onOpenChange}
             side="left"
             boundary="embedded"
-            defaultSize="45%"
+            mode="view"
+            defaultSize={formDrawerWidth("master", false)}
             title={period ? `Período ${period.month_display || period.id}` : "Período Contable"}
             icon={Calendar}
         >

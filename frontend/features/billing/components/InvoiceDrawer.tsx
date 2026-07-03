@@ -12,6 +12,7 @@ import { PrintableLayout } from '@/features/_shared'
 import { useInvoice } from '@/features/billing/hooks/useInvoices'
 import { ActivitySidebar } from '@/features/audit'
 import type { TransactionDrawerProps } from '@/features/_shared'
+import { formDrawerWidth } from '@/lib/form-widths'
 
 interface InvoiceDrawerProps extends TransactionDrawerProps {
     invoiceId?: number
@@ -61,10 +62,11 @@ export function InvoiceDrawer({ id, open, onOpenChange, mode = 'view', invoiceId
             </PrintableLayout>
 
             <Drawer
+                mode="view"
                 open={open}
                 onOpenChange={onOpenChange}
                 side="left"
-                defaultSize="50%"
+                defaultSize={formDrawerWidth("master", !!entityId)}
                 icon={getEntityIcon('billing.invoice')}
                 title={<span>{displayId}</span>}
                 headerActions={<Button variant="ghost" size="icon" onClick={() => handlePrint()}><Printer className="h-4 w-4" /></Button>}
