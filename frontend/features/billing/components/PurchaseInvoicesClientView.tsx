@@ -261,8 +261,8 @@ export function PurchaseInvoicesClientView() {
                     fetchSource={async () => {
                         const { purchasingApi } = await import('@/features/purchasing/api/purchasingApi')
                         const source = notingDoc.purchase_order
-                            ? await purchasingApi.getOrder(notingDoc.purchase_order) as Record<string, unknown>
-                            : await purchasingApi.getInvoice(notingDoc.id) as Record<string, unknown>
+                            ? (await purchasingApi.getOrder(notingDoc.purchase_order) as unknown) as Record<string, unknown>
+                            : (await purchasingApi.getInvoice(notingDoc.id) as unknown) as Record<string, unknown>
                         const rawLines = (source.lines as Record<string, unknown>[]) || []
                         const normLines = rawLines.map((l: Record<string, unknown>) => ({
                             lineId: l.id as number,
