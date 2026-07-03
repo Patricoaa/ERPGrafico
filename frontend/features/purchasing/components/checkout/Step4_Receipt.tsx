@@ -220,6 +220,8 @@ export function Step4_Receipt({ receiptData, setReceiptData, orderLines = [] }: 
                             value={type.id}
                             label={type.label}
                             description={type.description}
+                            icon={<type.icon className="h-4 w-4" />}
+                            iconColor={type.color}
                         />
                     ))}
                 </RadioGroup>
