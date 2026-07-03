@@ -464,16 +464,24 @@ class JournalEntry(AuditedModel):
 
     def check_balance(self):
         from django.db.models import Sum
+
         agg = self.items.aggregate(
             total_debit=Sum("debit"),
             total_credit=Sum("credit"),
         )
         debit = agg["total_debit"] or Decimal("0")
         credit = agg["total_credit"] or Decimal("0")
+
         if debit != credit:
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.error(f"check_balance FAILED for Entry {self.id} (ref: {self.reference}): Debe: {debit}, Haber: {credit}")
+            items = list(self.items.all())
+            for idx, item in enumerate(items):
+                logger.error(f"  Item {idx}: account_id={item.account_id} debit={item.debit} credit={item.credit}")
             raise ValidationError(
-                _("El asiento no está cuadrado. Debe: %(debit)s, Haber: %(credit)s")
-                % {"debit": debit, "credit": credit}
+                _("El asiento no está cuadrado. Debe: %(debit)s, Haber: %(credit)s"),
+                params={"debit": debit, "credit": credit},
             )
         return True
 

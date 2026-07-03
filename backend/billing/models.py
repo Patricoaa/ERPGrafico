@@ -166,6 +166,9 @@ class Invoice(TransactionalDocument):
             prefix = self.dte_strategy().display_prefix
         except KeyError:
             prefix = "DOC"
+        # FACTURA se usa para ventas y compras: FACV para venta, FACC para compra
+        if self.dte_type == self.DTEType.FACTURA and self.purchase_order_id:
+            prefix = "FACC"
         return f"{prefix}-{self.number or 'Draft'}"
 
     @property

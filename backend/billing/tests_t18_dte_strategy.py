@@ -86,6 +86,7 @@ def make_invoice(
     inv.total_tax = total_tax
     inv.sale_order = sale_order or make_sale_order([], number="9999")
     inv.sale_order_id = 1
+    inv.purchase_order_id = None
     inv.number = number
     inv.display_id = f"{dte_type[:4]}-{number}"
     inv.get_dte_type_display.return_value = {

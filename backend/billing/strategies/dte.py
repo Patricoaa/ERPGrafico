@@ -182,33 +182,46 @@ def _build_revenue_grouping(invoice: "Invoice") -> dict:
 
 class FacturaStrategy(DTEStrategy):
     """
-    DTE 33 — Factura Electrónica (ventas afectas, consumidores con RUT).
+    DTE 33 — Factura Electrónica.
 
-    Asiento:
+    Maneja tanto ventas (con sale_order) como compras (con purchase_order).
+    La dirección se determina automáticamente según el pedido asociado.
+
+    Asiento (venta):
         Dr  Clientes (CxC)            = invoice.total
         Cr  Ingresos (distribuido)    = invoice.total_net
         Cr  IVA Débito Fiscal         = invoice.total_tax
 
-    Lógica idéntica al bloque ``not is_tax_exempt`` de
-    ``AccountingMapper.get_entries_for_sale_invoice()``
-    (accounting/services.py:581-604).
+    Asiento (compra):
+        Dr  Existencias               = invoice.total_net
+        Dr  IVA Crédito Fiscal        = invoice.total_tax
+        Cr  Proveedores (CxP)         = invoice.total
     """
 
     display_prefix = "FACV"
     sii_document_code = 33
 
     def expected_fields(self) -> set[str]:
-        return {"sale_order"}
+        return {"sale_order", "purchase_order"}
 
     def validate(self, invoice: "Invoice") -> None:
         from django.core.exceptions import ValidationError
 
-        if not invoice.sale_order_id:
-            raise ValidationError("FACTURA requiere una Nota de Venta asociada.")
+        if not invoice.sale_order_id and not invoice.purchase_order_id:
+            raise ValidationError("FACTURA requiere una Nota de Venta o una Orden de Compra asociada.")
         if invoice.total <= Decimal("0"):
             raise ValidationError("El total de la FACTURA debe ser mayor a cero.")
 
     def make_journal_entry(
+        self,
+        invoice: "Invoice",
+        settings: "AccountingSettings",
+    ) -> tuple[str, str, JournalItemList]:
+        if invoice.purchase_order_id:
+            return self._make_purchase_entry(invoice, settings)
+        return self._make_sale_entry(invoice, settings)
+
+    def _make_sale_entry(
         self,
         invoice: "Invoice",
         settings: "AccountingSettings",
@@ -261,6 +274,58 @@ class FacturaStrategy(DTEStrategy):
             extra=[f"Pedido {order.display_id}"],
         )
         reference = f"{invoice.dte_type[:3]}-{order.number}"
+        return description, reference, items
+
+    def _make_purchase_entry(
+        self,
+        invoice: "Invoice",
+        settings: "AccountingSettings",
+    ) -> tuple[str, str, JournalItemList]:
+        from django.core.exceptions import ValidationError
+
+        order = invoice.purchase_order
+        payable_account = settings.default_payable_account
+        stock_input_account = settings.stock_input_account
+        tax_account = settings.default_tax_receivable_account
+
+        if not payable_account or not stock_input_account:
+            raise ValidationError("Falta configuración de cuentas para Factura de Compra.")
+
+        doc_id = invoice.display_id
+        supplier_name = order.supplier.name
+
+        items: JournalItemList = [
+            {
+                "account": payable_account,
+                "debit": Decimal("0.00"),
+                "credit": invoice.total,
+                "partner": order.supplier,
+                "partner_name": supplier_name,
+                "label": GlosaBuilder.item(Roles.CXP, supplier_name, doc_id),
+            },
+            {
+                "account": stock_input_account,
+                "debit": invoice.total_net,
+                "credit": Decimal("0.00"),
+                "label": GlosaBuilder.item(Roles.PUENTE_RECEPCION, doc_ref=doc_id),
+            },
+        ]
+
+        if invoice.total_tax > Decimal("0") and tax_account:
+            items.append(
+                {
+                    "account": tax_account,
+                    "debit": invoice.total_tax,
+                    "credit": Decimal("0.00"),
+                    "label": GlosaBuilder.item(Roles.IVA_CREDITO, doc_ref=doc_id),
+                }
+            )
+
+        description = GlosaBuilder.build(
+            GlosaBuilder.COMPRA, doc_id, supplier_name, invoice.total,
+            extra=[f"OC {order.display_id}"],
+        )
+        reference = f"FCP-{invoice.id}"
         return description, reference, items
 
 
