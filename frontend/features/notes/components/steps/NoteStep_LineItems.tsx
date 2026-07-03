@@ -266,33 +266,17 @@ function SelectModeTable({
     )
 
     return (
-        <div className="border rounded-md overflow-hidden shadow-card bg-card min-h-[400px]">
-            <DataTable
-                columns={columns}
-                data={lines}
-                variant="compact"
-                gridTemplate="grid-cols-[3rem_minmax(180px,1fr)_4rem_5rem_7rem_8rem_minmax(120px,1fr)]"
-                hidePagination
-                noBorder
-                emptyState={{
-                    title: 'No hay productos',
-                    description: 'No se encontraron líneas disponibles en el documento original.',
-                }}
-                renderRow={(row, children) => {
-                    const selected = isSelected(row.original.lineId)
-                    return (
-                        <div
-                            className={cn(
-                                'transition-colors hover:bg-muted/5 h-20 items-center',
-                                selected ? 'bg-primary/[0.02]' : '',
-                            )}
-                        >
-                            {children}
-                        </div>
-                    )
-                }}
-            />
-        </div>
+        <DataTable
+            columns={columns}
+            data={lines}
+            variant="minimal"
+            hidePagination
+            noBorder
+            emptyState={{
+                title: 'No hay productos',
+                description: 'No se encontraron líneas disponibles en el documento original.',
+            }}
+        />
     )
 }
 
@@ -369,7 +353,7 @@ function EditModeTable({
                         <Input
                             type="number"
                             className={cn(
-                                'h-9 text-center font-bold font-mono transition-all',
+                                'h-9 text-center font-bold font-mono transition-all max-w-[100px] mx-auto w-full',
                                 isActive
                                     ? isCreditNote
                                         ? 'border-warning/20 ring-2 ring-warning/10'
@@ -402,7 +386,7 @@ function EditModeTable({
                             <Input
                                 type="number"
                                 className={cn(
-                                    'h-9 pl-6 text-right font-mono font-medium',
+                                    'h-9 pl-6 text-right font-mono font-medium max-w-[120px] mx-auto w-full',
                                     isCreditNote ? 'bg-muted/10' : 'bg-background',
                                 )}
                                 value={line.noteUnitPrice}
@@ -448,32 +432,17 @@ function EditModeTable({
                 </div>
             </div>
 
-            <div className="border rounded-md overflow-hidden shadow-card bg-card">
+            <div className="bg-card">
                 <DataTable
                     columns={columns}
                     data={lines}
-                    variant="compact"
-                    gridTemplate="grid-cols-[3rem_1fr_5rem_6rem_7rem_8rem_8rem]"
+                    variant="minimal"
                     hidePagination
                     noBorder
                     emptyState={{
                         title: 'No hay productos',
                         description: 'No se encontraron líneas disponibles en el documento original.',
                     }}
-                    renderRow={(row, children) => (
-                        <div
-                            className={cn(
-                                'transition-colors hover:bg-muted/20',
-                                row.original.noteQuantity > 0
-                                    ? isCreditNote
-                                        ? 'bg-warning/10/40 hover:bg-warning/10/60'
-                                        : 'bg-primary/10/40 hover:bg-primary/10/60'
-                                    : '',
-                            )}
-                        >
-                            {children}
-                        </div>
-                    )}
                 />
             </div>
 
