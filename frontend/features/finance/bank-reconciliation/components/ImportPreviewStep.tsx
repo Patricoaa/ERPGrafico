@@ -160,8 +160,9 @@ function WarningTable({ warnings }: { warnings: DryRunWarning[] }) {
         <DataTable
             columns={columns}
             data={warnings}
-            variant="embedded"
+            variant="minimal"
             hidePagination
+            noBorder
         />
     )
 }
