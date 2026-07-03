@@ -165,7 +165,11 @@ export function Step2_Logistics({
                 )}
             </div>
 
-            <RadioGroup
+            <LabeledContainer
+                label="Opciones de Procesamiento"
+                icon={<Package className="h-3 w-3" />}
+            >
+                <RadioGroup
                 value={formData.delivery_type}
                 onValueChange={(val) => {
                     if (val === 'PARTIAL') {
@@ -244,7 +248,8 @@ export function Step2_Logistics({
                         <span className="text-[10px] text-muted-foreground leading-tight mt-1 inline-block">Procesar algunos</span>
                     </div>
                 </div>
-            </RadioGroup>
+                </RadioGroup>
+            </LabeledContainer>
 
             <div className="space-y-4 animate-in fade-in duration-300">
                 {formData.delivery_type === 'PARTIAL' && (

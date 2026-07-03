@@ -7,7 +7,7 @@ import { useBillingSettingsQuery } from "@/features/settings"
 import { useMemo, useEffect } from "react"
 import { cn } from "@/lib/utils"
 
-import { DocumentAttachmentDropzone, FolioValidationInput, PeriodValidationDateInput, LabeledSwitch } from '@/components/shared'
+import { DocumentAttachmentDropzone, FolioValidationInput, PeriodValidationDateInput, LabeledSwitch, LabeledContainer } from '@/components/shared'
 
 import { type DTEData } from "../../types"
 
@@ -65,11 +65,12 @@ export function Step2_PurchaseDTE({
                 </p>
             </div>
             <div className="space-y-4">
-                <RadioGroup
-                    value={dteData.type}
-                    onValueChange={(val) => setDteData({ ...dteData, type: val })}
-                    className="flex flex-wrap gap-4 w-full"
-                >
+                <LabeledContainer label="Tipo de Documento" icon={<FileText className="h-3 w-3" />}>
+                    <RadioGroup
+                        value={dteData.type}
+                        onValueChange={(val) => setDteData({ ...dteData, type: val })}
+                        className="flex flex-wrap gap-4 w-full"
+                    >
                     {filteredOptions.map((opt) => (
                         <Label
                             key={opt.id}
@@ -85,7 +86,8 @@ export function Step2_PurchaseDTE({
                             <span className="text-[10px] text-muted-foreground mt-1 text-center">Código SII: {opt.code}</span>
                         </Label>
                     ))}
-                </RadioGroup>
+                    </RadioGroup>
+                </LabeledContainer>
             </div>
 
             <div className="space-y-4 animate-in fade-in slide-in-from-top-2 duration-300">

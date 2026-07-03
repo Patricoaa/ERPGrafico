@@ -74,11 +74,12 @@ export function Step2_DTE({
         <div className="space-y-6">
             <FormSection title="Documento Tributario" icon={FileText} />
 
-            <RadioGroup
-                value={dteData.type}
-                onValueChange={(val) => setDteData({ ...dteData, type: val })}
-                className="grid grid-cols-1 gap-2"
-            >
+            <LabeledContainer label="Tipo de Documento" icon={<FileText className="h-3 w-3" />}>
+                <RadioGroup
+                    value={dteData.type}
+                    onValueChange={(val) => setDteData({ ...dteData, type: val })}
+                    className="grid grid-cols-1 gap-2"
+                >
                 {filteredOptions.map((opt) => (
                     <Label
                         key={opt.id}
@@ -109,7 +110,8 @@ export function Step2_DTE({
                         </div>
                     </Label>
                 ))}
-            </RadioGroup>
+                </RadioGroup>
+            </LabeledContainer>
 
             {(dteData.type === "FACTURA" || dteData.type === "FACTURA_EXENTA") && (
                 <div className="space-y-4 animate-in fade-in slide-in-from-top-2 duration-300">
