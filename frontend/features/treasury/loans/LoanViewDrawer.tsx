@@ -9,6 +9,7 @@ import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { useLoan } from './hooks'
 import { parseDateOnly } from '@/lib/utils'
+import { formDrawerWidth } from '@/lib/form-widths'
 
 interface Props {
     loanId: number | null
@@ -30,12 +31,11 @@ export function LoanViewDrawer({ loanId, open, onOpenChange }: Props) {
 
     return (
         <Drawer
+            mode="view"
             open={open}
             onOpenChange={onOpenChange}
             side="left"
-            defaultSize="720px"
-            minSize="560px"
-            maxSize="960px"
+            defaultSize={formDrawerWidth("complex", false)}
             resizable
             title={
                 <div className="flex items-center gap-3">

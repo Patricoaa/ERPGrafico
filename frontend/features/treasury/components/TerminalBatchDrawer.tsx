@@ -11,6 +11,7 @@ import { formatPlainDate } from '@/lib/utils'
 import { PrintableLayout } from '@/features/_shared'
 import { useTerminalBatch } from '@/features/treasury/hooks/useTerminalBatch'
 import type { TransactionDrawerProps } from '@/features/_shared'
+import { formDrawerWidth } from '@/lib/form-widths'
 
 interface TerminalBatchDrawerProps extends TransactionDrawerProps {
   batchId?: number
@@ -48,10 +49,11 @@ export function TerminalBatchDrawer({ id, open, onOpenChange, batchId }: Termina
       </PrintableLayout>
 
       <Drawer
+        mode="view"
         open={open}
         onOpenChange={onOpenChange}
         side="left"
-        defaultSize="50%"
+        defaultSize={formDrawerWidth("master", false)}
         icon={getEntityIcon('treasury.terminalbatch')}
         title={<span>{displayId}</span>}
         headerActions={<Button variant="ghost" size="icon" onClick={() => handlePrint()}><Printer className="h-4 w-4" /></Button>}

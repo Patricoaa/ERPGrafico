@@ -21,6 +21,7 @@ import { useTreasuryAccounts } from '../hooks/useTreasuryAccounts'
 import { useLoanMutations } from './hooks'
 import { showApiError } from '@/lib/errors'
 import { AccountSelector } from '@/components/selectors/AccountSelector'
+import { formDrawerWidth } from '@/lib/form-widths'
 
 const schema = z.object({
     lender: z.string().min(1, 'Banco es requerido'),
@@ -217,9 +218,7 @@ export function LoanRegisterDrawer({ open, onOpenChange, bankId }: Props) {
             open={open}
             onOpenChange={onOpenChange}
             side="left"
-            defaultSize="960px"
-            minSize="720px"
-            maxSize="1280px"
+            defaultSize={formDrawerWidth("master", false)}
             resizable
             title={
                 <div className="flex items-center gap-3">

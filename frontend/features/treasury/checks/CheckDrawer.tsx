@@ -5,6 +5,7 @@ import { Drawer, EmptyState, MoneyDisplay, SkeletonShell, StatusBadge } from "@/
 import { getEntityIcon } from "@/lib/entity-registry"
 import { checksApi } from './api'
 import type { Check } from './types'
+import { formDrawerWidth } from '@/lib/form-widths'
 
 interface CheckDrawerProps {
     id: number | null
@@ -21,11 +22,12 @@ export function CheckDrawer({ id, open, onOpenChange }: CheckDrawerProps) {
 
     return (
         <Drawer
+            mode="view"
             open={open}
             onOpenChange={onOpenChange}
             side="left"
             boundary="embedded"
-            defaultSize="45%"
+            defaultSize={formDrawerWidth("master", false)}
             title={check ? `${check.display_id}` : "Cheque"}
             subtitle={check?.bank_name}
             icon={getEntityIcon('treasury.check')}
