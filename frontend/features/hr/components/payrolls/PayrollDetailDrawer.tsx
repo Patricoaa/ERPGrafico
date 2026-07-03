@@ -5,6 +5,7 @@ import { getEntityIcon } from "@/lib/entity-registry"
 import { useState } from "react"
 import { PayrollDetailContent } from "./PayrollDetailContent"
 import type { EmployeeBasic } from "@/features/hr/hooks/usePayrolls"
+import { formDrawerWidth } from "@/lib/form-widths"
 
 interface PayrollDetailDrawerProps {
     payrollId: number | null
@@ -29,7 +30,7 @@ export function PayrollDetailDrawer({ payrollId, open, onOpenChange, onUpdate, v
                 onOpenChange={onOpenChange}
                 side="left"
                 boundary="embedded"
-                defaultSize="60%"
+                defaultSize={formDrawerWidth("master", false)}
                 contentClassName="p-0 flex flex-col overflow-hidden"
                 title={headerData.title}
                 subtitle={headerData.subtitle}

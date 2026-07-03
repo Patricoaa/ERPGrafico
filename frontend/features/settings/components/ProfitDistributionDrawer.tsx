@@ -10,6 +10,7 @@ import { formatPlainDate } from '@/lib/utils'
 import { PrintableLayout } from '@/features/_shared'
 import { useProfitDistribution } from '@/features/contacts'
 import type { TransactionDrawerProps } from '@/features/_shared'
+import { formDrawerWidth } from '@/lib/form-widths'
 
 interface ProfitDistributionDrawerProps extends TransactionDrawerProps {
   distributionId?: number
@@ -54,10 +55,11 @@ export function ProfitDistributionDrawer({ id, open, onOpenChange, distributionI
       </PrintableLayout>
 
       <Drawer
+        mode="view"
         open={open}
         onOpenChange={onOpenChange}
         side="left"
-        defaultSize="55%"
+        defaultSize={formDrawerWidth("master", false)}
         icon={ChartPie}
         title={<span>{displayId}</span>}
         headerActions={<Button variant="ghost" size="icon" onClick={() => handlePrint()}><Printer className="h-4 w-4" /></Button>}
