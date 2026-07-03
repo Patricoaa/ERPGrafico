@@ -42,9 +42,8 @@ export function NoteStep_Payment({
 }: NoteStep_PaymentProps) {
     const isCreditNote = noteType === 'NOTA_CREDITO'
 
-    // Debit Note → sales operation (receiving/charging money)
-    // Credit Note → purchases operation (paying out / receiving refund through purchase accounts)
-    const operation: 'sales' | 'purchases' = isCreditNote ? 'purchases' : 'sales'
+    // Inherit payment methods according to the wizard mode (sales vs purchases)
+    const operation: 'sales' | 'purchases' = mode === 'sales' ? 'sales' : 'purchases'
 
     // Sync amount when totals change on mount
     useEffect(() => {

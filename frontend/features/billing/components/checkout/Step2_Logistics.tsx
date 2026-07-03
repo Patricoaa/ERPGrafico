@@ -158,88 +158,82 @@ export function Step2_Logistics({
                 )}
             </div>
 
-            <LabeledContainer
-                label="Tipo de Movimiento"
-                icon={<Truck className="h-3.5 w-3.5 opacity-50" />}
-                className="mt-4"
+            <RadioGroup
+                value={formData.delivery_type}
+                onValueChange={(val) => {
+                    if (val === 'PARTIAL') {
+                        const initialLineData = selectedItems
+                            .filter(item => {
+                                const isRestricted = !isCreditNote &&
+                                    (item.product_type === 'MANUFACTURABLE' || item.has_bom) &&
+                                    !item.mfg_auto_finalize;
+                                return item.creates_stock_move && !isRestricted;
+                            })
+                            .map(item => ({
+                                line_id: item.line_id,
+                                product_id: item.product_id,
+                                quantity: item.quantity,
+                                uom_id: item.uom_id
+                            }));
+                        setData({ ...formData, delivery_type: val, line_data: initialLineData });
+                    } else {
+                        setData({ ...formData, delivery_type: val });
+                    }
+                }}
+                className="grid grid-cols-3 gap-3 mt-4"
             >
-                <RadioGroup
-                    value={formData.delivery_type}
-                    onValueChange={(val) => {
-                        if (val === 'PARTIAL') {
-                            const initialLineData = selectedItems
-                                .filter(item => {
-                                    const isRestricted = !isCreditNote &&
-                                        (item.product_type === 'MANUFACTURABLE' || item.has_bom) &&
-                                        !item.mfg_auto_finalize;
-                                    return item.creates_stock_move && !isRestricted;
-                                })
-                                .map(item => ({
-                                    line_id: item.line_id,
-                                    product_id: item.product_id,
-                                    quantity: item.quantity,
-                                    uom_id: item.uom_id
-                                }));
-                            setData({ ...formData, delivery_type: val, line_data: initialLineData });
-                        } else {
-                            setData({ ...formData, delivery_type: val });
-                        }
-                    }}
-                    className="grid gap-3"
+                <div
+                    className={cn(
+                        "flex flex-col items-center justify-center text-center gap-2 rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent cursor-pointer transition-all",
+                        formData.delivery_type === 'IMMEDIATE' && "border-primary bg-primary/5",
+                        hasRestrictedItems && "opacity-50 pointer-events-none grayscale"
+                    )}
+                    onClick={() => !hasRestrictedItems && setData({ ...formData, delivery_type: 'IMMEDIATE' })}
                 >
-                    <div
-                        className={cn(
-                            "flex items-center gap-4 rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent cursor-pointer transition-all",
-                            formData.delivery_type === 'IMMEDIATE' && "border-primary bg-primary/5",
-                            hasRestrictedItems && "opacity-50 pointer-events-none grayscale"
-                        )}
-                        onClick={() => !hasRestrictedItems && setData({ ...formData, delivery_type: 'IMMEDIATE' })}
-                    >
-                        <RadioGroupItem value="IMMEDIATE" id="del-immediate" className="sr-only" disabled={hasRestrictedItems} />
-                        <div className={`p-2 rounded-md bg-background border ${formData.delivery_type === 'IMMEDIATE' ? 'text-primary' : 'text-muted-foreground'}`}>
-                            <Package className="h-5 w-5" />
-                        </div>
-                        <div className="flex-1">
-                            <span className="text-sm font-bold block">Movimiento Inmediato</span>
-                            <span className="text-[10px] text-muted-foreground">Rebajar/Aumentar stock ahora mismo.</span>
-                        </div>
+                    <RadioGroupItem value="IMMEDIATE" id="del-immediate" className="sr-only" disabled={hasRestrictedItems} />
+                    <div className={`p-3 rounded-full bg-background border shadow-sm ${formData.delivery_type === 'IMMEDIATE' ? 'text-primary border-primary/20' : 'text-muted-foreground'}`}>
+                        <Package className="h-6 w-6" />
                     </div>
+                    <div>
+                        <span className="text-sm font-bold block">Inmediato</span>
+                        <span className="text-[10px] text-muted-foreground leading-tight mt-1 inline-block">Procesar ahora</span>
+                    </div>
+                </div>
 
-                    <div
-                        className={cn(
-                            "flex items-center gap-4 rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent cursor-pointer transition-all",
-                            formData.delivery_type === 'SCHEDULED' && "border-primary bg-primary/5"
-                        )}
-                        onClick={() => setData({ ...formData, delivery_type: 'SCHEDULED' })}
-                    >
-                        <RadioGroupItem value="SCHEDULED" id="del-scheduled" className="sr-only" />
-                        <div className={`p-2 rounded-md bg-background border ${formData.delivery_type === 'SCHEDULED' ? 'text-primary' : 'text-muted-foreground'}`}>
-                            <Calendar className="h-5 w-5" />
-                        </div>
-                        <div className="flex-1">
-                            <span className="text-sm font-bold block">Programar Movimiento</span>
-                            <span className="text-[10px] text-muted-foreground">Registrar para una fecha futura.</span>
-                        </div>
+                <div
+                    className={cn(
+                        "flex flex-col items-center justify-center text-center gap-2 rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent cursor-pointer transition-all",
+                        formData.delivery_type === 'SCHEDULED' && "border-primary bg-primary/5"
+                    )}
+                    onClick={() => setData({ ...formData, delivery_type: 'SCHEDULED' })}
+                >
+                    <RadioGroupItem value="SCHEDULED" id="del-scheduled" className="sr-only" />
+                    <div className={`p-3 rounded-full bg-background border shadow-sm ${formData.delivery_type === 'SCHEDULED' ? 'text-primary border-primary/20' : 'text-muted-foreground'}`}>
+                        <Calendar className="h-6 w-6" />
                     </div>
+                    <div>
+                        <span className="text-sm font-bold block">Programar</span>
+                        <span className="text-[10px] text-muted-foreground leading-tight mt-1 inline-block">Fecha futura</span>
+                    </div>
+                </div>
 
-                    <div
-                        className={cn(
-                            "flex items-center gap-4 rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent cursor-pointer transition-all",
-                            formData.delivery_type === 'PARTIAL' && "border-primary bg-primary/5"
-                        )}
-                        onClick={() => setData({ ...formData, delivery_type: 'PARTIAL' })}
-                    >
-                        <RadioGroupItem value="PARTIAL" id="del-partial" className="sr-only" />
-                        <div className={`p-2 rounded-md bg-background border ${formData.delivery_type === 'PARTIAL' ? 'text-primary' : 'text-muted-foreground'}`}>
-                            <Truck className="h-5 w-5" />
-                        </div>
-                        <div className="flex-1">
-                            <span className="text-sm font-bold block">Carga Parcial</span>
-                            <span className="text-[10px] text-muted-foreground">Procesar solo algunos ítems ahora.</span>
-                        </div>
+                <div
+                    className={cn(
+                        "flex flex-col items-center justify-center text-center gap-2 rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent cursor-pointer transition-all",
+                        formData.delivery_type === 'PARTIAL' && "border-primary bg-primary/5"
+                    )}
+                    onClick={() => setData({ ...formData, delivery_type: 'PARTIAL' })}
+                >
+                    <RadioGroupItem value="PARTIAL" id="del-partial" className="sr-only" />
+                    <div className={`p-3 rounded-full bg-background border shadow-sm ${formData.delivery_type === 'PARTIAL' ? 'text-primary border-primary/20' : 'text-muted-foreground'}`}>
+                        <Truck className="h-6 w-6" />
                     </div>
-                </RadioGroup>
-            </LabeledContainer>
+                    <div>
+                        <span className="text-sm font-bold block">Parcial</span>
+                        <span className="text-[10px] text-muted-foreground leading-tight mt-1 inline-block">Procesar algunos</span>
+                    </div>
+                </div>
+            </RadioGroup>
 
             <div className="space-y-4 animate-in fade-in duration-300">
                 {formData.delivery_type === 'PARTIAL' && (

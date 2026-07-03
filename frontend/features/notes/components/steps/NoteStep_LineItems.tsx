@@ -483,12 +483,7 @@ export function NoteStep_LineItems({
                         onLinesChange={onLinesChange}
                         isExempt={isExempt}
                     />
-                    {selectedLines.length > 0 && (
-                        <div className="flex justify-end text-sm font-bold text-muted-foreground">
-                            Subtotal seleccionado:&nbsp;
-                            <span className="text-foreground font-black">{formatCurrency(totalNet)}</span>
-                        </div>
-                    )}
+
                 </>
             ) : (
                 <EditModeTable

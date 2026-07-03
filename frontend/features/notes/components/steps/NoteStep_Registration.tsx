@@ -11,8 +11,9 @@
  *  - The registration fields inside purchasing/notes/Step1_GeneralInfo
  */
 
-import { DocumentAttachmentDropzone, LabeledInput, LabeledCheckbox, PeriodValidationDateInput } from '@/components/shared'
+import { DocumentAttachmentDropzone, LabeledInput, LabeledSwitch, PeriodValidationDateInput } from '@/components/shared'
 import { FileText, Calendar, Hash, ShieldAlert } from 'lucide-react'
+import { cn } from '@/lib/utils'
 import { useServerDate } from '@/hooks/useServerDate'
 import { useEffect } from 'react'
 import type { NoteType, RegistrationData } from '@/features/notes'
@@ -54,12 +55,12 @@ export function NoteStep_Registration({
             </div>
 
             <div className="space-y-4">
-                <LabeledCheckbox
-                    label="Documento Pendiente"
-                    description="Emitiré/recibiré la nota luego"
+                <LabeledSwitch
+                    label="Emisión"
+                    description={data.isPending ? "Emitiré/recibiré la nota luego" : "Emisión inmediata"}
                     checked={data.isPending}
-                    onCheckedChange={(val) => {
-                        const isChecked = !!val
+                    onCheckedChange={(checked) => {
+                        const isChecked = !!checked
                         if (isChecked) {
                             setData(prev => ({
                                 ...prev,
@@ -72,11 +73,13 @@ export function NoteStep_Registration({
                             setData(prev => ({ ...prev, isPending: false }))
                         }
                     }}
+                    icon={<FileText className={cn("h-4 w-4 transition-colors", data.isPending ? "text-warning" : "text-muted-foreground/30")} />}
+                    className={cn(data.isPending ? "bg-warning/5 border-warning/20 shadow-card" : "border-dashed")}
                 />
 
                 {!data.isPending && (
                     <div className="space-y-6 animate-in fade-in slide-in-from-top-2 duration-300">
-                        <div className="grid grid-cols-2 gap-4 p-4 border rounded-md bg-muted/10">
+                        <div className="grid grid-cols-2 gap-4">
                             <LabeledInput
                                 label="N° de Folio"
                                 icon={<Hash className="h-3 w-3" />}
@@ -111,7 +114,7 @@ export function NoteStep_Registration({
                                 />
                             </div>
 
-                            <div className="col-span-2 pt-2 border-t mt-2">
+                            <div className="col-span-2">
                                 <DocumentAttachmentDropzone
                                     file={data.attachment}
                                     onFileChange={(file) =>
