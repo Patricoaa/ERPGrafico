@@ -73,7 +73,7 @@ export function AccountingClosuresClientView({ externalOpen, onExternalOpenChang
     const [newFYModalOpen, setNewFYModalOpen] = useState(false);
     const [previewData, setPreviewData] = useState<FiscalYearPreviewResult | null>(null);
     const [activeYearToClose, setActiveYearToClose] = useState<number | null>(null);
-    const [declarationPeriodId, setDeclarationPeriodId] = useState<number | undefined>(undefined);
+    const [declarationTarget, setDeclarationTarget] = useState<{ id?: number; year?: number; month?: number } | undefined>(undefined);
     const [declarationWizardOpen, setDeclarationWizardOpen] = useState(false);
 
     // Payment state
@@ -181,14 +181,14 @@ export function AccountingClosuresClientView({ externalOpen, onExternalOpenChang
         }
     };
 
-    const handleOpenDeclaration = useCallback((id: number) => {
-        setDeclarationPeriodId(id);
+    const handleOpenDeclaration = useCallback((params: { id?: number; year: number; month: number }) => {
+        setDeclarationTarget(params);
         setDeclarationWizardOpen(true);
     }, []);
 
     const handleDeclarationSuccess = useCallback(() => {
         setDeclarationWizardOpen(false);
-        setDeclarationPeriodId(undefined);
+        setDeclarationTarget(undefined);
         refetchTaxPeriods();
         fetchPeriods();
     }, [refetchTaxPeriods, fetchPeriods]);
@@ -421,10 +421,11 @@ export function AccountingClosuresClientView({ externalOpen, onExternalOpenChang
                                         taxPeriods={yearTaxPeriods}
                                         onClosePeriod={handleClosePeriodWithChecklist}
                                         onReopenPeriod={reopenPeriod}
+                                        onCreatePeriod={(year, month) => createPeriod({ year, month })}
                                         isPeriodActionLoading={actionLoadingPeriod}
                                         onCloseTaxPeriod={handleCloseTaxPeriod}
                                         onReopenTaxPeriod={handleReopenTaxPeriod}
-                                        onOpenDeclaration={handleOpenDeclaration}
+                                        onOpenDeclaration={(params: { id?: number; year: number; month: number }) => handleOpenDeclaration(params)}
                                         isTaxActionLoading={isLoadingTaxAction}
                                         onPreviewClosing={handlePreviewClosing}
                                         onReopenFiscalYear={reopenFiscalYear}
@@ -456,10 +457,12 @@ export function AccountingClosuresClientView({ externalOpen, onExternalOpenChang
                 onOpenChange={(open) => {
                     if (!open) {
                         setDeclarationWizardOpen(false);
-                        setDeclarationPeriodId(undefined);
+                        setDeclarationTarget(undefined);
                     }
                 }}
-                periodId={declarationPeriodId}
+                periodId={declarationTarget?.id}
+                year={declarationTarget?.year}
+                month={declarationTarget?.month}
                 onSuccess={handleDeclarationSuccess}
             />
 
