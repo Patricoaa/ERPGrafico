@@ -26,19 +26,23 @@ import {
 function UoMSelector({ line: l, currentUom, onUomChange }: { line: Record<string, unknown>, currentUom: number, onUomChange: (uomId: number) => void }) {
     const [allowedUoms, setAllowedUoms] = useState<Record<string, unknown>[]>([])
 
+    const productId = l.productId ?? l.product_id;
+    const lineId = l.lineId ?? l.line_id;
+    const uomName = l.uomName ?? l.uom_name;
+
     useEffect(() => {
         const fetchAllowed = async () => {
             try {
-                const uoms = await billingApi.getAllowedUoms((l.product_id as number) || (l.product as number), 'sale')
+                const uoms = await billingApi.getAllowedUoms((productId as number) || (l.product as number), 'sale')
                 setAllowedUoms(uoms)
             } catch (err) {
                 console.error("Error fetching allowed UoMs", err)
             }
         }
         fetchAllowed()
-    }, [l.id, l.product_id])
+    }, [lineId, productId])
 
-    if (allowedUoms.length <= 1) return <span className="text-xs text-muted-foreground">{l.uom_name as string}</span>
+    if (allowedUoms.length <= 1) return <span className="text-xs text-muted-foreground">{uomName as string}</span>
 
     return (
         <Select value={currentUom?.toString()} onValueChange={(val) => onUomChange(parseInt(val))}>
@@ -74,10 +78,12 @@ export function Step2_Logistics({
     const [, setFetchingWarehouses] = useState(true)
 
     // Check for "Manufacturable" products (Simple or Advanced) - ONLY block for Debit Notes
-    const restrictedItems = selectedItems.filter(item =>
-        (item.product_type === 'MANUFACTURABLE' || item.has_bom) &&
-        !item.mfg_auto_finalize
-    );
+    const restrictedItems = selectedItems.filter(item => {
+        const pType = item.productType ?? item.product_type;
+        const hasBom = item.hasBom ?? item.has_bom;
+        const auto = item.mfgAutoFinalize ?? item.mfg_auto_finalize;
+        return (pType === 'MANUFACTURABLE' || hasBom) && !auto;
+    });
     const hasRestrictedItems = !isCreditNote && restrictedItems.length > 0;
 
     // Initialize data if null or missing fields
@@ -164,16 +170,20 @@ export function Step2_Logistics({
                     if (val === 'PARTIAL') {
                         const initialLineData = selectedItems
                             .filter(item => {
+                                const pType = item.productType ?? item.product_type;
+                                const hasBom = item.hasBom ?? item.has_bom;
+                                const auto = item.mfgAutoFinalize ?? item.mfg_auto_finalize;
+                                const createsStockMove = item.createsStockMove ?? item.creates_stock_move;
                                 const isRestricted = !isCreditNote &&
-                                    (item.product_type === 'MANUFACTURABLE' || item.has_bom) &&
-                                    !item.mfg_auto_finalize;
-                                return item.creates_stock_move && !isRestricted;
+                                    (pType === 'MANUFACTURABLE' || hasBom) &&
+                                    !auto;
+                                return createsStockMove && !isRestricted;
                             })
                             .map(item => ({
-                                line_id: item.line_id,
-                                product_id: item.product_id,
-                                quantity: item.quantity,
-                                uom_id: item.uom_id
+                                line_id: item.lineId ?? item.line_id,
+                                product_id: item.productId ?? item.product_id,
+                                quantity: item.noteQuantity ?? item.quantity,
+                                uom_id: item.uomId ?? item.uom_id
                             }));
                         setData({ ...formData, delivery_type: val, line_data: initialLineData });
                     } else {
@@ -254,24 +264,34 @@ export function Step2_Logistics({
                                 </TableHeader>
                                 <TableBody>
                                     {selectedItems.map((i: Record<string, unknown>) => {
-                                        const item = i as unknown as { line_id: number; product_id: number; product_name: string; noteQuantity?: number; quantity?: number; uom_id: number; product_type: string; has_bom: boolean; mfg_auto_finalize: boolean; creates_stock_move: boolean };
+                                        const item = i as unknown as { lineId?: number, line_id?: number; productId?: number, product_id?: number; productName?: string, product_name?: string; noteQuantity?: number; quantity?: number; uomId?: number, uom_id?: number; productType?: string, product_type?: string; hasBom?: boolean, has_bom?: boolean; mfgAutoFinalize?: boolean, mfg_auto_finalize?: boolean; createsStockMove?: boolean, creates_stock_move?: boolean };
+                                        
+                                        const lineId = (item.lineId ?? item.line_id) as number;
+                                        const productId = (item.productId ?? item.product_id) as number;
+                                        const productName = (item.productName ?? item.product_name) as string;
+                                        const uomId = (item.uomId ?? item.uom_id) as number;
+                                        const productType = (item.productType ?? item.product_type) as string;
+                                        const hasBom = (item.hasBom ?? item.has_bom) as boolean;
+                                        const mfgAutoFinalize = (item.mfgAutoFinalize ?? item.mfg_auto_finalize) as boolean;
+                                        const createsStockMove = (item.createsStockMove ?? item.creates_stock_move) as boolean;
+
                                         const itemQty = (item.noteQuantity ?? item.quantity ?? 0) as number;
                                         const isRestricted = !isCreditNote &&
-                                            (item.product_type === 'MANUFACTURABLE' || item.has_bom) &&
-                                            !item.mfg_auto_finalize;
+                                            (productType === 'MANUFACTURABLE' || hasBom) &&
+                                            !mfgAutoFinalize;
 
-                                        const isEligible = (item.creates_stock_move ||
-                                            item.product_type === 'MANUFACTURABLE' ||
-                                            item.has_bom) && !isRestricted;
+                                        const isEligible = (createsStockMove ||
+                                            productType === 'MANUFACTURABLE' ||
+                                            hasBom) && !isRestricted;
 
                                         const currentVal = ((formData.line_data || []) as Record<string, unknown>[])
-                                            .find((ld: Record<string, unknown>) => (ld.line_id as number) === item.line_id)?.quantity as number ?? 0;
+                                            .find((ld: Record<string, unknown>) => (ld.line_id as number) === lineId)?.quantity as number ?? 0;
 
                                         return (
-                                            <TableRow key={item.line_id} className={cn(!isEligible && "bg-muted/30 opacity-70")}>
+                                            <TableRow key={lineId} className={cn(!isEligible && "bg-muted/30 opacity-70")}>
                                                 <TableCell>
                                                     <div className="flex flex-col gap-1 py-1">
-                                                        <span className="font-medium text-xs leading-tight">{item.product_name as string}</span>
+                                                        <span className="font-medium text-xs leading-tight">{productName}</span>
                                                         {!isEligible && (
                                                             <span className="text-[10px] text-warning font-bold uppercase tracking-tighter">
                                                                 {isRestricted ? "Requiere Producción" : "Sin control de stock"}
@@ -294,11 +314,11 @@ export function Step2_Logistics({
                                                             const val = parseFloat(e.target.value) || 0;
                                                             const lineData = (formData.line_data || []) as Record<string, unknown>[];
                                                             const lines = [...lineData];
-                                                            const idx = lines.findIndex((ld: Record<string, unknown>) => (ld.line_id as number) === item.line_id);
+                                                            const idx = lines.findIndex((ld: Record<string, unknown>) => (ld.line_id as number) === lineId);
                                                             if (idx >= 0) {
                                                                 lines[idx] = { ...lines[idx], quantity: val };
                                                             } else {
-                                                                lines.push({ line_id: item.line_id, product_id: item.product_id, quantity: val, uom_id: item.uom_id });
+                                                                lines.push({ line_id: lineId, product_id: productId, quantity: val, uom_id: uomId });
                                                             }
                                                             setData({ ...formData, line_data: lines });
                                                         }}
@@ -307,16 +327,16 @@ export function Step2_Logistics({
                                                 </TableCell>
                                                 <TableCell className="text-sm text-muted-foreground font-medium">
                                                     <UoMSelector
-                                                        line={item}
-                                                        currentUom={((formData.line_data as Record<string, unknown>[]) || []).find((ld: Record<string, unknown>) => (ld.line_id as number) === item.line_id)?.uom_id as number || item.uom_id}
-                                                        onUomChange={(uomId) => {
+                                                        line={i}
+                                                        currentUom={((formData.line_data as Record<string, unknown>[]) || []).find((ld: Record<string, unknown>) => (ld.line_id as number) === lineId)?.uom_id as number || uomId}
+                                                        onUomChange={(uomIdVal) => {
                                                             const lineData = (formData.line_data || []) as Record<string, unknown>[];
                                                             const lines = [...lineData];
-                                                            const idx = lines.findIndex((ld: Record<string, unknown>) => (ld.line_id as number) === item.line_id);
+                                                            const idx = lines.findIndex((ld: Record<string, unknown>) => (ld.line_id as number) === lineId);
                                                             if (idx >= 0) {
-                                                                lines[idx] = { ...lines[idx], uom_id: uomId };
+                                                                lines[idx] = { ...lines[idx], uom_id: uomIdVal };
                                                             } else {
-                                                                lines.push({ line_id: item.line_id, product_id: item.product_id, quantity: 1, uom_id: item.uom_id });
+                                                                lines.push({ line_id: lineId, product_id: productId, quantity: 1, uom_id: uomIdVal });
                                                             }
                                                             setData({ ...formData, line_data: lines });
                                                         }}
