@@ -26,7 +26,6 @@ export { purchaseOrderSegDef } from './segmentationDef'
 export {
   DocumentRegistrationModal,
   PurchaseCheckoutWizard,
-  PurchaseNoteModal,
   ReceiptModal,
   PurchaseOrderSummaryCard,
   PurchaseProcessSummarySidebar,
@@ -36,10 +35,6 @@ export {
   Step3_PurchasePayment,
   Step4_Receipt,
   PurchaseNoteSummarySidebar,
-  Step1_GeneralInfo,
-  Step2_LineItems,
-  Step3_Review,
-  Step4_Payment,
   PurchaseOrderModal,
 } from './components'
 
