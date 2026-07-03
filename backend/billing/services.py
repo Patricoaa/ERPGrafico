@@ -557,7 +557,7 @@ class BillingService:
     def create_purchase_bill(
         order: PurchaseOrder,
         supplier_invoice_number: str = "",
-        dte_type: str = Invoice.DTEType.PURCHASE_INV,
+        dte_type: str = Invoice.DTEType.FACTURA,
         document_attachment=None,
         date=None,
         status=Invoice.Status.POSTED,

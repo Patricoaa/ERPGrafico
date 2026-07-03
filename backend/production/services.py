@@ -1444,7 +1444,7 @@ class WorkOrderService:
 
             # 2. Create Draft Invoice (Factura/Boleta)
             # Map production document type to billing DTEType
-            dte_type = Invoice.DTEType.PURCHASE_INV  # Default Factura
+            dte_type = Invoice.DTEType.FACTURA  # Default Factura
             if document_type == "BOLETA":
                 dte_type = Invoice.DTEType.BOLETA
 

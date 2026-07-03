@@ -2,6 +2,8 @@ from core.api.pagination import StandardResultsSetPagination
 from core.idempotency import idempotent_endpoint
 from django.core.exceptions import ValidationError as DjangoValidationError
 from django.utils import timezone
+from django.utils.decorators import method_decorator
+from django.views.decorators.csrf import csrf_exempt
 from rest_framework import status, viewsets, exceptions
 from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework.decorators import action
@@ -135,6 +137,7 @@ class F29DeclarationViewSet(viewsets.ModelViewSet):
         from .selectors import TaxSelectorExt
         return Response(TaxSelectorExt.get_declaration_documents(self.get_object()))
 
+    @method_decorator(csrf_exempt)
     @action(detail=True, methods=['post'], parser_classes=[MultiPartParser, FormParser])
     def attach_document(self, request, pk=None):
         instance = self.get_object()
