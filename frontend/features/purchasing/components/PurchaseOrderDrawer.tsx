@@ -12,6 +12,7 @@ import { PrintableLayout } from '@/features/_shared'
 import { usePurchaseOrderDetail } from '@/features/purchasing/hooks/usePurchaseOrderDetail'
 import { ActivitySidebar } from '@/features/audit'
 import type { TransactionDrawerProps } from '@/features/_shared'
+import { formDrawerWidth } from '@/lib/form-widths'
 
 interface PurchaseOrderDrawerProps extends TransactionDrawerProps {
   purchaseOrderId?: number
@@ -58,7 +59,7 @@ export function PurchaseOrderDrawer({ id, open, onOpenChange, purchaseOrderId }:
         open={open}
         onOpenChange={onOpenChange}
         side="left"
-        defaultSize="50%"
+        defaultSize={formDrawerWidth("master", !!entityId)}
         icon={getEntityIcon('purchasing.purchaseorder')}
         title={<span>{displayId}</span>}
         headerActions={<Button variant="ghost" size="icon" onClick={() => handlePrint()}><Printer className="h-4 w-4" /></Button>}
