@@ -266,17 +266,33 @@ function SelectModeTable({
     )
 
     return (
-        <DataTable
-            columns={columns}
-            data={lines}
-            variant="minimal"
-            hidePagination
-            noBorder
-            emptyState={{
-                title: 'No hay productos',
-                description: 'No se encontraron líneas disponibles en el documento original.',
-            }}
-        />
+        <div className="border rounded-md overflow-hidden shadow-card bg-card min-h-[400px]">
+            <DataTable
+                columns={columns}
+                data={lines}
+                variant="compact"
+                gridTemplate="grid-cols-[3rem_minmax(180px,1fr)_4rem_5rem_7rem_8rem_minmax(120px,1fr)]"
+                hidePagination
+                noBorder
+                emptyState={{
+                    title: 'No hay productos',
+                    description: 'No se encontraron líneas disponibles en el documento original.',
+                }}
+                renderRow={(row, children) => {
+                    const selected = isSelected(row.original.lineId)
+                    return (
+                        <div
+                            className={cn(
+                                'transition-colors hover:bg-muted/5 h-20 items-center',
+                                selected ? 'bg-primary/[0.02]' : '',
+                            )}
+                        >
+                            {children}
+                        </div>
+                    )
+                }}
+            />
+        </div>
     )
 }
 
@@ -404,16 +420,6 @@ function EditModeTable({
                 },
                 meta: { align: 'right' },
             },
-            {
-                header: 'Subtotal',
-                cell: ({ row }) => (
-                    <DataCell.Currency
-                        value={row.original.noteQuantity * row.original.noteUnitPrice}
-                        className="font-black justify-end"
-                    />
-                ),
-                meta: { align: 'right' },
-            },
         ],
         [isCreditNote, handleChange],
     )
@@ -432,17 +438,32 @@ function EditModeTable({
                 </div>
             </div>
 
-            <div className="bg-card">
+            <div className="border rounded-md overflow-hidden shadow-card bg-card">
                 <DataTable
                     columns={columns}
                     data={lines}
-                    variant="minimal"
+                    variant="compact"
+                    gridTemplate="grid-cols-[3rem_1fr_4rem_5rem_8rem_8rem]"
                     hidePagination
                     noBorder
                     emptyState={{
                         title: 'No hay productos',
                         description: 'No se encontraron líneas disponibles en el documento original.',
                     }}
+                    renderRow={(row, children) => (
+                        <div
+                            className={cn(
+                                'transition-colors hover:bg-muted/20',
+                                row.original.noteQuantity > 0
+                                    ? isCreditNote
+                                        ? 'bg-warning/10/40 hover:bg-warning/10/60'
+                                        : 'bg-primary/10/40 hover:bg-primary/10/60'
+                                    : '',
+                            )}
+                        >
+                            {children}
+                        </div>
+                    )}
                 />
             </div>
 
