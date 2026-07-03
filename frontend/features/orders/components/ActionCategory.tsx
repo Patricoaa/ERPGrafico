@@ -442,7 +442,7 @@ export const ActionCategory = forwardRef(({
                         referenceLabel={resolvedInvoices?.find((inv: any) => inv.status !== 'CANCELLED' && !['NOTA_CREDITO', 'NOTA_DEBITO'].includes(inv.dte_type as string))?.number}
                         fetchSource={async () => {
                             const { billingApi } = await import('@/features/billing/api/billingApi')
-                            const inv = await billingApi.getInvoice(resolvedInvoiceId) as Record<string, unknown>
+                            const inv = (await billingApi.getInvoice(resolvedInvoiceId) as unknown) as Record<string, unknown>
                             const invLines = ((inv.lines as Record<string, unknown>[]) || []).map((l: Record<string, unknown>) => ({
                                 lineId: l.id as number,
                                 productId: l.product as number,
