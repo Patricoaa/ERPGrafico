@@ -9,6 +9,7 @@ import { useReactToPrint } from "react-to-print"
 import { formatCurrency } from "@/lib/money"
 import { PrintableLayout } from "@/features/_shared/transaction-drawer"
 import { usePurchaseReceipt } from "../hooks/usePurchasing"
+import { formDrawerWidth } from "@/lib/form-widths"
 
 interface PurchaseReceiptDrawerProps {
     receiptId?: number | null
@@ -69,7 +70,7 @@ export function PurchaseReceiptDrawer({ receiptId, id, open, onOpenChange }: Pur
                 onOpenChange={onOpenChange}
                 side="left"
                 boundary="embedded"
-                defaultSize="50%"
+                defaultSize={formDrawerWidth("master", false)}
                 title={<span>{receipt ? `Recepción ${String((receipt as Record<string, unknown>).number)}` : "Recepción de Compra"}</span>}
                 headerActions={<Button variant="ghost" size="icon" onClick={() => handlePrint()}><Printer className="h-4 w-4" /></Button>}
                 subtitle={String((receipt as Record<string, unknown>)?.supplier_name ?? '')}

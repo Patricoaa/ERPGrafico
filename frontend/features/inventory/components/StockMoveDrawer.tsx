@@ -11,6 +11,7 @@ import { PrintableLayout } from '@/features/_shared'
 import { useStockMove } from '@/features/inventory/hooks/useStockMoves'
 import { ActivitySidebar } from '@/features/audit'
 import type { TransactionDrawerProps } from '@/features/_shared'
+import { formDrawerWidth } from '@/lib/form-widths'
 
 interface StockMoveDrawerProps extends TransactionDrawerProps {
     stockMoveId?: number
@@ -55,7 +56,7 @@ export function StockMoveDrawer({ id, open, onOpenChange, stockMoveId }: StockMo
                 open={open}
                 onOpenChange={onOpenChange}
                 side="left"
-                defaultSize="50%"
+                defaultSize={formDrawerWidth("master", !!entityId)}
                 icon={getEntityIcon('inventory.stockmove')}
                 title={<span>{displayId}</span>}
                 headerActions={<Button variant="ghost" size="icon" onClick={() => handlePrint()}><Printer className="h-4 w-4" /></Button>}
