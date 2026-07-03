@@ -167,7 +167,6 @@ export function Step2_Logistics({
 
             <LabeledContainer
                 label="Opciones de Procesamiento"
-                icon={<Package className="h-3 w-3" />}
             >
                 <RadioGroup
                 value={formData.delivery_type}

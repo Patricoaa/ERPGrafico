@@ -74,7 +74,7 @@ export function Step2_DTE({
         <div className="space-y-6">
             <FormSection title="Documento Tributario" icon={FileText} />
 
-            <LabeledContainer label="Tipo de Documento" icon={<FileText className="h-3 w-3" />}>
+            <LabeledContainer label="Tipo de Documento">
                 <RadioGroup
                     value={dteData.type}
                     onValueChange={(val) => setDteData({ ...dteData, type: val })}
