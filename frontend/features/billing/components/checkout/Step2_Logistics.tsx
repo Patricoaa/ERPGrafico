@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react"
 import { LabeledInput, LabeledContainer, PeriodValidationDateInput } from "@/components/shared"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
-import { Truck, Package, Calendar, AlertTriangle, ShoppingBag, Info } from "lucide-react"
+import { Truck, Package, Calendar, AlertTriangle, ShoppingBag } from "lucide-react"
 import { billingApi } from "../../api/billingApi"
 import { cn } from "@/lib/utils"
 import { useServerDate } from "@/hooks/useServerDate"
@@ -22,12 +22,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select"
-import {
-    Tooltip,
-    TooltipContent,
-    TooltipProvider,
-    TooltipTrigger,
-} from "@/components/ui/tooltip"
+
 
 function UoMSelector({ line: l, currentUom, onUomChange }: { line: Record<string, unknown>, currentUom: number, onUomChange: (uomId: number) => void }) {
     const [allowedUoms, setAllowedUoms] = useState<Record<string, unknown>[]>([])
@@ -256,19 +251,7 @@ export function Step2_Logistics({
                     <div className="space-y-4 animate-in fade-in slide-in-from-top-2">
                         <LabeledContainer
                             label="Cantidades para Movimiento Inmediato"
-                            icon={<Package className="h-3.5 w-3.5 opacity-50" />}
-                            suffix={
-                                <TooltipProvider>
-                                    <Tooltip>
-                                        <TooltipTrigger asChild>
-                                            <Info className="h-3.5 w-3.5 text-muted-foreground/50 hover:text-muted-foreground cursor-default transition-colors" />
-                                        </TooltipTrigger>
-                                        <TooltipContent side="left" className="max-w-[200px] text-xs">
-                                            Especifique las cantidades que procesará ahora. El resto quedará pendiente para despacho futuro.
-                                        </TooltipContent>
-                                    </Tooltip>
-                                </TooltipProvider>
-                            }
+                            tooltip="Especifique las cantidades que procesará ahora. El resto quedará pendiente para despacho futuro."
                         >
                             <div className="w-full overflow-hidden">
                             <Table>
