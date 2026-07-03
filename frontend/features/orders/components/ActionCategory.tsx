@@ -20,7 +20,7 @@ const ReceiptModal = dynamic(() => import("@/features/purchasing/components/Rece
 const PaymentHistoryModal = dynamic(() => import("./PaymentHistoryModal").then(m => m.PaymentHistoryModal))
 const PaymentModal = dynamic(() => import("@/features/treasury/components/PaymentModal").then(m => m.PaymentModal))
 const PaymentReferenceModal = dynamic(() => import("@/features/treasury/components/PaymentReferenceModal").then(m => m.PaymentReferenceModal))
-const NoteCheckoutWizard = dynamic(() => import("@/features/billing/components/NoteCheckoutWizard").then(m => m.NoteCheckoutWizard))
+const UnifiedNoteWizard = dynamic(() => import("@/features/notes").then(m => ({ default: m.UnifiedNoteWizard })))
 const DocumentListModal = dynamic(() => import("./DocumentListModal").then(m => m.DocumentListModal))
 import { LazyDrawer } from "@/features/_shared/transaction-drawer"
 const NoteLogisticsModal = dynamic(() => import("./NoteLogisticsModal").then(m => m.NoteLogisticsModal))
@@ -429,16 +429,70 @@ export const ActionCategory = forwardRef(({
                 />
             )}
 
-            {(activeModal === 'create-credit-note' || activeModal === 'create-debit-note') && (
-                <NoteCheckoutWizard
-                    open={true}
-                    onOpenChange={closeModal}
-                    orderId={order?.id}
-                    invoiceId={(resolvedInvoices?.find((inv: any) => inv.status !== 'CANCELLED' && !['NOTA_CREDITO', 'NOTA_DEBITO'].includes(inv.dte_type as string))?.id as number) || 0}
-                    initialType={activeModal === 'create-debit-note' ? 'NOTA_DEBITO' : 'NOTA_CREDITO'}
-                    onSuccess={() => { closeModal(); onActionSuccess?.() }}
-                />
-            )}
+            {(activeModal === 'create-credit-note' || activeModal === 'create-debit-note') && (() => {
+                const resolvedInvoiceId = (resolvedInvoices?.find((inv: any) => inv.status !== 'CANCELLED' && !['NOTA_CREDITO', 'NOTA_DEBITO'].includes(inv.dte_type as string))?.id as number) || 0
+                const noteInitialType = activeModal === 'create-debit-note' ? 'NOTA_DEBITO' as const : 'NOTA_CREDITO' as const
+                return (
+                    <UnifiedNoteWizard
+                        open={true}
+                        onOpenChange={closeModal}
+                        mode="sales"
+                        initialType={noteInitialType}
+                        features={{ logistics: true, manufacturing: true }}
+                        referenceLabel={resolvedInvoices?.find((inv: any) => inv.status !== 'CANCELLED' && !['NOTA_CREDITO', 'NOTA_DEBITO'].includes(inv.dte_type as string))?.number}
+                        fetchSource={async () => {
+                            const { billingApi } = await import('@/features/billing/api/billingApi')
+                            const inv = await billingApi.getInvoice(resolvedInvoiceId) as Record<string, unknown>
+                            const invLines = ((inv.lines as Record<string, unknown>[]) || []).map((l: Record<string, unknown>) => ({
+                                lineId: l.id as number,
+                                productId: l.product as number,
+                                productName: l.product_name as string,
+                                productCode: l.product_code as string | undefined,
+                                productType: l.product_type as string | undefined,
+                                trackInventory: l.track_inventory as boolean | undefined,
+                                hasBom: l.has_bom as boolean | undefined,
+                                requiresAdvancedManufacturing: l.requires_advanced_manufacturing as boolean | undefined,
+                                mfgAutoFinalize: l.mfg_auto_finalize as boolean | undefined,
+                                createsStockMove: (l.track_inventory as boolean) && (l.product_type as string) !== 'MANUFACTURABLE',
+                                uomName: l.uom_name as string | undefined,
+                                originalQuantity: (l.quantity_delivered as number) || (l.quantity as number),
+                                noteQuantity: 0,
+                                noteUnitPrice: (l.unit_price as number) || 0,
+                                taxAmountPerUnit: ((l.unit_price as number) || 0) * (((l.tax_rate as number) ?? 19) / 100),
+                                reason: '',
+                            }))
+                            return {
+                                label: `${inv.dte_type_display as string} ${inv.number as string}`,
+                                isExempt: (inv.dte_type as string) === 'FACTURA_EXENTA' || (inv.dte_type as string) === 'BOLETA_EXENTA',
+                                originalTotal: inv.total as number,
+                                lines: invLines,
+                            }
+                        }}
+                        onSubmit={async (payload) => {
+                            const { billingApi } = await import('@/features/billing/api/billingApi')
+                            const formData = new FormData()
+                            formData.append('original_invoice_id', resolvedInvoiceId.toString())
+                            formData.append('note_type', payload.noteType)
+                            formData.append('selected_items', JSON.stringify(payload.lines.map(l => ({
+                                line_id: l.lineId,
+                                product_id: l.productId,
+                                quantity: l.noteQuantity,
+                                unit_price: l.noteUnitPrice,
+                                tax_amount: l.taxAmountPerUnit ?? 0,
+                                reason: l.reason ?? '',
+                                manufacturing_data: l.manufacturingData ?? null,
+                            }))))
+                            if (payload.logistics) formData.append('logistics_data', JSON.stringify(payload.logistics))
+                            const reg = payload.registration
+                            formData.append('registration_data', JSON.stringify({ document_number: reg.documentNumber, document_date: reg.documentDate, is_pending: reg.isPending }))
+                            if (reg.attachment) formData.append('document_attachment', reg.attachment)
+                            if (payload.payment.method) formData.append('payment_data', JSON.stringify(payload.payment))
+                            await billingApi.noteWorkflowCheckout(formData)
+                        }}
+                        onSuccess={() => { closeModal(); onActionSuccess?.() }}
+                    />
+                )
+            })()}
 
             {activeModal === 'transaction-view' && viewConfig && (
                 <LazyDrawer
