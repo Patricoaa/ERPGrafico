@@ -8,6 +8,8 @@ interface RadioCardProps {
     id: string
     label: string
     description?: string
+    icon?: ReactNode
+    iconColor?: string
     disabled?: boolean
     className?: string
     children?: ReactNode
@@ -18,6 +20,8 @@ export function RadioCard({
     id,
     label,
     description,
+    icon,
+    iconColor = "text-foreground",
     disabled,
     className,
     children
@@ -43,6 +47,13 @@ export function RadioCard({
                 disabled={disabled}
                 className="mt-0.5 shrink-0" 
             />
+
+            {/* Opcional: Ícono con fondo */}
+            {icon && (
+                <div className={cn("p-1.5 rounded-md bg-background border shrink-0", iconColor)}>
+                    {icon}
+                </div>
+            )}
             
             {/* Textos */}
             <div className="flex flex-col gap-1 min-w-0 flex-1 justify-center">

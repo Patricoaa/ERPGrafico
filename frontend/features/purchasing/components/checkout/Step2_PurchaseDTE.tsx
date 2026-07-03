@@ -64,7 +64,7 @@ export function Step2_PurchaseDTE({
                 </p>
             </div>
             <div className="space-y-4">
-                <LabeledContainer label="Tipo de Documento" icon={<FileText className="h-3 w-3" />}>
+                <LabeledContainer label="Tipo de Documento">
                     <RadioGroup
                         value={dteData.type}
                         onValueChange={(val) => setDteData({ ...dteData, type: val })}

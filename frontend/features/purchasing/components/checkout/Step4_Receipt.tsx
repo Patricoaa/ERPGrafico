@@ -207,7 +207,6 @@ export function Step4_Receipt({ receiptData, setReceiptData, orderLines = [] }: 
 
             <LabeledContainer
                 label={`Tipo de ${receiptLabel}`}
-                icon={<Package className="h-3 w-3" />}
             >
                 <RadioGroup
                     value={receiptData.type}

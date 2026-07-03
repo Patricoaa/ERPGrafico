@@ -131,7 +131,6 @@ export function Step3_Delivery({ deliveryData, setDeliveryData, orderLines }: St
         <div className="space-y-6">
             <LabeledContainer
                 label="Opciones de Despacho"
-                icon={<Package className="h-3 w-3" />}
             >
                 <RadioGroup
                     value={deliveryData.type}
