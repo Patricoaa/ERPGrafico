@@ -13,7 +13,7 @@ import { billingApi } from "@/features/billing/api/billingApi"
 import { toast } from "sonner"
 import { PaymentModal } from "@/features/treasury/components/PaymentModal"
 import { ReceiptModal } from "@/features/purchasing/components/ReceiptModal"
-import { PurchaseNoteModal } from "@/features/purchasing/components/PurchaseNoteModal"
+import { UnifiedNoteWizard } from '@/features/notes'
 
 import { DataTableView } from '@/components/shared'
 import { useHubPanel } from "@/components/providers/HubPanelProvider"
@@ -247,7 +247,68 @@ export function PurchaseInvoicesClientView() {
             </div>
             {payingDoc && <PaymentModal open={!!payingDoc} onOpenChange={(open) => !open && setPayingDoc(null)} onConfirm={handlePayment} isPurchase={true} total={parseFloat(payingDoc.total)} pendingAmount={payingDoc.pending_amount ?? parseFloat(payingDoc.total)} hideDteFields={true} isRefund={payingDoc.dte_type === 'NOTA_CREDITO'} existingInvoice={{ dte_type: payingDoc.dte_type, number: payingDoc.number ?? '', document_attachment: null }} />}
             {receivingDoc && receivingDoc.purchase_order && <ReceiptModal open={!!receivingDoc} onOpenChange={(open) => !open && setReceivingDoc(null)} orderId={receivingDoc.purchase_order} onSuccess={fetchDocuments} isRefund={receivingDoc.dte_type === 'NOTA_CREDITO'} />}
-            {notingDoc && <PurchaseNoteModal open={!!notingDoc} onOpenChange={(open) => !open && setNotingDoc(null)} orderId={notingDoc.purchase_order ?? undefined} orderNumber={(notingDoc.purchase_order_number || notingDoc.purchase_order?.toString()) ?? undefined} invoiceId={notingDoc.id} onSuccess={fetchDocuments} />}
+            {notingDoc && (
+                <UnifiedNoteWizard
+                    open={!!notingDoc}
+                    onOpenChange={(open) => !open && setNotingDoc(null)}
+                    mode="purchase"
+                    initialType="NOTA_CREDITO"
+                    allowTypeChange={true}
+                    features={{ reviewStep: true }}
+                    supplierName={notingDoc.partner_name ?? undefined}
+                    orderReference={notingDoc.purchase_order_number?.toString() ?? notingDoc.purchase_order?.toString()}
+                    referenceLabel={notingDoc.purchase_order ? `OCS-${notingDoc.purchase_order_number ?? notingDoc.purchase_order}` : `Factura #${notingDoc.id}`}
+                    fetchSource={async () => {
+                        const { purchasingApi } = await import('@/features/purchasing/api/purchasingApi')
+                        const source = notingDoc.purchase_order
+                            ? await purchasingApi.getOrder(notingDoc.purchase_order) as Record<string, unknown>
+                            : await purchasingApi.getInvoice(notingDoc.id) as Record<string, unknown>
+                        const rawLines = (source.lines as Record<string, unknown>[]) || []
+                        const normLines = rawLines.map((l: Record<string, unknown>) => ({
+                            lineId: l.id as number,
+                            productId: l.product as number,
+                            productName: String(l.product_name || l.description || ''),
+                            productCode: l.product_code as string | undefined,
+                            uomName: l.uom_name as string | undefined,
+                            originalQuantity: Number(l.quantity) || 0,
+                            noteQuantity: 0,
+                            noteUnitPrice: parseFloat(String(l.unit_cost || l.unit_price || '0')),
+                        }))
+                        return {
+                            label: notingDoc.purchase_order ? `OCS-${source.number as string}` : `Factura #${notingDoc.id}`,
+                            isExempt: false,
+                            originalTotal: Number(source.total) || 0,
+                            supplierName: source.supplier_name as string | undefined,
+                            warehouseName: source.warehouse_name as string | undefined,
+                            contactId: typeof source.supplier === 'object' ? (source.supplier as Record<string, unknown>)?.id as number : source.supplier as number | undefined,
+                            lines: normLines,
+                        }
+                    }}
+                    onSubmit={async (payload) => {
+                        const { purchasingApi } = await import('@/features/purchasing/api/purchasingApi')
+                        const { PricingUtils } = await import('@/lib/pricing-utils')
+                        const formData = new FormData()
+                        formData.append('note_type', payload.noteType)
+                        formData.append('document_number', payload.registration.documentNumber)
+                        formData.append('document_date', payload.registration.documentDate)
+                        formData.append('amount_net', payload.totalNet.toString())
+                        formData.append('amount_tax', PricingUtils.calculateTax(payload.totalNet).toString())
+                        const returnItems = payload.lines
+                            .filter(l => l.noteQuantity > 0)
+                            .map(l => ({ product_id: l.productId, quantity: l.noteQuantity, unit_cost: l.noteUnitPrice }))
+                        formData.append('return_items', JSON.stringify(returnItems))
+                        if (payload.registration.attachment) formData.append('document_attachment', payload.registration.attachment)
+                        if (payload.payment.method || payload.payment.amount > 0) formData.append('payment_data', JSON.stringify(payload.payment))
+                        if (notingDoc.purchase_order) {
+                            formData.append('original_invoice_id', notingDoc.id.toString())
+                            await purchasingApi.registerNote(notingDoc.purchase_order, formData)
+                        } else {
+                            await purchasingApi.registerInvoiceNote(notingDoc.id, formData)
+                        }
+                    }}
+                    onSuccess={fetchDocuments}
+                />
+            )}
             {completingDoc && <DocumentCompletionModal open={!!completingDoc} onOpenChange={(open) => !open && setCompletingDoc(null)} invoiceId={completingDoc.id} invoiceType={completingDoc.dte_type} contactId={completingDoc.partner || completingDoc.supplier} isPurchase={true} onComplete={async (invoiceId, formData) => { await billingApi.confirmInvoice(invoiceId, formData) }} onSuccess={fetchDocuments} />}
             <ActionConfirmModal open={deleteConfirm.isOpen} onOpenChange={(open) => { if (!open) deleteConfirm.cancel() }} onConfirm={deleteConfirm.confirm} title="Cancelar Documento" description="¿Está seguro de cancelar este documento?" variant="destructive" />
             <ActionConfirmModal open={annulConfirm.isOpen} onOpenChange={(open) => { if (!open) annulConfirm.cancel() }} onConfirm={(reason) => { annulReasonRef.current = reason ?? ''; return annulConfirm.confirm() }} title="Anular Documento" description="¿Está seguro de que desea ANULAR este documento?" variant="destructive" requireReason reasonLabel="Motivo de la anulación" />
