@@ -3,6 +3,7 @@
 import { Drawer, SkeletonShell, StatusBadge } from "@/components/shared"
 import { getEntityIcon } from "@/lib/entity-registry"
 import { useF29Detail } from "../hooks/useTaxQueries"
+import { formDrawerWidth } from "@/lib/form-widths"
 
 interface F29DeclarationDrawerProps {
     declarationId: number | null
@@ -20,7 +21,8 @@ export function F29DeclarationDrawer({ declarationId, open, onOpenChange }: F29D
             onOpenChange={onOpenChange}
             side="left"
             boundary="embedded"
-            defaultSize="50%"
+            mode="view"
+            defaultSize={formDrawerWidth("master", false)}
             title={declaration ? `Declaración F29 — ${declaration.period_display || declaration.id}` : "Declaración F29"}
             icon={getEntityIcon('tax.f29declaration')}
         >
