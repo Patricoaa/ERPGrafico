@@ -24,6 +24,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert"
 import { cn } from "@/lib/utils"
 
 import { useServerDate } from "@/hooks/useServerDate"
+import { formDrawerWidth } from "@/lib/form-widths"
 
 interface SaleOrderLine {
     id: number
@@ -97,7 +98,7 @@ function DeliveryDrawerInner({ open, onOpenChange, orderId, onSuccess, filterTyp
 
     if (isLoading || !order) {
         return (
-            <Drawer open={open} onOpenChange={onOpenChange} side="right" defaultSize="65%" title="Cargando despacho..." contentClassName="p-0">
+            <Drawer open={open} onOpenChange={onOpenChange} side="right" defaultSize={formDrawerWidth("master", false)} title="Cargando despacho..." contentClassName="p-0">
                 <div className="flex items-center justify-center py-12">
                     <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
                 </div>
@@ -112,7 +113,7 @@ function DeliveryDrawerInner({ open, onOpenChange, orderId, onSuccess, filterTyp
             open={open}
             onOpenChange={onOpenChange}
             side="left"
-            defaultSize="65%"
+            defaultSize={formDrawerWidth("master", false)}
             contentClassName="p-0"
             title={isServiceMode ? "Confirmar Entrega de Servicios" : "Despachar Orden"}
             subtitle={isServiceMode ? "Confirme la entrega de los servicios." : "Ingrese los productos a despachar."}
