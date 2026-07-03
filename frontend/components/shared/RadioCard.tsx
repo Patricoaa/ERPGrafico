@@ -38,12 +38,12 @@ export function RadioCard({
             )}
         >
             {/* Círculo decorativo que envuelve al Radio */}
-            <div className="flex shrink-0 items-center justify-center rounded-full border-2 border-muted bg-background p-0.5 mt-0.5 transition-colors group-has-[[data-state=checked]]:border-primary group-has-[[data-state=checked]]:bg-primary/10">
+            <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full border-2 border-muted bg-background transition-colors group-has-[[data-state=checked]]:border-primary group-has-[[data-state=checked]]:bg-primary/10 mt-0.5">
                 <RadioGroupItem 
                     value={value} 
                     id={id} 
                     disabled={disabled}
-                    className="border-none shadow-none ring-0 focus-visible:ring-0" 
+                    className="border-none shadow-none ring-0 focus-visible:ring-0 w-3 h-3 m-0" 
                 />
             </div>
 
