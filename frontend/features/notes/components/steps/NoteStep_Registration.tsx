@@ -12,7 +12,7 @@
  */
 
 import { DocumentAttachmentDropzone, LabeledInput, LabeledSwitch, PeriodValidationDateInput } from '@/components/shared'
-import { FileText, Calendar, Hash, ShieldAlert } from 'lucide-react'
+import { FileText, Hash, ShieldAlert } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useServerDate } from '@/hooks/useServerDate'
 import { useEffect } from 'react'
@@ -92,12 +92,7 @@ export function NoteStep_Registration({
                                 required
                             />
 
-                            <div className="space-y-2">
-                                <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/60 flex items-center gap-2">
-                                    <Calendar className="h-3 w-3" />
-                                    Fecha Emisión
-                                </label>
-                                <PeriodValidationDateInput
+                            <PeriodValidationDateInput
                                     date={data.documentDate ? new Date(data.documentDate + 'T12:00:00') : undefined}
                                     onDateChange={(d) => {
                                         if (d) {
@@ -112,7 +107,6 @@ export function NoteStep_Registration({
                                     validationType="both"
                                     onValidityChange={onPeriodValidityChange}
                                 />
-                            </div>
 
                             <div className="col-span-2">
                                 <DocumentAttachmentDropzone
