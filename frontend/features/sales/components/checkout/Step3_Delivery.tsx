@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { FormSection, LabeledInput, PeriodValidationDateInput, LabeledContainer } from "@/components/shared"
+import { FormSection, LabeledInput, PeriodValidationDateInput, LabeledContainer, RadioCard } from "@/components/shared"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Label } from "@/components/ui/label"
 import {Truck, Package, Calendar, Info, AlertTriangle} from "lucide-react"
@@ -138,71 +138,33 @@ export function Step3_Delivery({ deliveryData, setDeliveryData, orderLines }: St
                     onValueChange={(val) => setDeliveryData((prev: CheckoutDeliveryData) => ({ ...prev, type: val as 'IMMEDIATE' | 'SCHEDULED' | 'PARTIAL' }))}
                     className="grid grid-cols-3 gap-3"
                 >
-                <Label
-                    htmlFor="del-immediate"
-                    className={cn(
-                        "card-base flex items-center gap-4 bg-card p-4 cursor-pointer shadow-card shadow-black/5",
-                        "focus-visible:border-2 focus-visible:border-primary",
-                        deliveryData.type === 'IMMEDIATE' ? "border-2 border-primary accent-visible" : "border",
-                        hasRestrictedItems && "opacity-50 pointer-events-none grayscale"
-                    )}
-                >
-                    <RadioGroupItem value="IMMEDIATE" id="del-immediate" className="sr-only" disabled={hasRestrictedItems} />
-                    <div className={cn(
-                        "p-2 rounded-md bg-background border transition-colors",
-                        deliveryData.type === 'IMMEDIATE' ? 'text-primary border-primary/30' : 'text-muted-foreground'
-                    )}>
-                        <Package className="h-5 w-5" />
-                    </div>
-                    <div className="flex-1">
-                        <span className="text-sm font-bold block">{isMixedMode ? "Despacho y Cumplimiento Inmediato" : "Despacho Inmediato"}</span>
-                        <span className="text-[10px] text-muted-foreground">Rebajar stock y entregar ahora mismo.</span>
-                    </div>
-                </Label>
+                <RadioCard
+                    id="del-immediate"
+                    value="IMMEDIATE"
+                    label={isMixedMode ? "Despacho y Cumplimiento Inmediato" : "Despacho Inmediato"}
+                    description="Rebajar stock y entregar ahora mismo."
+                    icon={<Package className="h-4 w-4" />}
+                    disabled={hasRestrictedItems}
+                    iconColor="text-primary"
+                />
 
-                <Label
-                    htmlFor="del-scheduled"
-                    className={cn(
-                        "card-base flex items-center gap-4 bg-card p-4 cursor-pointer shadow-card shadow-black/5",
-                        "focus-visible:border-2 focus-visible:border-primary",
-                        deliveryData.type === 'SCHEDULED' ? "border-2 border-primary accent-visible" : "border"
-                    )}
-                >
-                    <RadioGroupItem value="SCHEDULED" id="del-scheduled" className="sr-only" />
-                    <div className={cn(
-                        "p-2 rounded-md bg-background border transition-colors",
-                        deliveryData.type === 'SCHEDULED' ? 'text-primary border-primary/30' : 'text-muted-foreground'
-                    )}>
-                        <Calendar className="h-5 w-5" />
-                    </div>
-                    <div className="flex-1">
-                        <span className="text-sm font-bold block leading-tight">
-                            {isMixedMode ? "Programar Entrega y Cumplimiento" : "Programar Entrega"}
-                        </span>
-                        <span className="text-[10px] text-muted-foreground">Reservar para fecha futura.</span>
-                    </div>
-                </Label>
+                <RadioCard
+                    id="del-scheduled"
+                    value="SCHEDULED"
+                    label={isMixedMode ? "Programar Entrega y Cumplimiento" : "Programar Entrega"}
+                    description="Reservar para fecha futura."
+                    icon={<Calendar className="h-4 w-4" />}
+                    iconColor="text-primary"
+                />
 
-                <Label
-                    htmlFor="del-partial"
-                    className={cn(
-                        "card-base flex items-center gap-4 bg-card p-4 cursor-pointer shadow-card shadow-black/5",
-                        "focus-visible:border-2 focus-visible:border-primary",
-                        deliveryData.type === 'PARTIAL' ? "border-2 border-primary accent-visible" : "border"
-                    )}
-                >
-                    <RadioGroupItem value="PARTIAL" id="del-partial" className="sr-only" />
-                    <div className={cn(
-                        "p-2 rounded-md bg-background border transition-colors",
-                        deliveryData.type === 'PARTIAL' ? 'text-primary border-primary/30' : 'text-muted-foreground'
-                    )}>
-                        <Truck className="h-5 w-5" />
-                    </div>
-                    <div className="flex-1">
-                        <span className="text-sm font-bold block leading-tight">Despacho Parcial</span>
-                        <span className="text-[10px] text-muted-foreground">Entregar disponibles hoy.</span>
-                    </div>
-                </Label>
+                <RadioCard
+                    id="del-partial"
+                    value="PARTIAL"
+                    label="Despacho Parcial"
+                    description="Entregar disponibles hoy."
+                    icon={<Truck className="h-4 w-4" />}
+                    iconColor="text-primary"
+                />
                 </RadioGroup>
             </LabeledContainer>
 

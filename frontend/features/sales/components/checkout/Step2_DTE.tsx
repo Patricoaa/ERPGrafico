@@ -12,7 +12,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert"
 import { useBillingSettingsQuery } from "@/features/settings"
 import { useServerDate } from "@/hooks/useServerDate"
 
-import { DocumentAttachmentDropzone, FolioValidationInput, FormSection, LabeledContainer, LabeledSwitch, PeriodValidationDateInput } from '@/components/shared'
+import { DocumentAttachmentDropzone, FolioValidationInput, FormSection, LabeledInput, PeriodValidationDateInput, LabeledContainer, LabeledSwitch, RadioCard } from "@/components/shared"
 
 import type { CheckoutDTEData } from "../../types"
 
@@ -81,34 +81,15 @@ export function Step2_DTE({
                     className="grid grid-cols-1 gap-2"
                 >
                 {filteredOptions.map((opt) => (
-                    <Label
+                    <RadioCard
                         key={opt.id}
-                        htmlFor={`type-${opt.id.toLowerCase().replace("_", "-")}`}
-                        className={cn(
-                            "card-base flex items-center gap-4 bg-card py-3 px-4 cursor-pointer shadow-card shadow-black/5",
-                            "focus-visible:border-2 focus-visible:border-primary",
-                            "[&:has([data-state=checked])]:border-2 [&:has([data-state=checked])]:border-primary",
-                            dteData.type === opt.id ? "border-2 border-primary accent-visible" : "border"
-                        )}
-                    >
-                        <RadioGroupItem
-                            value={opt.id}
-                            id={`type-${opt.id.toLowerCase().replace("_", "-")}`}
-                            className="sr-only"
-                        />
-                        <div className={cn(
-                            "flex items-center justify-center h-9 w-9 rounded-md shrink-0",
-                            dteData.type === opt.id ? "bg-primary/10" : "bg-muted"
-                        )}>
-                            <opt.icon className={cn("h-5 w-5", opt.color)} />
-                        </div>
-                        <div className="flex flex-col">
-                            <span className="text-sm font-medium">{opt.label}</span>
-                            <span className="text-xs text-muted-foreground mt-0.5">
-                                Código SII: {opt.code}
-                            </span>
-                        </div>
-                    </Label>
+                        id={`type-${opt.id.toLowerCase().replace("_", "-")}`}
+                        value={opt.id}
+                        label={opt.label}
+                        description={`Código SII: ${opt.code}`}
+                        icon={<opt.icon className="h-4 w-4" />}
+                        iconColor={opt.color}
+                    />
                 ))}
                 </RadioGroup>
             </LabeledContainer>

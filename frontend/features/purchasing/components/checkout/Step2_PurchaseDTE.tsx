@@ -6,8 +6,7 @@ import {FileText, Receipt, AlertCircle} from "lucide-react"
 import { useBillingSettingsQuery } from "@/features/settings"
 import { useMemo, useEffect } from "react"
 import { cn } from "@/lib/utils"
-
-import { DocumentAttachmentDropzone, FolioValidationInput, PeriodValidationDateInput, LabeledSwitch, LabeledContainer } from '@/components/shared'
+import { DocumentAttachmentDropzone, FolioValidationInput, PeriodValidationDateInput, LabeledSwitch, LabeledContainer, RadioCard } from '@/components/shared'
 
 import { type DTEData } from "../../types"
 
@@ -72,19 +71,16 @@ export function Step2_PurchaseDTE({
                         className="flex flex-wrap gap-4 w-full"
                     >
                     {filteredOptions.map((opt) => (
-                        <Label
+                        <RadioCard
                             key={opt.id}
-                            htmlFor={`type-${opt.id.toLowerCase().replace('_', '-')}`}
-                            className={cn(
-                                "flex flex-1 flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground [&:has([data-state=checked])]:border-primary cursor-pointer min-w-[120px]",
-                                dteData.type === opt.id ? 'border-primary' : ''
-                            )}
-                        >
-                            <RadioGroupItem value={opt.id} id={`type-${opt.id.toLowerCase().replace('_', '-')}`} className="sr-only" />
-                            <opt.icon className={`mb-3 h-6 w-6 ${opt.color || ''}`} />
-                            <span className="text-sm font-medium">{opt.label}</span>
-                            <span className="text-[10px] text-muted-foreground mt-1 text-center">Código SII: {opt.code}</span>
-                        </Label>
+                            id={`type-${opt.id.toLowerCase().replace('_', '-')}`}
+                            value={opt.id}
+                            label={opt.label}
+                            description={`Código SII: ${opt.code}`}
+                            icon={<opt.icon className="h-4 w-4" />}
+                            iconColor={opt.color}
+                            className="flex-1 min-w-[150px]"
+                        />
                     ))}
                     </RadioGroup>
                 </LabeledContainer>

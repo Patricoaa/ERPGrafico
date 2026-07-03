@@ -92,7 +92,8 @@ export { SEG_TEXT, SEG_WRAPPER, SEG_TRIGGER, SEG_ACTIVE, SEG_INACTIVE, SEG_DROPD
 export * from './DatePicker';
 export * from './DateRangeFilter';
 export * from './ReportToolbar';
-export * from './FacetedFilter';
+export * from './FacetedFilter'
+export * from './RadioCard';
 export * from './FolioValidationInput';
 export * from './LabeledInput';
 export * from './LabeledSelect';

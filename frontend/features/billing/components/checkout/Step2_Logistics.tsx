@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { LabeledInput, LabeledContainer, PeriodValidationDateInput } from "@/components/shared"
+import { LabeledInput, LabeledContainer, PeriodValidationDateInput, RadioCard } from '@/components/shared'
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Truck, Package, Calendar, AlertTriangle, ShoppingBag } from "lucide-react"
 import { billingApi } from "../../api/billingApi"
@@ -197,57 +197,33 @@ export function Step2_Logistics({
                 }}
                 className="grid grid-cols-3 gap-3 mt-4"
             >
-                <div
-                    className={cn(
-                        "card-base flex flex-col items-center justify-center text-center gap-2 rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent cursor-pointer transition-all",
-                        formData.delivery_type === 'IMMEDIATE' && "border-primary bg-primary/5",
-                        hasRestrictedItems && "opacity-50 pointer-events-none grayscale"
-                    )}
-                    onClick={() => !hasRestrictedItems && setData({ ...formData, delivery_type: 'IMMEDIATE' })}
-                >
-                    <RadioGroupItem value="IMMEDIATE" id="del-immediate" className="sr-only" disabled={hasRestrictedItems} />
-                    <div className={`p-3 rounded-full bg-background border shadow-sm ${formData.delivery_type === 'IMMEDIATE' ? 'text-primary border-primary/20' : 'text-muted-foreground'}`}>
-                        <Package className="h-6 w-6" />
-                    </div>
-                    <div>
-                        <span className="text-sm font-bold block">Inmediato</span>
-                        <span className="text-[10px] text-muted-foreground leading-tight mt-1 inline-block">Procesar ahora</span>
-                    </div>
-                </div>
+                <RadioCard
+                    id="del-immediate"
+                    value="IMMEDIATE"
+                    label="Inmediato"
+                    description="Procesar ahora"
+                    icon={<Package className="h-4 w-4" />}
+                    disabled={hasRestrictedItems}
+                    iconColor="text-primary"
+                />
 
-                <div
-                    className={cn(
-                        "card-base flex flex-col items-center justify-center text-center gap-2 rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent cursor-pointer transition-all",
-                        formData.delivery_type === 'SCHEDULED' && "border-primary bg-primary/5"
-                    )}
-                    onClick={() => setData({ ...formData, delivery_type: 'SCHEDULED' })}
-                >
-                    <RadioGroupItem value="SCHEDULED" id="del-scheduled" className="sr-only" />
-                    <div className={`p-3 rounded-full bg-background border shadow-sm ${formData.delivery_type === 'SCHEDULED' ? 'text-primary border-primary/20' : 'text-muted-foreground'}`}>
-                        <Calendar className="h-6 w-6" />
-                    </div>
-                    <div>
-                        <span className="text-sm font-bold block">Programar</span>
-                        <span className="text-[10px] text-muted-foreground leading-tight mt-1 inline-block">Fecha futura</span>
-                    </div>
-                </div>
+                <RadioCard
+                    id="del-scheduled"
+                    value="SCHEDULED"
+                    label="Programar"
+                    description="Fecha futura"
+                    icon={<Calendar className="h-4 w-4" />}
+                    iconColor="text-primary"
+                />
 
-                <div
-                    className={cn(
-                        "card-base flex flex-col items-center justify-center text-center gap-2 rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent cursor-pointer transition-all",
-                        formData.delivery_type === 'PARTIAL' && "border-primary bg-primary/5"
-                    )}
-                    onClick={() => setData({ ...formData, delivery_type: 'PARTIAL' })}
-                >
-                    <RadioGroupItem value="PARTIAL" id="del-partial" className="sr-only" />
-                    <div className={`p-3 rounded-full bg-background border shadow-sm ${formData.delivery_type === 'PARTIAL' ? 'text-primary border-primary/20' : 'text-muted-foreground'}`}>
-                        <Truck className="h-6 w-6" />
-                    </div>
-                    <div>
-                        <span className="text-sm font-bold block">Parcial</span>
-                        <span className="text-[10px] text-muted-foreground leading-tight mt-1 inline-block">Procesar algunos</span>
-                    </div>
-                </div>
+                <RadioCard
+                    id="del-partial"
+                    value="PARTIAL"
+                    label="Parcial"
+                    description="Procesar algunos"
+                    icon={<Truck className="h-4 w-4" />}
+                    iconColor="text-primary"
+                />
                 </RadioGroup>
             </LabeledContainer>
 

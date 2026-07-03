@@ -1,7 +1,7 @@
 "use client"
 
 import {useState, useEffect} from "react"
-import { LabeledInput, LabeledSelect, LabeledContainer, PeriodValidationDateInput } from "@/components/shared"
+import { LabeledInput, LabeledSelect, LabeledContainer, PeriodValidationDateInput, RadioCard } from "@/components/shared"
 import { purchasingApi } from "../../api/purchasingApi"
 import { useServerDate } from "@/hooks/useServerDate"
 import {
@@ -215,23 +215,15 @@ export function Step4_Receipt({ receiptData, setReceiptData, orderLines = [] }: 
                     className="grid grid-cols-3 gap-3"
                 >
                     {receiptTypes.map((type) => (
-                        <Label
+                        <RadioCard
                             key={type.id}
-                            htmlFor={`receipt-${type.id}`}
-                            className={cn(
-                                "card-base flex items-center gap-4 bg-card p-4 cursor-pointer shadow-card shadow-black/5 hover:border-primary/50 transition-all",
-                                receiptData.type === type.id ? 'border-primary ring-1 ring-primary/20' : ''
-                            )}
-                        >
-                            <RadioGroupItem value={type.id} id={`receipt-${type.id}`} className="sr-only" />
-                            <div className={`p-2 rounded-md bg-background border ${type.color}`}>
-                                <type.icon className="h-5 w-5" />
-                            </div>
-                            <div className="flex-1">
-                                <span className="text-sm font-semibold block">{type.label}</span>
-                                <span className="text-[10px] uppercase font-black text-muted-foreground">{type.description}</span>
-                            </div>
-                        </Label>
+                            id={`receipt-${type.id}`}
+                            value={type.id}
+                            label={type.label}
+                            description={type.description}
+                            icon={<type.icon className="h-4 w-4" />}
+                            iconColor={type.color}
+                        />
                     ))}
                 </RadioGroup>
             </LabeledContainer>
