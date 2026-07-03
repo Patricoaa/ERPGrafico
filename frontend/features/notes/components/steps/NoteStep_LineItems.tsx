@@ -23,7 +23,7 @@
 import { useMemo, useCallback } from 'react'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Input } from '@/components/ui/input'
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
+
 import { AlertCircle, Package, Tag } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Chip, DataCell, DataTable, LabeledInput } from '@/components/shared'
@@ -103,147 +103,195 @@ function SelectModeTable({
         onLinesChange(updateLine(selectedLines, lineId, patch))
     }
 
-    return (
-        <div className="rounded-md border flex-1 overflow-auto min-h-[400px]">
-            <Table>
-                <TableHeader className="sticky top-0 bg-background z-10">
-                    <TableRow>
-                        <TableHead className="w-14 text-center">
-                            <Tag className="h-4 w-4 mx-auto text-muted-foreground" />
-                        </TableHead>
-                        <TableHead className="font-black uppercase text-[10px] tracking-widest text-muted-foreground/60">
-                            Producto / Servicio
-                        </TableHead>
-                        <TableHead className="text-right font-black uppercase text-[10px] tracking-widest text-muted-foreground/60">
-                            Original
-                        </TableHead>
-                        <TableHead className="text-right font-black uppercase text-[10px] tracking-widest text-muted-foreground/60">
-                            Entregado
-                        </TableHead>
-                        <TableHead className="w-28 text-center font-black uppercase text-[10px] tracking-widest text-muted-foreground/60">
-                            Cant. Nota
-                        </TableHead>
-                        <TableHead className="w-32 text-center font-black uppercase text-[10px] tracking-widest text-muted-foreground/60">
-                            Precio
-                        </TableHead>
-                        <TableHead className="font-black uppercase text-[10px] tracking-widest text-muted-foreground/60">
-                            Motivo
-                        </TableHead>
-                    </TableRow>
-                </TableHeader>
-                <TableBody>
-                    {lines.map((line) => {
-                        const selected = isSelected(line.lineId)
-                        const sel = getSelected(line.lineId)
-                        const maxQty = isCreditNote ? line.originalQuantity : 999999
-
-                        return (
-                            <TableRow
-                                key={String(line.lineId)}
-                                className={cn(
-                                    'transition-colors h-20',
-                                    selected ? 'bg-primary/[0.02]' : 'hover:bg-muted/5',
+    const columns = useMemo<ColumnDef<NoteLineItem>[]>(
+        () => [
+            {
+                id: 'select',
+                header: () => <Tag className="h-4 w-4 mx-auto text-muted-foreground" />,
+                cell: ({ row }) => {
+                    const line = row.original
+                    const selected = isSelected(line.lineId)
+                    return (
+                        <div className="w-full flex justify-center">
+                            <Checkbox
+                                checked={selected}
+                                onCheckedChange={() => toggleLine(line)}
+                                className="h-6 w-6 rounded-md border-2 border-primary/30 data-[state=checked]:bg-primary data-[state=checked]:border-primary transition-all"
+                            />
+                        </div>
+                    )
+                },
+                meta: { align: 'center' },
+            },
+            {
+                header: 'Producto / Servicio',
+                cell: ({ row }) => {
+                    const line = row.original
+                    return (
+                        <div className="flex flex-col gap-1 items-start w-full">
+                            <span className="font-bold text-sm tracking-tight text-foreground leading-tight text-left">
+                                {line.productName}
+                            </span>
+                            <div className="flex items-center gap-2">
+                                <Chip size="xs" className="opacity-70">
+                                    {line.productCode ?? line.productId}
+                                </Chip>
+                                {line.productType === 'MANUFACTURABLE' && (
+                                    <Chip size="xs" intent="warning">Fab</Chip>
                                 )}
-                            >
-                                <TableCell className="text-center">
-                                    <Checkbox
-                                        checked={selected}
-                                        onCheckedChange={() => toggleLine(line)}
-                                        className="h-6 w-6 rounded-md border-2 border-primary/30 data-[state=checked]:bg-primary data-[state=checked]:border-primary transition-all"
-                                    />
-                                </TableCell>
+                            </div>
+                        </div>
+                    )
+                },
+                meta: { align: 'left' },
+            },
+            {
+                header: 'Original',
+                cell: ({ row }) => {
+                    const line = row.original
+                    return (
+                        <div className="flex flex-col items-end w-full">
+                            <span className="font-bold text-xs tabular-nums text-muted-foreground/60">
+                                {Math.floor(line.originalQuantity)}
+                            </span>
+                            <span className="text-[10px] font-medium opacity-70 text-muted-foreground/60">
+                                {line.uomName}
+                            </span>
+                        </div>
+                    )
+                },
+                meta: { align: 'right' },
+            },
+            {
+                header: 'Entregado',
+                cell: ({ row }) => {
+                    const line = row.original
+                    return (
+                        <div className="flex flex-col items-end w-full">
+                            <span className="font-black text-xs tabular-nums text-success">
+                                {Math.floor(line.originalQuantity)}
+                            </span>
+                            <span className="text-[10px] font-bold text-success/60 uppercase">
+                                {line.uomName}
+                            </span>
+                        </div>
+                    )
+                },
+                meta: { align: 'right' },
+            },
+            {
+                header: 'Cant. Nota',
+                cell: ({ row }) => {
+                    const line = row.original
+                    const selected = isSelected(line.lineId)
+                    const sel = getSelected(line.lineId)
+                    const maxQty = isCreditNote ? line.originalQuantity : 999999
+                    return (
+                        <div className="relative group max-w-[100px] mx-auto w-full">
+                            <LabeledInput
+                                type="number"
+                                step="1"
+                                disabled={!selected}
+                                value={sel?.noteQuantity ?? ''}
+                                onChange={(e) => {
+                                    let val = parseInt(e.target.value) || 0
+                                    if (val > maxQty) val = maxQty
+                                    if (val < 0) val = 0
+                                    updateSelected(line.lineId, { noteQuantity: val })
+                                }}
+                                className={cn('h-10 text-center font-bold transition-all', !selected && 'opacity-50')}
+                                max={maxQty}
+                                min={0}
+                            />
+                            {selected && isCreditNote && (
+                                <div className="absolute -top-3 -right-3">
+                                    <Chip size="xs" intent="primary" className="border-2 border-background shadow-card">
+                                        MAX {maxQty}
+                                    </Chip>
+                                </div>
+                            )}
+                        </div>
+                    )
+                },
+                meta: { align: 'center' },
+            },
+            {
+                header: 'Precio',
+                cell: ({ row }) => {
+                    const line = row.original
+                    const selected = isSelected(line.lineId)
+                    const sel = getSelected(line.lineId)
+                    return (
+                        <div className="max-w-[120px] mx-auto flex flex-col items-center gap-1 w-full">
+                            <LabeledInput
+                                type="number"
+                                disabled={!selected || isCreditNote}
+                                value={sel?.noteUnitPrice ?? ''}
+                                onChange={(e) => {
+                                    const val = parseFloat(e.target.value) || 0
+                                    updateSelected(line.lineId, { noteUnitPrice: val })
+                                }}
+                                className={cn(
+                                    'h-10 text-center font-bold transition-all tabular-nums',
+                                    (!selected || isCreditNote) && 'opacity-50',
+                                )}
+                                min={0}
+                            />
+                            {isExempt && <Chip size="xs" intent="success">Exento</Chip>}
+                        </div>
+                    )
+                },
+                meta: { align: 'center' },
+            },
+            {
+                header: 'Motivo',
+                cell: ({ row }) => {
+                    const line = row.original
+                    const selected = isSelected(line.lineId)
+                    const sel = getSelected(line.lineId)
+                    return (
+                        <LabeledInput
+                            placeholder="Indique motivo..."
+                            disabled={!selected}
+                            value={sel?.reason ?? ''}
+                            onChange={(e) => updateSelected(line.lineId, { reason: e.target.value })}
+                            className={cn('h-10 text-xs font-medium placeholder:italic transition-all w-full', !selected && 'opacity-50')}
+                        />
+                    )
+                },
+                meta: { align: 'left' },
+            },
+        ],
+        [isCreditNote, isSelected, getSelected, toggleLine, updateSelected, isExempt],
+    )
 
-                                <TableCell>
-                                    <div className="flex flex-col gap-1">
-                                        <span className="font-bold text-sm tracking-tight text-foreground leading-tight">
-                                            {line.productName}
-                                        </span>
-                                        <div className="flex items-center gap-2">
-                                            <Chip size="xs" className="opacity-70">
-                                                {line.productCode ?? line.productId}
-                                            </Chip>
-                                            {line.productType === 'MANUFACTURABLE' && (
-                                                <Chip size="xs" intent="warning">Fab</Chip>
-                                            )}
-                                        </div>
-                                    </div>
-                                </TableCell>
-
-                                <TableCell className="text-right font-bold text-xs tabular-nums text-muted-foreground/60">
-                                    <div className="flex flex-col">
-                                        <span>{Math.floor(line.originalQuantity)}</span>
-                                        <span className="text-[10px] font-medium opacity-70">{line.uomName}</span>
-                                    </div>
-                                </TableCell>
-
-                                <TableCell className="text-right font-black text-xs tabular-nums text-success px-3">
-                                    <div className="flex flex-col">
-                                        <span>{Math.floor(line.originalQuantity)}</span>
-                                        <span className="text-[10px] font-bold text-success/60 uppercase">{line.uomName}</span>
-                                    </div>
-                                </TableCell>
-
-                                <TableCell className="px-4">
-                                    <div className="relative group max-w-[100px] mx-auto">
-                                        <LabeledInput
-                                            type="number"
-                                            step="1"
-                                            disabled={!selected}
-                                            value={sel?.noteQuantity ?? ''}
-                                            onChange={(e) => {
-                                                let val = parseInt(e.target.value) || 0
-                                                if (val > maxQty) val = maxQty
-                                                if (val < 0) val = 0
-                                                updateSelected(line.lineId, { noteQuantity: val })
-                                            }}
-                                            className={cn('h-10 text-center font-bold transition-all', !selected && 'opacity-50')}
-                                            max={maxQty}
-                                            min={0}
-                                        />
-                                        {selected && isCreditNote && (
-                                            <div className="absolute -top-3 -right-3">
-                                                <Chip size="xs" intent="primary" className="border-2 border-background shadow-card">
-                                                    MAX {maxQty}
-                                                </Chip>
-                                            </div>
-                                        )}
-                                    </div>
-                                </TableCell>
-
-                                <TableCell className="px-4">
-                                    <div className="max-w-[120px] mx-auto flex flex-col items-center gap-1">
-                                        <LabeledInput
-                                            type="number"
-                                            disabled={!selected || isCreditNote}
-                                            value={sel?.noteUnitPrice ?? ''}
-                                            onChange={(e) => {
-                                                const val = parseFloat(e.target.value) || 0
-                                                updateSelected(line.lineId, { noteUnitPrice: val })
-                                            }}
-                                            className={cn(
-                                                'h-10 text-center font-bold transition-all tabular-nums',
-                                                (!selected || isCreditNote) && 'opacity-50',
-                                            )}
-                                            min={0}
-                                        />
-                                        {isExempt && <Chip size="xs" intent="success">Exento</Chip>}
-                                    </div>
-                                </TableCell>
-
-                                <TableCell>
-                                    <LabeledInput
-                                        placeholder="Indique motivo..."
-                                        disabled={!selected}
-                                        value={sel?.reason ?? ''}
-                                        onChange={(e) => updateSelected(line.lineId, { reason: e.target.value })}
-                                        className={cn('h-10 text-xs font-medium placeholder:italic transition-all', !selected && 'opacity-50')}
-                                    />
-                                </TableCell>
-                            </TableRow>
-                        )
-                    })}
-                </TableBody>
-            </Table>
+    return (
+        <div className="border rounded-md overflow-hidden shadow-card bg-card min-h-[400px]">
+            <DataTable
+                columns={columns}
+                data={lines}
+                variant="compact"
+                gridTemplate="grid-cols-[3rem_minmax(180px,1fr)_4rem_5rem_7rem_8rem_minmax(120px,1fr)]"
+                hidePagination
+                noBorder
+                emptyState={{
+                    title: 'No hay productos',
+                    description: 'No se encontraron líneas disponibles en el documento original.',
+                }}
+                renderRow={(row, children) => {
+                    const selected = isSelected(row.original.lineId)
+                    return (
+                        <div
+                            className={cn(
+                                'transition-colors hover:bg-muted/5 h-20 items-center',
+                                selected ? 'bg-primary/[0.02]' : '',
+                            )}
+                        >
+                            {children}
+                        </div>
+                    )
+                }}
+            />
         </div>
     )
 }
