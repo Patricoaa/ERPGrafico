@@ -455,7 +455,7 @@ export function NoteStep_LineItems({
     const totalNet = selectedLines.reduce((acc, l) => acc + l.noteQuantity * l.noteUnitPrice, 0)
 
     return (
-        <div className="w-full max-w-5xl mx-auto space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+        <div className="w-full h-full flex flex-col space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
             {selectionMode === 'select' ? (
                 <>
                     <div className="flex flex-col gap-1">

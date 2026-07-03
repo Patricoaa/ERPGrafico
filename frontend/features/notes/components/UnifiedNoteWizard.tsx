@@ -402,8 +402,8 @@ export function UnifiedNoteWizard({
 
                 {/* ---- Center Content ---- */}
                 <div className="flex-1 flex flex-col min-w-0 h-full relative border-r">
-                    <div className="flex-1 p-10 overflow-y-auto bg-background custom-scrollbar">
-                        <div className="max-w-4xl mx-auto">
+                    <div className="flex-1 p-10 overflow-y-auto bg-background custom-scrollbar flex flex-col">
+                        <div className="w-full flex-1 flex flex-col">
                             {renderStep()}
                         </div>
                     </div>
@@ -413,7 +413,7 @@ export function UnifiedNoteWizard({
                 {mode === 'sales' && !initializing && (
                     <div className="w-80 hidden lg:block overflow-hidden relative">
                         <NoteItemsSummary
-                            items={lines as unknown as Record<string, unknown>[]}
+                            items={lines}
                             totalNet={totalNet}
                             totalTax={totalTax}
                             total={total}
