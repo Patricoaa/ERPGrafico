@@ -27,11 +27,13 @@ interface DeclarationWizardProps {
     isOpen: boolean
     onOpenChange: (open: boolean) => void
     periodId?: number
+    year?: number
+    month?: number
     onSuccess: () => void
     existingPeriods?: TaxPeriod[]
 }
 
-export function DeclarationWizard({ isOpen, onOpenChange, periodId, onSuccess, existingPeriods: existingPeriodsProp }: DeclarationWizardProps) {
+export function DeclarationWizard({ isOpen, onOpenChange, periodId, year: propYear, month: propMonth, onSuccess, existingPeriods: existingPeriodsProp }: DeclarationWizardProps) {
     const { year: currentYear, month: currentMonth, dateString, serverDate } = useServerDate()
     const { openHub } = useHubPanel()
     const { rate } = useVatRate()
@@ -94,8 +96,8 @@ export function DeclarationWizard({ isOpen, onOpenChange, periodId, onSuccess, e
                 setIsClosed(false)
                 setHadPaymentDue(false)
                 let targetPeriod: TaxPeriod | undefined
-                let year: number | undefined
-                let month: number | undefined
+                let year: number | undefined = propYear
+                let month: number | undefined = propMonth
 
                 // If we have a periodId, resolve period and skip step 1
                 if (periodId) {
@@ -124,7 +126,7 @@ export function DeclarationWizard({ isOpen, onOpenChange, periodId, onSuccess, e
         }
 
         initializeWizard()
-    }, [isOpen, periodId, existingPeriods, serverDate, currentYear, currentMonth])
+    }, [isOpen, periodId, propYear, propMonth, existingPeriods, serverDate, currentYear, currentMonth])
 
     const handleSaveAndClose = async () => {
         setIsLoading(true)

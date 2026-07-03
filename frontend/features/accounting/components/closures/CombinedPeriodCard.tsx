@@ -3,7 +3,7 @@
 import React from 'react'
 import { Card } from '@/components/ui/card'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
-import { Calendar, Lock, LockOpen, FileText, FileCheck, Undo2, DollarSign } from 'lucide-react'
+import { Calendar, Lock, LockOpen, FileText, FileCheck, Undo2, DollarSign, Plus } from 'lucide-react'
 import { IconButton, StatusBadge } from '@/components/shared'
 import { type AccountingPeriod, type TaxPeriod } from '../../types'
 import { useReopenConfirm } from '../../hooks/useReopenConfirm'
@@ -17,10 +17,11 @@ interface CombinedPeriodCardProps {
     taxPeriod?: TaxPeriod
     onClosePeriod: (id: number) => void
     onReopenPeriod: (params: { id: number; reason?: string }) => Promise<unknown>
+    onCreatePeriod: (year: number, month: number) => Promise<unknown>
     isPeriodActionLoading: boolean
     onCloseTaxPeriod: (id: number) => Promise<void>
     onReopenTaxPeriod: (params: { id: number; reason?: string }) => Promise<unknown>
-    onOpenDeclaration: (id: number) => void
+    onOpenDeclaration: (params: { id?: number; year: number; month: number }) => void
     isTaxActionLoading: boolean
     onPayF29?: (periodId: number) => void
 }
@@ -28,7 +29,7 @@ interface CombinedPeriodCardProps {
 export function CombinedPeriodCard({
     month, year,
     accountingPeriod: acct, taxPeriod: tax,
-    onClosePeriod, onReopenPeriod, isPeriodActionLoading,
+    onClosePeriod, onReopenPeriod, onCreatePeriod, isPeriodActionLoading,
     onCloseTaxPeriod, onReopenTaxPeriod, onOpenDeclaration, isTaxActionLoading, onPayF29,
 }: CombinedPeriodCardProps) {
     const acctClosed = acct?.status === 'CLOSED'
@@ -66,7 +67,13 @@ export function CombinedPeriodCard({
                             {acct ? (
                                 <StatusBadge status={acct.status} label={acct.status_display} variant="dot" size="xs" />
                             ) : (
-                                <span className="text-[9px] text-muted-foreground/40 italic">—</span>
+                                <button
+                                    className="inline-flex items-center justify-center rounded-sm text-[9px] font-medium transition-colors hover:bg-accent hover:text-accent-foreground h-5 px-1.5 text-muted-foreground/60 border border-dashed border-border"
+                                    onClick={() => onCreatePeriod(year, month)}
+                                    disabled={isPeriodActionLoading}
+                                >
+                                    <Plus className="w-2.5 h-2.5 mr-0.5" /> Abrir
+                                </button>
                             )}
                         </div>
                         {acct && !acctClosed && (
@@ -116,14 +123,20 @@ export function CombinedPeriodCard({
                                 <span className="text-[9px] text-muted-foreground/40 italic">—</span>
                             )}
                         </div>
-                        {tax && !taxClosed && !hasDeclaration && (
+                        {(!tax || (!taxClosed && !hasDeclaration)) && (
                             <Tooltip>
                                 <TooltipTrigger asChild>
-                                    <IconButton className="h-7 w-7 text-muted-foreground hover:text-info" onClick={() => onOpenDeclaration(tax.id)} disabled={isTaxActionLoading}>
-                                        <FileText className="w-3.5 h-3.5" />
-                                    </IconButton>
+                                    <div className="inline-flex">
+                                        <IconButton className="h-7 w-7 text-muted-foreground hover:text-info" onClick={() => onOpenDeclaration({ id: tax?.id, year, month })} disabled={isTaxActionLoading || !acct || acctClosed}>
+                                            <FileText className="w-3.5 h-3.5" />
+                                        </IconButton>
+                                    </div>
                                 </TooltipTrigger>
-                                <TooltipContent side="top"><p className="text-xs">Declarar F29</p></TooltipContent>
+                                <TooltipContent side="top">
+                                    <p className="text-xs">
+                                        {!acct ? 'Abrir periodo contable primero' : (acctClosed ? 'Periodo contable cerrado' : 'Declarar F29')}
+                                    </p>
+                                </TooltipContent>
                             </Tooltip>
                         )}
                         {tax && !taxClosed && hasDeclaration && !isFullyPaid && requiresPayment && (

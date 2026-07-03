@@ -19,10 +19,11 @@ interface FiscalYearCardProps {
     taxPeriods: TaxPeriod[];
     onClosePeriod: (id: number) => void;
     onReopenPeriod: (params: { id: number; reason?: string }) => Promise<unknown>;
+    onCreatePeriod: (year: number, month: number) => Promise<unknown>;
     isPeriodActionLoading: boolean;
     onCloseTaxPeriod: (id: number) => Promise<void>;
     onReopenTaxPeriod: (params: { id: number; reason?: string }) => Promise<unknown>;
-    onOpenDeclaration: (id: number) => void;
+    onOpenDeclaration: (params: { id?: number; year: number; month: number }) => void;
     isTaxActionLoading: boolean;
     onPreviewClosing: (year: number) => void;
     onReopenFiscalYear: (year: number) => void;
@@ -38,6 +39,7 @@ export function FiscalYearCard({
     taxPeriods,
     onClosePeriod,
     onReopenPeriod,
+    onCreatePeriod,
     isPeriodActionLoading,
     onCloseTaxPeriod,
     onReopenTaxPeriod,
@@ -157,6 +159,7 @@ export function FiscalYearCard({
                                 taxPeriod={tax}
                                 onClosePeriod={onClosePeriod}
                                 onReopenPeriod={onReopenPeriod}
+                                onCreatePeriod={onCreatePeriod}
                                 isPeriodActionLoading={isPeriodActionLoading}
                                 onCloseTaxPeriod={onCloseTaxPeriod}
                                 onReopenTaxPeriod={onReopenTaxPeriod}
