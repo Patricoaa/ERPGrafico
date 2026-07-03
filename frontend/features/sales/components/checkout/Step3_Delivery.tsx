@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { FormSection, LabeledInput, PeriodValidationDateInput } from "@/components/shared"
+import { FormSection, LabeledInput, PeriodValidationDateInput, LabeledContainer } from "@/components/shared"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Label } from "@/components/ui/label"
 import {Truck, Package, Calendar, Info, AlertTriangle} from "lucide-react"
@@ -129,11 +129,15 @@ export function Step3_Delivery({ deliveryData, setDeliveryData, orderLines }: St
 
     return (
         <div className="space-y-6">
-            <RadioGroup
-                value={deliveryData.type}
-                onValueChange={(val) => setDeliveryData((prev: CheckoutDeliveryData) => ({ ...prev, type: val as 'IMMEDIATE' | 'SCHEDULED' | 'PARTIAL' }))}
-                className="grid grid-cols-3 gap-3"
+            <LabeledContainer
+                label="Opciones de Despacho"
+                icon={<Package className="h-3 w-3" />}
             >
+                <RadioGroup
+                    value={deliveryData.type}
+                    onValueChange={(val) => setDeliveryData((prev: CheckoutDeliveryData) => ({ ...prev, type: val as 'IMMEDIATE' | 'SCHEDULED' | 'PARTIAL' }))}
+                    className="grid grid-cols-3 gap-3"
+                >
                 <Label
                     htmlFor="del-immediate"
                     className={cn(
@@ -199,7 +203,8 @@ export function Step3_Delivery({ deliveryData, setDeliveryData, orderLines }: St
                         <span className="text-[10px] text-muted-foreground">Entregar disponibles hoy.</span>
                     </div>
                 </Label>
-            </RadioGroup>
+                </RadioGroup>
+            </LabeledContainer>
 
             {deliveryData.type === 'PARTIAL' && (
                 <div className="space-y-4 animate-in fade-in slide-in-from-top-2">

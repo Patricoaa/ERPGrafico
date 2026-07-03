@@ -205,11 +205,10 @@ export function Step4_Receipt({ receiptData, setReceiptData, orderLines = [] }: 
         <div className="space-y-6">
             {/* Removed Warehouse Selector as per requirements */}
 
-            <div className="space-y-2">
-                <div className="flex items-center gap-2 mb-2 text-sm font-bold uppercase tracking-widest text-muted-foreground">
-                    <Package className="h-4 w-4" />
-                    <span>Tipo de {receiptLabel}</span>
-                </div>
+            <LabeledContainer
+                label={`Tipo de ${receiptLabel}`}
+                icon={<Package className="h-3 w-3" />}
+            >
                 <RadioGroup
                     value={receiptData.type}
                     onValueChange={(val) => setReceiptData({ ...receiptData, type: val as ReceiptData['type'] })}
@@ -235,7 +234,7 @@ export function Step4_Receipt({ receiptData, setReceiptData, orderLines = [] }: 
                         </Label>
                     ))}
                 </RadioGroup>
-            </div>
+            </LabeledContainer>
 
             {receiptData.type === 'PARTIAL' && orderLines.length > 0 && (
                 <div className="space-y-4 animate-in fade-in slide-in-from-top-2">
@@ -332,7 +331,7 @@ export function Step4_Receipt({ receiptData, setReceiptData, orderLines = [] }: 
             )}
 
             {(receiptData.type as string) !== 'DEFERRED' && (
-                <div className="space-y-6 p-4 bg-muted/30 rounded-md border border-dashed animate-in fade-in">
+                <div className="space-y-6 animate-in fade-in slide-in-from-top-2">
                     <LabeledInput
                         label="Referencia de Entrega"
                         placeholder="Ej: Guía de despacho #123"
