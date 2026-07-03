@@ -82,7 +82,7 @@ export function NoteStep_Payment({
           }
 
     return (
-        <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+        <div className="w-full h-full flex flex-col space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
             <div className="flex flex-col gap-1">
                 <h3 className="font-black tracking-tighter text-foreground uppercase flex items-center gap-3 text-xl">
                     <CheckCircle2 className="h-6 w-6 text-primary" />

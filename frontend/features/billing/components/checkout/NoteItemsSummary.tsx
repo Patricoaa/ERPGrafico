@@ -8,8 +8,10 @@ import { ShoppingBag } from "lucide-react"
 import { formatCurrency } from "@/lib/money"
 import { cn } from "@/lib/utils"
 
+import type { NoteLineItem } from "@/features/notes"
+
 interface NoteItemsSummaryProps {
-    items: Record<string, unknown>[]
+    items: NoteLineItem[]
     totalNet: number
     totalTax: number
     total: number
@@ -35,33 +37,33 @@ export function NoteItemsSummary({
                         </h3>
 
                         <div className="space-y-4">
-                            {items.length === 0 ? (
+                            {items.filter(item => item.noteQuantity > 0).length === 0 ? (
                                 <EmptyState context="inventory" variant="compact" title="Sin productos seleccionados" />
                             ) : (
-                                items.map((item, idx) => (
+                                items.filter(item => item.noteQuantity > 0).map((item, idx) => (
                                     <div key={idx} className="flex justify-between items-start gap-4 animate-in fade-in duration-500">
                                         <div className="space-y-1.5 flex-1 min-w-0">
                                             <Tooltip>
                                                 <TooltipTrigger asChild>
                                                     <p className="font-bold text-[13px] leading-tight text-foreground/90 truncate mr-2">
-                                                        {(item.product_name as string) || `Producto ${item.product_id as number}`}
+                                                        {item.productName || `Producto ${item.productId}`}
                                                     </p>
                                                 </TooltipTrigger>
-                                                <TooltipContent side="top">{(item.product_name as string) || `Producto ${item.product_id as number}`}</TooltipContent>
+                                                <TooltipContent side="top">{item.productName || `Producto ${item.productId}`}</TooltipContent>
                                             </Tooltip>
                                             <div className="flex flex-wrap items-center gap-1.5 mt-0.5">
                                                 <Chip size="xs" intent="neutral" className="bg-muted">
-                                                    {(item.quantity as number)} {(item.uom_name as string) || 'un'}
+                                                    {item.noteQuantity} {item.uomName || 'un'}
                                                 </Chip>
-                                                {(item.reason as string) && (
+                                                {item.reason && (
                                                     <Chip size="xs" intent="neutral" className="h-3 px-1 font-normal opacity-70 italic truncate max-w-[120px]">
-                                                        {item.reason as string}
+                                                        {item.reason}
                                                     </Chip>
                                                 )}
                                             </div>
                                         </div>
                                         <p className="font-mono text-xs font-black whitespace-nowrap pt-0.5">
-                                            {formatCurrency((parseFloat(item.unit_price_gross as string) || (parseFloat(item.unit_price as string) + parseFloat(item.tax_amount as string))) * parseFloat(item.quantity as string))}
+                                            {formatCurrency((item.noteUnitPrice + (item.taxAmountPerUnit ?? 0)) * item.noteQuantity)}
                                         </p>
                                     </div>
                                 ))

@@ -42,7 +42,7 @@ export function NoteStep_Registration({
     }, [dateString]) // eslint-disable-line react-hooks/exhaustive-deps
 
     return (
-        <div className="space-y-6">
+        <div className="w-full h-full flex flex-col space-y-6">
             <div className="flex flex-col gap-1 text-left">
                 <h3 className="font-black tracking-tighter text-foreground uppercase flex items-center gap-3">
                     <FileText className="h-5 w-5 text-primary" />
