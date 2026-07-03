@@ -212,7 +212,7 @@ export function Step4_Receipt({ receiptData, setReceiptData, orderLines = [] }: 
                 <RadioGroup
                     value={receiptData.type}
                     onValueChange={(val) => setReceiptData({ ...receiptData, type: val as ReceiptData['type'] })}
-                    className="grid grid-cols-3 gap-3"
+                    className="grid grid-cols-1 md:grid-cols-3 gap-3 w-full"
                 >
                     {receiptTypes.map((type) => (
                         <RadioCard
@@ -221,8 +221,6 @@ export function Step4_Receipt({ receiptData, setReceiptData, orderLines = [] }: 
                             value={type.id}
                             label={type.label}
                             description={type.description}
-                            icon={<type.icon className="h-4 w-4" />}
-                            iconColor={type.color}
                         />
                     ))}
                 </RadioGroup>

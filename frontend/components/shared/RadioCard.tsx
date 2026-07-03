@@ -8,8 +8,6 @@ interface RadioCardProps {
     id: string
     label: string
     description?: string
-    icon?: ReactNode
-    iconColor?: string
     disabled?: boolean
     className?: string
     children?: ReactNode
@@ -20,8 +18,6 @@ export function RadioCard({
     id,
     label,
     description,
-    icon,
-    iconColor = "text-foreground",
     disabled,
     className,
     children
@@ -31,7 +27,7 @@ export function RadioCard({
             htmlFor={id}
             className={cn(
                 // Base layout
-                "flex flex-row items-start gap-3 rounded-md border border-input p-3 transition-all",
+                "flex flex-row items-start gap-3 rounded-md border border-input p-3 transition-all h-full",
                 // Interacciones
                 !disabled && "cursor-pointer hover:border-primary/50 hover:bg-accent/50",
                 disabled && "opacity-50 cursor-not-allowed",
@@ -45,21 +41,14 @@ export function RadioCard({
                 value={value} 
                 id={id} 
                 disabled={disabled}
-                className="mt-0.5" 
+                className="mt-0.5 shrink-0" 
             />
             
-            {/* Opcional: Ícono con fondo */}
-            {icon && (
-                <div className={cn("p-1.5 rounded-md bg-background border shrink-0", iconColor)}>
-                    {icon}
-                </div>
-            )}
-            
             {/* Textos */}
-            <div className="flex flex-col gap-1 min-w-0 flex-1">
+            <div className="flex flex-col gap-1 min-w-0 flex-1 justify-center">
                 <span className="text-sm font-bold truncate leading-none">{label}</span>
                 {description && (
-                    <span className="text-[10px] uppercase font-black text-muted-foreground truncate leading-tight">
+                    <span className="text-[10px] uppercase font-black text-muted-foreground line-clamp-2 leading-tight mt-0.5">
                         {description}
                     </span>
                 )}

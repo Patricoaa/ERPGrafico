@@ -195,16 +195,14 @@ export function Step2_Logistics({
                         setData({ ...formData, delivery_type: val });
                     }
                 }}
-                className="grid grid-cols-3 gap-3 mt-4"
+                className="grid grid-cols-1 md:grid-cols-3 gap-3 w-full mt-4"
             >
                 <RadioCard
                     id="del-immediate"
                     value="IMMEDIATE"
                     label="Inmediato"
                     description="Procesar ahora"
-                    icon={<Package className="h-4 w-4" />}
                     disabled={hasRestrictedItems}
-                    iconColor="text-primary"
                 />
 
                 <RadioCard
@@ -212,8 +210,6 @@ export function Step2_Logistics({
                     value="SCHEDULED"
                     label="Programar"
                     description="Fecha futura"
-                    icon={<Calendar className="h-4 w-4" />}
-                    iconColor="text-primary"
                 />
 
                 <RadioCard
@@ -221,8 +217,6 @@ export function Step2_Logistics({
                     value="PARTIAL"
                     label="Parcial"
                     description="Procesar algunos"
-                    icon={<Truck className="h-4 w-4" />}
-                    iconColor="text-primary"
                 />
                 </RadioGroup>
             </LabeledContainer>

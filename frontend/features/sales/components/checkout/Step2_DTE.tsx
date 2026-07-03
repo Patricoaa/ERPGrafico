@@ -78,7 +78,7 @@ export function Step2_DTE({
                 <RadioGroup
                     value={dteData.type}
                     onValueChange={(val) => setDteData({ ...dteData, type: val })}
-                    className="grid grid-cols-1 gap-2"
+                    className="grid grid-cols-1 md:grid-cols-3 gap-3 w-full"
                 >
                 {filteredOptions.map((opt) => (
                     <RadioCard
@@ -87,8 +87,6 @@ export function Step2_DTE({
                         value={opt.id}
                         label={opt.label}
                         description={`Código SII: ${opt.code}`}
-                        icon={<opt.icon className="h-4 w-4" />}
-                        iconColor={opt.color}
                     />
                 ))}
                 </RadioGroup>
