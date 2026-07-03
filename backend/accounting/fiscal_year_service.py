@@ -337,6 +337,7 @@ class FiscalYearClosingService:
                 JournalEntryService.reverse_entry(
                     fiscal_year.opening_entry,
                     description=f"Reverso Apertura {year + 1} (por reapertura Ej. {year})",
+                    allow_automatic=True
                 )
             fiscal_year.opening_entry = None
 
@@ -344,7 +345,9 @@ class FiscalYearClosingService:
         if fiscal_year.closing_entry:
             if fiscal_year.closing_entry.status == JournalEntry.Status.POSTED:
                 JournalEntryService.reverse_entry(
-                    fiscal_year.closing_entry, description=f"Reverso Cierre Ejercicio {year}"
+                    fiscal_year.closing_entry, 
+                    description=f"Reverso Cierre Ejercicio {year}",
+                    allow_automatic=True
                 )
             fiscal_year.closing_entry = None
 
@@ -428,7 +431,7 @@ class FiscalYearClosingService:
             # Calculate accumulated balance up to end_date
             result = JournalItem.objects.filter(
                 account=account,
-                entry__status=JournalEntry.Status.POSTED,
+                entry__status__in=JournalEntry.balance_affecting_statuses(),
                 entry__date__lte=end_date,
             ).aggregate(
                 total_debit=Sum("debit"),
