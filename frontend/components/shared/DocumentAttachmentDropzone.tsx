@@ -53,7 +53,6 @@ export function DocumentAttachmentDropzone({
                         disabled={disabled}
                     />
                     <div className="min-h-[72px] w-full flex flex-col items-center justify-center gap-1 group-hover:text-primary transition-colors">
-                        <Upload className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors" />
                         <p className="text-[10px] font-bold text-muted-foreground uppercase text-center px-4 group-hover:text-primary transition-colors">
                             Seleccionar o arrastrar archivo
                         </p>
