@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import { type FiscalYearPreviewResult } from '../../types';
 import { cn } from '@/lib/utils';
+import { formDrawerWidth } from '@/lib/form-widths';
 
 // Lazy load FinancialStatementsReport
 const FinancialStatementsReport = lazy(() => import('@/features/finance/components/FinancialStatementsReport').then(m => ({ default: m.FinancialStatementsReport })));
@@ -232,7 +233,7 @@ export function FiscalYearClosingWizard({
             <Drawer
                 open={isOpen}
                 onOpenChange={onClose}
-                defaultSize="45%"
+                defaultSize={formDrawerWidth("complex", false)}
                 minSize={500}
                 side="left"
                 boundary="embedded"
