@@ -1,4 +1,4 @@
-export { NoteCheckoutWizard, NoteItemsSummary, NoteProcessSidebar, PurchaseInvoicesClientView, SalesInvoicesClientView, Step1_Items, Step2_Logistics, Step3_Registration, Step4_Payment } from './components'
+export { NoteItemsSummary, NoteProcessSidebar, PurchaseInvoicesClientView, SalesInvoicesClientView, Step1_Items, Step2_Logistics, Step3_Registration, Step4_Payment } from './components'
 export { useInvoices, useInvoice, INVOICES_QUERY_KEY } from './hooks/useInvoices'
 export { usePurchaseInvoices, PURCHASE_INVOICES_QUERY_KEY } from './hooks/usePurchaseInvoices'
 export type { Invoice, InvoiceFilters, AnnulInvoicePayload } from './types'
