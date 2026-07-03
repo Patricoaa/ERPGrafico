@@ -6,10 +6,9 @@ import { Button } from "@/components/ui/button"
 import { User, Paintbrush, X } from "lucide-react"
 import { AdvancedContactSelector } from "@/components/selectors/AdvancedContactSelector"
 import { toast } from "sonner"
-import { ManufacturingSpecsEditor,
-    emptyManufacturingData,
-    type ManufacturingData, } from '@/components/shared'
+import { ManufacturingSpecsEditor, emptyManufacturingData, type ManufacturingData } from '@/components/shared'
 import { type Contact } from "@/types/entities"
+import { formDrawerWidth } from "@/lib/form-widths"
 
 interface AdvancedManufacturingDrawerProps {
     open: boolean
@@ -126,7 +125,7 @@ export function AdvancedManufacturingDrawer({
             open={open}
             onOpenChange={onOpenChange}
             side="left"
-            defaultSize="75%"
+            defaultSize={formDrawerWidth("master", false)}
             contentClassName="p-0"
             title={
                 <div className="flex items-center gap-6 p-4">

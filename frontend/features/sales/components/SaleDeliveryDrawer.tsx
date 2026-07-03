@@ -9,6 +9,7 @@ import { formatPlainDate } from '@/lib/utils'
 import { PrintableLayout } from '@/features/_shared'
 import { useSaleOrder } from '@/features/sales/hooks/useSalesOrders'
 import type { TransactionDrawerProps } from '@/features/_shared'
+import { formDrawerWidth } from '@/lib/form-widths'
 
 interface SaleDeliveryDrawerProps extends TransactionDrawerProps {
     deliveryId?: number
@@ -54,7 +55,7 @@ export function SaleDeliveryDrawer({ id, open, onOpenChange, saleOrderId, delive
                 open={open}
                 onOpenChange={onOpenChange}
                 side="left"
-                defaultSize="50%"
+                defaultSize={formDrawerWidth("master", false)}
                 icon={Truck}
                 title={<span>{deliveryNumber}</span>}
                 headerActions={<Button variant="ghost" size="icon" onClick={() => handlePrint()}><Printer className="h-4 w-4" /></Button>}

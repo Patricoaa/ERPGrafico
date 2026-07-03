@@ -13,6 +13,7 @@ import { formatPlainDate } from '@/lib/utils'
 import { PrintableLayout } from '@/features/_shared'
 import { ActivitySidebar } from '@/features/audit'
 import type { TransactionDrawerProps } from '@/features/_shared'
+import { formDrawerWidth } from '@/lib/form-widths'
 
 interface SaleOrderDrawerProps extends TransactionDrawerProps {
     orderId?: number
@@ -52,7 +53,7 @@ export function SaleOrderDrawer({ id, open, onOpenChange, orderId, segmenter }: 
                 open={open}
                 onOpenChange={onOpenChange}
                 side="left"
-                defaultSize="50%"
+                defaultSize={formDrawerWidth("master", !!entityId)}
                 icon={getEntityIcon('sales.saleorder')}
                 title={<span>{order?.number ?? 'Nota de Venta'}</span>}
                 headerActions={<Button variant="ghost" size="icon" onClick={() => handlePrint()}><Printer className="h-4 w-4" /></Button>}
