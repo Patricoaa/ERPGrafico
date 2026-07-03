@@ -12,6 +12,7 @@ import { PrintableLayout } from '@/features/_shared'
 import { useTreasuryMovement } from '@/features/treasury/hooks/useTreasuryMovement'
 import { ActivitySidebar } from '@/features/audit'
 import type { TransactionDrawerProps } from '@/features/_shared'
+import { formDrawerWidth } from '@/lib/form-widths'
 
 interface CashMovementDrawerProps extends TransactionDrawerProps {
   movementId?: number
@@ -51,12 +52,13 @@ export function CashMovementDrawer({ id, open, onOpenChange, movementId }: CashM
       </PrintableLayout>
 
       <Drawer
+        mode="view"
         open={open}
         onOpenChange={onOpenChange}
         side="left"
-        defaultSize="50%"
-                icon={getEntityIcon('treasury.treasurymovement')}
-                title={<span>{displayId}</span>}
+        defaultSize={formDrawerWidth("master", !!entityId)}
+        icon={getEntityIcon('treasury.treasurymovement')}
+        title={<span>{displayId}</span>}
         headerActions={<Button variant="ghost" size="icon" onClick={() => handlePrint()}><Printer className="h-4 w-4" /></Button>}
         subtitle={movementType}
         description={formatPlainDate(movement?.date ?? movement?.created_at)}

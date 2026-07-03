@@ -3,6 +3,7 @@
 import { Drawer, EmptyState, MoneyDisplay, SkeletonShell, StatusBadge } from "@/components/shared"
 import { getEntityIcon } from "@/lib/entity-registry"
 import { useBankStatement } from "../hooks/useBankStatement"
+import { formDrawerWidth } from "@/lib/form-widths"
 
 interface BankStatementData {
     id: number
@@ -26,11 +27,12 @@ export function BankStatementDrawer({ statementId, open, onOpenChange }: BankSta
 
     return (
         <Drawer
+            mode="view"
             open={open}
             onOpenChange={onOpenChange}
             side="left"
             boundary="embedded"
-            defaultSize="55%"
+            defaultSize={formDrawerWidth("master", false)}
             title={statement ? `Cartola ${statement.display_id || statement.id}` : "Cartola Bancaria"}
             subtitle={statement?.treasury_account_name}
             icon={getEntityIcon('treasury.bankstatement')}

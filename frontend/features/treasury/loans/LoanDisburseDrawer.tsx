@@ -18,6 +18,7 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { useServerDate } from '@/hooks/useServerDate'
 import { useTreasurySettings } from '@/features/settings'
 import type { BankLoan } from './types'
+import { formDrawerWidth } from '@/lib/form-widths'
 
 const schema = z.object({
     date: z.string().min(1, 'Fecha es requerida'),
@@ -105,9 +106,7 @@ export function LoanDisburseDrawer({ open, onOpenChange, loan, onSuccess }: Prop
             open={open}
             onOpenChange={onOpenChange}
             side="right"
-            defaultSize="560px"
-            minSize="480px"
-            maxSize="720px"
+            defaultSize={formDrawerWidth("complex", false)}
             resizable
             title={
                 <div className="flex items-center gap-3">
