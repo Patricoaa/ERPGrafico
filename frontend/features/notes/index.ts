@@ -9,7 +9,10 @@ export type {
     NoteWizardSourceDocument,
 } from './types'
 
-// Hooks
+// Components
+export { UnifiedNoteWizard, type UnifiedNoteWizardProps } from './components/UnifiedNoteWizard'
+
+
 export {
     useNoteWizardState,
     type UseNoteWizardStateOptions,
