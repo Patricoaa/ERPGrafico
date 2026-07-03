@@ -1,13 +1,13 @@
 "use client"
 
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
-import { Checkbox } from "@/components/ui/checkbox"
+import { Label } from "@/components/ui/label"
 import {FileText, Receipt, AlertCircle} from "lucide-react"
 import { useBillingSettingsQuery } from "@/features/settings"
 import { useMemo, useEffect } from "react"
 import { cn } from "@/lib/utils"
 
-import { DocumentAttachmentDropzone, FolioValidationInput, PeriodValidationDateInput } from '@/components/shared'
+import { DocumentAttachmentDropzone, FolioValidationInput, PeriodValidationDateInput, LabeledSwitch } from '@/components/shared'
 
 import { type DTEData } from "../../types"
 
@@ -71,7 +71,7 @@ export function Step2_PurchaseDTE({
                     className="flex flex-wrap gap-4 w-full"
                 >
                     {filteredOptions.map((opt) => (
-                        <label
+                        <Label
                             key={opt.id}
                             htmlFor={`type-${opt.id.toLowerCase().replace('_', '-')}`}
                             className={cn(
@@ -83,65 +83,59 @@ export function Step2_PurchaseDTE({
                             <opt.icon className={`mb-3 h-6 w-6 ${opt.color || ''}`} />
                             <span className="text-sm font-medium">{opt.label}</span>
                             <span className="text-[10px] text-muted-foreground mt-1 text-center">Código SII: {opt.code}</span>
-                        </label>
+                        </Label>
                     ))}
                 </RadioGroup>
             </div>
 
             <div className="space-y-4 animate-in fade-in slide-in-from-top-2 duration-300">
-                <div className="flex items-center space-x-2 p-3 bg-muted/30 rounded-md border border-dashed">
-                    <Checkbox
-                        id="is-pending"
-                        checked={dteData.isPending}
-                        onCheckedChange={(checked) => {
-                            const pending = !!checked;
-                            if (pending) {
-                                setDteData({ ...dteData, isPending: true, number: '', attachment: null });
-                                onValidityChange?.(true);
-                                onPeriodValidityChange?.(true);
-                            } else {
-                                setDteData({ ...dteData, isPending: false });
-                            }
-                        }}
-                    />
-                    <label htmlFor="is-pending" className="text-xs font-medium cursor-pointer">
-                        Recibiré el documento luego
-                    </label>
-                </div>
+                <LabeledSwitch
+                    label="Recepción"
+                    description={dteData.isPending ? "Recibiré el documento luego" : "Recepción inmediata"}
+                    checked={!!dteData.isPending}
+                    onCheckedChange={(checked) => {
+                        const pending = !!checked;
+                        if (pending) {
+                            setDteData({ ...dteData, isPending: true, number: '', attachment: null });
+                            onValidityChange?.(true);
+                            onPeriodValidityChange?.(true);
+                        } else {
+                            setDteData({ ...dteData, isPending: false });
+                        }
+                    }}
+                    icon={<FileText className={cn("h-4 w-4 transition-colors", dteData.isPending ? "text-warning" : "text-muted-foreground/30")} />}
+                    className={cn(dteData.isPending ? "bg-warning/5 border-warning/20 shadow-card" : "border-dashed")}
+                />
 
                 {!dteData.isPending && (
-                    <div className="grid grid-cols-2 gap-4 p-4 border rounded-md bg-muted/10">
-                        <div className="space-y-2">
-                            <FolioValidationInput
-                                value={dteData.number}
-                                onChange={(val: string) => setDteData({ ...dteData, number: val })}
-                                dteType={dteData.type}
-                                contactId={contactId ? Number(contactId) : undefined}
-                                isPurchase={true}
-                                onValidityChange={onValidityChange}
-                                disabled={dteData.isPending}
-                            />
-                        </div>
-                        <div className="space-y-2">
-                            <PeriodValidationDateInput
-                                label="Fecha Emisión"
-                                required
-                                date={dteData.date ? new Date(dteData.date + 'T12:00:00') : undefined}
-                                onDateChange={(d) => {
-                                    if (d) {
-                                        const year = d.getFullYear()
-                                        const month = String(d.getMonth() + 1).padStart(2, '0')
-                                        const day = String(d.getDate()).padStart(2, '0')
-                                        setDteData({ ...dteData, date: `${year}-${month}-${day}` })
-                                    } else {
-                                        setDteData({ ...dteData, date: "" })
-                                    }
-                                }}
-                                validationType="both"
-                                onValidityChange={onPeriodValidityChange}
-                                disabled={dteData.isPending}
-                            />
-                        </div>
+                    <div className="grid grid-cols-2 gap-4">
+                        <FolioValidationInput
+                            value={dteData.number}
+                            onChange={(val: string) => setDteData({ ...dteData, number: val })}
+                            dteType={dteData.type}
+                            contactId={contactId ? Number(contactId) : undefined}
+                            isPurchase={true}
+                            onValidityChange={onValidityChange}
+                            disabled={dteData.isPending}
+                        />
+                        <PeriodValidationDateInput
+                            label="Fecha Emisión"
+                            required
+                            date={dteData.date ? new Date(dteData.date + 'T12:00:00') : undefined}
+                            onDateChange={(d) => {
+                                if (d) {
+                                    const year = d.getFullYear()
+                                    const month = String(d.getMonth() + 1).padStart(2, '0')
+                                    const day = String(d.getDate()).padStart(2, '0')
+                                    setDteData({ ...dteData, date: `${year}-${month}-${day}` })
+                                } else {
+                                    setDteData({ ...dteData, date: "" })
+                                }
+                            }}
+                            validationType="both"
+                            onValidityChange={onPeriodValidityChange}
+                            disabled={dteData.isPending}
+                        />
                         <div className="col-span-2">
                             <DocumentAttachmentDropzone
                                 file={dteData.attachment}

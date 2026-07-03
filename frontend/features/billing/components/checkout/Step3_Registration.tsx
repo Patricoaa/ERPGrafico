@@ -1,7 +1,8 @@
 "use client"
 
-import { DocumentAttachmentDropzone, LabeledInput, LabeledCheckbox, PeriodValidationDateInput } from '@/components/shared'
-import { FileText, Calendar, Hash, ShieldAlert } from "lucide-react"
+import { DocumentAttachmentDropzone, LabeledInput, LabeledSwitch, PeriodValidationDateInput } from '@/components/shared'
+import { FileText, Hash, ShieldAlert } from "lucide-react"
+import { cn } from "@/lib/utils"
 import { useServerDate } from "@/hooks/useServerDate"
 import { useEffect } from "react"
 
@@ -47,9 +48,9 @@ export function Step3_Registration({
             </div>
 
             <div className="space-y-4">
-                <LabeledCheckbox
-                    label="Documento Pendiente"
-                    description="Emitiré/recibiré la nota luego"
+                <LabeledSwitch
+                    label="Emisión"
+                    description={formData.is_pending ? "Emitiré/recibiré el documento luego" : "Emisión inmediata"}
                     checked={formData.is_pending}
                     onCheckedChange={(val) => {
                         const isChecked = !!val;
@@ -65,12 +66,13 @@ export function Step3_Registration({
                             setData({ ...formData, is_pending: false });
                         }
                     }}
+                    icon={<FileText className={cn("h-4 w-4 transition-colors", formData.is_pending ? "text-warning" : "text-muted-foreground/30")} />}
+                    className={cn(formData.is_pending ? "bg-warning/5 border-warning/20 shadow-card" : "border-dashed")}
                 />
 
                 {!formData.is_pending && (
                     <div className="space-y-6 animate-in fade-in slide-in-from-top-2 duration-300">
-                        {/* Main Info Card */}
-                        <div className="grid grid-cols-2 gap-4 p-4 border rounded-md bg-muted/10">
+                        <div className="grid grid-cols-2 gap-4">
                             <LabeledInput
                                 label="N° de Folio"
                                 icon={<Hash className="h-3 w-3" />}
@@ -80,32 +82,22 @@ export function Step3_Registration({
                                 onChange={(e) => setData({ ...formData, document_number: e.target.value })}
                                 required
                             />
-                            <div className="space-y-2">
-                                <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/60 flex items-center gap-2">
-                                    <Calendar className="h-3 w-3" />
-                                    Fecha Emisión
-                                </label>
-                                <div>
-                                    <PeriodValidationDateInput
-                                        date={formData.document_date ? new Date(formData.document_date + 'T12:00:00') : undefined}
-                                        onDateChange={(d) => {
-                                            if (d) {
-                                                const year = d.getFullYear()
-                                                const month = String(d.getMonth() + 1).padStart(2, '0')
-                                                const day = String(d.getDate()).padStart(2, '0')
-                                                setData({ ...formData, document_date: `${year}-${month}-${day}` })
-                                            } else {
-                                                setData({ ...formData, document_date: "" })
-                                            }
-                                        }}
-                                        validationType="both"
-                                        onValidityChange={onPeriodValidityChange}
-                                    />
-                                </div>
-                            </div>
-
-                            {/* Attachment Section inside the card */}
-                            <div className="col-span-2 pt-2 border-t mt-2">
+                            <PeriodValidationDateInput
+                                date={formData.document_date ? new Date(formData.document_date + 'T12:00:00') : undefined}
+                                onDateChange={(d) => {
+                                    if (d) {
+                                        const year = d.getFullYear()
+                                        const month = String(d.getMonth() + 1).padStart(2, '0')
+                                        const day = String(d.getDate()).padStart(2, '0')
+                                        setData({ ...formData, document_date: `${year}-${month}-${day}` })
+                                    } else {
+                                        setData({ ...formData, document_date: "" })
+                                    }
+                                }}
+                                validationType="both"
+                                onValidityChange={onPeriodValidityChange}
+                            />
+                            <div className="col-span-2">
                                 <DocumentAttachmentDropzone
                                     file={formData.attachment}
                                     onFileChange={(file) => setData({ ...formData, attachment: file })}
