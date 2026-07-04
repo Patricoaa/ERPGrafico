@@ -15,6 +15,13 @@ import { format } from "date-fns"
 import { WorkOrderWizard } from "@/features/production"
 import { useWorkOrderSearch } from "@/features/production/hooks/useWorkOrderSearch"
 import { EmptyState } from '@/components/shared'
+import {
+    Tooltip,
+    TooltipContent,
+    TooltipProvider,
+    TooltipTrigger,
+} from "@/components/ui/tooltip"
+import { Info } from "lucide-react"
 import { type WorkOrder } from "@/types/entities"
 // Removed LabeledContainer import as it's now internal
 
@@ -105,9 +112,21 @@ export function AdvancedWorkOrderSelector({
                 )}
             >
                 {label && (
-                    <legend className={cn("notched-legend", error && "text-destructive")}>
+                    <legend className={cn("notched-legend flex items-center gap-1.5", error && "text-destructive")}>
                         {label}
-                        {required && <span className="ml-1 text-destructive">*</span>}
+                        {required && <span className="text-destructive">*</span>}
+                        {hint && (
+                            <TooltipProvider delayDuration={200}>
+                                <Tooltip>
+                                    <TooltipTrigger asChild>
+                                        <Info className="h-3 w-3 text-muted-foreground hover:text-primary transition-colors cursor-help" />
+                                    </TooltipTrigger>
+                                    <TooltipContent side="top" className="max-w-[250px] text-xs">
+                                        {hint}
+                                    </TooltipContent>
+                                </Tooltip>
+                            </TooltipProvider>
+                        )}
                     </legend>
                 )}
                 <Popover open={open} onOpenChange={setOpen}>
@@ -220,15 +239,11 @@ export function AdvancedWorkOrderSelector({
                 </PopoverContent>
                 </Popover>
             </fieldset>
-            {error ? (
+            {error && (
                 <p className="mt-1.5 text-[11px] font-medium text-destructive animate-in fade-in slide-in-from-top-1 w-full text-left px-1">
                     {error}
                 </p>
-            ) : hint ? (
-                <p className="mt-1.5 text-[10px] text-muted-foreground italic px-1 w-full text-left">
-                    {hint}
-                </p>
-            ) : null}
+            )}
 
             {previewId && (
                 <WorkOrderWizard

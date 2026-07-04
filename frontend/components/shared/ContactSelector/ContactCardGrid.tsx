@@ -62,44 +62,69 @@ export function ContactCardGrid({ selectedId, onSelect, placeholder = "Buscar co
                             <Card
                                 key={contact.id}
                                 className={cn(
-                                    "card-base overflow-hidden flex flex-col bg-card cursor-pointer shadow-card shadow-black/5",
+                                    "overflow-hidden flex flex-col cursor-pointer transition-all bg-transparent group",
                                     "focus-visible:border-2 focus-visible:border-primary",
                                     isSelected
-                                        ? "border-2 border-primary accent-visible"
-                                        : "border",
+                                        ? "border-2 border-primary ring-1 ring-primary/20"
+                                        : "border border-border/50 hover:border-border",
                                     isTouchPOS && "active:scale-[0.98]"
                                 )}
                                 onClick={() => onSelect(contact)}
                                 role="button"
                                 tabIndex={0}
                             >
-                                <div className="flex items-start gap-2 p-2.5 pb-1.5">
-                                    <div className={cn(
-                                        "flex items-center justify-center h-7 w-7 rounded-md shrink-0",
-                                        isSelected ? "bg-primary/10 text-primary" : "bg-muted text-muted-foreground"
-                                    )}>
-                                        {contact.contact_type === 'COMPANY' ? (
-                                            <Building2 className="h-3.5 w-3.5" />
-                                        ) : (
-                                            <User className="h-3.5 w-3.5" />
-                                        )}
+                                <div className="flex items-start justify-between gap-2 p-2.5 pb-1.5">
+                                    <div className="flex items-start gap-2 min-w-0 flex-1">
+                                        <div className={cn(
+                                            "flex items-center justify-center h-7 w-7 rounded-md shrink-0 transition-colors",
+                                            isSelected ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground group-hover:bg-muted/80"
+                                        )}>
+                                            {contact.contact_type === 'COMPANY' ? (
+                                                <Building2 className="h-3.5 w-3.5" />
+                                            ) : (
+                                                <User className="h-3.5 w-3.5" />
+                                            )}
+                                        </div>
+                                        <div className="min-w-0 flex-1">
+                                            <span className="font-bold text-xs truncate leading-tight block">{contact.name}</span>
+                                            <span className="text-[10px] font-mono text-muted-foreground truncate block mt-0.5">
+                                                {contact.tax_id ? formatRUT(contact.tax_id) : 'S/Rut'}
+                                            </span>
+                                        </div>
                                     </div>
-                                    <div className="min-w-0 flex-1">
-                                        <span className="font-bold text-xs truncate leading-tight block">{contact.name}</span>
-                                        <span className="text-[10px] font-mono text-muted-foreground truncate block">
-                                            {contact.tax_id ? formatRUT(contact.tax_id) : 'S/Rut'}
-                                        </span>
+                                    <div className="flex shrink-0 items-center justify-center mt-1">
+                                        <div className={cn(
+                                            "flex h-4 w-4 items-center justify-center rounded-full border-2 transition-colors",
+                                            isSelected ? "border-primary bg-background" : "border-muted-foreground/30 bg-background group-hover:border-primary/50"
+                                        )}>
+                                            {isSelected && <div className="h-2 w-2 rounded-full bg-primary" />}
+                                        </div>
                                     </div>
                                 </div>
-                                <div className="flex items-center gap-1.5 px-2.5 pb-2.5 pt-1 border-t border-border/30 text-[10px] text-muted-foreground">
-                                    <span className="font-semibold text-foreground/80">{formatCurrency(Number(contact.credit_available ?? 0))}</span>
-                                    <span className="text-muted-foreground/50">crédito</span>
-                                    <span className="text-muted-foreground/30">|</span>
-                                    <span className="font-semibold text-destructive">{formatCurrency(Number(contact.credit_balance_used ?? 0))}</span>
-                                    <span className="text-muted-foreground/50">adeudado</span>
-                                    <span className="text-muted-foreground/30">•</span>
-                                    <span>{contact.last_sale_date ? new Date(contact.last_sale_date).toLocaleDateString() : '—'}</span>
-                                    <span className="text-muted-foreground/50">última venta</span>
+                                <div className="flex items-center gap-1.5 px-2.5 pb-2 pt-1.5 border-t border-border/30 text-[10px] text-muted-foreground mt-auto">
+                                    {contactType === 'SUPPLIER' ? (
+                                        <>
+                                            <span className="font-semibold text-foreground/80">{formatCurrency(Number(contact.credit_available ?? 0))}</span>
+                                            <span className="text-muted-foreground/50">línea</span>
+                                            <span className="text-muted-foreground/30">|</span>
+                                            <span className="font-semibold text-destructive">{formatCurrency(Number(contact.credit_balance_used ?? 0))}</span>
+                                            <span className="text-muted-foreground/50">por pagar</span>
+                                            <span className="text-muted-foreground/30">•</span>
+                                            <span>{(contact as any).last_purchase_date ? new Date((contact as any).last_purchase_date).toLocaleDateString() : '—'}</span>
+                                            <span className="text-muted-foreground/50">última compra</span>
+                                        </>
+                                    ) : (
+                                        <>
+                                            <span className="font-semibold text-foreground/80">{formatCurrency(Number(contact.credit_available ?? 0))}</span>
+                                            <span className="text-muted-foreground/50">crédito</span>
+                                            <span className="text-muted-foreground/30">|</span>
+                                            <span className="font-semibold text-destructive">{formatCurrency(Number(contact.credit_balance_used ?? 0))}</span>
+                                            <span className="text-muted-foreground/50">adeudado</span>
+                                            <span className="text-muted-foreground/30">•</span>
+                                            <span>{contact.last_sale_date ? new Date(contact.last_sale_date).toLocaleDateString() : '—'}</span>
+                                            <span className="text-muted-foreground/50">última venta</span>
+                                        </>
+                                    )}
                                 </div>
                             </Card>
                         )
