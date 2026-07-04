@@ -30,7 +30,7 @@ export function RadioCard({
         <Label
             htmlFor={id}
             className={cn(
-                "group flex flex-row items-start gap-3 rounded-md border border-input p-3 transition-all h-full",
+                "group flex flex-row items-center gap-3 rounded-md border border-input p-3 transition-all h-full",
                 !disabled && "cursor-pointer hover:border-primary/50 hover:bg-accent/50",
                 disabled && "opacity-50 cursor-not-allowed",
                 "[&:has([data-state=checked])]:border-primary [&:has([data-state=checked])]:bg-primary/5 [&:has([data-state=checked])]:ring-1 [&:has([data-state=checked])]:ring-primary/20",
@@ -38,7 +38,7 @@ export function RadioCard({
             )}
         >
             {/* Círculo decorativo que envuelve al Radio */}
-            <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full border-2 border-muted bg-background transition-colors group-has-[[data-state=checked]]:border-primary group-has-[[data-state=checked]]:bg-primary/10 mt-0.5">
+            <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full border-2 border-muted bg-background transition-colors group-has-[[data-state=checked]]:border-primary group-has-[[data-state=checked]]:bg-primary/10">
                 <RadioGroupItem 
                     value={value} 
                     id={id} 
@@ -49,7 +49,7 @@ export function RadioCard({
 
             {/* Opcional: Ícono sin fondo */}
             {icon && (
-                <div className={cn("shrink-0 mt-0.5", iconColor)}>
+                <div className={cn("shrink-0", iconColor)}>
                     {icon}
                 </div>
             )}
