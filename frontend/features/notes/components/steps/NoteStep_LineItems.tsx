@@ -128,29 +128,24 @@ function SelectModeTable({
                 cell: ({ row }) => {
                     const line = row.original
                     return (
-                        <div className="flex flex-col gap-1 items-start w-full">
-                            <span className="font-bold text-sm tracking-tight text-foreground leading-tight text-left">
+                        <div className="flex flex-col gap-1 items-center justify-center w-full text-center">
+                            <span className="font-bold text-sm tracking-tight text-foreground leading-tight">
                                 {line.productName}
                             </span>
-                            <div className="flex items-center gap-2">
-                                <Chip size="xs" className="opacity-70">
-                                    {line.productCode ?? line.productId}
-                                </Chip>
-                                {line.productType === 'MANUFACTURABLE' && (
-                                    <Chip size="xs" intent="warning">Fab</Chip>
-                                )}
-                            </div>
+                            {line.productType === 'MANUFACTURABLE' && (
+                                <Chip size="xs" intent="warning">Fab</Chip>
+                            )}
                         </div>
                     )
                 },
-                meta: { align: 'left' },
+                meta: { align: 'center' },
             },
             {
                 header: 'Original',
                 cell: ({ row }) => {
                     const line = row.original
                     return (
-                        <div className="flex flex-col items-end w-full">
+                        <div className="flex flex-col items-center justify-center w-full">
                             <span className="font-bold text-xs tabular-nums text-muted-foreground/60">
                                 {Math.floor(line.originalQuantity)}
                             </span>
@@ -160,14 +155,14 @@ function SelectModeTable({
                         </div>
                     )
                 },
-                meta: { align: 'right' },
+                meta: { align: 'center' },
             },
             {
                 header: 'Entregado',
                 cell: ({ row }) => {
                     const line = row.original
                     return (
-                        <div className="flex flex-col items-end w-full">
+                        <div className="flex flex-col items-center justify-center w-full">
                             <span className="font-black text-xs tabular-nums text-success">
                                 {Math.floor(line.originalQuantity)}
                             </span>
@@ -177,7 +172,7 @@ function SelectModeTable({
                         </div>
                     )
                 },
-                meta: { align: 'right' },
+                meta: { align: 'center' },
             },
             {
                 header: 'Cant. Nota',
@@ -255,11 +250,11 @@ function SelectModeTable({
                             disabled={!selected}
                             value={sel?.reason ?? ''}
                             onChange={(e) => updateSelected(line.lineId, { reason: e.target.value })}
-                            className={cn('h-10 text-xs font-medium placeholder:italic transition-all w-full', !selected && 'opacity-50')}
+                            className={cn('h-10 text-xs font-medium placeholder:italic transition-all w-full text-center', !selected && 'opacity-50')}
                         />
                     )
                 },
-                meta: { align: 'left' },
+                meta: { align: 'center' },
             },
         ],
         [isCreditNote, isSelected, getSelected, toggleLine, updateSelected, isExempt],
@@ -316,15 +311,12 @@ function EditModeTable({
             {
                 header: 'Producto / Descripción',
                 cell: ({ row }) => (
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center justify-center gap-3 w-full">
                         <Package className="h-4 w-4 text-muted-foreground shrink-0" />
-                        <div className="flex flex-col gap-0.5 items-start text-left w-full">
-                            <DataCell.Text className="justify-start text-left font-bold text-sm text-foreground">
+                        <div className="flex flex-col gap-0.5 items-center text-center w-full">
+                            <DataCell.Text className="justify-center text-center font-bold text-sm text-foreground">
                                 {row.original.productName}
                             </DataCell.Text>
-                            <DataCell.Code className="justify-start text-left text-[10px] text-muted-foreground">
-                                {row.original.productCode ?? '-'}
-                            </DataCell.Code>
                         </div>
                     </div>
                 ),
@@ -404,7 +396,7 @@ function EditModeTable({
                         </div>
                     )
                 },
-                meta: { align: 'right' },
+                meta: { align: 'center' },
             },
         ],
         [isCreditNote, handleChange],
