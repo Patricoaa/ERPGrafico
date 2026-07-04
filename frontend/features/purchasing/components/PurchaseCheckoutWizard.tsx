@@ -31,7 +31,7 @@ import { Check, ChevronRight, ChevronLeft, Loader2, ShoppingCart } from "lucide-
 import { useVatRate } from '@/hooks/useVatRate'
 import { useTreasuryAccounts } from "@/hooks/useTreasuryAccounts"
 import { useServerDate } from "@/hooks/useServerDate"
-import { BaseModal, CancelButton, FormFooter } from '@/components/shared'
+import { Drawer, CancelButton, FormFooter } from '@/components/shared'
 import { useRef } from "react"
 
 interface PurchaseCheckoutWizardProps {
@@ -404,17 +404,17 @@ export function PurchaseCheckoutWizard({
     // const totalSteps = 5 -- calculated dynamically now
 
     return (
-        <BaseModal
+        <Drawer
             open={open}
             onOpenChange={onOpenChange}
-            variant="wizard"
             icon={ShoppingCart}
             title="Procesar Compra"
             description="Asistente de compra rápida, facturación y recepción de inventario."
-            size="full"
-            hideScrollArea
-            className="h-[90vh]"
-            contentClassName="p-0"
+            side="right"
+            defaultSize="100%"
+            boundary="screen"
+            contentClassName="p-0 flex flex-col"
+            headerClassName="border-b pb-2 px-6 py-3"
             footer={
                 <FormFooter
                     leftActions={
@@ -528,6 +528,6 @@ export function PurchaseCheckoutWizard({
                     />
                 </div>
             </div>
-        </BaseModal>
+        </Drawer>
     )
 }

@@ -25,7 +25,7 @@ import { ChevronLeft, ChevronRight, CheckCircle2, FileText, Loader2 } from 'luci
 import { Button } from '@/components/ui/button'
 import { toast } from 'sonner'
 
-import { ActionSlideButton, BaseModal, Chip, SkeletonShell } from '@/components/shared'
+import { Drawer, ActionSlideButton, Chip, SkeletonShell } from '@/components/shared'
 
 // Shared steps
 import {
@@ -309,14 +309,14 @@ export function UnifiedNoteWizard({
         (currentStepId === 'registration' && !registration.isPending && !isPeriodValid)
 
     return (
-        <BaseModal
+        <Drawer
             open={open}
             onOpenChange={(val) => !(submitting || initializing) && onOpenChange(val)}
-            size="full"
-            className="h-[90vh]"
-            contentClassName="p-0"
-            hideScrollArea
-            variant="wizard"
+            side="right"
+            defaultSize="100%"
+            boundary="screen"
+            contentClassName="p-0 flex flex-col"
+            headerClassName="border-b pb-2 px-6 py-3"
             icon={FileText}
             title={
                 <div className="flex items-center gap-3">
@@ -425,6 +425,6 @@ export function UnifiedNoteWizard({
                     </div>
                 )}
             </div>
-        </BaseModal>
+        </Drawer>
     )
 }
