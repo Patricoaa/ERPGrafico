@@ -1,6 +1,6 @@
 "use client"
 
-import { LabeledInput } from "@/components/shared"
+import { LabeledInput, StepHeader, DataCell, MoneyDisplay } from "@/components/shared"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 
@@ -81,15 +81,7 @@ export function Step1_Items({
 
     return (
         <div className="space-y-4">
-            <div className="flex flex-col gap-1">
-                <h3 className="font-black tracking-tighter text-foreground uppercase flex items-center gap-3">
-                    <Package className="h-5 w-5 text-primary" />
-                    Selección de Productos
-                </h3>
-                <p className="text-sm text-muted-foreground">
-                    Seleccione los ítems de la factura original que desea corregir.
-                </p>
-            </div>
+            <StepHeader title="Selección de Productos" description="Seleccione los ítems de la factura original que desea corregir." icon={Package} />
 
             <div className="rounded-md border flex-1 overflow-auto min-h-[400px]">
                 <Table>

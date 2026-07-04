@@ -20,7 +20,7 @@ import { getTask } from "@/features/workflow"
 import { formatMoney } from "@/lib/money"
 
 import {Loader2, Hammer, AlertCircle, ShieldAlert, CheckCircle2, FileWarning, Truck, User} from "lucide-react"
-import {BaseModal, FormSection} from '@/components/shared'
+import {BaseModal, StepHeader} from '@/components/shared'
 import { cn } from "@/lib/utils"
 
 import { useAuth } from "@/contexts/AuthContext"
@@ -304,7 +304,7 @@ export const SalesCheckoutWizardContent = forwardRef<SalesCheckoutWizardContentH
             case 'customer':
                 return (
                     <div className="space-y-6">
-                        <FormSection title="Identificación del Cliente" icon={User} />
+                        <StepHeader title="Identificación del Cliente" description="Seleccione o cree el cliente para esta venta." icon={User} />
                         <Step1_Customer
                             selectedCustomerId={selectedCustomerId}
                             setSelectedCustomerId={(id) => setSelectedCustomerId(id || "")}
@@ -329,7 +329,7 @@ export const SalesCheckoutWizardContent = forwardRef<SalesCheckoutWizardContentH
             case 'manufacturing':
                 return (
                     <div className="space-y-6">
-                        <FormSection title="Detalles de Fabricación" icon={Hammer} />
+                        <StepHeader title="Detalles de Fabricación" description="Especifique los parámetros técnicos para la producción." icon={Hammer} />
                         <Step2_ManufacturingDetails
                             orderLines={currentOrderLines}
                             setOrderLines={setCurrentOrderLines}
@@ -339,7 +339,7 @@ export const SalesCheckoutWizardContent = forwardRef<SalesCheckoutWizardContentH
             case 'delivery':
                 return (
                     <div className="space-y-6">
-                        <FormSection title="Logística y Entrega" icon={Truck} />
+                        <StepHeader title="Logística y Entrega" description="Defina cómo y cuándo se entregarán los productos." icon={Truck} />
                         <Step3_Delivery deliveryData={deliveryData} setDeliveryData={setDeliveryData} orderLines={currentOrderLines} />
                     </div>
                 )

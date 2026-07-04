@@ -2,6 +2,7 @@
 
 import { CheckCircle2 } from "lucide-react"
 import { PaymentMethodSelector, type PaymentData } from "@/features/treasury"
+import { StepHeader } from "@/components/shared"
 import { useEffect } from "react"
 
 interface Step4_PaymentProps {
@@ -78,17 +79,13 @@ export function Step4_Payment({
 
     return (
         <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
-            <div className="flex flex-col gap-1">
-                <h3 className="font-black tracking-tighter text-foreground uppercase flex items-center gap-3 text-xl">
-                    <CheckCircle2 className="h-6 w-6 text-primary" />
-                    {isCreditNote ? 'Método de Devolución' : 'Método de Cobro'}
-                </h3>
-                <p className="text-sm text-muted-foreground">
-                    {isCreditNote
-                        ? 'Indique cómo se realizará la devolución del dinero (o deje pendiente para saldo a favor).'
-                        : 'Seleccione cómo realizará el cobro de esta nota de débito.'}
-                </p>
-            </div>
+            <StepHeader 
+                title={isCreditNote ? 'Método de Devolución' : 'Método de Cobro'} 
+                description={isCreditNote
+                    ? 'Indique cómo se realizará la devolución del dinero (o deje pendiente para saldo a favor).'
+                    : 'Seleccione cómo realizará el cobro de esta nota de débito.'}
+                icon={CheckCircle2}
+            />
 
             <PaymentMethodSelector
                 operation={operation}

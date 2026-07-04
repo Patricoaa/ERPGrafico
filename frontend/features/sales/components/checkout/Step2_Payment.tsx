@@ -2,7 +2,7 @@
 
 import { PaymentMethodSelector, type PaymentData } from "@/features/treasury"
 import { type CheckoutPaymentData } from "../../types"
-import { FormSection } from '@/components/shared'
+import { StepHeader } from '@/components/shared'
 import { Wallet } from "lucide-react"
 import { useCallback } from "react"
 
@@ -46,7 +46,7 @@ export function Step2_Payment({ paymentData, setPaymentData, total, terminalId, 
                 paymentData={adaptedPaymentData}
                 onPaymentDataChange={handlePaymentChange}
                 customerCreditBalance={customerCreditBalance}
-                methodTitle={<FormSection title="Método de Pago" icon={Wallet} />}
+                methodTitle={<StepHeader title="Método de Pago" description="Seleccione cómo el cliente pagará esta venta." icon={Wallet} />}
                 labels={{
                     totalLabel: 'Total a Cobrar',
                     amountLabel: 'Monto Recibido',

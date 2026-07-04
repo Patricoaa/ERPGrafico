@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { FormSection, LabeledInput, PeriodValidationDateInput, LabeledContainer, RadioCard } from "@/components/shared"
+import { StepHeader, LabeledInput, PeriodValidationDateInput, LabeledContainer, RadioCard } from "@/components/shared"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Label } from "@/components/ui/label"
 import {Truck, Package, Calendar, Info, AlertTriangle} from "lucide-react"
@@ -271,9 +271,6 @@ export function Step3_Delivery({ deliveryData, setDeliveryData, orderLines }: St
                 </div>
             )}
 
-            {(deliveryData.type === 'SCHEDULED' || deliveryData.type === 'PARTIAL') && (
-                <FormSection title="Fecha" icon={Calendar} />
-            )}
 
             {(deliveryData.type === 'SCHEDULED' || deliveryData.type === 'PARTIAL') && (
                 <PeriodValidationDateInput

@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { Building2, AlertCircle } from "lucide-react"
+import { StepHeader } from "@/components/shared"
 import { AdvancedContactSelector } from "@/components/selectors/AdvancedContactSelector"
 import { AdvancedWorkOrderSelector } from "@/components/selectors/AdvancedWorkOrderSelector"
 import { purchasingApi } from "../../api/purchasingApi"
@@ -54,12 +55,7 @@ export function Step0_Supplier({
                 </div>
             </div>
 
-            <div className="text-center space-y-2">
-                <h3 className="text-2xl font-bold tracking-tight">Seleccionar Proveedor</h3>
-                <p className="text-muted-foreground">
-                    Busque un proveedor por nombre o RUT para asociar a esta compra.
-                </p>
-            </div>
+            <StepHeader title="Seleccionar Proveedor" description="Busque un proveedor por nombre o RUT para asociar a esta compra." icon={Building2} />
 
             <div className="w-full space-y-4">
                 <AdvancedContactSelector

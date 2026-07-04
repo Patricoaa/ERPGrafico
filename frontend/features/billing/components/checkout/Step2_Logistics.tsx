@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { LabeledInput, LabeledContainer, PeriodValidationDateInput, RadioCard } from '@/components/shared'
+import { FormSection, LabeledInput, LabeledContainer, LabeledSwitch, PeriodValidationDateInput, RadioCard, StepHeader } from "@/components/shared"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Truck, Package, Calendar, AlertTriangle, ShoppingBag } from "lucide-react"
 import { billingApi } from "../../api/billingApi"
@@ -145,16 +145,9 @@ export function Step2_Logistics({
 
     return (
         <div className="space-y-6">
-            <div className="flex flex-col gap-1">
-                <h3 className=" font-black tracking-tighter text-foreground uppercase flex items-center gap-3">
-                    <ShoppingBag className="h-5 w-5 text-primary" />
-                    Opciones de Logística
-                </h3>
-                <p className="text-sm text-muted-foreground">
-                    Configure cómo se procesará el movimiento de inventario.
-                </p>
+            <StepHeader title="Opciones de Logística" description="Configure cómo se procesará el movimiento de inventario." icon={ShoppingBag} />
 
-                {hasRestrictedItems && (
+            {hasRestrictedItems && (
                     <div className="flex items-start gap-3 p-4 bg-destructive/10 border border-destructive/20 rounded-md text-destructive mt-2">
                         <AlertTriangle className="h-5 w-5 shrink-0 mt-0.5" />
                         <div className="space-y-1">
@@ -162,8 +155,7 @@ export function Step2_Logistics({
                             <p className="text-xs font-medium">Hay {restrictedItems.length} productos que requieren fabricación. El despacho inmediato está deshabilitado para estos ítems.</p>
                         </div>
                     </div>
-                )}
-            </div>
+            )}
 
             <LabeledContainer
                 label="Opciones de Procesamiento"
