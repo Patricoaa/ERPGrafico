@@ -266,7 +266,7 @@ function SelectModeTable({
     )
 
     return (
-        <div className="rounded-lg border bg-card overflow-hidden [&_thead]:border-b-2 [&_thead]:border-border">
+        <div className="rounded-lg border border-border/50 bg-transparent overflow-hidden [&_thead]:border-b [&_thead]:border-border/50">
             <DataTable
                 columns={columns}
                 data={lines}
@@ -424,7 +424,7 @@ function EditModeTable({
                 </div>
             </div>
 
-            <div className="bg-card [&_thead]:border-b-2 [&_thead]:border-border">
+            <div className="rounded-lg border border-border/50 bg-transparent overflow-hidden [&_thead]:border-b [&_thead]:border-border/50">
                 <DataTable
                     columns={columns}
                     data={lines}
