@@ -30,7 +30,7 @@ export function NoteItemsSummary({
     return (
         <WizardSummarySidebar
             width="w-full"
-            className="border-l border-r-0 bg-muted/20"
+            className="bg-muted/20"
             body={
                 <div className="space-y-4">
                     <h3 className="text-[10px] font-black uppercase tracking-[0.15em] text-muted-foreground/60 flex items-center gap-2">
