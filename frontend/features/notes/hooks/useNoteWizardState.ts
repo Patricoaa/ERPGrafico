@@ -224,7 +224,11 @@ export function useNoteWizardState({
             .then((doc) => {
                 if (cancelled) return
                 setSourceDocument(doc)
-                setLines(doc.lines)
+                const mappedLines = doc.lines.map(line => ({
+                    ...line,
+                    noteQuantity: initialType === 'NOTA_CREDITO' ? 0 : line.noteQuantity
+                }))
+                setLines(mappedLines)
                 setPayment(makeDefaultPayment(doc.originalTotal))
             })
             .catch((err: unknown) => {
