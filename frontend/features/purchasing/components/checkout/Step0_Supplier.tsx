@@ -2,8 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { Building2, AlertCircle } from "lucide-react"
-import { StepHeader } from "@/components/shared"
-import { AdvancedContactSelector } from "@/components/selectors/AdvancedContactSelector"
+import { StepHeader, ContactCardGrid } from "@/components/shared"
 import { AdvancedWorkOrderSelector } from "@/components/selectors/AdvancedWorkOrderSelector"
 import { purchasingApi } from "../../api/purchasingApi"
 
@@ -47,22 +46,16 @@ export function Step0_Supplier({
     }, [selectedSupplierId, setSelectedSupplierId, setSelectedSupplierName])
 
     return (
-        <div className="space-y-8 flex flex-col items-center justify-center min-h-[400px] max-w-2xl mx-auto">
-            <div className="relative">
-                <div className="absolute -inset-4 bg-primary/10 rounded-full blur-xl animate-pulse" />
-                <div className="relative bg-background p-6 rounded-md shadow-elevated border-2 border-primary/20">
-                    <Building2 className="h-12 w-12 text-primary" />
-                </div>
-            </div>
-
+        <div className="space-y-6">
             <StepHeader title="Seleccionar Proveedor" description="Busque un proveedor por nombre o RUT para asociar a esta compra." icon={Building2} />
 
-            <div className="w-full space-y-4">
-                <AdvancedContactSelector
-                    label="Proveedor"
-                    value={selectedSupplierId}
-                    onChange={setSelectedSupplierId}
-                    onSelectContact={(contact) => setSelectedSupplierName(contact.name)}
+            <div className="w-full space-y-6">
+                <ContactCardGrid
+                    selectedId={selectedSupplierId}
+                    onSelect={(contact) => {
+                        setSelectedSupplierId(contact.id.toString())
+                        setSelectedSupplierName(contact.name)
+                    }}
                     contactType="SUPPLIER"
                     placeholder="Buscar por Nombre, RUT o Email..."
                 />
