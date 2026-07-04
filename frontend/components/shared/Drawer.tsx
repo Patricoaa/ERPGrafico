@@ -174,10 +174,10 @@ export function Drawer({
 
     // Render classes for side specific logic
     const sideStyles = {
-        bottom: "rounded-t-xl! border-t-0! !bottom-0 !top-auto !w-full !left-0 !right-0",
-        top: "rounded-b-xl! border-b-0! !top-0 !bottom-auto !w-full !left-0 !right-0",
-        right: "rounded-l-xl! border-l-0! !h-full !right-0 !left-auto !top-0 !bottom-0 sm:max-w-none",
-        left: "rounded-r-xl! border-r-0! !h-full !left-0 !right-auto !top-0 !bottom-0 sm:max-w-none",
+        bottom: "rounded-t-xl! border-t-0! bottom-0! top-auto! w-full! left-0! right-0!",
+        top: "rounded-b-xl! border-b-0! top-0! bottom-auto! w-full! left-0! right-0!",
+        right: "rounded-l-xl! border-l-0! h-full! right-0! left-auto! top-0! bottom-0! sm:max-w-none!",
+        left: "rounded-r-xl! border-r-0! h-full! left-0! right-auto! top-0! bottom-0! sm:max-w-none!",
     }
 
     const iconElement: React.ReactNode = icon
@@ -195,7 +195,7 @@ export function Drawer({
                 side={side}
                 hideOverlay={!finalShowOverlay}
                 isPlainOverlay={!finalModal}
-                overlayClassName={boundary === "embedded" ? "!absolute !inset-0" : "!fixed !inset-0"}
+                overlayClassName={boundary === "embedded" ? "absolute! inset-0!" : "fixed! inset-0!"}
                 hideCloseButton={true}
                 container={containerElement || undefined}
                 style={{
@@ -211,7 +211,7 @@ export function Drawer({
                 }}
                 className={cn(
                     "p-0 flex flex-col overflow-hidden panel-surface",
-                    boundary === "embedded" ? "!absolute" : "!fixed",
+                    boundary === "embedded" ? "absolute!" : "fixed!",
                     sideStyles[side],
                     className
                 )}
