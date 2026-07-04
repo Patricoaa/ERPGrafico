@@ -266,7 +266,7 @@ function SelectModeTable({
     )
 
     return (
-        <div className="[&_thead]:border-b-2 [&_thead]:border-border">
+        <div className="rounded-lg border bg-card overflow-hidden [&_thead]:border-b-2 [&_thead]:border-border">
             <DataTable
                 columns={columns}
                 data={lines}
