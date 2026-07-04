@@ -69,6 +69,22 @@ export function PurchaseProcessSummarySidebar({
         },
         {
             id: 4,
+            label: 'Recepción',
+            icon: Package,
+            detail: receiptData ? (
+                <div className="space-y-1">
+                    <p className="text-xs font-semibold">{receiptLabels[receiptData.type]}</p>
+                    {warehouseName && (
+                        <div className="flex items-center gap-1.5 mt-1">
+                            <Warehouse className="h-3 w-3" />
+                            <p className="text-[10px] font-semibold truncate">{warehouseName}</p>
+                        </div>
+                    )}
+                </div>
+            ) : undefined
+        },
+        {
+            id: 5,
             label: 'Pago',
             icon: CreditCard,
             detail: paymentData ? (
@@ -80,22 +96,6 @@ export function PurchaseProcessSummarySidebar({
                     {paymentData.pendingDebt !== undefined && paymentData.pendingDebt > 0 && (
                         <div className="text-[10px] text-warning font-semibold flex items-center gap-1">
                             Deuda: <MoneyDisplay amount={paymentData.pendingDebt} inline />
-                        </div>
-                    )}
-                </div>
-            ) : undefined
-        },
-        {
-            id: 5,
-            label: 'Recepción',
-            icon: Package,
-            detail: receiptData ? (
-                <div className="space-y-1">
-                    <p className="text-xs font-semibold">{receiptLabels[receiptData.type]}</p>
-                    {warehouseName && (
-                        <div className="flex items-center gap-1.5 mt-1">
-                            <Warehouse className="h-3 w-3" />
-                            <p className="text-[10px] font-semibold truncate">{warehouseName}</p>
                         </div>
                     )}
                 </div>
