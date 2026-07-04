@@ -1,8 +1,8 @@
 "use client"
 
-import {User, Wallet, Truck, CheckCircle2, Hammer, FileText} from "lucide-react"
+import { User, Wallet, Truck, Hammer, FileText } from "lucide-react"
 import { cn, formatPlainDate } from "@/lib/utils"
-import { MoneyDisplay } from "@/components/shared"
+import { MoneyDisplay, WizardStepsSidebar, type WizardSidebarStep } from "@/components/shared"
 
 interface ProcessSummarySidebarProps {
     currentStep: number
@@ -44,91 +44,66 @@ export function ProcessSummarySidebar({
     paymentData,
     deliveryData
 }: ProcessSummarySidebarProps) {
-    // Mirror the wizard's steps exactly
-    const steps = [
-        { id: 'customer', label: 'Cliente', icon: User },
-        { id: 'dte', label: 'Documento', icon: FileText },
+    const steps: WizardSidebarStep[] = [
+        {
+            id: 'customer',
+            label: 'Cliente',
+            icon: User,
+            detail: customerName ? <p className="text-xs font-semibold truncate">{customerName}</p> : undefined
+        },
+        {
+            id: 'dte',
+            label: 'Documento',
+            icon: FileText,
+            detail: dteType ? <p className="text-xs font-semibold">{dteType}</p> : undefined
+        },
     ]
 
     if (hasManufacturing) {
-        steps.push({ id: 'manufacturing', label: 'Fabricación', icon: Hammer })
+        steps.push({
+            id: 'manufacturing',
+            label: 'Fabricación',
+            icon: Hammer,
+            detail: <p className="text-xs font-semibold">Fabricación configurada</p>
+        })
     }
 
-    steps.push({ id: 'delivery', label: 'Entrega', icon: Truck })
-    steps.push({ id: 'payment', label: 'Pago', icon: Wallet })
+    steps.push({
+        id: 'delivery',
+        label: 'Entrega',
+        icon: Truck,
+        detail: deliveryData ? (
+            <div className="space-y-0.5">
+                <p className="text-xs font-semibold">{deliveryLabels[deliveryData.type]}</p>
+                {deliveryData.date && (
+                    <p className="text-[10px]">{formatPlainDate(deliveryData.date)}</p>
+                )}
+            </div>
+        ) : undefined
+    })
+
+    steps.push({
+        id: 'payment',
+        label: 'Pago',
+        icon: Wallet,
+        detail: paymentData ? (
+            <div className="space-y-0.5">
+                <p className="text-xs font-semibold">{methodLabels[paymentData.method]}</p>
+                <MoneyDisplay amount={paymentData.amount} className="text-xs font-bold" />
+                {paymentData.creditAssigned !== undefined && paymentData.creditAssigned > 0 && (
+                    <div className="text-[10px] text-warning font-semibold flex items-center gap-1">
+                        Crédito: <MoneyDisplay amount={paymentData.creditAssigned} inline />
+                    </div>
+                )}
+            </div>
+        ) : undefined
+    })
 
     return (
-        <div className="w-64 border-r bg-muted/10 p-4 space-y-2 hidden md:block overflow-y-auto">
-            <h3 className="text-xs font-bold uppercase text-muted-foreground mb-4 px-2">
-                Proceso de Venta
-            </h3>
-
-            {steps.map((step, index) => {
-                const stepNumber = index + 1
-                const Icon = step.icon
-                const isActive = currentStep === stepNumber
-                const isPast = currentStep > stepNumber
-                const isFuture = currentStep < stepNumber
-
-                return (
-                    <div
-                        key={step.id}
-                        className={cn(
-                            "rounded-lg transition-all duration-200",
-                            isActive && "bg-primary text-primary-foreground shadow-card",
-                            isPast && "bg-success/10 text-success",
-                            isFuture && "text-muted-foreground"
-                        )}
-                    >
-                        <div className="flex items-center space-x-3 p-3">
-                            <Icon className="h-5 w-5 shrink-0" />
-                            <span className="text-sm font-medium flex-1">{step.label}</span>
-                            {isPast && <CheckCircle2 className="h-4 w-4" />}
-                        </div>
-
-                        {/* Step Details */}
-                        {isPast && (
-                            <div className="px-3 pb-3 pt-1 space-y-1 animate-in fade-in duration-300">
-                                {step.id === 'customer' && (
-                                    <>
-                                        {customerName && <p className="text-xs font-semibold truncate">{customerName}</p>}
-                                    </>
-                                )}
-                                {step.id === 'dte' && (
-                                    <>
-                                        {dteType && <p className="text-xs font-semibold">{dteType}</p>}
-                                    </>
-                                )}
-                                {step.id === 'payment' && paymentData && (
-                                    <div className="space-y-0.5">
-                                        <p className="text-xs font-semibold">
-                                            {methodLabels[paymentData.method]}
-                                        </p>
-                                        <MoneyDisplay amount={paymentData.amount} className="text-xs font-bold" />
-                                        {paymentData.creditAssigned !== undefined && paymentData.creditAssigned > 0 && (
-                                            <div className="text-[10px] text-warning font-semibold flex items-center gap-1">
-                                                Crédito: <MoneyDisplay amount={paymentData.creditAssigned} inline />
-                                            </div>
-                                        )}
-                                    </div>
-                                )}
-                                {step.id === 'delivery' && deliveryData && (
-                                    <div className="space-y-0.5">
-                                        <p className="text-xs font-semibold">
-                                            {deliveryLabels[deliveryData.type]}
-                                        </p>
-                                        {deliveryData.date && (
-                                            <p className="text-[10px]">
-                                                {formatPlainDate(deliveryData.date)}
-                                            </p>
-                                        )}
-                                    </div>
-                                )}
-                            </div>
-                        )}
-                    </div>
-                )
-            })}
-        </div>
+        <WizardStepsSidebar
+            title="Proceso de Venta"
+            currentStep={currentStep}
+            steps={steps}
+        />
     )
 }
