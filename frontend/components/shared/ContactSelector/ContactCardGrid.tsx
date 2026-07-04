@@ -16,14 +16,19 @@ interface ContactCardGridProps {
     selectedId: string | null
     onSelect: (contact: Contact) => void
     placeholder?: string
+    contactType?: 'CUSTOMER' | 'SUPPLIER' | 'BOTH' | 'NONE'
 }
 
-export function ContactCardGrid({ selectedId, onSelect, placeholder = "Buscar contacto..." }: ContactCardGridProps) {
+export function ContactCardGrid({ selectedId, onSelect, placeholder = "Buscar contacto...", contactType }: ContactCardGridProps) {
     const [searchTerm, setSearchTerm] = useState("")
     const debouncedSearch = useDebounce(searchTerm, 300)
     const { isTouchPOS } = useDeviceContext()
 
-    const { contacts, loading } = useContactSearch({ search: debouncedSearch }, true)
+    const { contacts, loading } = useContactSearch({
+        search: debouncedSearch,
+        contactType,
+        limit: 8 // Show more cards in grid mode
+    }, true)
 
     const gridCols = isTouchPOS
         ? "grid-cols-2 sm:grid-cols-3"
@@ -51,7 +56,7 @@ export function ContactCardGrid({ selectedId, onSelect, placeholder = "Buscar co
                 />
             ) : (
                 <div className={cn("grid gap-3", gridCols)}>
-                    {contacts.map((contact) => {
+                    {contacts.map((contact: Contact) => {
                         const isSelected = selectedId === contact.id.toString()
                         return (
                             <Card

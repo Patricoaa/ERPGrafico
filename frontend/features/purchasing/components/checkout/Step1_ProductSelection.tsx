@@ -209,8 +209,7 @@ export function Step1_ProductSelection({
         <>
             <StepHeader title="Selección de Productos" description="Agregue los productos que se incluirán en esta orden de compra." icon={ShoppingCart} />
             <FormLineItemsTable
-            icon={ShoppingCart}
-            title="Selección de Productos"
+            className="bg-transparent"
             columns={COLUMNS}
             onAdd={() => append({ ...defaultLine })}
             addButtonText="Agregar Producto"
