@@ -1,7 +1,9 @@
 "use client"
 
 import React, { useRef } from "react"
-import { Drawer, SkeletonShell, StatusBadge } from "@/components/shared"
+import { Drawer, SkeletonShell, StatusBadge, DataTable } from "@/components/shared"
+import { useMemo } from "react"
+import type { ColumnDef } from "@tanstack/react-table"
 import { getEntityIcon } from "@/lib/entity-registry"
 import { Button } from "@/components/ui/button"
 import { Printer } from "lucide-react"
@@ -23,6 +25,18 @@ export function PurchaseReturnDrawer({ returnId, id, open, onOpenChange }: Purch
     const { returnData, isLoading } = usePurchaseReturn(entityId, open)
     const printRef = useRef<HTMLDivElement>(null)
     const handlePrint = useReactToPrint({ contentRef: printRef })
+
+    const columns = useMemo<ColumnDef<Record<string, unknown>>[]>(() => [
+        {
+            header: "Producto",
+            cell: ({ row }) => String(row.original.product_name)
+        },
+        {
+            header: "Cantidad",
+            cell: ({ row }) => String(row.original.quantity_returned),
+            meta: { align: "right" }
+        }
+    ], [])
 
     return (
         <>
@@ -109,22 +123,17 @@ export function PurchaseReturnDrawer({ returnId, id, open, onOpenChange }: Purch
                                     <div>
                                         <h4 className="text-sm font-medium mb-2">Líneas</h4>
                                         <div className="border rounded-md overflow-hidden">
-                                            <table className="w-full text-sm">
-                                                <thead className="bg-muted">
-                                                    <tr>
-                                                        <th className="p-2 text-left">Producto</th>
-                                                        <th className="p-2 text-right">Cantidad</th>
-                                                    </tr>
-                                                </thead>
-                                                <tbody>
-                                                    {lines.map((line: Record<string, unknown>, idx: number) => (
-                                                        <tr key={idx} className="border-t">
-                                                            <td className="p-2">{String(line.product_name)}</td>
-                                                            <td className="p-2 text-right">{String(line.quantity_returned)}</td>
-                                                        </tr>
-                                                    ))}
-                                                </tbody>
-                                            </table>
+                                            <DataTable
+                                                columns={columns}
+                                                data={lines}
+                                                variant="minimal"
+                                                hidePagination
+                                                noBorder
+                                                emptyState={{
+                                                    title: "No hay líneas",
+                                                    description: "No se encontraron líneas."
+                                                }}
+                                            />
                                         </div>
                                     </div>
                                 )}

@@ -4,7 +4,7 @@ import { useMemo, useState } from 'react'
 import { Plus, Truck } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { ActionConfirmModal, Chip, DataCell, DataTable } from '@/components/shared'
+import { ActionConfirmModal, Chip, DataCell, DataTable, EmptyState } from '@/components/shared'
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select'
@@ -186,6 +186,7 @@ export function MaterialAssignmentStep({
                     description: 'No hay materiales de stock asignados',
                   }}
                 />
+              </div>
 
               {/* Add stock material form */}
               {isViewingCurrentStage && (
