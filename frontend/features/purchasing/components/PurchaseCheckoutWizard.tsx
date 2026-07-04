@@ -412,7 +412,7 @@ export function PurchaseCheckoutWizard({
             description="Asistente de compra rápida, facturación y recepción de inventario."
             side="right"
             defaultSize="100%"
-            boundary="screen"
+            boundary="embedded"
             contentClassName="p-0 flex flex-col"
             headerClassName="border-b pb-2 px-6 py-3"
             footer={
