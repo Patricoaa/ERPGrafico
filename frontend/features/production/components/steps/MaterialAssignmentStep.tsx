@@ -1,10 +1,10 @@
 "use client"
 
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { Plus, Truck } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { ActionConfirmModal, Chip, DataCell, EmptyState } from '@/components/shared'
+import { ActionConfirmModal, Chip, DataCell, DataTable } from '@/components/shared'
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select'
@@ -15,6 +15,7 @@ import { useProductionVariants, productionApi } from '../../hooks'
 import { MaterialAssignmentTabs } from '../MaterialAssignmentTabs'
 import { useVatRate } from '@/hooks/useVatRate'
 import { useWorkOrderMutations } from '../../hooks'
+import type { ColumnDef } from '@tanstack/react-table'
 
 import { cn } from '@/lib/utils'
 import { showApiError } from '@/lib/errors'
@@ -99,6 +100,69 @@ export function MaterialAssignmentStep({
   const stockMaterials = order.materials?.filter((m: WorkOrderMaterial) => !m.is_outsourced) ?? []
   const outsourcedMaterials = order.materials?.filter((m: WorkOrderMaterial) => m.is_outsourced) ?? []
 
+  const stockColumns = useMemo<ColumnDef<WorkOrderMaterial>[]>(() => [
+    {
+      id: 'componente',
+      header: 'Componente',
+      cell: ({ row }) => (
+        <div>
+          <p className="font-medium">{row.original.component_name}</p>
+          <p className="text-[10px] text-muted-foreground uppercase">{row.original.component_code}</p>
+        </div>
+      ),
+    },
+    {
+      id: 'cantidad_planificada',
+      header: () => <div className="text-right">Cantidad Planificada</div>,
+      cell: ({ row }) => (
+        <div className="text-right font-medium">{row.original.quantity_planned}</div>
+      ),
+    },
+    {
+      id: 'disponible',
+      header: 'UoM',
+      cell: ({ row }) => {
+        const m = row.original
+        return (
+          <div className="text-right">
+            <p className={cn('text-sm font-bold',
+              (m.stock_available ?? 0) >= m.quantity_planned ? 'text-success' : 'text-destructive',
+            )}>
+              {m.stock_available ?? 0} {m.uom_name}
+            </p>
+            <p className="text-[10px] text-muted-foreground">Disponible</p>
+          </div>
+        )
+      },
+    },
+    {
+      id: 'costo_total',
+      header: () => <div className="text-right">Costo Total</div>,
+      cell: ({ row }) => (
+        <DataCell.Currency value={row.original.total_cost} className="justify-end font-bold text-xs" />
+      ),
+    },
+    {
+      id: 'origen',
+      header: 'Origen',
+      cell: ({ row }) => <Chip size="xs">{row.original.source}</Chip>,
+    },
+    {
+      id: 'acciones',
+      header: '',
+      cell: ({ row }) => {
+        const m = row.original
+        if (m.source !== 'MANUAL' || !isViewingCurrentStage) return null
+        return (
+          <DataCell.ActionGroup>
+            <DataCell.Action action="edit" onClick={() => handleEdit(m)} />
+            <DataCell.Action action="delete" onClick={() => setMaterialToDelete(m)} />
+          </DataCell.ActionGroup>
+        )
+      },
+    },
+  ], [isViewingCurrentStage, handleEdit, setMaterialToDelete])
+
   return (
     <div className="space-y-6">
       <div className="space-y-4">
@@ -110,61 +174,18 @@ export function MaterialAssignmentStep({
             <div className="space-y-6">
               {/* Stock materials table */}
               <div className="border rounded-md overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead className="bg-muted/50">
-                    <tr>
-                      <th className="p-2 text-left">Componente</th>
-                      <th className="p-2 text-right">Cantidad Planificada</th>
-                      <th className="p-2 text-left">UoM</th>
-                      <th className="p-2 text-right">Costo Total</th>
-                      <th className="p-2 text-left">Origen</th>
-                      <th className="p-2 w-10" />
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {stockMaterials.map((m: WorkOrderMaterial) => (
-                      <tr key={m.id} className="border-t">
-                        <td className="p-2">
-                          <p className="font-medium">{m.component_name}</p>
-                          <p className="text-[10px] text-muted-foreground uppercase">{m.component_code}</p>
-                        </td>
-                        <td className="p-2 text-right font-medium">{m.quantity_planned}</td>
-                        <td className="p-2">
-                          <div className="text-right">
-                            <p className={cn('text-sm font-bold',
-                              (m.stock_available ?? 0) >= m.quantity_planned ? 'text-success' : 'text-destructive',
-                            )}>
-                              {m.stock_available ?? 0} {m.uom_name}
-                            </p>
-                            <p className="text-[10px] text-muted-foreground">Disponible</p>
-                          </div>
-                        </td>
-                        <td className="p-2 text-right">
-                          <DataCell.Currency value={m.total_cost} className="justify-end font-bold text-xs" />
-                        </td>
-                        <td className="p-2">
-                          <Chip size="xs">{m.source}</Chip>
-                        </td>
-                        <td className="p-2">
-                          {m.source === 'MANUAL' && isViewingCurrentStage && (
-                            <DataCell.ActionGroup>
-                              <DataCell.Action action="edit" onClick={() => handleEdit(m)} />
-                              <DataCell.Action action="delete" onClick={() => setMaterialToDelete(m)} />
-                            </DataCell.ActionGroup>
-                          )}
-                        </td>
-                      </tr>
-                    ))}
-                    {stockMaterials.length === 0 && (
-                      <tr>
-                        <td colSpan={6} className="p-0">
-                          <EmptyState context="inventory" variant="compact" description="No hay materiales de stock asignados" />
-                        </td>
-                      </tr>
-                    )}
-                  </tbody>
-                </table>
-              </div>
+                <DataTable
+                  columns={stockColumns}
+                  data={stockMaterials}
+                  variant="minimal"
+                  hidePagination
+                  noBorder
+                  emptyState={{
+                    context: 'inventory',
+                    title: 'No hay materiales asignados',
+                    description: 'No hay materiales de stock asignados',
+                  }}
+                />
 
               {/* Add stock material form */}
               {isViewingCurrentStage && (

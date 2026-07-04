@@ -24,7 +24,7 @@ export function PurchaseOrderSummaryCard({
     const tax = isExempt ? 0 : PricingUtils.extractTax(total);
 
     return (
-        <div className="h-full flex flex-col bg-background">
+        <div className="h-full flex flex-col bg-transparent">
             <div className="flex-1 overflow-auto custom-scrollbar">
                 <div className="p-6 space-y-6">
                     <div className="space-y-4">
@@ -61,7 +61,7 @@ export function PurchaseOrderSummaryCard({
                 </div>
             </div>
 
-            <div className="p-6 bg-background border-t shadow-[0_-4px_20px_-10px_oklch(0.12_0.02_240_/_0.1)] space-y-3">
+            <div className="p-6 bg-transparent border-t shadow-[0_-4px_20px_-10px_oklch(0.12_0.02_240_/_0.1)] space-y-3">
                 <div className="flex justify-between text-xs font-bold text-muted-foreground/80">
                     <span>Subtotal Neto</span>
                     <span className="whitespace-nowrap font-mono">{formatCurrency(net)}</span>
