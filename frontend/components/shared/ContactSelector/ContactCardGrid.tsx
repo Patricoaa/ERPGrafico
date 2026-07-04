@@ -73,8 +73,8 @@ export function ContactCardGrid({ selectedId, onSelect, placeholder = "Buscar co
                                 role="button"
                                 tabIndex={0}
                             >
-                                <div className="flex items-start justify-between gap-2 p-2.5 pb-1.5">
-                                    <div className="flex items-start gap-2 min-w-0 flex-1">
+                                <div className="flex items-center justify-between gap-2 p-2.5 pb-1.5">
+                                    <div className="flex items-center gap-2 min-w-0 flex-1">
                                         <div className={cn(
                                             "flex items-center justify-center h-7 w-7 rounded-md shrink-0 transition-colors",
                                             isSelected ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground group-hover:bg-muted/80"
@@ -92,7 +92,7 @@ export function ContactCardGrid({ selectedId, onSelect, placeholder = "Buscar co
                                             </span>
                                         </div>
                                     </div>
-                                    <div className="flex shrink-0 items-center justify-center mt-1">
+                                    <div className="flex shrink-0 items-center justify-center">
                                         <div className={cn(
                                             "flex h-4 w-4 items-center justify-center rounded-full border-2 transition-colors",
                                             isSelected ? "border-primary bg-background" : "border-muted-foreground/30 bg-background group-hover:border-primary/50"
