@@ -405,7 +405,7 @@ export function UnifiedNoteWizard({
 
                 {/* ---- Center Content ---- */}
                 <div className="flex-1 flex flex-col min-w-0 h-full relative border-r">
-                    <div className="flex-1 p-10 overflow-y-auto bg-background custom-scrollbar flex flex-col">
+                    <div className="flex-1 p-10 overflow-y-auto custom-scrollbar flex flex-col">
                         <div className="w-full flex-1 flex flex-col">
                             {renderStep()}
                         </div>
