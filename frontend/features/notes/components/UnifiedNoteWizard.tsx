@@ -312,7 +312,7 @@ export function UnifiedNoteWizard({
         <Drawer
             open={open}
             onOpenChange={(val) => !(submitting || initializing) && onOpenChange(val)}
-            side="right"
+            side="bottom"
             defaultSize="100%"
             boundary="embedded"
             contentClassName="p-0 flex flex-col"
