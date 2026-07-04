@@ -1,7 +1,7 @@
 "use client"
 
 import {useState, useEffect} from "react"
-import { LabeledInput, LabeledSelect, LabeledContainer, PeriodValidationDateInput, RadioCard } from "@/components/shared"
+import { LabeledInput, LabeledSelect, LabeledContainer, PeriodValidationDateInput, RadioCard, StepHeader } from "@/components/shared"
 import { purchasingApi } from "../../api/purchasingApi"
 import { useServerDate } from "@/hooks/useServerDate"
 import {
@@ -203,7 +203,7 @@ export function Step4_Receipt({ receiptData, setReceiptData, orderLines = [] }: 
 
     return (
         <div className="space-y-6">
-            {/* Removed Warehouse Selector as per requirements */}
+            <StepHeader title="Recepción de Mercadería" description="Indique cómo y cuándo se realizará la recepción del inventario." icon={Receipt} />
 
             <LabeledContainer
                 label={`Tipo de ${receiptLabel}`}

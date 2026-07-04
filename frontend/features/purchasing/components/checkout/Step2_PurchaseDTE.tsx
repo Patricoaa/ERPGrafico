@@ -6,7 +6,7 @@ import {FileText, Receipt, AlertCircle} from "lucide-react"
 import { useBillingSettingsQuery } from "@/features/settings"
 import { useMemo, useEffect } from "react"
 import { cn } from "@/lib/utils"
-import { DocumentAttachmentDropzone, FolioValidationInput, PeriodValidationDateInput, LabeledSwitch, LabeledContainer, RadioCard } from '@/components/shared'
+import { DocumentAttachmentDropzone, FolioValidationInput, PeriodValidationDateInput, LabeledSwitch, LabeledContainer, RadioCard, StepHeader } from '@/components/shared'
 
 import { type DTEData } from "../../types"
 
@@ -54,14 +54,8 @@ export function Step2_PurchaseDTE({
     }, [allowedDteTypes])
     return (
         <div className="space-y-8">
-            <div className="flex flex-col gap-1">
-                <h3 className=" font-black tracking-tighter text-foreground uppercase flex items-center gap-3">
-                    <FileText className="h-5 w-5 text-primary" />
-                    Registro de Documento
-                </h3>
-                <p className="text-sm text-muted-foreground">
-                    Ingrese la información relacionada al DTE y adjunte el respaldo legal.
-                </p>
+            <div className="flex flex-col gap-1 mb-2">
+                <StepHeader title="Registro de Documento" description="Ingrese la información relacionada al DTE y adjunte el respaldo legal." icon={FileText} />
             </div>
             <div className="space-y-4">
                 <LabeledContainer label="Tipo de Documento">

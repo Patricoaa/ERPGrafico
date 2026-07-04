@@ -26,7 +26,8 @@ export * from './GenericWizard';
 export * from './ActionFoldButton';
 export * from './ActionSlideButton';
 export * from './ToolbarCreateButton';
-export * from './ActionButtons';
+export * from './ActionButtons'
+export * from './StepHeader';
 export * from './ActionDock';
 export * from './BulkActionDock';
 

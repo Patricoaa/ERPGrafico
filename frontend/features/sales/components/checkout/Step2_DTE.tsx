@@ -12,7 +12,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert"
 import { useBillingSettingsQuery } from "@/features/settings"
 import { useServerDate } from "@/hooks/useServerDate"
 
-import { DocumentAttachmentDropzone, FolioValidationInput, FormSection, LabeledInput, PeriodValidationDateInput, LabeledContainer, LabeledSwitch, RadioCard } from "@/components/shared"
+import { DocumentAttachmentDropzone, FolioValidationInput, StepHeader, LabeledInput, PeriodValidationDateInput, LabeledContainer, LabeledSwitch, RadioCard } from "@/components/shared"
 
 import type { CheckoutDTEData } from "../../types"
 
@@ -72,7 +72,7 @@ export function Step2_DTE({
 
     return (
         <div className="space-y-6">
-            <FormSection title="Documento Tributario" icon={FileText} />
+            <StepHeader title="Documento Tributario" description="Seleccione el tipo de documento a emitir para esta venta." icon={FileText} />
 
             <LabeledContainer label="Tipo de Documento">
                 <RadioGroup

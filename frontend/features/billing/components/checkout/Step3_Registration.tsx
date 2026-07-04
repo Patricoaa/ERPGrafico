@@ -1,6 +1,6 @@
 "use client"
 
-import { DocumentAttachmentDropzone, LabeledInput, LabeledSwitch, PeriodValidationDateInput } from '@/components/shared'
+import { DocumentAttachmentDropzone, LabeledInput, LabeledSwitch, LabeledContainer, PeriodValidationDateInput, StepHeader } from '@/components/shared'
 import { FileText, Hash, ShieldAlert } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useServerDate } from "@/hooks/useServerDate"
@@ -37,15 +37,7 @@ export function Step3_Registration({
 
     return (
         <div className="space-y-6">
-            <div className="flex flex-col gap-1 text-left">
-                <h3 className=" font-black tracking-tighter text-foreground uppercase flex items-center gap-3">
-                    <FileText className="h-5 w-5 text-primary" />
-                    Registro de Documento
-                </h3>
-                <p className="text-sm text-muted-foreground">
-                    Ingrese la información relacionada al DTE y adjunte el respaldo legal.
-                </p>
-            </div>
+            <StepHeader title="Registro de Documento" description="Ingrese la información relacionada al DTE y adjunte el respaldo legal." icon={FileText} />
 
             <div className="space-y-4">
                 <LabeledSwitch

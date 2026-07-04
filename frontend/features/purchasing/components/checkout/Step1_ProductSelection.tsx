@@ -20,7 +20,7 @@ import { toast } from "sonner"
 import { type CheckoutLine } from "../../types"
 import { type ProductMinimal, type UoM } from "@/types/entities"
 import { formatCurrency } from "@/lib/money"
-import { DataCell, MoneyDisplay, FormLineItemsTable } from '@/components/shared'
+import { DataCell, MoneyDisplay, FormLineItemsTable, StepHeader } from '@/components/shared'
 
 interface Step1_ProductSelectionProps {
     orderLines: CheckoutLine[]
@@ -206,7 +206,9 @@ export function Step1_ProductSelection({
     }
 
     return (
-        <FormLineItemsTable
+        <>
+            <StepHeader title="Selección de Productos" description="Agregue los productos que se incluirán en esta orden de compra." icon={ShoppingCart} />
+            <FormLineItemsTable
             icon={ShoppingCart}
             title="Selección de Productos"
             columns={COLUMNS}
@@ -302,5 +304,6 @@ export function Step1_ProductSelection({
                 })}
             </TableBody>
         </FormLineItemsTable>
+        </>
     )
 }
