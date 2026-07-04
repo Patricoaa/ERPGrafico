@@ -314,7 +314,7 @@ export function UnifiedNoteWizard({
             onOpenChange={(val) => !(submitting || initializing) && onOpenChange(val)}
             side="right"
             defaultSize="100%"
-            boundary="screen"
+            boundary="embedded"
             contentClassName="p-0 flex flex-col"
             headerClassName="border-b pb-2 px-6 py-3"
             icon={FileText}
