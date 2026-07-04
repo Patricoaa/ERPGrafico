@@ -248,7 +248,7 @@ export function PurchaseCheckoutWizard({
             toast.error("Debe ingresar el número de folio de la boleta.")
             return false
         }
-        if (targetStep === 4 && paymentData.amount > 0) {
+        if (targetStep === 5 && paymentData.amount > 0) {
             // Check if payment method is selected
             if (!paymentData.method) {
                 toast.error("Debe seleccionar un método de pago para continuar.")
@@ -464,12 +464,12 @@ export function PurchaseCheckoutWizard({
                     supplierName={selectedSupplierName}
                     warehouseName={selectedWarehouseName}
                     dteType={step > 2 ? dteData.type : undefined}
-                    paymentData={step > 3 ? {
+                    receiptData={step > 3 ? receiptData : undefined}
+                    paymentData={step > 4 ? {
                         method: paymentData.method,
                         amount: paymentData.amount,
                         pendingDebt: currentTotal - paymentData.amount
                     } : undefined}
-                    receiptData={step > 4 ? receiptData : undefined}
                 />
 
                 {/* Center - Content Area Wrapper */}
@@ -503,8 +503,7 @@ export function PurchaseCheckoutWizard({
                                 onPeriodValidityChange={(isValid) => setIsPeriodValid(isValid)}
                             />
                         )}
-                        {step === 4 && <Step3_PurchasePayment paymentData={paymentData} setPaymentData={setPaymentData} total={currentTotal} />}
-                        {step === 5 && (
+                        {step === 4 && (
                             <Step4_Receipt
                                 receiptData={receiptData}
                                 setReceiptData={(data) => {
@@ -516,6 +515,7 @@ export function PurchaseCheckoutWizard({
                                 orderLines={currentOrderLines}
                             />
                         )}
+                        {step === 5 && <Step3_PurchasePayment paymentData={paymentData} setPaymentData={setPaymentData} total={currentTotal} />}
                     </div>
                 </div>
 
