@@ -47,7 +47,20 @@ export function Step0_Supplier({
 
     return (
         <div className="space-y-6">
-            <StepHeader title="Seleccionar Proveedor" description="Busque un proveedor por nombre o RUT para asociar a esta compra." icon={Building2} />
+            <StepHeader 
+                title="Seleccionar Proveedor" 
+                description="Busque un proveedor por nombre o RUT para asociar a esta compra." 
+                icon={Building2} 
+                rightContent={
+                    <AdvancedWorkOrderSelector
+                        label="Orden de Trabajo (Opcional)"
+                        value={selectedWorkOrderId}
+                        onChange={setSelectedWorkOrderId}
+                        className="w-[300px]"
+                        hint="Seleccione una OT si desea vincular esta compra manualmente a un trabajo de producción."
+                    />
+                }
+            />
 
             <div className="w-full space-y-6">
                 <ContactCardGrid
@@ -60,16 +73,6 @@ export function Step0_Supplier({
                     placeholder="Buscar por Nombre, RUT o Email..."
                 />
 
-                <div className="space-y-1">
-                    <AdvancedWorkOrderSelector
-                        label="Orden de Trabajo (Opcional)"
-                        value={selectedWorkOrderId}
-                        onChange={setSelectedWorkOrderId}
-                    />
-                    <p className="text-[10px] text-muted-foreground italic px-1">
-                        Seleccione una OT si desea vincular esta compra manualmente a un trabajo de producción.
-                    </p>
-                </div>
 
                 {!selectedSupplierId && !loading && (
                     <div className="flex items-center gap-2 text-sm text-warning font-medium py-2 px-3 bg-warning/10 rounded-md border border-warning/10 animate-in fade-in slide-in-from-top-2">

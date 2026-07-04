@@ -27,6 +27,7 @@ interface AdvancedWorkOrderSelectorProps {
     required?: boolean
     placeholder?: string
     className?: string
+    hint?: string
 }
 
 export function AdvancedWorkOrderSelector({
@@ -37,7 +38,8 @@ export function AdvancedWorkOrderSelector({
     label,
     error,
     required,
-    className
+    className,
+    hint
 }: AdvancedWorkOrderSelectorProps) {
     const { orders, singleOrder, loading: searchLoading, fetchOrders, fetchSingleOrder } = useWorkOrderSearch()
     const [open, setOpen] = useState(false)
@@ -218,11 +220,15 @@ export function AdvancedWorkOrderSelector({
                 </PopoverContent>
                 </Popover>
             </fieldset>
-            {error && (
+            {error ? (
                 <p className="mt-1.5 text-[11px] font-medium text-destructive animate-in fade-in slide-in-from-top-1 w-full text-left px-1">
                     {error}
                 </p>
-            )}
+            ) : hint ? (
+                <p className="mt-1.5 text-[10px] text-muted-foreground italic px-1 w-full text-left">
+                    {hint}
+                </p>
+            ) : null}
 
             {previewId && (
                 <WorkOrderWizard
