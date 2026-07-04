@@ -316,21 +316,23 @@ export function UnifiedNoteWizard({
             className="h-[90vh]"
             contentClassName="p-0"
             hideScrollArea
+            variant="wizard"
+            icon={FileText}
             title={
-                <div className="flex items-center gap-4">
-                    <FileText className="h-5 w-5 text-muted-foreground" />
-                    <div className="flex items-center gap-2">
-                        <span className="font-black tracking-tighter uppercase block text-lg">
-                            {title}
-                        </span>
-                        {isExempt && <Chip intent="success">Documento Exento</Chip>}
-                    </div>
+                <div className="flex items-center gap-3">
+                    <span>{title}</span>
+                    {isExempt && <Chip intent="success" size="sm" className="h-6">Documento Exento</Chip>}
                     {referenceLabel && (
-                        <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mt-0.5">
-                            {referenceLabel}
-                        </p>
+                        <Chip intent="neutral" size="sm" className="h-6 font-mono font-bold tracking-widest text-[10px] uppercase">
+                            Ref: {referenceLabel}
+                        </Chip>
                     )}
                 </div>
+            }
+            description={
+                noteType === 'NOTA_CREDITO' 
+                    ? 'Asistente de emisión de Notas de Crédito, devoluciones y logística inversa.'
+                    : 'Asistente de emisión de Notas de Débito y cargos adicionales.'
             }
             footer={
                 <div className="w-full flex justify-between items-center">
