@@ -116,6 +116,32 @@ export function MovementWizard({
     const [submitting, setSubmitting] = useState(false)
     const [partnerCapitalInfo, setPartnerCapitalInfo] = useState<{ subscribed: number; balance: number; pending: number } | null>(null)
 
+    // Reset all form state when modal opens
+    const prevOpen = React.useRef(open)
+    useEffect(() => {
+        if (open && !prevOpen.current) {
+            requestAnimationFrame(() => {
+                setStepIndex(0)
+                setImpact(fixedMoveType === 'TRANSFER' ? 'TRANSFER' : (fixedMoveType && MOVEMENT_TYPES.IN.find(t => t.value === fixedMoveType) ? 'IN' : (fixedMoveType && MOVEMENT_TYPES.OUT.find(t => t.value === fixedMoveType) ? 'OUT' : 'IN')))
+                setMoveType(fixedMoveType || 'TIP')
+                setContactId(initialContactId)
+                setContactName(initialContactName)
+                setTransferDirection('OUT')
+                setTransferTargetId("")
+                setFromAccountId(fixedAccountId ? String(fixedAccountId) : "")
+                setToAccountId("")
+                setFromAccountName(fixedAccountName || "")
+                setToAccountName("")
+                setFromAccountBalance(null)
+                setToAccountBalance(null)
+                setAmount('0')
+                setNotes('')
+                setPartnerCapitalInfo(null)
+            })
+        }
+        prevOpen.current = open
+    }, [open, fixedMoveType, fixedAccountId, fixedAccountName, initialContactId, initialContactName])
+
     const showReasonStep = context === 'treasury' && impact !== 'TRANSFER' && variant !== 'partners' && !fixedMoveType
 
     const steps: WizardStep[] = useMemo(() => {
