@@ -82,6 +82,10 @@ export * from './LoadingFallback';
 // Animations
 export * from './FadeIn';
 
+// Generic Popover with search
+export { SearchablePopover } from './SearchablePopover';
+export type { SearchablePopoverProps } from './SearchablePopover';
+
 // Smart Search
 export { SmartSearchBar, useSmartSearch, useClientSearch } from './SmartSearchBar';
 export type { FilterState } from './SmartSearchBar';
