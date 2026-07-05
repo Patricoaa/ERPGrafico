@@ -24,6 +24,17 @@ export function MobilizeEarningsWizard({ open, onOpenChange, onSuccess, initialP
     const [date, setDate] = useState(() => new Date().toISOString().split('T')[0])
     const [description, setDescription] = useState("Movilización de utilidades retenidas")
 
+    const prevOpen = React.useRef(open)
+    useEffect(() => {
+        if (open && !prevOpen.current) {
+            requestAnimationFrame(() => {
+                setDate(new Date().toISOString().split('T')[0])
+                setDescription("Movilización de utilidades retenidas")
+            })
+        }
+        prevOpen.current = open
+    }, [open])
+
     useEffect(() => {
         if (open) {
             const fetchPartners = async () => {
