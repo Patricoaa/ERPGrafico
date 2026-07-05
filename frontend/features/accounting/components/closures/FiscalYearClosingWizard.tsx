@@ -47,7 +47,11 @@ export function FiscalYearClosingWizard({
     // Reset state when modal opens
     useEffect(() => {
         if (isOpen) {
-            requestAnimationFrame(() => setIsClosed(false));
+            requestAnimationFrame(() => {
+                setIsClosed(false);
+                setShowTrialBalance(false);
+                setShowIncomeStatement(false);
+            });
         }
     }, [isOpen]);
 
