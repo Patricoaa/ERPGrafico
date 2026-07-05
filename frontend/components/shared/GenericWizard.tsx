@@ -68,6 +68,15 @@ export function GenericWizard({
     const [currentStep, setCurrentStep] = React.useState(initialStep)
     const [isStepTransitioning, startTransition] = React.useTransition()
     const [isFinished, setIsFinished] = React.useState(false)
+    const prevOpen = React.useRef(open)
+
+    // Reset step when modal opens (transitions false → true)
+    React.useEffect(() => {
+        if (open && !prevOpen.current) {
+            requestAnimationFrame(() => setCurrentStep(initialStep))
+        }
+        prevOpen.current = open
+    }, [open, initialStep])
 
     // Sync internal state with prop to allow external navigation jumps
     React.useEffect(() => {
