@@ -11,7 +11,6 @@ import { createEmployee, updateEmployee } from '@/features/hr/api/hrApi'
 import type { Employee, EmployeeConceptAmount } from "@/types/hr"
 import { ActionSlideButton, CancelButton } from "@/components/shared"
 import { UserCog, CalendarCheck2, Plus, ShieldCheck, Printer } from "lucide-react"
-import { getEntityIcon } from "@/lib/entity-registry"
 import { ActivitySidebar } from "@/features/audit/components"
 import { FormSplitLayout } from "@/components/shared"
 
@@ -27,7 +26,7 @@ import { Button } from "@/components/ui/button"
 import { useReactToPrint } from "react-to-print"
 import { useServerDate } from "@/hooks/useServerDate"
 import { PrintableLayout } from "@/features/_shared/transaction-drawer"
-import type { DrawerMode } from "@/features/_shared/drawer/types"
+import { useDrawerIdentity, type DrawerMode } from "@/features/_shared/drawer"
 
 export const employeeSchema = z.object({
     contact: z.string().min(1, "Contacto requerido"),
@@ -249,11 +248,9 @@ export function EmployeeDrawer({ open, onOpenChange, employee, onSaved, trigger,
 
     const watchSalud = form.watch("salud_type")
 
-    const drawerTitle = isView
-        ? `Ficha de Empleado${employee?.display_id ? ` • ${employee.display_id}` : ""}`
-        : mode === 'create'
-            ? "Nuevo Empleado"
-            : "Editar Empleado"
+    const identity = useDrawerIdentity('hr.employee', mode, employee, {
+        subtitle: employee ? `Ficha de Personal • ${employee.display_id} • ${employee.contact_detail?.name}` : "Ficha de Personal • Recursos Humanos",
+    })
 
     const footer = isView ? undefined : (
         <FormFooter
@@ -291,10 +288,10 @@ export function EmployeeDrawer({ open, onOpenChange, employee, onSaved, trigger,
             <Drawer
                 open={open}
                 onOpenChange={onOpenChange}
-                icon={getEntityIcon('hr.employee')}
-                title={<span>{drawerTitle}</span>}
+                icon={identity.icon}
+                title={identity.title}
                 headerActions={(mode === 'view' || mode === 'edit') && employee?.id && <Button variant="ghost" size="icon" onClick={() => handlePrint()}><Printer className="h-4 w-4" /></Button>}
-                subtitle={employee ? `Ficha de Personal • ${employee.display_id} • ${employee.contact_detail?.name}` : "Ficha de Personal • Recursos Humanos"}
+                subtitle={identity.subtitle}
                 defaultSize={formDrawerWidth("master", !!employee)}
                 className="h-[90vh]"
                 mode={mode}

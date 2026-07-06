@@ -27,7 +27,7 @@ import { ActivitySidebar } from "@/features/audit/components"
 import {ShoppingCart, Package, Wand2, User, Banknote, Scale, Truck, Receipt, ClipboardList, Mail, MapPin, Printer} from "lucide-react"
 import { useReactToPrint } from "react-to-print"
 import { PrintableLayout } from "@/features/_shared/transaction-drawer"
-import type { DrawerMode } from "@/features/_shared/drawer/types"
+import { useDrawerIdentity, type DrawerMode } from "@/features/_shared/drawer"
 import { createDomainCardView } from "@/lib/view-helpers"
 import { DataCell, EmptyState, Chip } from '@/components/shared'
 import { contactDocumentActions, type ContactDocumentActionsCtx } from './contactDocumentActions'
@@ -234,11 +234,7 @@ export default function ContactDrawer({ open, onOpenChange, contact, onSuccess, 
         },
     ]
 
-    const drawerTitle = isView
-        ? `Ficha de Contacto${contact?.id ? ` #${contact.id}` : ""}`
-        : mode === 'create'
-            ? "Nuevo Contacto"
-            : "Editar Contacto"
+    const identity = useDrawerIdentity('contacts.contact', mode, contact)
 
     return (
         <>
@@ -267,8 +263,8 @@ export default function ContactDrawer({ open, onOpenChange, contact, onSuccess, 
             <Drawer
                 open={open}
                 onOpenChange={onOpenChange}
-                icon={User}
-                title={<span>{drawerTitle}</span>}
+                icon={identity.icon}
+                title={identity.title}
                 headerActions={contact?.id && (mode === 'view' || mode === 'edit') && <Button variant="ghost" size="icon" onClick={() => handlePrint()}><Printer className="h-4 w-4" /></Button>}
                 subtitle="Ficha Maestra • CRM & Finanzas"
                 defaultSize={formDrawerWidth("master", !!c)}

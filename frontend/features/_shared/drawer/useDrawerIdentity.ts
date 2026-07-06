@@ -8,6 +8,8 @@ export interface DrawerIdentityData {
   [key: string]: unknown
 }
 
+export type DrawerIdentityInput = unknown
+
 export interface UseDrawerIdentityOptions {
   /** Sobrescribe el género detectado desde EntityMetadata */
   feminine?: boolean
@@ -21,9 +23,10 @@ function feminineArticle(feminine: boolean): string {
   return feminine ? 'de la' : 'del'
 }
 
-function formatEntityTitle(label: string, mode: DrawerMode, data?: DrawerIdentityData | null, feminine?: boolean) {
+function formatEntityTitle(label: string, mode: DrawerMode, data?: DrawerIdentityInput, feminine?: boolean) {
   const meta = getEntityMetadata(label)
   const entityTitle = meta?.title ?? label.split('.').pop() ?? label
+  const record = data as { id?: number | string } | null | undefined
 
   if (mode === 'create') {
     const prefix = feminine ? 'Nueva' : 'Nuevo'
@@ -34,7 +37,7 @@ function formatEntityTitle(label: string, mode: DrawerMode, data?: DrawerIdentit
     return `Editar ${entityTitle}`
   }
 
-  const idStr = data?.id != null ? ` #${data.id}` : ''
+  const idStr = record?.id != null ? ` #${record.id}` : ''
   return `Ficha de ${entityTitle}${idStr}`
 }
 
@@ -55,7 +58,7 @@ function formatDefaultSubtitle(mode: DrawerMode, label: string, feminine?: boole
 export function useDrawerIdentity(
   label: string,
   mode: DrawerMode,
-  data?: DrawerIdentityData | null,
+  data?: DrawerIdentityInput,
   options?: UseDrawerIdentityOptions,
 ) {
   const meta = getEntityMetadata(label)

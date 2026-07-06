@@ -19,10 +19,9 @@ import { AdvancedContactSelector } from "@/components/selectors/AdvancedContactS
 import { type AppGroup } from "@/types/entities"
 import { useReactToPrint } from "react-to-print"
 import { PrintableLayout } from "@/features/_shared/transaction-drawer"
-import type { DrawerMode } from "@/features/_shared/drawer/types"
 import { cn } from "@/lib/utils"
 import { formDrawerWidth } from "@/lib/form-widths"
-import { getEntityIcon } from "@/lib/entity-registry"
+import { useDrawerIdentity, type DrawerMode } from "@/features/_shared/drawer"
 
 const userSchema = z.object({
     username: z.string().min(3, "Mínimo 3 caracteres"),
@@ -210,11 +209,9 @@ export function UserDrawer({ initialData, onSuccess, trigger, open: controlledOp
         },
     ]
 
-    const drawerTitle = isView
-        ? `Ficha de Usuario${initialData?.id ? ` #${initialData.id}` : ""}`
-        : mode === 'create'
-            ? "Nuevo Usuario"
-            : "Editar Usuario"
+    const identity = useDrawerIdentity('core.user', mode, initialData, {
+        subtitle: "Gestión de cuentas, roles y permisos de acceso.",
+    })
 
     return (
         <>
@@ -251,12 +248,12 @@ export function UserDrawer({ initialData, onSuccess, trigger, open: controlledOp
             <Drawer
                 open={open}
                 onOpenChange={setOpen}
-                title={<span>{drawerTitle}</span>}
+                title={identity.title}
                 headerActions={(mode === 'view' || mode === 'edit') && initialData?.id && <Button variant="ghost" size="icon" onClick={() => handlePrint()}><Printer className="h-4 w-4" /></Button>}
-                subtitle="Gestión de cuentas, roles y permisos de acceso."
+                subtitle={identity.subtitle}
                 defaultSize={width}
                 mode={mode}
-                icon={getEntityIcon('core.user')}
+                icon={identity.icon}
                 side="left"
                 footer={isView ? undefined : (
                     <FormFooter
