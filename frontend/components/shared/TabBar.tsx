@@ -129,7 +129,7 @@ export function TabBar({
                                 <span
                                     className={cn(
                                         SEG_TEXT + " leading-tight",
-                                        dense ? "tracking-wide" : "tracking-widest",
+                                                                                "tracking-widest",
                                         "whitespace-nowrap text-center",
                                         isVertical && "group-data-[state=inactive]:hidden group-hover:!block"
                                     )}
