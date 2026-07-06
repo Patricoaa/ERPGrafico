@@ -28,6 +28,8 @@ Ver: docs/50-audit/Arquitectura Django/30-patterns.md#p-02b--dtestrategy
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
+
+from core.prefix_registry import EntityPrefix
 from decimal import Decimal
 from typing import TYPE_CHECKING
 
@@ -198,7 +200,7 @@ class FacturaStrategy(DTEStrategy):
         Cr  Proveedores (CxP)         = invoice.total
     """
 
-    display_prefix = "FACV"
+    display_prefix = EntityPrefix.INVOICE_FACTURA
     sii_document_code = 33
 
     def expected_fields(self) -> set[str]:
@@ -342,7 +344,7 @@ class BoletaStrategy(DTEStrategy):
     (accounting/services.py:581-604).
     """
 
-    display_prefix = "BOL"
+    display_prefix = EntityPrefix.INVOICE_BOLETA
     sii_document_code = 39
 
     def expected_fields(self) -> set[str]:
@@ -417,7 +419,7 @@ class FacturaExentaStrategy(DTEStrategy):
     DTE 34 — Factura Exenta.
     """
 
-    display_prefix = "FAC-EX"
+    display_prefix = EntityPrefix.INVOICE_EXENTA
     sii_document_code = 34
 
     def expected_fields(self) -> set[str]:
@@ -480,7 +482,7 @@ class BoletaExentaStrategy(DTEStrategy):
     DTE 41 — Boleta Exenta.
     """
 
-    display_prefix = "BE"
+    display_prefix = EntityPrefix.INVOICE_BOLETA_EXENTA
     sii_document_code = 41
 
     def expected_fields(self) -> set[str]:
@@ -544,7 +546,7 @@ class ComprobantePagoStrategy(DTEStrategy):
     DTE 48 — Comprobante de Pago Electrónico (Voucher TUU/Transbank válido como boleta).
     """
 
-    display_prefix = "CPE"
+    display_prefix = EntityPrefix.COMPROBANTE_PAGO
     sii_document_code = 48
 
     def expected_fields(self) -> set[str]:
@@ -615,7 +617,7 @@ class PurchaseInvStrategy(DTEStrategy):
     Factura de Compra (PURCHASE_INV). Mapea a DTE 33 (Factura de Compra de proveedores).
     """
 
-    display_prefix = "FACC"
+    display_prefix = EntityPrefix.INVOICE_COMPRA
     sii_document_code = 33
 
     def expected_fields(self) -> set[str]:
@@ -826,7 +828,7 @@ class NotaCreditoStrategy(DTEStrategy):
     DTE 61 — Nota de Crédito.
     """
 
-    display_prefix = "NC"
+    display_prefix = EntityPrefix.NOTA_CREDITO
     sii_document_code = 61
 
     def expected_fields(self) -> set[str]:
@@ -853,7 +855,7 @@ class NotaDebitoStrategy(DTEStrategy):
     DTE 56 — Nota de Débito.
     """
 
-    display_prefix = "ND"
+    display_prefix = EntityPrefix.NOTA_DEBITO
     sii_document_code = 56
 
     def expected_fields(self) -> set[str]:
