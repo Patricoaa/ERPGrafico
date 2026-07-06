@@ -25,7 +25,6 @@ export function PurchaseReturnDrawer({ returnId, id, open, onOpenChange }: Purch
     const { returnData, isLoading } = usePurchaseReturn(entityId, open)
     const identity = useDrawerIdentity('purchasing.purchasereturn', 'view', returnData as Record<string, unknown> | undefined, {
         overrideTitle: returnData ? `Devolución ${String((returnData as Record<string, unknown>).number)}` : "Devolución de Compra",
-        overrideSubtitle: String((returnData as Record<string, unknown>)?.supplier_name ?? ''),
     })
     const printRef = useRef<HTMLDivElement>(null)
     const handlePrint = useReactToPrint({ contentRef: printRef })

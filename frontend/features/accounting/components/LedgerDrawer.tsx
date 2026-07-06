@@ -92,9 +92,8 @@ export function LedgerDrawer({ accountId, accountName, accountCode, trigger, noT
     // Fetch ledger data
     const { data, isLoading, refetch } = useLedger(accountId, startStr, endStr)
 
-    const identity = useDrawerIdentity('accounting.account', 'view', undefined, {
+    const identity = useDrawerIdentity('accounting.account', 'view', { code: accountCode, name: accountName }, {
         overrideTitle: "Libro Mayor",
-        overrideSubtitle: `${accountCode} | ${accountName}`,
     })
 
     return (

@@ -29,7 +29,6 @@ export function PurchaseOrderDrawer({ id, open, onOpenChange, purchaseOrderId }:
 
   const identity = useDrawerIdentity('purchasing.purchaseorder', 'view', order, {
     overrideTitle: displayId,
-    overrideSubtitle: contactName,
     onPrint: handlePrint,
   })
 

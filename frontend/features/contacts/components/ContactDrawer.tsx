@@ -234,7 +234,6 @@ export default function ContactDrawer({ open, onOpenChange, contact, onSuccess, 
     ]
 
     const identity = useDrawerIdentity('contacts.contact', mode, contact, {
-        overrideSubtitle: "Ficha Maestra • CRM & Finanzas",
         printable: !!contact?.id && (mode === 'view' || mode === 'edit'),
         onPrint: handlePrint,
     })

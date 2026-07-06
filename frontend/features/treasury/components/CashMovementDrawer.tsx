@@ -22,8 +22,6 @@ export function CashMovementDrawer({ id, open, onOpenChange, movementId }: CashM
   const displayId = movement?.display_id ?? `#${entityId}`
   const movementType = movement?.movement_type_display ?? movement?.movement_type ?? ''
   const identity = useDrawerIdentity('treasury.treasurymovement', 'view', movement, {
-    overrideTitle: displayId,
-    overrideSubtitle: movementType,
     onPrint: handlePrint,
   })
 

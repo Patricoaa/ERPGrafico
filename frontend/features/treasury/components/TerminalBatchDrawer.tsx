@@ -21,8 +21,6 @@ export function TerminalBatchDrawer({ id, open, onOpenChange, batchId }: Termina
 
   const displayId = batch?.display_id ?? `#${entityId}`
   const identity = useDrawerIdentity('treasury.terminalbatch', 'view', batch, {
-    overrideTitle: displayId,
-    overrideSubtitle: "Lote de Liquidación",
     onPrint: handlePrint,
   })
 
