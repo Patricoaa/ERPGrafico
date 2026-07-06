@@ -51,7 +51,7 @@ export function ActionDock({ isVisible, children, className }: ActionDockProps) 
     return isVisible && (
         <div
             className={cn(
-                "fixed bottom-6 z-[100] bg-card border shadow-elevated rounded-md px-6 py-2 flex items-center gap-8 transition-all duration-500 ease-[var(--ease-premium)]",
+                "fixed bottom-6 z-[100] bg-card border shadow-elevated rounded-lg px-6 py-2 flex items-center gap-8 transition-all duration-500 ease-[var(--ease-premium)]",
                 "animate-in fade-in slide-in-from-bottom-4 ease-[cubic-bezier(0.34,1.56,0.64,1)] duration-500 fill-mode-both",
                 getPositionClass(),
                 className
@@ -120,11 +120,11 @@ export interface BulkAction<TData> {
 }
 
 const intentClasses: Record<BulkActionIntent, string> = {
-    default: "h-9 rounded-full px-6 text-xs font-bold bg-primary/10 text-primary hover:bg-primary/15 shadow-floating transition-transform active:scale-95",
-    destructive: "h-9 rounded-full px-4 text-xs bg-destructive/10 text-destructive hover:bg-destructive/15",
-    warning: "h-9 rounded-full px-4 text-xs bg-warning/10 text-warning hover:bg-warning/15",
-    success: "h-9 rounded-full px-4 text-xs bg-success/10 text-success hover:bg-success/15",
-    ghost: "h-9 rounded-full px-4 text-xs bg-muted/50 text-muted-foreground hover:bg-muted",
+    default: "h-9 rounded-full px-6 text-xs font-bold text-primary hover:bg-primary/10 shadow-floating transition-transform active:scale-95",
+    destructive: "h-9 rounded-full px-4 text-xs text-destructive hover:bg-destructive/10",
+    warning: "h-9 rounded-full px-4 text-xs text-warning hover:bg-warning/10",
+    success: "h-9 rounded-full px-4 text-xs text-success hover:bg-success/10",
+    ghost: "h-9 rounded-full px-4 text-xs text-muted-foreground hover:bg-muted",
 }
 
 interface BulkActionButtonsProps<TData> {

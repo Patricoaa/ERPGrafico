@@ -329,7 +329,7 @@ export function DataTable<TData, TValue>({
             return (
                 <ActionDock isVisible>
                     <div className="flex items-center gap-2">
-                        <CmykRing className="h-3 w-3 animate-pulse" />
+                        <CmykRing className="h-2.5 w-2.5 animate-pulse" />
                         <span className="text-xs font-bold uppercase tracking-widest text-foreground whitespace-nowrap">
                             {`${selectedRows.length} ${selectedRows.length === 1 ? "seleccionado" : "seleccionados"}`}
                         </span>
