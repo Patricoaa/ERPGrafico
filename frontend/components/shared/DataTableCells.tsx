@@ -77,7 +77,7 @@ export const DataCell = {
      * (identificadores, fechas, números, badges, etc.). Es el contenedor de texto principal por defecto.
      */
     Text: ({ children, className, ...props }: BaseCellProps) => (
-        <div className={cn("flex justify-center items-center text-center w-full text-[13px] font-medium text-foreground", className)} {...props}>{children}</div>
+        <div className={cn("flex justify-center items-center text-center w-full text-sm font-medium text-foreground", className)} {...props}>{children}</div>
     ),
 
     /**
@@ -120,7 +120,7 @@ export const DataCell = {
                         if (onClick) onClick(e);
                         else if (contactId) openEntity('contacts.contact', Number(contactId));
                     }}
-                    className={cn("flex justify-center items-center gap-1.5 text-[13px] font-bold hover:underline hover:text-primary/80 transition-colors text-foreground")}
+                    className={cn("flex justify-center items-center gap-1.5 text-sm font-bold hover:underline hover:text-primary/80 transition-colors text-foreground")}
                     {...props}
                 >
                     <span className="truncate">{children}</span>
@@ -250,7 +250,7 @@ export const DataCell = {
     Date: ({ value, className, showTime = false, ...props }: ValueCellProps<string | Date> & { showTime?: boolean }) => {
         if (!value) return <div className={cn("flex justify-center items-center w-full text-[12px] text-muted-foreground/50", className)} {...props}>-</div>
         return (
-            <div className={cn("flex justify-center items-center w-full text-[13px] font-medium text-foreground whitespace-nowrap", className)} {...props}>
+            <div className={cn("flex justify-center items-center w-full text-sm font-medium text-foreground whitespace-nowrap", className)} {...props}>
                 {formatPlainDate(value)}
                 {showTime && (() => {
                     const date = typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value)
