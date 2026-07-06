@@ -20,6 +20,7 @@ class AccountingConfig(AppConfig):
 
         try:
             from accounting.models import Account, Budget, FiscalYear, JournalEntry
+            from core.prefix_registry import EntityPrefix
             from core.registry import SearchableEntity, UniversalRegistry
 
             UniversalRegistry.register(
@@ -47,8 +48,8 @@ class AccountingConfig(AppConfig):
                     title_plural="Libro Diario",
                     icon="hash",
                     search_fields=("number", "description"),
-                    short_display_template="AS-{number}",
-                    display_template="AS-{number}",
+                    short_display_template=f"{EntityPrefix.JOURNAL_ENTRY}-{{number}}",
+                    display_template=f"{EntityPrefix.JOURNAL_ENTRY}-{{number}}",
                     subtitle_template="{description}",
                     extra_info_template="{date}",
                     list_url="/accounting/entries",
@@ -64,7 +65,7 @@ class AccountingConfig(AppConfig):
                     title_plural="Ejercicios Contables",
                     icon="calendar",
                     search_fields=("year",),
-                    short_display_template="EJ-{year}",
+                    short_display_template=f"{EntityPrefix.FISCAL_YEAR}-{{year}}",
                     display_template="Ejercicio {year}",
                     subtitle_template="{status}",
                     extra_info_template="{start_date} / {end_date}",
@@ -81,7 +82,7 @@ class AccountingConfig(AppConfig):
                     title_plural="Presupuestos",
                     icon="pie-chart",
                     search_fields=("name", "description"),
-                    short_display_template="BUD-{id}",
+                    short_display_template=f"{EntityPrefix.BUDGET}-{{id}}",
                     display_template="{name}",
                     subtitle_template="{start_date} / {end_date}",
                     extra_info_template="{description}",

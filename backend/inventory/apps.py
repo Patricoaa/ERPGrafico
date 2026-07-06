@@ -19,6 +19,7 @@ class InventoryConfig(AppConfig):
             pass
 
         try:
+            from core.prefix_registry import EntityPrefix
             from core.registry import SearchableEntity, UniversalRegistry
             from inventory.models import Product, StockMove, Subscription, Warehouse
 
@@ -30,7 +31,7 @@ class InventoryConfig(AppConfig):
                     title_plural="Productos",
                     icon="package",
                     search_fields=("name", "code", "internal_code"),
-                    short_display_template="{code}",
+                    short_display_template=f"{EntityPrefix.PRODUCT}-{{id}}",
                     display_template="{name}",
                     subtitle_template="SKU: {code}",
                     extra_info_template="{category.name}",
@@ -47,8 +48,8 @@ class InventoryConfig(AppConfig):
                     title_plural="Kardex",
                     icon="arrow-right-left",
                     search_fields=("id", "description", "adjustment_reason"),
-                    short_display_template="MOV-{id}",
-                    display_template="MOV-{id}",
+                    short_display_template=f"{EntityPrefix.STOCK_MOVE}-{{id}}",
+                    display_template=f"{EntityPrefix.STOCK_MOVE}-{{id}}",
                     list_url="/inventory/stock?tab=movements",
                     detail_url_pattern="/inventory/stock-moves/{id}",
                     permission="inventory.view_stockmove",
@@ -62,8 +63,8 @@ class InventoryConfig(AppConfig):
                     title_plural="Suscripciones",
                     icon="repeat",
                     search_fields=("product__name", "supplier__name"),
-                    short_display_template="SUB-{id}",
-                    display_template="SUB-{id} · {product.name}",
+                    short_display_template=f"{EntityPrefix.SUBSCRIPTION}-{{id}}",
+                    display_template=f"{EntityPrefix.SUBSCRIPTION}-{{id}} · {{product.name}}",
                     subtitle_template="{supplier.name}",
                     extra_info_template="{status}",
                     list_url="/inventory/products/subscriptions",

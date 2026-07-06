@@ -19,6 +19,7 @@ class ProductionConfig(AppConfig):
             pass
 
         try:
+            from core.prefix_registry import EntityPrefix
             from core.registry import SearchableEntity, UniversalRegistry
             from production.models import BillOfMaterials, WorkOrder
 
@@ -30,8 +31,8 @@ class ProductionConfig(AppConfig):
                     title_plural="Ordenes de Trabajo",
                     icon="wrench",
                     search_fields=("number", "description", "related_contact__name"),
-                    short_display_template="OT-{number}",
-                    display_template="OT-{number}",
+                    short_display_template=f"{EntityPrefix.WORK_ORDER}-{{number}}",
+                    display_template=f"{EntityPrefix.WORK_ORDER}-{{number}}",
                     subtitle_template="{description}",
                     extra_info_template="{status}",
                     list_url="/production/orders",
@@ -47,7 +48,7 @@ class ProductionConfig(AppConfig):
                     title_plural="Listas de Materiales",
                     icon="clipboard-list",
                     search_fields=("name", "product__name"),
-                    short_display_template="BOM-{id}",
+                    short_display_template=f"{EntityPrefix.BOM}-{{id}}",
                     display_template="{name}",
                     subtitle_template="{product.name}",
                     extra_info_template="{status}",

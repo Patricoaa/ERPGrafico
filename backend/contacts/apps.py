@@ -21,6 +21,7 @@ class ContactsConfig(AppConfig):
         try:
             from contacts.models import Contact
             from contacts.partner_models import PartnerTransaction, ProfitDistributionResolution
+            from core.prefix_registry import EntityPrefix
             from core.registry import SearchableEntity, UniversalRegistry
 
             UniversalRegistry.register(
@@ -31,7 +32,7 @@ class ContactsConfig(AppConfig):
                     title_plural="Contactos",
                     icon="users",
                     search_fields=("name", "tax_id", "contact_name", "code"),
-                    short_display_template="CON-{id}",
+                    short_display_template=f"{EntityPrefix.CONTACT}-{{id}}",
                     display_template="{name}",
                     subtitle_template="{tax_id} · {email}",
                     extra_info_template="",
@@ -48,7 +49,7 @@ class ContactsConfig(AppConfig):
                     title_plural="Transacciones de Socios",
                     icon="arrow-left-right",
                     search_fields=("partner__name", "description", "display_id"),
-                    short_display_template="PT-{display_id}",
+                    short_display_template="{display_id}",
                     display_template="{display_id} · {partner.name}",
                     subtitle_template="{get_transaction_type_display}",
                     extra_info_template="{amount}",
@@ -65,8 +66,8 @@ class ContactsConfig(AppConfig):
                     title_plural="Distribuciones de Utilidades",
                     icon="pie-chart",
                     search_fields=("id", "fiscal_year", "acta_number"),
-                    short_display_template="DIST-{display_id}",
-                    display_template="DIST-{display_id}",
+                    short_display_template="{display_id}",
+                    display_template="{display_id}",
                     subtitle_template="Año {fiscal_year}",
                     extra_info_template="{status}",
                     list_url="/contacts/profit-distribution",
