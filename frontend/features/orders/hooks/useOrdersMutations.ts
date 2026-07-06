@@ -4,6 +4,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import { ordersApi } from '../api/ordersApi'
 import { useRealtime } from '@/features/realtime'
+import { invalidateCrossFeature } from '@/lib/invalidation'
 import { SALES_KEYS } from '@/features/sales'
 import { PURCHASING_KEYS } from '@/features/purchasing'
 import { INVOICES_QUERY_KEY } from '@/features/billing'
@@ -21,9 +22,7 @@ export function useAnnulInvoice() {
         onSuccess: () => {
             markLocalMutation()
             toast.success('Documento anulado correctamente')
-            queryClient.invalidateQueries({ queryKey: INVOICES_QUERY_KEY })
-            queryClient.invalidateQueries({ queryKey: SALES_KEYS.all })
-            queryClient.invalidateQueries({ queryKey: PURCHASING_KEYS.all })
+            invalidateCrossFeature(queryClient, [INVOICES_QUERY_KEY, SALES_KEYS.all, PURCHASING_KEYS.all])
         },
     })
 }
@@ -37,9 +36,7 @@ export function useCancelInvoice() {
         onSuccess: () => {
             markLocalMutation()
             toast.success('Borrador cancelado correctamente')
-            queryClient.invalidateQueries({ queryKey: INVOICES_QUERY_KEY })
-            queryClient.invalidateQueries({ queryKey: SALES_KEYS.all })
-            queryClient.invalidateQueries({ queryKey: PURCHASING_KEYS.all })
+            invalidateCrossFeature(queryClient, [INVOICES_QUERY_KEY, SALES_KEYS.all, PURCHASING_KEYS.all])
         },
     })
 }
@@ -52,9 +49,7 @@ export function useConfirmInvoice() {
             ordersApi.confirmInvoice(id, formData),
         onSuccess: () => {
             markLocalMutation()
-            queryClient.invalidateQueries({ queryKey: INVOICES_QUERY_KEY })
-            queryClient.invalidateQueries({ queryKey: SALES_KEYS.all })
-            queryClient.invalidateQueries({ queryKey: PURCHASING_KEYS.all })
+            invalidateCrossFeature(queryClient, [INVOICES_QUERY_KEY, SALES_KEYS.all, PURCHASING_KEYS.all])
         },
     })
 }
@@ -66,7 +61,7 @@ export function useCreateInvoiceFromOrder() {
         mutationFn: (data: Record<string, unknown>) => ordersApi.createInvoiceFromOrder(data),
         onSuccess: () => {
             markLocalMutation()
-            queryClient.invalidateQueries({ queryKey: INVOICES_QUERY_KEY })
+            invalidateCrossFeature(queryClient, [INVOICES_QUERY_KEY])
         },
     })
 }
@@ -80,8 +75,7 @@ export function useProcessLogistics() {
         onSuccess: () => {
             markLocalMutation()
             toast.success('Logística procesada correctamente')
-            queryClient.invalidateQueries({ queryKey: INVOICES_QUERY_KEY })
-            queryClient.invalidateQueries({ queryKey: PRODUCTS_KEYS.all })
+            invalidateCrossFeature(queryClient, [INVOICES_QUERY_KEY, PRODUCTS_KEYS.all])
         },
     })
 }
@@ -97,8 +91,7 @@ export function useCancelOrder(orderType: 'sale' | 'purchase') {
         onSuccess: () => {
             markLocalMutation()
             toast.success('Orden cancelada correctamente')
-            queryClient.invalidateQueries({ queryKey: SALES_KEYS.all })
-            queryClient.invalidateQueries({ queryKey: PURCHASING_KEYS.all })
+            invalidateCrossFeature(queryClient, [SALES_KEYS.all, PURCHASING_KEYS.all])
         },
     })
 }
@@ -121,9 +114,7 @@ export function useAnnulLogistics() {
         onSuccess: () => {
             markLocalMutation()
             toast.success('Movimiento anulado correctamente')
-            queryClient.invalidateQueries({ queryKey: SALES_KEYS.all })
-            queryClient.invalidateQueries({ queryKey: PURCHASING_KEYS.all })
-            queryClient.invalidateQueries({ queryKey: PRODUCTS_KEYS.all })
+            invalidateCrossFeature(queryClient, [SALES_KEYS.all, PURCHASING_KEYS.all, PRODUCTS_KEYS.all])
         },
     })
 }
@@ -139,10 +130,7 @@ export function useRegisterPaymentMovement() {
         onSuccess: () => {
             markLocalMutation()
             toast.success('Operación de tesorería registrada')
-            queryClient.invalidateQueries({ queryKey: MOVEMENTS_KEYS.all })
-            queryClient.invalidateQueries({ queryKey: PAYMENTS_KEYS.all })
-            queryClient.invalidateQueries({ queryKey: SALES_KEYS.all })
-            queryClient.invalidateQueries({ queryKey: PURCHASING_KEYS.all })
+            invalidateCrossFeature(queryClient, [MOVEMENTS_KEYS.all, PAYMENTS_KEYS.all, SALES_KEYS.all, PURCHASING_KEYS.all])
         },
     })
 }
@@ -158,10 +146,7 @@ export function useAnnulPayment() {
         onSuccess: () => {
             markLocalMutation()
             toast.success('Pago anulado correctamente')
-            queryClient.invalidateQueries({ queryKey: PAYMENTS_KEYS.all })
-            queryClient.invalidateQueries({ queryKey: MOVEMENTS_KEYS.all })
-            queryClient.invalidateQueries({ queryKey: SALES_KEYS.all })
-            queryClient.invalidateQueries({ queryKey: PURCHASING_KEYS.all })
+            invalidateCrossFeature(queryClient, [PAYMENTS_KEYS.all, MOVEMENTS_KEYS.all, SALES_KEYS.all, PURCHASING_KEYS.all])
         },
     })
 }
@@ -181,10 +166,7 @@ export function useRegisterPaymentReturn() {
         onSuccess: () => {
             markLocalMutation()
             toast.success('Devolución de pago registrada correctamente')
-            queryClient.invalidateQueries({ queryKey: PAYMENTS_KEYS.all })
-            queryClient.invalidateQueries({ queryKey: MOVEMENTS_KEYS.all })
-            queryClient.invalidateQueries({ queryKey: SALES_KEYS.all })
-            queryClient.invalidateQueries({ queryKey: PURCHASING_KEYS.all })
+            invalidateCrossFeature(queryClient, [PAYMENTS_KEYS.all, MOVEMENTS_KEYS.all, SALES_KEYS.all, PURCHASING_KEYS.all])
         },
     })
 }
@@ -198,10 +180,7 @@ export function useCancelPayment() {
         onSuccess: () => {
             markLocalMutation()
             toast.success('Pago cancelado correctamente')
-            queryClient.invalidateQueries({ queryKey: PAYMENTS_KEYS.all })
-            queryClient.invalidateQueries({ queryKey: MOVEMENTS_KEYS.all })
-            queryClient.invalidateQueries({ queryKey: SALES_KEYS.all })
-            queryClient.invalidateQueries({ queryKey: PURCHASING_KEYS.all })
+            invalidateCrossFeature(queryClient, [PAYMENTS_KEYS.all, MOVEMENTS_KEYS.all, SALES_KEYS.all, PURCHASING_KEYS.all])
         },
     })
 }
@@ -217,8 +196,7 @@ export function useAnnulWorkOrder() {
         onSuccess: () => {
             markLocalMutation()
             toast.success('OT anulada correctamente')
-            queryClient.invalidateQueries({ queryKey: SALES_KEYS.all })
-            queryClient.invalidateQueries({ queryKey: PURCHASING_KEYS.all })
+            invalidateCrossFeature(queryClient, [SALES_KEYS.all, PURCHASING_KEYS.all])
         },
     })
 }

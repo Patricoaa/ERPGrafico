@@ -5,6 +5,7 @@ import { accountingApi } from '../api/accountingApi'
 import { LEDGER_QUERY_KEY } from './useLedger'
 import { ACCOUNTS_QUERY_KEY } from './useAccounts'
 import { useRealtime } from '@/features/realtime'
+import { invalidateCrossFeature } from '@/lib/invalidation'
 import type { FilterState } from '@/components/shared'
 
 import { JOURNAL_ENTRIES_QUERY_KEY } from './queryKeys'
@@ -88,7 +89,7 @@ export function usePostJournalEntry(options?: { onSuccess?: () => void }) {
         mutationFn: (id: number) => accountingApi.postEntry(id),
         onSuccess: () => {
             markLocalMutation()
-            queryClient.invalidateQueries({ queryKey: JOURNAL_ENTRIES_QUERY_KEY })
+            invalidateCrossFeature(queryClient, [JOURNAL_ENTRIES_QUERY_KEY])
             toast.success('Asiento publicado exitosamente')
             options?.onSuccess?.()
         },
@@ -103,7 +104,7 @@ export function useReverseJournalEntry(options?: { onSuccess?: () => void }) {
         mutationFn: (id: number) => accountingApi.reverseEntry(id),
         onSuccess: () => {
             markLocalMutation()
-            queryClient.invalidateQueries({ queryKey: JOURNAL_ENTRIES_QUERY_KEY })
+            invalidateCrossFeature(queryClient, [JOURNAL_ENTRIES_QUERY_KEY])
             toast.success('Asiento de reversión creado exitosamente')
             options?.onSuccess?.()
         },
@@ -118,10 +119,7 @@ export function useDeleteJournalEntry(options?: { onSuccess?: () => void }) {
         mutationFn: (id: number) => accountingApi.deleteEntry(id),
         onSuccess: () => {
             markLocalMutation()
-            // A deleted entry changes the ledger view, the journal list, AND account balances
-            queryClient.invalidateQueries({ queryKey: [LEDGER_QUERY_KEY] })
-            queryClient.invalidateQueries({ queryKey: JOURNAL_ENTRIES_QUERY_KEY })
-            queryClient.invalidateQueries({ queryKey: ACCOUNTS_QUERY_KEY })
+            invalidateCrossFeature(queryClient, [[LEDGER_QUERY_KEY], JOURNAL_ENTRIES_QUERY_KEY, ACCOUNTS_QUERY_KEY])
             toast.success('Asiento eliminado correctamente')
             options?.onSuccess?.()
         },

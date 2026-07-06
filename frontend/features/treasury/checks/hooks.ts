@@ -3,6 +3,7 @@ import { toast } from 'sonner'
 import { showApiError } from '@/lib/errors'
 import { checksApi } from './api'
 import type { CheckCreatePayload, CheckDepositPayload } from './types'
+import { invalidateCrossFeature } from '@/lib/invalidation'
 
 const CHECKS_KEYS = {
     all: ['checks'] as const,
@@ -43,7 +44,7 @@ export function useCheckMutations() {
     const queryClient = useQueryClient()
 
     const invalidate = () => {
-        queryClient.invalidateQueries({ queryKey: CHECKS_KEYS.all })
+        invalidateCrossFeature(queryClient, [CHECKS_KEYS.all])
     }
 
     const create = useMutation({

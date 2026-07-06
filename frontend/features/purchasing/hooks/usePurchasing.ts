@@ -1,4 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { invalidateCrossFeature } from '@/lib/invalidation'
 import { toast } from 'sonner'
 import type { FilterState } from '@/components/shared'
 import type { Invoice } from '@/features/billing'
@@ -38,7 +39,7 @@ export function usePurchasingOrders(filters?: FilterState & { page?: number, pag
         mutationFn: (id: number) => purchasingApi.deleteOrder(id),
         onSuccess: () => {
             markLocalMutation()
-            queryClient.invalidateQueries({ queryKey: PURCHASING_KEYS.lists() })
+            invalidateCrossFeature(queryClient, [PURCHASING_KEYS.lists()])
             toast.success('Orden de Compra eliminada')
         },
     })
@@ -48,7 +49,7 @@ export function usePurchasingOrders(filters?: FilterState & { page?: number, pag
             purchasingApi.annulOrder(id, { force, reason }),
         onSuccess: () => {
             markLocalMutation()
-            queryClient.invalidateQueries({ queryKey: PURCHASING_KEYS.all })
+            invalidateCrossFeature(queryClient, [PURCHASING_KEYS.all])
             toast.success('Orden de Compra anulada correctamente.')
         },
         onError: (error: Error) => {

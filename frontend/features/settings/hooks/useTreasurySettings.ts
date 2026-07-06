@@ -1,4 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { invalidateCrossFeature } from '@/lib/invalidation'
 import { toast } from 'sonner'
 import { settingsApi } from '../api/settingsApi'
 import { ACCOUNTING_SETTINGS_QUERY_KEY } from './useAccountingSettings'
@@ -32,7 +33,7 @@ export function useTreasurySettings() {
         onSuccess: () => {
             markLocalMutation()
             toast.success('Configuración de tesorería aplicada')
-            queryClient.invalidateQueries({ queryKey: ACCOUNTING_SETTINGS_QUERY_KEY })
+            invalidateCrossFeature(queryClient, [ACCOUNTING_SETTINGS_QUERY_KEY])
         },
         onError: () => {
             toast.error('Error al guardar cambios de tesorería')

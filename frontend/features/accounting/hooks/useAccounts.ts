@@ -4,6 +4,7 @@ import { accountingApi } from '../api/accountingApi'
 import type { AccountFilters, AccountPayload, Account } from '../types'
 import { toast } from 'sonner'
 import { useRealtime } from '@/features/realtime'
+import { invalidateCrossFeature } from '@/lib/invalidation'
 
 import { ACCOUNTS_QUERY_KEY, ACCOUNTS_MAPPINGS_QUERY_KEY } from './queryKeys'
 
@@ -30,8 +31,7 @@ export function useAccounts({ filters }: UseAccountsProps = {}) {
         mutationFn: (payload: AccountPayload) => accountingApi.createAccount(payload),
         onSuccess: () => {
             markLocalMutation()
-            // Accounts QUERY_KEY prefix invalidation covers mappings slice too
-            queryClient.invalidateQueries({ queryKey: ACCOUNTS_QUERY_KEY })
+            invalidateCrossFeature(queryClient, [ACCOUNTS_QUERY_KEY])
             toast.success('Cuenta creada exitosamente')
         },
         onError: (error: Error) => {
@@ -44,8 +44,7 @@ export function useAccounts({ filters }: UseAccountsProps = {}) {
             accountingApi.updateAccount(id, payload),
         onSuccess: () => {
             markLocalMutation()
-            // Prefix match: invalidates both ['accounts', ...filters] AND ['accounts', 'mappings']
-            queryClient.invalidateQueries({ queryKey: ACCOUNTS_QUERY_KEY })
+            invalidateCrossFeature(queryClient, [ACCOUNTS_QUERY_KEY])
             toast.success('Cuenta actualizada exitosamente')
         },
         onError: (error: Error) => {
@@ -57,8 +56,7 @@ export function useAccounts({ filters }: UseAccountsProps = {}) {
         mutationFn: (id: number) => accountingApi.deleteAccount(id),
         onSuccess: () => {
             markLocalMutation()
-            // Prefix match: invalidates list + mappings slice
-            queryClient.invalidateQueries({ queryKey: ACCOUNTS_QUERY_KEY })
+            invalidateCrossFeature(queryClient, [ACCOUNTS_QUERY_KEY])
             toast.success('Cuenta eliminada exitosamente')
         },
         onError: (error: Error) => {

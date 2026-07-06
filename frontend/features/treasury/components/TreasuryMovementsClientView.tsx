@@ -312,7 +312,15 @@ export function TreasuryMovementsClientView({ externalOpen, createAction }: Trea
             <Suspense fallback={<div />}>
                 <CashMovementModal
                     open={openModal}
-                    onOpenChange={(open: boolean) => setOpenModal(open)}
+                    onOpenChange={(open: boolean) => {
+                        setOpenModal(open)
+                        if (!open) {
+                            const params = new URLSearchParams(searchParams.toString())
+                            params.delete('modal')
+                            const query = params.toString()
+                            router.replace(query ? `${pathname}?${query}` : pathname, { scroll: false })
+                        }
+                    }}
                     onSuccess={refetch}
                 />
             </Suspense>

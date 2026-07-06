@@ -4,6 +4,7 @@ import { toast } from 'sonner';
 import { type AccountingPeriod } from '../types';
 import { showApiError } from '@/lib/errors';
 import { useRealtime } from '@/features/realtime';
+import { invalidateCrossFeature } from '@/lib/invalidation';
 
 import { ACCOUNTING_PERIODS_QUERY_KEY } from './queryKeys'
 
@@ -37,7 +38,7 @@ export function useAccountingPeriods() {
         },
         onSuccess: () => {
             markLocalMutation();
-            queryClient.invalidateQueries({ queryKey: ACCOUNTING_PERIODS_QUERY_KEY });
+            invalidateCrossFeature(queryClient, [ACCOUNTING_PERIODS_QUERY_KEY]);
             toast.success('Periodo contable cerrado exitosamente');
         },
         onError: (error) => showApiError(error, 'Error al cerrar el periodo'),
@@ -48,7 +49,7 @@ export function useAccountingPeriods() {
             api.post(`/tax/accounting-periods/${params.id}/reopen/`, { reason: params.reason }),
         onSuccess: () => {
             markLocalMutation();
-            queryClient.invalidateQueries({ queryKey: ACCOUNTING_PERIODS_QUERY_KEY });
+            invalidateCrossFeature(queryClient, [ACCOUNTING_PERIODS_QUERY_KEY]);
             toast.success('Periodo contable reabierto exitosamente');
         },
         onError: (error) => showApiError(error, 'Error al reabrir el periodo'),
@@ -58,7 +59,7 @@ export function useAccountingPeriods() {
         mutationFn: ({ year, month }: { year: number, month: number }) => api.post('/tax/accounting-periods/', { year, month }),
         onSuccess: (_, { year, month }) => {
             markLocalMutation();
-            queryClient.invalidateQueries({ queryKey: ACCOUNTING_PERIODS_QUERY_KEY });
+            invalidateCrossFeature(queryClient, [ACCOUNTING_PERIODS_QUERY_KEY]);
             toast.success(`Periodo ${month}/${year} inicializado correctamente`);
         },
         onError: (error) => showApiError(error, 'Error al crear el periodo'),

@@ -10,6 +10,7 @@ import { posApi } from '../api/posApi'
 import { toast } from 'sonner'
 
 import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { invalidateCrossFeature } from '@/lib/invalidation'
 import { POS_KEYS } from './queryKeys'
 
 interface DraftResponse {
@@ -89,10 +90,7 @@ export function useDrafts(options: UseDraftsOptions = {}) {
             posApi.updateDraft(draftId, draftData),
         onSuccess: (_data, variables) => {
             markLocalMutation()
-            // Invalidate draft lists and details
-            queryClient.invalidateQueries({ queryKey: POS_KEYS.drafts.lists() })
-            queryClient.invalidateQueries({ queryKey: POS_KEYS.drafts.detail() })
-            queryClient.invalidateQueries({ queryKey: POS_KEYS.drafts.detailById(variables.draftId) })
+            invalidateCrossFeature(queryClient, [POS_KEYS.drafts.lists(), POS_KEYS.drafts.detail(), POS_KEYS.drafts.detailById(variables.draftId)])
             toast.success('Borrador actualizado')
         },
         onError: (error: Error) => {
@@ -104,8 +102,7 @@ export function useDrafts(options: UseDraftsOptions = {}) {
         mutationFn: (draftData: Partial<DraftCart>) => posApi.createDraft(draftData),
         onSuccess: () => {
             markLocalMutation()
-            // Invalidate draft lists
-            queryClient.invalidateQueries({ queryKey: POS_KEYS.drafts.lists() })
+            invalidateCrossFeature(queryClient, [POS_KEYS.drafts.lists()])
             toast.success('Borrador creado')
         },
         onError: (error: Error) => {
@@ -117,9 +114,7 @@ export function useDrafts(options: UseDraftsOptions = {}) {
         mutationFn: ({ draftId, posSessionId }: { draftId: number; posSessionId: number }) => posApi.deleteDraft(draftId, { pos_session_id: posSessionId }),
         onSuccess: () => {
             markLocalMutation()
-            // Invalidate draft lists and details
-            queryClient.invalidateQueries({ queryKey: POS_KEYS.drafts.lists() })
-            queryClient.invalidateQueries({ queryKey: POS_KEYS.drafts.detail() })
+            invalidateCrossFeature(queryClient, [POS_KEYS.drafts.lists(), POS_KEYS.drafts.detail()])
             toast.success('Borrador eliminado')
         },
         onError: (error: Error) => {

@@ -3,6 +3,7 @@ import { useRealtime } from '@/features/realtime'
 import { taxApi } from '../api/taxApi'
 import { TAX_KEYS } from './queryKeys'
 import { showApiError } from '@/lib/errors'
+import { invalidateCrossFeature } from '@/lib/invalidation'
 
 export function useTaxCalculation() {
   return useMutation({
@@ -23,8 +24,7 @@ export function useCreateDeclaration() {
       taxApi.createDeclaration(data),
     onSuccess: () => {
       markLocalMutation()
-      queryClient.invalidateQueries({ queryKey: TAX_KEYS.declarations.all() })
-      queryClient.invalidateQueries({ queryKey: TAX_KEYS.periods.all() })
+      invalidateCrossFeature(queryClient, [TAX_KEYS.declarations.all(), TAX_KEYS.periods.all()])
     }
   })
 }
@@ -38,8 +38,7 @@ export function useRegisterDeclaration() {
       taxApi.registerDeclaration(id, data, idempotencyKey),
     onSuccess: () => {
       markLocalMutation()
-      queryClient.invalidateQueries({ queryKey: TAX_KEYS.declarations.all() })
-      queryClient.invalidateQueries({ queryKey: TAX_KEYS.periods.all() })
+      invalidateCrossFeature(queryClient, [TAX_KEYS.declarations.all(), TAX_KEYS.periods.all()])
     }
   })
 }
@@ -53,7 +52,7 @@ export function useClosePeriod() {
         taxApi.closePeriod(id, idempotencyKey),
     onSuccess: () => {
       markLocalMutation()
-      queryClient.invalidateQueries({ queryKey: TAX_KEYS.periods.all() })
+      invalidateCrossFeature(queryClient, [TAX_KEYS.periods.all()])
     }
   })
 }
@@ -66,7 +65,7 @@ export function useReopenPeriod() {
     mutationFn: (params: { id: number; reason?: string }) => taxApi.reopenPeriod(params),
     onSuccess: () => {
       markLocalMutation()
-      queryClient.invalidateQueries({ queryKey: TAX_KEYS.periods.all() })
+      invalidateCrossFeature(queryClient, [TAX_KEYS.periods.all()])
     }
   })
 }
@@ -80,8 +79,7 @@ export function useCreateTaxPayment() {
       taxApi.createPayment(data),
     onSuccess: () => {
       markLocalMutation()
-      queryClient.invalidateQueries({ queryKey: TAX_KEYS.periods.all() })
-      queryClient.invalidateQueries({ queryKey: TAX_KEYS.declarations.all() })
+      invalidateCrossFeature(queryClient, [TAX_KEYS.periods.all(), TAX_KEYS.declarations.all()])
     },
     onError: (error: Error) => {
       showApiError(error, 'Error al registrar pago')
@@ -103,8 +101,7 @@ export function useUploadF29Document(declarationId: number) {
     mutationFn: (file: File) => taxApi.attachDeclarationDocument(declarationId, file),
     onSuccess: () => {
       markLocalMutation()
-      queryClient.invalidateQueries({ queryKey: TAX_KEYS.periods.all() })
-      queryClient.invalidateQueries({ queryKey: TAX_KEYS.declarations.all() })
+      invalidateCrossFeature(queryClient, [TAX_KEYS.periods.all(), TAX_KEYS.declarations.all()])
     },
     onError: (error: Error) => {
       showApiError(error, 'Error al subir documento F29')

@@ -1,4 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { invalidateCrossFeature } from '@/lib/invalidation'
 import { billingApi } from '../api/billingApi'
 import { toast } from 'sonner'
 import type { Invoice, InvoiceFilters } from '../types'
@@ -6,9 +7,9 @@ import { PURCHASING_KEYS } from '@/features/purchasing'
 import { useRealtime } from '@/features/realtime'
 import { useAuth } from '@/contexts/AuthContext'
 
-import { PURCHASE_INVOICES_QUERY_KEY } from './queryKeys'
+import { PURCHASE_INVOICES_KEYS, PURCHASE_INVOICES_QUERY_KEY } from './queryKeys'
 
-export { PURCHASE_INVOICES_QUERY_KEY }
+export { PURCHASE_INVOICES_KEYS, PURCHASE_INVOICES_QUERY_KEY }
 
 interface UsePurchaseInvoicesProps {
     filters?: Omit<InvoiceFilters, 'mode'>
@@ -20,7 +21,7 @@ export function usePurchaseInvoices({ filters }: UsePurchaseInvoicesProps = {}) 
     const { isAuthenticated } = useAuth()
 
     const query = useQuery({
-        queryKey: [...PURCHASE_INVOICES_QUERY_KEY, filters],
+        queryKey: PURCHASE_INVOICES_KEYS.list(filters),
         queryFn: () => billingApi.getInvoices({ ...filters, mode: 'purchase' }),
         staleTime: 2 * 60 * 1000,
         enabled: isAuthenticated,
@@ -33,8 +34,7 @@ export function usePurchaseInvoices({ filters }: UsePurchaseInvoicesProps = {}) 
     const refetch = query.refetch
 
     const invalidate = () => {
-        queryClient.invalidateQueries({ queryKey: PURCHASE_INVOICES_QUERY_KEY })
-        queryClient.invalidateQueries({ queryKey: PURCHASING_KEYS.all })
+        invalidateCrossFeature(queryClient, [PURCHASE_INVOICES_KEYS.all, PURCHASING_KEYS.all])
     }
 
     const annulMutation = useMutation({

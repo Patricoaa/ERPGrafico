@@ -26,6 +26,7 @@ export {
   StatementImportModal,
   ReconciliationBreadcrumbs,
   BankJournalDrawer,
+  StatementDetailPanel,
 } from './bank-reconciliation/components'
 export { useStatementQuery } from './bank-reconciliation/hooks/useReconciliationQueries'
 export { useUnmatchMutation, useMatchMutation, useGroupMatchMutation, useExcludeMutation, useBulkExcludeMutation, useRestoreMutation, useAutoMatchMutation, useCreateAndMatchMutation, useAllocateMutation, useCreateMovementMutation, useUpdateReconciliationSettingsMutation } from './bank-reconciliation/hooks/useReconciliationMutations'

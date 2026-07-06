@@ -1,4 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { invalidateCrossFeature } from '@/lib/invalidation'
 import { toast } from 'sonner'
 import { settingsApi } from '../api/settingsApi'
 import type { SalesSettings, SalesSettingsUpdatePayload } from '../types'
@@ -38,7 +39,7 @@ export function useSalesSettings(): UseSalesSettingsReturn {
         onSuccess: () => {
             markLocalMutation()
             toast.success('Configuración de ventas aplicada')
-            queryClient.invalidateQueries({ queryKey: SALES_SETTINGS_QUERY_KEY })
+            invalidateCrossFeature(queryClient, [SALES_SETTINGS_QUERY_KEY])
         },
         onError: () => {
             toast.error('Error al guardar cambios')

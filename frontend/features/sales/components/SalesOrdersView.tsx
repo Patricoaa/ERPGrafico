@@ -2,16 +2,12 @@
 
 import React, { useState } from "react"
 import { useRouter, useSearchParams, usePathname } from "next/navigation"
-import { DataTableView } from '@/components/shared'
-import { DataTableColumnHeader } from '@/components/shared'
+import { DataTableView, DataCell, DomainHubStatus, SmartSearchBar, useSmartSearch, SegmentationBar, useSegmentation, DataTableColumnHeader, createDateColumn, createContactColumn, createCurrencyColumn, createCodeColumn } from '@/components/shared'
 import { type ColumnDef } from "@tanstack/react-table"
 import { ArrowRight, ArrowLeft } from "lucide-react"
 
 import { useHubPanel } from "@/components/providers/HubPanelProvider"
-import { DomainHubStatus } from "@/components/shared"
-import { DataCell } from '@/components/shared'
 import { useSalesOrders, useSalesNotes, type SaleOrder, type SaleNote } from "@/features/sales"
-import { SmartSearchBar, useSmartSearch, SegmentationBar, useSegmentation } from "@/components/shared"
 import { salesOrderSearchDef, salesNoteSearchDef } from "@/features/sales/searchDef"
 import { salesOrderSegDef, salesNoteSegDef } from "@/features/sales/segmentationDef"
 import type { SaleOrderFilters } from "@/features/sales/types"
@@ -80,30 +76,12 @@ export function SalesOrdersView({ viewMode, posSessionId, onSelectOrder, selecte
     })
 
     const columns: ColumnDef<SaleOrder>[] = [
-        {
-            accessorKey: "number",
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Folio" className="justify-center" />,
-            cell: ({ row }) => <DataCell.Code>{row.original.display_id ?? row.original.number}</DataCell.Code>,
-            meta: { title: "Folio" },
-        },
-        {
-            accessorKey: "date",
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Fecha" className="justify-center" />,
-            cell: ({ row }) => <DataCell.Date value={row.getValue("date")} />,
-            meta: { title: "Fecha" },
-        },
-        {
-            accessorKey: "customer_name",
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Cliente" className="justify-center" />,
-            cell: ({ row }) => <DataCell.ContactLink contactId={row.original.customer}>{row.getValue("customer_name")}</DataCell.ContactLink>,
-            meta: { title: "Cliente" },
-        },
-        {
-            accessorKey: "total",
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Total" className="justify-center" />,
-            cell: ({ row }) => <DataCell.Currency value={row.getValue("total")} />,
-            meta: { title: "Total" },
-        },
+        createCodeColumn<SaleOrder>("number", "Folio", {
+            render: (entity) => <DataCell.Code>{entity.display_id ?? entity.number}</DataCell.Code>,
+        }),
+        createDateColumn<SaleOrder>("date", "Fecha"),
+        createContactColumn<SaleOrder>("customer_name", "Cliente", "customer"),
+        createCurrencyColumn<SaleOrder>("total", "Total"),
         {
             accessorKey: "status",
             header: ({ column }) => <DataTableColumnHeader column={column} title="Estados" className="justify-center" />,

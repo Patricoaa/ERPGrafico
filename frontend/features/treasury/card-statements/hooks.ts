@@ -5,6 +5,7 @@ import { cardStatementsApi } from './api'
 import type {
     CreditCardStatementCreatePayload, PayStatementPayload, ApplyChargesPayload,
 } from './types'
+import { invalidateCrossFeature } from '@/lib/invalidation'
 
 const STMT_KEYS = {
     all: ['card-statements'] as const,
@@ -43,8 +44,7 @@ export function useCardStatementMutations() {
     const queryClient = useQueryClient()
 
     const invalidate = () => {
-        queryClient.invalidateQueries({ queryKey: STMT_KEYS.all })
-        queryClient.invalidateQueries({ queryKey: ['card-analytics'] })
+        invalidateCrossFeature(queryClient, [STMT_KEYS.all, ['card-analytics']])
     }
 
     const create = useMutation({

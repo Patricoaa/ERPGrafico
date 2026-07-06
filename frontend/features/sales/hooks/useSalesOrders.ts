@@ -1,3 +1,4 @@
+import { invalidateCrossFeature } from '@/lib/invalidation'
 import {showApiError} from "@/lib/errors"
 import { useQueryClient, useMutation, useQuery } from '@tanstack/react-query'
 import { salesApi } from '../api/salesApi'
@@ -12,6 +13,7 @@ export { SALES_KEYS }
 
 export function useSalesOrders({ filters, initialData }: { filters?: SaleOrderFilters, initialData?: Page<SaleOrder> } = {}) {
     const queryClient = useQueryClient()
+    const invalidateSales = () => invalidateCrossFeature(queryClient, [SALES_KEYS.all])
     const { markLocalMutation } = useRealtime()
 
     const { page = 1, page_size = 50, ...restFilters } = filters || {}
@@ -35,7 +37,7 @@ export function useSalesOrders({ filters, initialData }: { filters?: SaleOrderFi
         onSuccess: () => {
             markLocalMutation()
             toast.success('Nota de venta creada')
-            queryClient.invalidateQueries({ queryKey: SALES_KEYS.all })
+            invalidateSales()
         },
         onError: (error: Error) => {
             showApiError(error, 'Error al crear la nota de venta')
@@ -48,7 +50,7 @@ export function useSalesOrders({ filters, initialData }: { filters?: SaleOrderFi
         onSuccess: () => {
             markLocalMutation()
             toast.success('Nota de venta actualizada')
-            queryClient.invalidateQueries({ queryKey: SALES_KEYS.all })
+            invalidateSales()
         },
         onError: (error: Error) => {
             showApiError(error, 'Error al actualizar la nota de venta')
@@ -60,7 +62,7 @@ export function useSalesOrders({ filters, initialData }: { filters?: SaleOrderFi
         onSuccess: () => {
             markLocalMutation()
             toast.success('Nota de venta eliminada')
-            queryClient.invalidateQueries({ queryKey: SALES_KEYS.all })
+            invalidateSales()
         },
         onError: () => {
             toast.error('Error al eliminar')
@@ -76,7 +78,7 @@ export function useSalesOrders({ filters, initialData }: { filters?: SaleOrderFi
             // un invoice asociado → invalida sales completo. Billing también
             // debe refrescarse pero esa invalidación la dispara el bus o el
             // próximo useInvoices al volverse stale.
-            queryClient.invalidateQueries({ queryKey: SALES_KEYS.all })
+            invalidateSales()
         },
     })
 
@@ -88,7 +90,7 @@ export function useSalesOrders({ filters, initialData }: { filters?: SaleOrderFi
             // dispatch cambia el delivery_status de la orden y crea movimientos
             // de stock. Invalidamos sales (estado) y la query externa de stockMoves
             // se invalidará si el bus está habilitado.
-            queryClient.invalidateQueries({ queryKey: SALES_KEYS.all })
+            invalidateSales()
         },
     })
 
@@ -99,7 +101,7 @@ export function useSalesOrders({ filters, initialData }: { filters?: SaleOrderFi
         }) => salesApi.dispatchOrderPartial(orderId, payload),
         onSuccess: () => {
             markLocalMutation()
-            queryClient.invalidateQueries({ queryKey: SALES_KEYS.all })
+            invalidateSales()
         },
     })
 

@@ -29,15 +29,18 @@ export function PurchaseReceiptDrawer({ receiptId, id, open, onOpenChange }: Pur
 
     const columns = useMemo<ColumnDef<Record<string, unknown>>[]>(() => [
         {
+            id: "product",
             header: "Producto",
             cell: ({ row }) => String(row.original.product_name)
         },
         {
+            id: "quantity",
             header: "Cantidad",
             cell: ({ row }) => String(row.original.quantity_received),
             meta: { align: "right" }
         },
         {
+            id: "cost",
             header: "Costo",
             cell: ({ row }) => formatCurrency(Number(row.original.unit_cost || 0)),
             meta: { align: "right" }

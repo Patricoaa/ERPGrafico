@@ -4,6 +4,7 @@ import { useRealtime } from '@/features/realtime'
 import * as workflowApi from '../api/workflowApi'
 import { WORKFLOW_KEYS } from './queryKeys'
 import { showApiError } from '@/lib/errors'
+import { invalidateCrossFeature } from '@/lib/invalidation'
 
 export function useCompleteTask() {
   const queryClient = useQueryClient()
@@ -13,8 +14,7 @@ export function useCompleteTask() {
     mutationFn: (id: number) => workflowApi.completeTask(id),
     onSuccess: (_, id) => {
       markLocalMutation()
-      queryClient.invalidateQueries({ queryKey: WORKFLOW_KEYS.taskDetail(id) })
-      queryClient.invalidateQueries({ queryKey: WORKFLOW_KEYS.tasks() })
+      invalidateCrossFeature(queryClient, [WORKFLOW_KEYS.taskDetail(id), WORKFLOW_KEYS.tasks()])
       toast.success('Tarea completada exitosamente')
     },
     onError: (error: Error) => {
@@ -32,8 +32,7 @@ export function useUpdateTask() {
       workflowApi.updateTask(id, payload),
     onSuccess: (_, variables) => {
       markLocalMutation()
-      queryClient.invalidateQueries({ queryKey: WORKFLOW_KEYS.taskDetail(variables.id) })
-      queryClient.invalidateQueries({ queryKey: WORKFLOW_KEYS.tasks() })
+      invalidateCrossFeature(queryClient, [WORKFLOW_KEYS.taskDetail(variables.id), WORKFLOW_KEYS.tasks()])
       toast.success('Tarea actualizada exitosamente')
     },
     onError: (error: Error) => {
@@ -51,7 +50,7 @@ export function useUpdateAssignmentRule() {
       workflowApi.updateAssignmentRule(id, data),
     onSuccess: () => {
       markLocalMutation()
-      queryClient.invalidateQueries({ queryKey: WORKFLOW_KEYS.assignmentRules() })
+      invalidateCrossFeature(queryClient, [WORKFLOW_KEYS.assignmentRules()])
       toast.success('Regla de asignación actualizada exitosamente')
     },
     onError: (error: Error) => {
@@ -68,7 +67,7 @@ export function useCreateAssignmentRule() {
     mutationFn: workflowApi.createAssignmentRule,
     onSuccess: () => {
       markLocalMutation()
-      queryClient.invalidateQueries({ queryKey: WORKFLOW_KEYS.assignmentRules() })
+      invalidateCrossFeature(queryClient, [WORKFLOW_KEYS.assignmentRules()])
       toast.success('Regla de asignación creada exitosamente')
     },
     onError: (error: Error) => {
@@ -86,7 +85,7 @@ export function useUpdateNotificationRule() {
       workflowApi.updateNotificationRule(id, data),
     onSuccess: () => {
       markLocalMutation()
-      queryClient.invalidateQueries({ queryKey: WORKFLOW_KEYS.notificationRules() })
+      invalidateCrossFeature(queryClient, [WORKFLOW_KEYS.notificationRules()])
       toast.success('Regla de notificación actualizada exitosamente')
     },
     onError: (error: Error) => {
@@ -103,7 +102,7 @@ export function useCreateNotificationRule() {
     mutationFn: workflowApi.createNotificationRule,
     onSuccess: () => {
       markLocalMutation()
-      queryClient.invalidateQueries({ queryKey: WORKFLOW_KEYS.notificationRules() })
+      invalidateCrossFeature(queryClient, [WORKFLOW_KEYS.notificationRules()])
       toast.success('Regla de notificación creada exitosamente')
     },
     onError: (error: Error) => {
@@ -120,7 +119,7 @@ export function useUpdateWorkflowSettings() {
     mutationFn: workflowApi.updateWorkflowSettings,
     onSuccess: () => {
       markLocalMutation()
-      queryClient.invalidateQueries({ queryKey: WORKFLOW_KEYS.workflowSettings() })
+      invalidateCrossFeature(queryClient, [WORKFLOW_KEYS.workflowSettings()])
       toast.success('Configuración actualizada exitosamente')
     },
     onError: (error: Error) => {

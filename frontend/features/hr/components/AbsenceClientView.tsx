@@ -6,11 +6,7 @@ import { toast } from "sonner"
 import { AbsenceDrawer } from "@/features/hr"
 import type { Absence, Employee } from "@/types/hr"
 import { type ColumnDef } from "@tanstack/react-table"
-import { DataTableView } from '@/components/shared'
-import { DataTableColumnHeader } from '@/components/shared'
-import { DataCell } from '@/components/shared'
-import { EntityCard } from "@/components/shared"
-import { ToolbarCreateButton, SegmentationBar, useSegmentation, SmartSearchBar, useClientSearch } from "@/components/shared"
+import { DataTableView, DataTableColumnHeader, DataCell, EntityCard, ToolbarCreateButton, SegmentationBar, useSegmentation, SmartSearchBar, useClientSearch, createDateColumn } from '@/components/shared'
 import { useAbsences, deleteAbsence, getEmployees, absenceActions, type AbsenceActionsCtx } from "@/features/hr"
 import { absenceSegDef } from "../segmentationDef"
 import { absenceSearchDef } from "../searchDef"
@@ -78,16 +74,8 @@ export function AbsenceClientView({ initialAbsences }: AbsenceClientViewProps) {
             cell: ({ row }) =>
                 <DataCell.Status status={row.original.absence_type} label={row.original.absence_type_display} />,
         },
-        {
-            accessorKey: "start_date",
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Inicio" className="justify-center" />,
-            cell: ({ row }) => <div className="flex justify-center w-full"><DataCell.Date value={row.getValue("start_date")} /></div>,
-        },
-        {
-            accessorKey: "end_date",
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Fin" className="justify-center" />,
-            cell: ({ row }) => <div className="flex justify-center w-full"><DataCell.Date value={row.getValue("end_date")} /></div>,
-        },
+        createDateColumn<Absence>("start_date", "Inicio"),
+        createDateColumn<Absence>("end_date", "Fin"),
         {
             accessorKey: "days",
             header: ({ column }) => <DataTableColumnHeader column={column} title="Días" className="justify-center" />,

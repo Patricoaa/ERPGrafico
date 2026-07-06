@@ -231,7 +231,55 @@ El mapa centralizado `searchableEntityRoutes.ts` (T-88) es la fuente de verdad. 
 
 ---
 
-## 8. Cross-references
+## 9. Parámetro `?modal` para wizards de creación/import
+
+Los wizards de creación o importación (no edición de entidades existentes) pueden usar `?modal` como URL param deep-linkeable en lugar de estado local, cuando el wizard requiere múltiples pasos o entrada de datos externa.
+
+### 9.1 Valores canónicos
+
+| Valor | Propósito | Ejemplo |
+|-------|-----------|---------|
+| `?modal=new` | Wizard de creación de entidad | `?modal=new` |
+| `?modal=import` | Wizard de importación (cartolas, etc.) | `?modal=import` |
+
+### 9.2 Reglas
+
+1. El componente **debe** limpiar `?modal` de la URL al cerrar el wizard, usando `router.replace` + `URLSearchParams.delete('modal')` — mismo patrón que `?selected` en §2.
+2. No usar `?modal` como reemplazo de `?selected` para edición — ese rol es exclusivo de `?selected` (ver §1).
+3. La acción de crear desde botón toolbar puede usar `href="/ruta?modal=new"` para deep-link.
+4. Al completar la creación, el wizard puede transicionar de `?modal=new` a `?selected={id}` (el ID de la entidad recién creada) o limpiar el param por completo.
+
+### 9.3 Ejemplo canónico
+
+```tsx
+// En el handler de apertura:
+onClick={() => {
+  const params = new URLSearchParams(searchParams.toString())
+  params.set('modal', 'import')
+  router.push(`${pathname}?${params.toString()}`, { scroll: false })
+  setOpen(true)
+}}
+
+// En el handler de cierre (onOpenChange):
+if (!open) {
+  const params = new URLSearchParams(searchParams.toString())
+  params.delete('modal')
+  const query = params.toString()
+  router.replace(query ? `${pathname}?${query}` : pathname, { scroll: false })
+}
+```
+
+### 9.4 Anti-patrones
+
+| Anti-patrón | Correcto |
+|-------------|----------|
+| Usar `?modal` para editar una entidad existente | `?selected={id}` |
+| No limpiar `?modal` al cerrar el wizard (URL queda con param fantasma) | `router.replace` con `params.delete('modal')` |
+| Usar `?modal=new` Y `?selected=id` simultáneamente en la misma URL | Son mutuamente excluyentes por propósito |
+
+---
+
+## 8. Cross-references (original)
 
 - ADR de la decisión: [ADR-0020](../10-architecture/adr/0020-modal-on-list-edit-ux.md)
 - Hook `useSelectedEntity` (implementación): [hook-contracts.md](./hook-contracts.md)

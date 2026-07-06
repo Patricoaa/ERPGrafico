@@ -3,6 +3,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import api from '@/lib/api'
+import { invalidateCrossFeature } from '@/lib/invalidation'
 import { UOMS_KEYS, UOM_CATEGORIES_KEYS } from './useUoMs'
 import { useRealtime } from '@/features/realtime'
 import type { UoM, UoMCategory, UoMCategoryPayload } from './useUoMs'
@@ -11,11 +12,14 @@ export function useUoMMutations() {
     const queryClient = useQueryClient()
     const { markLocalMutation } = useRealtime()
 
+    const invalidateUoMs = () => invalidateCrossFeature(queryClient, [UOMS_KEYS.all])
+    const invalidateUoMsAndCategories = () => invalidateCrossFeature(queryClient, [UOMS_KEYS.all, UOM_CATEGORIES_KEYS.all])
+
     const deleteUoM = useMutation({
         mutationFn: async (id: number) => api.delete(`/inventory/uoms/${id}/`),
         onSuccess: () => {
             markLocalMutation()
-            queryClient.invalidateQueries({ queryKey: UOMS_KEYS.all })
+            invalidateUoMs()
         },
     })
 
@@ -28,7 +32,7 @@ export function useUoMMutations() {
         },
         onSuccess: () => {
             markLocalMutation()
-            queryClient.invalidateQueries({ queryKey: UOMS_KEYS.all })
+            invalidateUoMs()
         },
     })
 
@@ -42,8 +46,7 @@ export function useUoMMutations() {
         onSuccess: (_, vars) => {
             markLocalMutation()
             toast.success(vars.id === null ? 'Categoría creada' : 'Categoría actualizada')
-            queryClient.invalidateQueries({ queryKey: UOM_CATEGORIES_KEYS.all })
-            queryClient.invalidateQueries({ queryKey: UOMS_KEYS.all })
+            invalidateUoMsAndCategories()
         },
     })
 
@@ -52,8 +55,7 @@ export function useUoMMutations() {
         onSuccess: () => {
             markLocalMutation()
             toast.success('Categoría eliminada')
-            queryClient.invalidateQueries({ queryKey: UOM_CATEGORIES_KEYS.all })
-            queryClient.invalidateQueries({ queryKey: UOMS_KEYS.all })
+            invalidateUoMsAndCategories()
         },
         onError: (e: Error) => {
             toast.error(`Error al eliminar la categoría: ${e.message}`)

@@ -458,6 +458,60 @@
 }
 
 /*
+ * FINE DOT GRID SURFACE — Finer dot grid for tighter panels
+ * Dot spacing at 12px (half of dot-grid-surface).
+ * Use on compact containers where the 24px grid feels too sparse.
+ */
+@utility dot-grid-surface-sm {
+  background-image: radial-gradient(var(--grid-line-color) 1px, transparent 0);
+  background-size: 12px 12px;
+  background-position: -7px -7px;
+}
+
+/*
+ * CROSS GRID SURFACE — Graph-paper crosshatch pattern
+ * Combines vertical + horizontal lines with subtle dot intersections.
+ * Use on surfaces that need a technical/engineering feel (e.g. production grids, Gantt).
+ */
+@utility cross-grid-surface {
+  background-image:
+    linear-gradient(var(--grid-line-color) 1px, transparent 0),
+    linear-gradient(90deg, var(--grid-line-color) 1px, transparent 0);
+  background-size: 24px 24px;
+  background-position: -1px -1px;
+}
+
+/*
+ * DIAGONAL STRIPE SURFACE — Subtle diagonal line pattern
+ * 45° diagonal lines at 24px spacing for visual rhythm.
+ * Use sparingly on decorative panels or loading zones.
+ */
+@utility diagonal-stripe-surface {
+  background-image: repeating-linear-gradient(
+    -45deg,
+    transparent 0,
+    transparent 10px,
+    var(--grid-line-color) 10px,
+    var(--grid-line-color) 11px
+  );
+  background-size: 24px 24px;
+}
+
+/*
+ * WAVY DOT SURFACE — Organic dot scatter
+ * Random-feeling dot placement via layered radial gradients.
+ * Use on creative/canvas surfaces where a rigid grid feels too mechanical.
+ */
+@utility wavy-dot-surface {
+  background-image:
+    radial-gradient(var(--grid-line-color) 1px, transparent 0),
+    radial-gradient(var(--grid-line-color) 1px, transparent 0),
+    radial-gradient(var(--grid-line-color) 0.5px, transparent 0);
+  background-size: 24px 24px, 16px 40px, 40px 16px;
+  background-position: 0 0, 12px 20px, 8px 4px;
+}
+
+/*
  * CMY RIBBON — Gradient top border for cards
  * Apply via className="ribbon-cmyk" on any <Card> or container.
  * Renders a 2px cyan→magenta→yellow smooth gradient bar along the top edge.

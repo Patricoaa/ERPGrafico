@@ -6,6 +6,7 @@ import { type ContactFilters, type ContactPayload, type Contact } from '../types
 import { SALES_KEYS } from '@/features/sales'
 import { PURCHASING_KEYS } from '@/features/purchasing'
 import { useRealtime } from '@/features/realtime'
+import { invalidateCrossFeature } from '@/lib/invalidation'
 
 import { CONTACTS_KEYS } from './queryKeys'
 
@@ -45,10 +46,8 @@ export function useContactMutations() {
         onSuccess: () => {
             markLocalMutation()
             toast.success('Contacto creado exitosamente')
-            queryClient.invalidateQueries({ queryKey: CONTACTS_KEYS.lists() })
             // A new contact might appear in order/purchase contact filter dropdowns
-            queryClient.invalidateQueries({ queryKey: [...SALES_KEYS.all, 'orders'] })
-            queryClient.invalidateQueries({ queryKey: PURCHASING_KEYS.orders() })
+            invalidateCrossFeature(queryClient, [CONTACTS_KEYS.lists(), [...SALES_KEYS.all, 'orders'], PURCHASING_KEYS.orders()])
         },
         onError: (error: Error) => {
             showApiError(error, 'Error al crear el contacto')
@@ -61,11 +60,8 @@ export function useContactMutations() {
         onSuccess: (data) => {
             markLocalMutation()
             toast.success('Contacto actualizado exitosamente')
-            queryClient.invalidateQueries({ queryKey: CONTACTS_KEYS.lists() })
-            queryClient.invalidateQueries({ queryKey: CONTACTS_KEYS.detail(data.id) })
             // Contact name change propagates to order/purchase contact display
-            queryClient.invalidateQueries({ queryKey: [...SALES_KEYS.all, 'orders'] })
-            queryClient.invalidateQueries({ queryKey: PURCHASING_KEYS.orders() })
+            invalidateCrossFeature(queryClient, [CONTACTS_KEYS.lists(), CONTACTS_KEYS.detail(data.id), [...SALES_KEYS.all, 'orders'], PURCHASING_KEYS.orders()])
         },
         onError: (error: Error) => {
             showApiError(error, 'Error al actualizar el contacto')
@@ -77,7 +73,7 @@ export function useContactMutations() {
         onSuccess: () => {
             markLocalMutation()
             toast.success('Contacto eliminado exitosamente')
-            queryClient.invalidateQueries({ queryKey: CONTACTS_KEYS.lists() })
+            invalidateCrossFeature(queryClient, [CONTACTS_KEYS.lists()])
         },
         onError: (error: Error) => {
             console.error(error)

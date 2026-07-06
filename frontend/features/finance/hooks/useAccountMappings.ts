@@ -3,6 +3,7 @@ import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query'
 import { accountingApi } from '@/features/accounting'
 import { type Account } from '@/features/accounting'
 import { useRealtime } from '@/features/realtime'
+import { invalidateCrossFeature } from '@/lib/invalidation'
 
 export type MappingType = 'is' | 'cf' | 'bs'
 
@@ -55,7 +56,7 @@ export function useAccountMappings(mappingType: MappingType) {
             accountingApi.updateAccountMappings(updates),
         onSuccess: () => {
             markLocalMutation()
-            queryClient.invalidateQueries({ queryKey: ['accounts'] })
+            invalidateCrossFeature(queryClient, [['accounts']])
         }
     })
 

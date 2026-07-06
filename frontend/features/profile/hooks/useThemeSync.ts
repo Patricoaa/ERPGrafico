@@ -7,6 +7,7 @@ import { useAuth } from "@/contexts/AuthContext"
 import { useRealtime } from "@/features/realtime"
 import { toast } from "sonner"
 import { PROFILE_KEYS } from "./queryKeys"
+import { invalidateCrossFeature } from '@/lib/invalidation'
 
 export function useThemeSync() {
   const { setTheme } = useTheme()
@@ -40,7 +41,7 @@ export function useThemeSync() {
     },
     onSuccess: () => {
       markLocalMutation()
-      queryClient.invalidateQueries({ queryKey: PROFILE_KEYS.all })
+      invalidateCrossFeature(queryClient, [PROFILE_KEYS.all])
     }
   })
 

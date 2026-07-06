@@ -6,6 +6,7 @@ import { accountingApi } from '../api/accountingApi'
 import type { AccountPayload } from '../types'
 import { toast } from 'sonner'
 import { useRealtime } from '@/features/realtime'
+import { invalidateCrossFeature } from '@/lib/invalidation'
 
 import { ACCOUNTS_QUERY_KEY } from './queryKeys'
 
@@ -17,7 +18,7 @@ export function useAccountMutations() {
         mutationFn: (payload: AccountPayload) => accountingApi.createAccount(payload),
         onSuccess: () => {
             markLocalMutation()
-            queryClient.invalidateQueries({ queryKey: ACCOUNTS_QUERY_KEY })
+            invalidateCrossFeature(queryClient, [ACCOUNTS_QUERY_KEY])
             toast.success('Cuenta creada exitosamente')
         },
         onError: (error: Error) => {
@@ -30,7 +31,7 @@ export function useAccountMutations() {
             accountingApi.updateAccount(id, payload),
         onSuccess: () => {
             markLocalMutation()
-            queryClient.invalidateQueries({ queryKey: ACCOUNTS_QUERY_KEY })
+            invalidateCrossFeature(queryClient, [ACCOUNTS_QUERY_KEY])
             toast.success('Cuenta actualizada exitosamente')
         },
         onError: (error: Error) => {
@@ -42,7 +43,7 @@ export function useAccountMutations() {
         mutationFn: (id: number) => accountingApi.deleteAccount(id),
         onSuccess: () => {
             markLocalMutation()
-            queryClient.invalidateQueries({ queryKey: ACCOUNTS_QUERY_KEY })
+            invalidateCrossFeature(queryClient, [ACCOUNTS_QUERY_KEY])
             toast.success('Cuenta eliminada exitosamente')
         },
         onError: (error: Error) => {

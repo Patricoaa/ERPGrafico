@@ -3,9 +3,9 @@ import { cn, translateStatus, formatPlainDate, parseDateOnly } from "@/lib/utils
 import { ExternalLink, type LucideIcon, MoreVertical } from "lucide-react"
 import Link from "next/link"
 import { type ReactNode, type HTMLAttributes } from "react"
-import type { ColumnDef } from "@tanstack/react-table"
+import type { ColumnDef, Row } from "@tanstack/react-table"
 
-import { MoneyDisplay, StatusBadge, EntityBadge, Chip as ChipComponent } from "@/components/shared"
+import { MoneyDisplay, StatusBadge, EntityBadge, Chip as ChipComponent, DataTableColumnHeader } from "@/components/shared"
 import { useGlobalModals } from "@/components/providers/GlobalModalProvider"
 import { Button } from "@/components/ui/button"
 import {
@@ -526,5 +526,137 @@ export function createActionsColumn<TData>({
         ),
         enableSorting: false,
         enableHiding: false,
+    }
+}
+
+// ─── Standard Column Factories ─────────────────────────────────────────────────
+// Eliminate the 5-line `header: ({column}) => <DataTableColumnHeader ...>` + cell
+// boilerplate that repeats identically across every DataTable definition.
+// ───────────────────────────────────────────────────────────────────────────────
+
+interface ColOpts<TData> {
+    /** Override the default cell renderer */
+    cell?: (row: TData) => ReactNode
+    /** Additional class for the header wrapper */
+    headerClassName?: string
+    /** Disable column sorting (default: true) */
+    enableSorting?: boolean
+}
+
+/** Cell content renderer — returns only the inner content, not the DataCell.* wrapper. */
+type CellContent<TData> = (row: TData) => ReactNode
+
+/**
+ * Creates a Code/identifier column.
+ * Default cell: `<DataCell.Code>{row.getValue(accessorKey)}</DataCell.Code>`
+ * Pass `render` to provide custom inner content while keeping the DataCell.Code wrapper.
+ */
+export function createCodeColumn<TData>(
+    accessorKey: string,
+    title: string,
+    opts?: ColOpts<TData> & { render?: CellContent<TData> }
+): ColumnDef<TData> {
+    return {
+        accessorKey,
+        header: ({ column }) => <DataTableColumnHeader column={column} title={title} className={cn("justify-center", opts?.headerClassName)} />,
+        cell: ({ row }) => (
+            <DataCell.Code>
+                {opts?.render ? opts.render(row.original) : ((row.getValue(accessorKey) as string) ?? "-")}
+            </DataCell.Code>
+        ),
+        enableSorting: opts?.enableSorting ?? true,
+    }
+}
+
+/**
+ * Creates a Date column.
+ * Default cell: `<DataCell.Date value={row.getValue(accessorKey)} />`
+ * Pass `{ showTime: true }` to display hours/minutes.
+ */
+export function createDateColumn<TData>(
+    accessorKey: string,
+    title: string,
+    opts?: ColOpts<TData> & { showTime?: boolean }
+): ColumnDef<TData> {
+    return {
+        accessorKey,
+        header: ({ column }) => <DataTableColumnHeader column={column} title={title} className={cn("justify-center", opts?.headerClassName)} />,
+        cell: ({ row }) => <DataCell.Date value={row.getValue(accessorKey) as string | Date} showTime={opts?.showTime} />,
+        enableSorting: opts?.enableSorting ?? true,
+    }
+}
+
+/**
+ * Creates a Currency column.
+ * Default cell: `<DataCell.Currency value={row.getValue(accessorKey)} />`
+ */
+export function createCurrencyColumn<TData>(
+    accessorKey: string,
+    title: string,
+    opts?: ColOpts<TData> & { digits?: number }
+): ColumnDef<TData> {
+    return {
+        accessorKey,
+        header: ({ column }) => <DataTableColumnHeader column={column} title={title} className={cn("justify-center", opts?.headerClassName)} />,
+        cell: ({ row }) => <DataCell.Currency value={row.getValue(accessorKey) as number | string} digits={opts?.digits} />,
+        enableSorting: opts?.enableSorting ?? true,
+    }
+}
+
+/**
+ * Creates a Secondary text column.
+ * Default cell: `<DataCell.Secondary>{row.getValue(accessorKey)}</DataCell.Secondary>`
+ */
+export function createSecondaryColumn<TData>(
+    accessorKey: string,
+    title: string,
+    opts?: ColOpts<TData>
+): ColumnDef<TData> {
+    return {
+        accessorKey,
+        header: ({ column }) => <DataTableColumnHeader column={column} title={title} className={cn("justify-center", opts?.headerClassName)} />,
+        cell: ({ row }) => <DataCell.Secondary>{(row.getValue(accessorKey) as string) ?? "-"}</DataCell.Secondary>,
+        enableSorting: opts?.enableSorting ?? true,
+    }
+}
+
+/**
+ * Creates a Contact link column.
+ * Default cell: `<DataCell.ContactLink contactId={row.original[contactIdAccessor]}>{row.getValue(accessorKey)}</DataCell.ContactLink>`
+ * @param contactIdAccessor — field on the row data that holds the contact ID (default: "partner")
+ */
+export function createContactColumn<TData>(
+    accessorKey: string,
+    title: string,
+    contactIdAccessor?: string,
+    opts?: ColOpts<TData>
+): ColumnDef<TData> {
+    const idField = contactIdAccessor ?? "partner"
+    return {
+        accessorKey,
+        header: ({ column }) => <DataTableColumnHeader column={column} title={title} className={cn("justify-center", opts?.headerClassName)} />,
+        cell: ({ row }) => {
+            const original = row.original as Record<string, unknown>
+            return <DataCell.ContactLink contactId={original[idField] as number | undefined}>{row.getValue(accessorKey) as string}</DataCell.ContactLink>
+        },
+        enableSorting: opts?.enableSorting ?? true,
+    }
+}
+
+/**
+ * Creates a Status badge column.
+ * Default cell: `<DataCell.Status status={row.getValue(accessorKey)} />`
+ * Use `opts.variant` for dot/hub variants, `opts.label` to override display text.
+ */
+export function createStatusColumn<TData>(
+    accessorKey: string,
+    title: string,
+    opts?: ColOpts<TData> & { variant?: "default" | "hub" | "dot"; label?: string }
+): ColumnDef<TData> {
+    return {
+        accessorKey,
+        header: ({ column }) => <DataTableColumnHeader column={column} title={title} className={cn("justify-center", opts?.headerClassName)} />,
+        cell: ({ row }) => <DataCell.Status status={row.getValue(accessorKey) as string} variant={opts?.variant} label={opts?.label} />,
+        enableSorting: opts?.enableSorting ?? true,
     }
 }

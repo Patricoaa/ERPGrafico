@@ -1,3 +1,4 @@
+import { invalidateCrossFeature } from '@/lib/invalidation'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import { treasuryApi, TERMINALS_KEYS } from '@/features/treasury'
@@ -24,10 +25,7 @@ export function usePosTerminals(): UsePosTerminalsReturn {
         staleTime: 5 * 60 * 1000,
     })
 
-    const invalidate = () => {
-        queryClient.invalidateQueries({ queryKey: TERMINALS_KEYS.lists() })
-        queryClient.invalidateQueries({ queryKey: TERMINALS_KEYS.details() })
-    }
+    const invalidate = () => invalidateCrossFeature(queryClient, [TERMINALS_KEYS.lists(), TERMINALS_KEYS.details()])
 
     const toggleActiveMutation = useMutation({
         mutationFn: async (terminal: Terminal) => {

@@ -3,6 +3,7 @@ import api from '@/lib/api'
 import { useRealtime } from '@/features/realtime'
 import { PRODUCTS_KEYS } from './queryKeys'
 import type { FilterState } from '@/components/shared'
+import { invalidateCrossFeature } from '@/lib/invalidation'
 
 export interface Subscription {
     id: number
@@ -47,9 +48,7 @@ export function useSubscriptions(filters?: FilterState) {
     })
 
     const invalidate = () => {
-        queryClient.invalidateQueries({ queryKey: SUBSCRIPTIONS_QUERY_KEY })
-        // pause/resume cambian el status del producto-suscripción → invalida products.
-        queryClient.invalidateQueries({ queryKey: PRODUCTS_KEYS.all })
+        invalidateCrossFeature(queryClient, [SUBSCRIPTIONS_QUERY_KEY, PRODUCTS_KEYS.all])
     }
 
     const pauseMutation = useMutation({

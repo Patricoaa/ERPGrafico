@@ -5,6 +5,7 @@ import { useRealtime } from '@/features/realtime'
 import type { Product, ProductFilters, ProductUpdatePayload } from '../types'
 import type { Page } from '@/lib/pagination'
 import { BOMS_QUERY_KEY, PRODUCTS_KEYS, PRODUCTS_QUERY_KEY } from './queryKeys'
+import { invalidateCrossFeature } from '@/lib/invalidation'
 
 // Re-export for backward compatibility with external consumers that still
 // import the flat constant directly (production/useBOMs, usePricingRules).
@@ -37,12 +38,7 @@ export function useProducts({ filters, initialData, page = 1, page_size = 50 }: 
     const refetch = query.refetch
 
     const invalidateProductsAndBoms = () => {
-        // Cover both list AND detail queries — invalidating `PRODUCTS_KEYS.all`
-        // hits every descendant (list, detail, and any future sub-resources).
-        queryClient.invalidateQueries({ queryKey: PRODUCTS_KEYS.all })
-        // A product change can affect BOMs that reference it (has_bom flag,
-        // component availability). Keep this cross-invalidation explicit.
-        queryClient.invalidateQueries({ queryKey: BOMS_QUERY_KEY })
+        invalidateCrossFeature(queryClient, [PRODUCTS_KEYS.all, BOMS_QUERY_KEY])
     }
 
     const updateProductMutation = useMutation({
@@ -88,8 +84,7 @@ export function useProducts({ filters, initialData, page = 1, page_size = 50 }: 
             markLocalMutation()
             // Genera N nuevos productos hijos — invalida lista, detalle y BOMs.
             // También invalida las queries de variants (parent_template-filtradas).
-            invalidateProductsAndBoms()
-            queryClient.invalidateQueries({ queryKey: ['inventory', 'variants'] })
+            invalidateCrossFeature(queryClient, [PRODUCTS_KEYS.all, BOMS_QUERY_KEY, ['inventory', 'variants']])
         },
     })
 

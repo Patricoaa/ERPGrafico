@@ -3,6 +3,7 @@
 export interface BankStatement {
     id: number
     display_id: string
+    treasury_account: number
     treasury_account_name: string
     statement_date: string
     opening_balance: string

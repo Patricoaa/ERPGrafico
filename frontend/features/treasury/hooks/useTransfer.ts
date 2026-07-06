@@ -1,4 +1,5 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { invalidateCrossFeature } from '@/lib/invalidation'
 import { toast } from 'sonner'
 import { showApiError } from '@/lib/errors'
 import { treasuryApi } from '../api/treasuryApi'
@@ -15,8 +16,7 @@ export function useTransfer() {
         onSuccess: () => {
             markLocalMutation()
             toast.success('Traspaso registrado correctamente.')
-            queryClient.invalidateQueries({ queryKey: MOVEMENTS_KEYS.all })
-            queryClient.invalidateQueries({ queryKey: TREASURY_ACCOUNTS_KEYS.all })
+            invalidateCrossFeature(queryClient, [MOVEMENTS_KEYS.all, TREASURY_ACCOUNTS_KEYS.all])
         },
         onError: (err) => {
             showApiError(err, 'Error al registrar el traspaso.')

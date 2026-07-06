@@ -1,4 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { invalidateCrossFeature } from '@/lib/invalidation'
 import { useRealtime } from '@/features/realtime'
 import { toast } from 'sonner'
 import { treasuryApi } from '../api/treasuryApi'
@@ -22,7 +23,7 @@ export function useBanks() {
     })
 
     const invalidate = () => {
-        queryClient.invalidateQueries({ queryKey: BANKS_KEYS.all })
+        invalidateCrossFeature(queryClient, [BANKS_KEYS.all])
     }
 
     const createMutation = useMutation({
@@ -103,8 +104,7 @@ export function usePaymentMethods() {
     })
 
     const invalidate = () => {
-        queryClient.invalidateQueries({ queryKey: PAYMENT_METHODS_KEYS.all })
-        queryClient.invalidateQueries({ queryKey: ALLOWED_PAYMENT_METHODS_KEYS.all })
+        invalidateCrossFeature(queryClient, [PAYMENT_METHODS_KEYS.all, ALLOWED_PAYMENT_METHODS_KEYS.all])
     }
 
     const createMutation = useMutation({

@@ -1,4 +1,5 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { invalidateCrossFeature } from '@/lib/invalidation'
 import { financeApi } from '../../api/financeApi'
 import { toast } from 'sonner'
 import { showApiError } from '@/lib/errors'
@@ -50,9 +51,11 @@ export function useMatchMutation(statementId: number, treasuryAccountId: number)
             }
         },
         onSettled: () => {
-            queryClient.invalidateQueries({ queryKey: [...reconciliationKeys.all, 'unreconciled-lines', statementId] })
-            queryClient.invalidateQueries({ queryKey: [...reconciliationKeys.all, 'unreconciled-payments', treasuryAccountId] })
-            queryClient.invalidateQueries({ queryKey: reconciliationKeys.statement(statementId) })
+            invalidateCrossFeature(queryClient, [
+                [...reconciliationKeys.all, 'unreconciled-lines', statementId],
+                [...reconciliationKeys.all, 'unreconciled-payments', treasuryAccountId],
+                reconciliationKeys.statement(statementId),
+            ])
         }
     })
 }
@@ -97,9 +100,11 @@ export function useGroupMatchMutation(statementId: number, treasuryAccountId: nu
             }
         },
         onSettled: () => {
-            queryClient.invalidateQueries({ queryKey: [...reconciliationKeys.all, 'unreconciled-lines', statementId] })
-            queryClient.invalidateQueries({ queryKey: [...reconciliationKeys.all, 'unreconciled-payments', treasuryAccountId] })
-            queryClient.invalidateQueries({ queryKey: reconciliationKeys.statement(statementId) })
+            invalidateCrossFeature(queryClient, [
+                [...reconciliationKeys.all, 'unreconciled-lines', statementId],
+                [...reconciliationKeys.all, 'unreconciled-payments', treasuryAccountId],
+                reconciliationKeys.statement(statementId),
+            ])
         }
     })
 }
@@ -124,8 +129,10 @@ export function useExcludeMutation(statementId: number) {
             toast.success("Movimiento excluido correctamente")
         },
         onSettled: () => {
-            queryClient.invalidateQueries({ queryKey: [...reconciliationKeys.all, 'unreconciled-lines', statementId] })
-            queryClient.invalidateQueries({ queryKey: reconciliationKeys.statement(statementId) })
+            invalidateCrossFeature(queryClient, [
+                [...reconciliationKeys.all, 'unreconciled-lines', statementId],
+                reconciliationKeys.statement(statementId),
+            ])
         }
     })
 }
@@ -150,8 +157,10 @@ export function useBulkExcludeMutation(statementId: number) {
             toast.success("Movimientos excluidos correctamente")
         },
         onSettled: () => {
-            queryClient.invalidateQueries({ queryKey: [...reconciliationKeys.all, 'unreconciled-lines', statementId] })
-            queryClient.invalidateQueries({ queryKey: reconciliationKeys.statement(statementId) })
+            invalidateCrossFeature(queryClient, [
+                [...reconciliationKeys.all, 'unreconciled-lines', statementId],
+                reconciliationKeys.statement(statementId),
+            ])
         }
     })
 }
@@ -176,8 +185,10 @@ export function useRestoreMutation(statementId: number) {
             showApiError(err, 'Error al restaurar')
         },
         onSettled: () => {
-            queryClient.invalidateQueries({ queryKey: [...reconciliationKeys.all, 'unreconciled-lines', statementId] })
-            queryClient.invalidateQueries({ queryKey: reconciliationKeys.statement(statementId) })
+            invalidateCrossFeature(queryClient, [
+                [...reconciliationKeys.all, 'unreconciled-lines', statementId],
+                reconciliationKeys.statement(statementId),
+            ])
         }
     })
 }
@@ -200,11 +211,12 @@ export function useAutoMatchMutation(statementId: number) {
             showApiError(err, 'Error en auto-match')
         },
         onSettled: () => {
-            queryClient.invalidateQueries({ queryKey: [...reconciliationKeys.all, 'unreconciled-lines', statementId] })
-            // Auto match could have matched payments across accounts — invalidate all unreconciled-payments
-            // but scoped to reconciliation domain, not everything
-            queryClient.invalidateQueries({ queryKey: [...reconciliationKeys.all, 'unreconciled-payments'] })
-            queryClient.invalidateQueries({ queryKey: reconciliationKeys.statement(statementId) })
+            // Auto match could have matched payments across accounts — scoped to reconciliation domain
+            invalidateCrossFeature(queryClient, [
+                [...reconciliationKeys.all, 'unreconciled-lines', statementId],
+                [...reconciliationKeys.all, 'unreconciled-payments'],
+                reconciliationKeys.statement(statementId),
+            ])
         }
     })
 }
@@ -222,9 +234,9 @@ export function useUpdateReconciliationSettingsMutation(accountId?: number | str
             markLocalMutation()
             toast.success('Configuración de inteligencia actualizada')
             if (accountId) {
-                queryClient.invalidateQueries({ queryKey: reconciliationKeys.settings(Number(accountId)) })
+                invalidateCrossFeature(queryClient, [reconciliationKeys.settings(Number(accountId))])
             } else {
-                queryClient.invalidateQueries({ queryKey: reconciliationKeys.all })
+                invalidateCrossFeature(queryClient, [reconciliationKeys.all])
             }
         },
         onError: (err) => {
@@ -255,9 +267,11 @@ export function useCreateAndMatchMutation(statementId: number, treasuryAccountId
             showApiError(err, "Error al crear y conciliar pago")
         },
         onSettled: () => {
-            queryClient.invalidateQueries({ queryKey: [...reconciliationKeys.all, 'unreconciled-lines', statementId] })
-            queryClient.invalidateQueries({ queryKey: [...reconciliationKeys.all, 'unreconciled-payments', treasuryAccountId] })
-            queryClient.invalidateQueries({ queryKey: reconciliationKeys.statement(statementId) })
+            invalidateCrossFeature(queryClient, [
+                [...reconciliationKeys.all, 'unreconciled-lines', statementId],
+                [...reconciliationKeys.all, 'unreconciled-payments', treasuryAccountId],
+                reconciliationKeys.statement(statementId),
+            ])
         }
     })
 }
@@ -281,9 +295,11 @@ export function useUnmatchMutation(statementId: number, treasuryAccountId: numbe
             showApiError(err, "Error al deshacer conciliación")
         },
         onSettled: () => {
-            queryClient.invalidateQueries({ queryKey: [...reconciliationKeys.all, 'unreconciled-lines', statementId] })
-            queryClient.invalidateQueries({ queryKey: [...reconciliationKeys.all, 'unreconciled-payments', treasuryAccountId] })
-            queryClient.invalidateQueries({ queryKey: reconciliationKeys.statement(statementId) })
+            invalidateCrossFeature(queryClient, [
+                [...reconciliationKeys.all, 'unreconciled-lines', statementId],
+                [...reconciliationKeys.all, 'unreconciled-payments', treasuryAccountId],
+                reconciliationKeys.statement(statementId),
+            ])
         }
     })
 }
@@ -308,7 +324,7 @@ export function useAllocateMutation(movementId: number, treasuryAccountId?: numb
         },
         onSettled: () => {
             if (treasuryAccountId) {
-                queryClient.invalidateQueries({ queryKey: reconciliationKeys.unreconciledPayments(treasuryAccountId) })
+                invalidateCrossFeature(queryClient, [reconciliationKeys.unreconciledPayments(treasuryAccountId)])
             }
             // Invalidate other generic movement/payment queries if necessary
         }
@@ -334,7 +350,7 @@ export function useCreateMovementMutation(treasuryAccountId: number) {
             showApiError(err, "Error al crear movimiento")
         },
         onSettled: () => {
-            queryClient.invalidateQueries({ queryKey: [...reconciliationKeys.all, 'unreconciled-payments', treasuryAccountId] })
+            invalidateCrossFeature(queryClient, [[...reconciliationKeys.all, 'unreconciled-payments', treasuryAccountId]])
         }
     })
 }

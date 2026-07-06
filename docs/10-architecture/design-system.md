@@ -21,6 +21,12 @@ ERPGrafico utilizes a unified design system. The goal is to provide a highly fun
     -   Rounding (`rounded-full`) is reserved for icon-only buttons, status pills, and specific kinetic elements.
     -   **Macro vs Micro Overlays:** Overlays that feel "floating above the app frame" (modals, web sheets, global drawers) use `rounded-lg` (macro overlay). Tooltips, dropdowns, and context menus are *micro overlays* — their atomic-level items use `rounded-sm`, while the root popover surface uses `rounded-lg` for consistency with macro overlays. For example, `DataTableCells` style `DropdownMenuContent` at `rounded-lg` but `DropdownMenuItem` and `TooltipContent` at `rounded-sm`.
     -   > **Note:** the Tailwind radius scale is **remapped** in `globals.css` to serve this hierarchy: `--radius = 0.5rem` (8px), `--radius-md = +4px` (12px), `--radius-lg = +8px` (16px), `--radius-xl = +12px` (20px). So `rounded-md` resolves to 12px here, **not** Tailwind's default 6px. Always verify the tokens in `app/globals.css`.
+3.  **Surface Patterns (Industrial Texture System):** Panels in the prepress/industrial domain use subtle background textures to reinforce the print-shop identity. These are defined as `@utility` classes in `app/globals.css` and applied via `className`:
+    -   **`dot-grid-surface`** — Subtle dot grid pattern (radial-gradient, 24px spacing). Use on `bg-card` panels in POS, product grids, and any surface that needs an industrial/prepress texture. See `app/globals.css:454`. **Do not** combine with other background utilities on the same element.
+    -   **`panel-surface`** — Shared surface treatment (`rounded-xl + border + shadow + bg-card`). Reserved for the main `<main>` shell, `CollapsibleSheet`, and `Drawer` instances. See `app/globals.css:444`.
+4.  **Accent Utilities:** Decorative flourishes for cards and surfaces:
+    -   **`ribbon-cmyk`** — 2px cyan→magenta→yellow gradient top border. Use on cards that need a print-shop accent (selected product cards, active panels). See `app/globals.css:465`.
+    -   **`card-accent-cmyk`** — Vertical CMY gradient accent on the left edge. Use on entity cards. See `app/globals.css:487`.
 3.  **Semantic Styling:** Never use hardcoded colors or spacing if a semantic token exists.
 
 ## Color Palette

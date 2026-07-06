@@ -1,4 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { invalidateCrossFeature } from '@/lib/invalidation'
 import api from '@/lib/api'
 import { toast } from 'sonner'
 import { useRealtime } from '@/features/realtime'
@@ -50,7 +51,7 @@ export function useAttributes({ filters }: { filters?: AttributeFilters } = {}) 
         staleTime: 15 * 60 * 1000, // 15 min — datos de configuración
     })
 
-    const invalidate = () => queryClient.invalidateQueries({ queryKey: ATTRIBUTES_QUERY_KEY })
+    const invalidate = () => invalidateCrossFeature(queryClient, [ATTRIBUTES_QUERY_KEY])
 
     const saveAttributeMutation = useMutation({
         mutationFn: async ({ id, payload }: { id: number | null, payload: Partial<Attribute> }) => {

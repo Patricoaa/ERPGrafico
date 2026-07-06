@@ -10,8 +10,9 @@ import { ExclusionModal } from "./ExclusionModal"
 import { SplitAllocationDialog } from "./SplitAllocationDialog"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useReconciledLinesQuery } from "../hooks/useReconciliationQueries"
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 
-import { ActionConfirmModal, ActionDock, BaseModal, CancelButton, Chip, CollapsibleSheet, EmptyState, FormFooter, LabeledInput, LabeledSelect, PeriodValidationDateInput, SkeletonShell, SmartSearchBar, useSmartSearch, SegmentationBar, useSegmentation } from '@/components/shared'
+import { ActionConfirmModal, ActionDock, BaseModal, CancelButton, Chip, CollapsibleSheet, EmptyState, FormFooter, LabeledInput, LabeledSelect, PeriodValidationDateInput, SkeletonShell, SmartSearchBar, useSmartSearch, SegmentationBar, useSegmentation, SEG_TRIGGER, SEG_WRAPPER } from '@/components/shared'
 import { reconciliationSearchDef } from "../searchDef"
 import { reconciliationSegDef } from "../segmentationDef"
 
@@ -725,41 +726,51 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                     {/* Right: Actions & Navigation Group */}
                     <div className="flex items-center gap-3 shrink-0 h-9">
                         {/* Navigation Tabs List */}
-                        <TabsList className="bg-muted/30 p-0.5 rounded-md border border-border/40 h-9 gap-0.5 overflow-hidden items-center">
-                            <TabsTrigger
-                                value="unreconciled"
-                                className="text-[10px] font-black uppercase tracking-wider px-3 h-7 py-0 flex items-center justify-center rounded-sm data-[state=active]:bg-background data-[state=active]:shadow-card data-[state=active]:text-primary transition-all"
-                            >
-                                Pendientes
-                            </TabsTrigger>
-                            <TabsTrigger
-                                value="reconciled"
-                                className="text-[10px] font-black uppercase tracking-wider px-3 h-7 py-0 flex items-center justify-center rounded-sm data-[state=active]:bg-background data-[state=active]:shadow-card data-[state=active]:text-primary transition-all"
-                            >
-                                Conciliados
-                            </TabsTrigger>
-                        </TabsList>
+                        <div className={SEG_WRAPPER}>
+                            <TabsList className="h-7 p-0 gap-0 bg-transparent shrink-0">
+                                <TabsTrigger
+                                    value="unreconciled"
+                                    className={SEG_TRIGGER + " data-[state=active]:bg-accent/50 data-[state=active]:shadow-none rounded-sm hover:bg-accent/30 transition-all duration-150"}
+                                >
+                                    Pendientes
+                                </TabsTrigger>
+                                <TabsTrigger
+                                    value="reconciled"
+                                    className={SEG_TRIGGER + " data-[state=active]:bg-accent/50 data-[state=active]:shadow-none rounded-sm hover:bg-accent/30 transition-all duration-150"}
+                                >
+                                    Conciliados
+                                </TabsTrigger>
+                            </TabsList>
+                        </div>
 
-                        <Button
-                            onClick={() => setActionDialog({ open: true, type: 'automatch' })}
-                            disabled={autoMatching}
-                            variant="outline"
-                            className="h-9 text-[10px] font-black uppercase tracking-widest bg-success/5 hover:bg-success/10 text-success border-success/20 hover:border-success/30 group transition-all px-4"
-                        >
-                            {autoMatching ? <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" /> : <Wand2 className="mr-1.5 h-3.5 w-3.5 group-hover:rotate-12 transition-transform" />}
-                            Auto-Match
-                        </Button>
-                        <Button
-                            onClick={() => setIntelOpen(prev => !prev)}
-                            variant="outline"
-                            className={cn(
-                                "h-9 w-9 p-0 rounded-md border-primary/20 hover:border-primary/45 transition-all flex items-center justify-center",
-                                intelOpen && "bg-primary text-primary-foreground border-primary"
-                            )}
-                            title="Configurar Inteligencia"
-                        >
-                            <Brain className="h-4 w-4" />
-                        </Button>
+                        <Tooltip>
+                            <TooltipTrigger asChild>
+                                <Button
+                                    onClick={() => setActionDialog({ open: true, type: 'automatch' })}
+                                    disabled={autoMatching}
+                                    variant="ghost"
+                                    className="h-9 w-9 p-0 bg-success/5 hover:bg-success/10 text-success group transition-all"
+                                >
+                                    {autoMatching ? <Loader2 className="h-4 w-4 animate-spin" /> : <Wand2 className="h-4 w-4 group-hover:rotate-12 transition-transform" />}
+                                </Button>
+                            </TooltipTrigger>
+                            <TooltipContent side="top">Auto-Match</TooltipContent>
+                        </Tooltip>
+                        <Tooltip>
+                            <TooltipTrigger asChild>
+                                <Button
+                                    onClick={() => setIntelOpen(prev => !prev)}
+                                    variant="ghost"
+                                    className={cn(
+                                        "h-9 w-9 p-0 transition-all",
+                                        intelOpen && "bg-primary text-primary-foreground"
+                                    )}
+                                >
+                                    <Brain className="h-4 w-4" />
+                                </Button>
+                            </TooltipTrigger>
+                            <TooltipContent side="top">Configurar Inteligencia</TooltipContent>
+                        </Tooltip>
                     </div>
                 </div>
 

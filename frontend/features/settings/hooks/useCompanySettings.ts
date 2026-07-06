@@ -1,4 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { invalidateCrossFeature } from '@/lib/invalidation'
 import { toast } from 'sonner'
 import { settingsApi } from '../api/settingsApi'
 import type { CompanySettings, CompanySettingsUpdatePayload } from '../types'
@@ -34,7 +35,7 @@ export function useCompanySettings(): UseCompanySettingsReturn {
         onSuccess: () => {
             markLocalMutation()
             toast.success('Configuración de empresa aplicada')
-            queryClient.invalidateQueries({ queryKey: COMPANY_SETTINGS_QUERY_KEY })
+            invalidateCrossFeature(queryClient, [COMPANY_SETTINGS_QUERY_KEY])
         },
         onError: () => {
             toast.error('Error al guardar cambios de empresa')

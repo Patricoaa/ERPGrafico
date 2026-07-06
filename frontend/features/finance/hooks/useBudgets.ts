@@ -3,6 +3,7 @@ import { financeApi, type Budget } from '../api/financeApi'
 import { toast } from 'sonner'
 import { FINANCE_KEYS } from './queryKeys'
 import { useRealtime } from '@/features/realtime'
+import { invalidateCrossFeature } from '@/lib/invalidation'
 
 export type { Budget }
 
@@ -44,7 +45,7 @@ export function useBudgets() {
         mutationFn: (payload: Partial<Budget>) => financeApi.createBudget(payload),
         onSuccess: () => {
             markLocalMutation()
-            queryClient.invalidateQueries({ queryKey: FINANCE_KEYS.budgets.lists() })
+            invalidateCrossFeature(queryClient, [FINANCE_KEYS.budgets.lists()])
             toast.success('Presupuesto creado exitosamente')
         },
         onError: (error) => {
@@ -58,7 +59,7 @@ export function useBudgets() {
             financeApi.updateBudget(id, payload),
         onSuccess: () => {
             markLocalMutation()
-            queryClient.invalidateQueries({ queryKey: FINANCE_KEYS.budgets.lists() })
+            invalidateCrossFeature(queryClient, [FINANCE_KEYS.budgets.lists()])
             toast.success('Presupuesto actualizado exitosamente')
         },
         onError: (error) => {

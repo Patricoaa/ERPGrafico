@@ -7,8 +7,7 @@ import { toast } from "sonner"
 import { CreatePayrollDrawer, PayrollDetailDrawer, deletePayroll, paySalary, payPrevired, createAdvance } from '@/features/hr'
 import type { Payroll } from "@/types/hr"
 import { type ColumnDef } from "@tanstack/react-table"
-import { DataTableView, DataTableColumnHeader } from '@/components/shared'
-import { DataCell } from '@/components/shared'
+import { DataTableView, DataTableColumnHeader, DataCell, createCodeColumn, createStatusColumn } from '@/components/shared'
 import { FileText } from "lucide-react"
 import { payrollActions, type PayrollActionsCtx } from '@/features/hr/payrollActions'
 import { PaymentModal } from "@/features/treasury"
@@ -178,11 +177,7 @@ export function PayrollClientView({ initialPayrolls }: PayrollClientViewProps) {
     }
 
     const columns: ColumnDef<Payroll>[] = [
-        {
-            accessorKey: "display_id",
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Número" className="justify-center" />,
-            cell: ({ row }) => <div className="flex justify-center w-full"><DataCell.Code>{row.getValue("display_id")}</DataCell.Code></div>,
-        },
+        createCodeColumn<Payroll>("display_id", "Número"),
         {
             accessorFn: (row) => row.employee_name || "",
             id: "employee",
@@ -248,24 +243,9 @@ export function PayrollClientView({ initialPayrolls }: PayrollClientViewProps) {
                 </div>
             ),
         },
-        {
-            accessorKey: "status",
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Estado" className="justify-center" />,
-            cell: ({ row }) =>
-                <DataCell.Status status={row.getValue("status") as string} />
-        },
-        {
-            accessorKey: "remuneration_paid_status",
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Remuneración" className="justify-center" />,
-            cell: ({ row }) =>
-                <DataCell.Status status={(row.original as Payroll & Record<string, string>).remuneration_paid_status || ""} />
-        },
-        {
-            accessorKey: "previred_paid_status",
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Previred" className="justify-center" />,
-            cell: ({ row }) =>
-                <DataCell.Status status={(row.original as Payroll & Record<string, string>).previred_paid_status || ""} />
-        },
+        createStatusColumn<Payroll>("status", "Estado"),
+        createStatusColumn<Payroll>("remuneration_paid_status", "Remuneración"),
+        createStatusColumn<Payroll>("previred_paid_status", "Previred"),
         payrollActions.column(actionsCtx, "Acciones"),
     ]
 

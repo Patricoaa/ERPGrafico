@@ -516,7 +516,7 @@ export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
     shortTemplate: 'CAR-{id}',
     listUrl: '/treasury/bank-center',
     detailUrlPattern: '/treasury/bank-center?statement={id}',
-    viewPolicy: { availableViews: ['list', 'card'], defaultView: 'list', cardComponent: 'entity' },
+    viewPolicy: { availableViews: ['card'], defaultView: 'card', cardComponent: 'custom' },
   },
   'treasury.check': {
     label: 'treasury.check',

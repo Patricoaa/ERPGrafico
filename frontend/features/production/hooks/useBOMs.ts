@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import api from '@/lib/api'
 import { toast } from 'sonner'
+import { invalidateCrossFeature } from '@/lib/invalidation'
 import { type BOM, type ProductMinimal } from '../types'
 import { productionApi } from '../api/productionApi'
 import { BOMS_QUERY_KEY, PRODUCTS_QUERY_KEY } from '@/features/inventory'
@@ -29,9 +30,7 @@ export function useDeleteBomMutation() {
         mutationFn: (id: number) => productionApi.deleteBom(id),
         onSuccess: () => {
             markLocalMutation()
-            queryClient.invalidateQueries({ queryKey: BOMS_QUERY_KEY })
-            queryClient.invalidateQueries({ queryKey: ALL_BOMS_QUERY_KEY })
-            queryClient.invalidateQueries({ queryKey: PRODUCTS_QUERY_KEY })
+            invalidateCrossFeature(queryClient, [BOMS_QUERY_KEY, ALL_BOMS_QUERY_KEY, PRODUCTS_QUERY_KEY])
             toast.success('Lista de Materiales eliminada')
         },
         onError: () => toast.error('Error al eliminar Lista de Materiales'),
@@ -55,9 +54,7 @@ export function useBOMs(params: { product_id?: string | number, parent_id?: stri
         mutationFn: (id: number) => api.delete(`/production/boms/${id}/`),
         onSuccess: () => {
             markLocalMutation()
-            queryClient.invalidateQueries({ queryKey: BOMS_QUERY_KEY })
-            // Deleting a BOM updates has_bom on the product
-            queryClient.invalidateQueries({ queryKey: PRODUCTS_QUERY_KEY })
+            invalidateCrossFeature(queryClient, [BOMS_QUERY_KEY, PRODUCTS_QUERY_KEY])
             toast.success('Lista de Materiales eliminada')
         },
         onError: () => toast.error('Error al eliminar Lista de Materiales')
@@ -67,9 +64,7 @@ export function useBOMs(params: { product_id?: string | number, parent_id?: stri
         mutationFn: (id: number) => api.patch(`/production/boms/${id}/`, { active: true }),
         onSuccess: () => {
             markLocalMutation()
-            queryClient.invalidateQueries({ queryKey: BOMS_QUERY_KEY })
-            // Toggling active BOM affects product's active BOM reference
-            queryClient.invalidateQueries({ queryKey: PRODUCTS_QUERY_KEY })
+            invalidateCrossFeature(queryClient, [BOMS_QUERY_KEY, PRODUCTS_QUERY_KEY])
             toast.success('Lista de Materiales establecida como activa')
         },
         onError: () => toast.error('Error al actualizar estado')

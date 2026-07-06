@@ -1,6 +1,7 @@
 "use client"
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { invalidateCrossFeature } from '@/lib/invalidation'
 import { settingsApi } from "../api/settingsApi"
 import { toast } from "sonner"
 import { useRealtime } from '@/features/realtime'
@@ -23,7 +24,7 @@ export function useGroups() {
         onSuccess: () => {
             markLocalMutation()
             toast.success("Grupo eliminado correctamente")
-            queryClient.invalidateQueries({ queryKey: GROUPS_QUERY_KEY })
+            invalidateCrossFeature(queryClient, [GROUPS_QUERY_KEY])
         },
         onError: () => {
             toast.error("Error al eliminar grupo")
@@ -33,7 +34,7 @@ export function useGroups() {
     return {
         groups,
         loading: isLoading,
-        fetchGroups: () => queryClient.invalidateQueries({ queryKey: GROUPS_QUERY_KEY }),
+        fetchGroups: () => invalidateCrossFeature(queryClient, [GROUPS_QUERY_KEY]),
         deleteGroup: deleteMutation.mutateAsync,
     }
 }

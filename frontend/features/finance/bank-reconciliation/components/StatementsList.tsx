@@ -1,13 +1,14 @@
 "use client"
 
 import React, { useState, useEffect, useMemo, useCallback } from "react"
-import { useRouter } from "next/navigation"
-import { Upload } from "lucide-react"
+import { useRouter, useSearchParams, usePathname } from "next/navigation"
+import { Upload, Activity, ChevronDown, CheckCircle2, Loader2 } from "lucide-react"
 import { useStatementsQuery } from "../hooks/useReconciliationQueries"
-import { useSelectedEntity } from "@/hooks/useSelectedEntity"
+import { useStatementQuery } from "../hooks/useReconciliationQueries"
 import type { BankStatement } from "../types"
-import { StatementImportModal } from "@/features/finance"
-import { DataTableView, StatusBadge, SmartSearchBar, SegmentationBar, useClientSearch, useSegmentation, EntityCard, ToolbarCreateButton } from '@/components/shared'
+import { StatementImportModal, StatementDetailPanel, ReconciliationPanel } from "@/features/finance"
+import { useConfirmStatement } from "@/features/treasury"
+import { DataTableView, StatusBadge, SmartSearchBar, SegmentationBar, useClientSearch, useSegmentation, EntityCard, ToolbarCreateButton, Drawer, EmptyState, ActionConfirmModal } from '@/components/shared'
 import { DataTableColumnHeader } from '@/components/shared'
 import type { ColumnDef } from "@tanstack/react-table"
 import { DataCell } from '@/components/shared'
@@ -15,6 +16,11 @@ import { statementActions, type StatementActionsCtx } from './statementActions'
 import { Progress } from "@/components/ui/progress"
 import type { SearchDefinition } from '@/types/search'
 import type { SegmentationDefinition } from '@/types/segmentation'
+import { cn } from "@/lib/utils"
+import { useConfirmAction } from "@/hooks/useConfirmAction"
+import { showApiError } from "@/lib/errors"
+import { toast } from "sonner"
+import { Button } from "@/components/ui/button"
 
 const statementsSearchDef: SearchDefinition = {
     fields: [
@@ -55,7 +61,12 @@ interface StatementsListProps {
 export function StatementsList({ externalOpen = false, createAction, bankId, accounts, detailBasePath }: StatementsListProps) {
     const statementDetailUrl = (id: number) => detailBasePath ? `${detailBasePath}/${id}` : `/treasury/reconciliation/${id}`
     const router = useRouter()
+    const searchParams = useSearchParams()
+    const pathname = usePathname()
     const [importModalOpen, setImportModalOpen] = useState(false)
+    const [modalKey, setModalKey] = useState(0)
+    const [expandedStmtId, setExpandedStmtId] = useState<number | null>(null)
+    const [workbenchStatementId, setWorkbenchStatementId] = useState<number | null>(null)
 
     const { filterFn, isFiltered: isTextFiltered, clearAll: clearText } = useClientSearch<BankStatement>(statementsSearchDef)
     const { filters: segFilters, isFiltered: isSegFiltered, clearAll: clearSeg } = useSegmentation(statementsSegDef)
@@ -81,17 +92,6 @@ export function StatementsList({ externalOpen = false, createAction, bankId, acc
         return result
     }, [filterFn, statements, segFilters])
 
-    const { entity: selectedFromUrl } = useSelectedEntity<BankStatement>({
-        endpoint: '/treasury/statements'
-    })
-
-    // Handle deep-linked statement selection (ADR-0020)
-    useEffect(() => {
-        if (selectedFromUrl) {
-            router.replace(statementDetailUrl(selectedFromUrl.id))
-        }
-    }, [selectedFromUrl, router])
-
     // Open import dialog when triggered via URL (?modal=import)
     useEffect(() => {
         if (externalOpen) {
@@ -100,19 +100,72 @@ export function StatementsList({ externalOpen = false, createAction, bankId, acc
         }
     }, [externalOpen])
 
+    // Auto-expand ?selected= deep-link (Phase 4)
+    useEffect(() => {
+        const selectedId = searchParams.get('selected')
+        if (selectedId) {
+            const numId = Number(selectedId)
+            if (!isNaN(numId)) {
+                const handle = requestAnimationFrame(() => setExpandedStmtId(numId))
+                return () => cancelAnimationFrame(handle)
+            }
+        }
+    }, [searchParams])
+
+    // Auto-open ?workbench= deep-link (Phase 4)
+    useEffect(() => {
+        const wbId = searchParams.get('workbench')
+        if (wbId) {
+            const numId = Number(wbId)
+            if (!isNaN(numId)) {
+                const handle = requestAnimationFrame(() => setWorkbenchStatementId(numId))
+                return () => cancelAnimationFrame(handle)
+            }
+        }
+    }, [searchParams])
+
     const handleImportSuccess = () => {
         refetch()
         setImportModalOpen(false)
-        if (!accounts) {
+        setModalKey(k => k + 1)
+        if (accounts) {
+            const params = new URLSearchParams(searchParams.toString())
+            params.delete('modal')
+            const query = params.toString()
+            router.replace(query ? `${pathname}?${query}` : pathname, { scroll: false })
+        } else {
             router.replace('/treasury/reconciliation')
         }
     }
 
     const handleModalChange = (open: boolean) => {
         setImportModalOpen(open)
-        if (!open && !accounts) {
-            router.replace('/treasury/reconciliation')
+        if (!open) {
+            setModalKey(k => k + 1)
+            const params = new URLSearchParams(searchParams.toString())
+            params.delete('modal')
+            const query = params.toString()
+            if (accounts) {
+                router.replace(query ? `${pathname}?${query}` : pathname, { scroll: false })
+            } else {
+                router.replace('/treasury/reconciliation')
+            }
         }
+    }
+
+    const openWorkbench = (stmtId: number) => {
+        setWorkbenchStatementId(stmtId)
+        const params = new URLSearchParams(searchParams.toString())
+        params.set('workbench', String(stmtId))
+        router.push(`${pathname}?${params.toString()}`, { scroll: false })
+    }
+
+    const closeWorkbench = () => {
+        setWorkbenchStatementId(null)
+        const params = new URLSearchParams(searchParams.toString())
+        params.delete('workbench')
+        const query = params.toString()
+        router.replace(query ? `${pathname}?${query}` : pathname, { scroll: false })
     }
 
     const actionsCtx: StatementActionsCtx = {
@@ -222,9 +275,112 @@ export function StatementsList({ externalOpen = false, createAction, bankId, acc
         <ToolbarCreateButton
             label="Importar Cartola"
             icon={Upload}
-            onClick={() => setImportModalOpen(true)}
+            onClick={() => {
+                const params = new URLSearchParams(searchParams.toString())
+                params.set('modal', 'import')
+                router.push(`${pathname}?${params.toString()}`, { scroll: false })
+                setImportModalOpen(true)
+            }}
         />
     ) : undefined
+
+    const renderLoadingView = () => (
+        <div className="space-y-4 pt-2">
+            {Array.from({ length: 4 }).map((_, i) => (
+                <EntityCard.Skeleton key={i} variant="full" showFooter />
+            ))}
+        </div>
+    )
+
+    const renderCustomView = (table: { getRowModel: () => { rows: Array<{ original: BankStatement }> } }) => {
+        const rows = table.getRowModel().rows
+        if (rows.length === 0) {
+            return (
+                <div className="pt-4">
+                    <EmptyState
+                        context="finance"
+                        title="No hay cartolas importadas"
+                        description="Importa una cartola bancaria para comenzar la conciliación."
+                    />
+                </div>
+            )
+        }
+        return (
+            <div className="space-y-3 pt-2">
+                {rows.map((row) => {
+                    const stmt = row.original
+                    const isExpanded = expandedStmtId === stmt.id
+                    return (
+                        <EntityCard key={stmt.id} className="overflow-hidden">
+                            <EntityCard.Header
+                                title={stmt.display_id}
+                                subtitle={stmt.treasury_account_name}
+                                trailing={<StatusBadge status={stmt.state} label={stmt.state_display} />}
+                            />
+                            <EntityCard.Body>
+                                <div className="flex items-start justify-between gap-4">
+                                    <EntityCard.Field label="Apertura" value={<DataCell.Currency value={stmt.opening_balance} />} />
+                                    <EntityCard.Field label="Cierre" value={<DataCell.Currency value={stmt.closing_balance} />} />
+                                    <EntityCard.Field
+                                        label="Progreso"
+                                        value={
+                                            <div className="flex items-center gap-2 min-w-[100px]">
+                                                <Progress value={stmt.reconciliation_progress} className="h-1.5 w-16" />
+                                                <span className="text-xs font-mono font-bold">{Math.round(stmt.reconciliation_progress)}%</span>
+                                            </div>
+                                        }
+                                    />
+                                </div>
+                            </EntityCard.Body>
+                            <EntityCard.Footer>
+                                <div className="flex items-center gap-2">
+                                    {stmt.state !== 'CONFIRMED' && stmt.reconciliation_progress < 100 && (
+                                        <Button size="sm" onClick={(e) => { e.stopPropagation(); openWorkbench(stmt.id) }}>
+                                            <Activity className="h-3.5 w-3.5 mr-1" />
+                                            Reconciliar
+                                        </Button>
+                                    )}
+                                    <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        onClick={(e) => { e.stopPropagation(); setExpandedStmtId(isExpanded ? null : stmt.id) }}
+                                    >
+                                        <ChevronDown className={cn("h-3 w-3 mr-1 transition-transform duration-200", isExpanded && "rotate-180")} />
+                                        {isExpanded ? 'Ocultar Detalle' : 'Ver Detalle'}
+                                    </Button>
+                                </div>
+                            </EntityCard.Footer>
+                            {isExpanded && (
+                                <div className="border-t border-border mt-2 pt-4">
+                                    <StatementDetailPanel
+                                        statementId={stmt.id}
+                                        bankId={bankId}
+                                        hideCreateAction
+                                        detailOnly
+                                    />
+                                </div>
+                            )}
+                        </EntityCard>
+                    )
+                })}
+            </div>
+        )
+    }
+
+    // Workbench drawer state: fetch statement for confirm button
+    const { data: workbenchStatement } = useStatementQuery(workbenchStatementId ?? 0, !!workbenchStatementId)
+    const confirmMutation = useConfirmStatement()
+    const confirmAction = useConfirmAction(async () => {
+        if (!workbenchStatementId) return
+        try {
+            await confirmMutation.mutateAsync(workbenchStatementId)
+            toast.success('Cartola confirmada exitosamente')
+            closeWorkbench()
+            refetch()
+        } catch (error: unknown) {
+            showApiError(error, 'Error al confirmar cartola')
+        }
+    })
 
     return (
         <div className="h-full flex flex-col">
@@ -266,29 +422,66 @@ export function StatementsList({ externalOpen = false, createAction, bankId, acc
                     }
                     createAction={internalImportButton ?? createAction}
                     defaultPageSize={10}
-                    renderCard={(stmt: BankStatement) => (
-                        <EntityCard key={stmt.id} onClick={() => router.push(statementDetailUrl(stmt.id))}>
-                            <EntityCard.Header
-                                title={stmt.display_id}
-                                subtitle={stmt.treasury_account_name}
-                                trailing={<StatusBadge status={stmt.state} label={stmt.state_display} />}
-                            />
-                            <EntityCard.Body>
-                                <EntityCard.Field label="Apertura" value={<DataCell.Currency value={stmt.opening_balance} />} />
-                                <EntityCard.Field label="Cierre" value={<DataCell.Currency value={stmt.closing_balance} />} />
-                                <EntityCard.Field label="Progreso" value={`${Math.round(parseFloat(String(stmt.reconciliation_progress)))}%`} />
-                            </EntityCard.Body>
-                        </EntityCard>
-                    )}
+                    renderLoadingView={renderLoadingView}
+                    renderCustomView={renderCustomView}
                 />
             </div>
 
             <StatementImportModal
+                key={modalKey}
                 open={importModalOpen}
                 onOpenChange={handleModalChange}
                 onSuccess={handleImportSuccess}
                 defaultAccountId={segFilters.account && segFilters.account !== 'all' ? Number(segFilters.account) : undefined}
                 allowedAccountIds={accounts?.map(a => a.id)}
+            />
+
+            <Drawer
+                open={!!workbenchStatementId}
+                onOpenChange={(open) => { if (!open) closeWorkbench() }}
+                title="Mesa de Conciliación"
+                side="bottom"
+                boundary="embedded"
+                resizable={false}
+                showOverlay={true}
+                defaultSize="100%"
+                contentClassName="p-0 flex flex-col overflow-hidden"
+                headerActions={
+                    workbenchStatement && workbenchStatement.reconciliation_progress === 100 && workbenchStatement.state !== 'CONFIRMED' ? (
+                        <Button
+                            onClick={() => confirmAction.requestConfirm()}
+                            disabled={confirmAction.isConfirming}
+                            className="bg-success hover:bg-success/90 shadow-card px-5 font-bold text-sm"
+                        >
+                            {confirmAction.isConfirming ? (
+                                <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Finalizando...</>
+                            ) : (
+                                <><CheckCircle2 className="mr-2 h-4 w-4" />Confirmar Cartola</>
+                            )}
+                        </Button>
+                    ) : undefined
+                }
+            >
+                {workbenchStatementId && (
+                    <div className="flex-1 p-4 overflow-hidden">
+                        <ReconciliationPanel
+                            statementId={workbenchStatementId}
+                            treasuryAccountId={workbenchStatement?.treasury_account ?? 0}
+                            onComplete={() => {
+                                refetch()
+                            }}
+                        />
+                    </div>
+                )}
+            </Drawer>
+
+            <ActionConfirmModal
+                open={confirmAction.isOpen}
+                onOpenChange={(open) => { if (!open) confirmAction.cancel() }}
+                onConfirm={confirmAction.confirm}
+                title="Confirmar Cartola"
+                description="¿Está seguro de confirmar esta cartola? Esto validará todas las conciliaciones, actualizará los saldos de la cuenta y bloqueará la cartola para futuras modificaciones."
+                confirmText="Confirmar"
             />
         </div>
     )

@@ -1,5 +1,6 @@
 import { useMemo } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { invalidateCrossFeature } from '@/lib/invalidation'
 import { toast } from 'sonner'
 import { settingsApi } from '../api/settingsApi'
 import { useRealtime } from '@/features/realtime'
@@ -92,7 +93,7 @@ export function useAccountingSettings() {
         onSuccess: () => {
             markLocalMutation()
             toast.success('Configuración contable aplicada')
-            queryClient.invalidateQueries({ queryKey: ACCOUNTING_SETTINGS_QUERY_KEY })
+            invalidateCrossFeature(queryClient, [ACCOUNTING_SETTINGS_QUERY_KEY])
         },
         onError: () => {
             toast.error('Error al guardar cambios contables')

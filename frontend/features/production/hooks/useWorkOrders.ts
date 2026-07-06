@@ -1,5 +1,6 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import api from '@/lib/api'
+import { invalidateCrossFeature } from '@/lib/invalidation'
 import type { WorkOrder } from '@/features/production/types'
 import { toPage, type Page } from '@/lib/pagination'
 import { WORK_ORDERS_LIST_KEY } from './useWorkOrderMutations'
@@ -52,7 +53,7 @@ export function useWorkOrders(filters?: WorkOrderFilters, initialData?: Page<Wor
     const refetch = query.refetch
 
     const invalidateList = () =>
-        queryClient.invalidateQueries({ queryKey: [WORK_ORDERS_LIST_KEY] })
+        invalidateCrossFeature(queryClient, [[WORK_ORDERS_LIST_KEY]])
 
     return { page: query.data, orders, isLoading: showSkeleton, isRefetching, refetch, invalidateList }
 }
