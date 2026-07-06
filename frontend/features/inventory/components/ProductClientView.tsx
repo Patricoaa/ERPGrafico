@@ -230,6 +230,7 @@ export function ProductClientView({ externalOpen, onExternalOpenChange, createAc
                     onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
                     aria-label="Select all"
                     className="translate-y-[2px]"
+                    variant="circle"
                 />
             ),
             cell: ({ row }) => {
@@ -241,6 +242,7 @@ export function ProductClientView({ externalOpen, onExternalOpenChange, createAc
                         onCheckedChange={(value) => row.toggleSelected(!!value)}
                         aria-label="Select row"
                         className="translate-y-[2px]"
+                        variant="circle"
                     />
                 )
             },

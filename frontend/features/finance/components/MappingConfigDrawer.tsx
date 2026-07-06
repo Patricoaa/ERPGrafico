@@ -144,6 +144,7 @@ export function MappingConfigDrawer({
                     onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
                     aria-label="Select all"
                     className="translate-y-[2px] border-muted-foreground/30"
+                    variant="circle"
                 />
             ),
             cell: ({ row }) => (
@@ -152,6 +153,7 @@ export function MappingConfigDrawer({
                     onCheckedChange={(value) => row.toggleSelected(!!value)}
                     aria-label="Select row"
                     className="translate-y-[2px] border-muted-foreground/30"
+                    variant="circle"
                 />
             ),
             enableSorting: false,

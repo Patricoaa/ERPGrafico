@@ -81,6 +81,7 @@ export function UoMClientView({ externalOpen, onExternalOpenChange, createAction
                     checked={table.getIsAllPageRowsSelected()}
                     onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
                     aria-label="Select all"
+                    variant="circle"
                 />
             ),
             cell: ({ row }) => (
@@ -88,6 +89,7 @@ export function UoMClientView({ externalOpen, onExternalOpenChange, createAction
                     checked={row.getIsSelected()}
                     onCheckedChange={(value) => row.toggleSelected(!!value)}
                     aria-label="Select row"
+                    variant="circle"
                 />
             ),
             enableSorting: false,

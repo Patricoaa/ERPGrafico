@@ -509,6 +509,7 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                     checked={table.getIsAllPageRowsSelected()}
                     onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
                     aria-label="Select all"
+                    variant="circle"
                 />
             ),
             cell: ({ row }) => (
@@ -516,6 +517,7 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                     checked={row.getIsSelected()}
                     onCheckedChange={(value) => row.toggleSelected(!!value)}
                     aria-label="Select row"
+                    variant="circle"
                 />
             ),
             size: 40,
@@ -601,6 +603,7 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                     checked={table.getIsAllPageRowsSelected()}
                     onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
                     aria-label="Select all"
+                    variant="circle"
                 />
             ),
             cell: ({ row }) => (
@@ -608,6 +611,7 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                     checked={row.getIsSelected()}
                     onCheckedChange={(value) => row.toggleSelected(!!value)}
                     aria-label="Select row"
+                    variant="circle"
                 />
             ),
             size: 40,

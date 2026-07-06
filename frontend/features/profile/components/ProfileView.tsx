@@ -412,6 +412,7 @@ function PersonalTab({
                     }}
                     aria-label="Seleccionar todo"
                     className="translate-y-[2px]"
+                    variant="circle"
                 />
             ),
             cell: ({ row }) => (
@@ -426,6 +427,7 @@ function PersonalTab({
                     }}
                     aria-label="Seleccionar fila"
                     className="translate-y-[2px]"
+                    variant="circle"
                 />
             ),
             enableSorting: false,
