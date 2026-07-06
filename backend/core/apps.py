@@ -13,6 +13,7 @@ class CoreConfig(AppConfig):
 
         try:
             from core.models import User
+            from core.prefix_registry import EntityPrefix
             from core.registry import SearchableEntity, UniversalRegistry
 
             UniversalRegistry.register(
@@ -23,7 +24,7 @@ class CoreConfig(AppConfig):
                     title_plural="Usuarios",
                     icon="user",
                     search_fields=("first_name", "last_name", "email"),
-                    short_display_template="USR-{id}",
+                    short_display_template=f"{EntityPrefix.USER}-{{id}}",
                     display_template="{first_name} {last_name}",
                     subtitle_template="{email}",
                     extra_info_template="{role}",

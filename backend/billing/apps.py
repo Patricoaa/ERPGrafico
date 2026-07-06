@@ -20,6 +20,7 @@ class BillingConfig(AppConfig):
 
         try:
             from billing.models import Invoice
+            from core.prefix_registry import EntityPrefix
             from core.registry import SearchableEntity, UniversalRegistry
 
             UniversalRegistry.register(
@@ -30,7 +31,7 @@ class BillingConfig(AppConfig):
                     title_plural="Facturas/DTEs",
                     icon="file-text",
                     search_fields=("number", "contact__name", "contact__tax_id"),
-                    short_display_template="FAC-{number}",
+                    short_display_template=f"{EntityPrefix.INVOICE_FACTURA}-{{number}}",
                     display_template="{dte_type} {number}",
                     subtitle_template="{contact.name} · {contact.tax_id}",
                     extra_info_template="{status}",

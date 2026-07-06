@@ -23,6 +23,7 @@ class SalesConfig(AppConfig):
         # Import signals
 
         try:
+            from core.prefix_registry import EntityPrefix
             from core.registry import SearchableEntity, UniversalRegistry
             from sales.models import SaleDelivery, SaleOrder, SaleReturn
 
@@ -34,8 +35,8 @@ class SalesConfig(AppConfig):
                     title_plural="Notas de Venta",
                     icon="receipt-text",
                     search_fields=("number", "customer__name", "customer__tax_id"),
-                    short_display_template="NV-{number}",
-                    display_template="NV-{number}",
+                    short_display_template=f"{EntityPrefix.SALE_ORDER}-{{number}}",
+                    display_template=f"{EntityPrefix.SALE_ORDER}-{{number}}",
                     subtitle_template="{customer.name} · {customer.tax_id}",
                     extra_info_template="{total}",
                     list_url="/sales/orders",
@@ -51,8 +52,8 @@ class SalesConfig(AppConfig):
                     title_plural="Guías de Despacho",
                     icon="truck",
                     search_fields=("number", "sale_order__customer__name"),
-                    short_display_template="DES-{number}",
-                    display_template="DES-{number}",
+                    short_display_template=f"{EntityPrefix.SALE_DELIVERY}-{{number}}",
+                    display_template=f"{EntityPrefix.SALE_DELIVERY}-{{number}}",
                     subtitle_template="{sale_order.customer.name} · {sale_order.customer.tax_id}",
                     extra_info_template="{status}",
                     list_url="/sales/deliveries",
@@ -68,8 +69,8 @@ class SalesConfig(AppConfig):
                     title_plural="Devoluciones",
                     icon="undo-2",
                     search_fields=("number", "sale_order__customer__name"),
-                    short_display_template="DEV-{number}",
-                    display_template="DEV-{number}",
+                    short_display_template=f"{EntityPrefix.SALE_RETURN}-{{number}}",
+                    display_template=f"{EntityPrefix.SALE_RETURN}-{{number}}",
                     subtitle_template="{sale_order.customer.name} · {sale_order.customer.tax_id}",
                     extra_info_template="{status}",
                     list_url="/sales/returns",

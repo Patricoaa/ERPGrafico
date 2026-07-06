@@ -19,6 +19,7 @@ class PurchasingConfig(AppConfig):
             pass
 
         try:
+            from core.prefix_registry import EntityPrefix
             from core.registry import SearchableEntity, UniversalRegistry
             from purchasing.models import PurchaseOrder, PurchaseReceipt, PurchaseReturn
 
@@ -30,8 +31,8 @@ class PurchasingConfig(AppConfig):
                     title_plural="Ordenes de Compra",
                     icon="shopping-cart",
                     search_fields=("number", "supplier__name", "supplier__tax_id"),
-                    short_display_template="OCS-{number}",
-                    display_template="OCS-{number}",
+                    short_display_template=f"{EntityPrefix.PURCHASE_ORDER}-{{number}}",
+                    display_template=f"{EntityPrefix.PURCHASE_ORDER}-{{number}}",
                     subtitle_template="{supplier.name} · {supplier.tax_id}",
                     extra_info_template="{total}",
                     list_url="/purchasing/orders",
@@ -47,8 +48,8 @@ class PurchasingConfig(AppConfig):
                     title_plural="Devoluciones de Compra",
                     icon="rotate-3d",
                     search_fields=("id", "purchase_order__number"),
-                    short_display_template="DEV-{number}",
-                    display_template="DEV-{number} · {purchase_order.number}",
+                    short_display_template=f"{EntityPrefix.PURCHASE_RETURN}-{{number}}",
+                    display_template=f"{EntityPrefix.PURCHASE_RETURN}-{{number}} · {{purchase_order.number}}",
                     subtitle_template="{purchase_order.supplier.name}",
                     extra_info_template="{status}",
                     list_url="/purchasing/returns",
@@ -68,8 +69,8 @@ class PurchasingConfig(AppConfig):
                         "purchase_order__number",
                         "purchase_order__supplier__name",
                     ),
-                    short_display_template="REC-{number}",
-                    display_template="REC-{number} · {purchase_order.number}",
+                    short_display_template=f"{EntityPrefix.PURCHASE_RECEIPT}-{{number}}",
+                    display_template=f"{EntityPrefix.PURCHASE_RECEIPT}-{{number}} · {{purchase_order.number}}",
                     subtitle_template="{purchase_order.supplier.name}",
                     extra_info_template="{status}",
                     list_url="/purchasing/receipts",

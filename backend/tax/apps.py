@@ -33,6 +33,7 @@ class TaxConfig(AppConfig):
             pass
 
         try:
+            from core.prefix_registry import EntityPrefix
             from core.registry import SearchableEntity, UniversalRegistry
             from tax.models import TaxPeriod
 
@@ -44,7 +45,7 @@ class TaxConfig(AppConfig):
                     title_plural="Períodos Tributarios",
                     icon="calendar",
                     search_fields=("year", "month"),
-                    short_display_template="{month_display}-{year}",
+                    short_display_template=f"{EntityPrefix.TAX_PERIOD}-{{month}}-{{year}}",
                     display_template="{month}/{year}",
                     subtitle_template="{status}",
                     extra_info_template="",
