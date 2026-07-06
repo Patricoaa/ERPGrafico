@@ -5,13 +5,13 @@ import { useFormWithToast } from "@/hooks/useFormWithToast"
 import * as z from "zod"
 import { ActionConfirmModal, DomainHubStatus, Drawer, StatCard, StatusBadge } from '@/components/shared'
 import { formDrawerWidth } from "@/lib/form-widths"
-import { Checkbox } from "@/components/ui/checkbox"
 import {
     Form,
     FormControl,
     FormField,
     FormItem,
 } from "@/components/ui/form"
+import { RadioGroup } from "@/components/ui/radio-group"
 import { Button } from "@/components/ui/button"
 import { ActionSlideButton, CancelButton } from "@/components/shared"
 import { useGlobalModals } from "@/components/providers/GlobalModalProvider"
@@ -37,9 +37,10 @@ import { DataTable } from '@/components/shared'
 import { type ColumnDef } from "@tanstack/react-table"
 
 import { getHubStatuses } from '@/features/orders'
-import { LabeledInput, LabeledContainer, LabeledCheckboxGroup, TabBar, TabBarContent, type TabItem, FormFooter, FormSection, FormSplitLayout, SkeletonShell } from "@/components/shared"
+import { LabeledInput, LabeledContainer, RadioCard, DynamicIcon, TabBar, TabBarContent, type TabItem, FormFooter, FormSection, FormSplitLayout, SkeletonShell } from "@/components/shared"
 import { cn } from "@/lib/utils"
 import { formatCurrency } from "@/lib/money"
+import { resolveCategory } from "@/lib/badge-resolvers"
 
 const contactSchema = z.object({
     name: z.string().min(2, "El nombre es requerido"),
@@ -317,84 +318,65 @@ export default function ContactDrawer({ open, onOpenChange, contact, onSuccess, 
                                         <div className="space-y-4">
                                             <FormSection title="Roles" icon={Scale} />
 
-                                            <LabeledContainer label="Preferencias Comerciales">
-                                                <div className="py-0.5 space-y-0.5">
-                                                    <FormField
-                                                        control={form.control}
-                                                        name="is_default_customer"
-                                                        render={({ field }) => (
-                                                            <div className="flex flex-col">
-                                                                <div
-                                                                    className="flex items-center gap-2 px-2 py-1.5 rounded cursor-pointer transition-colors hover:bg-muted/10"
-                                                                    onClick={() => field.onChange(!field.value)}
-                                                                >
-                                                                    <Checkbox
-                                                                        checked={field.value}
-                                                                        onCheckedChange={field.onChange}
-                                                                        onClick={(e) => e.stopPropagation()}
-                                                                    />
-                                                                    <span className={cn(
-                                                                        "text-sm",
-                                                                        field.value ? "text-foreground font-bold" : "text-muted-foreground/70"
-                                                                    )}>
-                                                                        Cliente por defecto
-                                                                    </span>
-                                                                </div>
-                                                                {defaultCustomer && defaultCustomer.id !== c?.id && (
-                                                                    <span className="text-xs text-muted-foreground pl-9 pb-1">
-                                                                        Actual: <strong>{defaultCustomer.name}</strong>
-                                                                    </span>
-                                                                )}
-                                                            </div>
-                                                        )}
-                                                    />
-                                                    <FormField
-                                                        control={form.control}
-                                                        name="is_default_vendor"
-                                                        render={({ field }) => (
-                                                            <div className="flex flex-col">
-                                                                <div
-                                                                    className="flex items-center gap-2 px-2 py-1.5 rounded cursor-pointer transition-colors hover:bg-muted/10"
-                                                                    onClick={() => field.onChange(!field.value)}
-                                                                >
-                                                                    <Checkbox
-                                                                        checked={field.value}
-                                                                        onCheckedChange={field.onChange}
-                                                                        onClick={(e) => e.stopPropagation()}
-                                                                    />
-                                                                    <span className={cn(
-                                                                        "text-sm",
-                                                                        field.value ? "text-foreground font-bold" : "text-muted-foreground/70"
-                                                                    )}>
-                                                                        Proveedor por defecto
-                                                                    </span>
-                                                                </div>
-                                                                {defaultVendor && defaultVendor.id !== c?.id && (
-                                                                    <span className="text-xs text-muted-foreground pl-9 pb-1">
-                                                                        Actual: <strong>{defaultVendor.name}</strong>
-                                                                    </span>
-                                                                )}
-                                                            </div>
-                                                        )}
-                                                    />
+                                            {(() => {
+                                                const isDefaultCustomer = form.watch('is_default_customer')
+                                                const isDefaultVendor = form.watch('is_default_vendor')
+                                                const commercialValue = isDefaultCustomer ? "customer" : isDefaultVendor ? "vendor" : "none"
+                                                return (
+                                                    <LabeledContainer label="Preferencias Comerciales">
+                                                        <RadioGroup
+                                                            value={commercialValue}
+                                                            onValueChange={(val) => {
+                                                                form.setValue('is_default_customer', val === 'customer', { shouldDirty: true })
+                                                                form.setValue('is_default_vendor', val === 'vendor', { shouldDirty: true })
+                                                            }}
+                                                            className="grid grid-cols-2 gap-3 w-full"
+                                                        >
+                                                            <RadioCard
+                                                                id="pref-customer"
+                                                                value="customer"
+                                                                label="Cliente por defecto"
+                                                                description={
+                                                                    defaultCustomer && defaultCustomer.id !== c?.id
+                                                                        ? `Actual: ${defaultCustomer.name}`
+                                                                        : "Se selecciona automáticamente en nuevas NV"
+                                                                }
+                                                                icon={<ShoppingCart className="h-4 w-4" />}
+                                                            />
+                                                            <RadioCard
+                                                                id="pref-vendor"
+                                                                value="vendor"
+                                                                label="Proveedor por defecto"
+                                                                description={
+                                                                    defaultVendor && defaultVendor.id !== c?.id
+                                                                        ? `Actual: ${defaultVendor.name}`
+                                                                        : "Se selecciona automáticamente en nuevas OC"
+                                                                }
+                                                                icon={<Package className="h-4 w-4" />}
+                                                            />
+                                                        </RadioGroup>
+                                                    </LabeledContainer>
+                                                )
+                                            })()}
+
+                                            <LabeledContainer label="Roles del Contacto">
+                                                <div className="grid grid-cols-3 gap-2 w-full">
+                                                    {(["CUSTOMER", "SUPPLIER", "RELATED", "PARTNER", "EMPLOYEE", "USER"] as const).map(value => {
+                                                        const resolved = resolveCategory('contact_type', value)
+                                                        return (
+                                                            <RadioGroup key={value} value={c?.active_roles?.includes(value) ? "on" : "off"} disabled>
+                                                                <RadioCard
+                                                                    id={`role-${value}`}
+                                                                    value="on"
+                                                                    label={resolved.label}
+                                                                    icon={resolved.icon ? <DynamicIcon name={resolved.icon} className="h-4 w-4" /> : undefined}
+                                                                    disabled
+                                                                />
+                                                            </RadioGroup>
+                                                        )
+                                                    })}
                                                 </div>
                                             </LabeledContainer>
-
-                                            <LabeledCheckboxGroup
-                                                disabled
-                                                columns={2}
-                                                label="Roles del Contacto"
-                                                items={[
-                                                    { value: "CUSTOMER", label: "Cliente" },
-                                                    { value: "SUPPLIER", label: "Proveedor" },
-                                                    { value: "RELATED", label: "Relacionado" },
-                                                    { value: "PARTNER", label: "Socio" },
-                                                    { value: "EMPLOYEE", label: "Empleado" },
-                                                    { value: "USER", label: "Usuario Sistema" },
-                                                ]}
-                                                value={c?.active_roles?.filter(r => r !== 'NONE') || []}
-                                                onChange={() => {}}
-                                            />
                                         </div>
 
                                         <div className="space-y-4">
