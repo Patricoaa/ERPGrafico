@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useRef } from "react"
+import { useState, useEffect, useRef, useMemo } from "react"
 import { Input } from "@/components/ui/input"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Button } from "@/components/ui/button"
@@ -16,7 +16,8 @@ import {
     Info,
     Scale
 } from "lucide-react"
-import { Chip, QuantityDisplay, LabeledInput } from "@/components/shared"
+import { Chip, QuantityDisplay, LabeledInput, DataTable } from "@/components/shared"
+import type { ColumnDef } from "@tanstack/react-table"
 
 import type { WorkOrder, WorkOrderMaterial } from "../../types"
 
@@ -125,7 +126,6 @@ function CostImpactPanel({
 export function RectificationStep({ order, onChange }: RectificationStepProps) {
     const materials = order?.materials || []
 
-    // Initialize actual quantities from planned quantities
     const [actualQuantities, setActualQuantities] = useState<Record<number, string>>(() => {
         const init: Record<number, string> = {}
         materials.forEach((m: WorkOrderMaterial) => {
@@ -150,16 +150,14 @@ export function RectificationStep({ order, onChange }: RectificationStepProps) {
 
     const isFirstMountRef = useRef(true)
 
-    // Notify parent whenever values change
     useEffect(() => {
-        // Guard: Skip the first call to onChange during mount to avoid illegal state updates
         if (isFirstMountRef.current) {
             isFirstMountRef.current = false
             return
         }
 
         const adjustments: MaterialAdjustment[] = materials
-            .filter((m: WorkOrderMaterial) => !m.is_outsourced) // Only stock materials get rectified
+            .filter((m: WorkOrderMaterial) => !m.is_outsourced)
             .map((m: WorkOrderMaterial) => ({
                 material_id: m.id,
                 actual_quantity: parseFloat(actualQuantities[m.id] ?? String(m.quantity_planned)) || 0
@@ -228,6 +226,161 @@ export function RectificationStep({ order, onChange }: RectificationStepProps) {
     const stockMaterials = materials.filter((m: WorkOrderMaterial) => !m.is_outsourced)
     const outsourcedMaterials = materials.filter((m: WorkOrderMaterial) => m.is_outsourced)
 
+    // ── Column definitions (defined inside component to capture state via closure) ──
+
+    const stockColumns = useMemo<ColumnDef<WorkOrderMaterial>[]>(() => [
+        {
+            id: "material",
+            header: "Material",
+            cell: ({ row }) => {
+                const material = row.original
+                const pCost = material.planned_cost ?? 0
+                const aCost = material.actual_cost ?? 0
+                const cDiff = aCost - pCost
+                const cPct = pCost > 0 ? (cDiff / pCost) : 0
+                return (
+                    <div>
+                        <div className="font-medium text-foreground">{material.component_name}</div>
+                        <div className="text-xs text-muted-foreground">{material.uom_name}</div>
+                        {Math.abs(cPct) > 0.01 && (
+                            <Chip size="xs" intent={cDiff > 0 ? "destructive" : "success"} className="mt-1 border-0">
+                                {cDiff > 0 ? "Costo ↑" : "Costo ↓"} {Math.abs(cPct * 100).toFixed(1)}%
+                            </Chip>
+                        )}
+                    </div>
+                )
+            },
+        },
+        {
+            id: "planned",
+            header: "Planificado",
+            meta: { align: "right" },
+            cell: ({ row }) => (
+                <QuantityDisplay value={row.original.quantity_planned} decimals={4} inline />
+            ),
+        },
+        {
+            id: "actual",
+            header: "Real Consumido",
+            meta: { align: "right" },
+            cell: ({ row }) => {
+                const material = row.original
+                const actualStr = actualQuantities[material.id] ?? String(material.quantity_planned)
+                const diff = getDiff(material.quantity_planned, actualStr)
+                const hasChange = diff !== null && diff !== 0
+                return (
+                    <Input
+                        type="number"
+                        min="0"
+                        step="any"
+                        value={actualStr}
+                        onChange={e => handleQuantityChange(material.id, e.target.value)}
+                        className={cn(
+                            "w-28 text-right h-8 text-sm ml-auto",
+                            hasChange && "border-warning focus-visible:ring-warning"
+                        )}
+                    />
+                )
+            },
+        },
+        {
+            id: "diff",
+            header: "Diferencia",
+            meta: { align: "right" },
+            cell: ({ row }) => {
+                const material = row.original
+                const actualStr = actualQuantities[material.id] ?? String(material.quantity_planned)
+                const diff = getDiff(material.quantity_planned, actualStr)
+                const isMore = (diff ?? 0) > 0
+                if (diff === null || diff === 0) {
+                    return (
+                        <span className="flex items-center justify-end gap-1 text-muted-foreground">
+                            <CheckCircle2 className="h-3.5 w-3.5 text-success" />
+                            <span className="text-xs">Sin cambios</span>
+                        </span>
+                    )
+                }
+                return (
+                    <span className={cn(
+                        "flex items-center justify-end gap-1 text-xs font-semibold",
+                        isMore ? "text-warning" : "text-success"
+                    )}>
+                        {isMore ? <TrendingUp className="h-3.5 w-3.5" /> : <TrendingDown className="h-3.5 w-3.5" />}
+                        {isMore ? "+" : ""}<QuantityDisplay value={diff} decimals={4} inline />
+                    </span>
+                )
+            },
+        },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    ], [actualQuantities])
+
+    const outsourcedColumns = useMemo<ColumnDef<WorkOrderMaterial>[]>(() => [
+        {
+            id: "service",
+            header: "Servicio",
+            cell: ({ row }) => {
+                const m = row.original
+                return (
+                    <div>
+                        <div className="font-medium text-foreground">{m.component_name}</div>
+                        {m.purchase_order_number && (
+                            <div className="text-xs text-muted-foreground mt-0.5">OC-{m.purchase_order_number}</div>
+                        )}
+                    </div>
+                )
+            },
+        },
+        {
+            id: "qty",
+            header: "Cant. Real",
+            meta: { align: "right" },
+            cell: ({ row }) => {
+                const m = row.original
+                const out = actualOutsourced[m.id]
+                const actualQty = out?.qty ?? String(m.quantity_planned)
+                const diffQty = getDiff(m.quantity_planned, actualQty)
+                return (
+                    <Input
+                        type="number"
+                        min="0"
+                        step="any"
+                        value={actualQty}
+                        onChange={e => handleOutsourcedChange(m.id, 'qty', e.target.value)}
+                        className={cn(
+                            "w-20 text-right h-8 text-sm ml-auto",
+                            diffQty && "border-warning focus-visible:ring-warning"
+                        )}
+                    />
+                )
+            },
+        },
+        {
+            id: "price",
+            header: "Precio Unit. Real",
+            meta: { align: "right" },
+            cell: ({ row }) => {
+                const m = row.original
+                const out = actualOutsourced[m.id]
+                const actualPrice = out?.price ?? String(m.unit_price ?? "0")
+                const diffPrice = getDiff(Number(m.unit_price ?? "0"), actualPrice)
+                return (
+                    <Input
+                        type="number"
+                        min="0"
+                        step="any"
+                        value={actualPrice}
+                        onChange={e => handleOutsourcedChange(m.id, 'price', e.target.value)}
+                        className={cn(
+                            "w-28 text-right h-8 text-sm ml-auto",
+                            diffPrice && "border-warning focus-visible:ring-warning"
+                        )}
+                    />
+                )
+            },
+        },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    ], [actualOutsourced])
+
     return (
         <div className="space-y-6 p-1">
             {/* Header */}
@@ -258,7 +411,7 @@ export function RectificationStep({ order, onChange }: RectificationStepProps) {
                 </Alert>
             )}
 
-            {/* Cost Impact Panel — shown inline when there are changes */}
+            {/* Cost Impact Panel */}
             {hasMeaningfulChanges && (
                 <CostImpactPanel
                     materials={materials}
@@ -270,7 +423,7 @@ export function RectificationStep({ order, onChange }: RectificationStepProps) {
                 />
             )}
 
-            {/* Materials Table */}
+            {/* Stock Materials Table */}
             {stockMaterials.length > 0 ? (
                 <div>
                     <div className="flex items-center gap-2 mb-3">
@@ -278,92 +431,18 @@ export function RectificationStep({ order, onChange }: RectificationStepProps) {
                         <span className="text-sm font-medium text-foreground">Materiales de Stock</span>
                         <Chip size="xs">{stockMaterials.length}</Chip>
                     </div>
-                    <div className="rounded-md border border-border overflow-hidden">
-                        <table className="w-full text-sm">
-                            <thead>
-                                <tr className="bg-muted/40 border-b border-border">
-                                    <th className="text-left px-4 py-2.5 font-medium text-muted-foreground">Material</th>
-                                    <th className="text-right px-4 py-2.5 font-medium text-muted-foreground">Planificado</th>
-                                    <th className="text-right px-4 py-2.5 font-medium text-muted-foreground w-36">Real Consumido</th>
-                                    <th className="text-right px-4 py-2.5 font-medium text-muted-foreground w-28">Diferencia</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {stockMaterials.map((material: WorkOrderMaterial) => {
-                                    const planned = material.quantity_planned
-                                    const actualStr = actualQuantities[material.id] ?? String(planned)
-                                    const diff = getDiff(planned, actualStr)
-                                    const hasChange = diff !== null && diff !== 0
-                                    const isMore = (diff ?? 0) > 0
-
-                                    return (
-                                        <tr
-                                            key={material.id}
-                                            className={cn(
-                                                "border-b border-border last:border-0 transition-colors",
-                                                hasChange ? "bg-warning/5" : "hover:bg-muted/20"
-                                            )}
-                                        >
-                                            <td className="px-4 py-3">
-                                                <div className="font-medium text-foreground">{material.component_name}</div>
-                                                <div className="text-xs text-muted-foreground">{material.uom_name}</div>
-                                                {(() => {
-                                                    const pCost = material.planned_cost ?? 0;
-                                                    const aCost = material.actual_cost ?? 0;
-                                                    const cDiff = aCost - pCost;
-                                                    const cPct = pCost > 0 ? (cDiff / pCost) : 0;
-                                                    if (Math.abs(cPct) > 0.01) {
-                                                        const isUp = cDiff > 0;
-                                                        return (
-                                                            <Chip size="xs" intent={isUp ? "destructive" : "success"} className="mt-1 border-0">
-                                                                {isUp ? "Costo ↑" : "Costo ↓"} {Math.abs(cPct * 100).toFixed(1)}%
-                                                            </Chip>
-                                                        )
-                                                    }
-                                                    return null;
-                                                })()}
-                                            </td>
-                                            <td className="px-4 py-3 text-right text-muted-foreground">
-                                                <QuantityDisplay value={planned} decimals={4} inline />
-                                            </td>
-                                            <td className="px-4 py-3 text-right">
-                                                <Input
-                                                    type="number"
-                                                    min="0"
-                                                    step="any"
-                                                    value={actualStr}
-                                                    onChange={e => handleQuantityChange(material.id, e.target.value)}
-                                                    className={cn(
-                                                        "w-28 text-right h-8 text-sm ml-auto",
-                                                        hasChange && "border-warning focus-visible:ring-warning"
-                                                    )}
-                                                />
-                                            </td>
-                                            <td className="px-4 py-3 text-right">
-                                                {diff === null || diff === 0 ? (
-                                                    <span className="flex items-center justify-end gap-1 text-muted-foreground">
-                                                        <CheckCircle2 className="h-3.5 w-3.5 text-success" />
-                                                        <span className="text-xs">Sin cambios</span>
-                                                    </span>
-                                                ) : (
-                                                    <span className={cn(
-                                                        "flex items-center justify-end gap-1 text-xs font-semibold",
-                                                        isMore ? "text-warning" : "text-success"
-                                                    )}>
-                                                        {isMore
-                                                            ? <TrendingUp className="h-3.5 w-3.5" />
-                                                            : <TrendingDown className="h-3.5 w-3.5" />
-                                                        }
-                                                        {isMore ? "+" : ""}<QuantityDisplay value={diff} decimals={4} inline />
-                                                    </span>
-                                                )}
-                                            </td>
-                                        </tr>
-                                    )
-                                })}
-                            </tbody>
-                        </table>
-                    </div>
+                    <DataTable
+                        variant="compact"
+                        gridTemplate="grid-cols-[1fr_auto_auto_auto]"
+                        columns={stockColumns}
+                        data={stockMaterials}
+                        getRowClassName={(row) => {
+                            const material = row.original
+                            const actualStr = actualQuantities[material.id] ?? String(material.quantity_planned)
+                            const diff = parseFloat(actualStr) - material.quantity_planned
+                            return !isNaN(diff) && diff !== 0 ? "bg-warning/5" : ""
+                        }}
+                    />
                 </div>
             ) : (
                 <Alert className="border-border bg-muted/20">
@@ -374,7 +453,7 @@ export function RectificationStep({ order, onChange }: RectificationStepProps) {
                 </Alert>
             )}
 
-            {/* Outsourced Materials */}
+            {/* Outsourced Materials Table */}
             {outsourcedMaterials.length > 0 && (
                 <div>
                     <div className="flex items-center gap-2 mb-3">
@@ -382,70 +461,22 @@ export function RectificationStep({ order, onChange }: RectificationStepProps) {
                         <span className="text-sm font-medium text-foreground">Servicios Tercerizados</span>
                         <Chip size="xs">{outsourcedMaterials.length}</Chip>
                     </div>
-                    <div className="rounded-md border border-border overflow-hidden">
-                        <table className="w-full text-sm">
-                            <thead>
-                                <tr className="bg-muted/40 border-b border-border">
-                                    <th className="text-left px-4 py-2.5 font-medium text-muted-foreground">Servicio</th>
-                                    <th className="text-right px-4 py-2.5 font-medium text-muted-foreground w-24">Cant. Real</th>
-                                    <th className="text-right px-4 py-2.5 font-medium text-muted-foreground w-32">Precio Unit. Real</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {outsourcedMaterials.map((m: WorkOrderMaterial) => {
-                                    const out = actualOutsourced[m.id]
-                                    const actualQty = out?.qty ?? String(m.quantity_planned)
-                                    const actualPrice = out?.price ?? String(m.unit_price ?? "0")
-                                    const diffQty = getDiff(m.quantity_planned, actualQty)
-                                    const diffPrice = getDiff(Number(m.unit_price ?? "0"), actualPrice)
-                                    const hasChange = (diffQty !== null && diffQty !== 0) || (diffPrice !== null && diffPrice !== 0)
-                                    
-                                    return (
-                                        <tr
-                                            key={m.id}
-                                            className={cn(
-                                                "border-b border-border last:border-0 transition-colors",
-                                                hasChange ? "bg-warning/5" : "hover:bg-muted/20"
-                                            )}
-                                        >
-                                            <td className="px-4 py-3">
-                                                <div className="font-medium text-foreground">{m.component_name}</div>
-                                                {m.purchase_order_number && (
-                                                    <div className="text-xs text-muted-foreground mt-0.5">OC-{m.purchase_order_number}</div>
-                                                )}
-                                            </td>
-                                            <td className="px-4 py-3 text-right">
-                                                <Input
-                                                    type="number"
-                                                    min="0"
-                                                    step="any"
-                                                    value={actualQty}
-                                                    onChange={e => handleOutsourcedChange(m.id, 'qty', e.target.value)}
-                                                    className={cn(
-                                                        "w-20 text-right h-8 text-sm ml-auto",
-                                                        diffQty && "border-warning focus-visible:ring-warning"
-                                                    )}
-                                                />
-                                            </td>
-                                            <td className="px-4 py-3 text-right">
-                                                <Input
-                                                    type="number"
-                                                    min="0"
-                                                    step="any"
-                                                    value={actualPrice}
-                                                    onChange={e => handleOutsourcedChange(m.id, 'price', e.target.value)}
-                                                    className={cn(
-                                                        "w-28 text-right h-8 text-sm ml-auto",
-                                                        diffPrice && "border-warning focus-visible:ring-warning"
-                                                    )}
-                                                />
-                                            </td>
-                                        </tr>
-                                    )
-                                })}
-                            </tbody>
-                        </table>
-                    </div>
+                    <DataTable
+                        variant="compact"
+                        gridTemplate="grid-cols-[1fr_auto_auto]"
+                        columns={outsourcedColumns}
+                        data={outsourcedMaterials}
+                        getRowClassName={(row) => {
+                            const m = row.original
+                            const out = actualOutsourced[m.id]
+                            if (!out) return ""
+                            const diffQty = parseFloat(out.qty) - m.quantity_planned
+                            const diffPrice = parseFloat(out.price) - Number(m.unit_price ?? "0")
+                            return (!isNaN(diffQty) && diffQty !== 0) || (!isNaN(diffPrice) && diffPrice !== 0)
+                                ? "bg-warning/5"
+                                : ""
+                        }}
+                    />
                 </div>
             )}
 
