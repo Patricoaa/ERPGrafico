@@ -10,6 +10,7 @@ from django.db.models.deletion import ProtectedError
 from django.utils import timezone
 from django.utils.translation import gettext as _
 
+from core.prefix_registry import EntityPrefix
 from accounting.glosa_builder import GlosaBuilder, Roles
 from accounting.models import AccountingSettings, JournalEntry, JournalItem
 from accounting.services import JournalEntryService
@@ -811,7 +812,7 @@ class TreasuryService:
             invoice=invoice,
             sale_order=sale_order,
             purchase_order=purchase_order,
-            reference=f"CP-{group.uuid}",
+            reference=f"{EntityPrefix.CARD_PURCHASE_GROUP}-{group.uuid}",
             notes=(f"Compra TC {group.display_id} en {installments} cuota(s) {notes}".strip()),
         )
         purchase_mv.card_purchase_group = group

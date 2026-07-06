@@ -5,6 +5,7 @@ from django.db import transaction
 from django.utils import timezone
 
 from core.models import User
+from core.prefix_registry import EntityPrefix
 from inventory.models import Subscription
 from purchasing.models import PurchaseOrder
 from purchasing.serializers import WritePurchaseOrderSerializer
@@ -117,7 +118,7 @@ def generate_subscription_orders(self):
                             # Notify configured recipients about the new order
                             WorkflowService.send_notification(
                                 notification_type="SUBSCRIPTION_OC_CREATED",
-                                title=f"Nueva Orden de Suscripción: OCS-{order.number}",
+                                title=f"Nueva Orden de Suscripción: {order.display_id}",
                                 message=f"Proveedor: {order.supplier.name if order.supplier else 'N/A'}",
                                 level=Notification.Type.INFO,
                                 link=f"/purchasing/orders?openHub={order.id}",

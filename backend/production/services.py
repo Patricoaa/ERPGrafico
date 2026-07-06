@@ -117,7 +117,7 @@ class WorkOrderService:
 
         delivery_with_wh = sale_line.order.deliveries.filter(warehouse__isnull=False).first()
         work_order = WorkOrder.objects.create(
-            description=f"{product.name} - NV-{sale_line.order.number}",
+            description=f"{product.name} - {EntityPrefix.SALE_ORDER}-{sale_line.order.number}",
             sale_order=sale_line.order,
             sale_line=sale_line,
             related_note=getattr(sale_line, "related_note", None),
@@ -191,7 +191,7 @@ class WorkOrderService:
                     )
             except Exception as e:
                 # Log error but keep OT created
-                logger.exception("Auto-finalize failed for OT-%s", work_order.number)
+                logger.exception("Auto-finalize failed for %s-%s", EntityPrefix.WORK_ORDER, work_order.number)
                 WorkOrderHistory.objects.create(
                     work_order=work_order,
                     stage=work_order.current_stage,
@@ -283,7 +283,7 @@ class WorkOrderService:
 
         WorkOrderService._create_initial_artifacts(
             new_wo,
-            origin_notes=f"OT duplicada desde OT-{work_order.number}.",
+            origin_notes=f"OT duplicada desde {EntityPrefix.WORK_ORDER}-{work_order.number}.",
             task_meta={"order_type": "manual"},
             user=user,
         )
@@ -364,7 +364,7 @@ class WorkOrderService:
                     )
             except Exception as e:
                 logger.exception(
-                    "Auto-finalize failed for OT-%s during delivery", work_order.number
+                    "Auto-finalize failed for %s-%s during delivery", EntityPrefix.WORK_ORDER, work_order.number
                 )
                 WorkOrderHistory.objects.create(
                     work_order=work_order,
@@ -561,7 +561,7 @@ class WorkOrderService:
         for po in work_order.purchase_orders.all():
             if po.status in [PurchaseOrder.Status.DRAFT, PurchaseOrder.Status.CONFIRMED]:
                 PurchasingService.cancel_purchase_order(po)
-                po.notes += f"\nAnulado por anulación de OT-{work_order.number}"
+                po.notes += f"\nAnulado por anulación de {EntityPrefix.WORK_ORDER}-{work_order.number}"
                 po.save(update_fields=["notes"])
 
         # 3. Finalize Annulment
@@ -759,8 +759,8 @@ class WorkOrderService:
         if next_stage == WorkOrder.Stage.MATERIAL_APPROVAL:
             WorkflowService.create_task(
                 task_type="OT_MATERIAL_APPROVAL",
-                title=f"Aprobación Stock: OT-{work_order.number}",
-                description=f"Valide la disponibilidad de stock para procesar la OT-{work_order.number}.",
+                title=f"Aprobación Stock: {EntityPrefix.WORK_ORDER}-{work_order.number}",
+                description=f"Valide la disponibilidad de stock para procesar la {EntityPrefix.WORK_ORDER}-{work_order.number}.",
                 content_object=work_order,
                 created_by=user,
             )
@@ -768,8 +768,8 @@ class WorkOrderService:
         if next_stage == WorkOrder.Stage.PREPRESS:
             WorkflowService.create_task(
                 task_type="OT_PREPRESS_APPROVAL",
-                title=f"Aprobación Pre-Impresión: OT-{work_order.number}",
-                description=f"Valide el diseño y especificaciones para la OT-{work_order.number}.",
+                title=f"Aprobación Pre-Impresión: {EntityPrefix.WORK_ORDER}-{work_order.number}",
+                description=f"Valide el diseño y especificaciones para la {EntityPrefix.WORK_ORDER}-{work_order.number}.",
                 content_object=work_order,
                 created_by=user,
             )
@@ -777,8 +777,8 @@ class WorkOrderService:
         if next_stage == WorkOrder.Stage.PRESS:
             WorkflowService.create_task(
                 task_type="OT_PRESS_APPROVAL",
-                title=f"Supervisión Impresión: OT-{work_order.number}",
-                description=f"Supervise el inicio de tiraje de la OT-{work_order.number}.",
+                title=f"Supervisión Impresión: {EntityPrefix.WORK_ORDER}-{work_order.number}",
+                description=f"Supervise el inicio de tiraje de la {EntityPrefix.WORK_ORDER}-{work_order.number}.",
                 content_object=work_order,
                 created_by=user,
             )
@@ -786,8 +786,8 @@ class WorkOrderService:
         if next_stage == WorkOrder.Stage.POSTPRESS:
             WorkflowService.create_task(
                 task_type="OT_POSTPRESS_APPROVAL",
-                title=f"Supervisión Post-Impresión: OT-{work_order.number}",
-                description=f"Valide terminaciones y empaque de la OT-{work_order.number}.",
+                title=f"Supervisión Post-Impresión: {EntityPrefix.WORK_ORDER}-{work_order.number}",
+                description=f"Valide terminaciones y empaque de la {EntityPrefix.WORK_ORDER}-{work_order.number}.",
                 content_object=work_order,
                 created_by=user,
             )
@@ -795,8 +795,8 @@ class WorkOrderService:
         if next_stage == WorkOrder.Stage.OUTSOURCING_VERIFICATION:
             WorkflowService.create_task(
                 task_type="OT_OUTSOURCING_VERIFICATION_APPROVAL",
-                title=f"Verificación Tercerizados: OT-{work_order.number}",
-                description=f"Valide la recepción de servicios externos para la OT-{work_order.number}.",
+                title=f"Verificación Tercerizados: {EntityPrefix.WORK_ORDER}-{work_order.number}",
+                description=f"Valide la recepción de servicios externos para la {EntityPrefix.WORK_ORDER}-{work_order.number}.",
                 content_object=work_order,
                 created_by=user,
             )
@@ -804,8 +804,8 @@ class WorkOrderService:
         if next_stage == WorkOrder.Stage.RECTIFICATION:
             WorkflowService.create_task(
                 task_type="OT_RECTIFICATION_APPROVAL",
-                title=f"Rectificación: OT-{work_order.number}",
-                description=f"Revise y confirme las cantidades reales de materiales consumidos y producción para la OT-{work_order.number}.",
+                title=f"Rectificación: {EntityPrefix.WORK_ORDER}-{work_order.number}",
+                description=f"Revise y confirme las cantidades reales de materiales consumidos y producción para la {EntityPrefix.WORK_ORDER}-{work_order.number}.",
                 content_object=work_order,
                 created_by=user,
             )
@@ -982,7 +982,7 @@ class WorkOrderService:
                 uom=mat.component.uom,
                 quantity=-base_comp_qty,  # Consumption in base units
                 move_type=StockMove.Type.OUT,
-                description=f"Consumo producción OT-{work_order.number}",
+                description=f"Consumo producción {EntityPrefix.WORK_ORDER}-{work_order.number}",
             )
             mat.quantity_consumed = mat.quantity_planned  # We consume what was planned
             mat.save()
@@ -1050,7 +1050,7 @@ class WorkOrderService:
                 uom=product.uom,
                 quantity=base_qty,
                 move_type=StockMove.Type.IN,
-                description=f"Entrada producción OT-{work_order.number}",
+                description=f"Entrada producción {EntityPrefix.WORK_ORDER}-{work_order.number}",
             )
 
         # 3. Generate Accounting Entry for Production
@@ -1124,7 +1124,7 @@ class WorkOrderService:
                             "account": account,
                             "debit": Decimal("0.00"),
                             "credit": amount,
-                            "label": f"Consumo OT-{work_order.number}",
+                            "label": f"Consumo {EntityPrefix.WORK_ORDER}-{work_order.number}",
                         }
                     )
 
@@ -1141,7 +1141,7 @@ class WorkOrderService:
                 # If track_inventory, also link the entry to the entry move
                 if product.track_inventory:
                     entry_move = StockMove.objects.filter(
-                        product=product, description=f"Entrada producción OT-{work_order.number}"
+                        product=product, description=f"Entrada producción {EntityPrefix.WORK_ORDER}-{work_order.number}"
                     ).first()
                     if entry_move:
                         entry_move.journal_entry = entry

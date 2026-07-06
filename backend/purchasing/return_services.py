@@ -5,6 +5,7 @@ from django.core.exceptions import ValidationError
 from django.db import transaction
 from django.utils import timezone
 
+from core.prefix_registry import EntityPrefix
 from accounting.glosa_builder import GlosaBuilder, Roles
 from accounting.models import JournalEntry, JournalItem
 from accounting.services import JournalEntryService
@@ -178,7 +179,7 @@ class PurchaseReturnService:
                     uom=product.uom,
                     quantity=-qty_base,  # Negative for OUT move
                     move_type=StockMove.Type.OUT,
-                    description=f"Devolución OCS-{return_doc.purchase_order.number}",
+                    description=f"Devolución {return_doc.purchase_order.display_id}",
                     source_uom=line.uom or product.uom,
                     source_quantity=line.quantity,
                 )

@@ -344,7 +344,8 @@ class ProductionConsumption(models.Model):
         ordering = ["-id"]
 
     def __str__(self):
-        return f"{self.product.name} x {self.quantity} (OT-{self.work_order.number})"
+        from core.prefix_registry import EntityPrefix
+        return f"{self.product.name} x {self.quantity} ({EntityPrefix.WORK_ORDER}-{self.work_order.number})"
 
 
 class WorkOrderMaterial(models.Model):

@@ -5,6 +5,7 @@ from django.core.exceptions import ValidationError
 from django.db import models, transaction
 from django.utils import timezone
 
+from core.prefix_registry import EntityPrefix
 from accounting.glosa_builder import GlosaBuilder, Roles
 from accounting.models import AccountingSettings, AccountType, JournalEntry, JournalItem
 from accounting.services import AccountingMapper, JournalEntryService
@@ -476,7 +477,7 @@ class PurchasingService:
                 uom=line.product.uom,
                 quantity=base_qty,  # base_qty is already negative for returns
                 move_type=StockMove.Type.OUT,
-                description=f"Devolución OCS-{receipt.purchase_order.number}",
+                description=f"Devolución {receipt.purchase_order.display_id}",
                 journal_entry=entry,
                 source_uom=line.uom or line.purchase_line.uom,
                 source_quantity=line.quantity_received,
@@ -620,7 +621,7 @@ class PurchasingService:
                             else "CLP",
                             "status": Subscription.Status.ACTIVE,
                             "recurrence_period": recurrence,
-                            "notes": f"Creado automáticamente desde OCS-{receipt.purchase_order.number}",
+                            "notes": f"Creado automáticamente desde {receipt.purchase_order.display_id}",
                         },
                     )
 
@@ -670,7 +671,7 @@ class PurchasingService:
                 warehouse=receipt.warehouse,
                 quantity=base_qty,
                 move_type=StockMove.Type.IN,
-                description=f"Recepción OCS-{receipt.purchase_order.number}",
+                description=f"Recepción {receipt.purchase_order.display_id}",
                 source_uom=line.uom or line.purchase_line.uom,
                 source_quantity=line.quantity_received,
                 unit_cost=cost_per_base_unit,
@@ -1040,7 +1041,7 @@ class PurchasingService:
                     warehouse=warehouse,
                     quantity=move_qty,
                     move_type=move_type,
-                    description=f"{invoice.get_dte_type_display()} {document_number} (OCS-{order.number})",
+                    description=f"{invoice.get_dte_type_display()} {document_number} ({order.display_id})",
                     journal_entry=entry,
                 )
 

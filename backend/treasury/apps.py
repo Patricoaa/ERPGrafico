@@ -27,6 +27,7 @@ class TreasuryConfig(AppConfig):
                 BankLoan,
                 BankStatement,
                 CardPurchaseGroup,
+                CardPurchaseInstallment,
                 Check,
                 CreditCardStatement,
                 CreditLine,
@@ -170,6 +171,23 @@ class TreasuryConfig(AppConfig):
                     list_url="/treasury/bank-center",
                     detail_url_pattern="/treasury/bank-center",
                     permission="treasury.view_cardpurchasegroup",
+                )
+            )
+            UniversalRegistry.register(
+                SearchableEntity(
+                    model=CardPurchaseInstallment,
+                    label="treasury.cardpurchaseinstallment",
+                    title_singular="Cuota de Compra TC",
+                    title_plural="Cuotas de Compra TC",
+                    icon="calendar",
+                    search_fields=("card_purchase_group__partner__name", "number"),
+                    short_display_template=f"{EntityPrefix.CARD_PURCHASE_INSTALLMENT}-{{id}}",
+                    display_template=f"{EntityPrefix.CARD_PURCHASE_INSTALLMENT}-{{id}}",
+                    subtitle_template="{card_purchase_group.display_id} · Cuota {number}",
+                    extra_info_template="{principal_amount} · {card_purchase_group.partner.name}",
+                    list_url="/treasury/bank-center",
+                    detail_url_pattern="/treasury/bank-center",
+                    permission="treasury.view_cardpurchaseinstallment",
                 )
             )
             UniversalRegistry.register(

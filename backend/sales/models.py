@@ -578,7 +578,8 @@ class SaleDelivery(TransactionalDocument, TotalsCalculationMixin):
         verbose_name_plural = _("Despachos de Venta")
 
     def __str__(self):
-        return f"{self.display_id} (NV-{self.sale_order.number})"
+        from core.prefix_registry import EntityPrefix
+        return f"{self.display_id} ({EntityPrefix.SALE_ORDER}-{self.sale_order.number})"
 
     @property
     def display_id(self):
@@ -740,7 +741,8 @@ class SaleReturn(TransactionalDocument, TotalsCalculationMixin):
         verbose_name_plural = _("Devoluciones de Venta")
 
     def __str__(self):
-        return f"{self.display_id} (NV-{self.sale_order.number})"
+        from core.prefix_registry import EntityPrefix
+        return f"{self.display_id} ({EntityPrefix.SALE_ORDER}-{self.sale_order.number})"
 
     @property
     def display_id(self):

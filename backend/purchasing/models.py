@@ -394,7 +394,8 @@ class PurchaseReceipt(TransactionalDocument, TotalsCalculationMixin):
         ordering = ["-id"]
 
     def __str__(self):
-        return f"{self.display_id} (OCS-{self.purchase_order.number})"
+        from core.prefix_registry import EntityPrefix
+        return f"{self.display_id} ({EntityPrefix.PURCHASE_ORDER}-{self.purchase_order.number})"
 
     @property
     def display_id(self):
@@ -528,7 +529,8 @@ class PurchaseReturn(TransactionalDocument, TotalsCalculationMixin):
         ordering = ["-id"]
 
     def __str__(self):
-        return f"{self.display_id} (OCS-{self.purchase_order.number})"
+        from core.prefix_registry import EntityPrefix
+        return f"{self.display_id} ({EntityPrefix.PURCHASE_ORDER}-{self.purchase_order.number})"
 
     @property
     def display_id(self):
