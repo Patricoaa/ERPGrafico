@@ -11,7 +11,9 @@ stability: contract-changes-require-ADR
 
 Sistema centralizado de identidad de entidades ERP. Define el **único lugar** donde se registran prefijos de documentos, íconos, títulos y rutas para todas las entidades del sistema.
 
-> **Regla cardinal**: Ningún módulo puede definir prefijos, íconos o títulos de entidades de forma ad-hoc. Todo debe fluir desde `ENTITY_REGISTRY`.
+> **Regla cardinal**: Ningún módulo puede definir prefijos, íconos o títulos de entidades de forma ad-hoc.
+> - **Backend**: todo fluye desde `EntityPrefix` enum en `core/prefix_registry.py`.
+> - **Frontend**: todo fluye desde `ENTITY_REGISTRY` + API `/api/core/entity-prefixes/`.
 
 ---
 
@@ -19,10 +21,10 @@ Sistema centralizado de identidad de entidades ERP. Define el **único lugar** d
 
 1. [ENTITY\_REGISTRY](#1-entity_registry)
 2. [Funciones helpers del registry](#2-funciones-helpers)
-3. [DynamicIcon](#3-dynamicicon)
-4. [EntityBadge](#4-entitybadge)
-5. [EntityHeader](#5-entityheader)
-6. [EntityDetailPage](#6-entitydetailpage) — eliminado (T-95)
+3. [API de prefijos (frontend)](#3-api-de-prefijos-frontend)
+4. [DynamicIcon](#4-dynamicicon)
+5. [EntityBadge](#5-entitybadge)
+6. [EntityHeader](#6-entityheader)
 7. [DataCell.Entity](#7-datacellEntity)
 8. [PageHeader — integración con iconos](#8-pageheader--integración-con-iconos)
 9. [Tabla maestra de prefijos](#9-tabla-maestra-de-prefijos)
@@ -79,7 +81,7 @@ import { MyIcon } from 'lucide-react';
 },
 ```
 
-> **⚠️ Después de agregar**: actualizar también `detectEntityLabel()` (ver §2) y el backend `AppConfig.ready()` si la entidad es buscable.
+> **⚠️ Después de agregar**: actualizar también el backend `AppConfig.ready()` si la entidad es buscable.
 
 ---
 
@@ -116,19 +118,68 @@ Retorna el ícono Lucide de la entidad. Fallback: `Package`.
 const Icon = getEntityIcon('production.workorder'); // → Wrench
 ```
 
-### `detectEntityLabel(text: string): string | null`
+### `getDtePrefix(dteType?: string | null): string`
 
-Detecta el label del registry a partir de un string (útil para notificaciones, tareas, búsqueda). Reconoce prefijos canónicos como `OCS-`, `NV-`, `OT-`, etc.
+Obtiene el prefijo de un DTE según su tipo. Lee desde el caché de la API `/api/core/entity-prefixes/` con fallback a un mapa hardcodeado (`FACTURA` → `FACV`, `BOLETA` → `BOL`, etc.).
 
 ```typescript
-detectEntityLabel('OCS-123');  // → 'purchasing.purchaseorder'
-detectEntityLabel('NV-007');   // → 'sales.saleorder'
-detectEntityLabel('random');   // → null
+getDtePrefix('FACTURA');  // → 'FACV'
+getDtePrefix('NOTA_CREDITO');  // → 'NC'
+```
+
+### `getDteLabel(dteType?: string | null): string`
+
+Retorna la etiqueta legible para un tipo de DTE. También lee desde el API con fallback hardcodeado.
+
+```typescript
+getDteLabel('FACTURA');  // → 'Factura'
+getDteLabel('BOLETA');   // → 'Boleta'
 ```
 
 ---
 
-## 3. DynamicIcon
+## 3. API de prefijos (frontend)
+
+**Archivo**: `frontend/lib/api/entity-prefixes.ts`
+
+Módulo que centraliza la obtención y caché de prefijos de entidades desde el backend.
+
+### Flujo de datos
+
+```
+[Componente] → getDtePrefix(dteType) → cachedPrefixes (sync)
+                                       → FALLBACK_MAP (hardcodeado)
+
+[App init]  → fetchEntityPrefixes() → GET /api/core/entity-prefixes/ → cachedPrefixes
+```
+
+### `fetchEntityPrefixes(): Promise<Record<string, string>>`
+
+Solicita al endpoint `/api/core/entity-prefixes/` el mapa completo de prefijos. Puebla un caché en memoria que las funciones síncronas consultan. En caso de error de red retorna `FALLBACK_MAP`.
+
+### `getDtePrefix(dteType?: string | null): string`
+
+Síncrona. Lee del caché (poblado por `fetchEntityPrefixes`) y fallback a `FALLBACK_MAP`. Reexportada desde `@/lib/entity-registry` para backward compatibility.
+
+### `getDteLabel(dteType?: string | null): string`
+
+Similar a `getDtePrefix` pero retorna la etiqueta legible (ej: `'Factura'`, `'Boleta'`).
+
+### Inicialización
+
+Se recomienda llamar `fetchEntityPrefixes()` en `RootLayout` o `Providers` para poblar el caché al cargar la app:
+
+```typescript
+// app/layout.tsx o app/providers.tsx
+import { fetchEntityPrefixes } from '@/lib/api/entity-prefixes';
+
+// En un useEffect de layout:
+useEffect(() => { fetchEntityPrefixes(); }, []);
+```
+
+---
+
+## 4. DynamicIcon
 
 **Archivo**: `frontend/components/ui/dynamic-icon.tsx`  
 **Import**: `import { DynamicIcon } from '@/components/ui/dynamic-icon'`
@@ -153,7 +204,7 @@ Carga íconos Lucide por **nombre como string** usando `next/dynamic`. Ideal par
 
 ---
 
-## 4. EntityBadge
+## 5. EntityBadge
 
 **Archivo**: `frontend/components/shared/EntityBadge.tsx`  
 **Import**: `import { EntityBadge } from '@/components/shared'`
@@ -181,7 +232,7 @@ Componente premium para renderizar identificadores de entidades de forma consist
 
 ---
 
-## 5. EntityHeader
+## 6. EntityHeader
 
 **Archivo**: `frontend/components/shared/EntityHeader.tsx`  
 **Import**: `import { EntityHeader } from '@/components/shared'`
@@ -217,7 +268,7 @@ Header estandarizado para páginas de detalle `[id]/page.tsx`. Renderiza el íco
 
 ---
 
-## 6. EntityDetailPage — eliminado (T-95)
+## 7. EntityDetailPage — eliminado (T-95)
 
 > ⚠️ **Componente eliminado en T-95 (ADR-0020).** `frontend/components/shared/EntityDetailPage.tsx` y las 16 páginas `*DetailClient.tsx` ya no existen. No usar en código nuevo.
 
@@ -225,7 +276,7 @@ Esta sección se conserva solo como puntero histórico. El shell orquestaba `Ent
 
 ---
 
-## 7. DataCell.Entity
+## 8. DataCell.Entity
 
 **Archivo**: `frontend/components/shared/DataTableCells.tsx`  
 **Import**: `import { DataCell, createActionsColumn } from '@/components/shared'`
@@ -270,7 +321,7 @@ Celda de tabla estandarizada para mostrar identificadores de documentos. Interna
 
 ---
 
-## 8. PageHeader — integración con iconos
+## 9. PageHeader — integración con iconos
 
 **Archivo**: `frontend/components/shared/PageHeader.tsx`
 
@@ -305,36 +356,66 @@ Los módulos de lista (no detalle) usan `PageHeader` con `iconName` que correspo
 
 ---
 
-## 9. Tabla maestra de prefijos
+## 10. Tabla maestra de prefijos
 
 Todos los prefijos canónicos del sistema. **No usar prefijos que no estén en esta tabla.**
 
-| Registry key | Prefijo | Título | Ícono Lucide |
-|---|---|---|---|
-| `sales.saleorder` | `NV-` | Nota de Venta | `ReceiptText` |
-| `sales.saledelivery` | `DES-` | Guía de Despacho | `Truck` |
-| `sales.salereturn` | `DEV-` | Devolución | `Undo2` |
-| `purchasing.purchaseorder` | `OCS-` | Orden de Compra | `ShoppingCart` |
-| `billing.invoice` | `FAC-` | Factura/DTE | `FileText` |
-| `production.workorder` | `OT-` | Orden de Trabajo | `Wrench` |
-| `inventory.stockmove` | `MOV-` | Movimiento de Stock | `ArrowLeftRight` |
-| `inventory.product` | `PRD-` | Producto | `Package` |
-| `treasury.treasurymovement` | `TRX-` | Movimiento de Tesorería | `Landmark` |
-| `treasury.bankstatement` | `CAR-` | Cartola Bancaria | `BookOpen` |
-| `treasury.creditline` | `CL-` | Línea de Crédito | `ScrollText` |
-| `treasury.bankloan` | `CRE-` | Crédito Bancario | `Banknote` |
-| `treasury.loaninstallment` | `CUO-` | Cuota de Crédito | `Calendar` |
-| `accounting.account` | `{code}` | Cuenta Contable | `Book` |
-| `accounting.journalentry` | `AS-` | Asiento Contable | `Hash` |
-| `contacts.contact` | `CON-` | Contacto | `Users` |
-| `hr.employee` | `EMP-` | Empleado | `UserCheck` |
-| `hr.payroll` | `LIQ-` | Liquidación de Sueldo | `Receipt` |
-| `core.user` | `USR-` | Usuario | `User` |
+| Registry key | Prefijo | Backend `EntityPrefix` | Título | Ícono Lucide |
+|---|---|---|---|---|
+| `sales.saleorder` | `NV` | `SALE_ORDER` | Nota de Venta | `ReceiptText` |
+| `sales.saledelivery` | `DES` | `SALE_DELIVERY` | Guía de Despacho | `Truck` |
+| `sales.salereturn` | `DEV` | `SALE_RETURN` | Devolución | `Undo2` |
+| `purchasing.purchaseorder` | `OCS` | `PURCHASE_ORDER` | Orden de Compra | `ShoppingCart` |
+| `purchasing.purchasereceipt` | `REC` | `PURCHASE_RECEIPT` | Recepción de Compra | `PackageCheck` |
+| `billing.invoice` | dinámico (`FACV`/`FACC`/`BOL`/`NC`/etc.) | — | Factura/DTE | `FileText` |
+| `production.workorder` | `OT` | `WORK_ORDER` | Orden de Trabajo | `Wrench` |
+| `production.bom` | `BOM` | `BOM` | Lista de Materiales | `ClipboardList` |
+| `inventory.stockmove` | `MOV` | `STOCK_MOVE` | Movimiento de Stock | `ArrowLeftRight` |
+| `inventory.product` | `PRD` | `PRODUCT` | Producto | `Package` |
+| `inventory.subscription` | `SUB` | `SUBSCRIPTION` | Suscripción | `Repeat` |
+| `inventory.pricingrule` | `REG` | `PRICING_RULE` | Regla de Precio | `Percent` |
+| `inventory.category` | `CAT` | `CATEGORY` | Categoría | `LayoutGrid` |
+| `inventory.customfieldtemplate` | `CF` | `CUSTOM_FIELD` | Campo Personalizado | `Tag` |
+| `treasury.treasurymovement` | `TES` | `TREASURY_MOVEMENT` | Movimiento de Tesorería | `ArrowRightLeft` |
+| `treasury.bankstatement` | `CAR` | `BANK_STATEMENT` | Cartola Bancaria | `BookOpen` |
+| `treasury.check` | `CHQ` | `CHECK` | Cheque | `FileText` |
+| `treasury.bankloan` | `CRE` | `BANK_LOAN` | Crédito Bancario | `HandCoins` |
+| `treasury.creditline` | `CL` | `CREDIT_LINE` | Línea de Crédito | `ScrollText` |
+| `treasury.loaninstallment` | `CUO` | `LOAN_INSTALLMENT` | Cuota de Crédito | `Calendar` |
+| `treasury.creditcardstatement` | `EST` | `CREDIT_CARD_STMT` | Estado de Cuenta Tarjeta | `CreditCard` |
+| `treasury.cardpendingcharge` | `CHG` | `CARD_PENDING_CHARGE` | Cargo No Facturado | `CreditCard` |
+| `treasury.terminalbatch` | `LOT` | `TERMINAL_BATCH` | Lote de Terminal | `ClipboardCheck` |
+| `treasury.transfer` | `TRF` | `TRANSFER` | Traspaso | `ArrowLeftRight` |
+| `treasury.bank` | — | — | Banco | `Landmark` |
+| `treasury.treasuryaccount` | — | — | Cuenta de Tesorería | `Landmark` |
+| `accounting.journalentry` | `AS` | `JOURNAL_ENTRY` | Asiento Contable | `Hash` |
+| `accounting.fiscalyear` | `EJ` | `FISCAL_YEAR` | Ejercicio Contable | `Calendar` |
+| `accounting.budget` | `BUD` | `BUDGET` | Presupuesto | `PieChart` |
+| `accounting.account` | `{code}` | — | Cuenta Contable | `Book` |
+| `contacts.contact` | `CON` | `CONTACT` | Contacto | `Users` |
+| `contacts.partnertransaction` | `PT` | `PARTNER_TRANSACTION` | Transacción de Socio | `ArrowRightLeft` |
+| `hr.employee` | `EMP` | `EMPLOYEE` | Empleado | `UserCheck` |
+| `hr.payroll` | `LIQ` | `PAYROLL` | Liquidación de Sueldo | `Receipt` |
+| `hr.absence` | `AUS` | `ABSENCE` | Inasistencia | `CalendarX2` |
+| `hr.salaryadvance` | `ANT` | `SALARY_ADVANCE` | Anticipo de Sueldo | `HandCoins` |
+| `hr.payrollconcept` | `CON-LIQ` | `PAYROLL_CONCEPT` | Concepto de Liquidación | `ClipboardList` |
+| `core.user` | `USR` | `USER` | Usuario | `User` |
+| `workflow.task` | `TASK` | `TASK` | Tarea | `ClipboardCheck` |
+| `finance.bankjournal` | `BJ` | `BANK_JOURNAL` | Diario Banco | `Landmark` |
+| `finance.payment` | `PAY` | `PAYMENT` | Pago | `Receipt` |
+| `pos.session` | `POS` | `POS_SESSION` | Sesión POS | `ShoppingCart` |
+| `pos.terminal` | `POS-C` | `POS_TERMINAL` | Caja POS | `Monitor` |
+| `tax.f29declaration` | `F29` | `F29_DECLARATION` | Declaración F29 | `FileText` |
+| `tax.accountingperiod` | `PER` | `ACCOUNTING_PERIOD` | Período Contable | `Calendar` |
+| `tax.taxperiod` | `IMP` | `TAX_PERIOD` | Período Tributario | `Calendar` |
+| `sales.saledelivery` | `DES` | `SALE_DELIVERY` | Guía de Despacho | `Truck` |
+
+> Para `billing.invoice` el prefijo es dinámico según `dte_type`. Ver `getDtePrefix()` en §3. El backend `EntityPrefix` define `INVOICE_FACTURA=FACV`, `INVOICE_BOLETA=BOL`, `NOTA_CREDITO=NC`, etc.
 
 
 ---
 
-## 10. Reglas de cumplimiento
+## 11. Reglas de cumplimiento
 
 ### ✅ Permitido
 
@@ -361,19 +442,19 @@ Todos los prefijos canónicos del sistema. **No usar prefijos que no estén en e
 <h1>Orden de Compra #{id}</h1>
 // → usar EntityHeader con entityLabel dentro del drawer/modal de edición
 
-// ❌ Agregar un registro al ENTITY_REGISTRY sin actualizar detectEntityLabel()
+// ❌ Usar getDtePrefix sin importarlo desde @/lib/entity-registry (es re-exportado desde api/entity-prefixes)
 ```
 
 ### Checklist para nueva entidad
 
+- [ ] Miembro en `backend/core/prefix_registry.py` enum `EntityPrefix`
 - [ ] Entrada en `ENTITY_REGISTRY` con todos los campos de `EntityMetadata`
-- [ ] Regla en `detectEntityLabel()` para el prefijo canónico
+- [ ] `shortTemplate` en `ENTITY_REGISTRY` coincide con el valor `EntityPrefix`
 - [ ] Backend: `AppConfig.ready()` registra la entidad con `title_singular`, `title_plural`, `short_display_template` (si es buscable)
 - [ ] Vista de lista: `DataCell.Entity` usa `entityLabel` o `type` en snake_case correcto
-- [ ] ~~Vista de detalle: `EntityDetailPage` usa `entityLabel`~~ — No aplica (T-95). La ruta `[id]` redirige a `<list_url>?selected={id}`.
 
 ---
 
-*Fuentes: `frontend/lib/entity-registry.ts` · `frontend/components/shared/EntityBadge.tsx` · `frontend/components/shared/EntityHeader.tsx` · `frontend/components/shared/DataTableCells.tsx` · `frontend/components/ui/dynamic-icon.tsx`*
+*Fuentes: `backend/core/prefix_registry.py` · `frontend/lib/entity-registry.ts` · `frontend/lib/api/entity-prefixes.ts` · `frontend/components/shared/EntityBadge.tsx` · `frontend/components/shared/EntityHeader.tsx` · `frontend/components/shared/DataTableCells.tsx` · `frontend/components/ui/dynamic-icon.tsx`*
 
 > **Nota histórica:** `EntityDetailPage.tsx` fue eliminado en T-95. Ver [list-modal-edit-pattern.md](./list-modal-edit-pattern.md) para el patrón canónico actual.
