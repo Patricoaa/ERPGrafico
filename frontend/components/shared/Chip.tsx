@@ -1,6 +1,7 @@
 "use client"
 
 import { type LucideIcon } from 'lucide-react'
+import * as LucideIcons from 'lucide-react'
 import type { BadgeIntent } from '@/lib/badge-resolvers'
 import { Badge } from '@/components/shared'
 import { resolveCategory } from '@/lib/badge-resolvers'
@@ -41,9 +42,12 @@ Chip.Category = function ChipCategory({
     size?: 'xs' | 'sm' | 'md'
     className?: string
 }) {
-    const { intent, label } = resolveCategory(domain, value)
+    const { intent, label, icon } = resolveCategory(domain, value)
+    const Icon = icon
+        ? (LucideIcons as unknown as Record<string, React.ElementType>)[icon] ?? null
+        : null
     return (
-        <Chip intent={intent} size={size} className={className}>
+        <Chip intent={intent} size={size} icon={Icon} className={className}>
             {label}
         </Chip>
     )
