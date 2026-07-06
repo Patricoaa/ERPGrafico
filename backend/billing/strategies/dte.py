@@ -327,7 +327,7 @@ class FacturaStrategy(DTEStrategy):
             GlosaBuilder.COMPRA, doc_id, supplier_name, invoice.total,
             extra=[f"OC {order.display_id}"],
         )
-        reference = f"FCP-{invoice.id}"
+        reference = f"{EntityPrefix.INVOICE_COMPRA}-{invoice.id}"
         return description, reference, items
 
 
@@ -677,7 +677,7 @@ class PurchaseInvStrategy(DTEStrategy):
             GlosaBuilder.COMPRA, doc_id, supplier_name, invoice.total,
             extra=[f"OC {order.display_id}"],
         )
-        reference = f"FCP-{invoice.id}"
+        reference = f"{EntityPrefix.INVOICE_COMPRA}-{invoice.id}"
         return description, reference, items
 
 

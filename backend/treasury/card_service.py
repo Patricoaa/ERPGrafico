@@ -1252,7 +1252,7 @@ class CardService:
                     "installment_number": r.number,
                     "is_installment_interest": False,
                     "movement_type": TreasuryMovement.Type.OUTBOUND,
-                    "reference": f"CP-{g.uuid}-i{r.number}",
+                    "reference": f"{EntityPrefix.CARD_PURCHASE_GROUP}-{g.uuid}-i{r.number}",
                     "date": str(r.due_date),
                 },
             )
@@ -1265,7 +1265,7 @@ class CardService:
                     "installment_number": None,
                     "is_installment_interest": False,
                     "movement_type": "ADJUSTMENT",
-                    "reference": f"PEND-{p.id}",
+                    "reference": f"{EntityPrefix.CARD_PENDING_CHARGE}-{p.id}",
                     "date": str(p.date),
                 },
             )

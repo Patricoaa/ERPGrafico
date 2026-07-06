@@ -408,7 +408,8 @@ class ProductSelector:
 
         production_usage = []
         for c in consumptions:
-            desc = f"Consumo en OT-{c.work_order.number}"
+            from core.prefix_registry import EntityPrefix
+            desc = f"Consumo en {EntityPrefix.WORK_ORDER}-{c.work_order.number}"
             if instance.has_variants and c.product_id != instance.id:
                 variant_name = c.product.variant_display_name or c.product.name
                 desc = f"[{variant_name}] {desc}"

@@ -8,6 +8,7 @@ from django.db import models, transaction
 from django.db.models import Q, QuerySet
 from django.utils import timezone
 
+from core.prefix_registry import EntityPrefix
 from accounting.glosa_builder import GlosaBuilder, Roles
 from accounting.models import Account, AccountType, JournalEntry, JournalItem
 from accounting.services import JournalEntryService
@@ -303,7 +304,7 @@ class StockService:
                 GlosaBuilder.AJUSTE_STOCK, doc_ref, description, total_value,
                 extra=[adjustment_reason or "Manual"],
             ),
-            reference=f"STK-{move.id}",
+            reference=f"{EntityPrefix.STOCK_MOVE}-{move.id}",
             status=JournalEntry.State.DRAFT,
             source_content_type=ContentType.objects.get_for_model(StockMove),
             source_object_id=move.id,

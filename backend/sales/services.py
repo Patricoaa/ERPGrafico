@@ -5,6 +5,7 @@ from django.core.exceptions import ValidationError
 from django.db import transaction
 from django.utils import timezone
 
+from core.prefix_registry import EntityPrefix
 from accounting.glosa_builder import GlosaBuilder, Roles
 from accounting.models import JournalEntry, JournalItem
 from accounting.services import AccountingMapper, JournalEntryService
@@ -568,7 +569,7 @@ class SalesService:
                         # Link to delivery for traceability
                         line.work_order = work_order
                         line.save()
-                        print(f"DEBUG: Created OT-{work_order.number} for {product.internal_code}")
+                        print(f"DEBUG: Created {EntityPrefix.WORK_ORDER}-{work_order.number} for {product.internal_code}")
                     else:
                         print(f"DEBUG: No OT created for {product.internal_code} (not express)")
 
@@ -594,7 +595,7 @@ class SalesService:
                     uom=product.uom,
                     quantity=-base_qty,  # Negative for OUT move
                     move_type=StockMove.Type.OUT,
-                    description=f"Despacho NV-{delivery.sale_order.number}",  # Updated description
+                    description=f"Despacho {EntityPrefix.SALE_ORDER}-{delivery.sale_order.number}",
                     source_uom=line.uom or line.sale_line.uom,
                     source_quantity=line.quantity,
                 )

@@ -1,6 +1,7 @@
 from django.core.exceptions import ValidationError
 from django.db import transaction
 
+from core.prefix_registry import EntityPrefix
 from .glosa_builder import GlosaBuilder, Roles
 from .models import (
     Account,
@@ -1144,7 +1145,7 @@ class AccountingMapper:
             )
 
         description = GlosaBuilder.build(GlosaBuilder.VENTA, doc_id, customer_name, order.total)
-        return description, f"SO-{order.id}", items
+        return description, f"{EntityPrefix.SALE_ORDER}-{order.id}", items
 
     @staticmethod
     def get_entries_for_purchase_order(order, settings):
@@ -1190,7 +1191,7 @@ class AccountingMapper:
             })
 
         description = GlosaBuilder.build(GlosaBuilder.COMPRA, doc_id, supplier_name, order.total)
-        return description, f"PO-{order.id}", items
+        return description, f"{EntityPrefix.PURCHASE_ORDER}-{order.id}", items
 
     @staticmethod
     def get_entries_for_delivery(delivery, settings):
@@ -1315,7 +1316,7 @@ class AccountingMapper:
             description = GlosaBuilder.build(
                 f"{GlosaBuilder.COSTO_DE_VENTA} (Diferido)", doc_id, partner, delivery.total_cost
             )
-            return description, f"SD-{delivery.id}", []
+            return description, f"{EntityPrefix.SALE_DELIVERY}-{delivery.id}", []
 
         items = []
         # Create summarized items
@@ -1340,7 +1341,7 @@ class AccountingMapper:
             )
 
         description = GlosaBuilder.build(GlosaBuilder.COSTO_DE_VENTA, doc_id, partner, delivery.total_cost)
-        return description, f"SD-{delivery.id}", items
+        return description, f"{EntityPrefix.SALE_DELIVERY}-{delivery.id}", items
 
     @staticmethod
     def get_entries_for_sale_invoice(invoice, settings):
@@ -1520,7 +1521,7 @@ class AccountingMapper:
             GlosaBuilder.COMPRA, doc_id, supplier_name, invoice.total,
             extra=[f"OC {order.display_id}"],
         )
-        return description, f"FCP-{invoice.id}", items
+        return description, f"{EntityPrefix.INVOICE_COMPRA}-{invoice.id}", items
 
     @staticmethod
     def get_entries_for_receipt(receipt, settings):
@@ -1581,7 +1582,6 @@ class AccountingMapper:
             GlosaBuilder.RECEPCION, doc_id, supplier_name, total_amount,
             extra=[f"OC {order.display_id}"],
         )
-        from core.prefix_registry import EntityPrefix
         return description, f"{EntityPrefix.PURCHASE_RECEIPT}-{receipt.id}", items
 
 

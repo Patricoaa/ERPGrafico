@@ -640,7 +640,8 @@ class CardPurchaseGroup(models.Model):
         ]
 
     def __str__(self):
-        return f"CP-{self.uuid}"
+        from core.prefix_registry import EntityPrefix
+        return f"{EntityPrefix.CARD_PURCHASE_GROUP}-{self.uuid}"
 
     @property
     def display_id(self):
@@ -732,7 +733,13 @@ class CardPurchaseInstallment(models.Model):
         ]
 
     def __str__(self):
-        return f"CPI-{self.card_purchase_group_id}-{self.number}"
+        from core.prefix_registry import EntityPrefix
+        return f"{EntityPrefix.CARD_PURCHASE_INSTALLMENT}-{self.card_purchase_group_id}-{self.number}"
+
+    @property
+    def display_id(self):
+        from core.prefix_registry import EntityPrefix
+        return f"{EntityPrefix.CARD_PURCHASE_INSTALLMENT}-{self.id}"
 
 
 class CardPendingCharge(models.Model):
@@ -813,7 +820,8 @@ class CardPendingCharge(models.Model):
         ]
 
     def __str__(self):
-        return f"PEND-{self.id} - {self.get_charge_type_display()} ${self.amount}"
+        from core.prefix_registry import EntityPrefix
+        return f"{EntityPrefix.CARD_PENDING_CHARGE}-{self.id} - {self.get_charge_type_display()} ${self.amount}"
 
 
 class TreasuryAccountManager(models.Manager):

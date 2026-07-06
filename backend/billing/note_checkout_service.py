@@ -6,6 +6,7 @@ from django.core.exceptions import ValidationError
 from django.db import transaction
 from django.utils import timezone
 
+from core.prefix_registry import EntityPrefix
 from accounting.glosa_builder import GlosaBuilder, Roles
 from accounting.models import AccountingSettings, JournalEntry, JournalItem
 from billing.models import Invoice
@@ -701,7 +702,7 @@ class NoteCheckoutService:
                     work_order.related_note = workflow.invoice
                     work_order.save()
                     print(
-                        f"DEBUG: Created ADVANCED OT-{work_order.number} for debit note {workflow.invoice.number}"
+                        f"DEBUG: Created ADVANCED {EntityPrefix.WORK_ORDER}-{work_order.number} for debit note {workflow.invoice.number}"
                     )
             elif product.mfg_profile and product.mfg_profile.mfg_auto_finalize:
                 # Express product - OT will be created during dispatch
