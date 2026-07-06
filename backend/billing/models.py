@@ -162,13 +162,14 @@ class Invoice(TransactionalDocument):
     @property
     def display_id(self):
         """Retorna ID del documento con prefijo apropiado"""
+        from core.prefix_registry import EntityPrefix
         try:
             prefix = self.dte_strategy().display_prefix
         except KeyError:
-            prefix = "DOC"
+            prefix = EntityPrefix.INVOICE_FACTURA
         # FACTURA se usa para ventas y compras: FACV para venta, FACC para compra
         if self.dte_type == self.DTEType.FACTURA and self.purchase_order_id:
-            prefix = "FACC"
+            prefix = EntityPrefix.INVOICE_COMPRA
         return f"{prefix}-{self.number or 'Draft'}"
 
     @property
