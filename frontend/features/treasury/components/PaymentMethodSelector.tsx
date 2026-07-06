@@ -406,14 +406,9 @@ export function PaymentMethodSelector({
                 isMultiple: true,
             })
 
-            const gridCols = Math.min(allMethods.length, 4)
-
             return (
                 <>
-                    <div
-                        className="grid gap-3"
-                        style={{ gridTemplateColumns: `repeat(${gridCols}, minmax(0, 1fr))` }}
-                    >
+                    <div className="grid gap-3 grid-cols-2 xl:grid-cols-3">
                     {allMethods.map((m) => {
                         const Icon = m.icon
                         const isSingleSelected = !m.isMultiple && paymentData.method === m.id
@@ -523,8 +518,6 @@ export function PaymentMethodSelector({
         }
 
         // ── Multi mode: unified grid + header ──
-        const gridCols = Math.min(availableMethods.length, 4)
-
         return (
             <div className="space-y-4">
                 {/* Multi header: badge + exit */}
@@ -543,10 +536,7 @@ export function PaymentMethodSelector({
                 </div>
 
                 {/* Unified grid: all methods in strict columns */}
-                <div
-                    className="grid gap-3 items-start"
-                    style={{ gridTemplateColumns: `repeat(${gridCols}, minmax(0, 1fr))` }}
-                >
+                <div className="grid gap-3 items-start grid-cols-2 xl:grid-cols-3">
                     {availableMethods.map((m) => {
                         const allocIndex = paymentsList.findIndex(p => p.method === m.id)
                         const isAllocated = allocIndex >= 0

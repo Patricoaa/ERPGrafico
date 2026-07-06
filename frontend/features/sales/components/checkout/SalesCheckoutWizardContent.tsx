@@ -131,9 +131,23 @@ export const SalesCheckoutWizardContent = forwardRef<SalesCheckoutWizardContentH
     }
     const idempotencyKeyRef = useRef<string>(generateUUID())
 
-    const hasManufacturing = useMemo(() => initialOrderLines.some((line: SaleOrderLine) =>
-        line.product_type === 'MANUFACTURABLE'
-    ), [initialOrderLines]);
+    const hasManufacturing = useMemo(() => currentOrderLines.some((line: SaleOrderLine) => {
+        const isManufacturable = line.product_type === 'MANUFACTURABLE' || line.has_bom;
+        if (!isManufacturable) return false;
+
+        // ALLOW EXCEPTION: Express products (auto-finalize) skip the restriction
+        if (line.mfg_auto_finalize) return false;
+
+        // ALLOW EXCEPTION: Simple manufacturable products with sufficient availability (stock + fab) skip the manufacturing step
+        const isSimple = !line.requires_advanced_manufacturing;
+        const totalAvailability = (line.qty_available || 0) + (line.manufacturable_quantity || 0);
+        const qtyNeeded = line.qty || line.quantity || 0;
+        const hasAvailability = totalAvailability >= qtyNeeded;
+
+        if (isSimple && hasAvailability) return false;
+
+        return true;
+    }), [currentOrderLines]);
 
     const steps = useMemo(() => {
         const s: { id: string; label: string }[] = [
@@ -501,7 +515,7 @@ export const SalesCheckoutWizardContent = forwardRef<SalesCheckoutWizardContentH
     }
 
     const handleBack = () => {
-        if (step === 1 && onCancel) {
+        if ((step === 1 || quickSale) && onCancel) {
             onCancel()
         } else {
             setStep(prev => Math.max(1, prev - 1))

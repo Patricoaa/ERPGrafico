@@ -5,6 +5,7 @@ import { useState, useRef, useEffect, useCallback, useMemo } from 'react'
 import { useReactToPrint } from 'react-to-print'
 import { useSearchParams } from 'next/navigation'
 import { useQueryClient } from '@tanstack/react-query'
+import { invalidateCrossFeature } from '@/lib/invalidation'
 import dynamic from 'next/dynamic'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
@@ -184,7 +185,7 @@ export function POSClientView() {
     const draftLoadedFromUrl = useRef(false)
     const checkoutWizardRef = useRef<SalesCheckoutWizardContentHandle>(null)
 
-    const checkoutTotalSteps = 4 + (items.some(i => i.product_type === 'MANUFACTURABLE') ? 1 : 0)
+    const checkoutTotalSteps = 4 + (Validation.requiresManufacturingStep(items) ? 1 : 0)
     const isCheckoutLastStep = posMode === 'CHECKOUT' && (wizardState?.step ?? 0) >= checkoutTotalSteps
 
     const handleCheckoutNext = useCallback(() => {
@@ -380,7 +381,7 @@ export function POSClientView() {
         setCompletedSaleData(transactionData)
         await releaseCurrentLock()
         setCurrentDraftId(null); setWizardState(null); clearCart()
-        await fetchDrafts(); queryClient.invalidateQueries({ queryKey: ['sales'] })
+        await fetchDrafts(); invalidateCrossFeature(queryClient, [['sales']])
         forceSync()
         setPosMode('SHOPPING'); toast.success("Venta completada exitosamente")
     }
@@ -568,8 +569,8 @@ export function POSClientView() {
                 <div className="md:col-span-12 lg:col-span-7 flex flex-col min-h-0">
                     {posMode === 'SHOPPING' ? (
                         <div key="shop" className="flex-1 flex flex-col min-h-0 animate-in fade-in slide-in-from-left-2 ease-premium duration-300 fill-mode-both">
-                            <Card className="flex-1 flex flex-col overflow-hidden bg-card dot-grid-surface border border-border/50 py-1.5 shadow-card shadow-black/5">
-                                <div className="px-2 pt-1.5 pb-1.5 border-b space-y-2">
+                            <Card className="flex-1 flex flex-col overflow-hidden bg-card dot-grid-surface border border-border/60 shadow-lg shadow-black/10 rounded-lg p-2">
+                                <div className={cn("px-2 border-b border-border/40 space-y-2", isTouchMode ? "pb-2 mb-2" : "pb-1.5 mb-1.5")}>
                                     <SearchBar
                                         className="bg-muted/50 hover:bg-muted/70 focus-within:bg-muted/70"
                                         value={searchTerm}

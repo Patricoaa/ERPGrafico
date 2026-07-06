@@ -5,6 +5,7 @@ import { cn, formatPlainDate } from "@/lib/utils"
 import { getDteLabel } from "@/lib/entity-registry"
 import {Check, ChevronRight, ShoppingCart, User, Factory, Truck, Wallet as WalletIcon, FileWarning} from "lucide-react"
 import type { WizardState } from "@/types/pos"
+import * as Validation from "../utils/validation"
 
 function getDeliveryLabel(type: string): string {
     switch (type) {
@@ -38,9 +39,7 @@ export function POSCheckoutHeader() {
     const { posMode, wizardState, items } = usePOS()
 
     const currentStep = posMode === 'SHOPPING' ? 1 : (wizardState?.step ?? 1) + 1
-    const hasManufacturing = items.some(line =>
-        line.product_type === 'MANUFACTURABLE'
-    )
+    const hasManufacturing = Validation.requiresManufacturingStep(items)
     // Define steps — mirrors SalesCheckoutWizardContent steps + leading 'Carrito'
     const steps = [
         { id: 1, label: 'Carrito', icon: ShoppingCart },
