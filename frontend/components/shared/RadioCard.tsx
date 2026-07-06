@@ -39,7 +39,7 @@ export function RadioCard({
             )}
         >
             {/* Círculo decorativo que envuelve al Radio */}
-            <div className="relative flex h-5 w-5 shrink-0 items-center justify-center rounded-full border-2 border-muted bg-background transition-colors group-has-[[data-state=checked]]:border-primary group-has-[[data-state=checked]]:bg-primary/10">
+            <div className="relative flex h-5 w-5 shrink-0 items-center justify-center rounded-full border-2 border-muted bg-background transition-colors group-has-data-[state=checked]:border-primary group-has-data-[state=checked]:bg-primary/10">
                 <RadioGroupItem 
                     value={value} 
                     id={id} 
@@ -48,7 +48,7 @@ export function RadioCard({
                 />
                 <CmykRing 
                     size="sm" 
-                    className="absolute inset-0 m-auto pointer-events-none opacity-0 group-has-[[data-state=checked]]:opacity-100 transition-opacity duration-200" 
+                    className="absolute inset-0 m-auto pointer-events-none opacity-0 group-has-data-[state=checked]:opacity-100 transition-opacity duration-200" 
                 />
             </div>
 
