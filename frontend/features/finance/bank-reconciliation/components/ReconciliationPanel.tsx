@@ -1269,7 +1269,7 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                             <div className="flex flex-col items-start gap-1">
                                 <div className="flex items-center gap-1.5">
                                     <Sparkles className="h-3 w-3 text-warning animate-pulse" />
-                                    <span className="text-[9px] font-black uppercase tracking-widest text-warning/80">Sugerencias</span>
+                                    <span className="text-xs font-bold uppercase tracking-widest text-warning/80">Sugerencias</span>
                                 </div>
                                 {suggestions.length === 1 ? (
                                     <button
@@ -1294,14 +1294,14 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                                         }}
                                         className="flex items-center gap-3 bg-warning/10 border border-warning/20 hover:bg-warning/20 transition-all rounded-full py-1 pl-3 pr-1 group shadow-card hover:shadow-elevated"
                                     >
-                                        <span className="text-[10px] font-bold truncate max-w-[150px]">{suggestions[0].payment_data?.contact_name || suggestions[0].batch_data?.display_id || suggestions[0].batch_data?.name}</span>
+                                        <span className="text-xs font-bold truncate max-w-[150px]">{suggestions[0].payment_data?.contact_name || suggestions[0].batch_data?.display_id || suggestions[0].batch_data?.name}</span>
                                         <div className="h-5 w-5 rounded-full bg-warning/20 flex items-center justify-center group-hover:bg-warning/30 transition-all duration-300">
                                             <ChevronRight className="h-3 w-3 text-warning group-hover:translate-x-0.5 transition-transform" />
                                         </div>
                                     </button>
                                 ) : (
                                     <div className="bg-warning/10 border border-warning/20 rounded-full py-1 px-3 shadow-card">
-                                        <span className="text-[9px] text-warning">{suggestions.length} Coincidencias</span>
+                                        <span className="text-xs text-warning">{suggestions.length} Coincidencias</span>
                                     </div>
                                 )}
                             </div>
@@ -1309,32 +1309,32 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                     ) : selectedPayments.length === 1 && selectedLines.length === 0 && lineSuggestions.length > 0 ? (
                         <ActionDock.Section className="mr-6 flex items-center gap-4 border-r px-4 border-border/40">
                             <div className="flex flex-col items-start gap-1">
-                                <div className="flex items-center gap-1.5">
-                                    <Sparkles className="h-3 w-3 text-warning animate-pulse" />
-                                    <span className="text-[9px] font-black uppercase tracking-widest text-warning/80">Sugerencias</span>
-                                </div>
-                                {lineSuggestions.length === 1 ? (
-                                    <button
-                                        onClick={() => {
-                                            const s = lineSuggestions[0]
-                                            const lineId = s.line_data?.id
-                                            const item = unreconciledLines.find(l => l.id === lineId)
-                                            if (item) {
-                                                setSelectedLines([item])
-                                            } else if (s.line_data) {
-                                                setSelectedLines([s.line_data as BankStatementLine])
-                                            }
-                                        }}
-                                        className="flex items-center gap-3 bg-warning/10 border border-warning/20 hover:bg-warning/20 transition-all rounded-full py-1 pr-3 pl-1 group shadow-card hover:shadow-elevated"
-                                    >
-                                        <div className="h-5 w-5 rounded-full bg-warning/20 flex items-center justify-center group-hover:bg-warning/30 transition-all duration-300">
-                                            <ChevronLeft className="h-3 w-3 text-warning group-hover:-translate-x-0.5 transition-transform" />
-                                        </div>
-                                        <span className="text-[10px] font-bold truncate max-w-[150px]">{lineSuggestions[0].line_data?.description}</span>
+                            <div className="flex items-center gap-1.5">
+                                <Sparkles className="h-3 w-3 text-warning animate-pulse" />
+                                <span className="text-xs font-bold uppercase tracking-widest text-warning/80">Sugerencias</span>
+                            </div>
+                            {lineSuggestions.length === 1 ? (
+                                <button
+                                    onClick={() => {
+                                        const s = lineSuggestions[0]
+                                        const lineId = s.line_data?.id
+                                        const item = unreconciledLines.find(l => l.id === lineId)
+                                        if (item) {
+                                            setSelectedLines([item])
+                                        } else if (s.line_data) {
+                                            setSelectedLines([s.line_data as BankStatementLine])
+                                        }
+                                    }}
+                                    className="flex items-center gap-3 bg-warning/10 border border-warning/20 hover:bg-warning/20 transition-all rounded-full py-1 pr-3 pl-1 group shadow-card hover:shadow-elevated"
+                                >
+                                    <div className="h-5 w-5 rounded-full bg-warning/20 flex items-center justify-center group-hover:bg-warning/30 transition-all duration-300">
+                                        <ChevronLeft className="h-3 w-3 text-warning group-hover:-translate-x-0.5 transition-transform" />
+                                    </div>
+                                    <span className="text-xs font-bold truncate max-w-[150px]">{lineSuggestions[0].line_data?.description}</span>
                                     </button>
                                 ) : (
                                     <div className="bg-warning/10 border border-warning/20 rounded-full py-1 px-3 shadow-card">
-                                        <span className="text-[9px] text-warning">{lineSuggestions.length} Coincidencias</span>
+                                        <span className="text-xs text-warning">{lineSuggestions.length} Coincidencias</span>
                                     </div>
                                 )}
                             </div>
@@ -1384,27 +1384,28 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                             <Button
                                 variant="ghost"
                                 size="sm"
-                                className="h-9 text-xs text-destructive hover:bg-destructive/10 hover:text-destructive rounded-sm px-4"
+                                className="h-9 rounded-full px-4 text-xs bg-destructive/10 text-destructive hover:bg-destructive/15"
                                 onClick={() => setActionDialog({ open: true, type: 'bulk_exclude' })}
                             >
-                                <Ban className="h-3 w-3 mr-1.5" />
-                                Excluir Seleccionados
+                                <Ban className="h-3.5 w-3.5 mr-1.5" />
+                                Excluir
                             </Button>
                         )}
 
                         <Button
                             variant="ghost"
                             size="sm"
-                                className="h-9 text-xs text-muted-foreground hover:bg-muted rounded-sm px-4"
+                                className="h-9 rounded-full px-4 text-xs bg-muted/50 text-muted-foreground hover:bg-muted"
                                 onClick={() => { setSelectedLines([]); setSelectedPayments([]); }}
                         >
-                            <X className="h-3 w-3 mr-1.5" />
+                            <X className="h-3.5 w-3.5 mr-1.5" />
                             Limpiar
                         </Button>
 
                         <Button
+                            variant="ghost"
                             size="sm"
-                            className="h-9 px-6 text-xs font-bold shadow-card transition-transform active:scale-95 rounded-sm"
+                            className="h-9 rounded-full px-6 text-xs font-bold bg-primary/10 text-primary hover:bg-primary/15 shadow-floating transition-transform active:scale-95"
                             onClick={() => setActionDialog({ open: true, type: 'confirm_match' })}
                             disabled={matching || selectedLines.length === 0 || selectedPayments.length === 0}
                         >

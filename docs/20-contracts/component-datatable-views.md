@@ -650,7 +650,7 @@ Slot opcional para renderizar una fila de totales/sumario al final de la tabla.
 
 ## 14. Bulk Actions
 
-El DataTable soporta dos mecanismos para acciones sobre filas seleccionadas, ambos renderizados en un `BulkActionDock` flotante.
+El DataTable soporta dos mecanismos para acciones sobre filas seleccionadas, ambos renderizados en un `ActionDock` flotante.
 
 ### 14.1 `bulkActions` — Declarativo (preferido)
 
@@ -676,14 +676,24 @@ Para UI de bulk action que no encaja en el modelo declarativo (selects, múltipl
 ```tsx
 <DataTable
   bulkDock={(items, clear) => (
-    <BulkActionDock selectedCount={items.length} onClear={clear}>
+    <ActionDock isVisible>
+      <div className="flex items-center gap-2">
+        <div className="h-1.5 w-1.5 rounded-full bg-primary animate-pulse" />
+        <span className="text-[10px] font-black uppercase tracking-widest text-foreground whitespace-nowrap">
+          {`${items.length} ${items.length === 1 ? "seleccionado" : "seleccionados"}`}
+        </span>
+      </div>
       <Select onValueChange={(value) => handleBulkUpdate(items, value, clear)}>
         <SelectTrigger>Asignar Categoría</SelectTrigger>
         <SelectContent>
           <SelectItem value="cat-a">Categoría A</SelectItem>
         </SelectContent>
       </Select>
-    </BulkActionDock>
+      <Button variant="ghost" size="sm" onClick={clear}
+        className="h-9 rounded-full px-4 text-xs text-muted-foreground hover:bg-muted">
+        <X className="h-3 w-3 mr-1.5" /> Limpiar
+      </Button>
+    </ActionDock>
   )}
 />
 ```
@@ -692,7 +702,8 @@ Para UI de bulk action que no encaja en el modelo declarativo (selects, múltipl
 
 - `bulkActions` declarativo para acciones simples (eliminar, cambiar estado)
 - `bulkDock` escape hatch reservado para UIs complejas (selects, formularios inline)
-- Ambos reciben envoltura consistente de `BulkActionDock` (floating dock, pill de conteo, botón limpiar)
+- `bulkDock` debe incluir manualmente el pill de conteo y botón limpiar usando `ActionDock`
+- Los tipos `BulkAction`, `BulkActionButtons` y `ActionDock` se importan de `@/components/shared`
 
 ---
 

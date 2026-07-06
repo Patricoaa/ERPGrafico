@@ -9,7 +9,7 @@ import { DataCell } from '@/components/shared'
 import { workOrderActions, type WorkOrderActionsCtx } from './workOrderActions'
 import { type ColumnDef, type Row, type Table } from "@tanstack/react-table"
 import type { Page } from '@/lib/pagination'
-import { Printer, User, Check } from "lucide-react"
+import { Printer, User, Check, X } from "lucide-react"
 import { useViewMode } from "@/hooks/useViewMode"
 import {
     WorkOrderWizard,
@@ -20,7 +20,7 @@ import {
 } from "@/features/production"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Button } from "@/components/ui/button"
-import { BulkActionDock, Chip, FadeIn } from "@/components/shared"
+import { ActionDock, Chip, CmykRing, FadeIn } from "@/components/shared"
 import { isWorkOrderOverdue } from "@/features/production/utils"
 import { ToolbarCreateButton, SmartSearchBar, useSmartSearch, SegmentationBar, useSegmentation } from "@/components/shared"
 import { cn, translateProductionStage } from "@/lib/utils"
@@ -357,9 +357,14 @@ export default function WorkOrdersPageClient({ initialOrders }: WorkOrdersPageCl
                         }
                         createAction={<ToolbarCreateButton label="Nueva OT" href="/production/orders?modal=new" />}
                         bulkDock={(items, clear) => (
-                            <BulkActionDock selectedCount={items.length} onClear={clear}>
+                            <ActionDock isVisible>
                                 <div className="flex items-center gap-2">
-
+                                    <CmykRing size="sm" className="animate-pulse" />
+                                    <span className="text-xs font-bold uppercase tracking-widest text-foreground whitespace-nowrap">
+                                        {`${items.length} ${items.length === 1 ? "seleccionado" : "seleccionados"}`}
+                                    </span>
+                                </div>
+                                <div className="flex items-center gap-2">
                                     <Button
                                         size="sm"
                                         variant="ghost"
@@ -371,7 +376,16 @@ export default function WorkOrdersPageClient({ initialOrders }: WorkOrdersPageCl
                                         {isBulkPrinting ? 'Generando…' : 'Imprimir todas'}
                                     </Button>
                                 </div>
-                            </BulkActionDock>
+                                <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={clear}
+                                    className="h-9 rounded-full px-4 text-xs text-muted-foreground hover:bg-muted"
+                                >
+                                    <X className="h-3 w-3 mr-1.5" />
+                                    Limpiar
+                                </Button>
+                            </ActionDock>
                         )}
                     />
                 </FadeIn>

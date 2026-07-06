@@ -25,10 +25,11 @@ import { cn } from "@/lib/utils"
 
 
 import { Skeleton } from "@/components/ui/skeleton"
-import { type LucideIcon } from "lucide-react"
+import { Button } from "@/components/ui/button"
+import { X, type LucideIcon } from "lucide-react"
 import { ScrollArea } from "@/components/ui/scroll-area"
 
-import { BulkActionButtons, BulkActionDock, DataTablePagination, DataTableToolbar, EmptyState, SkeletonShell, StatCard, type BulkAction, type AnalyticsPanelConfig, type ToolbarActionItem } from '@/components/shared'
+import { BulkActionButtons, ActionDock, CmykRing, DataTablePagination, DataTableToolbar, EmptyState, SkeletonShell, StatCard, type BulkAction, type AnalyticsPanelConfig, type ToolbarActionItem } from '@/components/shared'
 import { resolveEmptyState, type DataTableEmptyState } from './emptyStateResolver'
 
 export interface DataTableProps<TData, TValue> {
@@ -68,15 +69,14 @@ export interface DataTableProps<TData, TValue> {
     toolbarClassName?: string
     noBorder?: boolean
     /**
-     * Declarative bulk actions rendered in a floating BulkActionDock when
+     * Declarative bulk actions rendered in a floating ActionDock when
      * one or more rows are selected. For custom layouts (stats, dropdowns)
      * use `bulkDock` instead.
      */
     bulkActions?: BulkAction<TData>[]
     /**
      * Escape hatch: full control over the floating dock. Receives the
-     * selected items and a `clear` callback. Wraps content with
-     * `BulkActionDock` to keep visual consistency.
+     * selected items and a `clear` callback. Renders inside ActionDock.
      */
     bulkDock?: (items: TData[], clear: () => void) => React.ReactNode
     viewOptions?: { label: string; value: string; icon: React.ComponentType<{ className?: string }> }[]
@@ -327,9 +327,24 @@ export function DataTable<TData, TValue>({
         if (bulkDock) return bulkDock(selectedItems, clearSelection)
         if (bulkActions && bulkActions.length > 0) {
             return (
-                <BulkActionDock selectedCount={selectedRows.length} onClear={clearSelection}>
+                <ActionDock isVisible>
+                    <div className="flex items-center gap-2">
+                        <CmykRing className="h-3 w-3 animate-pulse" />
+                        <span className="text-xs font-bold uppercase tracking-widest text-foreground whitespace-nowrap">
+                            {`${selectedRows.length} ${selectedRows.length === 1 ? "seleccionado" : "seleccionados"}`}
+                        </span>
+                    </div>
                     <BulkActionButtons actions={bulkActions} items={selectedItems} />
-                </BulkActionDock>
+                    <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={clearSelection}
+                        className="h-9 rounded-full px-4 text-xs text-muted-foreground hover:bg-muted"
+                    >
+                        <X className="h-3 w-3 mr-1.5" />
+                        Limpiar
+                    </Button>
+                </ActionDock>
             )
         }
         return null

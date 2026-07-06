@@ -1,6 +1,8 @@
 "use client"
 
 import * as React from "react"
+import { type LucideIcon } from "lucide-react"
+import { Button } from "@/components/ui/button"
 
 import { cn } from "@/lib/utils"
 
@@ -49,7 +51,7 @@ export function ActionDock({ isVisible, children, className }: ActionDockProps) 
     return isVisible && (
         <div
             className={cn(
-                "fixed bottom-6 z-[100] bg-card border shadow-elevated rounded-full px-6 py-3 flex items-center gap-8 transition-all duration-500 ease-[var(--ease-premium)]",
+                "fixed bottom-6 z-[100] bg-card border shadow-elevated rounded-md px-6 py-2 flex items-center gap-8 transition-all duration-500 ease-[var(--ease-premium)]",
                 "animate-in fade-in slide-in-from-bottom-4 ease-[cubic-bezier(0.34,1.56,0.64,1)] duration-500 fill-mode-both",
                 getPositionClass(),
                 className
@@ -88,8 +90,8 @@ ActionDock.Stat = function ActionDockStat({
 }) {
     return (
         <div className="flex flex-col border-r border-border/40 pr-8 last:border-0 justify-center">
-            <div className="text-[9px] font-black uppercase text-muted-foreground/60 tracking-widest leading-none mb-1.5 whitespace-nowrap">{label}</div>
-            <div className={cn("text-sm font-mono font-bold leading-none", colorClass)}>
+            <div className="text-xs font-bold uppercase text-muted-foreground tracking-widest leading-none mb-1.5 whitespace-nowrap">{label}</div>
+            <div className={cn("text-xs font-mono font-bold leading-none", colorClass)}>
                 {value}
             </div>
         </div>
@@ -101,4 +103,64 @@ ActionDock.Stat = function ActionDockStat({
  */
 ActionDock.Actions = function ActionDockActions({ children, className }: { children: React.ReactNode, className?: string }) {
     return <div className={cn("flex items-center gap-2 border-l pl-6 py-1", className)}>{children}</div>
+}
+
+// ─── Bulk-action types & helpers (historically in BulkActionDock) ──────────────
+
+export type BulkActionIntent = "default" | "destructive" | "warning" | "success" | "ghost"
+
+export interface BulkAction<TData> {
+    key: string
+    label: React.ReactNode
+    icon?: LucideIcon
+    onClick: (items: TData[]) => void | Promise<void>
+    intent?: BulkActionIntent
+    disabled?: (items: TData[]) => boolean
+    hidden?: (items: TData[]) => boolean
+}
+
+const intentClasses: Record<BulkActionIntent, string> = {
+    default: "h-9 rounded-full px-6 text-xs font-bold bg-primary/10 text-primary hover:bg-primary/15 shadow-floating transition-transform active:scale-95",
+    destructive: "h-9 rounded-full px-4 text-xs bg-destructive/10 text-destructive hover:bg-destructive/15",
+    warning: "h-9 rounded-full px-4 text-xs bg-warning/10 text-warning hover:bg-warning/15",
+    success: "h-9 rounded-full px-4 text-xs bg-success/10 text-success hover:bg-success/15",
+    ghost: "h-9 rounded-full px-4 text-xs bg-muted/50 text-muted-foreground hover:bg-muted",
+}
+
+interface BulkActionButtonsProps<TData> {
+    actions: BulkAction<TData>[]
+    items: TData[]
+    className?: string
+}
+
+export function BulkActionButtons<TData>({
+    actions,
+    items,
+    className,
+}: BulkActionButtonsProps<TData>) {
+    const visible = actions.filter(a => !a.hidden?.(items))
+    if (visible.length === 0) return null
+
+    return (
+        <ActionDock.Actions className={className}>
+            {visible.map(action => {
+                const Icon = action.icon
+                const intent = action.intent ?? "ghost"
+                const isDisabled = action.disabled?.(items) ?? false
+                return (
+                    <Button
+                        key={action.key}
+                        variant="ghost"
+                        size="sm"
+                        disabled={isDisabled}
+                        onClick={() => action.onClick(items)}
+                        className={cn(intentClasses[intent], "disabled:opacity-30")}
+                    >
+                        {Icon && <Icon className="h-3.5 w-3.5 mr-1.5" />}
+                        {action.label}
+                    </Button>
+                )
+            })}
+        </ActionDock.Actions>
+    )
 }

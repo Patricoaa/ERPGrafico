@@ -31,7 +31,6 @@ export * from './StepHeader';
 export * from './WizardStepsSidebar';
 export * from './WizardSummarySidebar';
 export * from './ActionDock';
-export * from './BulkActionDock';
 
 // Cards & Containers
 export * from './StatCard';
