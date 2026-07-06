@@ -120,11 +120,11 @@ export interface BulkAction<TData> {
 }
 
 const intentClasses: Record<BulkActionIntent, string> = {
-    default: "h-9 rounded-full px-6 text-xs font-bold text-primary hover:bg-primary/10 shadow-floating transition-transform active:scale-95",
-    destructive: "h-9 rounded-full px-4 text-xs text-destructive hover:bg-destructive/10",
-    warning: "h-9 rounded-full px-4 text-xs text-warning hover:bg-warning/10",
-    success: "h-9 rounded-full px-4 text-xs text-success hover:bg-success/10",
-    ghost: "h-9 rounded-full px-4 text-xs text-muted-foreground hover:bg-muted",
+    default: "h-9 rounded-full px-6 text-xs font-bold text-primary hover:bg-primary/10 hover:text-primary shadow-floating transition-transform active:scale-95",
+    destructive: "h-9 rounded-full px-4 text-xs text-destructive hover:bg-destructive/10 hover:text-destructive",
+    warning: "h-9 rounded-full px-4 text-xs text-warning hover:bg-warning/10 hover:text-warning",
+    success: "h-9 rounded-full px-4 text-xs text-success hover:bg-success/10 hover:text-success",
+    ghost: "h-9 rounded-full px-4 text-xs text-muted-foreground hover:bg-muted hover:text-muted-foreground",
 }
 
 interface BulkActionButtonsProps<TData> {
