@@ -116,7 +116,7 @@ export function AdvanceDrawer({ open, onOpenChange, advance, employees: employee
     const employeePayrolls = payrolls.filter(p => p.employee.toString() === selectedEmployee && p.status === 'DRAFT')
 
     const identity = useDrawerIdentity('hr.salaryadvance', mode, advance, {
-        subtitle: advance ? "Revise y modifique los datos del anticipo solicitado." : "Registre una entrega de dinero a cuenta de la próxima liquidación.",
+        overrideSubtitle: advance ? "Revise y modifique los datos del anticipo solicitado." : "Registre una entrega de dinero a cuenta de la próxima liquidación.",
     })
 
     return (

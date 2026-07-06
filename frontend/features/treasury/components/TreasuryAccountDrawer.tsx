@@ -174,7 +174,7 @@ export function TreasuryAccountDrawer({ open, onOpenChange, accountId, onSuccess
 
     const identity = useDrawerIdentity('treasury.treasuryaccount', mode, entityData ?? (accountId ? { id: accountId } : undefined), {
         feminine: true,
-        subtitle: isSystemManaged
+        overrideSubtitle: isSystemManaged
             ? "Esta cuenta es gestionada automáticamente por el proveedor de terminal. No puede modificarse directamente."
             : accountId
                 ? "Modifique los detalles de la cuenta y revise su historial."

@@ -20,8 +20,8 @@ export function CheckDrawer({ id, open, onOpenChange }: CheckDrawerProps) {
         enabled: !!id && open,
     })
     const identity = useDrawerIdentity('treasury.check', 'view', check, {
-        customTitle: check ? `${check.display_id}` : "Cheque",
-        subtitle: check?.bank_name,
+        overrideTitle: check ? `${check.display_id}` : "Cheque",
+        overrideSubtitle: check?.bank_name,
     })
 
     return (

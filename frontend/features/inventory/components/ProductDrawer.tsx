@@ -25,7 +25,7 @@ import { CancelButton, ActionSlideButton } from "@/components/shared"
 
 import { formDrawerWidth } from "@/lib/form-widths"
 import { PrintableLayout } from "@/features/_shared/transaction-drawer"
-import { useDrawerMode, useDrawerIdentity, usePrintableDrawer, DrawerPrintButton, drawerFooter, type DrawerMode } from "@/features/_shared/drawer"
+import { useDrawerMode, useDrawerIdentity, usePrintableDrawer, drawerFooter, type DrawerMode } from "@/features/_shared/drawer"
 
 // Product subcomponents and schema
 import { ProductBasicInfo } from "./product/ProductBasicInfo"
@@ -596,7 +596,11 @@ export function ProductDrawer({ open, onOpenChange, initialData, onSuccess, lock
         },
     ]
 
-    const drawerIdentity = useDrawerIdentity('inventory.product', mode, initialData)
+    const drawerIdentity = useDrawerIdentity('inventory.product', mode, initialData, {
+        overrideSubtitle: initialData ? form.watch("name") : "Maestro de Producto",
+        printable: (mode === 'view' || mode === 'edit') && !!initialData?.id,
+        onPrint: handlePrint,
+    })
 
     const tabHeader = (
         <div className="flex flex-col p-6 pb-2">
@@ -792,8 +796,8 @@ export function ProductDrawer({ open, onOpenChange, initialData, onSuccess, lock
                 className="h-[90vh]"
                 icon={drawerIdentity.icon}
                 title={drawerIdentity.title}
-                headerActions={<DrawerPrintButton show={(mode === 'view' || mode === 'edit') && !!initialData?.id} onPrint={handlePrint} />}
-                subtitle={initialData ? form.watch("name") : "Maestro de Producto"}
+                headerActions={drawerIdentity.headerActions}
+                subtitle={drawerIdentity.subtitle}
                 mode={mode}
                 footer={footerSlot}
                 side="left"

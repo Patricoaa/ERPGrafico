@@ -25,8 +25,8 @@ interface BankStatementDrawerProps {
 export function BankStatementDrawer({ statementId, open, onOpenChange }: BankStatementDrawerProps) {
     const { statement, isLoading, isError } = useBankStatement<BankStatementData>(statementId, open)
     const identity = useDrawerIdentity('treasury.bankstatement', 'view', statement, {
-        customTitle: statement ? `Cartola ${statement.display_id || statement.id}` : "Cartola Bancaria",
-        subtitle: statement?.treasury_account_name,
+        overrideTitle: statement ? `Cartola ${statement.display_id || statement.id}` : "Cartola Bancaria",
+        overrideSubtitle: statement?.treasury_account_name,
     })
 
     return (

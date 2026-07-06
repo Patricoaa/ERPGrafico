@@ -28,8 +28,8 @@ export function PurchaseOrderDrawer({ id, open, onOpenChange, purchaseOrderId }:
   const orderLines = (order?.lines as Array<Record<string, unknown>> | undefined)
 
   const identity = useDrawerIdentity('purchasing.purchaseorder', 'view', order, {
-    customTitle: displayId,
-    subtitle: contactName,
+    overrideTitle: displayId,
+    overrideSubtitle: contactName,
     onPrint: handlePrint,
   })
 

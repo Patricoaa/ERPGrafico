@@ -251,8 +251,8 @@ export function AccountDrawer({
     }
 
     const identity = useDrawerIdentity('accounting.account', mode, initialData as Record<string, unknown> | undefined, {
-        customTitle: isViewMode ? `Ficha de Cuenta #${initialData?.id}` : undefined,
-        subtitle: isViewMode
+        overrideTitle: isViewMode ? `Ficha de Cuenta #${initialData?.id}` : undefined,
+        overrideSubtitle: isViewMode
             ? `${(initialData?.code as string) || ""} • ${form.watch("name") || "Vista de detalle"}`
             : `${(initialData?.code as string) || ""} • ${form.watch("name") || "Plan de Cuentas • Contabilidad General"}`,
     })

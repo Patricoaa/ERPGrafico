@@ -9,8 +9,7 @@ import { toast } from "sonner"
 import { Drawer, CancelButton, LabeledInput, FormFooter, LabeledCheckbox, ActionSlideButton } from "@/components/shared"
 import { formDrawerWidth } from "@/lib/form-widths"
 import {Form, FormField} from "@/components/ui/form"
-import { Button } from "@/components/ui/button"
-import { Printer } from "lucide-react"
+
 import { useReactToPrint } from "react-to-print"
 import { PrintableLayout } from "@/features/_shared/transaction-drawer"
 import { useDrawerIdentity, type DrawerMode } from "@/features/_shared/drawer"
@@ -93,7 +92,9 @@ export function PartnerEditDrawer({ open, onOpenChange, contact, onSuccess, mode
     }
 
     const identity = useDrawerIdentity('settings.partner', mode, contact, {
-        subtitle: `Ajuste la participación de ${contact?.name}.`,
+        overrideSubtitle: `Ajuste la participación de ${contact?.name}.`,
+        printable: (mode === 'view' || mode === 'edit') && !!contact?.id,
+        onPrint: handlePrint,
     })
 
     if (!contact) return null
@@ -118,7 +119,7 @@ export function PartnerEditDrawer({ open, onOpenChange, contact, onSuccess, mode
                 mode={mode}
                 title={identity.title}
                 icon={identity.icon}
-                headerActions={(mode === 'view' || mode === 'edit') && contact?.id && <Button variant="ghost" size="icon" onClick={() => handlePrint()}><Printer className="h-4 w-4" /></Button>}
+                headerActions={identity.headerActions}
                 subtitle={identity.subtitle}
                 footer={isView ? undefined : (
                     <FormFooter

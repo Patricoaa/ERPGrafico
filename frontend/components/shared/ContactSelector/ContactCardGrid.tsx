@@ -95,9 +95,9 @@ export function ContactCardGrid({ selectedId, onSelect, placeholder = "Buscar co
                                     <div className="flex shrink-0 items-center justify-center">
                                         <div className={cn(
                                             "flex h-4 w-4 items-center justify-center rounded-full border-2 transition-colors",
-                                            isSelected ? "border-transparent" : "border-muted-foreground/30 bg-background group-hover:border-primary/50"
+                                            isSelected ? "border-primary bg-background" : "border-muted-foreground/30 bg-background group-hover:border-primary/50"
                                         )}>
-                                            {isSelected ? <CmykRing size="sm" /> : null}
+                                            {isSelected && <CmykRing size="sm" />}
                                         </div>
                                     </div>
                                 </div>

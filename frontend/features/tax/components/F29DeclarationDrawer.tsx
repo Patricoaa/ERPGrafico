@@ -16,7 +16,7 @@ export function F29DeclarationDrawer({ declarationId, open, onOpenChange }: F29D
     const { data: declaration, isLoading } = useF29Detail(declarationId ?? undefined)
 
     const identity = useDrawerIdentity('tax.f29declaration', 'view', declaration, {
-        customTitle: declaration ? `Declaración F29 — ${declaration.period_display || declaration.id}` : "Declaración F29",
+        overrideTitle: declaration ? `Declaración F29 — ${declaration.period_display || declaration.id}` : "Declaración F29",
     })
 
     return (

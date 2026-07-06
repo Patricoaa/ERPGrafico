@@ -221,7 +221,7 @@ export function TerminalDrawer({ open, onOpenChange, terminal, onSuccess, mode: 
     }
 
     const identity = useDrawerIdentity('treasury.terminal', mode, terminal, {
-        subtitle: (
+        overrideSubtitle: (
             <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
                 {terminal?.code && (
                     <>

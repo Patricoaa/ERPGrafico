@@ -82,10 +82,10 @@ export function TransactionNumberDrawer({
     const width = formDrawerWidth("micro", !!paymentId)
 
     const identity = useDrawerIdentity('finance.payment', mode, paymentId ? { id: paymentId } : undefined, {
-        customTitle: isView
+        overrideTitle: isView
             ? `Ficha de Transacción${paymentId ? ` #${paymentId}` : ""}`
             : "Registrar N° de Transacción",
-        subtitle: "Ingrese el número de comprobante o transacción bancaria.",
+        overrideSubtitle: "Ingrese el número de comprobante o transacción bancaria.",
     })
 
     return (

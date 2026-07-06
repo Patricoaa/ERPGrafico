@@ -128,7 +128,7 @@ export function UoMDrawer({ open: openProp, onOpenChange, initialData, onSuccess
     const watchType = form.watch("uom_type")
 
     const identity = useDrawerIdentity('inventory.uom', mode, initialData, {
-        subtitle: initialData?.id ? "Modifique los parámetros de conversión y consulte el historial." : "Configure el nombre, categoría y ratio de conversión.",
+        overrideSubtitle: initialData?.id ? "Modifique los parámetros de conversión y consulte el historial." : "Configure el nombre, categoría y ratio de conversión.",
     })
 
     return (

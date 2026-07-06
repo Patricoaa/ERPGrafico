@@ -10,7 +10,7 @@ import {
 } from "@/components/ui/form"
 
 import { TableBody, TableCell, TableRow } from "@/components/ui/table"
-import { Trash2, Save, Workflow, Box, CheckCircle2, Truck, Package, Printer } from "lucide-react"
+import { Trash2, Save, Workflow, Box, CheckCircle2, Truck, Package } from "lucide-react"
 import { useReactToPrint } from "react-to-print"
 import { PrintableLayout } from "@/features/_shared/transaction-drawer"
 import { useDrawerIdentity, type DrawerMode } from "@/features/_shared/drawer"
@@ -25,7 +25,6 @@ import type { BOM, BOMLine, ProductMinimal, UoM } from "../types"
 import { ActionSlideButton, CancelButton, DataCell, Drawer, FormFooter, FormLineItemsTable, IconButton, LabeledInput, LabeledSelect, LabeledSwitch, SkeletonShell } from '@/components/shared'
 import { useVatRate } from "@/hooks/useVatRate"
 import { formDrawerWidth } from "@/lib/form-widths"
-import { Button } from "@/components/ui/button"
 
 const tableInputClass = "h-9 w-full bg-background border border-border/80 rounded-sm px-2 text-xs focus:border-primary/40 focus:outline-none transition-all disabled:opacity-50"
 
@@ -307,13 +306,15 @@ export function BOMDrawer({
     }
 
     const identity = useDrawerIdentity('production.bom', mode, bomToEdit, {
-        subtitle: selectedVariant
+        overrideSubtitle: selectedVariant
             ? `Lista de Materiales • Variante: ${selectedVariant.variant_display_name || selectedVariant.name}`
             : (selectedProduct && selectedProduct.has_variants)
                 ? `Lista de Materiales • Plantilla Base: ${selectedProduct.name}`
                 : selectedProduct
                     ? `Lista de Materiales • P: ${selectedProduct.name}`
                     : "Lista de Materiales • Receta de Fabricación",
+        printable: (mode === 'view' || mode === 'edit') && !!bomToEdit?.id,
+        onPrint: handlePrint,
     })
 
     return (
@@ -340,7 +341,7 @@ export function BOMDrawer({
                 mode={mode}
                 icon={identity.icon}
                 title={identity.title}
-                headerActions={(mode === 'view' || mode === 'edit') && bomToEdit?.id && <Button variant="ghost" size="icon" onClick={() => handlePrint()}><Printer className="h-4 w-4" /></Button>}
+                headerActions={identity.headerActions}
                 subtitle={identity.subtitle}
                 footer={isView ? undefined : (
                     <FormFooter

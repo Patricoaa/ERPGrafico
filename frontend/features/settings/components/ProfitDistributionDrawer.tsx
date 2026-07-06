@@ -21,8 +21,8 @@ export function ProfitDistributionDrawer({ id, open, onOpenChange, distributionI
   const displayId = distribution?.display_id ?? `#${entityId}`
   const isProfit = distribution?.is_profit !== false
   const identity = useDrawerIdentity('contacts.profitdistributionresolution', 'view', distribution, {
-    customTitle: displayId,
-    subtitle: isProfit ? 'Utilidad' : 'Pérdida',
+    overrideTitle: displayId,
+    overrideSubtitle: isProfit ? 'Utilidad' : 'Pérdida',
     onPrint: handlePrint,
   })
 

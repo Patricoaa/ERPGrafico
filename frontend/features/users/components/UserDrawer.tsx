@@ -210,7 +210,7 @@ export function UserDrawer({ initialData, onSuccess, trigger, open: controlledOp
     ]
 
     const identity = useDrawerIdentity('core.user', mode, initialData, {
-        subtitle: "Gestión de cuentas, roles y permisos de acceso.",
+        overrideSubtitle: "Gestión de cuentas, roles y permisos de acceso.",
     })
 
     return (

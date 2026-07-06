@@ -137,7 +137,7 @@ export function UoMCategoryDrawer({ open: openProp, onOpenChange, initialData, o
 
     const identity = useDrawerIdentity('inventory.uomcategory', mode, initialData, {
         feminine: true,
-        subtitle: initialData?.id ? "Modifique el nombre de la categoría y consulte el historial." : "Define un agrupador para unidades del mismo tipo.",
+        overrideSubtitle: initialData?.id ? "Modifique el nombre de la categoría y consulte el historial." : "Define un agrupador para unidades del mismo tipo.",
     })
 
     return (

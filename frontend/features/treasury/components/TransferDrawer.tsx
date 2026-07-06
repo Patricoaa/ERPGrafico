@@ -86,8 +86,8 @@ export function TransferDrawer({ open, onOpenChange, onSuccess, mode: modeProp }
     const sourceAccount = accounts.find(a => a.id.toString() === fromAccountId)
 
     const identity = useDrawerIdentity('treasury.transfer', mode, undefined, {
-        customTitle: isView ? "Ficha de Traspaso" : "Traspaso entre Cuentas",
-        subtitle: "Mueva fondos entre sus cuentas de tesorería de forma inmediata.",
+        overrideTitle: isView ? "Ficha de Traspaso" : "Traspaso entre Cuentas",
+        overrideSubtitle: "Mueva fondos entre sus cuentas de tesorería de forma inmediata.",
     })
 
     return (
