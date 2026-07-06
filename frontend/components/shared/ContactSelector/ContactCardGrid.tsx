@@ -6,7 +6,7 @@ import { cn } from "@/lib/utils"
 import { useDebounce } from "@/hooks/useDebounce"
 import { useContactSearch } from "@/features/contacts/hooks/useContactSearch"
 import { useDeviceContext } from "@/hooks/useDeviceContext"
-import { EmptyState, CardSkeleton, SearchBar } from "@/components/shared"
+import { CmykRing, EmptyState, CardSkeleton, SearchBar } from "@/components/shared"
 import { Building2, User } from "lucide-react"
 import { formatRUT } from "@/lib/utils/format"
 import { formatCurrency } from "@/lib/money"
@@ -95,9 +95,9 @@ export function ContactCardGrid({ selectedId, onSelect, placeholder = "Buscar co
                                     <div className="flex shrink-0 items-center justify-center">
                                         <div className={cn(
                                             "flex h-4 w-4 items-center justify-center rounded-full border-2 transition-colors",
-                                            isSelected ? "border-primary bg-background" : "border-muted-foreground/30 bg-background group-hover:border-primary/50"
+                                            isSelected ? "border-transparent" : "border-muted-foreground/30 bg-background group-hover:border-primary/50"
                                         )}>
-                                            {isSelected && <div className="h-2 w-2 rounded-full bg-primary" />}
+                                            {isSelected ? <CmykRing size="sm" /> : null}
                                         </div>
                                     </div>
                                 </div>
