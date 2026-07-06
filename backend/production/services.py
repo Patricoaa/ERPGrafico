@@ -173,7 +173,7 @@ class WorkOrderService:
                 "sale_order_id": work_order.sale_order_id,
                 "order_type": "sale",
                 "order_number": work_order.sale_order.number if work_order.sale_order else "",
-                "prefix": "NV",
+                "prefix": EntityPrefix.SALE_ORDER,
             },
         )
 
@@ -347,7 +347,7 @@ class WorkOrderService:
                 "sale_order_id": work_order.sale_order_id,
                 "order_type": "sale",
                 "order_number": work_order.sale_order.number if work_order.sale_order else "",
-                "prefix": "NV",
+                "prefix": EntityPrefix.SALE_ORDER,
             },
         )
 

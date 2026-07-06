@@ -95,9 +95,10 @@ class CommentSerializer(serializers.ModelSerializer):
         return "Sistema"
 
     def get_source_label(self, obj):
+        from core.prefix_registry import EntityPrefix
         model_name = obj.content_type.model if obj.content_type else ""
         if model_name == "workorder":
-            return "OT"
+            return EntityPrefix.WORK_ORDER
         if model_name in ("saleorder", "invoice"):
-            return "NV"
+            return EntityPrefix.SALE_ORDER
         return model_name.upper()
