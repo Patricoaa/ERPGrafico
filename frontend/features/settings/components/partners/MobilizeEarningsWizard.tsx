@@ -200,7 +200,7 @@ export function MobilizeEarningsWizard({ open, onOpenChange, onSuccess, initialP
                         <div className="bg-muted/30 p-4 rounded-md flex items-start gap-3 border border-border/50">
                             <ArrowRightLeft className="w-5 h-5 text-primary mt-0.5" />
                             <div className="space-y-1">
-                                <h4 className="font-heading font-semibold text-sm">Resumen de Movilización</h4>
+                                <h4 className=" font-semibold text-sm">Resumen de Movilización</h4>
                                 <p className="text-xs text-muted-foreground leading-relaxed">
                                     Se procederá a movilizar utilidades retenidas pasadas.
                                     Este proceso generará automáticamente los asientos contables correspondientes

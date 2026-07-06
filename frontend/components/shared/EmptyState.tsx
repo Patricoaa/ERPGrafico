@@ -57,7 +57,7 @@ const CONTEXT_CONFIG: Record<EmptyStateContext, { icon: LucideIcon; title: strin
  * Standardized Industrial Empty State
  * 
  * Follows the design aesthetic:
- * - Typography: font-heading (Syne) + uppercase + extrabold
+ * - Typography:  (Syne) + uppercase + extrabold
  * - Palette: muted-foreground / subtle borders
  * - Layouts: full, compact, minimal
  */
@@ -82,7 +82,7 @@ export function EmptyState({
         return (
             <div className={cn("flex items-center gap-3 py-4 px-2 text-muted-foreground", className)}>
                 {React.createElement(iconCmp, { className: "h-4 w-4 shrink-0" })}
-                <span className="text-[10px] font-heading font-black uppercase tracking-wider">{displayTitle}</span>
+                <span className="text-[10px]  font-black uppercase tracking-wider">{displayTitle}</span>
                 {action && <div className="ml-auto">{action}</div>}
             </div>
         )
@@ -110,7 +110,7 @@ export function EmptyState({
             {/* Content Section */}
             <div className="flex max-w-md flex-col items-center space-y-2 text-center whitespace-normal">
                 <h3 className={cn(
-                    "w-full text-center font-heading font-black uppercase tracking-tighter text-foreground/90",
+                    "w-full text-center  font-black uppercase tracking-tighter text-foreground/90",
                     variant === 'full' ? "text-lg" : "text-sm"
                 )}>
                     {displayTitle}

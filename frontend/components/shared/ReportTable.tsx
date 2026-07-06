@@ -91,7 +91,7 @@ const ReportRow = ({
                             )}
                             <span className={cn(
                                 "text-sm tracking-tight truncate", 
-                                level === 0 ? "uppercase font-black tracking-widest font-heading" : "font-medium"
+                                level === 0 ? "uppercase font-black tracking-widest " : "font-medium"
                             )}>
                                 {node.name}
                             </span>

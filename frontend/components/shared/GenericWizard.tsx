@@ -118,7 +118,7 @@ export function GenericWizard({
             <span className="font-mono font-black text-xs text-primary tracking-wider">
                 {String(currentStep + 1).padStart(2, '0')} / {String(totalSteps).padStart(2, '0')}
             </span>
-            <span className="text-[10px] font-heading font-black uppercase tracking-wider text-muted-foreground">
+            <span className="text-[10px]  font-black uppercase tracking-wider text-muted-foreground">
                 {currentStepData.title}
             </span>
         </div>

@@ -128,7 +128,7 @@ export function PieChart({
             {centerLabel && (
                 <div className="pointer-events-none absolute inset-0 flex items-center justify-center" style={{ transform: "translateY(-6%)" }}>
                     <div className="text-center">
-                        <div className="text-xl font-black font-heading tracking-tighter text-foreground">
+                        <div className="text-xl font-black  tracking-tighter text-foreground">
                             {centerLabel.value}
                         </div>
                         {centerLabel.label && (

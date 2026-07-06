@@ -210,7 +210,7 @@ export function FiscalYearClosingWizard({
                         <div className="p-5 space-y-4">
                             <div>
                                 <p className="text-[10px] font-black uppercase text-muted-foreground tracking-[0.2em] mb-1">Ejercicio Fiscal a Cerrar</p>
-                                <p className="text-4xl font-heading font-black tabular-nums">{year}</p>
+                                <p className="text-4xl  font-black tabular-nums">{year}</p>
                             </div>
                             <div className="h-[1px] bg-border w-24 mx-auto" />
                             <div>
@@ -266,7 +266,7 @@ export function FiscalYearClosingWizard({
                 <div className="flex flex-col items-center justify-center h-full p-12 text-center space-y-6 animate-in zoom-in-95 duration-500">
                     <ShieldCheck className="w-10 h-10 text-muted-foreground" />
                     <div>
-                        <h3 className="text-2xl font-heading font-black uppercase tracking-tighter">¡Ejercicio {year} Cerrado!</h3>
+                        <h3 className="text-2xl  font-black uppercase tracking-tighter">¡Ejercicio {year} Cerrado!</h3>
                         <p className="text-sm text-muted-foreground mt-1 px-4">
                             La contabilidad ha sido sellada y el asiento de cierre ha sido generado con éxito.
                             Ahora puedes proceder con la distribución de utilidades a los socios.

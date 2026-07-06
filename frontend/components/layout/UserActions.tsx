@@ -258,7 +258,7 @@ export function UserActions({ isInboxOpen, onInboxToggle }: UserActionsProps) {
                                     className="relative h-10 w-10 flex items-center justify-center rounded-md text-foreground/50 hover:bg-accent hover:text-accent-foreground transition-all duration-200 active:scale-95 bg-transparent border border-border/60"
                                 >
                                     <Avatar className="h-full w-full rounded-md bg-transparent">
-                                        <AvatarFallback className="bg-transparent text-current font-heading font-black text-[10px] rounded-md">
+                                        <AvatarFallback className="bg-transparent text-current  font-black text-[10px] rounded-md">
                                             {user?.username?.substring(0, 2).toUpperCase() || 'US'}
                                         </AvatarFallback>
                                     </Avatar>
@@ -273,7 +273,7 @@ export function UserActions({ isInboxOpen, onInboxToggle }: UserActionsProps) {
                         <DropdownMenuLabel className="font-normal">
                             <div className="flex items-center gap-2 rounded-lg bg-muted p-1.5">
                                 <Avatar className="h-7 w-7 rounded-full">
-                                    <AvatarFallback className="font-heading font-black text-[10px]">
+                                    <AvatarFallback className=" font-black text-[10px]">
                                         {user?.username?.substring(0, 2).toUpperCase() || 'US'}
                                     </AvatarFallback>
                                 </Avatar>

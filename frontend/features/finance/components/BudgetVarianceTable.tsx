@@ -168,17 +168,17 @@ function BudgetVarianceTableBase({ data, loading }: BudgetVarianceTableProps) {
                 <Table>
                     <TableHeader className="bg-muted/50">
                         <TableRow className="hover:bg-transparent border-b-2">
-                            <TableHead className="w-[300px] font-heading text-xs uppercase tracking-wider">Cuenta Contable</TableHead>
+                            <TableHead className="w-[300px]  text-xs uppercase tracking-wider">Cuenta Contable</TableHead>
 
                             {/* Month Group */}
-                            <TableHead className="text-right font-heading text-[10px] uppercase text-primary border-l">Real Mes</TableHead>
-                            <TableHead className="text-right font-heading text-[10px] uppercase border-r/50">Ppto Mes</TableHead>
-                            <TableHead className="text-right font-heading text-[10px] uppercase">Var Mes</TableHead>
+                            <TableHead className="text-right  text-[10px] uppercase text-primary border-l">Real Mes</TableHead>
+                            <TableHead className="text-right  text-[10px] uppercase border-r/50">Ppto Mes</TableHead>
+                            <TableHead className="text-right  text-[10px] uppercase">Var Mes</TableHead>
 
                             {/* YTD Group */}
-                            <TableHead className="text-right font-heading text-[10px] uppercase text-primary border-l bg-muted/20">Real YTD</TableHead>
-                            <TableHead className="text-right font-heading text-[10px] uppercase border-r/50 bg-muted/20">Ppto YTD</TableHead>
-                            <TableHead className="text-right font-heading text-[10px] uppercase bg-muted/20">Var YTD</TableHead>
+                            <TableHead className="text-right  text-[10px] uppercase text-primary border-l bg-muted/20">Real YTD</TableHead>
+                            <TableHead className="text-right  text-[10px] uppercase border-r/50 bg-muted/20">Ppto YTD</TableHead>
+                            <TableHead className="text-right  text-[10px] uppercase bg-muted/20">Var YTD</TableHead>
                         </TableRow>
                     </TableHeader>
                     <TableBody>

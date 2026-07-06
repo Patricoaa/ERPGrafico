@@ -33,7 +33,7 @@ export const ActionFoldButton = React.forwardRef<HTMLButtonElement, ActionFoldBu
 
                 {/* The text */}
                 <div className={cn(
-                    "absolute right-0 flex items-center h-full text-primary-foreground text-xs font-heading font-bold uppercase tracking-widest",
+                    "absolute right-0 flex items-center h-full text-primary-foreground text-xs  font-bold uppercase tracking-widest",
                     "transition-all duration-300 ease-in-out opacity-0 w-0",
                     "group-hover:opacity-100 group-hover:w-[65%] group-hover:pr-3"
                 )}>

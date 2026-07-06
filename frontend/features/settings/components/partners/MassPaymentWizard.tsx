@@ -197,7 +197,7 @@ export function MassPaymentWizard({ open, onOpenChange, resolution, onSuccess }:
                         <div className="flex flex-col items-center justify-center text-center space-y-4">
                             <Banknote className="h-8 w-8" />
                             <div>
-                                <h3 className="text-xl font-heading font-black uppercase tracking-tighter">Ejecutar Pagos Masivos</h3>
+                                <h3 className="text-xl  font-black uppercase tracking-tighter">Ejecutar Pagos Masivos</h3>
                                 <p className="text-sm text-muted-foreground max-w-md mt-2">
                                     Se registrará la salida del dinero de la tesorería y la disminución de la deuda de &quot;Dividendos por Pagar&quot; con {partnersCount} miembros.
                                 </p>

@@ -1043,7 +1043,7 @@ export const SalesCheckoutWizardContent = forwardRef<SalesCheckoutWizardContentH
                         <FileWarning className="h-8 w-8 text-destructive" />
                     </div>
                     <div className="text-center space-y-2">
-                        <h4 className="font-heading text-lg font-black uppercase tracking-tight text-foreground">
+                        <h4 className=" text-lg font-black uppercase tracking-tight text-foreground">
                             Emitir Factura
                         </h4>
                         <p className="text-sm text-muted-foreground leading-relaxed">

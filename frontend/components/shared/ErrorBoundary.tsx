@@ -48,7 +48,7 @@ export class ErrorBoundary extends Component<Props, State> {
                     </div>
 
                     <div className="max-w-md space-y-4">
-                        <h2 className="text-2xl font-heading font-black uppercase tracking-tighter text-foreground">
+                        <h2 className="text-2xl  font-black uppercase tracking-tighter text-foreground">
                             Error de Sistema
                         </h2>
                         
@@ -68,7 +68,7 @@ export class ErrorBoundary extends Component<Props, State> {
                                 onClick={this.handleReset}
                                 className="h-10 px-6 rounded-none border-foreground group relative overflow-hidden"
                             >
-                                <span className="relative z-10 flex items-center gap-2 uppercase font-heading font-black tracking-widest text-[11px]">
+                                <span className="relative z-10 flex items-center gap-2 uppercase  font-black tracking-widest text-[11px]">
                                     <RefreshCw className="h-3 w-3 group-hover:rotate-180 transition-transform duration-500" />
                                     Reiniciar Interfaz
                                 </span>

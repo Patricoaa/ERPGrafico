@@ -160,7 +160,7 @@ export function PhaseCard({
                 </div>
                 <div className="flex-1 flex items-center gap-2">
                     <h3 className={cn(
-                        "font-heading font-black uppercase tracking-[0.2em] text-foreground leading-none",
+                        " font-black uppercase tracking-[0.2em] text-foreground leading-none",
                         "text-[11.5px]"
                     )}>
                         {title}
