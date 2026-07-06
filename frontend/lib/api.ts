@@ -12,6 +12,9 @@ const api = axios.create({
     timeout: 15000,
 });
 
+/** Evento que cruza la barrera Axios (no-React) → AuthContext (React). */
+export const AUTH_UNAUTHORIZED_EVENT = 'auth:unauthorized' as const;
+
 let isRefreshing = false;
 let failedQueue: Array<{ resolve: (token: string) => void; reject: (error: unknown) => void }> = [];
 
@@ -115,7 +118,7 @@ api.interceptors.response.use(
                 if (isBrowser) {
                     try {
                         removeClientTokens();
-                        window.dispatchEvent(new CustomEvent('auth:unauthorized'));
+                        window.dispatchEvent(new CustomEvent(AUTH_UNAUTHORIZED_EVENT));
                     } catch {}
                 }
                 return Promise.reject(error);

@@ -4,7 +4,7 @@ import React, { createContext, useContext, useEffect, useState, useCallback, use
 import {useRouter} from "next/navigation";
 import axios from "axios";
 import { toast } from "sonner";
-import api from "@/lib/api";
+import api, { AUTH_UNAUTHORIZED_EVENT } from "@/lib/api";
 import { useTheme } from "next-themes";
 import { setClientToken, removeClientTokens, getClientToken } from "@/lib/client-token";
 
@@ -101,8 +101,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             setIsAuthenticated(false);
             router.push("/login");
         };
-        window.addEventListener("auth:unauthorized", handleUnauthorized);
-        return () => window.removeEventListener("auth:unauthorized", handleUnauthorized);
+        window.addEventListener(AUTH_UNAUTHORIZED_EVENT, handleUnauthorized);
+        return () => window.removeEventListener(AUTH_UNAUTHORIZED_EVENT, handleUnauthorized);
     }, [router]);
 
     const login = async (token: string) => {
