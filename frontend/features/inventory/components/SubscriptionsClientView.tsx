@@ -236,6 +236,7 @@ export function SubscriptionsClientView({ hideHeader = false, externalOpen = fal
                     checked={table.getIsAllPageRowsSelected()}
                     onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
                     aria-label="Select all"
+                    variant="circle"
                 />
             ),
             cell: ({ row }) => (
@@ -243,6 +244,7 @@ export function SubscriptionsClientView({ hideHeader = false, externalOpen = fal
                     checked={row.getIsSelected()}
                     onCheckedChange={(value) => row.toggleSelected(!!value)}
                     aria-label="Select row"
+                    variant="circle"
                 />
             ),
             enableSorting: false,
