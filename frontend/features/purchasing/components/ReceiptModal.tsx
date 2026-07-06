@@ -16,6 +16,7 @@ import { purchasingApi } from "../api/purchasingApi"
 import { toast } from "sonner"
 import { Loader2, Package, AlertTriangle, CheckCircle2 } from "lucide-react"
 import { Alert, AlertDescription } from "@/components/ui/alert"
+import { formatEntityDisplay } from "@/lib/entity-registry"
 import { useServerDate } from "@/hooks/useServerDate"
 
 interface PurchaseOrderLine {
@@ -224,7 +225,7 @@ export function ReceiptModal({
             onOpenChange={onOpenChange}
             size="xl"
             icon={Package}
-            title={`${isRefund ? "Devolver Productos" : (filterType === 'SERVICE' ? "Confirmar Entrega de Servicios" : "Recibir Orden")} OCS-${order?.number || ""}`}
+            title={`${isRefund ? "Devolver Productos" : (filterType === 'SERVICE' ? "Confirmar Entrega de Servicios" : "Recibir Orden")} ${formatEntityDisplay('purchasing.purchaseorder', { number: order?.number || "" })}`}
             description={`Proveedor: ${order?.supplier_name || ""}`}
             footer={
                 <FormFooter

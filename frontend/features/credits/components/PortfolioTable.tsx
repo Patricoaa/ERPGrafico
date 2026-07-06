@@ -15,6 +15,7 @@ import {
 } from "lucide-react"
 import { useHubPanel } from "@/components/providers/HubPanelProvider"
 import { Button } from "@/components/ui/button"
+import { formatEntityDisplay } from "@/lib/entity-registry"
 import { SkeletonShell, ActionConfirmModal, DataCell, EntityBadge, MoneyDisplay } from "@/components/shared"
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 import { DataTable, type KpiCardDef } from '@/components/shared'
@@ -294,7 +295,7 @@ function PortfolioContactPanel({ contact, onRefresh }: { contact: CreditContact,
                 open={!!showWriteOffDocDialog}
                 onOpenChange={(o) => !o && setShowWriteOffDocDialog(null)}
                 onConfirm={() => showWriteOffDocDialog ? handleWriteOffDoc(showWriteOffDocDialog.id) : undefined}
-                title={`¿Castigar Documento NV-${showWriteOffDocDialog?.number}?`}
+                title={`¿Castigar Documento ${formatEntityDisplay('sales.saleorder', { number: showWriteOffDocDialog?.number })}?`}
                 description={
                     <div className="space-y-3 pt-1 text-sm leading-relaxed">
                         <p>Se castigará el saldo pendiente de <strong><MoneyDisplay amount={showWriteOffDocDialog?.balance} inline /></strong> para este documento.</p>

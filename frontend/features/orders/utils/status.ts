@@ -260,19 +260,18 @@ export const getInvoiceHubStatuses = (invoice: InvoiceBase) => {
 
 
 // Helper to prevent duplicate prefixes (e.g. OCS-OCS-123)
-export const formatEntity = (prefix: string, number: string | number, displayId?: string) => {
+import { formatEntityDisplay } from '@/lib/entity-registry'
+
+export const formatEntity = (prefix: string, number: string | number, displayId?: string): string => {
     if (displayId) return displayId
-
-    // Standardize prefixes to match registry
-    let standardPrefix = prefix
-    if (prefix === 'OC') standardPrefix = 'OCS'
-    if (prefix === 'FACT') standardPrefix = 'FACV'
-
+    if (prefix === 'FACT') return formatEntityDisplay('billing.invoice', { number })
+    if (prefix === 'OC') return formatEntityDisplay('purchasing.purchaseorder', { number })
+    if (prefix === 'NV') return formatEntityDisplay('sales.saleorder', { number })
+    if (prefix === 'DES') return formatEntityDisplay('sales.saledelivery', { number })
+    if (prefix === 'REC') return formatEntityDisplay('purchasing.purchasereceipt', { number })
+    if (prefix === 'DEV') return formatEntityDisplay('sales.salereturn', { number })
+    if (prefix === 'MOV') return formatEntityDisplay('inventory.stockmove', { id: number })
+    if (prefix === 'CAS' || prefix === 'ING' || prefix === 'EGR') return formatEntityDisplay('treasury.treasurymovement', { id: number })
     const numStr = String(number || '')
-    const cleanPrefix = standardPrefix.replace('-', '')
-
-    if (numStr.toUpperCase().startsWith(cleanPrefix.toUpperCase())) {
-        return numStr
-    }
-    return `${standardPrefix}-${numStr}`
+    return `${prefix}-${numStr}`
 }

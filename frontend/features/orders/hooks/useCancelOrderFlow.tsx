@@ -14,6 +14,7 @@ import { useState, useCallback } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import { getErrorMessage } from '@/lib/errors'
+import { formatEntityDisplay } from '@/lib/entity-registry'
 import { ordersApi } from '../api/ordersApi'
 import { useCancelOrder } from './useOrdersMutations'
 
@@ -52,7 +53,7 @@ function buildImpactDescription(impact: CancelImpact): React.ReactNode {
         ...(impact.deliveries || []).map(d => `• Despacho #${d.id} — ${d.status}`),
         ...(impact.receipts || []).map(r => `• Recepción #${r.id} — ${r.status}`),
         ...impact.payments.map(p => `• Pago #${p.id} — ${p.status}`),
-        ...(impact.work_orders || []).map(w => `• OT ${w.number} — ${w.stage}`),
+        ...(impact.work_orders || []).map(w => `• ${formatEntityDisplay('production.workorder', { number: w.number })} — ${w.stage}`),
     ]
 
     return (

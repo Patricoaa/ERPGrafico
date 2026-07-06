@@ -9,6 +9,7 @@ import {FileText, Loader2, Upload} from "lucide-react"
 import {BaseModal, CancelButton, DocumentAttachmentDropzone, FolioValidationInput, FormFooter, FormSection, LabeledSelect, PeriodValidationDateInput} from '@/components/shared'
 import { toast } from "sonner"
 import { cn } from "@/lib/utils"
+import { formatEntityDisplay } from "@/lib/entity-registry"
 import { purchasingApi } from "../api/purchasingApi"
 import { useServerDate } from "@/hooks/useServerDate"
 
@@ -106,7 +107,7 @@ export function DocumentRegistrationModal({
             onOpenChange={onOpenChange}
             size="md"
             icon={FileText}
-            title={`Registrar Factura/Boleta - OCS-${orderNumber}`}
+            title={`Registrar Factura/Boleta - ${formatEntityDisplay('purchasing.purchaseorder', { number: orderNumber })}`}
             description="Ingrese los datos del documento tributario recibido del proveedor."
             footer={
                 <FormFooter

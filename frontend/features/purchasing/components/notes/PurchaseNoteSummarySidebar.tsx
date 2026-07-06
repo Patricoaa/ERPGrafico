@@ -2,6 +2,7 @@ import { Separator } from "@/components/ui/separator"
 import { Progress } from "@/components/ui/progress"
 import { formatCurrency } from "@/lib/money"
 import { formatPlainDate } from "@/lib/utils"
+import { formatEntityDisplay } from "@/lib/entity-registry"
 import { SkeletonShell, WizardSummarySidebar } from "@/components/shared"
 import {
     FileText,
@@ -69,7 +70,7 @@ export function PurchaseNoteSummarySidebar({
                                 {noteType === 'NOTA_CREDITO' ? 'Nota de Crédito' : 'Nota de Débito'}
                             </h3>
                             <p className="text-xs text-muted-foreground font-medium">
-                                {referenceText || (orderNumber ? `Sobre OCS-${orderNumber}` : 'Sobre Documento')}
+                                {referenceText || (orderNumber ? `Sobre ${formatEntityDisplay('purchasing.purchaseorder', { number: orderNumber })}` : 'Sobre Documento')}
                             </p>
                         </div>
                     </div>

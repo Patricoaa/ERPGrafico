@@ -6,7 +6,7 @@ import { getErrorMessage } from "@/lib/errors"
 import { useState } from "react"
 import { PhaseCard } from "./PhaseCard"
 import { Banknote, Trash2, Ban, Gavel } from "lucide-react"
-import { formatEntity } from '@/features/orders/utils/status'
+import { formatEntityDisplay } from '@/lib/entity-registry'
 import { cn } from "@/lib/utils"
 import { toast } from "sonner"
 import { useCancelPayment, useAnnulPayment } from "../../hooks/useOrdersMutations"
@@ -147,7 +147,7 @@ export function TreasuryPhase({
                     const isWriteOff = p.payment_method === 'WRITE_OFF'
                     return {
                         type: isWriteOff ? 'Castigo' : (p.payment_method_display || 'Pago'),
-                        number: formatEntity(isWriteOff ? 'CAS' : (p.payment_type === 'INBOUND' ? 'ING' : 'EGR'), p.id, p.display_id),
+                        number: p.display_id || formatEntityDisplay('treasury.treasurymovement', { id: p.id }),
                         icon: isWriteOff ? Gavel : Banknote,
                         isWarning: isWriteOff,
                         id: p.id,

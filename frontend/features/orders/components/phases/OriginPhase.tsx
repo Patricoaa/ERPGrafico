@@ -2,7 +2,7 @@
 
 import { PhaseCard } from "./PhaseCard"
 import { FileText, Trash2, Ban, Edit, TrendingUp } from "lucide-react"
-import { formatEntity } from '@/features/orders/utils/status'
+import { formatEntityDisplay } from '@/lib/entity-registry'
 import { toast } from "sonner"
 import { useCancelOrderFlow } from "../../hooks/useCancelOrderFlow"
 import { useRouter } from "next/navigation"
@@ -59,7 +59,7 @@ export function OriginPhase({
     const documents: PhaseDocument[] = isNoteMode ? [
         {
             type: 'Documento Rectificado',
-            number: formatEntity('FACT', activeInvoice?.corrected_invoice?.number || '---', activeInvoice?.corrected_invoice?.display_id),
+            number: activeInvoice?.corrected_invoice?.display_id || formatEntityDisplay('billing.invoice', { number: activeInvoice?.corrected_invoice?.number || '---', dte_type: activeInvoice?.dte_type }),
             icon: FileText,
             id: activeInvoice?.corrected_invoice?.id as number,
             docType: 'invoice',
@@ -67,7 +67,7 @@ export function OriginPhase({
         },
         ...(order ? [{
             type: isSale ? 'Nota de Venta' : 'Orden de compras y servicios',
-            number: formatEntity(isSale ? 'NV' : 'OCS', order?.number || order?.id, order?.display_id),
+            number: order?.display_id || formatEntityDisplay(isSale ? 'sales.saleorder' : 'purchasing.purchaseorder', { number: order?.number || order?.id, id: order?.id }),
             icon: FileText,
             id: order?.id,
             docType: type === 'obligation' ? 'service_obligation' : (type === 'sale' ? 'sale_order' : 'purchase_order'),
@@ -76,7 +76,7 @@ export function OriginPhase({
     ] : (order ? [
         {
             type: isSale ? 'Nota de Venta' : 'Orden de compras y servicios',
-            number: formatEntity(isSale ? 'NV' : 'OCS', order?.number || order?.id, order?.display_id),
+            number: order?.display_id || formatEntityDisplay(isSale ? 'sales.saleorder' : 'purchasing.purchaseorder', { number: order?.number || order?.id, id: order?.id }),
             icon: FileText,
             id: order?.id,
             docType: type === 'obligation' ? 'service_obligation' : (type === 'sale' ? 'sale_order' : 'purchase_order'),
@@ -98,7 +98,7 @@ export function OriginPhase({
     ] : (activeInvoice ? [
         {
             type: activeInvoice?.dte_type_display || 'Factura Directa',
-            number: formatEntity('FACT', activeInvoice?.number || '---', activeInvoice?.display_id),
+            number: activeInvoice?.display_id || formatEntityDisplay('billing.invoice', { number: activeInvoice?.number || '---', dte_type: activeInvoice?.dte_type }),
             icon: FileText,
             id: activeInvoice?.id,
             docType: 'invoice',
