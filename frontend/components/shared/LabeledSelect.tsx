@@ -141,11 +141,11 @@ export const LabeledSelect = forwardRef<
 
                 {/* Error or Hint Text */}
                 {hasError ? (
-                    <div className="mt-1.5 text-[11px] font-medium text-destructive animate-in fade-in slide-in-from-top-1 px-1">
+                    <div className="mt-1.5 text-[10px] font-medium text-destructive animate-in fade-in slide-in-from-top-1 px-1">
                         {error}
                     </div>
                 ) : hint ? (
-                    <div className="mt-1.5 text-[11px] font-medium text-muted-foreground/70 px-1">
+                    <div className="mt-1.5 text-[10px] font-medium text-muted-foreground/70 px-1">
                         {hint}
                     </div>
                 ) : null}
