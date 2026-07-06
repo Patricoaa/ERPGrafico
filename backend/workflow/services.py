@@ -424,6 +424,7 @@ class WorkflowService:
         )
 
         from billing.models import Invoice
+        from core.prefix_registry import EntityPrefix
 
         is_invoice = isinstance(order, Invoice)
         prefix = ""
@@ -432,19 +433,19 @@ class WorkflowService:
         if is_invoice:
             # Map DTE type to prefix
             if order.dte_type == "NOTA_CREDITO":
-                prefix = "NC"
+                prefix = EntityPrefix.NOTA_CREDITO
             elif order.dte_type == "NOTA_DEBITO":
-                prefix = "ND"
+                prefix = EntityPrefix.NOTA_DEBITO
             elif order.dte_type == "BOLETA":
-                prefix = "BOL"
+                prefix = EntityPrefix.INVOICE_BOLETA
             else:
-                prefix = "FAC"
+                prefix = EntityPrefix.INVOICE_FACTURA
 
             # Notes often start in Hub as draft, use ID if number not yet available
             doc_num = order.number if (order.number and order.number != "Draft") else f"#{order.id}"
             order_label = f"{prefix}-{doc_num}"
         else:
-            prefix = "NV" if order_type == "sale" else "OC"
+            prefix = EntityPrefix.SALE_ORDER if order_type == "sale" else EntityPrefix.PURCHASE_ORDER
             order_label = f"{prefix}-{order.number}"
             # Default labels
         contact_name = ""
