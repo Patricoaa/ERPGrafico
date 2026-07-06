@@ -54,7 +54,7 @@ Esta escala es **hardcoded con valores `text-[Npx]`** deliberadamente — el dis
 | **N0 — KPI/Metric** | StatCard value, PieChart center | `text-2xl/3xl font-black` | `tracking-tighter` | normal | "1.234" |
 | **N0 — Empty state** | EmptyState title | `text-lg font-black` | `tracking-tighter` | `uppercase` | "Sin resultados" |
 | **N0 — Error page** | ErrorBoundary, app/error | `text-2xl font-black` | `tracking-tighter` | `uppercase` | "Algo salió mal" |
-| **N1 — Sección** | FormSection, sidebar título | `text-[11px] font-black` | `tracking-[0.25em]` | `uppercase` | "Roles", "Identidad del Contacto" |
+| **N1 — Sección** | FormSection, SectionHeader, sidebar título | `text-[11px] font-black` | `tracking-[0.25em]` | `uppercase` | "Roles", "Identidad del Contacto" |
 | **N2 — Etiqueta de campo** | LabeledInput legend | `text-[10px] font-black` | `tracking-[0.15em]` | `uppercase` | "Nombre / Razón Social" |
 | **N2 — Botón acción** | SubmitButton, CancelButton | `text-[10px] font-black h-9` | `tracking-widest` | `uppercase` | "Guardar", "Cancelar" |
 | **N2 — Header de tabla** | DataTableColumnHeader, `<th>` | `text-[10px] font-black` | `tracking-widest` | `uppercase` | "Fecha", "Total", "Estado" |
@@ -70,7 +70,7 @@ Esta escala es **hardcoded con valores `text-[Npx]`** deliberadamente — el dis
 | **N3 — Valor financiero** | DataCell.Currency, StatCard number | `text-xs font-medium tabular-nums` | normal | normal | "$1.234.567" |
 | **N3 — Fecha** | DataCell.Date | `text-sm font-medium` | normal | normal | "15/03/2026" |
 | **N3 — Descripción** | EmptyState description, notes | `text-sm text-muted-foreground` | normal | normal | "Defina la lista de materiales..." |
-| **N4 — Tab label** | TabBar trigger | `text-xs font-semibold` | `tracking-widest` (underline) / `tracking-tight` (toolbar) | normal | "Perfil", "Cliente" |
+| **N4 — Tab label** | PageTabs, TabBar trigger | `text-[10px] sm:text-[11px] font-black uppercase` | `tracking-wider` (PageTabs) / `tracking-widest` (TabBar) | `uppercase` | "Perfil", "Cliente" |
 | **N4 — Tooltip** | TooltipTrigger content | `text-[9px] font-black` | `tracking-widest` | `uppercase` | "Editar" |
 | **N4 — Timestamp** | ActivitySidebar time | `text-[9px] font-medium text-muted-foreground/60` | normal | normal | "hace 2 horas" |
 | **N4 — Badge count** | TabBar badge number | `text-[9px] font-black` | normal | normal | 3, 15 |
@@ -147,6 +147,12 @@ text-2xl  font-black  tracking-tighter
 
 > Siempre `font-black` + `tracking-tighter`. Nunca `font-bold` ni `tracking-tight` en KPIs.
 
+**StatCard labels** — todas las variantes (`minimal`, `compact`, `chart`) usan `tracking-widest`:
+
+```
+text-[10px] font-bold uppercase tracking-widest text-muted-foreground
+```
+
 ---
 
 ## Escala de texto body y descripciones
@@ -211,7 +217,7 @@ Los colores de tipo de producto en `ProductTypeSelector` son identificadores vis
 | `tracking-tighter` | `-0.04em` | Headings h1-h6, KPIs |
 | `tracking-tight` | `-0.02em` | Texto denso, modal titles |
 | `tracking-normal` | `0` | Body text (default) |
-| `tracking-wider` | `0.05em` | Sub-tabs, elementos secundarios |
+| `tracking-wider` | `0.05em` | Wizard steps, PageTabs tabs, elementos secundarios |
 | `tracking-widest` | `0.1em` | Botones de acción, badges estándar |
 | `tracking-[0.15em]` | `0.15em` | N2: LabeledInput legend |
 | `tracking-[0.25em]` | `0.25em` | N1: FormSection title |

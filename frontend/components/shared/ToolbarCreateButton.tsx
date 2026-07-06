@@ -33,7 +33,7 @@ export function ToolbarCreateButton({
         <Button
             size="sm"
             className={cn(
-                "px-4 font-semibold tracking-tight gap-1 rounded-sm shrink-0 cursor-pointer",
+                "px-4 font-semibold tracking-widest gap-1 rounded-sm shrink-0 cursor-pointer",
                 className
             )}
             {...props}

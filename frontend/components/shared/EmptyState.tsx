@@ -82,7 +82,7 @@ export function EmptyState({
         return (
             <div className={cn("flex items-center gap-3 py-4 px-2 text-muted-foreground", className)}>
                 {React.createElement(iconCmp, { className: "h-4 w-4 shrink-0" })}
-                <span className="text-[10px]  font-black uppercase tracking-wider">{displayTitle}</span>
+                <span className="text-[10px]  font-black uppercase tracking-tighter">{displayTitle}</span>
                 {action && <div className="ml-auto">{action}</div>}
             </div>
         )

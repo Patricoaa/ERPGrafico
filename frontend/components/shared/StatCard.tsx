@@ -242,7 +242,7 @@ export function StatCard({
     inner = (
       <CardContent className="p-4">
         <div className="flex items-center justify-between mb-2">
-          <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+          <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
             {label}
           </p>
           {renderArrowIcon()}
@@ -277,7 +277,7 @@ export function StatCard({
     inner = (
       <>
         <CardHeader className="flex flex-row items-center justify-between px-4 py-2.5 border-b shrink-0">
-          <CardTitle className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+          <CardTitle className="text-xs font-bold uppercase tracking-widest text-muted-foreground">
             {label}
           </CardTitle>
           {trend && (

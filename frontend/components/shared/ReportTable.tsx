@@ -85,13 +85,13 @@ const ReportRow = ({
                         
                         <div className="flex flex-col min-w-0">
                             {node.code && (
-                                <span className="font-mono text-[10px] text-muted-foreground tracking-tighter opacity-70 leading-none mb-0.5">
+                                <span className="font-mono text-[10px] text-muted-foreground opacity-70 leading-none mb-0.5">
                                     {node.code}
                                 </span>
                             )}
                             <span className={cn(
                                 "text-sm tracking-tight truncate", 
-                                level === 0 ? "uppercase font-black tracking-widest " : "font-medium"
+                                level === 0 ? "uppercase font-black" : "font-medium"
                             )}>
                                 {node.name}
                             </span>
