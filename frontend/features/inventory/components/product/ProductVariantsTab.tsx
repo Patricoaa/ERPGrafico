@@ -283,6 +283,7 @@ export function ProductVariantsTab({ form, initialData, onTabChange }: ProductVa
                                         <Checkbox
                                             checked={variants.length > 0 && selectedVariantIds.length === variants.length}
                                             onCheckedChange={toggleSelectAll}
+                                            variant="circle"
                                         />
                                     </TableHead>
                                     <TableHead className="font-bold">ID</TableHead>
@@ -313,6 +314,7 @@ export function ProductVariantsTab({ form, initialData, onTabChange }: ProductVa
                                                     checked={isSelected}
                                                     onCheckedChange={() => toggleVariantSelect(v.id)}
                                                     onClick={(e) => e.stopPropagation()}
+                                                    variant="circle"
                                                 />
                                             </TableCell>
                                             <TableCell>

@@ -370,7 +370,7 @@ export function PosTerminalDrawer({ open, onOpenChange, terminal, onSuccess, mod
                                                                         checked={isSelected}
                                                                         disabled={isView}
                                                                         onCheckedChange={() => toggleMethod(method.id)}
-                                                                        className={isSelected ? "text-primary border-primary" : "border-muted-foreground/40 group-hover:border-primary/50"}
+                                                                        variant="circle"
                                                                     />
                                                                     <div className="flex flex-col">
                                                                         <span className={cn(

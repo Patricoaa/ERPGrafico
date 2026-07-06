@@ -127,7 +127,7 @@ export function Step1_Items({
                                         <Checkbox
                                             checked={selected}
                                             onCheckedChange={() => toggleItem(line.id)}
-                                            className="h-6 w-6 rounded-md border-2 border-primary/30 data-[state=checked]:bg-primary data-[state=checked]:border-primary transition-all"
+                                            variant="circle"
                                         />
                                     </TableCell>
                                     <TableCell>
