@@ -20,7 +20,7 @@ import { ActivitySidebar } from "@/features/audit/components"
 import { formDrawerWidth } from "@/lib/form-widths"
 import { PrintableLayout } from "@/features/_shared/transaction-drawer"
 import { useReactToPrint } from "react-to-print"
-import type { DrawerMode } from "@/features/_shared/drawer/types"
+import { useDrawerIdentity, type DrawerMode } from "@/features/_shared/drawer"
 
 const accountSchema = z.object({
     code: z.string().optional().or(z.literal("")),
@@ -250,15 +250,12 @@ export function AccountDrawer({
         return <>{formContent}</>
     }
 
-    const drawerTitle = isViewMode
-        ? `Ficha de Cuenta #${initialData?.id}`
-        : mode === 'create'
-            ? "Nueva Cuenta Contable"
-            : "Editar Cuenta Contable"
-
-    const drawerSubtitle = isViewMode
-        ? `${(initialData?.code as string) || ""} • ${form.watch("name") || "Vista de detalle"}`
-        : `${(initialData?.code as string) || ""} • ${form.watch("name") || "Plan de Cuentas • Contabilidad General"}`
+    const identity = useDrawerIdentity('accounting.account', mode, initialData as Record<string, unknown> | undefined, {
+        customTitle: isViewMode ? `Ficha de Cuenta #${initialData?.id}` : undefined,
+        subtitle: isViewMode
+            ? `${(initialData?.code as string) || ""} • ${form.watch("name") || "Vista de detalle"}`
+            : `${(initialData?.code as string) || ""} • ${form.watch("name") || "Plan de Cuentas • Contabilidad General"}`,
+    })
 
     return (
         <>
@@ -290,10 +287,10 @@ export function AccountDrawer({
                 onOpenChange={setOpen}
                 side="left"
                 defaultSize={width}
-                icon={getEntityIcon('accounting.account')}
-                title={<span>{drawerTitle}</span>}
+                icon={identity.icon}
+                title={identity.title}
                 headerActions={(mode === 'view' || mode === 'edit') && !!initialData?.id && <Button variant="ghost" size="icon" onClick={() => handlePrint()}><Printer className="h-4 w-4" /></Button>}
-                subtitle={drawerSubtitle}
+                subtitle={identity.subtitle}
                 mode={mode}
                 footer={isViewMode ? undefined : (
                     <FormFooter

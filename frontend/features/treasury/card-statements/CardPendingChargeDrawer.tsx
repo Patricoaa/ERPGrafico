@@ -5,7 +5,7 @@ import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
 import { DollarSign, Tag, Pencil, Trash2 } from "lucide-react"
-import type { DrawerMode } from "@/features/_shared/drawer/types"
+import { useDrawerIdentity, type DrawerMode } from "@/features/_shared/drawer"
 import { useServerDate } from "@/hooks/useServerDate"
 import { toDateOnlyISO } from "@/lib/utils"
 import { Form, FormField } from "@/components/ui/form"
@@ -142,7 +142,10 @@ export function CardPendingChargeDrawer({
         }
     }
 
-    const drawerTitle = isView ? "Detalle del Cargo" : charge ? "Editar Cargo" : "Agregar Cargo No Facturado"
+    const identity = useDrawerIdentity('treasury.cardpendingcharge', mode, charge ?? undefined, {
+        customTitle: isView ? "Detalle del Cargo" : charge ? "Editar Cargo" : "Agregar Cargo No Facturado",
+        subtitle: `${charge ? 'Editar' : 'Nuevo'} cargo en ${cardAccountName}`,
+    })
 
     return (
         <Drawer
@@ -151,8 +154,9 @@ export function CardPendingChargeDrawer({
             side="left"
             defaultSize={formDrawerWidth("simple", false)}
             mode={mode}
-            title={drawerTitle}
-            subtitle={`${charge ? 'Editar' : 'Nuevo'} cargo en ${cardAccountName}`}
+            title={identity.title}
+            icon={identity.icon}
+            subtitle={identity.subtitle}
             footer={isView ? undefined : (
                 <FormFooter
                     actions={

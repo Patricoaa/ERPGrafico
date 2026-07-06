@@ -397,7 +397,8 @@ class CardService:
         from accounting.models import JournalEntry, JournalItem
         from accounting.services import JournalEntryService
 
-        doc_ref = f"CHG-{statement.display_id}"
+        from core.prefix_registry import EntityPrefix
+        doc_ref = f"{EntityPrefix.CARD_PENDING_CHARGE}-{statement.display_id}"
         entry = JournalEntry.objects.create(
             date=apply_date,
             description=GlosaBuilder.build(

@@ -10,6 +10,7 @@ from django.contrib.contenttypes.models import ContentType
 from django.utils import timezone
 
 from core.models import Attachment
+from core.prefix_registry import EntityPrefix
 from inventory.models import Product, StockMove, UoM, Warehouse
 from purchasing.models import PurchaseLine, PurchaseOrder
 from workflow.models import Task
@@ -252,7 +253,7 @@ class WorkOrderService:
         No link to sale_line.
         """
         new_wo = WorkOrder.objects.create(
-            description=f"Copia de {work_order.description or 'OT-' + str(work_order.number)}",
+            description=f"Copia de {work_order.description or str(EntityPrefix.WORK_ORDER) + '-' + str(work_order.number)}",
             is_manual=True,
             product=work_order.product
             if not work_order.sale_line
@@ -1078,8 +1079,8 @@ class WorkOrderService:
                 # Create journal entry
                 entry_data = {
                     "date": timezone.now().date(),
-                    "description": f"Consumo Producción OT-{work_order.number}",
-                    "reference": f"OT-{work_order.number}",
+                    "description": f"Consumo Producción {EntityPrefix.WORK_ORDER}-{work_order.number}",
+                    "reference": f"{EntityPrefix.WORK_ORDER}-{work_order.number}",
                     "status": JournalEntry.State.DRAFT,
                     "source_content_type": ContentType.objects.get_for_model(WorkOrder),
                     "source_object_id": work_order.id,

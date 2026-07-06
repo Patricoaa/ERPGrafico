@@ -23,6 +23,8 @@ export interface BaseModalProps extends
     Omit<React.ComponentPropsWithoutRef<typeof DialogPrimitive.Content>, "title">,
     VariantProps<typeof dialogContentVariants>,
     PanelBaseProps {
+    /** Description text shown under the title (wrapped in DialogDescription for ARIA) */
+    description?: React.ReactNode
     hideScrollArea?: boolean
     allowOverflow?: boolean
     variant?: BaseModalVariant
@@ -114,7 +116,7 @@ export function BaseModal({
                                     {title}
                                 </DialogTitle>
                             }
-                            description={description ? (
+                            subtitle={description ? (
                                 <DialogDescription
                                     asChild={typeof description !== "string"}
                                     className={descriptionStyles}

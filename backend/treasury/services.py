@@ -392,7 +392,9 @@ class TreasuryService:
 
         date = movement.date
         partner_name = movement.contact.name if movement.contact else ""
-        doc_ref = movement.reference or f"MOV-{movement.id}"
+        from core.prefix_registry import EntityPrefix
+
+        doc_ref = movement.reference or f"{EntityPrefix.STOCK_MOVE}-{movement.id}"
 
         mtype = movement.movement_type
         action = {
@@ -404,7 +406,7 @@ class TreasuryService:
         entry = JournalEntry.objects.create(
             date=date,
             description=GlosaBuilder.build(action, doc_ref, partner_name, movement.amount),
-            reference=f"MOV-{movement.id}",
+            reference=f"{EntityPrefix.STOCK_MOVE}-{movement.id}",
             status=JournalEntry.State.DRAFT,
             source_content_type=ContentType.objects.get_for_model(TreasuryMovement),
             source_object_id=movement.id,
@@ -1018,11 +1020,12 @@ class TreasuryService:
                     from_account = treasury_acc if return_type == "OUTBOUND" else None
                     to_account = treasury_acc if return_type == "INBOUND" else None
 
+                return_prefix = EntityPrefix.PURCHASE_RETURN if movement.purchase_order else EntityPrefix.SALE_RETURN
                 return_movement = TreasuryMovement.objects.create(
                     movement_type=return_type,
                     payment_method=movement.payment_method,
                     amount=refund_amount,
-                    reference=f"DEV-{movement.id}",
+                    reference=f"{return_prefix}-{movement.id}",
                     contact=movement.contact,
                     invoice=movement.invoice,
                     sale_order=movement.sale_order,
@@ -1047,15 +1050,16 @@ class TreasuryService:
                 refund_role = Roles.CXP
 
             if movement.sale_order or movement.purchase_order:
+                return_prefix = EntityPrefix.PURCHASE_RETURN if movement.purchase_order else EntityPrefix.SALE_RETURN
                 partner_name = movement.contact.name if movement.contact else ""
-                doc_ref = f"DEV-{movement.id}"
+                doc_ref = f"{return_prefix}-{movement.id}"
 
                 entry = JournalEntry.objects.create(
                     date=return_movement.date,
                     description=GlosaBuilder.build(
                         GlosaBuilder.DEVOLUCION_PAGO, doc_ref, partner_name, refund_amount,
                     ),
-                    reference=f"DEV-JE-{movement.id}",
+                    reference=f"{return_prefix}-JE-{movement.id}",
                     status=JournalEntry.State.DRAFT,
                     source_content_type=ContentType.objects.get_for_model(TreasuryMovement),
                     source_object_id=return_movement.id,

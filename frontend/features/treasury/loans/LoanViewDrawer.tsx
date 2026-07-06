@@ -10,6 +10,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { useLoan } from './hooks'
 import { parseDateOnly } from '@/lib/utils'
 import { formDrawerWidth } from '@/lib/form-widths'
+import { useDrawerIdentity } from '@/features/_shared/drawer'
 
 interface Props {
     loanId: number | null
@@ -29,6 +30,11 @@ function Field({ label, value }: { label: string; value: React.ReactNode }) {
 export function LoanViewDrawer({ loanId, open, onOpenChange }: Props) {
     const { data: loan, isLoading, isError } = useLoan(loanId)
 
+    const identity = useDrawerIdentity('treasury.bankloan', 'view', loan, {
+        customTitle: loan ? `${loan.display_id} · ${loan.lender_name}` : 'Cargando crédito…',
+        subtitle: loan ? `${loan.status_display} · ${loan.currency}` : undefined,
+    })
+
     return (
         <Drawer
             mode="view"
@@ -37,13 +43,9 @@ export function LoanViewDrawer({ loanId, open, onOpenChange }: Props) {
             side="left"
             defaultSize={formDrawerWidth("complex", false)}
             resizable
-            title={
-                <div className="flex items-center gap-3">
-                    <Banknote className="h-5 w-5 text-muted-foreground" />
-                    <span>{loan ? `${loan.display_id} · ${loan.lender_name}` : 'Cargando crédito…'}</span>
-                </div>
-            }
-            subtitle={loan ? `${loan.status_display} · ${loan.currency}` : undefined}
+            icon={identity.icon}
+            title={identity.title}
+            subtitle={identity.subtitle}
         >
             {isError ? (
                 <div className="p-4">

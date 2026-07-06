@@ -10,7 +10,7 @@ import {
     FormField,
 } from "@/components/ui/form"
 import { Printer } from "lucide-react"
-import { getEntityIcon } from "@/lib/entity-registry"
+
 import { Button } from "@/components/ui/button"
 import { ActivitySidebar } from "@/features/audit/components"
 import { showApiError } from "@/lib/errors"
@@ -19,7 +19,7 @@ import { FormSplitLayout } from "@/components/shared"
 import { formDrawerWidth } from "@/lib/form-widths"
 import { useReactToPrint } from "react-to-print"
 import { PrintableLayout } from "@/features/_shared/transaction-drawer"
-import type { DrawerMode } from "@/features/_shared/drawer/types"
+import { useDrawerIdentity, type DrawerMode } from "@/features/_shared/drawer"
 
 export interface UoMCategory {
     id: number
@@ -135,11 +135,10 @@ export function UoMCategoryDrawer({ open: openProp, onOpenChange, initialData, o
         </Form>
     )
 
-    const drawerTitle = isView
-        ? `Ficha de Categoría de Medida${initialData?.id ? ` #${initialData.id}` : ""}`
-        : mode === 'create'
-            ? "Nueva Categoría de Medida"
-            : "Editar Categoría de Medida"
+    const identity = useDrawerIdentity('inventory.uomcategory', mode, initialData, {
+        feminine: true,
+        subtitle: initialData?.id ? "Modifique el nombre de la categoría y consulte el historial." : "Define un agrupador para unidades del mismo tipo.",
+    })
 
     return (
         <>
@@ -163,10 +162,10 @@ export function UoMCategoryDrawer({ open: openProp, onOpenChange, initialData, o
                 side="left"
                 defaultSize={width}
                 mode={mode}
-                icon={getEntityIcon('inventory.uomcategory')}
-                title={<span>{drawerTitle}</span>}
+                icon={identity.icon}
+                title={identity.title}
                 headerActions={(mode === 'view' || mode === 'edit') && initialData?.id && <Button variant="ghost" size="icon" onClick={() => handlePrint()}><Printer className="h-4 w-4" /></Button>}
-                subtitle={initialData?.id ? "Modifique el nombre de la categoría y consulte el historial." : "Define un agrupador para unidades del mismo tipo."}
+                subtitle={identity.subtitle}
                 footer={isView ? undefined : (
                     <FormFooter
                         actions={

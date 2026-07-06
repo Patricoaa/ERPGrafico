@@ -33,15 +33,20 @@ export interface EntityMetadata {
   titlePlural: string;
   icon: LucideIcon;
   iconName: string;
-  shortTemplate: string;
+  /** Optional — when present, used as fallback if API config is unavailable. */
+  shortTemplate?: string;
   listUrl: string;
   detailUrlPattern: string;
   /** True if the entity title is feminine (e.g. "la cuenta", "la nota") — affects prefix: "Nueva" vs "Nuevo" */
   feminine?: boolean;
-  /** Default drawer subtitle / description for this entity */
-  description?: string;
-  /** Template string for dynamic subtitle (e.g. "{code} · {name}"). Rendered with entity data. */
-  subtitleTemplate?: string;
+    /** Default drawer subtitle / description for this entity */
+    description?: string;
+    /** Template string for dynamic subtitle (e.g. "{code} · {name}"). Rendered with entity data. */
+    subtitleTemplate?: string;
+    /** Template string appended to subtitle after " · " separator. Supports {field:date} format. */
+    subtitleSuffixTemplate?: string;
+    /** Whether the entity drawer shows a print button in the header */
+    printable?: boolean;
   /** Field to use for the main partner name in cards/headers */
   partnerField?: string | ((data: Record<string, unknown>) => string);
   /** Workflow status calculation strategy */
@@ -60,6 +65,8 @@ export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
     feminine: true,
     description: 'Documento de venta a cliente',
     subtitleTemplate: 'NV-{number} · {customer_name}',
+    subtitleSuffixTemplate: '{date:date} · {channel_display}',
+    printable: true,
     shortTemplate: 'NV-{number}',
     listUrl: '/sales/orders',
     detailUrlPattern: '/sales/orders/{id}',
@@ -82,6 +89,7 @@ export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
     feminine: true,
     description: 'Registro de despacho de mercadería',
     subtitleTemplate: 'DES-{number} · {partner_name}',
+    subtitleSuffixTemplate: 'Despacho · {date:date}',
     shortTemplate: 'DES-{number}',
     listUrl: '/sales/deliveries',
     detailUrlPattern: '/sales/deliveries/{id}',
@@ -110,6 +118,8 @@ export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
     feminine: true,
     description: 'Solicitud de compra a proveedor',
     subtitleTemplate: 'OCS-{number} · {supplier_name}',
+    subtitleSuffixTemplate: '{date:date} · {status_display}',
+    printable: true,
     shortTemplate: 'OCS-{number}',
     listUrl: '/purchasing/orders',
     detailUrlPattern: '/purchasing/orders/{id}',
@@ -126,6 +136,8 @@ export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
     feminine: true,
     description: 'Documento tributario electrónico',
     subtitleTemplate: '{number} · {partner_name}',
+    subtitleSuffixTemplate: '{dte_type_display} · {date:date}',
+    printable: true,
     shortTemplate: 'FAC-{number}',
     listUrl: '/billing/sales',
     detailUrlPattern: '/billing/invoices/{id}',
@@ -171,6 +183,7 @@ export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
     iconName: 'ArrowLeftRight',
     description: 'Entrada o salida de existencias',
     subtitleTemplate: 'MOV-{id}',
+    subtitleSuffixTemplate: '{move_type} · {date:date}',
     shortTemplate: 'MOV-{id}',
     listUrl: '/inventory/stock/movements',
     detailUrlPattern: '/inventory/stock-moves/{id}',
@@ -295,6 +308,7 @@ export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
     iconName: 'ArrowRightLeft',
     description: 'Transacción de fondos',
     subtitleTemplate: 'TES-{id}',
+    subtitleSuffixTemplate: '{date:date}',
     shortTemplate: 'TES-{id}',
     listUrl: '/treasury/operaciones/movements',
     detailUrlPattern: '/treasury/operaciones/movements?selected={id}',
@@ -580,6 +594,7 @@ export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
     feminine: true,
     description: 'Distribución de utilidades entre socios',
     subtitleTemplate: 'RD-{id}',
+    subtitleSuffixTemplate: 'Ejercicio {fiscal_year} · {resolution_date:date}',
     shortTemplate: 'RD-{id}',
     listUrl: '/finances/partners',
     detailUrlPattern: '/finances/partners/distributions',
@@ -739,6 +754,7 @@ export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
     iconName: 'ClipboardCheck',
     description: 'Lote de liquidación de transacciones',
     subtitleTemplate: 'LOT-{id}',
+    subtitleSuffixTemplate: '{provider_name}',
     shortTemplate: 'LOT-{id}',
     listUrl: '/treasury/bank-center',
     detailUrlPattern: '/treasury/bank-center?batch={id}',
@@ -887,18 +903,71 @@ export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
   },
 };
 
-import { getDtePrefix, getDteLabel } from './api/entity-prefixes';
+import { getDtePrefix, getDteLabel, getEntityConfig } from './api/entity-prefixes';
 export { getDtePrefix, getDteLabel };
+
+function formatTemplateDate(value: string): string {
+  const dateStr = value.split('T')[0];
+  const matches = dateStr.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (matches) {
+    const [, year, month, day] = matches;
+    return `${day}/${month}/${year}`;
+  }
+  const date = new Date(value);
+  if (isNaN(date.getTime())) return value;
+  return date.toLocaleDateString('es-CL', { year: 'numeric', month: '2-digit', day: '2-digit' });
+}
+
+function templateFromData(template: string, data: Record<string, unknown>): string {
+  return template.replace(/{([^}]+)}/g, (_match, key: string) => {
+    const [path, format] = key.split(':');
+    let value: unknown = data;
+
+    for (const part of path.split('.')) {
+      if (value !== null && typeof value === 'object') {
+        value = (value as Record<string, unknown>)[part];
+      } else {
+        value = undefined;
+      }
+    }
+
+    if (value === undefined || value === null) return '';
+
+    if (format === 'date') {
+      return formatTemplateDate(String(value));
+    }
+
+    if (format && format.startsWith('0') && format.endsWith('d')) {
+      const length = parseInt(format.slice(1, -1), 10);
+      return String(value).padStart(length, '0');
+    }
+
+    return String(value);
+  });
+}
 
 /**
  * Renders a template string using the provided data.
  * Supports dot notation (e.g. {customer.name}) and simple padding (e.g. {id:06d}).
+ *
+ * Template resolution order:
+ *   1. API config (from UniversalRegistry via /api/core/entity-config/)
+ *   2. ENTITY_REGISTRY shortTemplate (fallback for frontend-only entities)
+ *   3. data.id as last resort
  */
 export function formatEntityDisplay(label: string, data: Record<string, unknown>): string {
-  const entity = ENTITY_REGISTRY[label];
-  if (!entity) return String(data.id ?? '');
+  // 1. Try API-served template first
+  const config = getEntityConfig(label);
+  let template = config?.shortTemplate;
 
-  let template = entity.shortTemplate;
+  // 2. Fallback to ENTITY_REGISTRY
+  if (!template) {
+    const entity = ENTITY_REGISTRY[label];
+    template = entity?.shortTemplate;
+  }
+
+  // 3. Fallback to data.id
+  if (!template) return String(data.id ?? '');
 
   // Domain-specific override for Billing Invoices (Dynamic Prefixes)
   const dteType = data.dte_type
@@ -923,27 +992,7 @@ export function formatEntityDisplay(label: string, data: Record<string, unknown>
     }
   }
 
-  return template.replace(/{([^}]+)}/g, (_match, key: string) => {
-    const [path, format] = key.split(':');
-    let value: unknown = cleanData;
-
-    for (const part of path.split('.')) {
-      if (value !== null && typeof value === 'object') {
-        value = (value as Record<string, unknown>)[part];
-      } else {
-        value = undefined;
-      }
-    }
-
-    if (value === undefined || value === null) return '';
-
-    if (format && format.startsWith('0') && format.endsWith('d')) {
-      const length = parseInt(format.slice(1, -1), 10);
-      return String(value).padStart(length, '0');
-    }
-
-    return String(value);
-  });
+  return templateFromData(template, cleanData);
 }
 
 export function getEntityMetadata(label: string): EntityMetadata | undefined {
@@ -952,27 +1001,46 @@ export function getEntityMetadata(label: string): EntityMetadata | undefined {
 
 /**
  * Renders subtitleTemplate from entity metadata, or falls back to description / empty string.
+ *
+ * Template resolution order:
+ *   1. API config subtitleTemplate (from UniversalRegistry)
+ *   2. ENTITY_REGISTRY subtitleTemplate
+ *   3. entity.description
  */
 export function renderEntitySubtitle(label: string, data?: Record<string, unknown> | null): string | undefined {
-  const entity = ENTITY_REGISTRY[label];
-  if (!entity) return undefined;
+  // 1. Try API-served template first
+  const config = getEntityConfig(label);
+  let subtitleTemplate = config?.subtitleTemplate;
 
-  if (data && entity.subtitleTemplate) {
-    return entity.subtitleTemplate.replace(/{([^}]+)}/g, (_match, key: string) => {
-      const [path] = key.split(':');
-      let value: unknown = data;
-      for (const part of path.split('.')) {
-        if (value !== null && typeof value === 'object') {
-          value = (value as Record<string, unknown>)[part];
-        } else {
-          value = undefined;
-        }
-      }
-      return value !== undefined && value !== null ? String(value) : '';
-    });
+  // 2. Fallback to ENTITY_REGISTRY
+  if (!subtitleTemplate) {
+    const entity = ENTITY_REGISTRY[label];
+    subtitleTemplate = entity?.subtitleTemplate;
   }
 
-  return entity.description;
+  if (data && subtitleTemplate) {
+    return templateFromData(subtitleTemplate, data);
+  }
+
+  const entity = ENTITY_REGISTRY[label];
+  return entity?.description;
+}
+
+/**
+ * Renders subtitleSuffixTemplate from entity metadata.
+ * Returns undefined if no template or no data.
+ */
+export function renderEntitySubtitleSuffix(label: string, data?: Record<string, unknown> | null): string | undefined {
+  const config = getEntityConfig(label);
+  let template = config?.subtitleSuffixTemplate;
+  if (!template) {
+    const entity = ENTITY_REGISTRY[label];
+    template = entity?.subtitleSuffixTemplate;
+  }
+  if (data && template) {
+    return templateFromData(template, data);
+  }
+  return undefined;
 }
 
 export function getEntityIcon(label: string) {

@@ -219,10 +219,10 @@ Los colores de tipo de producto en `ProductTypeSelector` son identificadores vis
 | `tracking-normal` | `0` | Body text (default) |
 | `tracking-wider` | `0.05em` | Wizard steps, PageTabs tabs, elementos secundarios |
 | `tracking-widest` | `0.1em` | Botones de acción, badges estándar |
-| `tracking-[0.15em]` | `0.15em` | N2: LabeledInput legend |
+| `tracking-widest` | `0.1em` | N2: LabeledInput / LabeledContainer legend |
 | `tracking-[0.25em]` | `0.25em` | N1: FormSection title |
 
-> Los valores custom (`[0.15em]`, `[0.25em]`) son partes del sistema de capas N1/N2 — no son ad-hoc.
+> El valor custom (`[0.25em]`) es parte del sistema de capas N1/N2 — no es ad-hoc.
 
 ---
 

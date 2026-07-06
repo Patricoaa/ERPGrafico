@@ -1,7 +1,7 @@
 "use client"
 
 import { Drawer, EmptyState, MoneyDisplay, SkeletonShell, StatusBadge } from "@/components/shared"
-import { getEntityIcon } from "@/lib/entity-registry"
+import { useDrawerIdentity } from "@/features/_shared/drawer"
 import { useBankStatement } from "../hooks/useBankStatement"
 import { formDrawerWidth } from "@/lib/form-widths"
 
@@ -24,6 +24,10 @@ interface BankStatementDrawerProps {
 
 export function BankStatementDrawer({ statementId, open, onOpenChange }: BankStatementDrawerProps) {
     const { statement, isLoading, isError } = useBankStatement<BankStatementData>(statementId, open)
+    const identity = useDrawerIdentity('treasury.bankstatement', 'view', statement, {
+        customTitle: statement ? `Cartola ${statement.display_id || statement.id}` : "Cartola Bancaria",
+        subtitle: statement?.treasury_account_name,
+    })
 
     return (
         <Drawer
@@ -33,9 +37,9 @@ export function BankStatementDrawer({ statementId, open, onOpenChange }: BankSta
             side="left"
             boundary="embedded"
             defaultSize={formDrawerWidth("master", false)}
-            title={statement ? `Cartola ${statement.display_id || statement.id}` : "Cartola Bancaria"}
-            subtitle={statement?.treasury_account_name}
-            icon={getEntityIcon('treasury.bankstatement')}
+            title={identity.title}
+            subtitle={identity.subtitle}
+            icon={identity.icon}
         >
             {isError ? (
                 <div className="p-4">

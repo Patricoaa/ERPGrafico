@@ -1,6 +1,7 @@
 from datetime import timedelta
 from decimal import Decimal
 
+from core.prefix_registry import EntityPrefix
 from django.db.models import Q, Sum
 from django.utils import timezone
 
@@ -654,7 +655,7 @@ class CardSelector:
                 "group_uuid": str(inst.card_purchase_group.uuid),
                 "group_display_id": inst.card_purchase_group.display_id,
                 "purchase_order_id": inst.po_id,
-                "purchase_order_display_id": f"OCS-{inst.po_display_number}"
+                "purchase_order_display_id": f"{EntityPrefix.PURCHASE_ORDER}-{inst.po_display_number}"
                 if inst.po_display_number
                 else None,
                 "partner_name": (
@@ -760,7 +761,7 @@ class CardSelector:
                 if inst.card_purchase_group
                 else None,
                 "purchase_order_id": inst.po_id,
-                "purchase_order_display_id": f"OCS-{inst.po_display_number}"
+                "purchase_order_display_id": f"{EntityPrefix.PURCHASE_ORDER}-{inst.po_display_number}"
                 if inst.po_display_number
                 else None,
             }

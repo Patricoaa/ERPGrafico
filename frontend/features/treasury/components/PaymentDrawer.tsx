@@ -24,7 +24,7 @@ import { formatCurrency } from "@/lib/money"
 import { ActivitySidebar } from "@/features/audit/components"
 import { usePayment } from "@/features/treasury/hooks/usePayment"
 import { PaymentMethodSelector, type PaymentData } from "@/features/treasury"
-import type { DrawerMode } from "@/features/_shared/drawer/types"
+import { useDrawerIdentity, type DrawerMode } from "@/features/_shared/drawer"
 
 const paymentSchema = z.object({
     payment_type: z.enum(["INBOUND", "OUTBOUND"]),
@@ -158,17 +158,18 @@ export function PaymentDrawer({
         }
     }
 
-    const drawerTitle = isViewMode
-        ? `Pago #${entityId}`
-        : mode === 'create'
-            ? "Registrar Pago"
-            : "Editar Pago"
-
-    const drawerSubtitle = isViewMode
-        ? 'Vista de detalle'
-        : initialData
-            ? "Actualice la información del pago."
-            : "Ingrese los datos para el flujo de tesorería."
+    const identity = useDrawerIdentity('finance.payment', mode, paymentData ?? (entityId ? { id: entityId } : undefined), {
+        customTitle: isViewMode
+            ? `Pago #${entityId}`
+            : mode === 'create'
+                ? "Registrar Pago"
+                : "Editar Pago",
+        subtitle: isViewMode
+            ? 'Vista de detalle'
+            : initialData
+                ? "Actualice la información del pago."
+                : "Ingrese los datos para el flujo de tesorería.",
+    })
 
     const showPrintable = entityId && (mode === 'view' || mode === 'edit')
 
@@ -206,11 +207,11 @@ export function PaymentDrawer({
                 onOpenChange={setOpen}
                 side="left"
                 defaultSize={formDrawerWidth("medium", !!initialData?.id || !!entityId)}
-                icon={Landmark}
+                icon={identity.icon}
                 contentClassName="p-0"
-                title={<span>{drawerTitle}</span>}
+                title={identity.title}
                 headerActions={showPrintable && <Button variant="ghost" size="icon" onClick={() => handlePrint()}><Printer className="h-4 w-4" /></Button>}
-                subtitle={drawerSubtitle}
+                subtitle={identity.subtitle}
                 mode={mode}
                 footer={isViewMode ? undefined : (
                     <FormFooter

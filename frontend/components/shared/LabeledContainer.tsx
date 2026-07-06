@@ -73,7 +73,7 @@ export function LabeledContainer({
             >
                 {label && (
                     <legend className={cn(
-                        "px-1.5 text-[10px] font-black uppercase tracking-[0.15em] transition-colors duration-200 flex items-center gap-1",
+                        "px-1.5 text-[10px] font-black uppercase tracking-widest transition-colors duration-200 flex items-center gap-1",
                         hasError ? "text-destructive" : "text-muted-foreground group-focus-within:text-primary",
                         labelClassName
                     )}>

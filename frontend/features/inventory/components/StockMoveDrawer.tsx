@@ -1,12 +1,8 @@
 'use client'
 
-import React, { useRef } from 'react'
+import React from 'react'
 import { Drawer, StatusBadge, SkeletonShell, FormSplitLayout } from '@/components/shared'
-import { Button } from '@/components/ui/button'
-import { Printer } from 'lucide-react'
-import { getEntityIcon } from "@/lib/entity-registry"
-import { useReactToPrint } from 'react-to-print'
-import { formatPlainDate } from '@/lib/utils'
+import { useDrawerIdentity, usePrintableDrawer } from "@/features/_shared/drawer"
 import { PrintableLayout } from '@/features/_shared'
 import { useStockMove } from '@/features/inventory/hooks/useStockMoves'
 import { ActivitySidebar } from '@/features/audit'
@@ -20,10 +16,14 @@ interface StockMoveDrawerProps extends TransactionDrawerProps {
 export function StockMoveDrawer({ id, open, onOpenChange, stockMoveId }: StockMoveDrawerProps) {
     const entityId = id ?? stockMoveId ?? null
     const { data: move, isLoading } = useStockMove(entityId)
-    const printRef = useRef<HTMLDivElement>(null)
-    const handlePrint = useReactToPrint({ contentRef: printRef })
+    const { printRef, handlePrint } = usePrintableDrawer()
 
     const displayId = move?.display_id ?? `#${entityId}`
+    const identity = useDrawerIdentity('inventory.stockmove', 'view', move, {
+        customTitle: displayId,
+        subtitle: move?.product_name,
+        onPrint: handlePrint,
+    })
 
     return (
         <>
@@ -57,11 +57,10 @@ export function StockMoveDrawer({ id, open, onOpenChange, stockMoveId }: StockMo
                 onOpenChange={onOpenChange}
                 side="left"
                 defaultSize={formDrawerWidth("master", !!entityId)}
-                icon={getEntityIcon('inventory.stockmove')}
-                title={<span>{displayId}</span>}
-                headerActions={<Button variant="ghost" size="icon" onClick={() => handlePrint()}><Printer className="h-4 w-4" /></Button>}
-                subtitle={move?.product_name}
-                description={`${move?.move_type ?? ''} · ${formatPlainDate(move?.date)}`}
+                icon={identity.icon}
+                title={identity.title}
+                headerActions={identity.headerActions}
+                subtitle={identity.subtitle}
             >
                 <FormSplitLayout sidebar={entityId ? <ActivitySidebar entityType="stock_move" entityId={entityId} /> : undefined} showSidebar={!!entityId}>
                     <SkeletonShell isLoading={isLoading} ariaLabel="Cargando movimiento de stock">

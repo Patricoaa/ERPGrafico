@@ -2,7 +2,7 @@
 
 import { useQuery } from '@tanstack/react-query'
 import { Drawer, EmptyState, MoneyDisplay, SkeletonShell, StatusBadge } from "@/components/shared"
-import { getEntityIcon } from "@/lib/entity-registry"
+import { useDrawerIdentity } from "@/features/_shared/drawer"
 import { checksApi } from './api'
 import type { Check } from './types'
 import { formDrawerWidth } from '@/lib/form-widths'
@@ -19,6 +19,10 @@ export function CheckDrawer({ id, open, onOpenChange }: CheckDrawerProps) {
         queryFn: () => checksApi.get(id as number),
         enabled: !!id && open,
     })
+    const identity = useDrawerIdentity('treasury.check', 'view', check, {
+        customTitle: check ? `${check.display_id}` : "Cheque",
+        subtitle: check?.bank_name,
+    })
 
     return (
         <Drawer
@@ -28,9 +32,9 @@ export function CheckDrawer({ id, open, onOpenChange }: CheckDrawerProps) {
             side="left"
             boundary="embedded"
             defaultSize={formDrawerWidth("master", false)}
-            title={check ? `${check.display_id}` : "Cheque"}
-            subtitle={check?.bank_name}
-            icon={getEntityIcon('treasury.check')}
+            title={identity.title}
+            subtitle={identity.subtitle}
+            icon={identity.icon}
         >
             {isError ? (
                 <div className="p-4">

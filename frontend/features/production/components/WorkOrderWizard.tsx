@@ -453,11 +453,11 @@ export function WorkOrderWizard({ mode, open, onOpenChange, onSuccess }: WorkOrd
             : 'Crear Orden de Trabajo'
         }
         subtitle={
-          order
+          (order
             ? `${formatEntityDisplay('production.workorder', order as unknown as Record<string, unknown>)} · ${order.sale_customer_name || 'Manual'} · ${formatPlainDate(order.created_at)}`
-            : 'Planificación de Producción • Nueva OT'
+            : 'Planificación de Producción • Nueva OT')
+          + ` · ${STAGES[viewingStepIndex]?.label ?? ''}`
         }
-        description={STAGES[viewingStepIndex]?.label}
         headerActions={
           <div className="flex items-center gap-2">
             {order && (

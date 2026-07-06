@@ -16,7 +16,7 @@ import { financeApi } from "../api/financeApi"
 import { toast } from "sonner"
 import { useReactToPrint } from "react-to-print"
 import { PrintableLayout } from "@/features/_shared/transaction-drawer"
-import type { DrawerMode } from "@/features/_shared/drawer/types"
+import { useDrawerIdentity, type DrawerMode } from "@/features/_shared/drawer"
 import { Drawer, LabeledInput, FormFooter, FormSplitLayout, CancelButton, ActionSlideButton } from "@/components/shared"
 import { ActivitySidebar } from "@/features/audit/components"
 import { formDrawerWidth } from "@/lib/form-widths"
@@ -81,9 +81,12 @@ export function TransactionNumberDrawer({
 
     const width = formDrawerWidth("micro", !!paymentId)
 
-    const drawerTitle = isView
-        ? `Ficha de Transacción${paymentId ? ` #${paymentId}` : ""}`
-        : "Registrar N° de Transacción"
+    const identity = useDrawerIdentity('finance.payment', mode, paymentId ? { id: paymentId } : undefined, {
+        customTitle: isView
+            ? `Ficha de Transacción${paymentId ? ` #${paymentId}` : ""}`
+            : "Registrar N° de Transacción",
+        subtitle: "Ingrese el número de comprobante o transacción bancaria.",
+    })
 
     return (
         <>
@@ -103,10 +106,10 @@ export function TransactionNumberDrawer({
                 side="left"
                 defaultSize={width}
                 mode={mode}
-                icon={Hash}
-                title={<span>{drawerTitle}</span>}
+                icon={identity.icon}
+                title={identity.title}
                 headerActions={(mode === 'view' || mode === 'edit') && paymentId && <Button variant="ghost" size="icon" onClick={() => handlePrint()}><Printer className="h-4 w-4" /></Button>}
-                subtitle="Ingrese el número de comprobante o transacción bancaria."
+                subtitle={identity.subtitle}
                 footer={isView ? undefined : (
                     <FormFooter
                         actions={

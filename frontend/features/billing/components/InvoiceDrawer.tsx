@@ -1,11 +1,8 @@
 'use client'
 
-import React, { useRef } from 'react'
+import React from 'react'
 import { Drawer, StatusBadge, SkeletonShell, FormSplitLayout } from '@/components/shared'
-import { Button } from '@/components/ui/button'
-import { Printer } from 'lucide-react'
-import { getEntityIcon } from "@/lib/entity-registry"
-import { useReactToPrint } from 'react-to-print'
+import { useDrawerIdentity, usePrintableDrawer } from "@/features/_shared/drawer"
 import { formatCurrency } from '@/lib/money'
 import { formatPlainDate } from '@/lib/utils'
 import { PrintableLayout } from '@/features/_shared'
@@ -21,12 +18,17 @@ interface InvoiceDrawerProps extends TransactionDrawerProps {
 export function InvoiceDrawer({ id, open, onOpenChange, mode = 'view', invoiceId }: InvoiceDrawerProps) {
     const entityId = id ?? invoiceId ?? null
     const { data: invoice, isLoading } = useInvoice(entityId)
-    const printRef = useRef<HTMLDivElement>(null)
-    const handlePrint = useReactToPrint({ contentRef: printRef })
+    const { printRef, handlePrint } = usePrintableDrawer()
 
     const displayId = invoice?.display_id ?? invoice?.number ?? `#${entityId}`
     const dteLabel = invoice?.dte_type_display ?? invoice?.dte_type ?? ''
     const partnerName = invoice?.partner_name ?? invoice?.customer_name ?? invoice?.supplier_name ?? ''
+
+    const identity = useDrawerIdentity('billing.invoice', 'view', invoice, {
+        customTitle: displayId,
+        subtitle: partnerName,
+        onPrint: handlePrint,
+    })
 
     return (
         <>
@@ -67,11 +69,10 @@ export function InvoiceDrawer({ id, open, onOpenChange, mode = 'view', invoiceId
                 onOpenChange={onOpenChange}
                 side="left"
                 defaultSize={formDrawerWidth("master", !!entityId)}
-                icon={getEntityIcon('billing.invoice')}
-                title={<span>{displayId}</span>}
-                headerActions={<Button variant="ghost" size="icon" onClick={() => handlePrint()}><Printer className="h-4 w-4" /></Button>}
-                subtitle={partnerName}
-                description={`${dteLabel} · ${formatPlainDate(invoice?.date)}`}
+                icon={identity.icon}
+                title={identity.title}
+                headerActions={identity.headerActions}
+                subtitle={identity.subtitle}
             >
                 <FormSplitLayout sidebar={entityId ? <ActivitySidebar entityType="invoice" entityId={entityId} /> : undefined} showSidebar={!!entityId}>
                     <SkeletonShell isLoading={isLoading} ariaLabel="Cargando factura">

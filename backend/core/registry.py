@@ -79,6 +79,32 @@ class UniversalRegistry:
         return list(cls._entities.keys())
 
     @classmethod
+    def all_entities_serializable(cls) -> list[dict[str, str]]:
+        """Returns all registered entities as dicts for the /api/core/entity-config/ endpoint."""
+        from core.prefix_registry import EntityPrefix
+
+        prefix_values = {m.value for m in EntityPrefix}
+        result = []
+        for entity in cls._entities.values():
+            prefix = ""
+            for template_prefix in sorted(prefix_values, key=len, reverse=True):
+                if entity.short_display_template.startswith(template_prefix) or entity.short_display_template.startswith(template_prefix + "-"):
+                    prefix = template_prefix
+                    break
+            result.append({
+                "label": entity.label,
+                "title": entity.title_singular,
+                "prefix": prefix,
+                "shortTemplate": entity.short_display_template,
+                "displayTemplate": entity.display_template,
+                "subtitleTemplate": entity.subtitle_template,
+                "icon": entity.icon,
+                "listUrl": entity.list_url,
+                "detailUrlPattern": entity.detail_url_pattern,
+            })
+        return result
+
+    @classmethod
     def get_for_model(cls, model: type[models.Model]) -> SearchableEntity | None:
         for entity in cls._entities.values():
             if entity.model == model:

@@ -18,7 +18,7 @@ import { formDrawerWidth } from "@/lib/form-widths"
 import { ActivitySidebar } from "@/features/audit/components"
 import { useReactToPrint } from "react-to-print"
 import { PrintableLayout } from "@/features/_shared/transaction-drawer"
-import type { DrawerMode } from "@/features/_shared/drawer/types"
+import { useDrawerIdentity, type DrawerMode } from "@/features/_shared/drawer"
 
 const terminalSchema = z.object({
     name: z.string().min(1, "El nombre es requerido"),
@@ -176,11 +176,20 @@ export function PosTerminalDrawer({ open, onOpenChange, terminal, onSuccess, mod
         return acc
     }, {} as Record<string, Array<{ id: number; name: string; treasury_account_name: string; method_type: string }>>)
 
-    const drawerTitle = isView
-        ? `Ficha de Caja POS${terminal?.id ? ` #${terminal.id}` : ""}`
-        : mode === 'create'
-            ? "Nueva Caja POS"
-            : "Editar Caja POS"
+    const identity = useDrawerIdentity('pos.terminal', mode, terminal, {
+        feminine: true,
+        subtitle: (
+            <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
+                {terminal?.code && (
+                    <>
+                        <span>{terminal.code}</span>
+                        <span className="opacity-30">|</span>
+                    </>
+                )}
+                <span>{terminal ? "Modifique la configuración de la caja POS y revise su historial." : "Configuración de la caja POS y asignación de métodos de pago."}</span>
+            </div>
+        ),
+    })
 
     return (
         <>
@@ -212,28 +221,14 @@ export function PosTerminalDrawer({ open, onOpenChange, terminal, onSuccess, mod
                 side="left"
                 defaultSize={formDrawerWidth("complex", !!terminal)}
                 mode={mode}
-                title={
-                    <div className="flex items-center gap-3">
-                        <MonitorSmartphone className="h-5 w-5 text-muted-foreground" />
-                        <span>{drawerTitle}</span>
-                    </div>
-                }
+                title={identity.title}
+                icon={identity.icon}
                 headerActions={terminal?.id && (mode === 'view' || mode === 'edit') && (
                     <Button variant="ghost" size="icon" onClick={() => handlePrint()}>
                         <Printer className="h-4 w-4" />
                     </Button>
                 )}
-                subtitle={
-                    <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
-                        {terminal?.code && (
-                            <>
-                                <span>{terminal.code}</span>
-                                <span className="opacity-30">|</span>
-                            </>
-                        )}
-                        <span>{terminal ? "Modifique la configuración de la caja POS y revise su historial." : "Configuración de la caja POS y asignación de métodos de pago."}</span>
-                    </div>
-                }
+                subtitle={identity.subtitle}
                 footer={isView ? undefined : (
                     <FormFooter
                         actions={

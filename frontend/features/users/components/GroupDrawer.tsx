@@ -21,7 +21,7 @@ import { toast } from "sonner"
 import { Printer } from "lucide-react"
 import { useReactToPrint } from "react-to-print"
 import { PrintableLayout } from "@/features/_shared/transaction-drawer"
-import type { DrawerMode } from "@/features/_shared/drawer/types"
+import { useDrawerIdentity, type DrawerMode } from "@/features/_shared/drawer"
 import { type AppGroup } from "@/types/entities"
 import { formDrawerWidth } from "@/lib/form-widths"
 
@@ -90,7 +90,14 @@ export function GroupDrawer({
 
     const mode: DrawerMode = modeProp ?? (initialData ? 'edit' : 'create')
     const isView = mode === 'view'
-    const drawerTitle = mode === 'create' ? 'Nuevo Grupo' : mode === 'view' ? initialData?.name || 'Grupo' : `Editar: ${initialData?.name || ''}`
+    const customTitle = mode === 'create' ? undefined
+        : mode === 'view'
+            ? (initialData?.name || 'Grupo')
+            : `Editar: ${initialData?.name || ''}`
+    const identity = useDrawerIdentity('settings.group', mode, initialData, {
+        customTitle,
+        subtitle: "Configuración de grupo funcional y permisos de acceso",
+    })
     const printRef = useRef<HTMLDivElement>(null)
     const handlePrint = useReactToPrint({ contentRef: printRef })
 
@@ -156,9 +163,10 @@ export function GroupDrawer({
                 side="left"
                 defaultSize={width}
                 mode={mode}
-                title={<span>{drawerTitle}</span>}
+                icon={identity.icon}
+                title={identity.title}
                 headerActions={(mode === 'view' || mode === 'edit') && initialData?.id && <Button variant="ghost" size="icon" onClick={() => handlePrint()}><Printer className="h-4 w-4" /></Button>}
-                subtitle="Configuración de grupo funcional y permisos de acceso"
+                subtitle={identity.subtitle}
                 footer={isView ? undefined : (
                     <FormFooter
                         actions={

@@ -14,7 +14,7 @@ import { Form, FormField } from "@/components/ui/form"
 import { Button } from "@/components/ui/button"
 import { useReactToPrint } from "react-to-print"
 import { PrintableLayout } from "@/features/_shared/transaction-drawer"
-import type { DrawerMode } from "@/features/_shared/drawer/types"
+import { useDrawerIdentity, type DrawerMode } from "@/features/_shared/drawer"
 import { Drawer, CancelButton, ActionSlideButton, LabeledInput, FormSection, FormFooter, FormSplitLayout } from "@/components/shared"
 import { formDrawerWidth } from "@/lib/form-widths"
 import { toast } from "sonner"
@@ -126,11 +126,15 @@ export function ProviderDrawer({ open, onOpenChange, provider, onSuccess, mode: 
         }
     }
 
-    const drawerTitle = isView
+    const customTitle = isView
         ? `Ficha de Proveedor${provider?.id ? ` #${provider.id}` : ""}`
-        : mode === 'create'
-            ? "Nuevo Proveedor de Pago"
-            : "Editar Proveedor"
+        : mode === 'edit'
+            ? "Editar Proveedor"
+            : undefined
+    const identity = useDrawerIdentity('treasury.terminalprovider', mode, provider, {
+        customTitle,
+        subtitle: "Configure las cuentas contables para recaudación y comisiones.",
+    })
 
     return (
         <>
@@ -154,9 +158,10 @@ export function ProviderDrawer({ open, onOpenChange, provider, onSuccess, mode: 
                 side="left"
                 defaultSize={formDrawerWidth("medium", !!provider)}
                 mode={mode}
-                title={<span>{drawerTitle}</span>}
+                icon={identity.icon}
+                title={identity.title}
                 headerActions={(mode === 'view' || mode === 'edit') && provider?.id && <Button variant="ghost" size="icon" onClick={() => handlePrint()}><Printer className="h-4 w-4" /></Button>}
-                subtitle="Configure las cuentas contables para recaudación y comisiones."
+                subtitle={identity.subtitle}
                 footer={isView ? undefined : (
                     <FormFooter
                         actions={

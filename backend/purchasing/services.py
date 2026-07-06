@@ -1434,7 +1434,7 @@ class PurchasingService:
                         partner=order.supplier,
                         invoice=invoice,
                         purchase_order=order,
-                        client_reference=f"OCS-{order.number}",
+                        client_reference=order.display_id,
                         created_by=user,
                     )
                 else:
@@ -1448,7 +1448,7 @@ class PurchasingService:
                     payment_method_obj=payment_method_inst,
                     amount=payment_amount,
                     movement_type="OUTBOUND",
-                    reference=f"OCS-{order.number}",
+                    reference=order.display_id,
                     partner=order.supplier,
                     invoice=invoice,
                     purchase_order=order,
@@ -1473,7 +1473,7 @@ class PurchasingService:
                     amount=payment_amount,
                     movement_type="OUTBOUND",
                     payment_method=payment_method,
-                    reference=f"OCS-{order.number}",
+                    reference=order.display_id,
                     partner=order.supplier,
                     invoice=invoice,
                     purchase_order=order,

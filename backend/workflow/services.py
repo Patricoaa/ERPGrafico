@@ -378,7 +378,7 @@ class WorkflowService:
         if already_exists:
             return
 
-        order_label = f"OCS-{order.number}"
+        order_label = order.display_id
         contact_name = ""
         try:
             if hasattr(order, "supplier") and order.supplier:

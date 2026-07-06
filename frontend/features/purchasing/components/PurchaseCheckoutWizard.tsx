@@ -409,7 +409,7 @@ export function PurchaseCheckoutWizard({
             onOpenChange={onOpenChange}
             icon={ShoppingCart}
             title="Procesar Compra"
-            description="Asistente de compra rápida, facturación y recepción de inventario."
+            subtitle="Asistente de compra rápida, facturación y recepción de inventario."
             side="bottom"
             defaultSize="100%"
             boundary="embedded"

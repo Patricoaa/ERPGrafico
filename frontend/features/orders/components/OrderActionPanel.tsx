@@ -128,7 +128,7 @@ export function OrderActionPanel({
                                 <StatusBadge status={order?.status || ""} />
                             </div>
                         )}
-                        description={loading ? (
+                        subtitle={loading ? (
                             <div className="flex flex-col gap-2">
                                 <Skeleton className="h-5 w-48" />
                                 <Skeleton className="h-3 w-32" />

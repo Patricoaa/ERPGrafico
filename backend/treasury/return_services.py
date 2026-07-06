@@ -1,6 +1,7 @@
 from datetime import date
 from decimal import Decimal
 
+from core.prefix_registry import EntityPrefix
 from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ValidationError
 from django.db import transaction
@@ -104,6 +105,8 @@ class TreasuryReturnService:
 
                 resolved_account = TreasuryAccount.objects.get(pk=current_treasury)
 
+        return_prefix = EntityPrefix.PURCHASE_RETURN if payment.purchase_order else EntityPrefix.SALE_RETURN
+
         if payment.sale_order:
             # Customer Return: Us -> Customer (OUTBOUND)
             movement_type = "OUTBOUND"
@@ -133,14 +136,14 @@ class TreasuryReturnService:
                 movement_type=movement_type,
                 payment_method=payment.payment_method,
                 amount=amount,
-                reference=f"DEV-{payment.id}",
+                reference=f"{return_prefix}-{payment.id}",
                 contact=payment.contact,
                 invoice=payment.invoice,
                 sale_order=payment.sale_order,
                 purchase_order=payment.purchase_order,
                 from_account=from_account,
                 to_account=to_account,
-                transaction_number=f"DEV-{payment.transaction_number}"
+                transaction_number=f"{return_prefix}-{payment.transaction_number}"
                 if payment.transaction_number
                 else None,
                 notes=f"Devolución de pago: {reason}",
@@ -156,11 +159,12 @@ class TreasuryReturnService:
             partner_account = settings.default_receivable_account
             # Treasury Account to adjust
             treasury_acc = from_account
+            return_prefix = EntityPrefix.SALE_RETURN
 
             entry = JournalEntry.objects.create(
                 date=return_movement.date,
-                description=GlosaBuilder.build(GlosaBuilder.DEVOLUCION_PAGO, f"DEV-{payment.id}", payment.contact.name if payment.contact else "", amount),
-                reference=f"DEV-JE-{payment.id}",
+                description=GlosaBuilder.build(GlosaBuilder.DEVOLUCION_PAGO, f"{return_prefix}-{payment.id}", payment.contact.name if payment.contact else "", amount),
+                reference=f"{return_prefix}-JE-{payment.id}",
                 status=JournalEntry.State.DRAFT,
                 source_content_type=ContentType.objects.get_for_model(TreasuryMovement),
                 source_object_id=return_movement.id,
@@ -174,7 +178,7 @@ class TreasuryReturnService:
                 credit=0,
                 partner=payment.contact,
                 partner_name=payment.contact.name if payment.contact else None,
-                label=GlosaBuilder.item(Roles.CXC, reason, f"DEV-{payment.id}"),
+                label=GlosaBuilder.item(Roles.CXC, reason, f"{return_prefix}-{payment.id}"),
             )
 
             # Credit: Cash/Bank (Money leaves our account)
@@ -183,18 +187,19 @@ class TreasuryReturnService:
                 account=treasury_acc.account if hasattr(treasury_acc, "account") else treasury_acc,
                 debit=0,
                 credit=amount,
-                label=GlosaBuilder.item(Roles.EFECTIVO, "Devolución", f"DEV-{payment.id}"),
+                label=GlosaBuilder.item(Roles.EFECTIVO, "Devolución", f"{return_prefix}-{payment.id}"),
             )
 
         elif payment.purchase_order:
             # Purchase payment return
             partner_account = settings.default_payable_account
             treasury_acc = to_account
+            return_prefix = EntityPrefix.PURCHASE_RETURN
 
             entry = JournalEntry.objects.create(
                 date=return_movement.date,
-                description=GlosaBuilder.build(GlosaBuilder.DEVOLUCION_PAGO, f"DEV-{payment.id}", payment.contact.name if payment.contact else "", amount),
-                reference=f"DEV-JE-{payment.id}",
+                description=GlosaBuilder.build(GlosaBuilder.DEVOLUCION_PAGO, f"{return_prefix}-{payment.id}", payment.contact.name if payment.contact else "", amount),
+                reference=f"{return_prefix}-JE-{payment.id}",
                 status=JournalEntry.State.DRAFT,
                 source_content_type=ContentType.objects.get_for_model(TreasuryMovement),
                 source_object_id=return_movement.id,
@@ -206,7 +211,7 @@ class TreasuryReturnService:
                 account=treasury_acc.account if hasattr(treasury_acc, "account") else treasury_acc,
                 debit=amount,
                 credit=0,
-                label=GlosaBuilder.item(Roles.EFECTIVO, "Devolución", f"DEV-{payment.id}"),
+                label=GlosaBuilder.item(Roles.EFECTIVO, "Devolución", f"{return_prefix}-{payment.id}"),
             )
 
             # Credit: Payable (We owe them again)
@@ -217,7 +222,7 @@ class TreasuryReturnService:
                 credit=amount,
                 partner=payment.contact,
                 partner_name=payment.contact.name if payment.contact else None,
-                label=GlosaBuilder.item(Roles.CXP, reason, f"DEV-{payment.id}"),
+                label=GlosaBuilder.item(Roles.CXP, reason, f"{return_prefix}-{payment.id}"),
             )
 
         JournalEntryService.post_entry(entry)

@@ -1581,7 +1581,8 @@ class AccountingMapper:
             GlosaBuilder.RECEPCION, doc_id, supplier_name, total_amount,
             extra=[f"OC {order.display_id}"],
         )
-        return description, f"REC-{receipt.id}", items
+        from core.prefix_registry import EntityPrefix
+        return description, f"{EntityPrefix.PURCHASE_RECEIPT}-{receipt.id}", items
 
 
 class BudgetService:

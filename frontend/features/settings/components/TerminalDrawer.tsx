@@ -22,7 +22,7 @@ import { Printer } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { useReactToPrint } from "react-to-print"
 import { PrintableLayout } from "@/features/_shared/transaction-drawer"
-import type { DrawerMode } from "@/features/_shared/drawer/types"
+import { useDrawerIdentity, type DrawerMode } from "@/features/_shared/drawer"
 
 export interface Terminal {
     id: number
@@ -220,11 +220,19 @@ export function TerminalDrawer({ open, onOpenChange, terminal, onSuccess, mode: 
         }
     }
 
-    const drawerTitle = isView
-        ? `Ficha de Terminal${terminal?.id ? ` #${terminal.id}` : ""}`
-        : mode === 'create'
-            ? "Nuevo Terminal"
-            : "Editar Terminal"
+    const identity = useDrawerIdentity('treasury.terminal', mode, terminal, {
+        subtitle: (
+            <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
+                {terminal?.code && (
+                    <>
+                        <span>{terminal.code}</span>
+                        <span className="opacity-30">|</span>
+                    </>
+                )}
+                <span>{form.watch("name") || "Configuración básica del TPV"}</span>
+            </div>
+        ),
+    })
 
     return (
         <>
@@ -248,28 +256,14 @@ export function TerminalDrawer({ open, onOpenChange, terminal, onSuccess, mode: 
                 side="left"
                 defaultSize={formDrawerWidth("complex", !!terminal)}
                 mode={mode}
-                title={
-                    <div className="flex items-center gap-3">
-                        <MonitorSmartphone className="h-5 w-5 text-muted-foreground" />
-                        <span>{drawerTitle}</span>
-                    </div>
-                }
+                title={identity.title}
+                icon={identity.icon}
                 headerActions={(mode === 'view' || mode === 'edit') && terminal?.id && (
                     <Button variant="ghost" size="icon" onClick={() => handlePrint()}>
                         <Printer className="h-4 w-4" />
                     </Button>
                 )}
-                subtitle={
-                    <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
-                        {terminal?.code && (
-                            <>
-                                <span>{terminal.code}</span>
-                                <span className="opacity-30">|</span>
-                            </>
-                        )}
-                        <span>{form.watch("name") || "Configuración básica del TPV"}</span>
-                    </div>
-                }
+                subtitle={identity.subtitle}
                 footer={isView ? undefined : (
                     <FormFooter
                         actions={
