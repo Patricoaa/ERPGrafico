@@ -22,7 +22,7 @@ import { useConfirmAction } from "@/hooks/useConfirmAction"
 
 import { usePurchaseInvoices } from "@/features/billing/hooks/usePurchaseInvoices"
 import { type Invoice, type InvoiceFilters } from "@/features/billing/types"
-import { getDtePrefix } from "@/lib/entity-registry"
+import { getDtePrefix, formatEntityDisplay } from "@/lib/entity-registry"
 
 export function PurchaseInvoicesClientView() {
     const { filters: textFilters, isFiltered: isTextFiltered, clearAll: clearText } = useSmartSearch(purchaseInvoiceSearchDef)
@@ -242,7 +242,7 @@ export function PurchaseInvoicesClientView() {
                     features={{ reviewStep: true }}
                     supplierName={notingDoc.partner_name ?? undefined}
                     orderReference={notingDoc.purchase_order_number?.toString() ?? notingDoc.purchase_order?.toString()}
-                    referenceLabel={notingDoc.purchase_order ? `OCS-${notingDoc.purchase_order_number ?? notingDoc.purchase_order}` : `Factura #${notingDoc.id}`}
+                    referenceLabel={notingDoc.purchase_order ? formatEntityDisplay('purchasing.purchaseorder', { number: notingDoc.purchase_order_number ?? notingDoc.purchase_order }) : `Factura #${notingDoc.id}`}
                     fetchSource={async () => {
                         const { purchasingApi } = await import('@/features/purchasing/api/purchasingApi')
                         const source = notingDoc.purchase_order
@@ -260,7 +260,7 @@ export function PurchaseInvoicesClientView() {
                             noteUnitPrice: parseFloat(String(l.unit_cost || l.unit_price || '0')),
                         }))
                         return {
-                            label: notingDoc.purchase_order ? `OCS-${source.number as string}` : `Factura #${notingDoc.id}`,
+                            label: notingDoc.purchase_order ? formatEntityDisplay('purchasing.purchaseorder', { number: source.number as string }) : `Factura #${notingDoc.id}`,
                             isExempt: false,
                             originalTotal: Number(source.total) || 0,
                             supplierName: source.supplier_name as string | undefined,

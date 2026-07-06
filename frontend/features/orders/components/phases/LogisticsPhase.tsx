@@ -6,7 +6,7 @@ import { useState } from "react"
 import { PhaseCard } from "./PhaseCard"
 import { Package, Ban } from "lucide-react"
 import { cn } from "@/lib/utils"
-import { formatEntity } from '@/features/orders/utils/status'
+import { formatEntityDisplay } from '@/lib/entity-registry'
 import { useAnnulLogistics } from "../../hooks/useOrdersMutations"
 import { ActionConfirmModal } from '@/components/shared'
 import { saleOrderActions } from '@/features/sales'
@@ -104,7 +104,7 @@ export function LogisticsPhase({
         if (Array.isArray(activeDoc.related_returns) && activeDoc.related_returns.length > 0) {
             docs.push(...activeDoc.related_returns.map((doc: Record<string, unknown>) => ({
                 type: doc.type as string,
-                number: formatEntity('DEV', (doc.number as string | number) || (doc.id as string | number), doc.display_id as string),
+                number: (doc.display_id as string) || formatEntityDisplay(isSale ? 'sales.salereturn' : 'purchasing.purchasereturn', { number: (doc.number as string | number) || (doc.id as string | number) }),
                 icon: Package,
                 id: doc.id as string | number,
                 docType: doc.docType as string,
@@ -125,7 +125,7 @@ export function LogisticsPhase({
         if (specificDocs && specificDocs.length > 0) {
             docs.push(...specificDocs.map((doc: Record<string, unknown>) => ({
                 type: isSale ? 'Despacho' : 'Recepción',
-                number: formatEntity(isSale ? 'DES' : 'REC', (doc.number as string) || (doc.id as number), doc.display_id as string),
+                number: (doc.display_id as string) || formatEntityDisplay(isSale ? 'sales.saledelivery' : 'purchasing.purchasereceipt', { number: (doc.number as string) || (doc.id as number) }),
                 icon: Package,
                 id: doc.id as number,
                 docType: (doc.docType as string) || (isSale ? 'sale_delivery' : 'purchase_receipt'),
@@ -145,7 +145,7 @@ export function LogisticsPhase({
         if (docs.length === 0 && (activeDoc.related_stock_moves?.length || 0) > 0) {
             docs.push(...(activeDoc.related_stock_moves || []).map((m: Record<string, unknown>) => ({
                 type: (m.move_type_display as string) || 'Movimiento',
-                number: formatEntity('MOV', m.id as number, m.display_id as string),
+                number: (m.display_id as string) || formatEntityDisplay('inventory.stockmove', { id: m.id as number }),
                 icon: Package,
                 id: m.id as number,
                 docType: 'inventory',

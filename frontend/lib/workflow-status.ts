@@ -324,20 +324,4 @@ export const getPurchaseHubStatuses = (order: OrderBase) => {
 }
 
 
-// Helper to prevent duplicate prefixes (e.g. OCS-OCS-123)
-export const formatEntity = (prefix: string, number: string | number, displayId?: string) => {
-    if (displayId) return displayId
 
-    // Standardize prefixes to match registry
-    let standardPrefix = prefix
-    if (prefix === 'OC') standardPrefix = 'OCS'
-    if (prefix === 'FACT') standardPrefix = 'FAC'
-
-    const numStr = String(number || '')
-    const cleanPrefix = standardPrefix.replace('-', '')
-
-    if (numStr.toUpperCase().startsWith(cleanPrefix.toUpperCase())) {
-        return numStr
-    }
-    return `${standardPrefix}-${numStr}`
-}

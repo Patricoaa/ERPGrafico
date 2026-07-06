@@ -5,7 +5,7 @@ import {
   List, LayoutDashboard, LayoutGrid, Kanban, CalendarDays, ClipboardCheck,
   Building2, Smartphone, CreditCard, Calendar, CalendarX2, Repeat,
   Tag, Percent, Ruler, PieChart, HandCoins, ClipboardList, PackageCheck,
-  BarChart3,
+  BarChart3, Scale, Monitor,
   ScrollText,
   type LucideIcon 
 } from 'lucide-react';
@@ -40,6 +40,8 @@ export interface EntityMetadata {
   feminine?: boolean;
   /** Default drawer subtitle / description for this entity */
   description?: string;
+  /** Template string for dynamic subtitle (e.g. "{code} · {name}"). Rendered with entity data. */
+  subtitleTemplate?: string;
   /** Field to use for the main partner name in cards/headers */
   partnerField?: string | ((data: Record<string, unknown>) => string);
   /** Workflow status calculation strategy */
@@ -57,6 +59,7 @@ export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
     iconName: 'ReceiptText',
     feminine: true,
     description: 'Documento de venta a cliente',
+    subtitleTemplate: 'NV-{number} · {customer_name}',
     shortTemplate: 'NV-{number}',
     listUrl: '/sales/orders',
     detailUrlPattern: '/sales/orders/{id}',
@@ -78,6 +81,7 @@ export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
     iconName: 'Truck',
     feminine: true,
     description: 'Registro de despacho de mercadería',
+    subtitleTemplate: 'DES-{number} · {partner_name}',
     shortTemplate: 'DES-{number}',
     listUrl: '/sales/deliveries',
     detailUrlPattern: '/sales/deliveries/{id}',
@@ -91,6 +95,7 @@ export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
     iconName: 'Undo2',
     feminine: true,
     description: 'Anulación total o parcial de una venta',
+    subtitleTemplate: 'DEV-{number} · {partner_name}',
     shortTemplate: 'DEV-{number}',
     listUrl: '/sales/returns',
     detailUrlPattern: '/sales/returns/{id}',
@@ -104,6 +109,7 @@ export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
     iconName: 'ShoppingCart',
     feminine: true,
     description: 'Solicitud de compra a proveedor',
+    subtitleTemplate: 'OCS-{number} · {supplier_name}',
     shortTemplate: 'OCS-{number}',
     listUrl: '/purchasing/orders',
     detailUrlPattern: '/purchasing/orders/{id}',
@@ -119,6 +125,7 @@ export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
     iconName: 'FileText',
     feminine: true,
     description: 'Documento tributario electrónico',
+    subtitleTemplate: '{number} · {partner_name}',
     shortTemplate: 'FAC-{number}',
     listUrl: '/billing/sales',
     detailUrlPattern: '/billing/invoices/{id}',
@@ -134,6 +141,7 @@ export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
     iconName: 'Wrench',
     feminine: true,
     description: 'Instrucción de fabricación o servicio',
+    subtitleTemplate: 'OT-{number}',
     shortTemplate: 'OT-{number}',
     listUrl: '/production/orders',
     detailUrlPattern: '/production/orders/{id}',
@@ -149,6 +157,7 @@ export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
     iconName: 'ClipboardList',
     feminine: true,
     description: 'Lista de materiales y componentes',
+    subtitleTemplate: 'BOM-{id}',
     shortTemplate: 'BOM-{id}',
     listUrl: '/production/boms',
     detailUrlPattern: '/production/boms/{id}',
@@ -161,6 +170,7 @@ export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
     icon: ArrowLeftRight,
     iconName: 'ArrowLeftRight',
     description: 'Entrada o salida de existencias',
+    subtitleTemplate: 'MOV-{id}',
     shortTemplate: 'MOV-{id}',
     listUrl: '/inventory/stock/movements',
     detailUrlPattern: '/inventory/stock-moves/{id}',
@@ -173,6 +183,7 @@ export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
     icon: Package,
     iconName: 'Package',
     description: 'Bien o servicio comercializable',
+    subtitleTemplate: '{code} · {name}',
     shortTemplate: 'PRD-{id}',
     listUrl: '/inventory/products',
     detailUrlPattern: '/inventory/products/{id}',
@@ -186,6 +197,7 @@ export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
     iconName: 'Repeat',
     feminine: true,
     description: 'Contrato recurrente de producto o servicio',
+    subtitleTemplate: 'SUB-{id} · {customer_name}',
     shortTemplate: 'SUB-{id}',
     listUrl: '/inventory/products/subscriptions',
     detailUrlPattern: '/inventory/products/{id}',
@@ -200,6 +212,7 @@ export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
     iconName: 'Building2',
     feminine: true,
     description: 'Ubicación física de almacenaje',
+    subtitleTemplate: '{code} · {name}',
     shortTemplate: '{code}',
     listUrl: '/inventory/stock/warehouses',
     detailUrlPattern: '/inventory/warehouses/{id}',
@@ -212,6 +225,7 @@ export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
     icon: Tag,
     iconName: 'Tag',
     description: 'Propiedad variable de un producto',
+    subtitleTemplate: '{name}',
     shortTemplate: '{name}',
     listUrl: '/inventory/stock/products/attributes',
     detailUrlPattern: '/inventory/stock/products/attributes',
@@ -224,6 +238,7 @@ export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
     icon: BarChart3,
     iconName: 'BarChart3',
     description: 'Informe de existencias actuales',
+    subtitleTemplate: '{name}',
     shortTemplate: '{name}',
     listUrl: '/inventory/stock/report',
     detailUrlPattern: '/inventory/stock/report',
@@ -237,6 +252,7 @@ export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
     iconName: 'Calendar',
     feminine: true,
     description: 'Pago periódico de un crédito',
+    subtitleTemplate: 'CUO-{id}',
     shortTemplate: 'CUO-{id}',
     listUrl: '/treasury/loans',
     detailUrlPattern: '/treasury/loans?selected={loan}&installment={id}',
@@ -251,6 +267,7 @@ export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
     iconName: 'ShoppingCart',
     feminine: true,
     description: 'Compra fraccionada en cuotas',
+    subtitleTemplate: '{group_display_id}',
     shortTemplate: '{group_display_id}',
     listUrl: '/treasury/bank-center',
     detailUrlPattern: '/treasury/bank-center',
@@ -263,6 +280,7 @@ export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
     icon: CreditCard,
     iconName: 'CreditCard',
     description: 'Resumen de movimientos de tarjeta',
+    subtitleTemplate: 'EST-{id} · {card_account_name}',
     shortTemplate: 'EST-{id}',
     listUrl: '/treasury/bank-center',
     detailUrlPattern: '/treasury/bank-center?statement={id}',
@@ -276,7 +294,8 @@ export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
     icon: ArrowRightLeft,
     iconName: 'ArrowRightLeft',
     description: 'Transacción de fondos',
-    shortTemplate: 'TRX-{id}',
+    subtitleTemplate: 'TES-{id}',
+    shortTemplate: 'TES-{id}',
     listUrl: '/treasury/operaciones/movements',
     detailUrlPattern: '/treasury/operaciones/movements?selected={id}',
     viewPolicy: { availableViews: ['card'], defaultView: 'card', cardComponent: 'entity', gridLayout: 'single-column' },
@@ -288,6 +307,7 @@ export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
     icon: Calendar,
     iconName: 'Calendar',
     description: 'Período contable anual',
+    subtitleTemplate: 'EJ-{year}',
     shortTemplate: 'EJ-{year}',
     listUrl: '/accounting/closures',
     detailUrlPattern: '/accounting/closures/{id}',
@@ -301,6 +321,7 @@ export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
     iconName: 'Book',
     feminine: true,
     description: 'Código contable del plan de cuentas',
+    subtitleTemplate: '{code} · {name}',
     shortTemplate: '{code}',
     listUrl: '/accounting/ledger',
     detailUrlPattern: '/accounting/accounts/{id}/ledger',
@@ -312,6 +333,7 @@ export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
     icon: PieChart,
     iconName: 'PieChart',
     description: 'Proyección financiera',
+    subtitleTemplate: 'BUD-{id} · {name}',
     shortTemplate: 'BUD-{id}',
     listUrl: '/finance/budgets',
     detailUrlPattern: '/finance/budgets/{id}',
@@ -324,6 +346,7 @@ export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
     icon: Hash,
     iconName: 'Hash',
     description: 'Registro contable de movimientos',
+    subtitleTemplate: 'AS-{number}',
     shortTemplate: 'AS-{number}',
     listUrl: '/accounting/entries',
     detailUrlPattern: '/accounting/entries/{id}',
@@ -336,6 +359,7 @@ export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
     icon: Calendar,
     iconName: 'Calendar',
     description: 'Período impositivo mensual',
+    subtitleTemplate: '{month_display}-{year}',
     shortTemplate: '{month_display}-{year}',
     listUrl: '/tax/declarations',
     detailUrlPattern: '/tax/periods/{id}',
@@ -348,6 +372,7 @@ export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
     icon: Users,
     iconName: 'Users',
     description: 'Persona o entidad del registro de partners',
+    subtitleTemplate: '{name}',
     shortTemplate: 'CON-{id}',
     listUrl: '/contacts',
     detailUrlPattern: '/contacts/{id}',
@@ -360,6 +385,7 @@ export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
     icon: UserCheck,
     iconName: 'UserCheck',
     description: 'Trabajador registrado en RRHH',
+    subtitleTemplate: '{name}',
     shortTemplate: 'EMP-{id}',
     listUrl: '/hr/employees',
     detailUrlPattern: '/hr/employees/{id}',
@@ -373,6 +399,7 @@ export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
     iconName: 'CalendarX2',
     feminine: true,
     description: 'Ausencia o permiso del empleado',
+    subtitleTemplate: 'AUS-{id} · {employee_name}',
     shortTemplate: 'AUS-{id}',
     listUrl: '/hr/absences',
     detailUrlPattern: '/hr/absences/{id}',
@@ -387,6 +414,7 @@ export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
     iconName: 'Receipt',
     feminine: true,
     description: 'Cálculo mensual de remuneraciones',
+    subtitleTemplate: 'LIQ-{id}',
     shortTemplate: 'LIQ-{id}',
     listUrl: '/hr/payrolls',
     detailUrlPattern: '/hr/payrolls/{id}',
@@ -399,6 +427,7 @@ export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
     icon: HandCoins,
     iconName: 'HandCoins',
     description: 'Adelanto de sueldo al empleado',
+    subtitleTemplate: 'ANT-{id}',
     shortTemplate: 'ANT-{id}',
     listUrl: '/hr/advances',
     detailUrlPattern: '/hr/advances/{id}',
@@ -412,6 +441,7 @@ export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
     iconName: 'ClipboardCheck',
     feminine: true,
     description: 'Actividad pendiente de un flujo de trabajo',
+    subtitleTemplate: 'TASK-{id} · {name}',
     shortTemplate: 'TASK-{id}',
     listUrl: '/workflow/tasks',
     detailUrlPattern: '/workflow/tasks/{id}',
@@ -424,6 +454,7 @@ export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
     icon: Landmark,
     iconName: 'Landmark',
     description: 'Bitácora de transacciones bancarias',
+    subtitleTemplate: '{name}',
     shortTemplate: 'BJ-{id}',
     listUrl: '/finances/statements',
     detailUrlPattern: '/finances/statements?selected={id}',
@@ -436,6 +467,7 @@ export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
     icon: Receipt,
     iconName: 'Receipt',
     description: 'Transferencia o desembolso de fondos',
+    subtitleTemplate: 'PAY-{id}',
     shortTemplate: 'PAY-{id}',
     listUrl: '/finances',
     detailUrlPattern: '/finances?selected={id}',
@@ -448,6 +480,7 @@ export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
     icon: User,
     iconName: 'User',
     description: 'Cuenta de acceso al sistema',
+    subtitleTemplate: '{username}',
     shortTemplate: '{username}',
     listUrl: '/settings/users',
     detailUrlPattern: '/settings/users/{id}',
@@ -460,10 +493,24 @@ export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
     icon: Users,
     iconName: 'Users',
     description: 'Conjunto de usuarios con permisos comunes',
+    subtitleTemplate: '{name}',
     shortTemplate: '{name}',
     listUrl: '/settings/users',
     detailUrlPattern: '/settings/users/{id}',
     viewPolicy: { availableViews: ['list', 'card'], defaultView: 'list', cardComponent: 'entity' },
+  },
+  'settings.partner': {
+    label: 'settings.partner',
+    title: 'Socio',
+    titlePlural: 'Socios',
+    icon: UserCheck,
+    iconName: 'UserCheck',
+    description: 'Socio colaborador con participación en resultados',
+    subtitleTemplate: '{name}',
+    shortTemplate: '{name}',
+    listUrl: '/settings/partners',
+    detailUrlPattern: '/settings/partners?selected={id}',
+    viewPolicy: { availableViews: ['list'], defaultView: 'list' },
   },
 
   // ── Purchasing (missing entities) ──────────────────────────────────────
@@ -475,6 +522,7 @@ export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
     iconName: 'PackageCheck',
     feminine: true,
     description: 'Ingreso de mercadería comprada',
+    subtitleTemplate: 'REC-{number} · {supplier_name}',
     shortTemplate: 'REC-{number}',
     listUrl: '/purchasing/orders',
     detailUrlPattern: '/purchasing/receipts/{id}',
@@ -488,6 +536,7 @@ export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
     iconName: 'Undo2',
     feminine: true,
     description: 'Devolución de mercadería al proveedor',
+    subtitleTemplate: 'DEV-{number} · {supplier_name}',
     shortTemplate: 'DEV-{number}',
     listUrl: '/purchasing/orders',
     detailUrlPattern: '/purchasing/returns/{id}',
@@ -502,6 +551,7 @@ export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
     icon: Calendar,
     iconName: 'Calendar',
     description: 'Período contable mensual',
+    subtitleTemplate: '{name}',
     shortTemplate: 'PER-{id}',
     listUrl: '/tax/declarations',
     detailUrlPattern: '/tax/periods/{id}',
@@ -514,6 +564,7 @@ export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
     iconName: 'FileText',
     feminine: true,
     description: 'Declaración mensual de IVA',
+    subtitleTemplate: 'F29-{id}',
     shortTemplate: 'F29-{id}',
     listUrl: '/tax/declarations',
     detailUrlPattern: '/tax/declarations/{id}',
@@ -528,6 +579,7 @@ export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
     iconName: 'PieChart',
     feminine: true,
     description: 'Distribución de utilidades entre socios',
+    subtitleTemplate: 'RD-{id}',
     shortTemplate: 'RD-{id}',
     listUrl: '/finances/partners',
     detailUrlPattern: '/finances/partners/distributions',
@@ -541,6 +593,7 @@ export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
     icon: Landmark,
     iconName: 'Landmark',
     description: 'Institución financiera registrada',
+    subtitleTemplate: '{name}',
     shortTemplate: '{name}',
     listUrl: '/treasury/bank-center',
     detailUrlPattern: '/treasury/bank-center/{id}/overview',
@@ -553,6 +606,7 @@ export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
     icon: CreditCard,
     iconName: 'CreditCard',
     description: 'Forma de pago configurada',
+    subtitleTemplate: '{name}',
     shortTemplate: '{name}',
     listUrl: '/treasury/operaciones/methods',
     detailUrlPattern: '/treasury/operaciones/methods?selected={id}',
@@ -566,6 +620,7 @@ export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
     iconName: 'Landmark',
     feminine: true,
     description: 'Cuenta bancaria o de efectivo',
+    subtitleTemplate: '{code} · {name}',
     shortTemplate: '{code}',
     listUrl: '/treasury/bank-center',
     detailUrlPattern: '/treasury/bank-center/{id}',
@@ -579,6 +634,7 @@ export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
     iconName: 'BookOpen',
     feminine: true,
     description: 'Extracto bancario importado',
+    subtitleTemplate: 'CAR-{id} · {treasury_account_name}',
     shortTemplate: 'CAR-{id}',
     listUrl: '/treasury/bank-center',
     detailUrlPattern: '/treasury/bank-center?statement={id}',
@@ -591,6 +647,7 @@ export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
     icon: FileText,
     iconName: 'FileText',
     description: 'Documento de pago diferido',
+    subtitleTemplate: 'CHQ-{number} · {bank_name}',
     shortTemplate: 'CHQ-{number}',
     listUrl: '/treasury/operaciones/movements',
     detailUrlPattern: '/treasury/operaciones/movements?check={id}',
@@ -603,6 +660,7 @@ export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
     icon: HandCoins,
     iconName: 'HandCoins',
     description: 'Préstamo otorgado por una entidad financiera',
+    subtitleTemplate: 'CRE-{code} · {name}',
     shortTemplate: 'CRE-{code}',
     listUrl: '/treasury/loans',
     detailUrlPattern: '/treasury/loans?selected={id}',
@@ -616,10 +674,23 @@ export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
     iconName: 'ScrollText',
     feminine: true,
     description: 'Límite de financiamiento disponible',
+    subtitleTemplate: 'CL-{code} · {name}',
     shortTemplate: 'CL-{code}',
     listUrl: '/treasury/bank-center',
     detailUrlPattern: '/treasury/bank-center',
     viewPolicy: { availableViews: ['card'], defaultView: 'card', cardComponent: 'entity' },
+  },
+  'treasury.cardpendingcharge': {
+    label: 'treasury.cardpendingcharge',
+    title: 'Cargo No Facturado',
+    titlePlural: 'Cargos No Facturados',
+    icon: CreditCard,
+    iconName: 'CreditCard',
+    description: 'Cargo pendiente de facturación en tarjeta',
+    subtitleTemplate: 'CHG-{id}',
+    shortTemplate: 'CHG-{id}',
+    listUrl: '/treasury/card-statements',
+    detailUrlPattern: '/treasury/card-statements',
   },
   'treasury.terminal': {
     label: 'treasury.terminal',
@@ -628,6 +699,7 @@ export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
     icon: Smartphone,
     iconName: 'Smartphone',
     description: 'Equipo POS o punto de venta',
+    subtitleTemplate: '{name}',
     shortTemplate: '{name}',
     listUrl: '/treasury/bank-center',
     detailUrlPattern: '/treasury/bank-center?terminal={id}',
@@ -640,6 +712,7 @@ export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
     icon: Building2,
     iconName: 'Building2',
     description: 'Empresa de servicios de pago',
+    subtitleTemplate: '{name}',
     shortTemplate: '{name}',
     listUrl: '/treasury/bank-center',
     detailUrlPattern: '/treasury/bank-center?provider={id}',
@@ -652,6 +725,7 @@ export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
     icon: Smartphone,
     iconName: 'Smartphone',
     description: 'Hardware de cobro asignado',
+    subtitleTemplate: 'DEV-{id} · {name}',
     shortTemplate: 'DEV-{id}',
     listUrl: '/treasury/bank-center',
     detailUrlPattern: '/treasury/bank-center?device={id}',
@@ -664,9 +738,23 @@ export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
     icon: ClipboardCheck,
     iconName: 'ClipboardCheck',
     description: 'Lote de liquidación de transacciones',
+    subtitleTemplate: 'LOT-{id}',
     shortTemplate: 'LOT-{id}',
     listUrl: '/treasury/bank-center',
     detailUrlPattern: '/treasury/bank-center?batch={id}',
+    viewPolicy: { availableViews: ['list'], defaultView: 'list' },
+  },
+  'treasury.transfer': {
+    label: 'treasury.transfer',
+    title: 'Traspaso',
+    titlePlural: 'Traspasos',
+    icon: ArrowLeftRight,
+    iconName: 'ArrowLeftRight',
+    description: 'Movimiento de fondos entre cuentas',
+    subtitleTemplate: 'TRF-{id}',
+    shortTemplate: 'TRF-{id}',
+    listUrl: '/treasury/transfers',
+    detailUrlPattern: '/treasury/transfers?selected={id}',
     viewPolicy: { availableViews: ['list'], defaultView: 'list' },
   },
 
@@ -678,6 +766,7 @@ export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
     icon: ClipboardList,
     iconName: 'ClipboardList',
     description: 'Ítem configurable de liquidación',
+    subtitleTemplate: '{name}',
     shortTemplate: 'CON-LIQ-{id}',
     listUrl: '/hr/payrolls',
     detailUrlPattern: '/hr/settings/concepts',
@@ -691,6 +780,7 @@ export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
     icon: Tag,
     iconName: 'Tag',
     description: 'Campo adicional definido por el usuario',
+    subtitleTemplate: '{name}',
     shortTemplate: 'CF-{id}',
     listUrl: '/inventory/products',
     detailUrlPattern: '/inventory/products/custom-fields',
@@ -703,6 +793,7 @@ export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
     iconName: 'LayoutGrid',
     feminine: true,
     description: 'Agrupación de productos',
+    subtitleTemplate: '{name}',
     shortTemplate: 'CAT-{id}',
     listUrl: '/inventory/products',
     detailUrlPattern: '/inventory/products?category={id}',
@@ -716,10 +807,24 @@ export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
     iconName: 'Ruler',
     feminine: true,
     description: 'Unidad de medida para productos',
+    subtitleTemplate: '{name}',
     shortTemplate: '{name}',
     listUrl: '/inventory/products/units',
     detailUrlPattern: '/inventory/products/units?selected={id}',
     viewPolicy: { availableViews: ['list'], defaultView: 'list' },
+  },
+  'inventory.uomcategory': {
+    label: 'inventory.uomcategory',
+    title: 'Categoría de Medida',
+    titlePlural: 'Categorías de Medida',
+    icon: Scale,
+    iconName: 'Scale',
+    feminine: true,
+    description: 'Agrupación de unidades de medida',
+    subtitleTemplate: '{name}',
+    shortTemplate: '{name}',
+    listUrl: '/inventory/products/units',
+    detailUrlPattern: '/inventory/products/units',
   },
   'inventory.pricingrule': {
     label: 'inventory.pricingrule',
@@ -729,6 +834,7 @@ export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
     iconName: 'Percent',
     feminine: true,
     description: 'Regla de cálculo de precio',
+    subtitleTemplate: 'REG-{id} · {name}',
     shortTemplate: 'REG-{id}',
     listUrl: '/inventory/products',
     detailUrlPattern: '/inventory/products?rule={id}',
@@ -744,7 +850,8 @@ export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
     iconName: 'ArrowRightLeft',
     feminine: true,
     description: 'Movimiento de capital de socio',
-    shortTemplate: 'TRX-{id}',
+    subtitleTemplate: 'PT-{id}',
+    shortTemplate: 'PT-{id}',
     listUrl: '/finances/partners',
     detailUrlPattern: '/finances/partners?transaction={id}',
     viewPolicy: { availableViews: ['list'], defaultView: 'list' },
@@ -759,34 +866,29 @@ export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
     iconName: 'ShoppingCart',
     feminine: true,
     description: 'Jornada de caja registradora',
+    subtitleTemplate: 'POS-{id}',
     shortTemplate: 'POS-{id}',
     listUrl: '/pos/sessions',
     detailUrlPattern: '/pos/sessions?selected={id}',
     viewPolicy: { availableViews: ['card'], defaultView: 'card', cardComponent: 'entity' },
   },
+  'pos.terminal': {
+    label: 'pos.terminal',
+    title: 'Caja POS',
+    titlePlural: 'Cajas POS',
+    icon: Monitor,
+    iconName: 'Monitor',
+    feminine: true,
+    description: 'Punto de venta configurable',
+    subtitleTemplate: '{name}',
+    shortTemplate: 'POS-{name}',
+    listUrl: '/pos/sessions',
+    detailUrlPattern: '/pos/sessions',
+  },
 };
 
-export const DTE_CONFIG: Record<string, { prefix: string, label: string }> = {
-  'FACTURA': { prefix: 'FACV', label: 'Factura' },
-  'FACTURA_EXENTA': { prefix: 'FAC-EX', label: 'Factura Exenta' },
-  'BOLETA': { prefix: 'BOL', label: 'Boleta' },
-  'BOLETA_EXENTA': { prefix: 'BE', label: 'Boleta Exenta' },
-  'PURCHASE_INV': { prefix: 'FACC', label: 'Factura de Compra' },
-  'NOTA_CREDITO': { prefix: 'NC', label: 'Nota de Crédito' },
-  'NOTA_DEBITO': { prefix: 'ND', label: 'Nota de Débito' },
-  'GUIA_DESPACHO': { prefix: 'GUI', label: 'Guía de Despacho' },
-  'NONE': { prefix: 'SD', label: 'Sin Documento' },
-};
-
-export function getDtePrefix(dteType?: string | null): string {
-  if (!dteType) return 'DOC';
-  return DTE_CONFIG[dteType]?.prefix || 'DOC';
-}
-
-export function getDteLabel(dteType?: string | null): string {
-  if (!dteType) return 'Documento';
-  return DTE_CONFIG[dteType]?.label || dteType;
-}
+import { getDtePrefix, getDteLabel } from './api/entity-prefixes';
+export { getDtePrefix, getDteLabel };
 
 /**
  * Renders a template string using the provided data.
@@ -795,7 +897,7 @@ export function getDteLabel(dteType?: string | null): string {
 export function formatEntityDisplay(label: string, data: Record<string, unknown>): string {
   const entity = ENTITY_REGISTRY[label];
   if (!entity) return String(data.id ?? '');
-  
+
   let template = entity.shortTemplate;
 
   // Domain-specific override for Billing Invoices (Dynamic Prefixes)
@@ -805,19 +907,17 @@ export function formatEntityDisplay(label: string, data: Record<string, unknown>
     template = `${prefix}-{number}`;
   }
 
-  // Strip legacy embedded prefix from data.number (e.g. "FACT-1002" → "1002")
+  // Strip legacy embedded prefix from data.number (e.g. "FACV-1002" → "1002")
   const cleanData = { ...data }
   if (label === 'billing.invoice' && dteType) {
     const rawNumber = String(data.number ?? '')
-    const allPrefixes = Object.values(DTE_CONFIG).map(c => c.prefix)
-    const prefixVariants = allPrefixes.flatMap(p => [p, p.replace(/-/g, '')])
-    const legacyPrefixes = ['FACT', 'FACC']
-    const allVariants = [...new Set([...prefixVariants, ...legacyPrefixes])]
-    
+    const knownPrefixes = ['FACV', 'FACC', 'FAC-EX', 'BOL', 'BE', 'NC', 'ND', 'GUI', 'CPE', 'FACT', 'DOC']
+    const allVariants = knownPrefixes.flatMap(p => [p, p.replace(/-/g, '')])
+
     const matchedPrefix = allVariants.find(p =>
       rawNumber.toUpperCase().startsWith(p.toUpperCase()) && rawNumber.length > p.length
     )
-    
+
     if (matchedPrefix) {
       cleanData.number = rawNumber.slice(matchedPrefix.length).replace(/^[-]+/, '')
     }
@@ -826,7 +926,7 @@ export function formatEntityDisplay(label: string, data: Record<string, unknown>
   return template.replace(/{([^}]+)}/g, (_match, key: string) => {
     const [path, format] = key.split(':');
     let value: unknown = cleanData;
-    
+
     for (const part of path.split('.')) {
       if (value !== null && typeof value === 'object') {
         value = (value as Record<string, unknown>)[part];
@@ -834,20 +934,45 @@ export function formatEntityDisplay(label: string, data: Record<string, unknown>
         value = undefined;
       }
     }
-    
+
     if (value === undefined || value === null) return '';
-    
+
     if (format && format.startsWith('0') && format.endsWith('d')) {
       const length = parseInt(format.slice(1, -1), 10);
       return String(value).padStart(length, '0');
     }
-    
+
     return String(value);
   });
 }
 
 export function getEntityMetadata(label: string): EntityMetadata | undefined {
   return ENTITY_REGISTRY[label];
+}
+
+/**
+ * Renders subtitleTemplate from entity metadata, or falls back to description / empty string.
+ */
+export function renderEntitySubtitle(label: string, data?: Record<string, unknown> | null): string | undefined {
+  const entity = ENTITY_REGISTRY[label];
+  if (!entity) return undefined;
+
+  if (data && entity.subtitleTemplate) {
+    return entity.subtitleTemplate.replace(/{([^}]+)}/g, (_match, key: string) => {
+      const [path] = key.split(':');
+      let value: unknown = data;
+      for (const part of path.split('.')) {
+        if (value !== null && typeof value === 'object') {
+          value = (value as Record<string, unknown>)[part];
+        } else {
+          value = undefined;
+        }
+      }
+      return value !== undefined && value !== null ? String(value) : '';
+    });
+  }
+
+  return entity.description;
 }
 
 export function getEntityIcon(label: string) {
@@ -897,38 +1022,4 @@ export function getViewOptions(label: string) {
 
 
 
-/**
- * Detects the entity label (registry key) from a string (e.g. task type or title).
- * Each entry maps a canonical display prefix to its entity registry label.
- * Used for smart navigation and dynamic identity formatting.
- */
-export function detectEntityLabel(text: string): string | null {
-  const t = text.toUpperCase();
-  
-  if (t.includes('OT_') || t.includes('OT-')) return 'production.workorder';
-  if (t.includes('OCS_') || t.includes('OCS-')) return 'purchasing.purchaseorder';
-  if (t.includes('NV_') || t.includes('NV-')) return 'sales.saleorder';
-  if (t.includes('FACV_') || t.includes('FACV-') || t.includes('FACC_') || t.includes('FACC-') || t.includes('FAC_') || t.includes('FAC-')) return 'billing.invoice';
-  if (t.includes('NC_') || t.includes('NC-') || t.includes('ND_') || t.includes('ND-')) return 'billing.invoice';
-  if (t.includes('EMP_') || t.includes('EMP-')) return 'hr.employee';
-  if (t.includes('LIQ_') || t.includes('LIQ-')) return 'hr.payroll';
-  if (t.includes('PRD_') || t.includes('PRD-')) return 'inventory.product';
-  if (t.includes('BOD_') || t.includes('BOD-')) return 'inventory.warehouse';
-  if (t.includes('CON_') || t.includes('CON-')) return 'contacts.contact';
-  if (t.includes('USR_') || t.includes('USR-')) return 'core.user';
-  if (t.includes('CAR_') || t.includes('CAR-')) return 'treasury.bankstatement';
-  if (t.includes('TRX_') || t.includes('TRX-')) return 'treasury.treasurymovement';
-  if (t.includes('CHQ_') || t.includes('CHQ-')) return 'treasury.check';
-  if (t.includes('EST_') || t.includes('EST-')) return 'treasury.creditcardstatement';
-  if (t.includes('CRE_') || t.includes('CRE-')) return 'treasury.bankloan';
-  if (t.includes('CL_') || t.includes('CL-')) return 'treasury.creditline';
-  if (t.includes('CUO_') || t.includes('CUO-')) return 'treasury.loaninstallment';
-  if (t.includes('MOV_') || t.includes('MOV-')) return 'inventory.stockmove';
-  if (t.includes('AS_') || t.includes('AS-')) return 'accounting.journalentry';
-  if (t.includes('CAT_') || t.includes('CAT-')) return 'inventory.category';
-  if (t.includes('REG_') || t.includes('REG-')) return 'inventory.pricingrule';
-  if (t.includes('POS_') || t.includes('POS-')) return 'pos.session';
-  if (t.includes('LOT_') || t.includes('LOT-')) return 'treasury.terminalbatch';
-  
-  return null;
-}
+

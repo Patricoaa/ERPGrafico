@@ -5,8 +5,7 @@ import { getErrorMessage } from "@/lib/errors"
 import { useState } from "react"
 import { PhaseCard } from "./PhaseCard"
 import { FileText, Trash2, Ban } from "lucide-react"
-import { formatEntity } from '@/features/orders/utils/status'
-import { getDtePrefix, getDteLabel } from '@/lib/entity-registry'
+import { formatEntityDisplay, getDteLabel } from '@/lib/entity-registry'
 import { toast } from "sonner"
 import { useAnnulInvoice, useCancelInvoice } from "../../hooks/useOrdersMutations"
 import { ActionConfirmModal } from '@/components/shared'
@@ -141,11 +140,7 @@ export function BillingPhase({
                 documents={[
                     ...(isNoteMode ? [{
                         type: activeDoc.dte_type_display || 'Nota',
-                        number: activeDoc.display_id || formatEntity(
-                            getDtePrefix(activeDoc.dte_type),
-                            activeDoc.number || '---',
-                            activeDoc.display_id
-                        ),
+                        number: activeDoc.display_id || formatEntityDisplay('billing.invoice', { number: activeDoc.number || '---', dte_type: activeDoc.dte_type }),
                         icon: FileText,
                         color: 'text-warning',
                         id: activeDoc.id,
@@ -158,11 +153,7 @@ export function BillingPhase({
                         .filter((inv: Order) => !isNoteMode || inv.id !== activeDoc.id)
                         .map((inv: Order) => ({
                             type: inv.dte_type_display || 'Documento',
-                            number: inv.display_id || formatEntity(
-                                getDtePrefix(inv.dte_type),
-                                inv.number || '---',
-                                inv.display_id
-                            ),
+                            number: inv.display_id || formatEntityDisplay('billing.invoice', { number: inv.number || '---', dte_type: inv.dte_type }),
                             icon: FileText,
                             color: (inv.dte_type === 'FACTURA_EXENTA' || inv.dte_type === 'BOLETA_EXENTA') ? 'text-warning' : 'text-primary',
                             id: Number(inv.id),
