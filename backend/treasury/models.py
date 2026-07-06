@@ -453,19 +453,8 @@ class TreasuryMovement(models.Model):
 
     @property
     def display_id(self):
-        if self.payment_method == self.Method.WRITE_OFF:
-            return f"CAS-{self.id}"
-
-        prefix = "MOV"
-        if self.movement_type == self.Type.INBOUND:
-            prefix = "DEP"
-        elif self.movement_type == self.Type.OUTBOUND:
-            prefix = "RET"
-        elif self.movement_type == self.Type.TRANSFER:
-            prefix = "TRAS"
-        elif self.movement_type == self.Type.ADJUSTMENT:
-            prefix = "ADJ"
-        return f"{prefix}-{self.id}"
+        from core.prefix_registry import EntityPrefix
+        return f"{EntityPrefix.TREASURY_MOVEMENT}-{self.id}"
 
     @property
     def treasury_account(self):
@@ -655,7 +644,8 @@ class CardPurchaseGroup(models.Model):
 
     @property
     def display_id(self):
-        return f"CPG-{self.id}"
+        from core.prefix_registry import EntityPrefix
+        return f"{EntityPrefix.CARD_PURCHASE_GROUP}-{self.id}"
 
     @property
     def total_interest(self) -> Decimal:
@@ -1343,7 +1333,8 @@ class BankStatement(models.Model):
 
     @property
     def display_id(self):
-        return f"CAR-{self.id}"
+        from core.prefix_registry import EntityPrefix
+        return f"{EntityPrefix.BANK_STATEMENT}-{self.id}"
 
     @property
     def reconciliation_progress(self):
@@ -2139,7 +2130,8 @@ class TerminalBatch(models.Model):
 
     @property
     def display_id(self):
-        return f"LOTE-{self.id}"
+        from core.prefix_registry import EntityPrefix
+        return f"{EntityPrefix.TERMINAL_BATCH}-{self.id}"
 
     def clean(self):
         """Validar que net_amount = gross_amount - commission_total"""
@@ -2626,7 +2618,8 @@ class Check(models.Model):
 
     @property
     def display_id(self) -> str:
-        return f"CHQ-{self.id}"
+        from core.prefix_registry import EntityPrefix
+        return f"{EntityPrefix.CHECK}-{self.id}"
 
     @property
     def is_overdue(self) -> bool:
@@ -2788,8 +2781,9 @@ class CreditLine(models.Model):
 
     @property
     def display_id(self) -> str:
+        from core.prefix_registry import EntityPrefix
         code_part = self.code or str(self.id)
-        return f"CL-{code_part}"
+        return f"{EntityPrefix.CREDIT_LINE}-{code_part}"
 
     @property
     def used_amount(self) -> Decimal:
@@ -3006,7 +3000,8 @@ class BankLoan(models.Model):
 
     @property
     def display_id(self) -> str:
-        return f"CRE-{self.id}"
+        from core.prefix_registry import EntityPrefix
+        return f"{EntityPrefix.BANK_LOAN}-{self.id}"
 
     @property
     def outstanding_balance(self) -> Decimal:
@@ -3182,7 +3177,8 @@ class LoanInstallment(models.Model):
 
     @property
     def display_id(self) -> str:
-        return f"CUO-{self.id}"
+        from core.prefix_registry import EntityPrefix
+        return f"{EntityPrefix.LOAN_INSTALLMENT}-{self.id}"
 
     @property
     def is_overdue(self) -> bool:
@@ -3363,14 +3359,16 @@ class CreditCardStatement(models.Model):
 
     @property
     def display_id(self) -> str:
-        return f"EST-{self.id}"
+        from core.prefix_registry import EntityPrefix
+        return f"{EntityPrefix.CREDIT_CARD_STMT}-{self.id}"
 
     @property
     def is_overdue(self) -> bool:
         from core.utils import get_current_date
 
         return (
-            self.status in (self.Status.OPEN, self.Status.PARTIALLY_PAID)
+            self.status in (self.Status.ACTIVE, self.Status.DELIVERED)
+            and self.due_date
             and self.due_date < get_current_date()
         )
 

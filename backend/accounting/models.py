@@ -460,7 +460,8 @@ class JournalEntry(AuditedModel):
 
     @property
     def display_id(self):
-        return f"AS-{self.number}"
+        from core.prefix_registry import EntityPrefix
+        return f"{EntityPrefix.JOURNAL_ENTRY}-{self.number}"
 
     def check_balance(self):
         from django.db.models import Sum

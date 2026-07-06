@@ -128,9 +128,8 @@ class Contact(models.Model):
 
     @property
     def display_id(self):
-        if not self.code:
-            return ""
-        return f"C-{self.code}"
+        from core.prefix_registry import EntityPrefix
+        return f"{EntityPrefix.CONTACT}-{self.id}"
 
     @property
     def is_customer(self):

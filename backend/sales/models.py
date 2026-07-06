@@ -257,7 +257,8 @@ class SaleOrder(TransactionalDocument, TotalsCalculationMixin):
 
     @property
     def display_id(self):
-        return f"NV-{self.number}"
+        from core.prefix_registry import EntityPrefix
+        return f"{EntityPrefix.SALE_ORDER}-{self.number}"
 
     def save(self, *args, **kwargs):
         if not self.number:
@@ -581,7 +582,8 @@ class SaleDelivery(TransactionalDocument, TotalsCalculationMixin):
 
     @property
     def display_id(self):
-        return f"DES-{self.number}"
+        from core.prefix_registry import EntityPrefix
+        return f"{EntityPrefix.SALE_DELIVERY}-{self.number}"
 
     def save(self, *args, **kwargs):
         if not self.number:
@@ -742,7 +744,8 @@ class SaleReturn(TransactionalDocument, TotalsCalculationMixin):
 
     @property
     def display_id(self):
-        return f"DEV-{self.number}"
+        from core.prefix_registry import EntityPrefix
+        return f"{EntityPrefix.SALE_RETURN}-{self.number}"
 
     def save(self, *args, **kwargs):
         if not self.number:

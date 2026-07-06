@@ -1275,7 +1275,8 @@ class StockMove(models.Model):
 
     @property
     def display_id(self):
-        return f"MOV-{self.id}"
+        from core.prefix_registry import EntityPrefix
+        return f"{EntityPrefix.STOCK_MOVE}-{self.id}"
 
     def save(self, *args, **kwargs):
         # Validate Accounting Period is not closed

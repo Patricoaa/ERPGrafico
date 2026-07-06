@@ -113,7 +113,8 @@ class PurchaseOrder(TransactionalDocument, TotalsCalculationMixin):
 
     @property
     def display_id(self):
-        return f"OCS-{self.number}"
+        from core.prefix_registry import EntityPrefix
+        return f"{EntityPrefix.PURCHASE_ORDER}-{self.number}"
 
     @property
     def effective_total(self):
@@ -397,7 +398,8 @@ class PurchaseReceipt(TransactionalDocument, TotalsCalculationMixin):
 
     @property
     def display_id(self):
-        return f"REC-{self.number}"
+        from core.prefix_registry import EntityPrefix
+        return f"{EntityPrefix.PURCHASE_RECEIPT}-{self.number}"
 
     def save(self, *args, **kwargs):
         if not self.number:
@@ -530,7 +532,8 @@ class PurchaseReturn(TransactionalDocument, TotalsCalculationMixin):
 
     @property
     def display_id(self):
-        return f"DEV-{self.number}"
+        from core.prefix_registry import EntityPrefix
+        return f"{EntityPrefix.PURCHASE_RETURN}-{self.number}"
 
     def save(self, *args, **kwargs):
         if not self.number:

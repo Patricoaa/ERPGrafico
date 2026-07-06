@@ -289,7 +289,8 @@ class Employee(models.Model):
 
     @property
     def display_id(self):
-        return f"EMP-{self.code}" if self.code else ""
+        from core.prefix_registry import EntityPrefix
+        return f"{EntityPrefix.EMPLOYEE}-{self.code}" if self.code else ""
 
     def save(self, *args, **kwargs):
         if not self.code:
@@ -375,7 +376,8 @@ class Payroll(models.Model):
 
     @property
     def display_id(self):
-        return f"LIQ-{self.number}" if self.number else ""
+        from core.prefix_registry import EntityPrefix
+        return f"{EntityPrefix.PAYROLL}-{self.number}" if self.number else ""
 
     @property
     def period_label(self):
