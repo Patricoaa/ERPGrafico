@@ -15,6 +15,7 @@ from .views import (
     MyProfileView,
     UserPreferenceView,
     UserViewSet,
+    entity_prefixes,
     server_time,
     system_status,
     BackgroundJobViewSet,
@@ -41,6 +42,7 @@ urlpatterns = [
     path("audit/global/", GlobalAuditLogView.as_view(), name="global-audit-log"),
     path("server-time/", server_time, name="server-time"),
     path("status/", system_status, name="system-status"),
+    path("entity-prefixes/", entity_prefixes, name="entity-prefixes"),
     path("preferences/", UserPreferenceView.as_view(), name="user-preferences"),
     path("search/", universal_search, name="universal-search"),
     path(
