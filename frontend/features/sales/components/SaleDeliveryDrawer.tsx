@@ -26,7 +26,6 @@ export function SaleDeliveryDrawer({ id, open, onOpenChange, saleOrderId, delive
 
     const identity = useDrawerIdentity('sales.saledelivery', 'view', delivery, {
         overrideTitle: deliveryNumber,
-        overrideSubtitle: partnerName,
         onPrint: handlePrint,
     })
 

@@ -26,7 +26,6 @@ export function PurchaseReceiptDrawer({ receiptId, id, open, onOpenChange }: Pur
     const { receipt, isLoading } = usePurchaseReceipt(entityId, open)
     const identity = useDrawerIdentity('purchasing.purchasereceipt', 'view', receipt as Record<string, unknown> | undefined, {
         overrideTitle: receipt ? `Recepción ${String((receipt as Record<string, unknown>).number)}` : "Recepción de Compra",
-        overrideSubtitle: String((receipt as Record<string, unknown>)?.supplier_name ?? ''),
     })
     const printRef = useRef<HTMLDivElement>(null)
     const handlePrint = useReactToPrint({ contentRef: printRef })

@@ -22,7 +22,6 @@ export function SaleOrderDrawer({ id, open, onOpenChange, orderId, segmenter }: 
 
     const identity = useDrawerIdentity('sales.saleorder', 'view', order, {
         overrideTitle: order?.number ?? 'Nota de Venta',
-        overrideSubtitle: order?.customer_name,
         onPrint: handlePrint,
     })
 

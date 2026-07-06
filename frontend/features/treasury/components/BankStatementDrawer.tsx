@@ -26,7 +26,6 @@ export function BankStatementDrawer({ statementId, open, onOpenChange }: BankSta
     const { statement, isLoading, isError } = useBankStatement<BankStatementData>(statementId, open)
     const identity = useDrawerIdentity('treasury.bankstatement', 'view', statement, {
         overrideTitle: statement ? `Cartola ${statement.display_id || statement.id}` : "Cartola Bancaria",
-        overrideSubtitle: statement?.treasury_account_name,
     })
 
     return (
