@@ -4,7 +4,7 @@ import React, { useRef } from "react"
 import { Drawer, SkeletonShell, StatusBadge, DataTable } from "@/components/shared"
 import { useMemo } from "react"
 import type { ColumnDef } from "@tanstack/react-table"
-import { getEntityIcon } from "@/lib/entity-registry"
+import { useDrawerIdentity } from "@/features/_shared/drawer"
 import { Button } from "@/components/ui/button"
 import { Printer } from "lucide-react"
 import { useReactToPrint } from "react-to-print"
@@ -23,6 +23,10 @@ interface PurchaseReturnDrawerProps {
 export function PurchaseReturnDrawer({ returnId, id, open, onOpenChange }: PurchaseReturnDrawerProps) {
     const entityId = returnId ?? id ?? null
     const { returnData, isLoading } = usePurchaseReturn(entityId, open)
+    const identity = useDrawerIdentity('purchasing.purchasereturn', 'view', returnData as Record<string, unknown> | undefined, {
+        customTitle: returnData ? `Devolución ${String((returnData as Record<string, unknown>).number)}` : "Devolución de Compra",
+        subtitle: String((returnData as Record<string, unknown>)?.supplier_name ?? ''),
+    })
     const printRef = useRef<HTMLDivElement>(null)
     const handlePrint = useReactToPrint({ contentRef: printRef })
 
@@ -85,10 +89,10 @@ export function PurchaseReturnDrawer({ returnId, id, open, onOpenChange }: Purch
                 side="left"
                 boundary="embedded"
                 defaultSize={formDrawerWidth("master", false)}
-                title={<span>{returnData ? `Devolución ${String((returnData as Record<string, unknown>).number)}` : "Devolución de Compra"}</span>}
+                title={identity.title}
                 headerActions={<Button variant="ghost" size="icon" onClick={() => handlePrint()}><Printer className="h-4 w-4" /></Button>}
-                subtitle={String((returnData as Record<string, unknown>)?.supplier_name ?? '')}
-                icon={getEntityIcon('purchasing.purchasereturn')}
+                subtitle={identity.subtitle}
+                icon={identity.icon}
 
             >
                 {isLoading ? (

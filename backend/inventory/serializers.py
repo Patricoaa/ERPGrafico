@@ -522,8 +522,8 @@ class StockMoveSerializer(serializers.ModelSerializer):
         return StockMoveSelector.get_related_documents(obj)
 
     def get_reference_code(self, obj):
-        # Prefer the internal MOV code as requested by the user
-        return f"MOV-{obj.id}"
+        from core.prefix_registry import EntityPrefix
+        return f"{EntityPrefix.STOCK_MOVE}-{obj.id}"
 
     def get_reference(self, obj):
         # 1. Purchase Receipt
@@ -535,8 +535,8 @@ class StockMoveSerializer(serializers.ModelSerializer):
         if hasattr(obj, "sale_delivery_line"):
             delivery = getattr(obj.sale_delivery_line, "delivery", None)
             if delivery:
-                # Use .number as .tracking_number does not exist in the model
-                return f"DES-{delivery.number}"
+                from core.prefix_registry import EntityPrefix
+                return f"{EntityPrefix.SALE_DELIVERY}-{delivery.number}"
 
         return None
 

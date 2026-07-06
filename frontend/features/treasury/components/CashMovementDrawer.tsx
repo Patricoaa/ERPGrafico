@@ -1,13 +1,9 @@
 'use client'
 
-import React, { useRef } from 'react'
+import React from 'react'
 import { Drawer, SkeletonShell, FormSplitLayout } from '@/components/shared'
-import { Button } from '@/components/ui/button'
-import { Printer } from 'lucide-react'
-import { getEntityIcon } from "@/lib/entity-registry"
-import { useReactToPrint } from 'react-to-print'
+import { useDrawerIdentity, usePrintableDrawer } from "@/features/_shared/drawer"
 import { formatCurrency } from '@/lib/money'
-import { formatPlainDate } from '@/lib/utils'
 import { PrintableLayout } from '@/features/_shared'
 import { useTreasuryMovement } from '@/features/treasury/hooks/useTreasuryMovement'
 import { ActivitySidebar } from '@/features/audit'
@@ -21,11 +17,15 @@ interface CashMovementDrawerProps extends TransactionDrawerProps {
 export function CashMovementDrawer({ id, open, onOpenChange, movementId }: CashMovementDrawerProps) {
   const entityId = id ?? movementId ?? null
   const { data: movement, isLoading } = useTreasuryMovement(entityId)
-  const printRef = useRef<HTMLDivElement>(null)
-  const handlePrint = useReactToPrint({ contentRef: printRef })
+  const { printRef, handlePrint } = usePrintableDrawer()
 
   const displayId = movement?.display_id ?? `#${entityId}`
   const movementType = movement?.movement_type_display ?? movement?.movement_type ?? ''
+  const identity = useDrawerIdentity('treasury.treasurymovement', 'view', movement, {
+    customTitle: displayId,
+    subtitle: movementType,
+    onPrint: handlePrint,
+  })
 
   return (
     <>
@@ -57,12 +57,10 @@ export function CashMovementDrawer({ id, open, onOpenChange, movementId }: CashM
         onOpenChange={onOpenChange}
         side="left"
         defaultSize={formDrawerWidth("master", !!entityId)}
-        icon={getEntityIcon('treasury.treasurymovement')}
-        title={<span>{displayId}</span>}
-        headerActions={<Button variant="ghost" size="icon" onClick={() => handlePrint()}><Printer className="h-4 w-4" /></Button>}
-        subtitle={movementType}
-        description={formatPlainDate(movement?.date ?? movement?.created_at)}
-
+        icon={identity.icon}
+        title={identity.title}
+        headerActions={identity.headerActions}
+        subtitle={identity.subtitle}
       >
         <SkeletonShell isLoading={isLoading} ariaLabel="Cargando movimiento" className="flex-1 flex flex-col">
           {movement && (

@@ -285,7 +285,10 @@ class Employee(models.Model):
         verbose_name_plural = _("Empleados")
 
     def __str__(self):
-        return f"EMP-{self.code} - {self.contact.name}" if self.contact else f"EMP-{self.code}"
+        from core.prefix_registry import EntityPrefix
+        code = self.code or ""
+        display = f"{EntityPrefix.EMPLOYEE}-{code}"
+        return f"{display} - {self.contact.name}" if self.contact else display
 
     @property
     def display_id(self):
@@ -372,7 +375,8 @@ class Payroll(models.Model):
         verbose_name_plural = _("Liquidaciones de Sueldo")
 
     def __str__(self):
-        return f"LIQ-{self.number} | {self.employee} | {self.period_year}/{str(self.period_month).zfill(2)}"
+        from core.prefix_registry import EntityPrefix
+        return f"{EntityPrefix.PAYROLL}-{self.number} | {self.employee} | {self.period_year}/{str(self.period_month).zfill(2)}"
 
     @property
     def display_id(self):

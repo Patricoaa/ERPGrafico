@@ -5,6 +5,7 @@ Extracted from POSSessionViewSet to keep views thin.
 
 from decimal import Decimal
 
+from core.prefix_registry import EntityPrefix
 from django.core.exceptions import ValidationError
 from django.db import transaction
 from django.utils import timezone
@@ -174,7 +175,7 @@ class POSService:
                 pos_session=session,
                 created_by=user,
                 notes=f"Retiro de cierre sesión #{session.id}",
-                reference=f"POS-RETIRO-{session.id}",
+                reference=f"{EntityPrefix.POS_SESSION}-RETIRO-{session.id}",
             )
 
         # Clean up draft carts
@@ -321,7 +322,7 @@ class POSService:
             notes=notes,
             justify_reason=move_type,
         )
-        movement.reference = f"POS-MANUAL-{movement.id}"
+        movement.reference = f"{EntityPrefix.POS_SESSION}-MANUAL-{movement.id}"
         movement.save(update_fields=["reference"])
 
         session.refresh_from_db()
@@ -408,7 +409,7 @@ def _apply_opening_fund_adjustment(
         pos_session=session,
         notes=full_notes,
         justify_reason=justify_reason,
-        reference=f"POS-AJUSTE-{session.id}",
+        reference=f"{EntityPrefix.POS_SESSION}-AJUSTE-{session.id}",
     )
 
 
@@ -451,5 +452,5 @@ def _create_difference_movement(
         pos_session=session,
         notes=f"Ajuste al Cierre: {notes or 'Sin observaciones'}",
         justify_reason=justify_reason,
-        reference=f"POS-EXCEDENTE-{session.id}",
+        reference=f"{EntityPrefix.POS_SESSION}-EXCEDENTE-{session.id}",
     )

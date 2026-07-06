@@ -10,7 +10,7 @@ import { Form, FormField } from "@/components/ui/form"
 import { Button } from "@/components/ui/button"
 import { useReactToPrint } from "react-to-print"
 import { PrintableLayout } from "@/features/_shared/transaction-drawer"
-import type { DrawerMode } from "@/features/_shared/drawer/types"
+import { useDrawerIdentity, type DrawerMode } from "@/features/_shared/drawer"
 import { Drawer, CancelButton, ActionSlideButton, LabeledInput, LabeledSelect, FormSection, FormFooter, FormSplitLayout, MultiSelectTagInput } from "@/components/shared"
 import { formDrawerWidth } from "@/lib/form-widths"
 import { toast } from "sonner"
@@ -110,11 +110,10 @@ export function DeviceDrawer({ open, onOpenChange, device, providers: providersP
         }
     }
 
-    const drawerTitle = isView
-        ? `Ficha de Dispositivo${device?.id ? ` #${device.id}` : ""}`
-        : mode === 'create'
-            ? "Registrar Nuevo Hardware"
-            : "Editar Dispositivo"
+    const identity = useDrawerIdentity('treasury.terminaldevice', mode, device, {
+        customTitle: mode === 'create' ? "Registrar Nuevo Hardware" : undefined,
+        subtitle: "Vincule una terminal física con un proveedor de servicios.",
+    })
 
     return (
         <>
@@ -134,9 +133,10 @@ export function DeviceDrawer({ open, onOpenChange, device, providers: providersP
                 side="left"
                 defaultSize={formDrawerWidth("medium", !!device)}
                 mode={mode}
-                title={<span>{drawerTitle}</span>}
+                icon={identity.icon}
+                title={identity.title}
                 headerActions={(mode === 'view' || mode === 'edit') && device?.id && <Button variant="ghost" size="icon" onClick={() => handlePrint()}><Printer className="h-4 w-4" /></Button>}
-                subtitle="Vincule una terminal física con un proveedor de servicios."
+                subtitle={identity.subtitle}
                 footer={isView ? undefined : (
                     <FormFooter
                         actions={

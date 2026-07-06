@@ -256,7 +256,7 @@ export function GenericWizard({
                     onOpenChange(val)
                 }}
                 title={title}
-                description={stepDescription}
+                subtitle={stepDescription}
                 side={drawerSide}
                 boundary={drawerBoundary}
                 defaultSize={drawerSize}

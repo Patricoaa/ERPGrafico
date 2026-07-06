@@ -11,7 +11,9 @@ import {
 
 import { TableBody, TableCell, TableRow } from "@/components/ui/table"
 import { Trash2, Save, Workflow, Box, CheckCircle2, Truck, Package, Printer } from "lucide-react"
-import { getEntityIcon } from "@/lib/entity-registry"
+import { useReactToPrint } from "react-to-print"
+import { PrintableLayout } from "@/features/_shared/transaction-drawer"
+import { useDrawerIdentity, type DrawerMode } from "@/features/_shared/drawer"
 import { ProductSelector } from "@/components/selectors/ProductSelector"
 import { AdvancedContactSelector } from "@/components/selectors/AdvancedContactSelector"
 import { UoMSelector } from "@/components/selectors/UoMSelector"
@@ -24,9 +26,6 @@ import { ActionSlideButton, CancelButton, DataCell, Drawer, FormFooter, FormLine
 import { useVatRate } from "@/hooks/useVatRate"
 import { formDrawerWidth } from "@/lib/form-widths"
 import { Button } from "@/components/ui/button"
-import { useReactToPrint } from "react-to-print"
-import { PrintableLayout } from "@/features/_shared/transaction-drawer"
-import type { DrawerMode } from "@/features/_shared/drawer/types"
 
 const tableInputClass = "h-9 w-full bg-background border border-border/80 rounded-sm px-2 text-xs focus:border-primary/40 focus:outline-none transition-all disabled:opacity-50"
 
@@ -307,11 +306,15 @@ export function BOMDrawer({
         }
     }
 
-    const drawerTitle = isView
-        ? `Ficha de Lista de Materiales${bomToEdit?.id ? ` #${bomToEdit.id}` : ""}`
-        : mode === 'create'
-            ? "Nueva Lista de Materiales"
-            : "Editar Lista de Materiales"
+    const identity = useDrawerIdentity('production.bom', mode, bomToEdit, {
+        subtitle: selectedVariant
+            ? `Lista de Materiales • Variante: ${selectedVariant.variant_display_name || selectedVariant.name}`
+            : (selectedProduct && selectedProduct.has_variants)
+                ? `Lista de Materiales • Plantilla Base: ${selectedProduct.name}`
+                : selectedProduct
+                    ? `Lista de Materiales • P: ${selectedProduct.name}`
+                    : "Lista de Materiales • Receta de Fabricación",
+    })
 
     return (
         <>
@@ -335,18 +338,10 @@ export function BOMDrawer({
                 side="left"
                 defaultSize={formDrawerWidth("complex", !!bomToEdit)}
                 mode={mode}
-                icon={getEntityIcon('production.bom')}
-                title={<span>{drawerTitle}</span>}
+                icon={identity.icon}
+                title={identity.title}
                 headerActions={(mode === 'view' || mode === 'edit') && bomToEdit?.id && <Button variant="ghost" size="icon" onClick={() => handlePrint()}><Printer className="h-4 w-4" /></Button>}
-                subtitle={
-                    selectedVariant
-                        ? `Lista de Materiales • Variante: ${selectedVariant.variant_display_name || selectedVariant.name}`
-                        : (selectedProduct && selectedProduct.has_variants)
-                            ? `Lista de Materiales • Plantilla Base: ${selectedProduct.name}`
-                            : selectedProduct
-                                ? `Lista de Materiales • P: ${selectedProduct.name}`
-                                : "Lista de Materiales • Receta de Fabricación"
-                }
+                subtitle={identity.subtitle}
                 footer={isView ? undefined : (
                     <FormFooter
                         actions={

@@ -4,7 +4,7 @@ import React, { useState, useEffect, useMemo, useRef } from "react"
 import { useRouter, usePathname, useSearchParams } from "next/navigation"
 import { useServerDate } from "@/hooks/useServerDate"
 import { Book, ArrowUpRight, ArrowDownRight, Scale, Calculator, Printer } from "lucide-react"
-import { getEntityIcon } from "@/lib/entity-registry"
+import { useDrawerIdentity } from "@/features/_shared/drawer"
 import { DataCell, DataTable, DataTableColumnHeader, DateRangeFilter, Drawer, IconButton, MoneyDisplay, SkeletonShell, SegmentationBar, SmartSearchBar, StatCard, useClientSearch } from '@/components/shared'
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 import { type ColumnDef } from "@tanstack/react-table"
@@ -92,6 +92,11 @@ export function LedgerDrawer({ accountId, accountName, accountCode, trigger, noT
     // Fetch ledger data
     const { data, isLoading, refetch } = useLedger(accountId, startStr, endStr)
 
+    const identity = useDrawerIdentity('accounting.account', 'view', undefined, {
+        customTitle: "Libro Mayor",
+        subtitle: `${accountCode} | ${accountName}`,
+    })
+
     return (
         <>
             {!noTrigger && (trigger ? (
@@ -159,9 +164,9 @@ export function LedgerDrawer({ accountId, accountName, accountCode, trigger, noT
             <Drawer
                 open={open}
                 onOpenChange={setOpen}
-                title="Libro Mayor"
-                subtitle={`${accountCode} | ${accountName}`}
-                icon={getEntityIcon('accounting.account')}
+                icon={identity.icon}
+                title={identity.title}
+                subtitle={identity.subtitle}
                 side="left"
                 boundary="embedded"
                 resizable={false}

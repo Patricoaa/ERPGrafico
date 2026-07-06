@@ -873,10 +873,12 @@ def _build_disbursement_entry(
         net_cash = principal
     fee_lines = fee_lines or []
 
+    from core.prefix_registry import EntityPrefix
+
     entry = JournalEntry.objects.create(
         date=movement.date,
-        description=GlosaBuilder.build(GlosaBuilder.DESEMBOLSO, movement.reference or f"MOV-{movement.id}", "", principal, extra=[movement.notes[:80] if movement.notes else None]),
-        reference=movement.reference or f"MOV-{movement.id}",
+        description=GlosaBuilder.build(GlosaBuilder.DESEMBOLSO, movement.reference or f"{EntityPrefix.STOCK_MOVE}-{movement.id}", "", principal, extra=[movement.notes[:80] if movement.notes else None]),
+        reference=movement.reference or f"{EntityPrefix.STOCK_MOVE}-{movement.id}",
         status=JournalEntry.Status.DRAFT,
         source_content_type=ContentType.objects.get_for_model(movement),
         source_object_id=movement.id,
@@ -955,11 +957,13 @@ def _build_installment_entry(
     from accounting.models import JournalEntry, JournalItem
     from accounting.services import JournalEntryService
 
+    from core.prefix_registry import EntityPrefix
+
     # Construir DRAFT con la descripción y el source (el movimiento).
     entry = JournalEntry.objects.create(
         date=movement.date,
-        description=GlosaBuilder.build(GlosaBuilder.PAGO_CUOTA, movement.reference or f"MOV-{movement.id}", "", principal_clp),
-        reference=movement.reference or f"MOV-{movement.id}",
+        description=GlosaBuilder.build(GlosaBuilder.PAGO_CUOTA, movement.reference or f"{EntityPrefix.STOCK_MOVE}-{movement.id}", "", principal_clp),
+        reference=movement.reference or f"{EntityPrefix.STOCK_MOVE}-{movement.id}",
         status=JournalEntry.Status.DRAFT,
         source_content_type=ContentType.objects.get_for_model(movement),
         source_object_id=movement.id,

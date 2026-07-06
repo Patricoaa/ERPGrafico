@@ -3483,4 +3483,6 @@ class Checkbook(models.Model):
 
     @property
     def display_id(self) -> str:
-        return f"CHQ-{self.id}"
+        from core.prefix_registry import EntityPrefix
+
+        return f"{EntityPrefix.CHECK}-{self.id}"

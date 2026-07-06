@@ -1,7 +1,7 @@
 "use client"
 
 import { Drawer, SkeletonShell, StatusBadge } from "@/components/shared"
-import { Calendar } from "lucide-react"
+import { useDrawerIdentity } from "@/features/_shared/drawer"
 import { useTaxPeriod } from "../hooks/useTaxQueries"
 import { formDrawerWidth } from "@/lib/form-widths"
 
@@ -15,6 +15,10 @@ interface AccountingPeriodDrawerProps {
 export function AccountingPeriodDrawer({ periodId, open, onOpenChange }: AccountingPeriodDrawerProps) {
     const { data: period, isLoading } = useTaxPeriod(periodId ?? undefined)
 
+    const identity = useDrawerIdentity('tax.accountingperiod', 'view', period, {
+        customTitle: period ? `Período ${period.month_display || period.id}` : "Período Contable",
+    })
+
     return (
         <Drawer
             open={open}
@@ -23,8 +27,8 @@ export function AccountingPeriodDrawer({ periodId, open, onOpenChange }: Account
             boundary="embedded"
             mode="view"
             defaultSize={formDrawerWidth("master", false)}
-            title={period ? `Período ${period.month_display || period.id}` : "Período Contable"}
-            icon={Calendar}
+            icon={identity.icon}
+            title={identity.title}
         >
             {isLoading ? (
                 <SkeletonShell isLoading={true} ariaLabel="Cargando período" />

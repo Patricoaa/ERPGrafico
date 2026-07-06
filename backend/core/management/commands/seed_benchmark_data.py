@@ -41,14 +41,16 @@ class Command(BaseCommand):
         # Get random contacts to assign to movements
         contact_ids = list(Contact.objects.values_list("id", flat=True)[:10000])
 
+        from core.prefix_registry import EntityPrefix
+
         # 2. Seed 100,000 Sale Orders (Movements)
         self.stdout.write("Seeding 100,000 Sale Orders...")
         orders_to_create = []
         for i in range(100000):
             if i % 500 == 0:
-                number = f"NV-001{i}"
+                number = f"{EntityPrefix.SALE_ORDER}-001{i}"
             else:
-                number = f"NV-{random.randint(100000, 999999)}"
+                number = f"{EntityPrefix.SALE_ORDER}-{random.randint(100000, 999999)}"
 
             orders_to_create.append(
                 SaleOrder(

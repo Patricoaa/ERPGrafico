@@ -325,7 +325,8 @@ class F29CalculationService:
                 "Falta configurar cuenta de IVA por Pagar (F29) en configuración contable."
             )
 
-        doc_ref = f"F29-{folio_number}" if folio_number else "F29"
+        from core.prefix_registry import EntityPrefix
+        doc_ref = f"{EntityPrefix.F29_DECLARATION}-{folio_number}" if folio_number else str(EntityPrefix.F29_DECLARATION)
         period_label = f"{declaration.tax_period.get_month_display()} {declaration.tax_period.year}"
 
         journal_entry = JournalEntry.objects.create(
@@ -333,7 +334,7 @@ class F29CalculationService:
             description=GlosaBuilder.build(
                 GlosaBuilder.CIERRE_ANUAL, "F29", "", declaration.total_amount_due, extra=[period_label],
             ),
-            reference=f"F29-{folio_number}" if folio_number else "",
+            reference=f"{EntityPrefix.F29_DECLARATION}-{folio_number}" if folio_number else "",
         )
 
         items = []

@@ -905,7 +905,7 @@ table [data-notched-field] {
     padding: 0 0.25rem;
     font-size: var(--notched-legend-size);
     font-weight: 900;
-    letter-spacing: 0.15em;
+    letter-spacing: 0.1em;
     text-transform: uppercase;
     color: var(--muted-foreground);
     line-height: 1;

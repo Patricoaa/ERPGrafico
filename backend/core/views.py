@@ -290,6 +290,13 @@ def entity_prefixes(request):
     return Response(EntityPrefix.as_dict())
 
 
+@api_view(["GET"])
+def entity_config(request):
+    """Return all registered SearchableEntity configs with templates and prefixes."""
+    from .registry import UniversalRegistry
+    return Response(UniversalRegistry.all_entities_serializable())
+
+
 class BackgroundJobViewSet(viewsets.ReadOnlyModelViewSet):
     pagination_class = StandardResultsSetPagination
     """

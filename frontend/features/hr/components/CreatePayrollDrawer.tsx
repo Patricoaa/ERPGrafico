@@ -11,7 +11,7 @@ import type { Employee } from "@/types/hr"
 
 import { Form, FormField } from "@/components/ui/form"
 import { FileText } from "lucide-react"
-import { getEntityIcon } from "@/lib/entity-registry"
+import { useDrawerIdentity } from "@/features/_shared/drawer"
 import { CancelButton, Drawer, FormFooter, LabeledInput, LabeledSelect, SkeletonShell, SubmitButton } from '@/components/shared'
 import { useServerDate } from "@/hooks/useServerDate"
 import { formDrawerWidth } from "@/lib/form-widths"
@@ -92,13 +92,18 @@ export function CreatePayrollDrawer({ open, onOpenChange, onSaved, trigger }: Cr
         }
     }
 
+    const identity = useDrawerIdentity('hr.payroll', 'create', undefined, {
+        customTitle: "Nueva Liquidación",
+        subtitle: "RRHH • Emisión Mensual",
+    })
+
     return (
         <Drawer
             open={open}
             onOpenChange={onOpenChange}
             side="left"
-            icon={getEntityIcon('hr.payroll')}
-            title="Nueva Liquidación"
+            icon={identity.icon}
+            title={identity.title}
             subtitle="RRHH • Emisión Mensual"
             defaultSize={formDrawerWidth("medium", false)}
             footer={

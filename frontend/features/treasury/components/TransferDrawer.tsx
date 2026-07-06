@@ -6,7 +6,7 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
 import { showApiError } from "@/lib/errors"
 import { ArrowLeftRight, DollarSign } from "lucide-react"
-import type { DrawerMode } from "@/features/_shared/drawer/types"
+import { useDrawerIdentity, type DrawerMode } from "@/features/_shared/drawer"
 import { TreasuryAccountSelector } from "@/components/selectors"
 import { PeriodValidationDateInput } from "@/components/shared"
 import { useServerDate } from "@/hooks/useServerDate"
@@ -85,7 +85,10 @@ export function TransferDrawer({ open, onOpenChange, onSuccess, mode: modeProp }
 
     const sourceAccount = accounts.find(a => a.id.toString() === fromAccountId)
 
-    const drawerTitle = isView ? "Ficha de Traspaso" : "Traspaso entre Cuentas"
+    const identity = useDrawerIdentity('treasury.transfer', mode, undefined, {
+        customTitle: isView ? "Ficha de Traspaso" : "Traspaso entre Cuentas",
+        subtitle: "Mueva fondos entre sus cuentas de tesorería de forma inmediata.",
+    })
 
     return (
         <>
@@ -95,8 +98,9 @@ export function TransferDrawer({ open, onOpenChange, onSuccess, mode: modeProp }
                 side="left"
                 defaultSize={formDrawerWidth("medium", false)}
                 mode={mode}
-                title={<><span>{drawerTitle}</span></>}
-                subtitle="Mueva fondos entre sus cuentas de tesorería de forma inmediata."
+                title={identity.title}
+                icon={identity.icon}
+                subtitle={identity.subtitle}
                 footer={isView ? undefined : (
                     <FormFooter
                         actions={

@@ -25,7 +25,7 @@ import { Button } from "@/components/ui/button"
 import { formDrawerWidth } from "@/lib/form-widths"
 import { useReactToPrint } from "react-to-print"
 import { PrintableLayout } from "@/features/_shared/transaction-drawer"
-import type { DrawerMode } from "@/features/_shared/drawer/types"
+import { useDrawerIdentity, type DrawerMode } from "@/features/_shared/drawer"
 
 const formSchema = z.object({
     name: z.string().min(2, "El nombre debe tener al menos 2 caracteres"),
@@ -428,11 +428,19 @@ export function PricingRuleDrawer({ auditSidebar, initialData, onSuccess, open, 
         </div>
     )
 
-    const drawerTitle = isView
-        ? `Ficha de Regla de Precio${initialData?.id ? ` #${initialData.id}` : ""}`
-        : mode === 'create'
-            ? "Nueva Regla de Precio"
-            : "Editar Regla de Precio"
+    const identity = useDrawerIdentity('inventory.pricingrule', mode, initialData, {
+        subtitle: (
+            <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
+                {initialData?.rule_type && (
+                    <>
+                        <span>{initialData.rule_type === "FIXED" ? "Monto Fijo" : initialData.rule_type === "PACKAGE_FIXED" ? "Paquete Fijo" : "Descuento"}</span>
+                        <span className="opacity-30">|</span>
+                    </>
+                )}
+                <span>{form.watch("name") || "Configuración de regla activa"}</span>
+            </div>
+        ),
+    })
 
     return (
         <>
@@ -460,19 +468,10 @@ export function PricingRuleDrawer({ auditSidebar, initialData, onSuccess, open, 
                 side="left"
                 defaultSize={formDrawerWidth("complex", !!initialData)}
                 mode={mode}
-                title={<span>{drawerTitle}</span>}
+                title={identity.title}
                 headerActions={(mode === 'view' || mode === 'edit') && initialData?.id && <Button variant="ghost" size="icon" onClick={() => handlePrint()}><Printer className="h-4 w-4" /></Button>}
-                subtitle={
-                    <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
-                        {initialData?.rule_type && (
-                            <>
-                                <span>{initialData.rule_type === "FIXED" ? "Monto Fijo" : initialData.rule_type === "PACKAGE_FIXED" ? "Paquete Fijo" : "Descuento"}</span>
-                                <span className="opacity-30">|</span>
-                            </>
-                        )}
-                        <span>{form.watch("name") || "Configuración de regla activa"}</span>
-                    </div>
-                }
+                subtitle={identity.subtitle}
+                icon={identity.icon}
                 footer={isView ? undefined : (
                     <FormFooter
                         actions={

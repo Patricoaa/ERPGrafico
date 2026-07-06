@@ -329,7 +329,7 @@ export function UnifiedNoteWizard({
                     )}
                 </div>
             }
-            description={
+            subtitle={
                 noteType === 'NOTA_CREDITO' 
                     ? 'Asistente de emisión de Notas de Crédito, devoluciones y logística inversa.'
                     : 'Asistente de emisión de Notas de Débito y cargos adicionales.'

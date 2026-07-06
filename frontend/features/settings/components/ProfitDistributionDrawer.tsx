@@ -1,12 +1,9 @@
 'use client'
 
-import React, { useRef, type ReactNode } from 'react'
+import React from 'react'
 import { Drawer, StatusBadge, SkeletonShell } from '@/components/shared'
-import { Button } from '@/components/ui/button'
-import { Printer, ChartPie } from 'lucide-react'
-import { useReactToPrint } from 'react-to-print'
+import { useDrawerIdentity, usePrintableDrawer } from "@/features/_shared/drawer"
 import { formatCurrency } from '@/lib/money'
-import { formatPlainDate } from '@/lib/utils'
 import { PrintableLayout } from '@/features/_shared'
 import { useProfitDistribution } from '@/features/contacts'
 import type { TransactionDrawerProps } from '@/features/_shared'
@@ -19,11 +16,15 @@ interface ProfitDistributionDrawerProps extends TransactionDrawerProps {
 export function ProfitDistributionDrawer({ id, open, onOpenChange, distributionId }: ProfitDistributionDrawerProps) {
   const entityId = id ?? distributionId ?? null
   const { data: distribution, isLoading } = useProfitDistribution(entityId)
-  const printRef = useRef<HTMLDivElement>(null)
-  const handlePrint = useReactToPrint({ contentRef: printRef })
+  const { printRef, handlePrint } = usePrintableDrawer()
 
   const displayId = distribution?.display_id ?? `#${entityId}`
   const isProfit = distribution?.is_profit !== false
+  const identity = useDrawerIdentity('contacts.profitdistributionresolution', 'view', distribution, {
+    customTitle: displayId,
+    subtitle: isProfit ? 'Utilidad' : 'Pérdida',
+    onPrint: handlePrint,
+  })
 
   return (
     <>
@@ -60,12 +61,10 @@ export function ProfitDistributionDrawer({ id, open, onOpenChange, distributionI
         onOpenChange={onOpenChange}
         side="left"
         defaultSize={formDrawerWidth("master", false)}
-        icon={ChartPie}
-        title={<span>{displayId}</span>}
-        headerActions={<Button variant="ghost" size="icon" onClick={() => handlePrint()}><Printer className="h-4 w-4" /></Button>}
-        subtitle={isProfit ? 'Utilidad' : 'Pérdida'}
-        description={`Ejercicio ${distribution?.fiscal_year ?? ''} · ${formatPlainDate(distribution?.resolution_date)}`}
-
+        icon={identity.icon}
+        title={identity.title}
+        headerActions={identity.headerActions}
+        subtitle={identity.subtitle}
       >
         <SkeletonShell isLoading={isLoading} ariaLabel="Cargando distribución">
           {distribution && (

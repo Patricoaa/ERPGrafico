@@ -1,11 +1,8 @@
 'use client'
 
-import React, { useRef } from 'react'
+import React from 'react'
 import { Drawer, StatusBadge, SkeletonShell } from '@/components/shared'
-import { Button } from '@/components/ui/button'
-import { Printer } from 'lucide-react'
-import { getEntityIcon } from "@/lib/entity-registry"
-import { useReactToPrint } from 'react-to-print'
+import { useDrawerIdentity, usePrintableDrawer } from "@/features/_shared/drawer"
 import { formatCurrency } from '@/lib/money'
 import { formatPlainDate } from '@/lib/utils'
 import { PrintableLayout } from '@/features/_shared'
@@ -20,10 +17,14 @@ interface TerminalBatchDrawerProps extends TransactionDrawerProps {
 export function TerminalBatchDrawer({ id, open, onOpenChange, batchId }: TerminalBatchDrawerProps) {
   const entityId = id ?? batchId ?? null
   const { data: batch, isLoading } = useTerminalBatch(entityId)
-  const printRef = useRef<HTMLDivElement>(null)
-  const handlePrint = useReactToPrint({ contentRef: printRef })
+  const { printRef, handlePrint } = usePrintableDrawer()
 
   const displayId = batch?.display_id ?? `#${entityId}`
+  const identity = useDrawerIdentity('treasury.terminalbatch', 'view', batch, {
+    customTitle: displayId,
+    subtitle: "Lote de Liquidación",
+    onPrint: handlePrint,
+  })
 
   return (
     <>
@@ -54,12 +55,10 @@ export function TerminalBatchDrawer({ id, open, onOpenChange, batchId }: Termina
         onOpenChange={onOpenChange}
         side="left"
         defaultSize={formDrawerWidth("master", false)}
-        icon={getEntityIcon('treasury.terminalbatch')}
-        title={<span>{displayId}</span>}
-        headerActions={<Button variant="ghost" size="icon" onClick={() => handlePrint()}><Printer className="h-4 w-4" /></Button>}
-        subtitle="Lote de Liquidación"
-        description={batch?.provider_name ?? batch?.payment_method ?? ''}
-
+        icon={identity.icon}
+        title={identity.title}
+        headerActions={identity.headerActions}
+        subtitle={identity.subtitle}
       >
         <SkeletonShell isLoading={isLoading} ariaLabel="Cargando lote de terminal">
           {batch && (

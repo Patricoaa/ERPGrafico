@@ -13,7 +13,7 @@ import { Button } from "@/components/ui/button"
 import { Printer } from "lucide-react"
 import { useReactToPrint } from "react-to-print"
 import { PrintableLayout } from "@/features/_shared/transaction-drawer"
-import type { DrawerMode } from "@/features/_shared/drawer/types"
+import { useDrawerIdentity, type DrawerMode } from "@/features/_shared/drawer"
 import { partnersApi } from "@/features/contacts/api/partnersApi"
 import type { Contact } from "@/types/entities"
 
@@ -92,13 +92,11 @@ export function PartnerEditDrawer({ open, onOpenChange, contact, onSuccess, mode
         }
     }
 
-    if (!contact) return null
+    const identity = useDrawerIdentity('settings.partner', mode, contact, {
+        subtitle: `Ajuste la participación de ${contact?.name}.`,
+    })
 
-    const drawerTitle = isView
-        ? `Ficha de Socio${contact?.id ? ` #${contact.id}` : ""}`
-        : mode === 'create'
-            ? "Nuevo Socio"
-            : "Editar Socio"
+    if (!contact) return null
 
     return (
         <>
@@ -118,9 +116,10 @@ export function PartnerEditDrawer({ open, onOpenChange, contact, onSuccess, mode
                 side="left"
                 defaultSize={formDrawerWidth("simple", true)}
                 mode={mode}
-                title={<span>{drawerTitle}</span>}
+                title={identity.title}
+                icon={identity.icon}
                 headerActions={(mode === 'view' || mode === 'edit') && contact?.id && <Button variant="ghost" size="icon" onClick={() => handlePrint()}><Printer className="h-4 w-4" /></Button>}
-                subtitle={`Ajuste la participación de ${contact.name}.`}
+                subtitle={identity.subtitle}
                 footer={isView ? undefined : (
                     <FormFooter
                         actions={

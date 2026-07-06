@@ -7,9 +7,8 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import { type JournalEntryInitialData } from "@/types/forms"
 import * as z from "zod"
 import { Plus, Pencil, Printer, ExternalLink } from "lucide-react"
-import { getEntityIcon } from "@/lib/entity-registry"
-import Link from "next/link"
 import { format } from "date-fns"
+import Link from "next/link"
 import { toDate } from "@/lib/utils"
 import {
     Form,
@@ -31,7 +30,7 @@ import { Chip, Drawer, LabeledInput, CancelButton, IconButton, PeriodValidationD
 import { SourceDocumentSelector, type SourceDocument } from "@/components/selectors/SourceDocumentSelector";
 import { formDrawerWidth } from "@/lib/form-widths";
 import { ActivitySidebar } from "@/features/audit/components";
-import type { DrawerMode } from "@/features/_shared/drawer/types"
+import { useDrawerIdentity, type DrawerMode } from "@/features/_shared/drawer"
 
 // JournalItem and JournalEntry schemas remain the same
 const journalItemSchema = z.object({
@@ -451,15 +450,16 @@ export function JournalEntryDrawer({
         return <>{formContent}</>
     }
 
-    const drawerTitle = isViewMode
-        ? `Asiento #${entityId}`
-        : mode === 'create'
-            ? "Nuevo Asiento Contable"
-            : "Editar Asiento"
-
-    const drawerSubtitle = isViewMode
-        ? form.watch("description") || 'Vista de detalle'
-        : form.watch("description") || "Registro manual de movimiento"
+    const identity = useDrawerIdentity('accounting.journalentry', mode, (viewEntry ?? initialData) as Record<string, unknown> | undefined, {
+        customTitle: isViewMode
+            ? `Asiento #${entityId}`
+            : mode === 'edit'
+                ? "Editar Asiento"
+                : undefined,
+        subtitle: isViewMode
+            ? form.watch("description") || 'Vista de detalle'
+            : form.watch("description") || "Registro manual de movimiento",
+    })
 
     const showPrintable = entityId && (mode === 'view' || mode === 'edit')
 
@@ -516,10 +516,10 @@ export function JournalEntryDrawer({
                 side="left"
                 defaultSize={width}
                 mode={mode}
-                icon={getEntityIcon('accounting.journalentry')}
-                title={<span>{drawerTitle}</span>}
+                icon={identity.icon}
+                title={identity.title}
                 headerActions={showPrintable && <Button variant="ghost" size="icon" onClick={() => handlePrint()}><Printer className="h-4 w-4" /></Button>}
-                subtitle={drawerSubtitle}
+                subtitle={identity.subtitle}
                 footer={isViewMode ? undefined : (
                     <FormFooter
                         actions={

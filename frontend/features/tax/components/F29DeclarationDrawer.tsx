@@ -1,7 +1,7 @@
 "use client"
 
 import { Drawer, SkeletonShell, StatusBadge } from "@/components/shared"
-import { getEntityIcon } from "@/lib/entity-registry"
+import { useDrawerIdentity } from "@/features/_shared/drawer"
 import { useF29Detail } from "../hooks/useTaxQueries"
 import { formDrawerWidth } from "@/lib/form-widths"
 
@@ -15,6 +15,10 @@ interface F29DeclarationDrawerProps {
 export function F29DeclarationDrawer({ declarationId, open, onOpenChange }: F29DeclarationDrawerProps) {
     const { data: declaration, isLoading } = useF29Detail(declarationId ?? undefined)
 
+    const identity = useDrawerIdentity('tax.f29declaration', 'view', declaration, {
+        customTitle: declaration ? `Declaración F29 — ${declaration.period_display || declaration.id}` : "Declaración F29",
+    })
+
     return (
         <Drawer
             open={open}
@@ -23,8 +27,8 @@ export function F29DeclarationDrawer({ declarationId, open, onOpenChange }: F29D
             boundary="embedded"
             mode="view"
             defaultSize={formDrawerWidth("master", false)}
-            title={declaration ? `Declaración F29 — ${declaration.period_display || declaration.id}` : "Declaración F29"}
-            icon={getEntityIcon('tax.f29declaration')}
+            icon={identity.icon}
+            title={identity.title}
         >
             {isLoading ? (
                 <SkeletonShell isLoading={true} ariaLabel="Cargando declaración" />

@@ -13,12 +13,11 @@ import { Button } from "@/components/ui/button"
 import { financeApi } from "../../api/financeApi"
 import { AccountSelector } from "@/components/selectors/AccountSelector"
 import { Printer } from "lucide-react"
-import { getEntityIcon } from "@/lib/entity-registry"
 import { Drawer, LabeledInput, LabeledSelect, FormFooter, CancelButton, ActionSlideButton } from "@/components/shared"
+import { useDrawerIdentity, type DrawerMode } from "@/features/_shared/drawer"
 import { formDrawerWidth } from "@/lib/form-widths"
 import { useReactToPrint } from "react-to-print"
 import { PrintableLayout } from "@/features/_shared/transaction-drawer"
-import type { DrawerMode } from "@/features/_shared/drawer/types"
 
 const journalSchema = z.object({
     name: z.string().min(1, "El nombre es requerido"),
@@ -102,11 +101,14 @@ export function BankJournalDrawer({ auditSidebar, onSuccess, initialData, open: 
         }
     }
 
-    const drawerTitle = isView
-        ? `Ficha de Caja/Banco${initialData?.id ? ` #${initialData.id}` : ""}`
-        : mode === 'create'
-            ? "Crear Caja o Banco"
-            : "Editar Caja/Banco"
+    const identity = useDrawerIdentity('finance.bankjournal', mode, initialData as Record<string, unknown> | undefined, {
+        customTitle: isView
+            ? `Ficha de Caja/Banco${initialData?.id ? ` #${initialData.id}` : ""}`
+            : mode === 'create'
+                ? "Crear Caja o Banco"
+                : "Editar Caja/Banco",
+        subtitle: initialData ? `${(initialData?.code as string) || ""} • ${form.watch("name") || ""}` : "Tesorería • Configuración de Caja o Banco",
+    })
 
     return (
         <>
@@ -134,10 +136,10 @@ export function BankJournalDrawer({ auditSidebar, onSuccess, initialData, open: 
                 side="left"
                 defaultSize={width}
                 mode={mode}
-                icon={getEntityIcon('finance.bankjournal')}
-                title={<span>{drawerTitle}</span>}
+                icon={identity.icon}
+                title={identity.title}
                 headerActions={(mode === 'view' || mode === 'edit') && !!initialData?.id && <Button variant="ghost" size="icon" onClick={() => handlePrint()}><Printer className="h-4 w-4" /></Button>}
-                subtitle={initialData ? `${(initialData?.code as string) || ""} • ${form.watch("name") || ""}` : "Tesorería • Configuración de Caja o Banco"}
+                subtitle={identity.subtitle}
                 footer={isView ? undefined : (
                     <FormFooter
                         actions={

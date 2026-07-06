@@ -100,7 +100,11 @@ const meta = getEntityMetadata('sales.saleorder');
 
 ### `formatEntityDisplay(label: string, data: any): string`
 
-Aplica el `shortTemplate` del registro a un objeto `data`. Soporta dot notation y zero-padding.
+Aplica el template del registro a un objeto `data`. Soporta dot notation y zero-padding.
+
+**Orden de resolución del template:**
+1. API config (`getEntityConfig(label).shortTemplate` desde `UniversalRegistry`)
+2. `ENTITY_REGISTRY[label].shortTemplate` (fallback para entidades frontend-only)
 
 ```typescript
 formatEntityDisplay('sales.saleorder', { number: 42 });
@@ -167,15 +171,56 @@ Similar a `getDtePrefix` pero retorna la etiqueta legible (ej: `'Factura'`, `'Bo
 
 ### Inicialización
 
-Se recomienda llamar `fetchEntityPrefixes()` en `RootLayout` o `Providers` para poblar el caché al cargar la app:
+Ambos cachés se pueblan automáticamente desde `app/providers.tsx` al cargar la app:
 
 ```typescript
-// app/layout.tsx o app/providers.tsx
-import { fetchEntityPrefixes } from '@/lib/api/entity-prefixes';
+import { fetchEntityPrefixes, fetchEntityConfig } from '@/lib/api/entity-prefixes';
 
-// En un useEffect de layout:
-useEffect(() => { fetchEntityPrefixes(); }, []);
+useEffect(() => {
+  fetchEntityPrefixes();
+  fetchEntityConfig();
+}, []);
 ```
+
+Mientras el caché no se ha poblado, `getEntityConfig()` retorna `undefined` y `formatEntityDisplay` cae graceful a `ENTITY_REGISTRY.shortTemplate`.
+
+---
+
+## 3b. API de config de entidades (`/api/core/entity-config/`)
+
+**Endpoint**: `GET /api/core/entity-config/`  
+**Fuente**: `UniversalRegistry.all_entities_serializable()` en `backend/core/registry.py`
+
+Retorna un array con los `SearchableEntity` registrados, incluyendo templates y prefijos:
+
+```json
+[
+  {
+    "label": "sales.saleorder",
+    "title": "Nota de Venta",
+    "prefix": "NV",
+    "shortTemplate": "NV-{number}",
+    "displayTemplate": "NV-{number} · {customer.name}",
+    "subtitleTemplate": "{customer.name} · {customer.tax_id}",
+    "icon": "receipt-text",
+    "listUrl": "/sales/orders",
+    "detailUrlPattern": "/sales/orders/{id}"
+  }
+]
+```
+
+Desde el frontend:
+
+```typescript
+import { getEntityConfig, fetchEntityConfig } from '@/lib/api/entity-prefixes';
+
+const config = getEntityConfig('sales.saleorder');
+// config?.shortTemplate → "NV-{number}"
+```
+
+### `getEntityConfig(label: string): EntityConfig | undefined`
+
+Síncrona. Retorna undefined si el label no existe en el caché o el caché no se ha poblado aún. El template del API tiene prioridad sobre `ENTITY_REGISTRY.shortTemplate` en `formatEntityDisplay` (ver §2).
 
 ---
 
@@ -448,10 +493,11 @@ Todos los prefijos canónicos del sistema. **No usar prefijos que no estén en e
 ### Checklist para nueva entidad
 
 - [ ] Miembro en `backend/core/prefix_registry.py` enum `EntityPrefix`
-- [ ] Entrada en `ENTITY_REGISTRY` con todos los campos de `EntityMetadata`
-- [ ] `shortTemplate` en `ENTITY_REGISTRY` coincide con el valor `EntityPrefix`
+- [ ] Entrada en `ENTITY_REGISTRY` con todos los campos de `EntityMetadata` (sin `shortTemplate` si está en `UniversalRegistry`)
 - [ ] Backend: `AppConfig.ready()` registra la entidad con `title_singular`, `title_plural`, `short_display_template` (si es buscable)
+- [ ] `short_display_template` en `apps.py` usa `f"{EntityPrefix.X}-{{number}}"` — **no hardcodear el string**
 - [ ] Vista de lista: `DataCell.Entity` usa `entityLabel` o `type` en snake_case correcto
+- [ ] `pytest backend/core/tests/test_prefix_sync.py` pasa (atrapa drift entre enum y templates)
 
 ---
 

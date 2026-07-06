@@ -56,7 +56,6 @@ export function Drawer({
     onOpenChange,
     title,
     subtitle,
-    description,
     icon,
     headerActions,
     children,
@@ -74,7 +73,6 @@ export function Drawer({
     headerClassName,
     footerClassName,
     titleClassName,
-    descriptionClassName,
     modal
 }: DrawerProps) {
     const isHorizontal = side === "left" || side === "right"
@@ -244,7 +242,7 @@ export function Drawer({
                     )} />
                 )}
 
-                {(title || subtitle || description || headerActions || icon) && (
+                {(title || subtitle || headerActions || icon) && (
                     <SheetHeader className={cn("px-6 py-3 border-b shrink-0", headerClassName)}>
                         <PanelHeader
                             icon={iconElement}
@@ -254,11 +252,6 @@ export function Drawer({
                                 </SheetTitle>
                             }
                             subtitle={subtitle}
-                            description={description ? (
-                                <span className={cn("text-[10px] font-black uppercase text-muted-foreground tracking-widest mt-0.5 opacity-60 truncate", descriptionClassName)}>
-                                    {description}
-                                </span>
-                            ) : undefined}
                             headerActions={
                                 <>
                                     {mode === "view" && (

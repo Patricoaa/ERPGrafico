@@ -1,10 +1,8 @@
 'use client'
 
-import React, { useRef } from 'react'
+import React from 'react'
 import { Drawer, StatusBadge, SkeletonShell } from '@/components/shared'
-import { Button } from '@/components/ui/button'
-import { Printer, Truck } from 'lucide-react'
-import { useReactToPrint } from 'react-to-print'
+import { useDrawerIdentity, usePrintableDrawer } from '@/features/_shared/drawer'
 import { formatPlainDate } from '@/lib/utils'
 import { PrintableLayout } from '@/features/_shared'
 import { useSaleOrder } from '@/features/sales/hooks/useSalesOrders'
@@ -20,12 +18,17 @@ interface SaleDeliveryDrawerProps extends TransactionDrawerProps {
 export function SaleDeliveryDrawer({ id, open, onOpenChange, saleOrderId, deliveryId }: SaleDeliveryDrawerProps) {
     const entityId = saleOrderId ?? null
     const { data: order, isLoading } = useSaleOrder(entityId)
-    const printRef = useRef<HTMLDivElement>(null)
-    const handlePrint = useReactToPrint({ contentRef: printRef })
+    const { printRef, handlePrint } = usePrintableDrawer()
 
     const delivery = order?.related_documents?.deliveries?.find(d => d.id === (id ?? deliveryId))
     const deliveryNumber = delivery?.number ?? `#${id ?? deliveryId}`
     const partnerName = order?.customer_name ?? ''
+
+    const identity = useDrawerIdentity('sales.saledelivery', 'view', delivery, {
+        customTitle: deliveryNumber,
+        subtitle: partnerName,
+        onPrint: handlePrint,
+    })
 
     return (
         <>
@@ -56,12 +59,10 @@ export function SaleDeliveryDrawer({ id, open, onOpenChange, saleOrderId, delive
                 onOpenChange={onOpenChange}
                 side="left"
                 defaultSize={formDrawerWidth("master", false)}
-                icon={Truck}
-                title={<span>{deliveryNumber}</span>}
-                headerActions={<Button variant="ghost" size="icon" onClick={() => handlePrint()}><Printer className="h-4 w-4" /></Button>}
-                subtitle={partnerName}
-                description={`Despacho · ${formatPlainDate(delivery?.date)}`}
-
+                icon={identity.icon}
+                title={identity.title}
+                headerActions={identity.headerActions}
+                subtitle={identity.subtitle}
             >
                 <SkeletonShell isLoading={isLoading} ariaLabel="Cargando despacho">
                     <div className="p-4 space-y-4">

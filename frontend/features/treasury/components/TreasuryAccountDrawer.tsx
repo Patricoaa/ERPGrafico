@@ -10,7 +10,7 @@ import { Landmark, CreditCard, Lock, Printer, ScrollText, Plus, Pencil, Archive 
 import { Button } from "@/components/ui/button"
 import { useReactToPrint } from "react-to-print"
 import { PrintableLayout } from "@/features/_shared/transaction-drawer"
-import type { DrawerMode } from "@/features/_shared/drawer/types"
+import { useDrawerIdentity, type DrawerMode } from "@/features/_shared/drawer"
 import { AccountSelector } from "@/components/selectors/AccountSelector"
 import { ActivitySidebar } from "@/features/audit/components"
 import { useTreasuryAccounts, treasuryApi, useCreditLineMutations, CreditLineDrawer } from "@/features/treasury"
@@ -172,11 +172,14 @@ export function TreasuryAccountDrawer({ open, onOpenChange, accountId, onSuccess
         }
     }
 
-    const drawerTitle = isView
-        ? `Ficha de Cuenta${accountId ? ` #${accountId}` : ""}`
-        : mode === 'create'
-            ? "Nueva Cuenta"
-            : "Editar Cuenta"
+    const identity = useDrawerIdentity('treasury.treasuryaccount', mode, entityData ?? (accountId ? { id: accountId } : undefined), {
+        feminine: true,
+        subtitle: isSystemManaged
+            ? "Esta cuenta es gestionada automáticamente por el proveedor de terminal. No puede modificarse directamente."
+            : accountId
+                ? "Modifique los detalles de la cuenta y revise su historial."
+                : "Complete la información para registrar una nueva cuenta.",
+    })
 
     return (
         <>
@@ -205,26 +208,20 @@ export function TreasuryAccountDrawer({ open, onOpenChange, accountId, onSuccess
                 defaultSize={formDrawerWidth("medium", !!accountId)}
                 mode={mode}
                 title={
-                    <div className="flex items-center gap-3">
-                        <Landmark className="h-5 w-5 text-muted-foreground" />
-                        <span>{drawerTitle}</span>
+                    <span className="flex items-center gap-3">
+                        {identity.title}
                         {isSystemManaged && (
                             <Chip icon={Lock}>Gestionada por sistema</Chip>
                         )}
-                    </div>
+                    </span>
                 }
+                icon={identity.icon}
                 headerActions={(mode === 'view' || mode === 'edit') && accountId && (
                     <Button variant="ghost" size="icon" onClick={() => handlePrint()}>
                         <Printer className="h-4 w-4" />
                     </Button>
                 )}
-                subtitle={
-                    isSystemManaged
-                        ? "Esta cuenta es gestionada automáticamente por el proveedor de terminal. No puede modificarse directamente."
-                        : accountId
-                            ? "Modifique los detalles de la cuenta y revise su historial."
-                            : "Complete la información para registrar una nueva cuenta."
-                }
+                subtitle={identity.subtitle}
                 footer={isView ? undefined : (
                     <FormFooter
                         actions={

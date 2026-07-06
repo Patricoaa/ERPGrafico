@@ -238,7 +238,8 @@ class WorkOrderViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
 
         try:
             pdf_bytes = WorkOrderPdfService.generate_pdf(work_order, request)
-            filename = f"OT-{work_order.number}.pdf"
+            from core.prefix_registry import EntityPrefix
+            filename = f"{EntityPrefix.WORK_ORDER}-{work_order.number}.pdf"
             response = HttpResponse(pdf_bytes, content_type="application/pdf")
             response["Content-Disposition"] = f'inline; filename="{filename}"'
             return response

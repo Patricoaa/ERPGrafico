@@ -1,7 +1,10 @@
 "use client"
 
-import { getEntityMetadata, getEntityIcon } from "@/lib/entity-registry"
+import React from "react"
+import { getEntityMetadata, getEntityIcon, renderEntitySubtitle, renderEntitySubtitleSuffix } from "@/lib/entity-registry"
+import { DrawerPrintButton } from "./DrawerPrintButton"
 import type { DrawerMode } from "./types"
+import type { ReactNode } from "react"
 
 export interface DrawerIdentityData {
   id?: number | string
@@ -13,10 +16,18 @@ export type DrawerIdentityInput = unknown
 export interface UseDrawerIdentityOptions {
   /** Sobrescribe el género detectado desde EntityMetadata */
   feminine?: boolean
-  /** Subtítulo estático. Si se omite, se usa un default según el modo */
-  subtitle?: string
+  /** Subtítulo estático (string o JSX). Si se omite, se usa un default según el modo */
+  subtitle?: ReactNode
+  /** Texto adicional appended al subtitle tras " · ". Anula subtitleSuffixTemplate del registry. */
+  subtitleSuffix?: string
   /** Título completamente custom (anula la resolución automática) */
   customTitle?: string
+  /** Icono custom (anula el del registry) */
+  icon?: React.ComponentType<{ className?: string }>
+  /** Si mostrar el botón de imprimir en headerActions (default: de ENTITY_REGISTRY) */
+  printable?: boolean
+  /** Callback para imprimir (requerido si printable es true) */
+  onPrint?: () => void
 }
 
 function feminineArticle(feminine: boolean): string {
@@ -67,13 +78,21 @@ export function useDrawerIdentity(
 
   const title = options?.customTitle ?? formatEntityTitle(label, mode, data, feminine)
 
-  const subtitle = options?.subtitle ?? meta?.description ?? formatDefaultSubtitle(mode, label, feminine)
+  const baseSubtitle = options?.subtitle ?? renderEntitySubtitle(label, data as Record<string, unknown> | null | undefined) ?? formatDefaultSubtitle(mode, label, feminine)
+  const suffix = options?.subtitleSuffix ?? renderEntitySubtitleSuffix(label, data as Record<string, unknown> | null | undefined)
+  const subtitle = suffix ? `${baseSubtitle} · ${suffix}` : baseSubtitle
 
-  const IconComponent = getEntityIcon(label)
+  const IconComponent = options?.icon ?? getEntityIcon(label)
+
+  const showPrint = options?.printable ?? meta?.printable ?? false
+  const headerActions: ReactNode = showPrint && options?.onPrint
+    ? React.createElement(DrawerPrintButton, { onPrint: options.onPrint })
+    : undefined
 
   return {
     title,
     subtitle,
     icon: IconComponent,
+    headerActions,
   }
 }

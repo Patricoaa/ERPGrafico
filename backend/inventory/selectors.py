@@ -339,11 +339,13 @@ class ProductSelector:
                 related_id = m.purchase_receipt_line.receipt.id
                 related_type = "purchase_receipt"
             elif hasattr(m, "sale_return_line") and m.sale_return_line:
-                display_id = f"DEV-{m.sale_return_line.return_doc.number}"
+                from core.prefix_registry import EntityPrefix
+                display_id = f"{EntityPrefix.SALE_RETURN}-{m.sale_return_line.return_doc.number}"
                 related_id = m.sale_return_line.return_doc.id
                 related_type = "sale_return"
             elif hasattr(m, "purchase_return_line") and m.purchase_return_line:
-                display_id = f"DEV-{m.purchase_return_line.return_doc.number}"
+                from core.prefix_registry import EntityPrefix
+                display_id = f"{EntityPrefix.PURCHASE_RETURN}-{m.purchase_return_line.return_doc.number}"
                 related_id = m.purchase_return_line.return_doc.id
                 related_type = "purchase_return"
 
