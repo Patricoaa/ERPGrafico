@@ -103,253 +103,243 @@ export function Cart({
     const showTotalDiscounts = canApplyGlobalDiscount
 
     return (
-        <Card className="flex-1 flex flex-col overflow-hidden border border-border bg-card dot-grid-surface shadow-card shadow-black/5 rounded-md">
-            <CardContent className="p-0 flex-1 flex flex-col overflow-hidden">
-                {/* Header */}
-                <div className="px-4 py-1.5 border-b bg-transparent shrink-0">
-                    <div className={cn("flex justify-between items-center gap-2", isTouchPOS ? "h-12" : "h-9")}>
+        <div className="flex flex-col flex-1 min-h-0 gap-2">
+            <Card className="flex-1 flex flex-col overflow-hidden border border-border/60 bg-card dot-grid-surface shadow-lg shadow-black/10 rounded-lg p-2 flex-shrink-0">
+                <CardContent className="p-0 flex-1 flex flex-col overflow-hidden">
+                    {/* Header */}
+                    <div className={cn("px-2 border-b border-border/40 bg-transparent shrink-0 flex justify-between items-center gap-2", isTouchPOS ? "pb-2 mb-2" : "pb-1.5 mb-1.5")}>
                         <div className="flex items-center gap-2 min-w-0">
-                            <span className="font-bold text-lg tracking-tight whitespace-nowrap">Resumen de Venta</span>
-                            {lastSaved && (
-                                <div className="flex items-center text-[9px] text-muted-foreground font-medium gap-1 opacity-80 whitespace-nowrap">
-                                    <Clock className="h-2.5 w-2.5" />
-                                    <span>
-                                        {saving ? "Guardando..." : `Sincronizado: ${lastSaved.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`}
-                                    </span>
-                                    {saving && <div className="h-0.5 w-10 bg-primary/20 rounded-full overflow-hidden"><div className="h-full bg-primary animate-progress-buffer w-1/3"></div></div>}
-                                </div>
-                            )}
-                        </div>
-                        <span className="text-[10px] font-black bg-primary text-primary-foreground px-1.5 py-0.5 rounded-full uppercase tracking-tighter shrink-0">
-                            {items.length} Items
-                        </span>
-                    </div>
-                </div>
-
-                {/* Items List */}
-                <div className="flex-1 overflow-auto bg-transparent rounded-b-md relative scrollbar-thin">
-                    {items.length === 0 ? (
-                        /* Empty State ... */
-                        <div className="absolute inset-0 flex flex-col items-center justify-center p-8 text-center text-muted-foreground/60 gap-4 animate-in fade-in zoom-in duration-500">
-                            <ShoppingCart className="h-12 w-12 text-muted-foreground/20" />
-                            <div className="space-y-1.5">
-                                <p className="font-bold text-lg text-muted-foreground/80 tracking-tight">El carrito está vacío</p>
-                                <p className="max-w-[280px] text-xs italic opacity-70 mx-auto leading-relaxed">
-                                    Escanea un código de barras o selecciona productos del catálogo para comenzar la venta.
-                                </p>
-                            </div>
-                        </div>
-                    ) : (
-                        /* Cards Content */
-                        <div className={cn("flex flex-col p-3 bg-card", isTouchMode ? "gap-3" : "gap-2")}>
-                            {items.map((item) => {
-                                const originalProduct = products.find(p => p.id === item.id)
-                                const maxQty = limits[`cart_${item.cartItemId}`]
-
-                                return (
-                                    <CartItem
-                                        key={item.cartItemId}
-                                        item={item}
-                                        originalProduct={originalProduct}
-                                        uoms={uoms}
-                                        maxQty={maxQty}
-                                        onQuantityChange={onItemQuantityChange}
-                                        onUomChange={onItemUomChange}
-                                        onPriceChange={onItemPriceChange}
-                                        onDiscountChange={onItemDiscountChange}
-                                        onRemove={onItemRemove}
-                                        onOpenNumpad={onOpenNumpad}
-                                        showLineDiscount={showLineDiscounts}
-                                        posMode={posMode}
-                                    />
-                                )
-                            })}
-                        </div>
-                    )}
-                </div>
-
-                {/* Footer — Mini Boletín + Details + Actions */}
-                <div className="bg-card border-t">
-
-                    {/* Mini Boletín — Financial Breakdown inside a card */}
-                    <div className="p-3 pb-0">
-                        <div className="rounded-lg bg-muted/50 p-2.5 space-y-1">
-                        <div className="flex justify-between text-xs text-muted-foreground">
-                            <span>Subtotal Neto</span>
-                            <span>{formatCurrency(totals.total_net)}</span>
-                        </div>
-                        <div className="flex justify-between text-xs text-muted-foreground">
-                            <span>IVA ({rate}%)</span>
-                            <span>{formatCurrency(totals.total_tax)}</span>
-                        </div>
-
-                        {/* Line Discounts (Sum of all per-item discounts) */}
-                        {(totals.line_discount_total || 0) > 0 && (
-                            <div className="flex justify-between text-xs text-muted-foreground">
-                                <span>Descuentos por Línea</span>
-                                <span>-{formatCurrency(totals.line_discount_total || 0)}</span>
-                            </div>
-                        )}
-
-                        {/* Global Discount (Editable) */}
-                        {(showTotalDiscounts || (totals.global_discount_total || 0) > 0) && (
-                            <div className="flex justify-between text-xs text-muted-foreground">
-                                <span>Descuento Global</span>
-                                {showTotalDiscounts ? (
-                                    <span
-                                        className="cursor-pointer hover:underline underline-offset-2"
-                                        onClick={() => onOpenNumpad('cart', 'discount', totalDiscountAmount || 0)}
-                                        role="button"
-                                        tabIndex={0}
-                                        onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onOpenNumpad('cart', 'discount', totalDiscountAmount || 0); } }}
-                                    >
-                                        {totalDiscountAmount ? formatCurrency(totalDiscountAmount) : "$0"}
-                                    </span>
-                                ) : (
-                                    <span>-{formatCurrency(totals.global_discount_total || 0)}</span>
+                                <span className="font-bold text-lg tracking-tight whitespace-nowrap">Resumen de Venta</span>
+                                {lastSaved && (
+                                    <div className="flex items-center text-[9px] text-muted-foreground font-medium gap-1 opacity-80 whitespace-nowrap">
+                                        <Clock className="h-2.5 w-2.5" />
+                                        <span>
+                                            {saving ? "Guardando..." : `Sincronizado: ${lastSaved.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`}
+                                        </span>
+                                        {saving && <div className="h-0.5 w-10 bg-primary/20 rounded-full overflow-hidden"><div className="h-full bg-primary animate-progress-buffer w-1/3"></div></div>}
+                                    </div>
                                 )}
                             </div>
-                        )}
-
-                        <div className="flex justify-between text-lg font-bold pt-1.5 border-t">
-                            <span>Total</span>
-                            <span>{formatCurrency(totals.total_gross)}</span>
-                        </div>
-                        </div>
+                            <span className="text-[10px] font-black bg-primary text-primary-foreground px-1.5 py-0.5 rounded-full uppercase tracking-tighter shrink-0">
+                                {items.length} Items
+                            </span>
                     </div>
 
-                    <div className="h-3" />
+                    {/* Items List */}
+                    <div className="flex-1 overflow-auto bg-transparent rounded-b-md relative scrollbar-thin">
+                        {items.length === 0 ? (
+                            <div className="absolute inset-0 flex flex-col items-center justify-center p-8 text-center text-muted-foreground/60 gap-4 animate-in fade-in zoom-in duration-500">
+                                <ShoppingCart className="h-12 w-12 text-muted-foreground/20" />
+                                <div className="space-y-1.5">
+                                    <p className="font-bold text-lg text-muted-foreground/80 tracking-tight">El carrito está vacío</p>
+                                    <p className="max-w-[280px] text-xs italic opacity-70 mx-auto leading-relaxed">
+                                        Escanea un código de barras o selecciona productos del catálogo para comenzar la venta.
+                                    </p>
+                                </div>
+                            </div>
+                        ) : (
+                            <div className={cn("flex flex-col p-3 bg-card", isTouchMode ? "gap-3" : "gap-2")}>
+                                {items.map((item) => {
+                                    const originalProduct = products.find(p => p.id === item.id)
+                                    const maxQty = limits[`cart_${item.cartItemId}`]
 
-                    {posMode === 'SHOPPING' && (
-                        <div className="flex gap-0">
+                                    return (
+                                        <CartItem
+                                            key={item.cartItemId}
+                                            item={item}
+                                            originalProduct={originalProduct}
+                                            uoms={uoms}
+                                            maxQty={maxQty}
+                                            onQuantityChange={onItemQuantityChange}
+                                            onUomChange={onItemUomChange}
+                                            onPriceChange={onItemPriceChange}
+                                            onDiscountChange={onItemDiscountChange}
+                                            onRemove={onItemRemove}
+                                            onOpenNumpad={onOpenNumpad}
+                                            showLineDiscount={showLineDiscounts}
+                                            posMode={posMode}
+                                        />
+                                    )
+                                })}
+                            </div>
+                        )}
+                    </div>
+
+                    {/* Footer — Mini Boletín */}
+                    <div className="bg-card shrink-0 pt-2 mt-2 border-t border-border/40">
+                        <div className="rounded-md bg-muted/50 p-2.5 space-y-1">
+                            <div className="flex justify-between text-xs text-muted-foreground">
+                                <span>Subtotal Neto</span>
+                                <span>{formatCurrency(totals.total_net)}</span>
+                            </div>
+                            <div className="flex justify-between text-xs text-muted-foreground">
+                                <span>IVA ({rate}%)</span>
+                                <span>{formatCurrency(totals.total_tax)}</span>
+                            </div>
+
+                            {(totals.line_discount_total || 0) > 0 && (
+                                <div className="flex justify-between text-xs text-muted-foreground">
+                                    <span>Descuentos por Línea</span>
+                                    <span>-{formatCurrency(totals.line_discount_total || 0)}</span>
+                                </div>
+                            )}
+
+                            {(showTotalDiscounts || (totals.global_discount_total || 0) > 0) && (
+                                <div className="flex justify-between text-xs text-muted-foreground">
+                                    <span>Descuento Global</span>
+                                    {showTotalDiscounts ? (
+                                        <span
+                                            className="cursor-pointer underline underline-offset-4 decoration-border hover:decoration-foreground hover:text-primary transition-colors"
+                                            onClick={() => onOpenNumpad('cart', 'discount', totalDiscountAmount || 0)}
+                                            role="button"
+                                            tabIndex={0}
+                                            onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onOpenNumpad('cart', 'discount', totalDiscountAmount || 0); } }}
+                                        >
+                                            {totalDiscountAmount ? formatCurrency(totalDiscountAmount) : "-%"}
+                                        </span>
+                                    ) : (
+                                        <span>-{formatCurrency(totals.global_discount_total || 0)}</span>
+                                    )}
+                                </div>
+                            )}
+
+                            <div className="flex justify-between text-lg font-bold pt-1.5 border-t">
+                                <span>Total</span>
+                                <span>{formatCurrency(totals.total_gross)}</span>
+                            </div>
+                            </div>
+                        </div>
+                </CardContent>
+            </Card>
+
+            {/* Floating Action Buttons */}
+            <div className="bg-card dot-grid-surface border border-border/60 rounded-lg shadow-lg shadow-black/10 p-2 space-y-2">
+                {posMode === 'SHOPPING' && (
+                    <>
+                        <div className="flex gap-2">
                             <Button
                                 className={cn(
-                                    "flex-1 shrink rounded-none font-black uppercase tracking-tight bg-primary/20 text-primary hover:bg-primary/30 relative overflow-hidden transition-colors",
-                                    isTouchPOS ? "h-20 text-2xl" : "h-12 text-lg"
+                                    "flex-1 shrink rounded-sm font-black uppercase tracking-tight bg-muted text-primary hover:bg-muted/80 border border-border",
+                                    isTouchPOS ? "h-16 text-xl" : "h-11 text-base"
                                 )}
                                 size="lg"
                                 disabled={loading || items.length === 0 || !canQuickSale.allowed}
                                 onClick={onQuickSale}
                                 title={!canQuickSale.allowed ? canQuickSale.reason : "Venta rápida: Saltar directo a pago con BOLETA"}
                             >
-                                <Zap className={cn("mr-2", isTouchPOS ? "h-8 w-8" : "h-6 w-6")} />
+                                <Zap className={cn("mr-2 rounded-sm", isTouchPOS ? "h-6 w-6" : "h-5 w-5")} />
                                 {!canQuickSale.allowed ? canQuickSale.reason : "Venta Rápida"}
                             </Button>
                             {onWithdrawClick && items.length > 0 && items.every(i => i.track_inventory) && (
                                 <Button
                                     className={cn(
-                                        "flex-1 shrink rounded-none font-black uppercase tracking-tight bg-warning text-warning-foreground hover:bg-warning/90 shadow-card",
-                                        isTouchPOS ? "h-20 text-2xl" : "h-12 text-lg"
+                                        "flex-1 shrink rounded-sm font-black uppercase tracking-tight bg-warning text-warning-foreground hover:bg-warning/90 shadow-card",
+                                        isTouchPOS ? "h-16 text-xl" : "h-11 text-base"
                                     )}
                                     size="lg"
                                     onClick={onWithdrawClick}
                                 >
-                                    <ShoppingCart className={cn("mr-2", isTouchPOS ? "h-8 w-8" : "h-6 w-6")} />
+                                    <ShoppingCart className={cn("mr-2 rounded-sm", isTouchPOS ? "h-6 w-6" : "h-5 w-5")} />
                                     Retiro de Socio
                                 </Button>
                             )}
                         </div>
-                    )}
 
-                    {posMode === 'SHOPPING' && (
-                        /* Confirm Sale Button */
                         <Button
                             id="confirm-sale-btn"
                             className={cn(
-                                "w-full rounded-none font-black uppercase tracking-tight hover:brightness-110 transition-all",
-                                    isTouchPOS ? "h-20 text-2xl" : "h-12 text-lg"
-                                )}
-                                size="lg"
-                                disabled={loading || saving || items.length === 0}
-                                onClick={onConfirmSale}
+                                "w-full rounded-sm font-black uppercase tracking-tight hover:brightness-110 transition-all",
+                                isTouchPOS ? "h-16 text-xl" : "h-11 text-base"
+                            )}
+                            size="lg"
+                            disabled={loading || saving || items.length === 0}
+                            onClick={onConfirmSale}
                         >
                             <ShoppingCart className={cn(
-                                "mr-2",
-                                isTouchPOS ? "h-8 w-8" : "h-6 w-6"
+                                "mr-2 rounded-sm",
+                                isTouchPOS ? "h-6 w-6" : "h-5 w-5"
                             )} />
                             {loading || saving ? "Procesando..." : "Confirmar Venta"}
                         </Button>
-                    )}
+                    </>
+                )}
 
-                    {posMode === 'CHECKOUT' && (
-                        <>
-                            {/* Row 1: Volver al Carrito | Pagar en otro terminal */}
-                            <div className="flex gap-0">
+                {posMode === 'CHECKOUT' && (
+                    <>
+                        <div className="flex gap-2">
+                            <Button
+                                className={cn(
+                                    "flex-1 shrink rounded-sm font-black uppercase tracking-tight bg-muted text-primary hover:bg-muted/80 border border-border",
+                                    isTouchPOS ? "h-16 text-xl" : "h-11 text-base"
+                                )}
+                                size="lg"
+                                onClick={onCancel}
+                                disabled={checkoutLoading}
+                            >
+                                <ShoppingCart className={cn("mr-2 rounded-sm", isTouchPOS ? "h-6 w-6" : "h-5 w-5")} />
+                                Volver al Carrito
+                            </Button>
+                            {isLastStep && (
                                 <Button
                                     className={cn(
-                                        "flex-1 shrink rounded-none font-black uppercase tracking-tight bg-primary/20 text-primary hover:bg-primary/30 relative overflow-hidden transition-colors",
-                                        isTouchPOS ? "h-20 text-2xl" : "h-12 text-lg"
+                                        "flex-1 shrink rounded-sm font-black uppercase tracking-tight bg-info text-info-foreground hover:bg-info/90",
+                                        isTouchPOS ? "h-16 text-xl" : "h-11 text-base"
                                     )}
                                     size="lg"
-                                    onClick={onCancel}
+                                    onClick={onSuspend}
                                     disabled={checkoutLoading}
                                 >
-                                    <ShoppingCart className={cn("mr-2", isTouchPOS ? "h-8 w-8" : "h-6 w-6")} />
-                                    Volver al Carrito
+                                    <Repeat className={cn("mr-2 rounded-sm", isTouchPOS ? "h-6 w-6" : "h-5 w-5")} />
+                                    Pagar en otra sesión
                                 </Button>
-                                {isLastStep && (
-                                    <Button
-                                        className={cn(
-                                            "flex-1 shrink rounded-none font-black uppercase tracking-tight bg-info text-info-foreground hover:bg-info/90",
-                                            isTouchPOS ? "h-20 text-2xl" : "h-12 text-lg"
-                                        )}
-                                        size="lg"
-                                        onClick={onSuspend}
-                                        disabled={checkoutLoading}
-                                    >
-                                        <Repeat className={cn("mr-2", isTouchPOS ? "h-8 w-8" : "h-6 w-6")} />
-                                        Pagar en otra sesión
-                                    </Button>
-                                )}
-                            </div>
+                            )}
+                        </div>
 
-                            {/* Row 2: Atrás | Siguiente / Finalizar Venta */}
-                            <div className="flex gap-0">
+                        <div className="flex gap-2">
+                            <Button
+                                variant="secondary"
+                                onClick={onCheckoutBack}
+                                disabled={checkoutLoading}
+                                className={cn(
+                                    "flex-1 shrink rounded-sm font-black uppercase tracking-tight",
+                                    isTouchPOS ? "h-16 text-xl" : "h-11 text-base"
+                                )}
+                                size="lg"
+                            >
+                                <ChevronLeft className={cn("mr-2 rounded-sm", isTouchPOS ? "h-6 w-6" : "h-5 w-5")} />
+                                Atrás
+                            </Button>
+                            {!isLastStep ? (
                                 <Button
-                                    variant="secondary"
-                                    onClick={onCheckoutBack}
+                                    onClick={onCheckoutNext}
                                     disabled={checkoutLoading}
                                     className={cn(
-                                        "flex-1 shrink rounded-none font-black uppercase tracking-tight",
-                                        isTouchPOS ? "h-20 text-2xl" : "h-12 text-lg"
+                                        "flex-1 shrink rounded-sm font-black uppercase tracking-tight",
+                                        isTouchPOS ? "h-16 text-xl" : "h-11 text-base"
                                     )}
                                     size="lg"
                                 >
-                                    <ChevronLeft className={cn("mr-2", isTouchPOS ? "h-8 w-8" : "h-6 w-6")} />
-                                    Atrás
+                                    Siguiente
+                                    <ChevronRight className={cn("ml-2 rounded-sm", isTouchPOS ? "h-6 w-6" : "h-5 w-5")} />
                                 </Button>
-                                {!isLastStep ? (
-                                    <Button
-                                        onClick={onCheckoutNext}
-                                        disabled={checkoutLoading}
-                                        className={cn(
-                                            "flex-1 shrink rounded-none font-black uppercase tracking-tight",
-                                            isTouchPOS ? "h-20 text-2xl" : "h-12 text-lg"
-                                        )}
-                                        size="lg"
-                                    >
-                                        Siguiente
-                                        <ChevronRight className={cn("ml-2", isTouchPOS ? "h-8 w-8" : "h-6 w-6")} />
-                                    </Button>
-                                ) : (
-                                    <Button
-                                        onClick={onCheckoutFinish}
-                                        disabled={checkoutLoading}
-                                        className={cn(
-                                            "flex-1 shrink rounded-none font-black uppercase tracking-tight bg-success hover:bg-success/90 text-success-foreground",
-                                            isTouchPOS ? "h-20 text-2xl" : "h-12 text-lg"
-                                        )}
-                                        size="lg"
-                                    >
-                                        <Check className={cn("mr-2", isTouchPOS ? "h-8 w-8" : "h-6 w-6")} />
-                                        Finalizar Venta
-                                    </Button>
-                                )}
-                            </div>
-                        </>
-                    )}
-                </div>
-            </CardContent>
-        </Card>
+                            ) : (
+                                <Button
+                                    onClick={onCheckoutFinish}
+                                    disabled={checkoutLoading}
+                                    className={cn(
+                                        "flex-1 shrink rounded-sm font-black uppercase tracking-tight bg-success hover:bg-success/90 text-success-foreground",
+                                        isTouchPOS ? "h-16 text-xl" : "h-11 text-base"
+                                    )}
+                                    size="lg"
+                                >
+                                    <Check className={cn("mr-2 rounded-sm", isTouchPOS ? "h-6 w-6" : "h-5 w-5")} />
+                                    Finalizar Venta
+                                </Button>
+                            )}
+                        </div>
+                    </>
+                )}
+            </div>
+        </div>
     )
 }

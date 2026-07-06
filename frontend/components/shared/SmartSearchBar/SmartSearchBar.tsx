@@ -210,7 +210,7 @@ export function SmartSearchBar({ searchDef, placeholder = 'Buscar...', className
         }}
       >
         {prefix}
-        <Search className="h-3.5 w-3.5 text-muted-foreground/50 shrink-0 transition-colors group-hover:text-foreground" />
+        <Search className="h-3.5 w-3.5 ml-1 text-muted-foreground/50 shrink-0 transition-colors group-hover:text-foreground" />
 
         {chips.map((chip) => (
           <Chip

@@ -57,7 +57,7 @@ export function SearchBar({
             )}
         >
             <Search className={cn(
-                'shrink-0 transition-colors group-hover:text-foreground',
+                'shrink-0 transition-colors group-hover:text-foreground ml-1',
                 isTouchDevice ? 'size-5 text-muted-foreground/50' : 'size-3.5 text-muted-foreground/50'
             )} />
             <input
