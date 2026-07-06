@@ -159,12 +159,12 @@ export function PaymentDrawer({
     }
 
     const identity = useDrawerIdentity('finance.payment', mode, paymentData ?? (entityId ? { id: entityId } : undefined), {
-        customTitle: isViewMode
+        overrideTitle: isViewMode
             ? `Pago #${entityId}`
             : mode === 'create'
                 ? "Registrar Pago"
                 : "Editar Pago",
-        subtitle: isViewMode
+        overrideSubtitle: isViewMode
             ? 'Vista de detalle'
             : initialData
                 ? "Actualice la información del pago."

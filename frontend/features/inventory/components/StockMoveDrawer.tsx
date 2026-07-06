@@ -20,8 +20,8 @@ export function StockMoveDrawer({ id, open, onOpenChange, stockMoveId }: StockMo
 
     const displayId = move?.display_id ?? `#${entityId}`
     const identity = useDrawerIdentity('inventory.stockmove', 'view', move, {
-        customTitle: displayId,
-        subtitle: move?.product_name,
+        overrideTitle: displayId,
+        overrideSubtitle: move?.product_name,
         onPrint: handlePrint,
     })
 

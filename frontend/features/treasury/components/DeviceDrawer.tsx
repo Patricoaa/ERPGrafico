@@ -111,8 +111,8 @@ export function DeviceDrawer({ open, onOpenChange, device, providers: providersP
     }
 
     const identity = useDrawerIdentity('treasury.terminaldevice', mode, device, {
-        customTitle: mode === 'create' ? "Registrar Nuevo Hardware" : undefined,
-        subtitle: "Vincule una terminal física con un proveedor de servicios.",
+        overrideTitle: mode === 'create' ? "Registrar Nuevo Hardware" : undefined,
+        overrideSubtitle: "Vincule una terminal física con un proveedor de servicios.",
     })
 
     return (

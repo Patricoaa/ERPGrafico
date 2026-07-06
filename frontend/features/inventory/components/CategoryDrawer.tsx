@@ -438,9 +438,11 @@ export function CategoryDrawer({
     }
 
     const identity = useDrawerIdentity('inventory.category', mode, initialData, {
-        subtitle: form.watch("name")
+        overrideSubtitle: form.watch("name")
             ? `${form.watch("prefix") ? `${form.watch("prefix")} | ` : ""}${form.watch("name")}`
             : (initialData ? undefined : "Nueva Categoría"),
+        printable: (mode === 'view' || mode === 'edit') && !!initialData?.id,
+        onPrint: handlePrint,
     })
 
     return (
@@ -472,7 +474,7 @@ export function CategoryDrawer({
                 mode={mode}
                 icon={identity.icon}
                 title={identity.title}
-                headerActions={(mode === 'view' || mode === 'edit') && initialData?.id && <Button variant="ghost" size="icon" onClick={() => handlePrint()}><Printer className="h-4 w-4" /></Button>}
+                headerActions={identity.headerActions}
                 subtitle={identity.subtitle}
 
                 footer={isView ? undefined : (

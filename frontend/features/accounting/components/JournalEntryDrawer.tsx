@@ -451,12 +451,12 @@ export function JournalEntryDrawer({
     }
 
     const identity = useDrawerIdentity('accounting.journalentry', mode, (viewEntry ?? initialData) as Record<string, unknown> | undefined, {
-        customTitle: isViewMode
+        overrideTitle: isViewMode
             ? `Asiento #${entityId}`
             : mode === 'edit'
                 ? "Editar Asiento"
                 : undefined,
-        subtitle: isViewMode
+        overrideSubtitle: isViewMode
             ? form.watch("description") || 'Vista de detalle'
             : form.watch("description") || "Registro manual de movimiento",
     })

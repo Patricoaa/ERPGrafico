@@ -109,8 +109,8 @@ export function AbsenceDrawer({ open, onOpenChange, absence, employees: employee
     }
 
     const identity = useDrawerIdentity('hr.absence', mode, absence, {
-        customTitle: mode === 'create' ? 'Registrar Inasistencia' : undefined,
-        subtitle: "Ingrese los detalles de la ausencia del empleado.",
+        overrideTitle: mode === 'create' ? 'Registrar Inasistencia' : undefined,
+        overrideSubtitle: "Ingrese los detalles de la ausencia del empleado.",
     })
 
     const footer = isView ? undefined : (

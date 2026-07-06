@@ -25,8 +25,8 @@ export function InvoiceDrawer({ id, open, onOpenChange, mode = 'view', invoiceId
     const partnerName = invoice?.partner_name ?? invoice?.customer_name ?? invoice?.supplier_name ?? ''
 
     const identity = useDrawerIdentity('billing.invoice', 'view', invoice, {
-        customTitle: displayId,
-        subtitle: partnerName,
+        overrideTitle: displayId,
+        overrideSubtitle: partnerName,
         onPrint: handlePrint,
     })
 

@@ -93,8 +93,8 @@ export function CreatePayrollDrawer({ open, onOpenChange, onSaved, trigger }: Cr
     }
 
     const identity = useDrawerIdentity('hr.payroll', 'create', undefined, {
-        customTitle: "Nueva Liquidación",
-        subtitle: "RRHH • Emisión Mensual",
+        overrideTitle: "Nueva Liquidación",
+        overrideSubtitle: "RRHH • Emisión Mensual",
     })
 
     return (

@@ -429,7 +429,7 @@ export function PricingRuleDrawer({ auditSidebar, initialData, onSuccess, open, 
     )
 
     const identity = useDrawerIdentity('inventory.pricingrule', mode, initialData, {
-        subtitle: (
+        overrideSubtitle: (
             <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
                 {initialData?.rule_type && (
                     <>

@@ -90,13 +90,13 @@ export function GroupDrawer({
 
     const mode: DrawerMode = modeProp ?? (initialData ? 'edit' : 'create')
     const isView = mode === 'view'
-    const customTitle = mode === 'create' ? undefined
+    const overrideTitle = mode === 'create' ? undefined
         : mode === 'view'
             ? (initialData?.name || 'Grupo')
             : `Editar: ${initialData?.name || ''}`
     const identity = useDrawerIdentity('settings.group', mode, initialData, {
-        customTitle,
-        subtitle: "Configuración de grupo funcional y permisos de acceso",
+        overrideTitle,
+        overrideSubtitle: "Configuración de grupo funcional y permisos de acceso",
     })
     const printRef = useRef<HTMLDivElement>(null)
     const handlePrint = useReactToPrint({ contentRef: printRef })

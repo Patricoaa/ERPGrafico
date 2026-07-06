@@ -178,7 +178,7 @@ export function PosTerminalDrawer({ open, onOpenChange, terminal, onSuccess, mod
 
     const identity = useDrawerIdentity('pos.terminal', mode, terminal, {
         feminine: true,
-        subtitle: (
+        overrideSubtitle: (
             <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
                 {terminal?.code && (
                     <>

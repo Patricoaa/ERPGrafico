@@ -249,7 +249,7 @@ export function EmployeeDrawer({ open, onOpenChange, employee, onSaved, trigger,
     const watchSalud = form.watch("salud_type")
 
     const identity = useDrawerIdentity('hr.employee', mode, employee, {
-        subtitle: employee ? `Ficha de Personal • ${employee.display_id} • ${employee.contact_detail?.name}` : "Ficha de Personal • Recursos Humanos",
+        overrideSubtitle: employee ? `Ficha de Personal • ${employee.display_id} • ${employee.contact_detail?.name}` : "Ficha de Personal • Recursos Humanos",
     })
 
     const footer = isView ? undefined : (

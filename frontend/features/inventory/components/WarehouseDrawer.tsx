@@ -178,10 +178,10 @@ export function WarehouseDrawer({ onSuccess, initialData, open: openProp, onOpen
     }
 
     const identity = useDrawerIdentity('inventory.warehouse', mode, initialData, {
-        customTitle: isView
+        overrideTitle: isView
             ? `Ficha de Almacén${initialData?.id ? ` #${initialData.id}` : ""}`
             : mode === 'create' ? "Nuevo Almacén" : "Editar Almacén",
-        subtitle: form.watch("name")
+        overrideSubtitle: form.watch("name")
             ? `${form.watch("code") ? `${form.watch("code")} | ` : ""}${form.watch("name")}`
             : (initialData ? undefined : "Nuevo Almacén"),
     })

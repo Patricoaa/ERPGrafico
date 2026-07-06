@@ -102,12 +102,12 @@ export function BankJournalDrawer({ auditSidebar, onSuccess, initialData, open: 
     }
 
     const identity = useDrawerIdentity('finance.bankjournal', mode, initialData as Record<string, unknown> | undefined, {
-        customTitle: isView
+        overrideTitle: isView
             ? `Ficha de Caja/Banco${initialData?.id ? ` #${initialData.id}` : ""}`
             : mode === 'create'
                 ? "Crear Caja o Banco"
                 : "Editar Caja/Banco",
-        subtitle: initialData ? `${(initialData?.code as string) || ""} • ${form.watch("name") || ""}` : "Tesorería • Configuración de Caja o Banco",
+        overrideSubtitle: initialData ? `${(initialData?.code as string) || ""} • ${form.watch("name") || ""}` : "Tesorería • Configuración de Caja o Banco",
     })
 
     return (

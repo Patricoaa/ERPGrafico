@@ -12,7 +12,6 @@ import {
     FormItem,
 } from "@/components/ui/form"
 import { RadioGroup } from "@/components/ui/radio-group"
-import { Button } from "@/components/ui/button"
 import { ActionSlideButton, CancelButton } from "@/components/shared"
 import { useGlobalModals } from "@/components/providers/GlobalModalProvider"
 import { useHubPanel } from "@/components/providers/HubPanelProvider"
@@ -234,7 +233,11 @@ export default function ContactDrawer({ open, onOpenChange, contact, onSuccess, 
         },
     ]
 
-    const identity = useDrawerIdentity('contacts.contact', mode, contact)
+    const identity = useDrawerIdentity('contacts.contact', mode, contact, {
+        overrideSubtitle: "Ficha Maestra • CRM & Finanzas",
+        printable: !!contact?.id && (mode === 'view' || mode === 'edit'),
+        onPrint: handlePrint,
+    })
 
     return (
         <>
@@ -265,8 +268,8 @@ export default function ContactDrawer({ open, onOpenChange, contact, onSuccess, 
                 onOpenChange={onOpenChange}
                 icon={identity.icon}
                 title={identity.title}
-                headerActions={contact?.id && (mode === 'view' || mode === 'edit') && <Button variant="ghost" size="icon" onClick={() => handlePrint()}><Printer className="h-4 w-4" /></Button>}
-                subtitle="Ficha Maestra • CRM & Finanzas"
+                headerActions={identity.headerActions}
+                subtitle={identity.subtitle}
                 defaultSize={formDrawerWidth("master", !!c)}
                 className="h-[90vh]"
                 contentClassName="p-0"

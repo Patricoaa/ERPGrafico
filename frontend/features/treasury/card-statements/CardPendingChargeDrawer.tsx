@@ -143,8 +143,8 @@ export function CardPendingChargeDrawer({
     }
 
     const identity = useDrawerIdentity('treasury.cardpendingcharge', mode, charge ?? undefined, {
-        customTitle: isView ? "Detalle del Cargo" : charge ? "Editar Cargo" : "Agregar Cargo No Facturado",
-        subtitle: `${charge ? 'Editar' : 'Nuevo'} cargo en ${cardAccountName}`,
+        overrideTitle: isView ? "Detalle del Cargo" : charge ? "Editar Cargo" : "Agregar Cargo No Facturado",
+        overrideSubtitle: `${charge ? 'Editar' : 'Nuevo'} cargo en ${cardAccountName}`,
     })
 
     return (

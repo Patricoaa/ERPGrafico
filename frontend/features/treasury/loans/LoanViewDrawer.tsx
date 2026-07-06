@@ -31,8 +31,8 @@ export function LoanViewDrawer({ loanId, open, onOpenChange }: Props) {
     const { data: loan, isLoading, isError } = useLoan(loanId)
 
     const identity = useDrawerIdentity('treasury.bankloan', 'view', loan, {
-        customTitle: loan ? `${loan.display_id} · ${loan.lender_name}` : 'Cargando crédito…',
-        subtitle: loan ? `${loan.status_display} · ${loan.currency}` : undefined,
+        overrideTitle: loan ? `${loan.display_id} · ${loan.lender_name}` : 'Cargando crédito…',
+        overrideSubtitle: loan ? `${loan.status_display} · ${loan.currency}` : undefined,
     })
 
     return (

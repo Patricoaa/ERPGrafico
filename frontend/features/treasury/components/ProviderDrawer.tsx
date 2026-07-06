@@ -126,14 +126,14 @@ export function ProviderDrawer({ open, onOpenChange, provider, onSuccess, mode: 
         }
     }
 
-    const customTitle = isView
+    const overrideTitle = isView
         ? `Ficha de Proveedor${provider?.id ? ` #${provider.id}` : ""}`
         : mode === 'edit'
             ? "Editar Proveedor"
             : undefined
     const identity = useDrawerIdentity('treasury.terminalprovider', mode, provider, {
-        customTitle,
-        subtitle: "Configure las cuentas contables para recaudación y comisiones.",
+        overrideTitle,
+        overrideSubtitle: "Configure las cuentas contables para recaudación y comisiones.",
     })
 
     return (

@@ -16,7 +16,7 @@ export function AccountingPeriodDrawer({ periodId, open, onOpenChange }: Account
     const { data: period, isLoading } = useTaxPeriod(periodId ?? undefined)
 
     const identity = useDrawerIdentity('tax.accountingperiod', 'view', period, {
-        customTitle: period ? `Período ${period.month_display || period.id}` : "Período Contable",
+        overrideTitle: period ? `Período ${period.month_display || period.id}` : "Período Contable",
     })
 
     return (
