@@ -248,7 +248,7 @@ export function TabBar({
                 {renderTabsList()}
             </div>
 
-            <div className={cn("flex-1 overflow-hidden", contentClassName || "bg-card")}>
+            <div className={cn("flex-1 overflow-hidden flex flex-col", contentClassName || "bg-card")}>
                 {children}
             </div>
         </Tabs>
