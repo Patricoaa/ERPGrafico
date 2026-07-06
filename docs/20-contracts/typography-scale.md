@@ -86,7 +86,7 @@ h-9  text-[10px]  font-black  uppercase  tracking-widest
 | **Estándar** | `text-[10px] font-black uppercase tracking-widest` | Badge/chip genérico de UI chrome | `<Chip size="sm">` |
 | **Compacto** | `text-[9px] font-black uppercase tracking-widest` | Tabla, inline, overlaid counters | `<Chip size="xs">` |
 | **Énfasis** | `text-[11px] font-black uppercase tracking-widest` | Detail views, modal sections | `<Chip size="md">` |
-| **Header de tabla** | `text-[10px] font-black uppercase tracking-widest` | `<TableHead>` columnas | `data-table-column-header.tsx` |
+| **Header de tabla** | `text-[10px] font-black font-heading uppercase tracking-widest` | `<TableHead>` columnas | `data-table-column-header.tsx` |
 | **Fine print excepción** | `text-[9px] font-medium` | Timestamps, conteos mínimos sin pill | Inline `<span>` |
 
 > **PROHIBIDO:** `text-[8px]` en features. Excepciones documentadas: `PrintableReceipt.tsx` (papel físico), POS `CartItem`/`POSCheckoutHeader` (espacio táctil crítico), `AvatarFallback` (imagen).
