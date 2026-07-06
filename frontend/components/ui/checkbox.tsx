@@ -26,7 +26,7 @@ const Checkbox = React.forwardRef<HTMLInputElement, CheckboxProps>(
         }, [isIndeterminate])
 
         return (
-            <div className={cn(isCircle ? "relative h-4 w-4" : "relative flex items-center")}>
+            <div className={cn(isCircle ? "relative flex items-center justify-center h-4 w-4" : "relative flex items-center")}>
                 <input
                     type="checkbox"
                     ref={inputRef}
@@ -44,9 +44,9 @@ const Checkbox = React.forwardRef<HTMLInputElement, CheckboxProps>(
                 />
                 {isCircle ? (
                     checked === true ? (
-                        <CmykRing size="sm" className="absolute inset-0 m-auto h-3 w-3 pointer-events-none" />
+                        <CmykRing size="sm" className="h-3 w-3 pointer-events-none" />
                     ) : isIndeterminate ? (
-                        <Minus className="absolute inset-0 m-auto h-3 w-3 text-muted-foreground pointer-events-none" />
+                        <Minus className="h-3 w-3 text-muted-foreground pointer-events-none" />
                     ) : null
                 ) : (
                     <>
