@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useRealtime } from '@/features/realtime'
+import { invalidateCrossFeature } from '@/lib/invalidation'
 import { creditLinesApi } from './api'
 import { CREDIT_LINES_KEYS } from '../hooks/queryKeys'
 import type { CreditLineCreatePayload } from './types'
@@ -31,14 +32,16 @@ export function useCreditLineOverview(id: number | null) {
 }
 
 export function useCreditLineMutations() {
-    const qc = useQueryClient()
+    const queryClient = useQueryClient()
     const { markLocalMutation } = useRealtime()
+
+    const invalidate = () => invalidateCrossFeature(queryClient, [CREDIT_LINES_KEYS.all])
 
     const create = useMutation({
         mutationFn: (data: CreditLineCreatePayload) => creditLinesApi.create(data),
         onSuccess: () => {
             markLocalMutation()
-            qc.invalidateQueries({ queryKey: CREDIT_LINES_KEYS.all })
+            invalidate()
         },
     })
 
@@ -47,7 +50,7 @@ export function useCreditLineMutations() {
             creditLinesApi.update(id, data),
         onSuccess: () => {
             markLocalMutation()
-            qc.invalidateQueries({ queryKey: CREDIT_LINES_KEYS.all })
+            invalidate()
         },
     })
 
@@ -55,7 +58,7 @@ export function useCreditLineMutations() {
         mutationFn: (id: number) => creditLinesApi.delete(id),
         onSuccess: () => {
             markLocalMutation()
-            qc.invalidateQueries({ queryKey: CREDIT_LINES_KEYS.all })
+            invalidate()
         },
     })
 

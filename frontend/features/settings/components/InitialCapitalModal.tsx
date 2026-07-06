@@ -105,6 +105,7 @@ export function InitialCapitalModal({ open, onOpenChange, onSuccess }: InitialCa
             )
         },
         {
+            id: "amount",
             header: () => <div className="text-right">Monto Aportado</div>,
             cell: ({ row }) => (
                 <div className="relative w-full max-w-[200px] ml-auto">
@@ -121,6 +122,7 @@ export function InitialCapitalModal({ open, onOpenChange, onSuccess }: InitialCa
             meta: { align: 'right' }
         },
         {
+            id: "percentage",
             header: "Participación",
             cell: ({ row }) => {
                 const percentage = totalCapital > 0 ? (row.original.amount / totalCapital) * 100 : 0

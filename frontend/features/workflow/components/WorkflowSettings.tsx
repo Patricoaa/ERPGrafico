@@ -18,6 +18,7 @@ import { Tabs, TabsContent } from "@/components/ui/tabs"
 import { Input } from "@/components/ui/input"
 import { Switch } from "@/components/ui/switch"
 import { cn } from "@/lib/utils"
+import { invalidateCrossFeature } from '@/lib/invalidation'
 import { CardSkeleton } from "@/components/shared"
 import type { WorkflowRule, NotificationRule } from "@/types/entities"
 import { useAutoSaveForm, type AutoSaveStatus } from "@/hooks/useAutoSaveForm"
@@ -367,7 +368,7 @@ const RecurrentRuleRow = React.memo(function RecurrentRuleRow({ taskType, rule, 
     
     const onSaveDay = useCallback(async (data: DayValues) => {
         await updateWorkflowSettingsMutation.mutateAsync({ [taskType.dayField]: data.value })
-        queryClient.invalidateQueries({ queryKey: workflowKeys.recurrentSettings() })
+        invalidateCrossFeature(queryClient, [workflowKeys.recurrentSettings()])
     }, [taskType.dayField])
 
     const { status: dayStatus } = useAutoSaveForm({

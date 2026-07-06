@@ -3,6 +3,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import api from '@/lib/api'
 import { showApiError } from '@/lib/errors'
+import { invalidateCrossFeature } from '@/lib/invalidation'
 import { useRealtime } from '@/features/realtime'
 
 export interface WorkOrderComment {
@@ -37,7 +38,7 @@ export function useWorkOrderComments(orderId: number) {
         },
         onSuccess: () => {
             markLocalMutation()
-            queryClient.invalidateQueries({ queryKey: [COMMENTS_KEY, orderId] })
+            invalidateCrossFeature(queryClient, [[COMMENTS_KEY, orderId]])
         },
         onError: (err) => showApiError(err, 'Error al agregar comentario'),
     })

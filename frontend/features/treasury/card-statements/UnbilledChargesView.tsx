@@ -39,6 +39,7 @@ import { PieChart } from "@/components/shared"
 import { useHubPanel } from '@/components/providers'
 import { useSearchParams, usePathname, useRouter } from 'next/navigation'
 import { useEntityRouteActions } from '@/hooks/useEntityRouteActions'
+import { invalidateCrossFeature } from '@/lib/invalidation'
 
 const unbilledSearchDef: SearchDefinition = {
     fields: [
@@ -212,7 +213,7 @@ export function UnbilledChargesView({
 
     const handleChargeDrawerSuccess = () => {
         handleChargeDrawerOpenChange(false)
-        queryClient.invalidateQueries({ queryKey: ['unbilled-charges', selectedCardAccount] })
+        invalidateCrossFeature(queryClient, [['unbilled-charges', selectedCardAccount]])
     }
 
     const handleAddChargeClick = () => {
@@ -223,8 +224,7 @@ export function UnbilledChargesView({
 
     const handleBillChargesSuccess = () => {
         setShowBillCharges(false)
-        queryClient.invalidateQueries({ queryKey: ['unbilled-charges', selectedCardAccount] })
-        queryClient.invalidateQueries({ queryKey: ['card-statements'] })
+        invalidateCrossFeature(queryClient, [['unbilled-charges', selectedCardAccount], ['card-statements']])
         toast.success('Cargos facturados exitosamente')
     }
 

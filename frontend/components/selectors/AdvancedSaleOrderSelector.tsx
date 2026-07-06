@@ -2,21 +2,18 @@
 import { formatEntityDisplay, getEntityIcon } from "@/lib/entity-registry"
 
 import { useState, useEffect } from "react"
-import { Check, ChevronDown, Search, Loader2, Eye } from "lucide-react"
+import { Check, ChevronDown, Eye } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
-import {
-    Popover,
-    PopoverContent,
-    PopoverTrigger,
-} from "@/components/ui/popover"
 import { useDebounce } from "@/hooks/useDebounce"
 import { format } from "date-fns"
 import { SaleOrderDrawer } from "@/features/sales/components/SaleOrderDrawer"
 
 import { useSaleOrderSearch } from "@/features/orders/hooks/useSaleOrderSearch"
-import { EmptyState } from '@/components/shared'
+import { LabeledContainer, SearchablePopover } from '@/components/shared'
 import { type SaleOrder } from "@/types/entities"
+
+const SaleOrderIcon = getEntityIcon('sales.saleorder')
 
 interface AdvancedSaleOrderSelectorProps {
     value?: string | number | null
@@ -98,137 +95,89 @@ export function AdvancedSaleOrderSelector({
     }
 
     return (
-        <div className={cn("relative w-full flex flex-col group", className)}>
-            <fieldset 
-                data-disabled={disabled || undefined}
-                className={cn(
-                    "notched-field w-full group transition-all",
-                    open && "focused",
-                    error && "error"
+        <LabeledContainer
+            label={label}
+            error={error}
+            disabled={disabled}
+            className={className}
+        >
+            <div className="flex items-center w-full">
+                {icon && (
+                    <div className="pl-2.5 flex items-center justify-center text-muted-foreground/60 transition-colors shrink-0 leading-none">
+                        {icon}
+                    </div>
                 )}
-            >
-                {label && (
-                    <legend className={cn(
-                        "px-1.5 text-[10px] font-black uppercase tracking-[0.15em] transition-colors duration-200 notched-legend",
-                        error ? "text-destructive" : "text-muted-foreground group-focus-within:text-primary"
-                    )}>
-                        {label}
-                    </legend>
-                )}
-                
-                <div className="flex items-center w-full">
-                    {icon && (
-                        <div className="pl-2.5 flex items-center justify-center text-muted-foreground/60 group-focus-within:text-primary transition-colors shrink-0 leading-none">
-                            {icon}
+                <SearchablePopover
+                    open={open}
+                    onOpenChange={setOpen}
+                    searchValue={searchTerm}
+                    onSearchChange={setSearchTerm}
+                    searchPlaceholder="Buscar por N° Nota o Cliente..."
+                    items={orders}
+                    isLoading={searchLoading}
+                    selectedId={selectedOrder ? selectedOrder.id.toString() : null}
+                    getId={(o) => o.id}
+                    onSelect={handleSelect}
+                    emptyTitle={searchTerm ? "No se encontraron notas" : "Escriba para buscar"}
+                    renderItem={(order) => (
+                        <div className="flex items-center gap-3 w-full overflow-hidden">
+                            <div className="flex-shrink-0 p-2 bg-muted rounded-md">
+                                <SaleOrderIcon className="h-4 w-4 text-primary" />
+                            </div>
+                            <div className="flex flex-col overflow-hidden flex-1">
+                                <div className="flex items-center justify-between">
+                                    <span className="truncate font-bold">{formatEntityDisplay('sales.saleorder', order as unknown as Record<string, unknown>)}</span>
+                                    <span className="text-[10px] font-mono text-muted-foreground">
+                                        {format(new Date(order.created_at), "dd/MM/yyyy")}
+                                    </span>
+                                </div>
+                                <span className="text-[10px] text-muted-foreground uppercase font-black truncate">
+                                    {order.customer_name}
+                                </span>
+                            </div>
+
+                            <div className="flex items-center gap-1">
+                                <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity"
+                                    onClick={(e) => openPreview(e, order.id)}
+                                    title="Previsualizar"
+                                >
+                                    <Eye className="h-4 w-4 text-primary" />
+                                </Button>
+                                {selectedOrder?.id === order.id && (
+                                    <Check className="h-4 w-4 text-primary flex-shrink-0" />
+                                )}
+                            </div>
                         </div>
                     )}
-                    <Popover open={open} onOpenChange={setOpen}>
-                        <PopoverTrigger asChild>
-                            <Button
-                                variant="ghost"
-                                role="combobox"
-                                aria-expanded={open}
-                                disabled={disabled}
-                                className={cn(
-                                    "w-full justify-between overflow-hidden h-[1.5rem] py-0 px-3 border-none shadow-none focus-visible:ring-0 bg-transparent hover:bg-transparent",
-                                    disabled && "opacity-50 cursor-not-allowed",
-                                    icon && "pl-1.5"
-                                )}
-                            >
-                        {selectedOrder ? (() => {
-                            const OrderIcon = getEntityIcon('sales.saleorder');
-                            return (
+                    trigger={
+                        <Button
+                            variant="ghost"
+                            role="combobox"
+                            aria-expanded={open}
+                            disabled={disabled}
+                            className={cn(
+                                "w-full justify-between overflow-hidden h-[1.5rem] py-0 px-3 border-none shadow-none focus-visible:ring-0 bg-transparent hover:bg-transparent",
+                                disabled && "opacity-50 cursor-not-allowed",
+                                icon && "pl-1.5"
+                            )}
+                        >
+                            {selectedOrder ? (
                                 <div className="flex items-center gap-1.5 min-w-0 flex-1">
-                                    <OrderIcon className="h-3.5 w-3.5 shrink-0 text-primary" />
+                                    <SaleOrderIcon className="h-3.5 w-3.5 shrink-0 text-primary" />
                                     <span className="font-semibold text-sm shrink-0">{formatEntityDisplay('sales.saleorder', selectedOrder as unknown as Record<string, unknown>)}</span>
                                     <span className="text-sm text-muted-foreground truncate">{selectedOrder.customer_name}</span>
                                 </div>
-                            );
-                        })() : (
-                            <span className="text-muted-foreground truncate">{placeholder}</span>
-                        )}
-                        <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                    </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0" align="start">
-                    <div className="p-2">
-                        <div className="flex items-center px-3 border rounded-md mb-2 bg-background">
-                            <Search className="mr-2 h-4 w-4 shrink-0 opacity-50" />
-                            <input
-                                className="flex h-10 w-full rounded-md bg-transparent py-3 text-sm outline-none placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50"
-                                placeholder="Buscar por N° Nota o Cliente..."
-                                value={searchTerm}
-                                onChange={(e) => setSearchTerm(e.target.value)}
-                                autoFocus
-                            />
-                        </div>
-                        <div className="max-h-[300px] overflow-y-auto space-y-1">
-                        {searchLoading ? (
-                            <div className="p-4 flex justify-center"><Loader2 className="h-4 w-4 animate-spin" /></div>
-                        ) : orders.length === 0 ? (
-                            <EmptyState
-                                context="search"
-                                variant="compact"
-                                title={searchTerm ? "No se encontraron notas" : "Escriba para buscar"}
-                            />
-                        ) : (
-                                orders.map((order) => (
-                                    <div
-                                        key={order.id}
-                                        className={cn(
-                                            "relative flex cursor-pointer select-none items-center rounded-sm px-2 py-2 text-sm outline-none hover:bg-accent hover:text-accent-foreground group",
-                                            selectedOrder?.id === order.id && "bg-accent"
-                                        )}
-                                        onClick={() => handleSelect(order)}
-                                    >
-                                        <div className="flex items-center gap-3 w-full overflow-hidden">
-                                            <div className="flex-shrink-0 p-2 bg-muted rounded-md group-hover:bg-background transition-colors">
-                                                {(() => {
-                                                    const OrderIcon = getEntityIcon('sales.saleorder');
-                                                    return <OrderIcon className="h-4 w-4 text-primary" />;
-                                                })()}
-                                            </div>
-                                            <div className="flex flex-col overflow-hidden flex-1">
-                                                <div className="flex items-center justify-between">
-                                                    <span className="truncate font-bold">{formatEntityDisplay('sales.saleorder', order as unknown as Record<string, unknown>)}</span>
-                                                    <span className="text-[10px] font-mono text-muted-foreground">
-                                                        {format(new Date(order.created_at), "dd/MM/yyyy")}
-                                                    </span>
-                                                </div>
-                                                <span className="text-[10px] text-muted-foreground uppercase font-black truncate">
-                                                    {order.customer_name}
-                                                </span>
-                                            </div>
-
-                                            <div className="flex items-center gap-1">
-                                                <Button
-                                                    variant="ghost"
-                                                    size="icon"
-                                                    className="h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity"
-                                                    onClick={(e) => openPreview(e, order.id)}
-                                                    title="Previsualizar"
-                                                >
-                                                    <Eye className="h-4 w-4 text-primary" />
-                                                </Button>
-                                                {selectedOrder?.id === order.id && (
-                                                    <Check className="h-4 w-4 text-primary flex-shrink-0" />
-                                                )}
-                                            </div>
-                                        </div>
-                                    </div>
-                                ))
+                            ) : (
+                                <span className="text-muted-foreground truncate">{placeholder}</span>
                             )}
-                        </div>
-                    </div>
-                </PopoverContent>
-            </Popover>
+                            <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                        </Button>
+                    }
+                />
             </div>
-            </fieldset>
-            {error && (
-                <p className="mt-1.5 text-[11px] font-medium text-destructive animate-in fade-in slide-in-from-top-1 w-full text-left px-1">
-                    {error}
-                </p>
-            )}
 
             {previewId && (
                 <SaleOrderDrawer
@@ -237,6 +186,6 @@ export function AdvancedSaleOrderSelector({
                     onOpenChange={setPreviewOpen}
                 />
             )}
-        </div>
+        </LabeledContainer>
     )
 }

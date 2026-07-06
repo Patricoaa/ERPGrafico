@@ -12,6 +12,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import api from '@/lib/api'
 import { showApiError } from '@/lib/errors'
+import { invalidateCrossFeature } from '@/lib/invalidation'
 import { useRealtime } from '@/features/realtime'
 import { WORK_ORDERS_LIST_KEY, WORK_ORDER_QUERY_KEY } from './useWorkOrderMutations'
 
@@ -32,10 +33,11 @@ export function useWorkOrderListActions(
   const { markLocalMutation } = useRealtime()
 
   const invalidate = (id?: number | string) => {
+    const keys: Array<readonly unknown[]> = [[WORK_ORDERS_LIST_KEY]]
     if (id) {
-      queryClient.invalidateQueries({ queryKey: [WORK_ORDER_QUERY_KEY, String(id)] })
+      keys.push([WORK_ORDER_QUERY_KEY, String(id)])
     }
-    queryClient.invalidateQueries({ queryKey: [WORK_ORDERS_LIST_KEY] })
+    invalidateCrossFeature(queryClient, keys)
     onSuccess?.()
   }
 
@@ -75,7 +77,7 @@ export function useWorkOrderListActions(
     onSuccess: () => {
       markLocalMutation()
       toast.success('OT duplicada correctamente.')
-      queryClient.invalidateQueries({ queryKey: [WORK_ORDERS_LIST_KEY] })
+      invalidateCrossFeature(queryClient, [[WORK_ORDERS_LIST_KEY]])
       onSuccess?.()
     },
     onError: (err) => showApiError(err, 'Error al duplicar la OT'),

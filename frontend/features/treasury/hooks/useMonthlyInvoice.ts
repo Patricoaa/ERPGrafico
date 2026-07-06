@@ -1,4 +1,5 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { invalidateCrossFeature } from '@/lib/invalidation'
 import { toast } from 'sonner'
 import { showApiError } from '@/lib/errors'
 import { treasuryApi } from '../api/treasuryApi'
@@ -14,7 +15,7 @@ export function useMonthlyInvoice() {
         onSuccess: () => {
             markLocalMutation()
             toast.success('Factura generada exitosamente')
-            queryClient.invalidateQueries({ queryKey: MONTHLY_INVOICES_KEYS.all })
+            invalidateCrossFeature(queryClient, [MONTHLY_INVOICES_KEYS.all])
         },
         onError: (err) => {
             showApiError(err, 'Error al generar factura')

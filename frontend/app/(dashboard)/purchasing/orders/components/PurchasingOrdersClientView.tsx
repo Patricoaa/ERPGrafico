@@ -567,7 +567,13 @@ export function PurchasingOrdersClientView({ viewMode, externalOpenCheckout, cre
                 open={checkoutOpen || !!checkoutOrderId}
                 onOpenChange={(open) => {
                     setCheckoutOpen(open)
-                    if (!open) setCheckoutOrderId(null)
+                    if (!open) {
+                        setCheckoutOrderId(null)
+                        const params = new URLSearchParams(searchParams.toString())
+                        params.delete('modal')
+                        const query = params.toString()
+                        router.replace(query ? `${pathname}?${query}` : pathname, { scroll: false })
+                    }
                 }}
                 order={null}
                 orderId={checkoutOrderId}
@@ -577,6 +583,10 @@ export function PurchasingOrdersClientView({ viewMode, externalOpenCheckout, cre
                     fetchOrders()
                     setCheckoutOpen(false)
                     setCheckoutOrderId(null)
+                    const params = new URLSearchParams(searchParams.toString())
+                    params.delete('modal')
+                    const query = params.toString()
+                    router.replace(query ? `${pathname}?${query}` : pathname, { scroll: false })
                 }}
             />
 

@@ -1,4 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { invalidateCrossFeature } from '@/lib/invalidation'
 import { useRealtime } from '@/features/realtime'
 import { toast } from 'sonner'
 import { showApiError } from '@/lib/errors'
@@ -42,7 +43,7 @@ export function useTreasuryMovements(filters: TreasuryMovementFilters = {}) {
         mutationFn: (payload: MovementCreatePayload) => treasuryApi.createMovement(payload),
         onSuccess: () => {
             markLocalMutation()
-            queryClient.invalidateQueries({ queryKey: MOVEMENTS_KEYS.all })
+            invalidateCrossFeature(queryClient, [MOVEMENTS_KEYS.all])
             toast.success('Movimiento registrado correctamente')
         },
         onError: (err) => {

@@ -5,7 +5,7 @@ import { USER_KEYS } from './queryKeys'
 
 export function useUserSearch(search: string = "", enabled: boolean = true) {
     const query = useQuery({
-        queryKey: USER_KEYS.list(search),
+        queryKey: USER_KEYS.list({ search }),
         queryFn: async () => {
             const params = new URLSearchParams()
             if (search) params.append("search", search)

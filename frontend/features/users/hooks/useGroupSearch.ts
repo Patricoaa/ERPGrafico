@@ -5,7 +5,7 @@ import { GROUP_KEYS } from './queryKeys'
 
 export function useGroupSearch(search: string = "", enabled: boolean = true) {
     const query = useQuery({
-        queryKey: GROUP_KEYS.list(search),
+        queryKey: GROUP_KEYS.list({ search }),
         queryFn: async () => {
             const params = new URLSearchParams()
             if (search) params.append("search", search)

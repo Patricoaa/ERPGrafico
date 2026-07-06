@@ -1,4 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { invalidateCrossFeature } from '@/lib/invalidation'
 import api from '@/lib/api'
 import { toPage, type Page } from '@/lib/pagination'
 import { useRealtime } from '@/features/realtime'
@@ -111,8 +112,7 @@ export function useStockAdjustment() {
         },
         onSuccess: () => {
             markLocalMutation()
-            queryClient.invalidateQueries({ queryKey: STOCK_MOVES_QUERY_KEY })
-            queryClient.invalidateQueries({ queryKey: PRODUCTS_KEYS.all })
+            invalidateCrossFeature(queryClient, [STOCK_MOVES_QUERY_KEY, PRODUCTS_KEYS.all])
         },
     })
 

@@ -3,6 +3,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import api from '@/lib/api'
 import { useRealtime } from '@/features/realtime'
+import { invalidateCrossFeature } from '@/lib/invalidation'
 import { PRICING_RULES_QUERY_KEY, PRODUCTS_QUERY_KEY } from './queryKeys'
 
 export function usePricingRuleMutations() {
@@ -10,8 +11,7 @@ export function usePricingRuleMutations() {
     const { markLocalMutation } = useRealtime()
 
     const invalidate = () => {
-        queryClient.invalidateQueries({ queryKey: PRICING_RULES_QUERY_KEY })
-        queryClient.invalidateQueries({ queryKey: PRODUCTS_QUERY_KEY })
+        invalidateCrossFeature(queryClient, [PRICING_RULES_QUERY_KEY, PRODUCTS_QUERY_KEY])
     }
 
     const deletePricingRule = useMutation({

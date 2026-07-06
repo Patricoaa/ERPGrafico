@@ -1,5 +1,6 @@
 "use client"
 
+import { invalidateCrossFeature } from '@/lib/invalidation'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import api from '@/lib/api'
 import { showApiError } from '@/lib/errors'
@@ -38,7 +39,7 @@ export function useSaleOrderComments(orderId: number | string) {
         },
         onSuccess: () => {
             markLocalMutation()
-            queryClient.invalidateQueries({ queryKey: [COMMENTS_KEY, orderId] })
+            invalidateCrossFeature(queryClient, [[COMMENTS_KEY, orderId]])
         },
         onError: (err) => showApiError(err, 'Error al agregar comentario'),
     })

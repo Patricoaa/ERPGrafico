@@ -1,4 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
+import { invalidateCrossFeature } from "@/lib/invalidation"
 import { useRealtime } from "@/features/realtime"
 import { toast } from "sonner"
 import { showApiError } from "@/lib/errors"
@@ -19,7 +20,7 @@ export function useTerminalProviders() {
     })
 
     const invalidate = () => {
-        queryClient.invalidateQueries({ queryKey: TERMINAL_PROVIDERS_KEYS.all })
+        invalidateCrossFeature(queryClient, [TERMINAL_PROVIDERS_KEYS.all])
     }
 
     const createProvider = useMutation({
@@ -75,7 +76,7 @@ export function useTerminalDevices(filters?: Record<string, string>) {
     })
 
     const invalidate = () => {
-        queryClient.invalidateQueries({ queryKey: TERMINAL_DEVICES_KEYS.all })
+        invalidateCrossFeature(queryClient, [TERMINAL_DEVICES_KEYS.all])
     }
 
     const createDevice = useMutation({

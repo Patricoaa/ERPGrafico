@@ -28,10 +28,12 @@ export function PurchaseReturnDrawer({ returnId, id, open, onOpenChange }: Purch
 
     const columns = useMemo<ColumnDef<Record<string, unknown>>[]>(() => [
         {
+            id: "product",
             header: "Producto",
             cell: ({ row }) => String(row.original.product_name)
         },
         {
+            id: "quantity",
             header: "Cantidad",
             cell: ({ row }) => String(row.original.quantity_returned),
             meta: { align: "right" }

@@ -15,10 +15,9 @@ import { PaymentModal } from "@/features/treasury/components/PaymentModal"
 import { ReceiptModal } from "@/features/purchasing/components/ReceiptModal"
 import { UnifiedNoteWizard } from '@/features/notes'
 
-import { DataTableView } from '@/components/shared'
-import { useHubPanel } from "@/components/providers/HubPanelProvider"
+import { DataTableView, createCodeColumn, createDateColumn, createCurrencyColumn, createContactColumn, DataTableColumnHeader } from '@/components/shared'
 import { DataCell } from '@/components/shared'
-import { DataTableColumnHeader } from '@/components/shared'
+import { useHubPanel } from "@/components/providers/HubPanelProvider"
 import { useConfirmAction } from "@/hooks/useConfirmAction"
 
 import { usePurchaseInvoices } from "@/features/billing/hooks/usePurchaseInvoices"
@@ -117,16 +116,10 @@ export function PurchaseInvoicesClientView() {
     }
 
     const columns: ColumnDef<Invoice>[] = [
-        {
-            accessorKey: "number",
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Folio" className="justify-center" />,
-            cell: ({ row }) => <DataCell.Code>{row.original.display_id ?? row.original.number}</DataCell.Code>,
-        },
-        {
-            accessorKey: "date",
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Fecha" className="justify-center" />,
-            cell: ({ row }) => <DataCell.Date value={row.getValue("date")} />,
-        },
+        createCodeColumn<Invoice>("number", "Folio", {
+            render: (row) => <>{row.display_id ?? row.number}</>,
+        }),
+        createDateColumn<Invoice>("date", "Fecha"),
         {
             accessorKey: "dte_type",
             header: ({ column }) => <DataTableColumnHeader column={column} title="Tipo" className="justify-center" />,
@@ -148,16 +141,8 @@ export function PurchaseInvoicesClientView() {
                 )
             },
         },
-        {
-            accessorKey: "partner_name",
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Proveedor" className="justify-center" />,
-            cell: ({ row }) => <DataCell.ContactLink contactId={row.original.partner || row.original.supplier}>{row.getValue("partner_name")}</DataCell.ContactLink>,
-        },
-        {
-            accessorKey: "total",
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Total" className="justify-center" />,
-            cell: ({ row }) => <DataCell.Currency value={row.getValue("total")} />,
-        },
+        createContactColumn<Invoice>("partner_name", "Proveedor", "partner"),
+        createCurrencyColumn<Invoice>("total", "Total"),
         {
             id: "payment_status",
             header: ({ column }) => <DataTableColumnHeader column={column} title="Pagado/Devuelto" className="justify-center" />,

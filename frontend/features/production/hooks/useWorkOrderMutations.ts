@@ -2,6 +2,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import api from '@/lib/api'
 import { showApiError } from '@/lib/errors'
+import { invalidateCrossFeature } from '@/lib/invalidation'
 import { useRealtime } from '@/features/realtime'
 import type { WorkOrderStageData } from '../schemas'
 
@@ -62,8 +63,7 @@ export function useWorkOrderMutations(
   const { markLocalMutation } = useRealtime()
 
   const invalidate = () => {
-    queryClient.invalidateQueries({ queryKey: [WORK_ORDER_QUERY_KEY, String(orderId)] })
-    queryClient.invalidateQueries({ queryKey: [WORK_ORDERS_LIST_KEY] })
+    invalidateCrossFeature(queryClient, [[WORK_ORDER_QUERY_KEY, String(orderId)], [WORK_ORDERS_LIST_KEY]])
     onSuccess?.()
   }
 

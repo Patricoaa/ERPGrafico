@@ -1,4 +1,5 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { invalidateCrossFeature } from '@/lib/invalidation'
 import { billingApi } from '../api/billingApi'
 import { INVOICES_QUERY_KEY } from './useInvoices'
 import { useRealtime } from '@/features/realtime'
@@ -8,7 +9,7 @@ export function useNoteCheckout() {
     const { markLocalMutation } = useRealtime()
 
     const invalidate = () => {
-        queryClient.invalidateQueries({ queryKey: INVOICES_QUERY_KEY })
+        invalidateCrossFeature(queryClient, [INVOICES_QUERY_KEY])
     }
 
     const checkoutMutation = useMutation({

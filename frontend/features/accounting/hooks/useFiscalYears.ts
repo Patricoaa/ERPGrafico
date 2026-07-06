@@ -4,8 +4,8 @@ import { toast } from 'sonner';
 import { type FiscalYear, type FiscalYearPreviewResult } from '../types';
 import { showApiError } from '@/lib/errors';
 import { useRealtime } from '@/features/realtime';
-import { ACCOUNTING_PERIODS_QUERY_KEY } from './queryKeys';
-import { FISCAL_YEARS_QUERY_KEY } from './queryKeys';
+import { invalidateCrossFeature } from '@/lib/invalidation';
+import { ACCOUNTING_PERIODS_QUERY_KEY, FISCAL_YEARS_QUERY_KEY } from './queryKeys';
 
 export { FISCAL_YEARS_QUERY_KEY };
 
@@ -26,9 +26,7 @@ export function useFiscalYears() {
         mutationFn: (year: number) => api.post(`/accounting/fiscal-years/${year}/close/`),
         onSuccess: (_, year) => {
             markLocalMutation();
-            queryClient.invalidateQueries({ queryKey: FISCAL_YEARS_QUERY_KEY });
-            // Closing a year changes period states within it
-            queryClient.invalidateQueries({ queryKey: ACCOUNTING_PERIODS_QUERY_KEY });
+            invalidateCrossFeature(queryClient, [FISCAL_YEARS_QUERY_KEY, ACCOUNTING_PERIODS_QUERY_KEY]);
             toast.success(`Ejercicio fiscal ${year} cerrado exitosamente.`);
         },
         onError: (error, year) => showApiError(error, `Error al cerrar el ejercicio fiscal ${year}`),
@@ -38,9 +36,7 @@ export function useFiscalYears() {
         mutationFn: (year: number) => api.post(`/accounting/fiscal-years/${year}/reopen/`),
         onSuccess: (_, year) => {
             markLocalMutation();
-            queryClient.invalidateQueries({ queryKey: FISCAL_YEARS_QUERY_KEY });
-            // Reopening a year also changes period states
-            queryClient.invalidateQueries({ queryKey: ACCOUNTING_PERIODS_QUERY_KEY });
+            invalidateCrossFeature(queryClient, [FISCAL_YEARS_QUERY_KEY, ACCOUNTING_PERIODS_QUERY_KEY]);
             toast.success(`Ejercicio fiscal ${year} reabierto exitosamente.`);
         },
         onError: (error, year) => showApiError(error, `Error al reabrir el ejercicio fiscal ${year}`),
@@ -50,7 +46,7 @@ export function useFiscalYears() {
         mutationFn: (year: number) => api.post(`/accounting/fiscal-years/${year}/generate-opening/`),
         onSuccess: (_, year) => {
             markLocalMutation();
-            queryClient.invalidateQueries({ queryKey: FISCAL_YEARS_QUERY_KEY });
+            invalidateCrossFeature(queryClient, [FISCAL_YEARS_QUERY_KEY]);
             toast.success(`Asiento de apertura para el año ${year + 1} generado exitosamente.`);
         },
         onError: (error, year) => showApiError(error, `Error al generar el asiento de apertura para el año ${year + 1}`),

@@ -1,4 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { invalidateCrossFeature } from '@/lib/invalidation'
 import api from '@/lib/api'
 import { toast } from 'sonner'
 import { useRealtime } from '@/features/realtime'
@@ -101,7 +102,7 @@ export function useUoMs(filters?: FilterState) {
         mutationFn: async (id: number) => api.delete(`/inventory/uoms/${id}/`),
         onSuccess: () => {
             markLocalMutation()
-            queryClient.invalidateQueries({ queryKey: UOMS_KEYS.all })
+            invalidateCrossFeature(queryClient, [UOMS_KEYS.all])
         },
     })
 
@@ -114,7 +115,7 @@ export function useUoMs(filters?: FilterState) {
         },
         onSuccess: () => {
             markLocalMutation()
-            queryClient.invalidateQueries({ queryKey: UOMS_KEYS.all })
+            invalidateCrossFeature(queryClient, [UOMS_KEYS.all])
         },
     })
 
@@ -130,8 +131,7 @@ export function useUoMs(filters?: FilterState) {
             toast.success(vars.id === null ? 'Categoría creada' : 'Categoría actualizada')
             // Cambia el conjunto de categorías Y puede afectar `category_name`
             // en cada UoM derivada → invalidar ambos.
-            queryClient.invalidateQueries({ queryKey: UOM_CATEGORIES_KEYS.all })
-            queryClient.invalidateQueries({ queryKey: UOMS_KEYS.all })
+            invalidateCrossFeature(queryClient, [UOM_CATEGORIES_KEYS.all, UOMS_KEYS.all])
         },
     })
 
@@ -140,8 +140,7 @@ export function useUoMs(filters?: FilterState) {
         onSuccess: () => {
             markLocalMutation()
             toast.success('Categoría eliminada')
-            queryClient.invalidateQueries({ queryKey: UOM_CATEGORIES_KEYS.all })
-            queryClient.invalidateQueries({ queryKey: UOMS_KEYS.all })
+            invalidateCrossFeature(queryClient, [UOM_CATEGORIES_KEYS.all, UOMS_KEYS.all])
         },
         onError: (e: Error) => {
             toast.error(`Error al eliminar la categoría: ${e.message}`)

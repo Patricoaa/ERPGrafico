@@ -6,9 +6,9 @@ import type { QueryClient } from '@tanstack/react-query'
  */
 export function invalidateCrossFeature(
     queryClient: QueryClient,
-    keys: Array<ReadonlyArray<unknown>>
+    keys: Array<readonly unknown[]>
 ): void {
     for (const key of keys) {
-        queryClient.invalidateQueries({ queryKey: key as Array<unknown> })
+        queryClient.invalidateQueries({ queryKey: key as unknown[] })
     }
 }

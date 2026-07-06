@@ -3,9 +3,7 @@
 import { showApiError, getErrorMessage } from "@/lib/errors"
 import React, { useState, useRef } from "react"
 import { useRouter, useSearchParams, usePathname } from "next/navigation"
-import { ActionConfirmModal, DataTableView } from '@/components/shared'
-import { DataCell } from '@/components/shared'
-import { DataTableColumnHeader } from '@/components/shared'
+import { ActionConfirmModal, DataTableView, createCodeColumn, createDateColumn, createCurrencyColumn, createSecondaryColumn, createContactColumn } from '@/components/shared'
 import { type ColumnDef } from "@tanstack/react-table"
 import {IconButton, SmartSearchBar, useSmartSearch, SegmentationBar, useSegmentation} from "@/components/shared"
 import { invoiceSearchDef } from "@/features/billing/searchDef"
@@ -109,31 +107,13 @@ export function SalesInvoicesClientView() {
     }
 
     const columns: ColumnDef<Invoice>[] = [
-        {
-            accessorKey: "number",
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Folio" className="justify-center" />,
-            cell: ({ row }) => <DataCell.Code>{row.original.display_id ?? row.original.number}</DataCell.Code>,
-        },
-        {
-            accessorKey: "date",
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Fecha" className="justify-center" />,
-            cell: ({ row }) => <DataCell.Date value={row.getValue("date")} />
-        },
-        {
-            accessorKey: "dte_type_display",
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Tipo" className="justify-center" />,
-            cell: ({ row }) => <DataCell.Secondary>{row.getValue("dte_type_display")}</DataCell.Secondary>
-        },
-        {
-            accessorKey: "partner_name",
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Cliente" className="justify-center" />,
-            cell: ({ row }) => <DataCell.ContactLink contactId={(row.original as unknown as { customer?: number; partner?: number }).customer ?? (row.original as unknown as { customer?: number; partner?: number }).partner ?? 0}>{row.getValue("partner_name")}</DataCell.ContactLink>
-        },
-        {
-            accessorKey: "total",
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Total" className="justify-center" />,
-            cell: ({ row }) => <DataCell.Currency value={row.getValue("total")} />
-        },
+        createCodeColumn<Invoice>("number", "Folio", {
+            render: (row) => <>{row.display_id ?? row.number}</>,
+        }),
+        createDateColumn<Invoice>("date", "Fecha"),
+        createSecondaryColumn<Invoice>("dte_type_display", "Tipo"),
+        createContactColumn<Invoice>("partner_name", "Cliente", "partner"),
+        createCurrencyColumn<Invoice>("total", "Total"),
         {
             id: "hub_trigger",
             header: () => null,

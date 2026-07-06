@@ -3,6 +3,7 @@ import api from '@/lib/api'
 import type { FilterState } from '@/components/shared'
 import { useRealtime } from '@/features/realtime'
 import { PRODUCTS_QUERY_KEY } from './queryKeys'
+import { invalidateCrossFeature } from '@/lib/invalidation'
 
 export interface PricingRule {
     id: number
@@ -49,9 +50,7 @@ export function usePricingRules(filters?: FilterState) {
     })
 
     const invalidate = () => {
-        queryClient.invalidateQueries({ queryKey: PRICING_RULES_QUERY_KEY })
-        // Pricing rule mutations cambian precios computados → invalidar products.
-        queryClient.invalidateQueries({ queryKey: PRODUCTS_QUERY_KEY })
+        invalidateCrossFeature(queryClient, [PRICING_RULES_QUERY_KEY, PRODUCTS_QUERY_KEY])
     }
 
     const deleteMutation = useMutation({

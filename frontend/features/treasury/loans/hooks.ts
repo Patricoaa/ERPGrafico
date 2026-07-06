@@ -6,6 +6,7 @@ import type {
     BankLoanCreatePayload, PayInstallmentPayload, PrepayLoanPayload,
     DisburseLoanPayload,
 } from './types'
+import { invalidateCrossFeature } from '@/lib/invalidation'
 
 const LOANS_KEYS = {
     all: ['loans'] as const,
@@ -55,7 +56,7 @@ export function useLoanMutations() {
     const queryClient = useQueryClient()
 
     const invalidate = () => {
-        queryClient.invalidateQueries({ queryKey: LOANS_KEYS.all })
+        invalidateCrossFeature(queryClient, [LOANS_KEYS.all])
     }
 
     const create = useMutation({

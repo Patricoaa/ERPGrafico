@@ -9,6 +9,7 @@ import { toast } from 'sonner'
 import { useRealtime, useEntitySubscription } from '@/features/realtime'
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { invalidateCrossFeature } from '@/lib/invalidation'
 import { inventoryApi } from '@/features/inventory'
 import { POS_KEYS } from './queryKeys'
 
@@ -125,7 +126,7 @@ export function useProducts() {
     const refreshProducts = useCallback(async (silent = false) => {
         if (!silent) setLoading(true)
         try {
-            await queryClient.invalidateQueries({ queryKey: POS_KEYS.products.all })
+            await invalidateCrossFeature(queryClient, [POS_KEYS.products.all])
             if (!silent) {
                 toast.success("Productos actualizados")
             }
@@ -144,7 +145,7 @@ export function useProducts() {
             markLocalMutation()
             const isFavorite = (data as Record<string, unknown>).is_favorite as boolean
             
-            queryClient.invalidateQueries({ queryKey: POS_KEYS.products.all })
+            invalidateCrossFeature(queryClient, [POS_KEYS.products.all])
             
             toast.success(isFavorite ? "Añadido a favoritos" : "Eliminado de favoritos")
         },

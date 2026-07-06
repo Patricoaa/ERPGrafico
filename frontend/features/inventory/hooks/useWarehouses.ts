@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import api from '@/lib/api'
 import { toast } from 'sonner'
 import { useRealtime } from '@/features/realtime'
+import { invalidateCrossFeature } from '@/lib/invalidation'
 
 export interface Warehouse {
     id: number
@@ -42,8 +43,7 @@ export function useWarehouses() {
     })
 
     const invalidate = () => {
-        // Cubre lista, detalle y cualquier sub-recurso futuro de warehouses.
-        queryClient.invalidateQueries({ queryKey: WAREHOUSES_KEYS.all })
+        invalidateCrossFeature(queryClient, [WAREHOUSES_KEYS.all])
     }
 
     const saveWarehouseMutation = useMutation({

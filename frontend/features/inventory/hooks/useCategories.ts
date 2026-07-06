@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import api from '@/lib/api'
 import { toast } from 'sonner'
 import { useRealtime } from '@/features/realtime'
+import { invalidateCrossFeature } from '@/lib/invalidation'
 
 export interface Category {
     id: number
@@ -52,7 +53,7 @@ export function useCategories(initialData?: Category[]) {
     const refetch = query.refetch
 
     const invalidate = () => {
-        queryClient.invalidateQueries({ queryKey: CATEGORIES_KEYS.all })
+        invalidateCrossFeature(queryClient, [CATEGORIES_KEYS.all])
     }
 
     const saveCategoryMutation = useMutation({
