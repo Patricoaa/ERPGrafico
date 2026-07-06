@@ -126,7 +126,8 @@ class PartnerTransaction(models.Model):
 
     @property
     def display_id(self):
-        return f"PT-{str(self.id).zfill(5)}"
+        from core.prefix_registry import EntityPrefix
+        return f"{EntityPrefix.PARTNER_TRANSACTION}-{str(self.id).zfill(5)}"
 
     @property
     def is_contribution(self):
@@ -355,7 +356,8 @@ class ProfitDistributionResolution(models.Model):
 
     @property
     def display_id(self):
-        return f"DIST-{self.fiscal_year}-{str(self.id).zfill(3)}"
+        from core.prefix_registry import EntityPrefix
+        return f"{EntityPrefix.PROFIT_DISTRIBUTION}-{self.fiscal_year}-{str(self.id).zfill(3)}"
 
     @property
     def is_profit(self):

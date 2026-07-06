@@ -178,7 +178,8 @@ class WorkOrder(models.Model):
 
     @property
     def display_id(self):
-        return f"OT-{self.number}"
+        from core.prefix_registry import EntityPrefix
+        return f"{EntityPrefix.WORK_ORDER}-{self.number}"
 
     @property
     def canonical_stage_data(self) -> dict:
