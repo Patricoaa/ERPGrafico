@@ -1,8 +1,4 @@
 export const ACCOUNTING_PERIODS_QUERY_KEY = ['accounting-periods'] as const
-export const TRIAL_BALANCE_KEYS = {
-    all: ['trial_balance'] as const,
-    period: (start?: string, end?: string) => [...TRIAL_BALANCE_KEYS.all, start, end] as const,
-}
 export const JOURNAL_ENTRIES_QUERY_KEY = ['journal-entries'] as const
 export const ACCOUNTS_QUERY_KEY = ['accounts'] as const
 export const ACCOUNTS_MAPPINGS_QUERY_KEY = ['accounts', 'mappings'] as const

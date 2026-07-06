@@ -127,26 +127,4 @@ export interface FiscalYearPreviewResult {
     is_loss: boolean;
 }
 
-export interface TrialBalanceItem {
-    id: number;
-    code: string;
-    name: string;
-    type: string;
-    initial_balance: number;
-    debit: number;
-    credit: number;
-    closing_balance: number;
-    saldo_deudor: number;
-    saldo_acreedor: number;
-}
-
 export type { TaxPeriod } from '@/features/tax'
-
-export interface TrialBalanceReport {
-    accounts: TrialBalanceItem[];
-    total_debit: number;
-    total_credit: number;
-    total_saldo_deudor: number;
-    total_saldo_acreedor: number;
-    is_balanced: boolean;
-}

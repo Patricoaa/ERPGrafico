@@ -1,5 +1,5 @@
 export type { AccountActionsCtx } from './components'
-export { AccountingClosuresClientView, AccountsClientView, ClosuresSkeleton, JournalEntryDrawer, LedgerDrawer, TrialBalanceReport, accountActions } from './components'
+export { AccountingClosuresClientView, AccountsClientView, ClosuresSkeleton, JournalEntryDrawer, LedgerDrawer, accountActions } from './components'
 export type { Account, AccountFilters, AccountPayload, AccountingPeriod } from './types'
 export { accountSegDef, fiscalYearSegDef, journalEntrySegDef } from './segmentationDef'
 export { useAccountingSettings, ACCOUNTING_SETTINGS_QUERY_KEY } from './hooks/useAccountingSettings'

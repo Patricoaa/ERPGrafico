@@ -129,6 +129,102 @@ function PortfolioContactPanel({ contact, onRefresh }: { contact: CreditContact,
 
     const agingBuckets = ['current', 'overdue_30', 'overdue_60', 'overdue_90', 'overdue_90plus'] as const;
 
+    const ledgerColumns = useMemo<ColumnDef<CreditLedgerEntry>[]>(() => [
+        {
+            id: "document",
+            header: "N° Documento",
+            cell: ({ row }) => <DataCell.Entity entityLabel="sales.saleorder" data={row.original as unknown as Record<string, unknown>} />
+        },
+        {
+            id: "date",
+            header: "Fecha",
+            cell: ({ row }) => <DataCell.Date value={row.original.date} />
+        },
+        {
+            id: "due_date",
+            header: "Vencimiento",
+            cell: ({ row }) => (
+                <div className="flex items-center gap-1.5 w-full">
+                    <DataCell.Date value={row.original.due_date} />
+                    {row.original.days_overdue > 0 && (
+                        <span className="text-destructive font-bold text-[11px]">({row.original.days_overdue}d)</span>
+                    )}
+                </div>
+            )
+        },
+        {
+            id: "total",
+            header: "Total",
+            meta: { align: "right" },
+            cell: ({ row }) => <DataCell.Currency value={row.original.effective_total} />
+        },
+        {
+            id: "paid",
+            header: "Pagado",
+            meta: { align: "right" },
+            cell: ({ row }) => <DataCell.Currency value={row.original.paid_amount} className="text-success font-medium" />
+        },
+        {
+            id: "balance",
+            header: "Saldo",
+            meta: { align: "right" },
+            cell: ({ row }) => <DataCell.Currency value={row.original.balance} className="font-bold" />
+        },
+        {
+            id: "origin",
+            header: "Origen",
+            cell: ({ row }) => row.original.credit_assignment_origin_display ? (
+                <DataCell.Chip
+                    intent={row.original.credit_assignment_origin === "MANUAL" ? "neutral" : row.original.credit_assignment_origin === "SALE" ? "info" : "warning"}
+                    size="xs"
+                    className="w-fit"
+                >
+                    {row.original.credit_assignment_origin_display}
+                </DataCell.Chip>
+            ) : <span className="text-muted-foreground/30">—</span>
+        },
+        {
+            id: "status",
+            header: "Estado",
+            cell: ({ row }) => (
+                <DataCell.Status
+                    status={row.original.aging_bucket === 'current' ? 'SUCCESS' : (row.original.days_overdue > 60 ? 'ERROR' : 'WARNING')}
+                    label={agingLabel[row.original.aging_bucket]}
+                />
+            )
+        },
+        {
+            id: "actions",
+            header: "",
+            meta: { align: "right" },
+            cell: ({ row }) => {
+                const entry = row.original
+                return (
+                    <div className="flex justify-end gap-1">
+                        {isDefault && Number(entry.balance) > 0 && (
+                            <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-6 px-2 text-[10px] text-destructive hover:bg-destructive/10 gap-1"
+                                disabled={writingOffDocId === entry.id}
+                                onClick={(e) => {
+                                    e.stopPropagation()
+                                    setShowWriteOffDocDialog({ id: entry.id, number: entry.number, balance: Number(entry.balance) })
+                                }}
+                            >
+                                {writingOffDocId === entry.id
+                                    ? <RefreshCw className="h-3 w-3 animate-spin" />
+                                    : <Gavel className="h-3 w-3" />}
+                                Castigar
+                            </Button>
+                        )}
+                        {!isDefault && <span className="text-muted-foreground/30">—</span>}
+                    </div>
+                )
+            }
+        }
+    ], [isDefault, writingOffDocId])
+
     return (
         <>
             <div className="mb-6 flex items-center gap-4">
@@ -185,93 +281,11 @@ function PortfolioContactPanel({ contact, onRefresh }: { contact: CreditContact,
             {loadingLedger ? (
                 <SkeletonShell isLoading ariaLabel="Cargando..." />
             ) : ledger && ledger.length > 0 ? (
-                <div className="overflow-x-auto">
-                    <table className="w-full text-left">
-                        <thead>
-                            <tr className="text-[10px] font-black uppercase tracking-widest text-muted-foreground border-b border-border/50">
-                                <th className="pb-2 pr-4 text-center">N° Documento</th>
-                                <th className="pb-2 pr-4 text-center">Fecha</th>
-                                <th className="pb-2 pr-4 text-center">Vencimiento</th>
-                                <th className="pb-2 pr-4 text-center">Total</th>
-                                <th className="pb-2 pr-4 text-center">Pagado</th>
-                                <th className="pb-2 pr-4 text-center">Saldo</th>
-                                <th className="pb-2 pr-4 text-center">Origen</th>
-                                <th className="pb-2 pr-4 text-center">Estado</th>
-                                <th className="pb-2 pr-2 text-center">Acciones</th>
-                            </tr>
-                        </thead>
-                        <tbody className="divide-y divide-border/20">
-                            {ledger.map((entry) => (
-                                <tr key={entry.id} className="text-[12px] group">
-                                    <td className="py-2 pr-4 text-center">
-                                        <DataCell.Entity entityLabel="sales.saleorder" data={entry as unknown as Record<string, unknown>} />
-                                    </td>
-                                    <td className="py-2 pr-4 text-center">
-                                        <DataCell.Date value={entry.date} />
-                                    </td>
-                                    <td className="py-2 pr-4 text-center">
-                                        <div className="flex justify-center items-center gap-1.5 w-full">
-                                            <DataCell.Date value={entry.due_date} />
-                                            {entry.days_overdue > 0 && (
-                                                <span className="text-destructive font-bold text-[11px]">({entry.days_overdue}d)</span>
-                                            )}
-                                        </div>
-                                    </td>
-                                    <td className="py-2 pr-4 text-center">
-                                        <DataCell.Currency value={entry.effective_total} />
-                                    </td>
-                                    <td className="py-2 pr-4 text-center">
-                                        <DataCell.Currency value={entry.paid_amount} className="text-success font-medium" />
-                                    </td>
-                                    <td className="py-2 pr-4 text-center">
-                                        <DataCell.Currency value={entry.balance} className="font-bold" />
-                                    </td>
-                                    <td className="py-2 pr-4 text-center">
-                                        <div className="flex justify-center">
-                                            {entry.credit_assignment_origin_display ? (
-                                                <DataCell.Chip
-                                                    intent={entry.credit_assignment_origin === "MANUAL" ? "neutral" : entry.credit_assignment_origin === "SALE" ? "info" : "warning"}
-                                                    size="xs"
-                                                    className="w-fit"
-                                                >
-                                                    {entry.credit_assignment_origin_display}
-                                                </DataCell.Chip>
-                                            ) : <span className="text-muted-foreground/30">—</span>}
-                                        </div>
-                                    </td>
-                                    <td className="py-2 pr-4 text-center">
-                                        <DataCell.Status
-                                            status={entry.aging_bucket === 'current' ? 'SUCCESS' : (entry.days_overdue > 60 ? 'ERROR' : 'WARNING')}
-                                            label={agingLabel[entry.aging_bucket]}
-                                        />
-                                    </td>
-                                    <td className="py-2 pr-2 text-center">
-                                        <div className="flex justify-center gap-1">
-                                            {isDefault && Number(entry.balance) > 0 && (
-                                                <Button
-                                                    variant="ghost"
-                                                    size="sm"
-                                                    className="h-6 px-2 text-[10px] text-destructive hover:bg-destructive/10 gap-1"
-                                                    disabled={writingOffDocId === entry.id}
-                                                    onClick={(e) => {
-                                                        e.stopPropagation()
-                                                        setShowWriteOffDocDialog({ id: entry.id, number: entry.number, balance: Number(entry.balance) })
-                                                    }}
-                                                >
-                                                    {writingOffDocId === entry.id
-                                                        ? <RefreshCw className="h-3 w-3 animate-spin" />
-                                                        : <Gavel className="h-3 w-3" />}
-                                                    Castigar
-                                                </Button>
-                                            )}
-                                            {!isDefault && <span className="text-muted-foreground/30">—</span>}
-                                        </div>
-                                    </td>
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
-                </div>
+                <DataTable
+                    variant="minimal"
+                    columns={ledgerColumns}
+                    data={ledger}
+                />
             ) : (
                 <p className="text-[12px] text-muted-foreground italic text-center py-4">Sin documentos pendientes.</p>
             )}
