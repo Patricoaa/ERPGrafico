@@ -1384,7 +1384,7 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                             <Button
                                 variant="ghost"
                                 size="sm"
-                                className="h-9 rounded-full px-4 text-xs text-destructive hover:bg-destructive/10"
+                                className="h-9 rounded-full px-4 text-xs text-destructive hover:bg-destructive/10 hover:text-destructive"
                                 onClick={() => setActionDialog({ open: true, type: 'bulk_exclude' })}
                             >
                                 <Ban className="h-3.5 w-3.5 mr-1.5" />
@@ -1395,7 +1395,7 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                         <Button
                             variant="ghost"
                             size="sm"
-                                className="h-9 rounded-full px-4 text-xs text-muted-foreground hover:bg-muted"
+                                className="h-9 rounded-full px-4 text-xs text-muted-foreground hover:bg-muted hover:text-muted-foreground"
                                 onClick={() => { setSelectedLines([]); setSelectedPayments([]); }}
                         >
                             <X className="h-3.5 w-3.5 mr-1.5" />
@@ -1405,7 +1405,7 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                         <Button
                             variant="ghost"
                             size="sm"
-                            className="h-9 rounded-full px-6 text-xs font-bold text-primary hover:bg-primary/10 shadow-floating transition-transform active:scale-95"
+                            className="h-9 rounded-full px-6 text-xs font-bold text-primary hover:bg-primary/10 hover:text-primary shadow-floating transition-transform active:scale-95"
                             onClick={() => setActionDialog({ open: true, type: 'confirm_match' })}
                             disabled={matching || selectedLines.length === 0 || selectedPayments.length === 0}
                         >
