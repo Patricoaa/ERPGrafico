@@ -296,7 +296,7 @@ export function BOMManager({ product, variantMode = false, onBomsChange }: BOMMa
                             </div>
                             <div className="space-y-1.5 max-w-sm">
                                 <p className="text-base font-black uppercase tracking-widest text-primary">Sin recetas de producción</p>
-                                <p className="text-[13px] font-medium text-muted-foreground/80">
+                                <p className="text-sm font-medium text-muted-foreground/80">
                                     Defina la lista de materiales (BOM) y el ruteo de etapas para fabricar este producto.
                                 </p>
                             </div>

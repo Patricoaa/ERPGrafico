@@ -582,7 +582,7 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                 const isCredit = safeParseFloat(row.original.credit) > safeParseFloat(row.original.debit)
                 return (
                     <div className="flex flex-col items-end justify-center h-full">
-                        <span className={cn("font-mono font-black text-[13px] tracking-tight", isCredit ? "text-success" : "text-destructive")}>
+                        <span className={cn("font-mono font-black text-sm tracking-tight", isCredit ? "text-success" : "text-destructive")}>
                             {formatCurrency(amount)}
                         </span>
                     </div>
@@ -687,7 +687,7 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                 return (
                     <div className="flex flex-col items-end justify-center h-full">
                         <span className={cn(
-                            "font-mono font-black text-[13px] tracking-tight group-hover:scale-105 transition-transform",
+                            "font-mono font-black text-sm tracking-tight group-hover:scale-105 transition-transform",
                             isDeposit ? "text-success" : "text-destructive"
                         )}>
                             {formatCurrency(Math.abs(parseFloat(item.amount)))}

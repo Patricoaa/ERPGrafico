@@ -55,7 +55,7 @@ export function OrderSummaryCard({
                                     <div className="space-y-1.5 flex-1 min-w-0">
                                         <Tooltip>
                                             <TooltipTrigger asChild>
-                                                <p className="font-bold text-[13px] leading-tight text-foreground/90 truncate mr-2">
+                                                <p className="font-bold text-sm leading-tight text-foreground/90 truncate mr-2">
                                                     {line.product_name || line.description}
                                                 </p>
                                             </TooltipTrigger>

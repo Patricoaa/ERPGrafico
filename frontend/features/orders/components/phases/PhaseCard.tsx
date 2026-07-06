@@ -221,7 +221,7 @@ export function PhaseCard({
                                                             <TooltipTrigger asChild>
                                                                 <span className={cn(
                                                                     "font-black text-foreground/90 truncate",
-                                                                    "text-[13px] max-w-full"
+                                                                    "text-sm max-w-full"
                                                                 )}>
                                                                     {doc.number}
                                                                 </span>
