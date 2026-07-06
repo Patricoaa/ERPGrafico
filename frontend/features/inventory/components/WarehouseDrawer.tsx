@@ -14,13 +14,12 @@ import {
 import { Button } from "@/components/ui/button"
 import { useWarehouseMutations } from "../hooks/useWarehouseMutations"
 import { Printer } from "lucide-react"
-import { getEntityIcon } from "@/lib/entity-registry"
 import { ActionSlideButton } from "@/components/shared"
 import { ActivitySidebar } from "@/features/audit/components"
 import { formDrawerWidth } from "@/lib/form-widths"
 import { useReactToPrint } from "react-to-print"
 import { PrintableLayout } from "@/features/_shared/transaction-drawer"
-import type { DrawerMode } from "@/features/_shared/drawer/types"
+import { useDrawerIdentity, type DrawerMode } from "@/features/_shared/drawer"
 
 const warehouseSchema = z.object({
     name: z.string().min(1, "El nombre es requerido"),
@@ -178,11 +177,14 @@ export function WarehouseDrawer({ onSuccess, initialData, open: openProp, onOpen
         return <>{formContent}</>
     }
 
-    const drawerTitle = isView
-        ? `Ficha de Almacén${initialData?.id ? ` #${initialData.id}` : ""}`
-        : mode === 'create'
-            ? "Nuevo Almacén"
-            : "Editar Almacén"
+    const identity = useDrawerIdentity('inventory.warehouse', mode, initialData, {
+        customTitle: isView
+            ? `Ficha de Almacén${initialData?.id ? ` #${initialData.id}` : ""}`
+            : mode === 'create' ? "Nuevo Almacén" : "Editar Almacén",
+        subtitle: form.watch("name")
+            ? `${form.watch("code") ? `${form.watch("code")} | ` : ""}${form.watch("name")}`
+            : (initialData ? undefined : "Nuevo Almacén"),
+    })
 
     return (
         <>
@@ -213,14 +215,10 @@ export function WarehouseDrawer({ onSuccess, initialData, open: openProp, onOpen
                 side="left"
                 defaultSize={width}
                 mode={mode}
-                icon={getEntityIcon('inventory.warehouse')}
-                title={<span>{drawerTitle}</span>}
+                icon={identity.icon}
+                title={identity.title}
                 headerActions={(mode === 'view' || mode === 'edit') && initialData?.id && <Button variant="ghost" size="icon" onClick={() => handlePrint()}><Printer className="h-4 w-4" /></Button>}
-                subtitle={
-                    form.watch("name")
-                        ? `${form.watch("code") ? `${form.watch("code")} | ` : ""}${form.watch("name")}`
-                        : (initialData ? undefined : "Nuevo Almacén")
-                }
+                subtitle={identity.subtitle}
                 footer={isView ? undefined : (
                     <FormFooter
                         actions={

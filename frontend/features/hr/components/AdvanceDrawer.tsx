@@ -16,10 +16,9 @@ import { CancelButton, ActionSlideButton } from "@/components/shared"
 import { Form, FormField } from "@/components/ui/form"
 import { Drawer, LabeledInput, LabeledSelect, PeriodValidationDateInput, FormFooter, FormSplitLayout } from "@/components/shared"
 import { Printer } from "lucide-react"
-import { getEntityIcon } from "@/lib/entity-registry"
 import { useReactToPrint } from "react-to-print"
 import { PrintableLayout } from "@/features/_shared/transaction-drawer"
-import type { DrawerMode } from "@/features/_shared/drawer/types"
+import { useDrawerIdentity, type DrawerMode } from "@/features/_shared/drawer"
 import { useServerDate } from "@/hooks/useServerDate"
 import { formDrawerWidth } from "@/lib/form-widths"
 
@@ -116,11 +115,9 @@ export function AdvanceDrawer({ open, onOpenChange, advance, employees: employee
     const selectedEmployee = form.watch("employee")
     const employeePayrolls = payrolls.filter(p => p.employee.toString() === selectedEmployee && p.status === 'DRAFT')
 
-    const drawerTitle = isView
-        ? `Ficha de Anticipo${advance?.id ? ` #${advance.id}` : ""}`
-        : mode === 'create'
-            ? "Nuevo Anticipo"
-            : "Editar Anticipo"
+    const identity = useDrawerIdentity('hr.salaryadvance', mode, advance, {
+        subtitle: advance ? "Revise y modifique los datos del anticipo solicitado." : "Registre una entrega de dinero a cuenta de la próxima liquidación.",
+    })
 
     return (
         <>
@@ -139,10 +136,10 @@ export function AdvanceDrawer({ open, onOpenChange, advance, employees: employee
                 onOpenChange={onOpenChange}
                 side="left"
                 defaultSize={width}
-                icon={getEntityIcon('hr.salaryadvance')}
-                title={<span>{drawerTitle}</span>}
+                icon={identity.icon}
+                title={identity.title}
                 headerActions={(mode === 'view' || mode === 'edit') && advance?.id && <Button variant="ghost" size="icon" onClick={() => handlePrint()}><Printer className="h-4 w-4" /></Button>}
-                subtitle={advance ? "Revise y modifique los datos del anticipo solicitado." : "Registre una entrega de dinero a cuenta de la próxima liquidación."}
+                subtitle={identity.subtitle}
                 mode={mode}
                 footer={isView ? undefined : (
                     <FormFooter

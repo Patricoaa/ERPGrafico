@@ -14,7 +14,6 @@ import { Button } from "@/components/ui/button"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from "@/components/ui/tooltip"
 import { ChevronDown, Search, Check, Plus, Printer } from "lucide-react"
-import { getEntityIcon } from "@/lib/entity-registry"
 import { ActionSlideButton } from "@/components/shared"
 import { ActivitySidebar } from "@/features/audit/components"
 import { useUoMs, type UoM } from "@/features/inventory/hooks/useUoMs"
@@ -23,7 +22,7 @@ import { cn } from "@/lib/utils"
 import { formDrawerWidth } from "@/lib/form-widths"
 import { useReactToPrint } from "react-to-print"
 import { PrintableLayout } from "@/features/_shared/transaction-drawer"
-import type { DrawerMode } from "@/features/_shared/drawer/types"
+import { useDrawerIdentity, type DrawerMode } from "@/features/_shared/drawer"
 
 const uomSchema = z.object({
     name: z.string().min(1, "El nombre es requerido"),
@@ -128,11 +127,9 @@ export function UoMDrawer({ open: openProp, onOpenChange, initialData, onSuccess
 
     const watchType = form.watch("uom_type")
 
-    const drawerTitle = isView
-        ? `Ficha de Unidad de Medida${initialData?.id ? ` #${initialData.id}` : ""}`
-        : mode === 'create'
-            ? "Nueva Unidad de Medida"
-            : "Editar Unidad de Medida"
+    const identity = useDrawerIdentity('inventory.uom', mode, initialData, {
+        subtitle: initialData?.id ? "Modifique los parámetros de conversión y consulte el historial." : "Configure el nombre, categoría y ratio de conversión.",
+    })
 
     return (
         <>
@@ -164,10 +161,10 @@ export function UoMDrawer({ open: openProp, onOpenChange, initialData, onSuccess
                 side="left"
                 defaultSize={width}
                 mode={mode}
-                icon={getEntityIcon('inventory.uom')}
-                title={<span>{drawerTitle}</span>}
+                icon={identity.icon}
+                title={identity.title}
                 headerActions={(mode === 'view' || mode === 'edit') && initialData?.id && <Button variant="ghost" size="icon" onClick={() => handlePrint()}><Printer className="h-4 w-4" /></Button>}
-                subtitle={initialData?.id ? "Modifique los parámetros de conversión y consulte el historial." : "Configure el nombre, categoría y ratio de conversión."}
+                subtitle={identity.subtitle}
                 footer={isView ? undefined : (
                     <FormFooter
                         actions={
