@@ -142,7 +142,7 @@ export function StockReport() {
                 const item = row.original;
                 return (
                     <div className="flex flex-col items-center w-full">
-                        <DataCell.Currency value={item.total_value} className="text-[13px] text-primary" />
+                        <DataCell.Currency value={item.total_value} className="text-sm text-primary" />
                         <DataCell.Secondary className="text-[9px] opacity-40 uppercase tracking-tighter">
                             {formatCurrency(item.unit_cost)} c/{item.uom_name}
                         </DataCell.Secondary>

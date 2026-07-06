@@ -46,7 +46,7 @@ export function NoteItemsSummary({
                                     <div className="space-y-1.5 flex-1 min-w-0">
                                         <Tooltip>
                                             <TooltipTrigger asChild>
-                                                <p className="font-bold text-[13px] leading-tight text-foreground/90 truncate mr-2">
+                                                <p className="font-bold text-sm leading-tight text-foreground/90 truncate mr-2">
                                                     {item.productName || `Producto ${item.productId}`}
                                                 </p>
                                             </TooltipTrigger>

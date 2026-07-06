@@ -183,7 +183,7 @@ export function ActivitySidebar({ entityId, entityType, className = "", title = 
                                             {/* Bloque de Información del Registro */}
                                             <div className="flex-1 min-w-0 pt-0.5 flex flex-col">
                                                 {/* Cabecera del Item de Línea de Tiempo */}
-                                                <div className="flex items-center gap-1.5 text-[13px] text-muted-foreground flex-wrap">
+                                                <div className="flex items-center gap-1.5 text-sm text-muted-foreground flex-wrap">
                                                     <span className="font-semibold text-foreground group-hover:text-primary transition-colors duration-normal">
                                                         {username}
                                                     </span>

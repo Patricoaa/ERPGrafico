@@ -88,7 +88,7 @@ export function UsersSettingsView({ activeTab }: UsersSettingsViewProps) {
                 const fullName = `${row.original.first_name || ''} ${row.original.last_name || ''}`.trim()
                 const displayName = fullName || row.original.username
 
-                if (!contactId) return <div className="text-muted-foreground text-[13px] font-bold text-center">{displayName}</div>
+                if (!contactId) return <div className="text-muted-foreground text-sm font-bold text-center">{displayName}</div>
 
                 return <DataCell.ContactLink contactId={contactId}>{displayName}</DataCell.ContactLink>
             },
