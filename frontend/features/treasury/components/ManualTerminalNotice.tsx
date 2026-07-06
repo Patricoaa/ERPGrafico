@@ -149,7 +149,7 @@ export function ManualTerminalNotice({
                     {config.icon}
                 </div>
                 <div className="space-y-1">
-                    <h4 className="font-heading text-xl font-black uppercase tracking-tighter text-foreground leading-none">
+                    <h4 className=" text-xl font-black uppercase tracking-tighter text-foreground leading-none">
                         {config.title}
                     </h4>
                     {paymentMethodName && (

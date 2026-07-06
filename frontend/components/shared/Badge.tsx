@@ -269,7 +269,7 @@ Badge.Hub = function BadgeHub({ intent = 'neutral', icon: Icon, tooltip, size = 
                 <TooltipTrigger asChild>{hubEl}</TooltipTrigger>
                 <TooltipContent
                     side="top"
-                    className="font-heading font-extrabold uppercase text-[10px] tracking-tighter"
+                    className=" font-extrabold uppercase text-[10px] tracking-tighter"
                 >
                     {tooltip}
                 </TooltipContent>

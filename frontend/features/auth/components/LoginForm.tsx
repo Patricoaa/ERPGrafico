@@ -56,7 +56,7 @@ export function LoginForm() {
         >
             {/* Form header */}
             <div className="mb-8 text-center">
-                <h2 className="font-heading font-black text-2xl uppercase tracking-tighter text-foreground mb-2">
+                <h2 className=" font-black text-2xl uppercase tracking-tighter text-foreground mb-2">
                     Iniciar sesión
                 </h2>
                 <p className="text-sm text-muted-foreground">

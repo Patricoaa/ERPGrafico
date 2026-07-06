@@ -179,7 +179,7 @@ export function DomainCard({
                                     <span className="text-[9px] text-muted-foreground uppercase tracking-widest font-extrabold mb-0.5">
                                         {label === 'purchasing.purchaseorder' ? 'Recepción' : 'Entrega'}
                                     </span>
-                                    <span className="text-sm font-heading tracking-tight whitespace-nowrap">
+                                    <span className="text-sm  tracking-tight whitespace-nowrap">
                                         {formatPlainDate(d.delivery_date || d.receipt_date)}
                                     </span>
                                 </div>
@@ -192,7 +192,7 @@ export function DomainCard({
                                     <MoneyDisplay
                                         amount={pending}
                                         showColor={false}
-                                        className="text-sm font-heading tracking-tight text-warning"
+                                        className="text-sm  tracking-tight text-warning"
                                     />
                                 </div>
                             )}
@@ -203,7 +203,7 @@ export function DomainCard({
                                 <MoneyDisplay
                                     amount={total}
                                     showColor={false}
-                                    className="text-sm font-heading tracking-tight"
+                                    className="text-sm  tracking-tight"
                                 />
                             </div>
                         </div>

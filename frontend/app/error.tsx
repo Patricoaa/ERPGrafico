@@ -21,7 +21,7 @@ export default function Error({
                 <div className="rounded-md bg-destructive/10 p-3 border border-destructive/20">
                     <AlertCircle className="h-6 w-6 text-destructive" />
                 </div>
-                <h2 className="text-xl font-heading font-black uppercase tracking-tighter">Algo salió mal</h2>
+                <h2 className="text-xl  font-black uppercase tracking-tighter">Algo salió mal</h2>
                 <p className="text-sm text-muted-foreground max-w-[500px]">
                     Ha ocurrido un error inesperado. Por favor intente nuevamente.
                 </p>

@@ -316,7 +316,7 @@ export const ActionCategory = forwardRef(({
                                     <category.icon className="h-4 w-4" />
                                 </div>
                             )}
-                            {category.label && <h3 className="font-heading font-extrabold uppercase text-xs tracking-wider">{category.label}</h3>}
+                            {category.label && <h3 className=" font-extrabold uppercase text-xs tracking-wider">{category.label}</h3>}
                             {categoryBadgeCount > 0 && (
                                 <Chip.Count value={categoryBadgeCount} size="sm" intent="neutral" className="ml-auto rounded" />
                             )}

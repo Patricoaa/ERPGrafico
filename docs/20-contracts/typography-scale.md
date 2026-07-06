@@ -3,13 +3,13 @@ layer: 20-contracts
 doc: typography-scale
 status: active
 owner: frontend-team
-last_review: 2026-05-21
+last_review: 2026-07-06
 stability: contract-changes-require-ADR
 ---
 
 # Typography Scale — ERPGrafico
 
-> Canon definitivo del sistema tipográfico. Toda decisión de tamaño, peso y espaciado debe referenciarse aquí. Última audit de tipografía: 2026-05-15.
+> Canon definitivo del sistema tipográfico. Toda decisión de tamaño, peso y espaciado debe referenciarse aquí.
 
 ---
 
@@ -17,14 +17,13 @@ stability: contract-changes-require-ADR
 
 | Token Tailwind | CSS Var | Fuente | Uso |
 |----------------|---------|--------|-----|
-| `font-sans` | `--font-sans` | Onest (Google Fonts) | Body, formularios, descripciones, UI genérica |
-| `font-heading` | `--font-heading` | Syne (Google Fonts, 400–800) | Títulos, KPIs, marca, tabs principales |
-| `font-mono` | `--font-mono` | System monospace stack | Datos tabulares, códigos, precios, IDs |
+| `font-sans` | `--font-sans` | Onest (variable 100–900) | **Única fuente del sistema** |
+| `font-mono` | `--font-mono` | System monospace stack | Datos tabulares, códigos, IDs |
 
-**Regla de uso:**
-- Nunca usar `font-heading` para texto de más de 2 líneas (perjudica legibilidad a cuerpo).
-- Siempre usar `font-mono` + clase `tabular-nums` en columnas financieras para evitar layout shifts.
+- Onest es la única fuente del sistema. No existe `font-heading`.
+- Toda la jerarquía tipográfica se construye con: weight, size, tracking y text-transform.
 - `font-sans` es el default del `body` — no necesita declararse explícitamente en componentes.
+- Siempre usar `font-mono` + `tabular-nums` en columnas financieras para evitar layout shifts.
 
 ---
 
@@ -34,7 +33,7 @@ Definidos en `frontend/app/globals.css @layer base`. El estilo base es heredado 
 
 | Heading | Tamaño base | Tailwind equiv. | Estilo base | Uso típico |
 |---------|-------------|-----------------|-------------|------------|
-| `h1` | 1.875rem (30px) | `text-3xl` | `font-heading font-extrabold tracking-tighter uppercase` | Página de login, hero sections |
+| `h1` | 1.875rem (30px) | `text-3xl` | `font-extrabold tracking-tighter uppercase` | Página de login, hero sections |
 | `h2` | 1.5rem (24px) | `text-2xl` | idem | Título principal de vista/sección |
 | `h3` | 1.25rem (20px) | `text-xl` | idem | Subtítulo, wizard steps, panel headers |
 | `h4` | 1.125rem (18px) | `text-lg` | idem | Card titles con peso visual |
@@ -45,15 +44,36 @@ Definidos en `frontend/app/globals.css @layer base`. El estilo base es heredado 
 
 ---
 
-## Escala de UI chrome (el sistema de 3 capas)
+## Sistema de jerarquía por contexto
 
 Esta escala es **hardcoded con valores `text-[Npx]`** deliberadamente — el diseño industrial denso requiere precisión sub-Tailwind. No reemplazar con clases semánticas (`text-xs`, `text-sm`).
 
-| Capa | Contexto | Tipografía | Componente |
-|------|----------|------------|------------|
-| **L1 — Sección** | Separadores de grupo en formularios | `text-[11px] font-black uppercase tracking-[0.25em] text-muted-foreground/70` | `<FormSection>` |
-| **L2 — Etiqueta** | Legends de campos notched | `text-[10px] font-black uppercase tracking-[0.15em] text-muted-foreground` | `<LabeledInput>` legend |
-| **L3 — Valor** | Contenido de inputs | `text-sm font-normal text-foreground` | `<LabeledInput>` input |
+| Contexto | Dónde | Tipografía | Tracking | Transform | Ejemplos |
+|----------|-------|------------|----------|-----------|----------|
+| **N0 — Brand/Hero** | Login, 404, landing | `text-3xl font-black` | `tracking-tighter` | `uppercase` | "ERPGrafico" |
+| **N0 — KPI/Metric** | StatCard value, PieChart center | `text-2xl/3xl font-black` | `tracking-tighter` | normal | "1.234" |
+| **N0 — Empty state** | EmptyState title | `text-lg font-black` | `tracking-tighter` | `uppercase` | "Sin resultados" |
+| **N0 — Error page** | ErrorBoundary, app/error | `text-2xl font-black` | `tracking-tighter` | `uppercase` | "Algo salió mal" |
+| **N1 — Sección** | FormSection, sidebar título | `text-[11px] font-black` | `tracking-[0.25em]` | `uppercase` | "Roles", "Identidad del Contacto" |
+| **N2 — Etiqueta de campo** | LabeledInput legend | `text-[10px] font-black` | `tracking-[0.15em]` | `uppercase` | "Nombre / Razón Social" |
+| **N2 — Botón acción** | SubmitButton, CancelButton | `text-[10px] font-black h-9` | `tracking-widest` | `uppercase` | "Guardar", "Cancelar" |
+| **N2 — Header de tabla** | DataTableColumnHeader, `<th>` | `text-[10px] font-black` | `tracking-widest` | `uppercase` | "Fecha", "Total", "Estado" |
+| **N2 — Badge/Chip** | Chip, StatusBadge, EntityBadge | `text-[9-12px] font-black font-mono` | `tracking-widest` | `uppercase` | "Pagado", "Pendiente" |
+| **N2 — Drawer/Modal title** | SheetTitle, DialogTitle | `text-xl font-black` | `tracking-tight` | normal | "Nuevo Contacto" |
+| **N2 — Drawer subtitle** | description prop | `text-[10px] font-black` | `tracking-widest` | `uppercase` | "Ficha Maestra • CRM" |
+| **N2 — Wizard step** | GenericWizard step indicator | `text-[10px] font-black` | `tracking-wider` | `uppercase` | "PASO 1 DE 3" |
+| **N2 — Paginación** | DataTablePagination | `text-[10px] font-black` | `tracking-widest` | `uppercase` | "Registros por página" |
+| **N3 — Valor de input** | LabeledInput input | `text-sm` | normal | normal | "Juan Pérez" |
+| **N3 — Dato primario** | DataCell.Text, DataCell.Date | `text-sm font-medium` | normal | normal | "15/03/2026" |
+| **N3 — Dato secundario** | DataCell.Secondary, helper hints | `text-xs text-muted-foreground` | normal | normal | "3 documentos" |
+| **N3 — Código/ID** | DataCell.Code, DataCell.Entity | `text-xs font-mono font-medium` | normal | `uppercase` | "NV-000123" |
+| **N3 — Valor financiero** | DataCell.Currency, StatCard number | `text-xs font-medium tabular-nums` | normal | normal | "$1.234.567" |
+| **N3 — Fecha** | DataCell.Date | `text-sm font-medium` | normal | normal | "15/03/2026" |
+| **N3 — Descripción** | EmptyState description, notes | `text-sm text-muted-foreground` | normal | normal | "Defina la lista de materiales..." |
+| **N4 — Tab label** | TabBar trigger | `text-xs font-semibold` | `tracking-widest` (underline) / `tracking-tight` (toolbar) | normal | "Perfil", "Cliente" |
+| **N4 — Tooltip** | TooltipTrigger content | `text-[9px] font-black` | `tracking-widest` | `uppercase` | "Editar" |
+| **N4 — Timestamp** | ActivitySidebar time | `text-[9px] font-medium text-muted-foreground/60` | normal | normal | "hace 2 horas" |
+| **N4 — Badge count** | TabBar badge number | `text-[9px] font-black` | normal | normal | 3, 15 |
 
 ---
 
@@ -67,7 +87,7 @@ h-9  text-[10px]  font-black  uppercase  tracking-widest
 
 | Componente | Variante | Nota |
 |------------|----------|------|
-| `<SubmitButton>` | Primary (slide) | `` |
+| `<SubmitButton>` | Primary (slide) |  |
 | `<CancelButton>` | Outline | `shadow-sm` |
 | `<DangerButton>` | Destructive | Extremo izquierdo del footer |
 | `<ToolbarCreateButton>` | Primary | `px-4 rounded-md shadow-sm` |
@@ -79,14 +99,14 @@ h-9  text-[10px]  font-black  uppercase  tracking-widest
 
 ## Escala de badges y chips
 
-> 📄 Contrato completo del componente `<Chip>` en **[component-chip.md](./component-chip.md)**.
+> Contrato completo del componente `<Chip>` en **[component-chip.md](./component-chip.md)**.
 
 | Tamaño | Clase | Cuándo usar | Componente |
 |--------|-------|-------------|------------|
 | **Estándar** | `text-[10px] font-black uppercase tracking-widest` | Badge/chip genérico de UI chrome | `<Chip size="sm">` |
 | **Compacto** | `text-[9px] font-black uppercase tracking-widest` | Tabla, inline, overlaid counters | `<Chip size="xs">` |
 | **Énfasis** | `text-[11px] font-black uppercase tracking-widest` | Detail views, modal sections | `<Chip size="md">` |
-| **Header de tabla** | `text-[10px] font-black font-heading uppercase tracking-widest` | `<TableHead>` columnas | `data-table-column-header.tsx` |
+| **Header de tabla** | `text-[10px] font-black uppercase tracking-widest` | `<TableHead>` columnas | `data-table-column-header.tsx` |
 | **Fine print excepción** | `text-[9px] font-medium` | Timestamps, conteos mínimos sin pill | Inline `<span>` |
 
 > **PROHIBIDO:** `text-[8px]` en features. Excepciones documentadas: `PrintableReceipt.tsx` (papel físico), POS `CartItem`/`POSCheckoutHeader` (espacio táctil crítico), `AvatarFallback` (imagen).
@@ -116,16 +136,16 @@ El componente `<StatusBadge>` tiene su propio sistema de tamaños intencional:
 Para números grandes con alto impacto visual:
 
 ```
-text-3xl  font-black  font-heading  tracking-tighter
+text-3xl  font-black  tracking-tighter
 ```
 
 Variante compacta (espacio limitado):
 
 ```
-text-2xl  font-black  font-heading  tracking-tighter
+text-2xl  font-black  tracking-tighter
 ```
 
-> Siempre `font-heading` (Syne) + `font-black` + `tracking-tighter`. Nunca `font-bold` ni `tracking-tight` en KPIs.
+> Siempre `font-black` + `tracking-tighter`. Nunca `font-bold` ni `tracking-tight` en KPIs.
 
 ---
 
@@ -193,28 +213,28 @@ Los colores de tipo de producto en `ProductTypeSelector` son identificadores vis
 | `tracking-normal` | `0` | Body text (default) |
 | `tracking-wider` | `0.05em` | Sub-tabs, elementos secundarios |
 | `tracking-widest` | `0.1em` | Botones de acción, badges estándar |
-| `tracking-[0.15em]` | `0.15em` | L2: LabeledInput legend |
-| `tracking-[0.25em]` | `0.25em` | L1: FormSection title |
+| `tracking-[0.15em]` | `0.15em` | N2: LabeledInput legend |
+| `tracking-[0.25em]` | `0.25em` | N1: FormSection title |
 
-> Los valores custom (`[0.15em]`, `[0.25em]`) son partes del sistema de capas L1/L2 — no son ad-hoc.
+> Los valores custom (`[0.15em]`, `[0.25em]`) son partes del sistema de capas N1/N2 — no son ad-hoc.
 
 ---
 
 ## Anti-patrones prohibidos
 
 ```tsx
+// ❌ font-heading — ya no existe como concepto
+<span className="font-heading">
+
 // ❌ Colores raw
 <span className="text-blue-500">
 <span className="text-red-400">
 
 // ❌ Reemplazar sistema de capas con clases semánticas
-<legend className="text-xs">  // Usar text-[10px] para L2
+<legend className="text-xs">  // Usar text-[10px] para N2
 
 // ❌ font-bold en botones de acción
 <Button className="font-bold">  // Usar font-black
-
-// ❌ font-heading en body text
-<p className="font-heading">  // Solo para headings y KPIs
 
 // ❌ Mezcla de pesos en el mismo patrón semántico
 // (Label+Value con semibold/bold/medium mezclados)

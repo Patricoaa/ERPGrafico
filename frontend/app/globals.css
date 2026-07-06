@@ -295,7 +295,6 @@
   --color-liability-foreground: var(--warning-foreground);
 
   --font-sans: var(--font-sans);
-  --font-heading: var(--font-heading);
 
   /*
    * FLUID TYPOGRAPHY — Override Tailwind defaults with viewport-scaled sizes.
@@ -730,7 +729,7 @@ table [data-notched-field] {
   /* Skip-to-content accessibility link */
   .skip-to-content {
     @apply sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-1/2 focus:-translate-x-1/2 focus:z-[100];
-    @apply focus:px-6 focus:py-3 focus:bg-primary focus:text-primary-foreground focus:rounded-lg focus:font-heading focus:font-black focus:uppercase focus:text-xs focus:tracking-widest focus:shadow-2xl;
+    @apply focus:px-6 focus:py-3 focus:bg-primary focus:text-primary-foreground focus:rounded-lg focus:font-black focus:uppercase focus:text-xs focus:tracking-widest focus:shadow-2xl;
   }
 
   /* REUSABLE SKELETON SHIMMER */
@@ -979,7 +978,7 @@ table [data-notched-field] {
   h4,
   h5,
   h6 {
-    @apply font-heading font-extrabold tracking-tighter uppercase;
+    @apply font-extrabold tracking-tighter uppercase;
   }
 
   /* Typography scale — default sizes (overridable per component via Tailwind classes) */

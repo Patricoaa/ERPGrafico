@@ -196,7 +196,7 @@ export function StatCard({
       <div
         className={cn(
           valueSizeMap[valueSize],
-          "font-black font-heading tracking-tighter",
+          "font-black  tracking-tighter",
           variant === "minimal" ? accentText[accent] : "text-foreground",
         )}
       >
@@ -261,7 +261,7 @@ export function StatCard({
             <Icon className="h-6 w-6" />
           </div>
         )}
-        <div className={cn(valueSizeMap[valueSize], "font-black font-heading tracking-tighter text-center")}>
+        <div className={cn(valueSizeMap[valueSize], "font-black  tracking-tighter text-center")}>
           {value}
         </div>
         <p className="text-xs font-bold text-muted-foreground text-center leading-tight">
@@ -298,7 +298,7 @@ export function StatCard({
       <>
         <CardHeader className="flex flex-row items-center justify-between px-4 py-2.5 border-b shrink-0 gap-4">
           <div className="flex items-center gap-2 min-w-0">
-            <span className={cn("font-black font-heading tracking-tighter shrink-0", valueSizeMap[valueSize])}>
+            <span className={cn("font-black  tracking-tighter shrink-0", valueSizeMap[valueSize])}>
               {value}
             </span>
             <span className="text-xs font-bold text-muted-foreground truncate">

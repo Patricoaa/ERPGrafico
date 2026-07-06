@@ -55,7 +55,7 @@ export function CombinedPeriodCard({
                 <div className="flex items-center justify-between">
                     <div className="flex items-center gap-1.5">
                         <Calendar className="w-3 h-3 text-muted-foreground" />
-                        <span className="font-heading font-bold text-xs uppercase">{MONTHS[month - 1]}</span>
+                        <span className=" font-bold text-xs uppercase">{MONTHS[month - 1]}</span>
                     </div>
                 </div>
 

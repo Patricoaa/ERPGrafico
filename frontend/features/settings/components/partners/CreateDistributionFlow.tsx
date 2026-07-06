@@ -335,7 +335,7 @@ export function CreateDistributionFlow({ open, onOpenChange, onSuccess, initialR
                         </Card>
                         <Card className="rounded-none border-dashed bg-card/50 shadow-card p-4 bg-muted/20">
                             <p className="text-[10px] font-bold uppercase text-muted-foreground tracking-widest mb-1">Ejercicio</p>
-                            <p className="text-xl font-heading font-black">{draftResolution?.fiscal_year}</p>
+                            <p className="text-xl  font-black">{draftResolution?.fiscal_year}</p>
                         </Card>
                     </div>
 
@@ -469,7 +469,7 @@ export function CreateDistributionFlow({ open, onOpenChange, onSuccess, initialR
                     <div className="flex flex-col items-center justify-center text-center space-y-4">
                         <Wallet className="h-8 w-8" />
                         <div>
-                            <h3 className="text-xl font-heading font-black uppercase tracking-tighter">Confirmación de Ejecución</h3>
+                            <h3 className="text-xl  font-black uppercase tracking-tighter">Confirmación de Ejecución</h3>
                             <p className="text-sm text-muted-foreground max-w-md mt-2">
                                 Al ejecutar, el sistema impactará el patrimonio de la empresa automáticamente.
                             </p>

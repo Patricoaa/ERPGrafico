@@ -115,7 +115,7 @@ export function PageTabs({ tabs, activeValue, subActiveValue, maxWidth, classNam
                                                                 <div className="w-3.5 h-3.5" />
                                                             )}
                                                             <span className={cn(
-                                                                "text-[10px] font-heading uppercase tracking-wider font-black",
+                                                                "text-[10px]  uppercase tracking-wider font-black",
                                                                 isSubActive ? "text-primary" : "text-muted-foreground group-hover:text-foreground"
                                                             )}>
                                                                 {sub.label}

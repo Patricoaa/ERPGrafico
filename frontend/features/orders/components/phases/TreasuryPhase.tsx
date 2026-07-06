@@ -187,7 +187,7 @@ export function TreasuryPhase({
                 <div className="flex items-center justify-between py-2 px-2 border-y border-border/10 my-2">
                     <div className="flex flex-col gap-0.5">
                         <span className="text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground/50 leading-none">Pagado</span>
-                        <span className="text-[14px] font-heading font-black text-success tracking-tight">
+                        <span className="text-[14px]  font-black text-success tracking-tight">
                             {formatCurrency(Number(activeDoc.total || 0) - Number(activeDoc.pending_amount || 0))}
                         </span>
                     </div>
@@ -197,7 +197,7 @@ export function TreasuryPhase({
                     <div className="flex flex-col gap-0.5 text-right">
                         <span className="text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground/50 leading-none">Pendiente</span>
                         <span className={cn(
-                            "text-[14px] font-heading font-black tracking-tight",
+                            "text-[14px]  font-black tracking-tight",
                             parseFloat(String(activeDoc.pending_amount || '0')) > 0 ? "text-warning" : "text-muted-foreground/30"
                         )}>
                             {formatCurrency(Number(activeDoc.pending_amount || 0))}

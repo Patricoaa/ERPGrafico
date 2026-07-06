@@ -325,7 +325,7 @@ export default function WorkOrdersPageClient({ initialOrders }: WorkOrdersPageCl
                                     { key: 'my_tasks', label: 'Mis OTs', type: 'custom', render: () => (
                                         <div
                                             className={cn(
-                                                "relative flex cursor-pointer select-none items-center rounded-sm px-3 py-1.5 text-xs uppercase font-bold font-heading tracking-wider outline-none transition-colors",
+                                                "relative flex cursor-pointer select-none items-center rounded-sm px-3 py-1.5 text-xs uppercase font-bold  tracking-wider outline-none transition-colors",
                                                 myTasks ? "bg-primary/10 text-primary" : "text-foreground/70 hover:bg-muted/50 hover:text-foreground"
                                             )}
                                             onClick={() => handleMyTasksChange(!myTasks)}

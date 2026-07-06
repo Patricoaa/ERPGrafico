@@ -60,7 +60,7 @@ export function ActionButton({
                     <span className={cn(
                         "leading-tight block",
                         compact ? "text-[9px]" : "text-xs",
-                        ghost ? "font-heading font-extrabold uppercase tracking-widest text-[9px]" : "font-semibold"
+                        ghost ? " font-extrabold uppercase tracking-widest text-[9px]" : "font-semibold"
                     )} style={{ wordBreak: 'break-word', whiteSpace: 'normal' }}>
                         {action.label}
                     </span>

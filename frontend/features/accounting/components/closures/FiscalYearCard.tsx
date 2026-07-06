@@ -65,7 +65,7 @@ export function FiscalYearCard({
                 title={
                     <div className="flex items-center gap-3">
                         <CalendarRange className="w-5 h-5 text-muted-foreground" />
-                        <span className="font-heading font-extrabold text-xl uppercase tracking-tighter">
+                        <span className=" font-extrabold text-xl uppercase tracking-tighter">
                             Ejercicio {year}
                         </span>
                         <StatusBadge status={status} />
