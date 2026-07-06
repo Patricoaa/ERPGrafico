@@ -283,6 +283,13 @@ def system_status(request):
     return Response(CoreService.get_system_status())
 
 
+@api_view(["GET"])
+def entity_prefixes(request):
+    """Return the canonical EntityPrefix enum as {name: prefix}."""
+    from .prefix_registry import EntityPrefix
+    return Response(EntityPrefix.as_dict())
+
+
 class BackgroundJobViewSet(viewsets.ReadOnlyModelViewSet):
     pagination_class = StandardResultsSetPagination
     """
