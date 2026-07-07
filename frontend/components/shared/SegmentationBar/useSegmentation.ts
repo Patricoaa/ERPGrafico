@@ -28,7 +28,7 @@ export function useSegmentation(
   basePeriod?: { serverParamFrom: string; serverParamTo: string },
 ): UseSegmentationReturn {
   const parsers = useMemo(() => {
-    const map: Record<string, any> = {}
+    const map: Record<string, typeof parseAsString> = {}
     for (const segment of def.segments) {
       for (const param of getSegmentParams(segment)) {
         map[param] = parseAsString

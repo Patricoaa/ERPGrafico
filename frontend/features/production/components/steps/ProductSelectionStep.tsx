@@ -5,7 +5,7 @@ import Image from "next/image";
 import {FileText, X} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { BaseProduct } from "@/features/inventory";
-import { resolveMediaUrl } from '@/lib/api';
+import { resolveMediaUrl } from '@/lib/media-url';
 import { ProductSelector } from '@/components/shared';
 import { useWorkOrderProducts } from "../../hooks/useWorkOrderProducts";
 

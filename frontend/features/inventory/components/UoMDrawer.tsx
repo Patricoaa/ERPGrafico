@@ -2,7 +2,7 @@
 
 import { showApiError } from "@/lib/errors"
 import { useState, useEffect, useRef } from "react"
-import { useForm } from "react-hook-form"
+import { useForm, type Resolver } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
 import { Drawer, CancelButton, LabeledInput, FormFooter, FormSplitLayout, LabeledContainer, SkeletonShell } from "@/components/shared"
@@ -56,7 +56,7 @@ export function UoMDrawer({ open: openProp, onOpenChange, initialData, onSuccess
     const isFetchingInitialData = open && isCategoriesLoading
 
     const form = useForm<UoMFormValues>({
-        resolver: zodResolver(uomSchema) as unknown as import("react-hook-form").Resolver<UoMFormValues>,
+        resolver: zodResolver(uomSchema) as unknown as Resolver<UoMFormValues>,
         defaultValues: {
             name: "",
             category: undefined,

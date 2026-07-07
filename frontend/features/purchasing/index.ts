@@ -1,3 +1,5 @@
+export { purchasingApi } from './api/purchasingApi'
+
 export {
     usePurchasingOrders,
     usePurchasingNotes,

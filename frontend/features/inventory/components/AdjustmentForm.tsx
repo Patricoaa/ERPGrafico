@@ -157,7 +157,7 @@ export function AdjustmentForm({
         const baseId = typeof productUom === 'object' && productUom !== null
             ? (productUom as { id: number }).id
             : (productUom as number | undefined)
-        const base = productUoMs.find((u: any) => u.id === baseId) || null
+        const base = productUoMs.find((u) => u.id === baseId) || null
         // Safe: ratio differs string vs number at type level only, runtime value is compatible
         setBaseUoM(base as unknown as UoM)
         if (base && !form.getValues("uom_id")) {
@@ -211,7 +211,7 @@ export function AdjustmentForm({
         }
     }
 
-    const selectedUoM = productUoMs.find((u: any) => u.id.toString() === selectedUoMId)
+    const selectedUoM = productUoMs.find((u) => u.id.toString() === selectedUoMId)
 
     // Helper: Conversion Preview
     const getConversionPreview = () => {
@@ -219,7 +219,7 @@ export function AdjustmentForm({
         if (baseUoM.id === selectedUoM.id) return null
 
         // Ratio logic: Qty Base = Qty * (FromRatio / ToRatio)
-        const factor = Number((selectedUoM as any).ratio) / Number((baseUoM as any).ratio)
+        const factor = Number(selectedUoM.ratio) / Number(baseUoM.ratio)
         const qtyInBase = quantity * factor
         const costInBase = unitCost / factor
 

@@ -17,7 +17,7 @@ export const VARIANTS_QUERY_KEY = ['product-variants']
 export function useBOM(id: number | undefined) {
     return useQuery({
         queryKey: [...ALL_BOMS_QUERY_KEY, 'detail', id],
-        queryFn: () => productionApi.getBOM(id!),
+        queryFn: () => productionApi.getBOM(id as number),
         enabled: !!id,
         staleTime: 2 * 60 * 1000,
     })

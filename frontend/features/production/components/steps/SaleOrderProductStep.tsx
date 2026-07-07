@@ -10,7 +10,7 @@ import { Input } from "@/components/ui/input";
 import { cn, parseDateOnly } from "@/lib/utils";
 import { formatCurrency } from "@/lib/money";
 import type { SaleOrderLine } from "@/features/sales";
-import { resolveMediaUrl } from "@/lib/api";
+import { resolveMediaUrl } from "@/lib/media-url";
 
 type ExpandedProduct = { id: number; name: string; code: string; image_thumbnail?: string; requires_advanced_manufacturing?: boolean };
 

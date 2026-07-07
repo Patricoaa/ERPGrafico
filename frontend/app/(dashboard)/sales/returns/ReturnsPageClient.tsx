@@ -33,7 +33,7 @@ export default function ReturnsPageClient() {
                         referenceLabel={selectedOrder?.related_documents?.invoices?.[0]?.number as string | undefined}
                         fetchSource={async () => {
                             const invoiceId = selectedOrder?.related_documents?.invoices?.[0]?.id as number || 0;
-                            const { billingApi } = await import('@/features/billing/api/billingApi')
+                            const { billingApi } = await import('@/features/billing')
                             const inv = (await billingApi.getInvoice(invoiceId) as unknown) as Record<string, unknown>
                             const invLines = ((inv.lines as Record<string, unknown>[]) || []).map((l: Record<string, unknown>) => ({
                                 lineId: l.id as number,
@@ -62,7 +62,7 @@ export default function ReturnsPageClient() {
                         }}
                         onSubmit={async (payload) => {
                             const invoiceId = selectedOrder?.related_documents?.invoices?.[0]?.id as number || 0;
-                            const { billingApi } = await import('@/features/billing/api/billingApi')
+                            const { billingApi } = await import('@/features/billing')
                             const formData = new FormData()
                             formData.append('original_invoice_id', invoiceId.toString())
                             formData.append('note_type', payload.noteType)

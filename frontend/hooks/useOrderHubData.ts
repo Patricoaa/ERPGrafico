@@ -15,7 +15,7 @@ export function useOrderHubData({ orderId, invoiceId, type, enabled = true }: Us
     const { 
         data, 
         isLoading: loading, 
-        error,
+        isError,
         refetch: fetchOrderDetails
     } = useQuery({
         queryKey: ['orderHub', { orderId, invoiceId, type }],
@@ -115,7 +115,7 @@ export function useOrderHubData({ orderId, invoiceId, type, enabled = true }: Us
         activeDoc,
         loading,
         userPermissions,
-        error,
+        isError,
         fetchOrderDetails,
         isNoteMode,
         isSale,

@@ -15,5 +15,4 @@ if (dsn) {
   });
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export const onRouterTransitionStart = (Sentry as unknown as any).captureRouterTransitionStart;
+export const onRouterTransitionStart = (Sentry as unknown as { captureRouterTransitionStart: typeof import('@sentry/nextjs')['captureRouterTransitionStart'] }).captureRouterTransitionStart;

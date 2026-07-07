@@ -12,7 +12,7 @@ interface ServerDateResponse {
 }
 
 export function useServerDate() {
-    const { data, isLoading, error } = useQuery({
+    const { data, isLoading, isError } = useQuery({
         queryKey: ['server-time'],
         queryFn: async () => {
             try {
@@ -45,7 +45,7 @@ export function useServerDate() {
     return {
         serverDate,
         isLoading,
-        error: error ? (error as Error) : null,
+        isError,
         dateString: data?.date || '',
         year: data?.year || null,
         month: data?.month || null

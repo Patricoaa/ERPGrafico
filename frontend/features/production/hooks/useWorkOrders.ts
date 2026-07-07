@@ -59,7 +59,7 @@ export function useWorkOrders(filters?: WorkOrderFilters, initialData?: Page<Wor
 }
 
 export function useWorkOrder(id: string | number) {
-    const { data, isLoading, error, refetch } = useQuery({
+    const { data, isLoading, isError, refetch } = useQuery({
         queryKey: ['workOrder', String(id)],
         queryFn: async (): Promise<WorkOrder> => {
             const res = await api.get(`/production/orders/${id}/`)
@@ -68,5 +68,5 @@ export function useWorkOrder(id: string | number) {
         staleTime: 2 * 60 * 1000,
         enabled: !!id,
     })
-    return { order: data, isLoading, error, refetch }
+    return { order: data, isLoading, isError, refetch }
 }

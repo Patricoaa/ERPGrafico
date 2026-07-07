@@ -721,7 +721,7 @@ interface DynamicMultiSelectSegmentProps<TData> {
 function DynamicMultiSelectSegment<TData>({ def, filters, apply, remove, table }: DynamicMultiSelectSegmentProps<TData>) {
   const [open, setOpen] = useState(false)
 
-  const column = table.getColumn(def.columnId!)
+  const column = table.getColumn(def.columnId ?? '')
 
   const dynamicOptions = useMemo(() => {
     if (!column) return def.options ?? []

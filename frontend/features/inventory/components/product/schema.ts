@@ -35,8 +35,8 @@ export const productSchema = z.object({
     parent_template: z.string().optional().or(z.literal("")).nullable(),
     attribute_values: z.array(z.string()).default([]),
     variant_display_name: z.string().optional().or(z.literal("")),
-    variant_updates: z.array(z.any()).default([]), // Tracks pending local updates to variants
-    variant_generation_selection: z.array(z.any()).optional(), // Temporary state for generating variants during creation
+    variant_updates: z.array(z.unknown()).default([]), // Tracks pending local updates to variants
+    variant_generation_selection: z.array(z.object({ attribute: z.number(), values: z.array(z.string()) })).optional(), // Temporary state for generating variants during creation
     mfg_auto_finalize: z.boolean().default(false),
     // Print Shop Workflow
     mfg_enable_prepress: z.boolean().default(false),

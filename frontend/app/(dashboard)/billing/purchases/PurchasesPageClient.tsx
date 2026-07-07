@@ -469,7 +469,7 @@ export default function PurchasesPageClient() {
                         orderReference={notingDoc.purchase_order_number?.toString() ?? notingDoc.purchase_order?.toString()}
                         referenceLabel={notingDoc.purchase_order ? formatEntityDisplay('purchasing.purchaseorder', { number: notingDoc.purchase_order_number ?? notingDoc.purchase_order }) : `Factura #${notingDoc.id}`}
                         fetchSource={async () => {
-                            const { purchasingApi } = await import('@/features/purchasing/api/purchasingApi')
+                            const { purchasingApi } = await import('@/features/purchasing')
                             const source = notingDoc.purchase_order
                                 ? (await purchasingApi.getOrder(notingDoc.purchase_order) as unknown) as Record<string, unknown>
                                 : (await purchasingApi.getInvoice(notingDoc.id) as unknown) as Record<string, unknown>
@@ -495,7 +495,7 @@ export default function PurchasesPageClient() {
                             }
                         }}
                         onSubmit={async (payload) => {
-                            const { purchasingApi } = await import('@/features/purchasing/api/purchasingApi')
+                            const { purchasingApi } = await import('@/features/purchasing')
                             const { PricingUtils } = await import('@/lib/pricing-utils')
                             const formData = new FormData()
                             formData.append('note_type', payload.noteType)

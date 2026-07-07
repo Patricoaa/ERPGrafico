@@ -482,7 +482,7 @@ export function ProductClientView({ externalOpen, onExternalOpenChange, createAc
                     pageCount={page ? Math.ceil(page.count / page.pageSize) : 0}
                     rowCount={page?.count ?? 0}
                     pagination={pageState}
-                    onPaginationChange={setPageState as any}
+                    onPaginationChange={setPageState}
                     smartSearch={<SmartSearchBar searchDef={productSearchDef} placeholder="Buscar producto..." className="w-full" />}
                     segmentation={
                         <SegmentationBar def={{
