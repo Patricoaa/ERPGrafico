@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/incompatible-library */
 "use client"
 
 import { showApiError } from "@/lib/errors"
@@ -73,7 +74,7 @@ interface JournalEntryDrawerProps {
 }
 
 export function JournalEntryDrawer({
-    accounts: accountsProp,
+
     onSuccess,
     initialData,
     triggerText = "Nuevo Asiento",
@@ -92,7 +93,18 @@ export function JournalEntryDrawer({
     const mode: DrawerMode = modeProp ?? (initialData ? 'edit' : 'create')
     const isViewMode = mode === 'view'
     const entityId = journalEntryId ?? initialData?.id
-    const { data: viewEntry, isLoading: isViewLoading } = useJournalEntry(isViewMode ? entityId : undefined)
+    const { data: viewEntryData, isLoading: isViewLoading } = useJournalEntry(isViewMode ? entityId : undefined)
+    const viewEntry = viewEntryData as {
+        id?: number;
+        date?: string;
+        description?: string;
+        label?: string;
+        items?: Array<Record<string, unknown>>;
+        source_documents?: Array<{ id: number; display_name: string }>;
+        is_manual?: boolean;
+        reversal_of?: unknown;
+        status?: string;
+    } | undefined;
     const printRef = useRef<HTMLDivElement>(null)
     const handlePrint = useReactToPrint({ contentRef: printRef })
 
@@ -116,8 +128,7 @@ export function JournalEntryDrawer({
         return () => { isMounted.current = false }
     }, [])
 
-    const { accounts: fetchedAccounts, isLoading: isAccountsLoading } = useAccounts({ filters: { is_leaf: true } })
-    const accounts = (accountsProp?.length ? accountsProp : fetchedAccounts) as Record<string, unknown>[]
+    const { isLoading: isAccountsLoading } = useAccounts({ filters: { is_leaf: true } })
 
     const { serverDate, isLoading: isServerDateLoading } = useServerDate()
 
@@ -157,7 +168,7 @@ export function JournalEntryDrawer({
 
     const width = formDrawerWidth("master", !!initialData?.id)
 
-    const selectedDate = form.watch("date")
+
 
     const lastResetKey = useRef<string | null>(null)
 
@@ -194,7 +205,7 @@ export function JournalEntryDrawer({
                 })),
             })
         }
-    }, [open, initialData, serverDate])
+    }, [open, initialData, serverDate, form])
 
     // Sync sourceDocument from initialData (outside lastResetKey guard)
     useEffect(() => {
@@ -518,7 +529,10 @@ export function JournalEntryDrawer({
                 mode={mode}
                 icon={identity.icon}
                 title={identity.title}
-                headerActions={showPrintable && <Button variant="ghost" size="icon" onClick={() => handlePrint()}><Printer className="h-4 w-4" /></Button>}
+                headerActions={showPrintable && (
+                    // eslint-disable-next-line no-restricted-syntax -- header action, not a row/card action
+                    <Button variant="ghost" size="icon" onClick={() => handlePrint()}><Printer className="h-4 w-4" /></Button>
+                )}
                 subtitle={identity.subtitle}
                 footer={isViewMode ? undefined : (
                     <FormFooter

@@ -1,7 +1,7 @@
 "use client"
 
 import React, { useState, useEffect, useRef } from "react"
-import { useForm } from "react-hook-form"
+import { useForm, useWatch } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
 import { showApiError } from "@/lib/errors"
@@ -67,7 +67,7 @@ export function TreasuryAccountDrawer({ open, onOpenChange, accountId, onSuccess
         },
     })
 
-    const type = form.watch("account_type")
+    const type = useWatch({ control: form.control, name: "account_type" })
     const isSubmitting = isCreating || isUpdating
     const isSystemManaged = SYSTEM_MANAGED_TYPES.has(type)
     const mode: DrawerMode = modeProp ?? (accountId ? 'edit' : 'create')
@@ -217,8 +217,9 @@ export function TreasuryAccountDrawer({ open, onOpenChange, accountId, onSuccess
                 }
                 icon={identity.icon}
                 headerActions={(mode === 'view' || mode === 'edit') && accountId && (
-                    <Button variant="ghost" size="icon" onClick={() => handlePrint()}>
-                        <Printer className="h-4 w-4" />
+                    <Button variant="outline" size="sm" onClick={() => handlePrint()}>
+                        <Printer className="h-4 w-4 mr-2" />
+                        Imprimir
                     </Button>
                 )}
                 subtitle={identity.subtitle}

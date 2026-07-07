@@ -81,6 +81,7 @@ export function BarChart({
                         <>
                             <span className="font-medium">{String(indexValue)}</span>
                             <span className="ml-2 font-bold">
+                                {/* eslint-disable-next-line no-restricted-syntax -- Nivo chart tooltip; MoneyDisplay not applicable in SVG context */}
                                 {Number(value).toLocaleString()}
                             </span>
                         </>

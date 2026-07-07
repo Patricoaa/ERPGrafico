@@ -3,7 +3,7 @@ import { cn, translateStatus, formatPlainDate, parseDateOnly } from "@/lib/utils
 import { ExternalLink, type LucideIcon, MoreVertical } from "lucide-react"
 import Link from "next/link"
 import { type ReactNode, type HTMLAttributes } from "react"
-import type { ColumnDef, Row } from "@tanstack/react-table"
+import type { ColumnDef } from "@tanstack/react-table"
 
 import { MoneyDisplay, StatusBadge, EntityBadge, Chip as ChipComponent, DataTableColumnHeader } from "@/components/shared"
 import { useGlobalModals } from "@/components/providers/GlobalModalProvider"
@@ -168,6 +168,7 @@ export const DataCell = {
         const num = typeof value === 'string' ? parseFloat(value) : value
         return (
             <div className={cn("text-xs font-medium tabular-nums text-foreground flex justify-center items-center", className)} {...props}>
+                {/* eslint-disable-next-line no-restricted-syntax -- numeric quantity format, not currency; MoneyDisplay not applicable */}
                 {prefix}{num.toLocaleString('es-CL', { minimumFractionDigits: decimals, maximumFractionDigits: decimals })} {suffix && <span className="text-xs font-medium text-foreground flex justify-center items-center">{suffix}</span>}
             </div>
         )
@@ -212,6 +213,7 @@ export const DataCell = {
                     "text-xs font-medium tabular-nums flex justify-center items-center",
                     colorClass
                 )}>
+                    {/* eslint-disable-next-line no-restricted-syntax -- flow/polarity quantity format, not currency */}
                     {sign}{Math.abs(numValue).toLocaleString('es-CL', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
                 </span>
                 {unit && (

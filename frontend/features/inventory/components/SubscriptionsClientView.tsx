@@ -215,7 +215,7 @@ export function SubscriptionsClientView({ hideHeader = false, externalOpen = fal
         return sub.recurrence_display
     }
 
-    const actionsCtx: SubscriptionActionsCtx = {
+    const actionsCtx: SubscriptionActionsCtx = useMemo(() => ({
         onEdit: (productId) => {
             const sub = subscriptions.find(s => s.product === productId)
             if (sub) openSubscription(sub.id, "edit")
@@ -227,7 +227,7 @@ export function SubscriptionsClientView({ hideHeader = false, externalOpen = fal
             setCurrentArchivingProduct(product)
             setIsConfirmModalOpen(true)
         },
-    }
+    }), [subscriptions, handlePause, handleResume, openSubscription])
 
     const columns = useMemo<ColumnDef<Subscription>[]>(() => [
         {

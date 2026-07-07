@@ -4,8 +4,9 @@ import React, { useState } from "react"
 import { BaseModal } from "./BaseModal"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
-import { AlertTriangle, AlertCircle, Info, Loader2, type LucideIcon, CheckCircle2 } from "lucide-react"
+import { AlertTriangle, AlertCircle, Info, type LucideIcon, CheckCircle2 } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { ActionSlideButton } from "./ActionSlideButton"
 
 export type ActionVariant = "default" | "destructive" | "warning" | "info" | "success"
 
@@ -133,25 +134,19 @@ export function ActionConfirmModal({
                     >
                         {cancelText}
                     </Button>
-                    <Button
-                        variant={config.buttonVariant}
+                    <ActionSlideButton
+                        variant={variant === "destructive" ? "destructive" : variant === "success" ? "success" : "primary"}
                         onClick={handleConfirm}
-                        disabled={isLoading || reasonMissing}
+                        disabled={reasonMissing}
+                        loading={isLoading}
                         className={cn(
                             "flex-1 sm:flex-none min-w-[100px]",
                             variant === "warning" && "bg-warning hover:bg-warning/90 text-warning-foreground border-none",
                             variant === "success" && "bg-success hover:bg-success/90 text-success-foreground border-none"
                         )}
                     >
-                        {isLoading ? (
-                            <>
-                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                Procesando...
-                            </>
-                        ) : (
-                            confirmText
-                        )}
-                    </Button>
+                        {isLoading ? "Procesando..." : confirmText}
+                    </ActionSlideButton>
                 </div>
             }
         >

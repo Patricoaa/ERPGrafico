@@ -2,7 +2,7 @@ import api from "@/lib/api"
 import type { MyProfile, ChangePasswordPayload, ChangePinPayload } from "@/types/profile"
 
 export async function getUserPreferences(): Promise<Record<string, unknown>> {
-  const res = await api.get('/core/preferences/')
+  const res = await api.get<Record<string, unknown>>('/core/preferences/')
   // eslint-disable-next-line pagination/no-raw-response-data
   return res.data
 }
@@ -12,27 +12,27 @@ export async function saveUserPreference(key: string, value: unknown): Promise<v
 }
 
 export async function getMyProfile(): Promise<MyProfile> {
-  const res = await api.get('/core/auth/my-profile/')
+  const res = await api.get<MyProfile>('/core/auth/my-profile/')
   return res.data
 }
 
 export async function updateThemePreference(theme: 'light' | 'dark' | 'system'): Promise<MyProfile['user']> {
-  const res = await api.patch('/core/auth/me/', { theme })
+  const res = await api.patch<MyProfile['user']>('/core/auth/me/', { theme })
   return res.data
 }
 
 export async function getEmployeePayrollPreview(payrollId: number | string): Promise<Record<string, unknown>> {
-    const res = await api.get(`/core/auth/my-profile/payrolls/${payrollId}/preview/`)
+    const res = await api.get<Record<string, unknown>>(`/core/auth/my-profile/payrolls/${payrollId}/preview/`)
     return res.data
 }
 
 export async function changePassword(data: ChangePasswordPayload): Promise<{ detail: string }> {
-  const res = await api.post('/core/auth/change-password/', data)
+  const res = await api.post<{ detail: string }>('/core/auth/change-password/', data)
   return res.data
 }
 
 export async function changePin(data: ChangePinPayload): Promise<{ detail: string }> {
-  const res = await api.post('/core/auth/change-pin/', data)
+  const res = await api.post<{ detail: string }>('/core/auth/change-pin/', data)
   return res.data
 }
 
@@ -42,7 +42,7 @@ export function getPayrollPdfUrl(payrollId: number): string {
 }
 
 export async function downloadPayrollPdf(payrollId: number, filename?: string): Promise<void> {
-  const res = await api.get(`/hr/payrolls/${payrollId}/download_pdf/`, {
+  const res = await api.get<Blob>(`/hr/payrolls/${payrollId}/download_pdf/`, {
     responseType: 'blob'
   })
   const url = window.URL.createObjectURL(new Blob([res.data], { type: 'application/pdf' }))

@@ -167,7 +167,7 @@ export function StockReport() {
         },
 
         stockReportActions.column(stockReportActionsCtx) as unknown as ColumnDef<StockReportItem>,
-    ], [setAdjustingProduct, setInsightsProduct])
+    ], [setAdjustingProduct, setInsightsProduct, stockReportActionsCtx])
 
     return (
         <PageContainer className="h-full flex flex-col">

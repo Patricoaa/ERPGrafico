@@ -4,11 +4,10 @@ import {
     DropdownMenu,
     DropdownMenuContent,
     DropdownMenuItem,
-    DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { type FiscalYear, type AccountingPeriod, type TaxPeriod } from '../../types';
-import { CalendarRange, Lock, MoreVertical, PlayCircle, Settings2, ShieldAlert, AlertTriangle, CheckCircle2 } from 'lucide-react';
+import { CalendarRange, Lock, MoreVertical, Settings2, ShieldAlert, AlertTriangle, CheckCircle2 } from 'lucide-react';
 import { CombinedPeriodCard } from './CombinedPeriodCard';
 import { formatPlainDate } from '@/lib/utils';
 

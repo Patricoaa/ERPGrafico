@@ -40,6 +40,7 @@ function Calendar({
       )}
       captionLayout={captionLayout}
       formatters={{
+        // eslint-disable-next-line no-restricted-syntax -- date locale formatting, not currency/quantity
         formatMonthDropdown: (date) =>
           date.toLocaleString("es-CL", { month: "short" }),
         ...formatters,

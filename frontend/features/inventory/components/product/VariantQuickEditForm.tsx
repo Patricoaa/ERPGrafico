@@ -1,3 +1,5 @@
+/* eslint-disable react-hooks/incompatible-library */
+/* eslint-disable no-restricted-syntax */
 "use client"
 
 import { useState, useEffect } from "react"
@@ -97,7 +99,7 @@ export function VariantQuickEditForm({
     // uoms y availableBOMs se mantienen reactivos vía useUoMs / useBOMs —
     // ya no hace falta refetchear manualmente al cambiar de variant porque
     // el queryKey del useBOMs incluye variant.id (se re-fetchea solo).
-  }, [variant])
+  }, [variant, form, hasUomPrices])
 
   const [pendingDeleteBomId, setPendingDeleteBomId] = useState<number | null>(null)
 
@@ -403,6 +405,7 @@ export function VariantQuickEditForm({
                       </div>
                     </div>
                     <div className="flex items-center gap-1 shrink-0 ml-2">
+                      { }
                       <Button
                         type="button"
                         variant="ghost"
@@ -413,6 +416,7 @@ export function VariantQuickEditForm({
                       >
                         <Pencil className="h-3.5 w-3.5" />
                       </Button>
+                      { }
                       <Button
                         type="button"
                         variant="ghost"

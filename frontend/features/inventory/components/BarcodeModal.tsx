@@ -22,7 +22,7 @@ export function BarcodeModal({ open, onOpenChange, initialValue = "", onApply }:
     const [mounted, setMounted] = useState(false)
     const barcodeSvgRef = useRef<SVGSVGElement | null>(null)
 
-    const generateBarcode = (node: SVGSVGElement | null, value: string) => {
+    const generateBarcode = React.useCallback((node: SVGSVGElement | null, value: string) => {
         if (!node || !value || !open) return
         
         try {
@@ -39,7 +39,7 @@ export function BarcodeModal({ open, onOpenChange, initialValue = "", onApply }:
         } catch (error) {
             console.error("Barcode generation failed:", error)
         }
-    }
+    }, [open])
 
     // Synchronize state with initialValue when opening
     useEffect(() => {
@@ -69,7 +69,7 @@ export function BarcodeModal({ open, onOpenChange, initialValue = "", onApply }:
             })
             return () => cancelAnimationFrame(rafId)
         }
-    }, [barcodeValue, open, mounted])
+    }, [barcodeValue, open, mounted, generateBarcode])
 
     const setRef = (node: SVGSVGElement | null) => {
         barcodeSvgRef.current = node

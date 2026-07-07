@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/incompatible-library */
 "use client"
 
 import React, { useState, useEffect, useRef } from "react"
@@ -17,7 +18,7 @@ import {
 import { useCategoryMutations } from "../hooks/useCategoryMutations"
 import { AccountSelector, CategorySelector } from "@/components/selectors"
 import * as LucideIcons from "lucide-react"
-import { Check, Printer, type LucideIcon } from "lucide-react"
+import { Check, type LucideIcon } from "lucide-react"
 import { formDrawerWidth } from "@/lib/form-widths"
 
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"

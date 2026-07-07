@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/incompatible-library */
 "use client"
 
 import { showApiError } from "@/lib/errors"
@@ -115,12 +116,13 @@ export function AdjustmentForm({
         }
     })
 
-    const selectedProductId = form.watch("product_id")
-    const selectedUoMId = form.watch("uom_id")
-    const moveType = form.watch("type")
-    const adjustmentReason = form.watch("adjustment_reason")
-    const quantity = Number(form.watch("quantity") || 0)
-    const unitCost = Number(form.watch("unit_cost") || 0)
+    const { watch } = form
+    const selectedProductId = watch("product_id")
+    const selectedUoMId = watch("uom_id")
+    const moveType = watch("type")
+    const adjustmentReason = watch("adjustment_reason")
+    const quantity = Number(watch("quantity") || 0)
+    const unitCost = Number(watch("unit_cost") || 0)
 
     const isPartnerReason = adjustmentReason === 'PARTNER_CONTRIBUTION' || adjustmentReason === 'PARTNER_WITHDRAWAL'
 

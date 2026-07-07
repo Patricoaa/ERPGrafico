@@ -52,7 +52,7 @@ export function ProductVariantsTab({ form, initialData, onTabChange }: ProductVa
         productId: initialData?.id,
         activeOnly: false,
     })
-    const variants = (variantsData ?? []) as Product[]
+    const variants = useMemo(() => (variantsData ?? []) as Product[], [variantsData])
 
     const { updateProduct, generateVariants, isGeneratingVariants: isGenerating } = useProducts()
     const { createAttributeValue } = useAttributes()

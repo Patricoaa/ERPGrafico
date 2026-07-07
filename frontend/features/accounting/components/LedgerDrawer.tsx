@@ -84,13 +84,13 @@ export function LedgerDrawer({ accountId, accountName, accountCode, trigger, noT
                 })
             })
         }
-    }, [serverDate])
+    }, [serverDate, dateRange])
 
     const startStr = dateRange ? format(dateRange.from, 'yyyy-MM-dd') : ''
     const endStr = dateRange ? format(dateRange.to, 'yyyy-MM-dd') : ''
 
     // Fetch ledger data
-    const { data, isLoading, refetch } = useLedger(accountId, startStr, endStr)
+    const { data, isLoading } = useLedger(accountId, startStr, endStr)
 
     const identity = useDrawerIdentity('accounting.account', 'view', { code: accountCode, name: accountName }, {
         overrideTitle: "Libro Mayor",
@@ -173,7 +173,10 @@ export function LedgerDrawer({ accountId, accountName, accountCode, trigger, noT
                 defaultSize={formDrawerWidth("master", false)}
                 mode="view"
                 contentClassName="p-0"
-                headerActions={<Button variant="ghost" size="icon" onClick={() => handlePrint()}><Printer className="h-4 w-4" /></Button>}
+                headerActions={(
+                    // eslint-disable-next-line no-restricted-syntax -- header action, not a row/card action
+                    <Button variant="ghost" size="icon" onClick={() => handlePrint()}><Printer className="h-4 w-4" /></Button>
+                )}
             >
                  {open && dateRange && (
                      <SkeletonShell isLoading={isLoading} ariaLabel="Cargando libro mayor" className="flex-1 flex flex-col h-full">
@@ -185,7 +188,6 @@ export function LedgerDrawer({ accountId, accountName, accountCode, trigger, noT
                              setDateRange={setDateRange}
                              data={data}
                              isLoading={isLoading}
-                             refetch={refetch}
                          />
                      </SkeletonShell>
                  )}
@@ -198,8 +200,7 @@ function LedgerContent({
     dateRange,
     setDateRange,
     data,
-    isLoading,
-    refetch
+    isLoading
 }: {
     accountId: number;
     startDate: string;
@@ -208,7 +209,6 @@ function LedgerContent({
     setDateRange: (range: { from: Date; to: Date } | undefined) => void;
     data: LedgerData | undefined;
     isLoading: boolean;
-    refetch: () => void;
 }) {
     const { serverDate } = useServerDate()
 

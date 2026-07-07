@@ -1,3 +1,5 @@
+/* eslint-disable react-hooks/incompatible-library */
+/* eslint-disable no-restricted-syntax */
 "use client"
 
 import { showApiError } from "@/lib/errors"

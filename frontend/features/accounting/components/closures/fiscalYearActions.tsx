@@ -1,5 +1,5 @@
 import { DataCell, createEntityActions } from '@/components/shared'
-import { ShieldAlert, LockOpen, PlayCircle } from 'lucide-react'
+import { ShieldAlert, LockOpen } from 'lucide-react'
 import type { AccountingPeriod, FiscalYear } from '../../types'
 
 export interface FiscalYearRow {

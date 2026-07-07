@@ -7,7 +7,7 @@ import {
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import {
-    GenericWizard, LabeledInput, LabeledSelect, MultiSelectTagInput, FormSection,
+    GenericWizard, LabeledInput, LabeledSelect, MultiSelectTagInput, FormSection, MoneyDisplay,
 } from "@/components/shared"
 import type { WizardStep } from "@/components/shared"
 import { Button } from "@/components/ui/button"
@@ -287,7 +287,7 @@ export function TreasuryAccountWizard({ open, onOpenChange, onSuccess, defaultBa
                             />
                             <SummaryRow label="Uso" value={USAGE_CARDS.find((u) => u.value === usage)?.label ?? "—"} />
                             {accountType === "CREDIT_CARD" && creditLimit && (
-                                <SummaryRow label="Cupo Total" value={`$${Number(creditLimit).toLocaleString('es-CL')}`} />
+                                <SummaryRow label="Cupo Total" value={<MoneyDisplay amount={Number(creditLimit)} />} />
                             )}
                         </div>
                     </div>
@@ -336,7 +336,7 @@ export function TreasuryAccountWizard({ open, onOpenChange, onSuccess, defaultBa
     )
 }
 
-function SummaryRow({ label, value }: { label: string; value: string }) {
+function SummaryRow({ label, value }: { label: string; value: React.ReactNode }) {
     return (
         <div className="p-3 flex justify-between items-center">
             <span className="text-muted-foreground font-medium">{label}:</span>

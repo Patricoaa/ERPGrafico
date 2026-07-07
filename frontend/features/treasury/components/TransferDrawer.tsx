@@ -1,7 +1,7 @@
 "use client"
 
 import React, { useState, useEffect, useRef } from "react"
-import { useForm } from "react-hook-form"
+import { useForm, useWatch } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
 import { showApiError } from "@/lib/errors"
@@ -42,7 +42,7 @@ export function TransferDrawer({ open, onOpenChange, onSuccess, mode: modeProp }
     const { serverDate, isLoading: isServerDateLoading } = useServerDate()
     const mode: DrawerMode = modeProp ?? 'create'
     const isView = mode === 'view'
-    const printRef = useRef<HTMLDivElement>(null)
+
     const isFetchingInitialData = open && (isAccountsLoading || isServerDateLoading)
     const [isDateValid, setIsDateValid] = useState(true)
 
@@ -56,9 +56,9 @@ export function TransferDrawer({ open, onOpenChange, onSuccess, mode: modeProp }
         }
     })
 
-    const fromAccountId = form.watch("from_account_id")
-    const toAccountId = form.watch("to_account_id")
-    const amount = form.watch("amount")
+    const fromAccountId = useWatch({ control: form.control, name: "from_account_id" })
+    const toAccountId = useWatch({ control: form.control, name: "to_account_id" })
+    const amount = useWatch({ control: form.control, name: "amount" })
 
     useEffect(() => {
         if (serverDate && !form.getValues("date")) {

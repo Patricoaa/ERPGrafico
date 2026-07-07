@@ -70,6 +70,7 @@ export const ActionSlideButton = React.forwardRef<HTMLButtonElement, ActionSlide
                 {/* Content wrapper to ensure text stays above the animated background */}
                 <span className="relative z-10 flex items-center justify-center gap-2">
                     {loading ? (
+                        // eslint-disable-next-line no-restricted-syntax -- This IS the canonical loading implementation for ActionSlideButton
                         <Loader2 className="h-3.5 w-3.5 animate-spin" />
                     ) : (
                         (() => {
