@@ -527,6 +527,7 @@ export function PaymentMethodSelector({
                         <span className="text-sm font-semibold uppercase tracking-wider text-primary">Modo múltiple</span>
                     </div>
                     <Button
+                        variant="ghost"
                         type="button"
                         onClick={exitMultiMode}
                         className="text-sm font-semibold text-destructive hover:text-destructive/80 px-4 py-2"
@@ -564,7 +565,8 @@ export function PaymentMethodSelector({
                                                 <TooltipTrigger asChild>
                                                     <Button
                                                         type="button"
-                                                        onClick={() => handleEditAmount(allocIndex)}
+                                                        variant="ghost"
+                                                         onClick={() => handleEditAmount(allocIndex)}
                                                         className="p-1.5 rounded-sm hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
                                                         aria-label="Editar monto"
                                                     >
@@ -577,6 +579,7 @@ export function PaymentMethodSelector({
                                                 <Tooltip>
                                                     <TooltipTrigger asChild>
                                                         <Button
+                                                            variant="ghost"
                                                             type="button"
                                                             onClick={() => setShowFieldsForIndex(showFieldsForIndex === allocIndex ? null : allocIndex)}
                                                             className="p-1.5 rounded-sm hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
@@ -591,6 +594,7 @@ export function PaymentMethodSelector({
                                             <Tooltip>
                                                 <TooltipTrigger asChild>
                                                     <Button
+                                                        variant="ghost"
                                                         type="button"
                                                         onClick={() => removePayment(allocIndex)}
                                                         className="p-1.5 rounded-sm hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors"

@@ -119,10 +119,12 @@ export function UniversalSearch() {
         <>
             {/* Wider Trigger Button */}
             <Button
+                variant="ghost"
+                size="icon"
                 type="button"
                 onClick={() => setOpen(true)}
                 aria-label="Búsqueda universal (Ctrl+K)"
-                className="group flex h-10 w-10 items-center justify-center rounded-md text-foreground/50 transition-all hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/20"
+                className="group rounded-md text-foreground/50 transition-all hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/20"
             >
                 <Search className="h-5 w-5 shrink-0 transition-colors group-hover:text-foreground" aria-hidden />
             </Button>
@@ -167,7 +169,7 @@ export function UniversalSearch() {
                                 </div>
                             ) : (
                                 <div className="flex items-center gap-1">
-                                    <Button onClick={() => setOpen(false)} className="rounded-md p-1.5 hover:bg-accent transition-colors">
+                                    <Button variant="ghost" onClick={() => setOpen(false)} className="rounded-md p-1.5 hover:bg-accent transition-colors">
                                         <X className="size-4 text-muted-foreground/60" />
                                     </Button>
                                 </div>
@@ -179,11 +181,12 @@ export function UniversalSearch() {
                             <div className="flex items-center border-b border-border bg-overlay/20 px-4 py-2">
                                 <div className="flex w-full items-center gap-2 overflow-x-auto flex-nowrap scrollbar-none [ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden pb-1">
                                     <Button
+                                        variant={!selectedType ? "default" : "ghost"}
                                         onClick={() => setSelectedType(null)}
                                         className={cn(
                                             "flex shrink-0 items-center gap-2 rounded-sm px-4 py-2 text-[10px] uppercase tracking-widest transition-all",
                                             !selectedType
-                                                ? "bg-primary text-primary-foreground "
+                                                ? ""
                                                 : "text-muted-foreground hover:bg-accent hover:text-foreground"
                                         )}
                                     >
@@ -192,11 +195,12 @@ export function UniversalSearch() {
                                     {entityTypes.map((type) => (
                                         <Button
                                             key={type.label}
+                                            variant={selectedType === type.label ? "default" : "ghost"}
                                             onClick={() => setSelectedType(type.label)}
                                             className={cn(
                                                 "flex shrink-0 items-center gap-2 rounded-sm px-4 py-2 text-[10px] uppercase tracking-widest transition-all",
                                                 selectedType === type.label
-                                                    ? "bg-primary text-primary-foreground "
+                                                    ? ""
                                                     : "text-muted-foreground hover:bg-accent hover:text-foreground"
                                             )}
                                         >

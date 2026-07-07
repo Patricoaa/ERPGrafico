@@ -77,6 +77,7 @@ export function ModuleLauncher({ open, onClose }: ModuleLauncherProps) {
                         onClick={(e) => e.stopPropagation()}
                     >
                         <Button
+                            variant="ghost"
                             onClick={onClose}
                             className="absolute -top-[clamp(2.5rem,6vw,3rem)] right-0 p-2 rounded-full text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors"
                             aria-label="Cerrar selector de módulos"

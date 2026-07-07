@@ -37,6 +37,7 @@ const CollapsibleSection = ({
 }) => (
     <div className="mb-4">
         <Button
+            variant="ghost"
             onClick={onToggle}
             className="flex items-center justify-between w-full p-2 text-sm font-semibold text-muted-foreground uppercase tracking-wide hover:text-foreground transition-colors rounded-md hover:bg-muted/50"
         >
