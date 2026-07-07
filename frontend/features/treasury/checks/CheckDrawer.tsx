@@ -1,10 +1,8 @@
 "use client"
 
-import { useQuery } from '@tanstack/react-query'
 import { Drawer, EmptyState, MoneyDisplay, SkeletonShell, StatusBadge } from "@/components/shared"
 import { useDrawerIdentity } from "@/features/_shared/drawer"
-import { checksApi } from './api'
-import type { Check } from './types'
+import { useCheck } from '../hooks/useChecks'
 import { formDrawerWidth } from '@/lib/form-widths'
 
 interface CheckDrawerProps {
@@ -14,11 +12,7 @@ interface CheckDrawerProps {
 }
 
 export function CheckDrawer({ id, open, onOpenChange }: CheckDrawerProps) {
-    const { data: check, isLoading, isError } = useQuery<Check>({
-        queryKey: ['checks', 'detail', id],
-        queryFn: () => checksApi.get(id as number),
-        enabled: !!id && open,
-    })
+    const { data: check, isLoading, isError } = useCheck(id, open)
     const identity = useDrawerIdentity('treasury.check', 'view', check, {
         overrideTitle: check ? `${check.display_id}` : "Cheque",
     })

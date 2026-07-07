@@ -308,7 +308,7 @@ export function VariantQuickEditForm({
               />
 
               {(currentMode === 'INHERIT' || currentMode === 'SURCHARGE') &&
-                (templateData as unknown as Record<string, unknown>)?.discount_active && (
+                !!((templateData as unknown as Record<string, unknown>)?.discount_active) && (
                   <div className="p-3 bg-warning/10 border border-warning/20 rounded-md flex gap-2 items-center text-[11px] font-bold text-warning-foreground">
                     <AlertCircle className="h-4 w-4 shrink-0 text-warning" />
                     El template tiene descuentos configurados. Estos se aplicarán sobre el precio final calculado de esta variante.
