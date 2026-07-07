@@ -5,7 +5,7 @@ import { CheckCircle } from 'lucide-react'
 import { BaseModal, MoneyDisplay } from '@/components/shared'
 import { Button } from '@/components/ui/button'
 import { useTreasuryAccounts } from '@/features/treasury'
-import { useCardStatementMutations } from './hooks'
+import { useCardStatementMutations } from '../hooks/useCardStatements'
 import type { CreditCardStatement } from './types'
 import type { TreasuryAccount } from '@/features/treasury/types'
 

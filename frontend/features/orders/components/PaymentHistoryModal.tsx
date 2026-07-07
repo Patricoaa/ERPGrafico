@@ -4,7 +4,6 @@ import { BaseModal, DataCell, DataTable } from '@/components/shared'
 import { formatCurrency } from "@/lib/money"
 import { Landmark, User, Hash, FileText } from "lucide-react"
 import { formatEntityDisplay } from "@/lib/entity-registry"
-import type { TransactionData } from "@/types/transactions"
 import type { ColumnDef } from "@tanstack/react-table"
 
 interface Payment {
@@ -22,7 +21,7 @@ interface Payment {
 interface PaymentHistoryModalProps {
     open: boolean
     onOpenChange: (open: boolean) => void
-    order: TransactionData
+    order: Record<string, unknown>
 }
 
 export function PaymentHistoryModal({

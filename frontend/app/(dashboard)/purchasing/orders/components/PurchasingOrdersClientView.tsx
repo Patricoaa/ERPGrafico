@@ -14,6 +14,7 @@ import { billingApi } from "@/features/billing"
 import { purchaseOrderSegDef } from "@/features/purchasing/segmentationDef"
 import type { PurchaseOrderAPI } from "@/features/purchasing"
 import type { Page } from '@/lib/pagination'
+import type { PurchaseOrderInitialData } from "@/types/forms"
 import { toast } from "sonner"
 
 import { useHubPanel } from "@/components/providers/HubPanelProvider"
@@ -30,7 +31,7 @@ interface PurchaseOrder extends Order {
     supplier_name: string
     date: string
     warehouse_name: string
-    supplier?: number | any
+    supplier?: number | string
     total_paid: number
     is_invoiced: boolean
     invoice_details?: {
@@ -54,7 +55,7 @@ export function PurchasingOrdersClientView({ viewMode, externalOpenCheckout, cre
     const { filters: segFilters, isFiltered: isSegFiltered, clearAll: clearSeg } = useSegmentation(purchaseOrderSegDef, basePeriod)
     const isFiltered = isTextFiltered || isSegFiltered
     const [pageState, setPageState] = useState({ pageIndex: 0, pageSize: 20 })
-    const allFilters = { ...(textFilters as any), ...(segFilters as any), page: pageState.pageIndex + 1, page_size: pageState.pageSize }
+    const allFilters = { ...textFilters, ...segFilters, page: pageState.pageIndex + 1, page_size: pageState.pageSize }
     const { page, orders, isLoading: isLoadingOrders, isRefetching, refetch: fetchOrders, deleteOrder, annulOrder } = usePurchasingOrders(allFilters, initialOrders ? { results: initialOrders, count: initialOrders.length } as Page<PurchaseOrderAPI> : undefined)
     // TODO: migrate purchasing notes to Page<T>
     const { notes, isLoading: isLoadingNotes } = usePurchasingNotes(initialNotes)
@@ -423,7 +424,7 @@ export function PurchasingOrdersClientView({ viewMode, externalOpenCheckout, cre
         // Hidden columns for filtering only - these provide data for faceted filters
         {
             id: "reception_status",
-            accessorFn: (row) => getHubStatuses(row as any).logistics, // use generic getHubStatuses from lib
+            accessorFn: (row) => getHubStatuses(row as Record<string, unknown>).logistics,
             header: () => null,
             cell: () => null,
             enableSorting: false,
@@ -434,7 +435,7 @@ export function PurchasingOrdersClientView({ viewMode, externalOpenCheckout, cre
         },
         {
             id: "billing_status",
-            accessorFn: (row) => getHubStatuses(row as any).billing,
+            accessorFn: (row) => getHubStatuses(row as Record<string, unknown>).billing,
             header: () => null,
             cell: () => null,
             enableSorting: false,
@@ -445,7 +446,7 @@ export function PurchasingOrdersClientView({ viewMode, externalOpenCheckout, cre
         },
         {
             id: "treasury_status",
-            accessorFn: (row) => getHubStatuses(row as any).treasury,
+            accessorFn: (row) => getHubStatuses(row as Record<string, unknown>).treasury,
             header: () => null,
             cell: () => null,
             enableSorting: false,
@@ -485,7 +486,7 @@ export function PurchasingOrdersClientView({ viewMode, externalOpenCheckout, cre
         <div className="flex-1 min-h-0 flex flex-col">
             {editingOrder && (
                 <PurchaseOrderModal
-                    initialData={editingOrder as unknown as any}
+                    initialData={editingOrder as unknown as PurchaseOrderInitialData}
                     open={!!editingOrder}
                     onOpenChange={(open) => {
                         if (!open) setEditingOrder(null)
@@ -498,9 +499,9 @@ export function PurchasingOrdersClientView({ viewMode, externalOpenCheckout, cre
                 <div className="flex-1 min-h-0">
                     <DataTableView
                         entityLabel={viewMode === 'orders' ? 'purchasing.purchaseorder' : 'billing.invoice'}
-                        columns={(viewMode === 'orders' ? columns : noteColumns) as any}
-                        data={(viewMode === 'orders' ? filteredOrders : filteredNotes) as any}
-                        onRowClick={(row: any) => toggleSelection(row.id)}
+                        columns={(viewMode === 'orders' ? columns : noteColumns) as unknown as ColumnDef<Record<string, unknown>>[]}
+                        data={(viewMode === 'orders' ? filteredOrders : filteredNotes) as unknown as Record<string, unknown>[]}
+                        onRowClick={(row: Record<string, unknown>) => toggleSelection(row.id as number)}
                         variant="embedded"
                         isLoading={viewMode === 'orders' ? isLoadingOrders : isLoadingNotes}
                         isRefetching={viewMode === 'orders' ? isRefetching : undefined}
@@ -512,9 +513,9 @@ export function PurchasingOrdersClientView({ viewMode, externalOpenCheckout, cre
                         pageCount={viewMode === 'orders' ? (page ? Math.ceil(page.count / page.pageSize) : 0) : undefined}
                         rowCount={viewMode === 'orders' ? (page?.count ?? 0) : undefined}
                         pagination={viewMode === 'orders' ? pageState : undefined}
-                        onPaginationChange={viewMode === 'orders' ? setPageState as any : undefined}
+                        onPaginationChange={viewMode === 'orders' ? setPageState : undefined}
                         createAction={createAction}
-                        isSelected={(data: any) => viewMode === 'orders'
+                        isSelected={(data: Record<string, unknown>) => viewMode === 'orders'
                             ? hubConfig?.orderId === data.id
                             : hubConfig?.invoiceId === data.id
                         }
@@ -577,7 +578,7 @@ export function PurchasingOrdersClientView({ viewMode, externalOpenCheckout, cre
                 }}
                 order={null}
                 orderId={checkoutOrderId}
-                orderLines={[{ product: "", product_name: "", quantity: 1, uom: "", uom_name: "", unit_cost: 0, tax_rate: rate } as any]}
+                orderLines={[{ product: "", product_name: "", quantity: 1, uom: "", uom_name: "", unit_cost: 0, tax_rate: rate }]}
                 total={0}
                 onComplete={() => {
                     fetchOrders()

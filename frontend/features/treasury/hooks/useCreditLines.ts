@@ -1,9 +1,9 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useRealtime } from '@/features/realtime'
 import { invalidateCrossFeature } from '@/lib/invalidation'
-import { creditLinesApi } from './api'
-import { CREDIT_LINES_KEYS } from '../hooks/queryKeys'
-import type { CreditLineCreatePayload } from './types'
+import { creditLinesApi } from '../credit-lines/api'
+import { CREDIT_LINES_KEYS } from './queryKeys'
+import type { CreditLineCreatePayload } from '../credit-lines/types'
 
 export function useCreditLines(params?: { treasury_account_id?: number; bank_id?: number; status?: string }) {
     return useQuery({

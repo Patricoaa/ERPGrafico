@@ -12,7 +12,7 @@ import {
 } from '@/components/shared'
 import { loanStatusSegDef } from './segmentationDef'
 import { loanSearchDef } from './searchDef'
-import { useLoans } from './hooks'
+import { useLoans } from '../hooks/useLoans'
 import { LoanRegisterDrawer } from './LoanRegisterDrawer'
 import { LoanViewDrawer } from './LoanViewDrawer'
 import { LoanDisburseDrawer } from './LoanDisburseDrawer'

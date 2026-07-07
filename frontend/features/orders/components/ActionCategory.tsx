@@ -35,6 +35,8 @@ import { useCancelOrderFlow } from "../hooks/useCancelOrderFlow"
 
 import { useHubPanel } from "@/components/providers/HubPanelProvider"
 import { type Order, type OrderLine } from "../types"
+import type { DocumentItem } from "./DocumentListModal"
+import type { Payment as TreasuryPayment } from "@/features/treasury/components/PaymentReferenceModal"
 
 interface ActionCategoryProps {
     category: CategoryType
@@ -156,9 +158,9 @@ export const ActionCategory = forwardRef(({
                     return
                 }
 
-                const targetDoc = docs[0] as any
-                const viewType = targetDoc.docType || (actionId === 'view-documents' ? 'invoice' : (isSale ? 'sale_delivery' : 'inventory'))
-                const viewId = actionId === 'view-documents' ? targetDoc.id : (targetDoc.id || targetDoc.stock_move_id)
+                const targetDoc = docs[0] as Record<string, unknown>
+                const viewType = targetDoc.docType as string || (actionId === 'view-documents' ? 'invoice' : (isSale ? 'sale_delivery' : 'inventory'))
+                const viewId = actionId === 'view-documents' ? targetDoc.id as number | string : ((targetDoc.id as number | string) || targetDoc.stock_move_id as number | string)
 
                 if (!viewId) {
                     toast.error("Error al identificar el documento.")
@@ -220,7 +222,7 @@ export const ActionCategory = forwardRef(({
                 } else {
                     // DRAFT invoice + posted payments: return the first posted payment
                     const payments = order?.related_documents?.payments || []
-                    const firstPosted = payments.find((p: any) => p.journal_entry?.state === 'POSTED')
+                    const firstPosted = payments.find((p) => (p.journal_entry as Record<string, unknown>)?.state === 'POSTED')
                     const paymentId = firstPosted?.id
                     if (!paymentId) {
                         toast.error("No se encontró un pago contabilizado para devolver.")
@@ -352,9 +354,9 @@ export const ActionCategory = forwardRef(({
                      <DocumentCompletionModal
                          open={true}
                          onOpenChange={closeModal}
-                         invoiceId={(tempInvoiceId || resolvedInvoices?.find((inv: any) => inv.status === 'DRAFT' || inv.number === 'Draft' || !inv.number)?.id) as number || 0}
-                         invoiceType={(tempInvoiceId ? "FACTURA_ELECTRONICA" : (resolvedInvoices?.find((inv: any) => inv.status === 'DRAFT' || inv.number === 'Draft' || !inv.number) as any)?.dte_type as string) || "FACTURA_ELECTRONICA"}
-                         contactId={(((order?.customer || order?.supplier) as Record<string, unknown>)?.id as number || (isSale ? (order as any).customer_id : (order as any).supplier_id)) as number || 0}
+                          invoiceId={(tempInvoiceId || resolvedInvoices?.find((inv) => inv.status === 'DRAFT' || inv.number === 'Draft' || !inv.number)?.id) as number || 0}
+                          invoiceType={(tempInvoiceId ? "FACTURA_ELECTRONICA" : resolvedInvoices?.find((inv) => inv.status === 'DRAFT' || inv.number === 'Draft' || !inv.number)?.dte_type as string) || "FACTURA_ELECTRONICA"}
+                          contactId={(((order?.customer || order?.supplier) as Record<string, unknown>)?.id as number || (isSale ? order.customer_id : order.supplier_id)) as number || 0}
                          isPurchase={isPurchase}
                           onComplete={async (invoiceId, formData) => {
                               if (!invoiceId) {
@@ -400,7 +402,7 @@ export const ActionCategory = forwardRef(({
                 <PaymentHistoryModal
                     open={true}
                     onOpenChange={closeModal}
-                    order={order as any}
+                    order={order}
                 />
             )}
 
@@ -415,7 +417,7 @@ export const ActionCategory = forwardRef(({
                     isRefund={activeModal === 'register-payment-return'}
                     title={activeModal === 'register-payment-return' ? (isSale ? "Registrar Reembolso a Cliente" : "Registrar Reembolso de Proveedor") : undefined}
                     posSessionId={posSessionId}
-                    customerCreditBalance={(order?.customer as any)?.credit_balance || (order?.customer_name as any)?.credit_balance || 0}
+                    customerCreditBalance={(order?.customer?.credit_balance as number) || ((order as Record<string, unknown>)['customer_name'] as Record<string, unknown>)?.credit_balance as number || 0}
                     allowCreditBalanceAccumulation={order?.dte_type === 'NOTA_CREDITO'}
                 />
             )}
@@ -424,13 +426,13 @@ export const ActionCategory = forwardRef(({
                 <PaymentReferenceModal
                     open={true}
                     onOpenChange={closeModal}
-                    payments={(order?.related_documents?.payments || order?.serialized_payments || []) as any}
+                    payments={(order?.related_documents?.payments || order?.serialized_payments || []) as unknown as TreasuryPayment[]}
                     onSuccess={() => { closeModal(); onActionSuccess?.() }}
                 />
             )}
 
             {(activeModal === 'create-credit-note' || activeModal === 'create-debit-note') && (() => {
-                const resolvedInvoiceId = (resolvedInvoices?.find((inv: any) => inv.status !== 'CANCELLED' && !['NOTA_CREDITO', 'NOTA_DEBITO'].includes(inv.dte_type as string))?.id as number) || 0
+                const resolvedInvoiceId = (resolvedInvoices?.find((inv) => inv.status !== 'CANCELLED' && !['NOTA_CREDITO', 'NOTA_DEBITO'].includes(inv.dte_type as string))?.id as number) || 0
                 const noteInitialType = activeModal === 'create-debit-note' ? 'NOTA_DEBITO' as const : 'NOTA_CREDITO' as const
                 return (
                     <UnifiedNoteWizard
@@ -439,7 +441,7 @@ export const ActionCategory = forwardRef(({
                         mode="sales"
                         initialType={noteInitialType}
                         features={{ logistics: true, manufacturing: true }}
-                        referenceLabel={resolvedInvoices?.find((inv: any) => inv.status !== 'CANCELLED' && !['NOTA_CREDITO', 'NOTA_DEBITO'].includes(inv.dte_type as string))?.number}
+                        referenceLabel={resolvedInvoices?.find((inv) => inv.status !== 'CANCELLED' && !['NOTA_CREDITO', 'NOTA_DEBITO'].includes(inv.dte_type as string))?.number}
                         fetchSource={async () => {
                             const { billingApi } = await import('@/features/billing/api/billingApi')
                             const inv = (await billingApi.getInvoice(resolvedInvoiceId) as unknown) as Record<string, unknown>
@@ -507,7 +509,7 @@ export const ActionCategory = forwardRef(({
                     open={true}
                     onOpenChange={closeModal}
                     type="work_orders"
-                    data={(order?.work_orders || []) as any}
+                    data={(order?.work_orders || []) as unknown as DocumentItem[]}
                     onItemClick={(type, id) => {
                         openTransaction(type, id)
                     }}
@@ -526,7 +528,7 @@ export const ActionCategory = forwardRef(({
                             sale_line: (order.lines || order.items || []).find((l: OrderLine) =>
                                 l.product_type === 'MANUFACTURABLE' &&
                                 l.requires_advanced_manufacturing &&
-                                !((l as any).work_order_summary)
+                                !l.work_order_summary
                             )?.id?.toString()
                         }
                     }}

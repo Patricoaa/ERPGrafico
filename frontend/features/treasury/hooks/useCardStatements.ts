@@ -1,10 +1,10 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import { showApiError } from '@/lib/errors'
-import { cardStatementsApi } from './api'
+import { cardStatementsApi } from '../card-statements/api'
 import type {
     CreditCardStatementCreatePayload, PayStatementPayload, ApplyChargesPayload,
-} from './types'
+} from '../card-statements/types'
 import { invalidateCrossFeature } from '@/lib/invalidation'
 
 const STMT_KEYS = {

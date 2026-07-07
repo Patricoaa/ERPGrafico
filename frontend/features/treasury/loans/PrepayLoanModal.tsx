@@ -8,7 +8,7 @@ import {
 } from '@/components/shared'
 import { useServerDate } from '@/hooks/useServerDate'
 import { useTreasuryAccounts } from '../hooks/useTreasuryAccounts'
-import { useLoanMutations } from './hooks'
+import { useLoanMutations } from '../hooks/useLoans'
 import type { BankLoan } from './types'
 
 interface Props {

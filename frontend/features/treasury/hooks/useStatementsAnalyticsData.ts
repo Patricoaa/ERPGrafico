@@ -4,7 +4,7 @@ import { useMemo } from "react"
 import { useQuery } from "@tanstack/react-query"
 import { treasuryApi } from "../api/treasuryApi"
 import { parseDateOnly } from "@/lib/utils"
-import type { TcHubAnalyticsResponse, PurchaseGroupAnalysisRow } from "./analyticsTypes"
+import type { TcHubAnalyticsResponse, PurchaseGroupAnalysisRow } from "../card-statements/analyticsTypes"
 
 export interface CostDonutItem {
     id: string

@@ -8,7 +8,7 @@ import {
     Skeleton, EmptyState, DataTable, DataTableColumnHeader, DataCell,
 } from '@/components/shared'
 import { Button } from '@/components/ui/button'
-import { useLoan } from './hooks'
+import { useLoan } from '../hooks/useLoans'
 import { LoanPayInstallmentModal } from './LoanPayInstallmentModal'
 import { PrepayLoanModal } from './PrepayLoanModal'
 import { LoanInstallmentReadonlyModal } from './LoanInstallmentReadonlyModal'

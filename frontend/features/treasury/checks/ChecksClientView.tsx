@@ -12,7 +12,7 @@ import {
     SegmentationBar, useSegmentation,
 } from '@/components/shared'
 import { useGlobalModals } from '@/components/providers/GlobalModalProvider'
-import { useChecks, useCheckMutations } from './hooks'
+import { useChecks, useCheckMutations } from '../hooks/useChecks'
 import { CheckDepositModal } from './CheckDepositModal'
 import { checkActions, type CheckActionsCtx } from './checkActions'
 import { checkSearchDef } from './searchDef'

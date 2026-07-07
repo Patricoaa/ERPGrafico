@@ -14,11 +14,25 @@ import { ProductInsightsModal } from "@/features/inventory/components/ProductIns
 import { stockReportActions, type StockReportActionsCtx } from './stockReportActions'
 import { useStockReport } from "@/features/inventory/hooks/useStockReport"
 
+interface StockReportItem {
+    id: number | string
+    name?: string
+    code?: string
+    internal_code?: string
+    category_name?: string
+    stock_qty?: number | string
+    qty_reserved?: number | string
+    qty_available?: number | string
+    uom_name?: string
+    unit_cost?: number | string
+    total_value?: number | string
+}
+
 export function StockReport() {
     const { report, isLoading, refetch } = useStockReport()
     const { filters: smartFilters, isFiltered, clearAll } = useSmartSearch(stockReportSearchDef)
-    const [adjustingProduct, setAdjustingProduct] = useState<any | null>(null)
-    const [insightsProduct, setInsightsProduct] = useState<any | null>(null)
+    const [adjustingProduct, setAdjustingProduct] = useState<StockReportItem | null>(null)
+    const [insightsProduct, setInsightsProduct] = useState<StockReportItem | null>(null)
     const [isFormLoading, setIsFormLoading] = useState(false)
 
     const stockReportActionsCtx: StockReportActionsCtx = {
@@ -29,7 +43,7 @@ export function StockReport() {
     const filteredReport = (() => {
         if (!smartFilters || Object.keys(smartFilters).length === 0) return report;
 
-        return report.filter((item: any) => {
+        return (report as StockReportItem[]).filter((item: StockReportItem) => {
             // Text search (Product/SKU/Code)
             if (smartFilters.search) {
                 const search = String(smartFilters.search).toLowerCase();
@@ -50,7 +64,7 @@ export function StockReport() {
         });
     })();
 
-    const columns = useMemo<ColumnDef<any>[]>(() => [
+    const columns = useMemo<ColumnDef<StockReportItem>[]>(() => [
         {
             accessorKey: "name",
             header: ({ column }) => <DataTableColumnHeader column={column} title="Producto" className="justify-center" />,
@@ -173,7 +187,7 @@ export function StockReport() {
                         title: "Sin productos para reportar",
                         description: "Cuando registres productos almacenables, su stock aparecerá aquí.",
                     }}
-                    renderCard={(item: any) => (
+                    renderCard={(item: StockReportItem) => (
                         <EntityCard key={item.id}>
                             <EntityCard.Header
                                 title={item.name}

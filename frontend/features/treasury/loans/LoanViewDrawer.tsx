@@ -7,7 +7,7 @@ import {
 } from '@/components/shared'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
-import { useLoan } from './hooks'
+import { useLoan } from '../hooks/useLoans'
 import { parseDateOnly } from '@/lib/utils'
 import { formDrawerWidth } from '@/lib/form-widths'
 import { useDrawerIdentity } from '@/features/_shared/drawer'

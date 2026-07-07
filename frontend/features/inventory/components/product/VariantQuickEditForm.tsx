@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react"
 import { createPortal } from "react-dom"
 import { type Product } from "@/types/entities"
-import { useForm, type UseFormReturn } from "react-hook-form"
+import { useForm, type UseFormReturn, type Resolver } from "react-hook-form"
 import { z } from "zod"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { Form, FormField } from "@/components/ui/form"
@@ -67,13 +67,13 @@ export function VariantQuickEditForm({
   const [bomModalOpen, setBomModalOpen] = useState(false)
   const [bomToEdit, setBomToEdit] = useState<BOM | undefined>(undefined)
 
-  const hasUomPrices = Array.isArray((templateData as any)?.uom_prices)
-    ? (templateData as any).uom_prices.length > 0
+  const hasUomPrices = Array.isArray(templateData?.uom_prices)
+    ? templateData?.uom_prices.length > 0
     : false
   const priceOptions = hasUomPrices ? INHERIT_ONLY_OPTION : ALL_PRICE_INHERITANCE_OPTIONS
 
   const form: UseFormReturn<QuickEditValues> = useForm<QuickEditValues>({
-    resolver: zodResolver(quickEditSchema) as any,
+    resolver: zodResolver(quickEditSchema) as unknown as Resolver<QuickEditValues>,
     defaultValues: {
       sale_price: Number(variant.sale_price) || 0,
       code: variant.code || "",
@@ -207,8 +207,8 @@ export function VariantQuickEditForm({
           value={activeTab}
           onValueChange={setActiveTab}
           items={[
-            { value: 'precios', label: 'Precios', icon: DollarSign as any },
-            { value: 'ldm', label: 'LDM', icon: Factory as any, badge: availableBOMs.length > 0 ? availableBOMs.length : undefined },
+            { value: 'precios', label: 'Precios', icon: DollarSign },
+            { value: 'ldm', label: 'LDM', icon: Factory, badge: availableBOMs.length > 0 ? availableBOMs.length : undefined },
           ]}
           className="flex-1"
           contentClassName="flex flex-col p-0"
@@ -308,7 +308,7 @@ export function VariantQuickEditForm({
               />
 
               {(currentMode === 'INHERIT' || currentMode === 'SURCHARGE') &&
-                (templateData as any)?.discount_active && (
+                (templateData as unknown as Record<string, unknown>)?.discount_active && (
                   <div className="p-3 bg-warning/10 border border-warning/20 rounded-md flex gap-2 items-center text-[11px] font-bold text-warning-foreground">
                     <AlertCircle className="h-4 w-4 shrink-0 text-warning" />
                     El template tiene descuentos configurados. Estos se aplicarán sobre el precio final calculado de esta variante.

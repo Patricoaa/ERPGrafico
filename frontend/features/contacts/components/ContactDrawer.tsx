@@ -16,7 +16,7 @@ import { ActionSlideButton, CancelButton } from "@/components/shared"
 import { useGlobalModals } from "@/components/providers/GlobalModalProvider"
 import { useHubPanel } from "@/components/providers/HubPanelProvider"
 import { useContact, useContactCreditLedger } from "../hooks/useContacts"
-import { type Contact, type InsightsData } from "../types"
+import { type Contact, type ContactPayload, type InsightsData } from "../types"
 import { formatRUT, validateRUT } from "@/lib/utils/format"
 import { useContactMutations, useContactInsights } from "@/features/contacts"
 import { useDefaultCustomer, useDefaultVendor } from "../hooks/useContactDefaults"
@@ -34,6 +34,7 @@ import { contactDocumentActions, type ContactDocumentActionsCtx } from './contac
 import { DataTable } from '@/components/shared'
 
 import { type ColumnDef } from "@tanstack/react-table"
+import { type LucideIcon } from "lucide-react"
 
 import { getHubStatuses } from '@/features/orders'
 import { LabeledInput, LabeledContainer, RadioCard, DynamicIcon, TabBar, TabBarContent, type TabItem, FormFooter, FormSection, FormSplitLayout, SkeletonShell } from "@/components/shared"
@@ -76,18 +77,18 @@ export default function ContactDrawer({ open, onOpenChange, contact, onSuccess, 
     const c = contact
     const { createContact, updateContact } = useContactMutations()
     const { data: insightsData, isLoading: loadingInsights, refetch: refetchInsights } = useContactInsights(c?.id)
-    const ins = insightsData as InsightsData | undefined
+    const ins = insightsData
 
     const form = useFormWithToast<z.infer<typeof contactSchema>>({
         schema: contactSchema,
         defaultValues: c ? {
-            name: (c.name || "") as string,
-            tax_id: (c.tax_id || "") as string,
-            email: (c.email || "") as string,
-            phone: (c.phone || "") as string,
-            address: (c.address || "") as string,
-            city: (c.city || "") as string,
-            payment_terms: (c.payment_terms || "CONTADO") as string,
+            name: c.name || "",
+            tax_id: c.tax_id || "",
+            email: c.email || "",
+            phone: c.phone || "",
+            address: c.address || "",
+            city: c.city || "",
+            payment_terms: c.payment_terms || "CONTADO",
             is_default_customer: !!c.is_default_customer,
             is_default_vendor: !!c.is_default_vendor,
         } : {
@@ -112,15 +113,15 @@ export default function ContactDrawer({ open, onOpenChange, contact, onSuccess, 
     useEffect(() => {
         if (contactDetails) {
             form.reset({
-                name: (contactDetails as any).name || "",
-                tax_id: (contactDetails as any).tax_id || "",
-                email: (contactDetails as any).email || "",
-                phone: (contactDetails as any).phone || "",
-                address: (contactDetails as any).address || "",
-                city: (contactDetails as any).city || "",
-                payment_terms: (contactDetails as any).payment_terms || "CONTADO",
-                is_default_customer: !!(contactDetails as any).is_default_customer,
-                is_default_vendor: !!(contactDetails as any).is_default_vendor,
+                name: contactDetails.name || "",
+                tax_id: contactDetails.tax_id || "",
+                email: contactDetails.email || "",
+                phone: contactDetails.phone || "",
+                address: contactDetails.address || "",
+                city: contactDetails.city || "",
+                payment_terms: contactDetails.payment_terms || "CONTADO",
+                is_default_customer: !!contactDetails.is_default_customer,
+                is_default_vendor: !!contactDetails.is_default_vendor,
             })
         }
     }, [contactDetails, form])
@@ -142,13 +143,13 @@ export default function ContactDrawer({ open, onOpenChange, contact, onSuccess, 
         requestAnimationFrame(() => {
             if (c && c.name) {
                 form.reset({
-                    name: c.name as string,
-                    tax_id: (c.tax_id || "") as string,
-                    email: (c.email || "") as string,
-                    phone: (c.phone || "") as string,
-                    address: (c.address || "") as string,
-                    city: (c.city || "") as string,
-                    payment_terms: (c.payment_terms || "CONTADO") as string,
+                    name: c.name,
+                    tax_id: c.tax_id || "",
+                    email: c.email || "",
+                    phone: c.phone || "",
+                    address: c.address || "",
+                    city: c.city || "",
+                    payment_terms: c.payment_terms || "CONTADO",
                     is_default_customer: !!c.is_default_customer,
                     is_default_vendor: !!c.is_default_vendor,
                 })
@@ -170,13 +171,13 @@ export default function ContactDrawer({ open, onOpenChange, contact, onSuccess, 
 
     const saveContact = async (values: z.infer<typeof contactSchema>) => {
         try {
-            let savedContact;
+            let savedContact: Contact | undefined;
             if (c?.id) {
-                savedContact = await updateContact({ id: c.id as number, payload: values as any })
+                savedContact = await updateContact({ id: c.id, payload: values as ContactPayload })
             } else {
-                savedContact = await createContact(values as any)
+                savedContact = await createContact(values as ContactPayload)
             }
-            onSuccess(savedContact as Contact)
+            onSuccess(savedContact)
             onOpenChange(false)
         } catch {
             // Error handled by hook
@@ -569,10 +570,10 @@ export default function ContactDrawer({ open, onOpenChange, contact, onSuccess, 
 }
 
 interface InsightsTableProps {
-    data: any[]
+    data: Record<string, unknown>[]
     type: 'sale' | 'purchase' | 'work_order'
     title: string
-    icon: any
+    icon: LucideIcon
     onActionSuccess?: () => void
 }
 
@@ -586,13 +587,13 @@ function InsightsTable({ data, type, title, icon: Icon, onActionSuccess }: Insig
         const total = data.length
 
         // Financial (Pending Payment)
-        const pendingPaymentItems = data.filter(item => parseFloat((item as any).pending_amount || "0") > 0)
-        const totalPendingMoney = pendingPaymentItems.reduce((acc, item) => acc + parseFloat((item as any).pending_amount || "0"), 0)
+        const pendingPaymentItems = data.filter(item => parseFloat(String((item as Record<string, unknown>).pending_amount ?? "0")) > 0)
+        const totalPendingMoney = pendingPaymentItems.reduce((acc, item) => acc + parseFloat(String((item as Record<string, unknown>).pending_amount ?? "0")), 0)
 
         // Logistics (Pending Delivery/Receipt)
         // Uses simplified check: not fully delivered/received if items exist
         const pendingLogisticsItems = data.filter(item => {
-            const status = getHubStatuses(item as any)
+            const status = getHubStatuses(item)
             return status.logistics === 'active' || status.logistics === 'neutral'
         })
 
@@ -603,7 +604,7 @@ function InsightsTable({ data, type, title, icon: Icon, onActionSuccess }: Insig
         })
 
         // Work Orders (Pending Completion)
-        const pendingWorkOrders = data.filter(item => (item as any).status !== 'COMPLETED')
+        const pendingWorkOrders = data.filter(item => String((item as Record<string, unknown>).status) !== 'COMPLETED')
 
         return {
             total,
@@ -619,7 +620,7 @@ function InsightsTable({ data, type, title, icon: Icon, onActionSuccess }: Insig
     const filteredData = useMemo(() => {
         switch (activeFilter) {
             case 'financial':
-                return data.filter(item => parseFloat((item as any).pending_amount || "0") > 0)
+                return data.filter(item => parseFloat(String((item as Record<string, unknown>).pending_amount ?? "0")) > 0)
             case 'logistics':
                 return data.filter(item => {
                     const status = getHubStatuses(item)
@@ -631,7 +632,7 @@ function InsightsTable({ data, type, title, icon: Icon, onActionSuccess }: Insig
                     return status.billing !== 'success'
                 })
             case 'pending': // For Work Orders
-                return data.filter(item => (item as any).status !== 'COMPLETED')
+                return data.filter(item => String((item as Record<string, unknown>).status) !== 'COMPLETED')
             case 'all':
             default:
                 return data
@@ -653,11 +654,10 @@ function InsightsTable({ data, type, title, icon: Icon, onActionSuccess }: Insig
 
     const contactDocumentActionsCtx: ContactDocumentActionsCtx = {
         onHub: (item) => {
-            const i = item as any
             if (type === 'work_order') {
-                openEntity('production.workorder', i.id)
+                openEntity('production.workorder', item.id as number)
             } else {
-                openHub({ orderId: i.id, type: type === 'purchase' ? 'purchase' : 'sale' })
+                openHub({ orderId: item.id as number, type: type === 'purchase' ? 'purchase' : 'sale' })
             }
         },
     }
@@ -770,11 +770,11 @@ function InsightsTable({ data, type, title, icon: Icon, onActionSuccess }: Insig
     )
 }
 
-function CreditLedgerTable({ data, loading, onActionSuccess }: { data: any[], loading: boolean, onActionSuccess?: () => void }) {
+function CreditLedgerTable({ data, loading, onActionSuccess }: { data: Record<string, unknown>[], loading: boolean, onActionSuccess?: () => void }) {
     const { openHub } = useHubPanel()
 
     // Placeholder tipado para el ledger - sigue el patrón del contrato
-    const LEDGER_SKELETON: any[] = Array.from({ length: 5 }, (_, i) => ({
+    const LEDGER_SKELETON: Record<string, unknown>[] = Array.from({ length: 5 }, (_, i) => ({
         id: i + 1,
         display_id: "————————————",
         number: "————————————",
@@ -789,7 +789,7 @@ function CreditLedgerTable({ data, loading, onActionSuccess }: { data: any[], lo
         supplier_name: "————————————",
         customer_id: 0,
         supplier_id: 0,
-        lines: [],
+        lines: [] as unknown[],
         related_documents: {
             invoices: [],
             payments: [],

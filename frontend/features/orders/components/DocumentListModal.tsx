@@ -6,7 +6,7 @@ import { FileText, Package, Truck, ClipboardList, ExternalLink } from "lucide-re
 import { formatEntityDisplay } from "@/lib/entity-registry"
 import type { ColumnDef } from "@tanstack/react-table"
 
-interface DocumentItem {
+export interface DocumentItem {
     id: number | string
     number?: string | number
     type_display?: string

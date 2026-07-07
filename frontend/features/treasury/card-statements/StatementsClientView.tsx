@@ -11,14 +11,14 @@ import {
 } from '@/components/shared'
 import type { SegmentationDefinition } from '@/types/segmentation'
 import type { SearchDefinition } from '@/types/search'
-import { useCardStatements } from './hooks'
+import { useCardStatements } from '../hooks/useCardStatements'
 import { useBankOverview } from '../hooks/useBankOverview'
 import type { BankOverviewData } from '../hooks/useBankOverview'
 import { StatementDetailModal } from './StatementDetailModal'
 import { PayStatementModal } from './PayStatementModal'
 import { statementActions, type StatementActionsCtx } from './statementActions'
 import type { CreditCardStatement } from './types'
-import { useStatementsAnalyticsData } from './useStatementsAnalyticsData'
+import { useStatementsAnalyticsData } from '../hooks/useStatementsAnalyticsData'
 import { parseDateOnly } from '@/lib/utils'
 
 interface StatementsClientViewProps {
