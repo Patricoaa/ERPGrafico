@@ -9,6 +9,9 @@ import { useServerDate } from '@/hooks/useServerDate'
 import { treasuryApi } from '../api/treasuryApi'
 import type { PendingChargeRow, UpcomingInstallment } from '../types'
 import { ChevronDown, ChevronRight, ShoppingCart } from 'lucide-react'
+import { useForm } from "react-hook-form"
+import { zodResolver } from "@hookform/resolvers/zod"
+import * as z from "zod"
 
 interface BillChargesModalProps {
     cardAccountId: number
@@ -77,6 +80,17 @@ const MONTHS = [
     { value: '12', label: 'Diciembre' },
 ]
 
+const billChargesSchema = z.object({
+    periodYear: z.number().min(2020, "Año inválido").max(2030, "Año inválido"),
+    periodMonth: z.string().min(1, "El mes es requerido"),
+    cutOffDate: z.string().min(1, "La fecha de cierre es requerida"),
+    dueDate: z.string().min(1, "La fecha de vencimiento es requerida"),
+    minimumPayment: z.string().optional(),
+    notes: z.string().optional(),
+})
+
+type BillChargesFormValues = z.infer<typeof billChargesSchema>
+
 export function BillChargesModal({
     cardAccountId,
     cardAccountName,
@@ -88,20 +102,25 @@ export function BillChargesModal({
     onCancel,
 }: BillChargesModalProps) {
     const { serverDate, dateString, year } = useServerDate()
-    const [periodYear, setPeriodYear] = useState(year ?? new Date().getFullYear())
-    const [periodMonth, setPeriodMonth] = useState(String(serverDate ? serverDate.getMonth() + 1 : new Date().getMonth() + 1))
-    const [cutOffDate, setCutOffDate] = useState(
-        dateString || new Date().toISOString().split('T')[0]
-    )
-    const [dueDate, setDueDate] = useState(() => {
-        const date = serverDate ? new Date(serverDate) : new Date()
-        date.setMonth(date.getMonth() + 1)
-        return date.toISOString().split('T')[0]
-    })
-    const [minimumPayment, setMinimumPayment] = useState('')
-    const [notes, setNotes] = useState('')
-    const [loading, setLoading] = useState(false)
     const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set())
+
+    const form = useForm<BillChargesFormValues>({
+        resolver: zodResolver(billChargesSchema),
+        defaultValues: {
+            periodYear: year ?? new Date().getFullYear(),
+            periodMonth: String(serverDate ? serverDate.getMonth() + 1 : new Date().getMonth() + 1),
+            cutOffDate: dateString || new Date().toISOString().split('T')[0],
+            dueDate: (() => {
+                const date = serverDate ? new Date(serverDate) : new Date()
+                date.setMonth(date.getMonth() + 1)
+                return date.toISOString().split('T')[0]
+            })(),
+            minimumPayment: '',
+            notes: '',
+        },
+    })
+
+    const loading = form.formState.isSubmitting
 
     const groupedCharges = useMemo(
         () => groupByPurchase(charges, installments),
@@ -117,30 +136,25 @@ export function BillChargesModal({
         })
     }
 
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault()
-
-        if (!cutOffDate || !dueDate) {
+    const handleSubmit = async (data: BillChargesFormValues) => {
+        if (!data.cutOffDate || !data.dueDate) {
             toast.error('Las fechas son requeridas')
             return
         }
 
         try {
-            setLoading(true)
             await treasuryApi.billUnbilledCharges({
                 card_account: cardAccountId,
-                period_year: periodYear,
-                period_month: parseInt(periodMonth),
-                cut_off_date: cutOffDate,
-                due_date: dueDate,
-                minimum_payment: minimumPayment ? parseFloat(minimumPayment) : undefined,
-                notes,
+                period_year: data.periodYear,
+                period_month: parseInt(data.periodMonth),
+                cut_off_date: data.cutOffDate,
+                due_date: data.dueDate,
+                minimum_payment: data.minimumPayment ? parseFloat(data.minimumPayment) : undefined,
+                notes: data.notes ?? '',
             })
             onSuccess()
         } catch (error) {
             showApiError(error, 'Error al facturar cargos')
-        } finally {
-            setLoading(false)
         }
     }
 
@@ -162,7 +176,7 @@ export function BillChargesModal({
                 </div>
             }
         >
-            <form id="bill-charges-form" onSubmit={handleSubmit}>
+            <form id="bill-charges-form" onSubmit={form.handleSubmit(handleSubmit)}>
                 <div className="space-y-6">
                     <div className="rounded-md border bg-muted/20 p-4">
                         <div className="text-sm text-muted-foreground">Total a facturar</div>
@@ -275,15 +289,17 @@ export function BillChargesModal({
                             type="number"
                             min="2020"
                             max="2030"
-                            value={periodYear}
-                            onChange={(e) => setPeriodYear(parseInt(e.target.value))}
+                            {...form.register("periodYear", { valueAsNumber: true })}
                             required
                         />
+                        {form.formState.errors.periodYear && (
+                            <p className="text-xs text-destructive">{form.formState.errors.periodYear.message}</p>
+                        )}
                         <LabeledSelect
                             label="Mes"
                             options={MONTHS}
-                            value={periodMonth}
-                            onChange={setPeriodMonth}
+                            value={form.watch("periodMonth")}
+                            onChange={(v) => form.setValue("periodMonth", v)}
                             placeholder="Seleccionar mes"
                             required
                         />
@@ -292,33 +308,29 @@ export function BillChargesModal({
                         <LabeledInput
                             label="Fecha de Cierre"
                             type="date"
-                            value={cutOffDate}
-                            onChange={(e) => setCutOffDate(e.target.value)}
+                            {...form.register("cutOffDate")}
                             required
                         />
                         <LabeledInput
                             label="Fecha de Vencimiento"
                             type="date"
-                            value={dueDate}
-                            onChange={(e) => setDueDate(e.target.value)}
+                            {...form.register("dueDate")}
                             required
                         />
                     </div>
                     <LabeledInput
                         label="Pago Mínimo (opcional)"
                         type="number"
-                        step="0.01"
+                        step="1"
                         min="0"
-                        value={minimumPayment}
-                        onChange={(e) => setMinimumPayment(e.target.value)}
-                        placeholder="0.00"
+                        {...form.register("minimumPayment")}
+                        placeholder="0"
                     />
                     <LabeledInput
                         label="Notas (opcional)"
                         as="textarea"
                         rows={3}
-                        value={notes}
-                        onChange={(e) => setNotes(e.target.value)}
+                        {...form.register("notes")}
                         placeholder="Notas sobre la facturación"
                     />
                 </div>

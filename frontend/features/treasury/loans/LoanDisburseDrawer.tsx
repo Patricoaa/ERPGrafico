@@ -180,7 +180,7 @@ export function LoanDisburseDrawer({ open, onOpenChange, loan, onSuccess }: Prop
                                 <LabeledInput
                                     label="Comisión de Apertura"
                                     type="number"
-                                    step="0.01"
+                                    step="1"
                                     required
                                     {...field}
                                     error={fieldState.error?.message}
@@ -194,7 +194,7 @@ export function LoanDisburseDrawer({ open, onOpenChange, loan, onSuccess }: Prop
                                 <LabeledInput
                                     label="Impuesto de Timbres"
                                     type="number"
-                                    step="0.01"
+                                    step="1"
                                     required
                                     {...field}
                                     error={fieldState.error?.message}

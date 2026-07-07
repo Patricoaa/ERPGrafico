@@ -301,9 +301,9 @@ export function LoanRegisterDrawer({ open, onOpenChange, bankId }: Props) {
                                 <LabeledInput
                                     label="Capital"
                                     type="number"
-                                    step="0.01"
+                                    step="1"
                                     required
-                                    placeholder="0.00"
+                                    placeholder="0"
                                     {...field}
                                     error={fieldState.error?.message}
                                 />
@@ -377,8 +377,8 @@ export function LoanRegisterDrawer({ open, onOpenChange, bankId }: Props) {
                                 <LabeledInput
                                     label="Seguro Mensual (opcional)"
                                     type="number"
-                                    step="0.01"
-                                    placeholder="0.00"
+                                    step="1"
+                                    placeholder="0"
                                     {...field}
                                 />
                             )}
@@ -397,8 +397,8 @@ export function LoanRegisterDrawer({ open, onOpenChange, bankId }: Props) {
                                 <LabeledInput
                                     label="Comisión de Apertura"
                                     type="number"
-                                    step="0.01"
-                                    placeholder="0.00"
+                                    step="1"
+                                    placeholder="0"
                                     {...field}
                                 />
                             )}
@@ -410,8 +410,8 @@ export function LoanRegisterDrawer({ open, onOpenChange, bankId }: Props) {
                                 <LabeledInput
                                     label="Impuesto de Timbres"
                                     type="number"
-                                    step="0.01"
-                                    placeholder="0.00"
+                                    step="1"
+                                    placeholder="0"
                                     {...field}
                                 />
                             )}

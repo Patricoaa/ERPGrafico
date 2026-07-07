@@ -217,7 +217,7 @@ export function SplitAllocationDialog({ open, onOpenChange, payment, treasuryAcc
                                                                 {...inputField}
                                                                 className="h-8 font-mono text-right text-xs"
                                                                 type="number"
-                                                                step="0.01"
+                                                                step="1"
                                                                 onChange={(e) => inputField.onChange(parseFloat(e.target.value) || 0)}
                                                             />
                                                         </FormControl>

@@ -325,6 +325,7 @@ export function PricingRuleDrawer({ auditSidebar, initialData, onSuccess, open, 
                                 <LabeledInput
                                     label="Precio (Neto)"
                                     type="number"
+                                    step="1"
                                     {...field}
                                     value={field.value || ""}
                                     onChange={(e) => {

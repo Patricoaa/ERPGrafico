@@ -201,7 +201,7 @@ export function HRSettingsView({ activeTab = "global" }: { activeTab?: string })
                                                 <LabeledInput
                                                     label="Valor UF Actual ($)"
                                                     type="number"
-                                                    step="0.01"
+                                                    step="1"
                                                     className="font-mono"
                                                     error={fieldState.error?.message}
                                                     {...field}
@@ -228,7 +228,7 @@ export function HRSettingsView({ activeTab = "global" }: { activeTab?: string })
                                                 <LabeledInput
                                                     label="Valor UTM Actual ($)"
                                                     type="number"
-                                                    step="0.01"
+                                                    step="1"
                                                     className="font-mono"
                                                     error={fieldState.error?.message}
                                                     {...field}
