@@ -341,7 +341,7 @@ export function InventoryContributionModal({
                                 </div>
                             }
                             type={isCostEditable ? "number" : "text"}
-                            step={isCostEditable ? "0.01" : undefined}
+                            step={isCostEditable ? "1" : undefined}
                             min="0"
                             readOnly={!isCostEditable}
                             value={isCostEditable ? unitCost : formatCurrency(Number(unitCost))}

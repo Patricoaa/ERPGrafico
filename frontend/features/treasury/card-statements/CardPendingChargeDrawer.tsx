@@ -201,9 +201,9 @@ export function CardPendingChargeDrawer({
                                             <LabeledInput
                                                 label="Monto"
                                                 type="number"
-                                                step="0.01"
+                                                step="1"
                                                 icon={<DollarSign className="h-4 w-4 opacity-40" />}
-                                                placeholder="0.00"
+                                                placeholder="0"
                                                 required
                                                 error={fieldState.error?.message}
                                                 {...field}

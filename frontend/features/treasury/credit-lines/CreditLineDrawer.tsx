@@ -198,7 +198,7 @@ export function CreditLineDrawer({ open, onOpenChange, creditLine, creditLineId,
                         <FormField control={form.control} name="credit_limit" render={({ field }) => (
                             <FormItem>
                                 <FormLabel>Límite de Crédito</FormLabel>
-                                <FormControl><Input type="number" step="0.01" {...field} /></FormControl>
+                                <FormControl><Input type="number" step="1" {...field} /></FormControl>
                                 <FormMessage />
                             </FormItem>
                         )} />
