@@ -19,6 +19,7 @@ import { toast } from "sonner"
 
 import { ActionConfirmModal, Chip, EntityCard, StatusBadge } from '@/components/shared'
 import { ProductDrawer } from "@/features/inventory/components/ProductDrawer"
+import type { ProductInitialData } from "@/types/forms"
 import { SubscriptionHistoryModal } from "@/features/inventory/components/SubscriptionHistoryModal"
 import { ArchivingRestrictionsModal } from "@/features/inventory/components/ArchivingRestrictionsModal"
 import { DataTableView } from '@/components/shared'
@@ -469,7 +470,7 @@ export function SubscriptionsClientView({ hideHeader = false, externalOpen = fal
                 onOpenChange={(open) => {
                     if (!open) clearAll()
                 }}
-                initialData={editingProduct || undefined}
+                initialData={(editingProduct || undefined) as ProductInitialData | undefined}
                 onSuccess={() => {
                     clearAll()
                     fetchSubscriptions()

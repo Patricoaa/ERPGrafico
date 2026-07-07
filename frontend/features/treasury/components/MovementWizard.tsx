@@ -294,7 +294,7 @@ export function MovementWizard({
                                             onChange={(val) => setFromAccountId(val || "")}
                                             onSelect={(acc) => {
                                                 setFromAccountName(acc.name)
-                                                setFromAccountBalance(acc.current_balance)
+                                                setFromAccountBalance(acc.current_balance ?? null)
                                             }}
                                             label="Origen (Retira)"
                                             error={fromAccountId && (fromAccountBalance ?? 0) <= 0 ? "La cuenta de origen no tiene fondos suficientes" : undefined}
@@ -311,7 +311,7 @@ export function MovementWizard({
                                             onChange={(val) => setToAccountId(val || "")}
                                             onSelect={(acc) => {
                                                 setToAccountName(acc.name)
-                                                setToAccountBalance(acc.current_balance)
+                                                setToAccountBalance(acc.current_balance ?? null)
                                             }}
                                             label="Destino (Deposita)"
                                             error={fromAccountId && toAccountId && fromAccountId === toAccountId ? "La cuenta de destino debe ser diferente al origen" : undefined}
@@ -323,13 +323,13 @@ export function MovementWizard({
                                     <TreasuryAccountSelector
                                         value={impact === 'IN' ? toAccountId : fromAccountId}
                                         onChange={(val) => impact === 'IN' ? setToAccountId(val || "") : setFromAccountId(val || "")}
-                                        onSelect={(acc) => {
-                                            if (impact === 'IN') {
-                                                setToAccountName(acc.name)
-                                                setToAccountBalance(acc.current_balance)
-                                            } else {
-                                                setFromAccountName(acc.name)
-                                                setFromAccountBalance(acc.current_balance)
+                                            onSelect={(acc) => {
+                                                if (impact === 'IN') {
+                                                    setToAccountName(acc.name)
+                                                    setToAccountBalance(acc.current_balance ?? null)
+                                                } else {
+                                                    setFromAccountName(acc.name)
+                                                    setFromAccountBalance(acc.current_balance ?? null)
                                             }
                                         }}
                                         label={impact === 'IN' ? 'Cuenta de Destino' : 'Cuenta de Origen'}

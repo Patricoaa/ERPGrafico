@@ -16,7 +16,7 @@ import { formatEntityDisplay } from "@/lib/entity-registry"
 import type { WorkOrderFormValues, WorkOrderInitialData } from "@/types/forms"
 import type { SaleOrder, SaleOrderLine } from "@/features/sales"
 import type { Contact } from "@/features/contacts"
-import type { Contact as ContactEntity } from "@/types/entities"
+import type { Contact as ContactEntity, Product } from "@/types/entities"
 import type { UoM, ProductMinimal } from "../../../types"
 
 interface WorkOrderBasicInfoProps {
@@ -207,11 +207,11 @@ export function WorkOrderBasicInfo({
                                         <ProductSelector
                                             value={field.value}
                                             onChange={field.onChange}
-                                            onSelect={handleManualProductSelect}
+                                            onSelect={(p: Product) => handleManualProductSelect(p as ProductMinimal)}
                                             productType="MANUFACTURABLE"
                                             label="Producto a Fabricar (Stock)"
                                             error={fieldState.error?.message}
-                                            customFilter={(p: ProductMinimal) =>
+                                            customFilter={(p: Product) =>
                                                 !p.requires_advanced_manufacturing &&
                                                 !p.mfg_auto_finalize
                                             }

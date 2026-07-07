@@ -23,6 +23,7 @@ import { AdvancedContactSelector } from '@/components/selectors/AdvancedContactS
 import { formatCurrency } from "@/lib/money"
 import { useVatRate } from '@/hooks/useVatRate'
 import { useCoreAllowedDteTypes } from '../../hooks/useProductionQueries'
+import type { Product } from "@/types/entities"
 import type { ProductMinimal, UoM } from '../../types'
 
 // ── Canonical shape for one outsourced service ──────────────────────────────
@@ -126,13 +127,13 @@ export function OutsourcedServiceForm({
           <ProductSelector
             value={value.productId}
             onChange={(id) => set({ productId: id })}
-            onSelect={(p) => {
-              const uomId = p?.uom_id ? p.uom_id.toString() : value.uomId
-              set({ productId: p?.id?.toString() ?? null, productObj: p ?? null, uomId })
+            onSelect={(p: Product) => {
+              const uomId = p?.uom ? (typeof p.uom === 'object' ? p.uom.id.toString() : p.uom.toString()) : value.uomId
+              set({ productId: p?.id?.toString() ?? null, productObj: p as ProductMinimal, uomId })
             }}
             disabled={productLocked}
-            customFilter={(p) =>
-              p.product_type === 'SERVICE' && !!(p as unknown as { can_be_purchased?: boolean }).can_be_purchased
+            customFilter={(p: Product) =>
+              p.product_type === 'SERVICE' && !!p.can_be_purchased
             }
           />
         </div>
