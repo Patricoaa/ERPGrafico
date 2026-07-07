@@ -56,7 +56,7 @@ import {
 import { useServerDate } from '@/hooks/useServerDate'
 import { MovementWizard, type MovementData } from "@/features/treasury"
 import { AutoMatchProgressModal } from "./AutoMatchProgressModal"
-import { ReconciliationIntelligence } from "./ReconciliationIntelligence"
+import { ReconciliationIntelligencePanel } from "./ReconciliationIntelligencePanel"
 
 import { DataTable } from '@/components/shared'
 import { LazyDrawer } from "@/features/_shared"
@@ -235,17 +235,16 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
     const { data: suggestions = [] } = useLineSuggestionsQuery(lineIdStr, selectedLines.length === 1)
     const { data: lineSuggestions = [] } = usePaymentSuggestionsQuery(paymentIdStr, selectedPayments.length === 1)
 
-    const matchMutation = useMatchMutation(statementId, treasuryAccountId)
-    const groupMatchMutation = useGroupMatchMutation(statementId, treasuryAccountId)
-    const autoMatchMutation = useAutoMatchMutation(statementId)
-    const excludeMutation = useExcludeMutation(statementId)
-    const bulkExcludeMutation = useBulkExcludeMutation(statementId)
-    const restoreMutation = useRestoreMutation(statementId)
+    const { match, isMatching } = useMatchMutation(statementId, treasuryAccountId)
+    const { groupMatch, isGroupMatching } = useGroupMatchMutation(statementId, treasuryAccountId)
+    const { autoMatch, isAutoMatching } = useAutoMatchMutation(statementId)
+    const { exclude } = useExcludeMutation(statementId)
+    const { bulkExclude } = useBulkExcludeMutation(statementId)
+    const { restore } = useRestoreMutation(statementId)
 
     const loading = loadingLines || loadingPayments || loadingReconciled
     const isError = isErrorStmt || isErrorBank || isErrorSystem || isErrorReconciled
-    const matching = matchMutation.isPending || groupMatchMutation.isPending
-    const autoMatching = autoMatchMutation.isPending
+    const matching = isMatching || isGroupMatching
 
     const [diffDialog, setDiffDialog] = useState<{ open: boolean, lineId: number, paymentId: number, amount: string, isGroup?: boolean, accountingDate?: Date }>({
         open: false, lineId: 0, paymentId: 0, amount: '0', isGroup: false, accountingDate: undefined
@@ -266,7 +265,7 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
 
     const statementLineActionsCtx: StatementLineActionsCtx = {
         onExclude: (lineId) => setActionDialog({ open: true, type: 'exclude', lineId }),
-        onRestore: (lineId) => restoreMutation.mutate(lineId),
+        onRestore: (lineId) => restore(lineId),
     }
 
     const systemItemActionsCtx: SystemItemActionsCtx = {
@@ -280,8 +279,8 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
         open: false, line: null
     })
     const [isCreateMovementOpen, setIsCreateMovementOpen] = useState(false)
-    const createAndMatchMutation = useCreateAndMatchMutation(statementId, treasuryAccountId)
-    const createMovementMutation = useCreateMovementMutation(treasuryAccountId)
+    const { createAndMatch } = useCreateAndMatchMutation(statementId, treasuryAccountId)
+    const { createMovement } = useCreateMovementMutation(treasuryAccountId)
 
     // S4.8: Async auto-match progress state
     const [autoMatchProgressOpen, setAutoMatchProgressOpen] = useState(false)
@@ -373,7 +372,7 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                 }
             }
 
-            await matchMutation.mutateAsync({ lineId, paymentId, isBatch, confirmData })
+            await match({ lineId, paymentId, isBatch, confirmData })
 
             setDiffDialog(prev => ({ ...prev, open: false }))
             setDiffNotes("")
@@ -422,7 +421,7 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                 }
             }
 
-            await groupMatchMutation.mutateAsync({ payload, confirmPayload, lineId: selectedLines[0].id })
+            await groupMatch({ payload, confirmPayload, lineId: selectedLines[0].id })
 
             setSelectedPayments([])
             setSelectedLines([])
@@ -466,7 +465,7 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
         }
 
         try {
-            await createAndMatchMutation.mutateAsync({
+            await createAndMatch({
                 lineId: createMatchDialog.line.id,
                 movementData: payload
             })
@@ -492,7 +491,7 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
         }
 
         try {
-            await createMovementMutation.mutateAsync(payload)
+            await createMovement(payload)
             setIsCreateMovementOpen(false)
         } catch (error) {
             throw error
@@ -751,11 +750,11 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                             <TooltipTrigger asChild>
                                 <Button
                                     onClick={() => setActionDialog({ open: true, type: 'automatch' })}
-                                    disabled={autoMatching}
+                                    disabled={isAutoMatching}
                                     variant="ghost"
                                     className="h-9 w-9 p-0 bg-success/5 hover:bg-success/10 text-success group transition-all"
                                 >
-                                    {autoMatching ? <Loader2 className="h-4 w-4 animate-spin" /> : <Wand2 className="h-4 w-4 group-hover:rotate-12 transition-transform" />}
+                                    {isAutoMatching ? <Loader2 className="h-4 w-4 animate-spin" /> : <Wand2 className="h-4 w-4 group-hover:rotate-12 transition-transform" />}
                                 </Button>
                             </TooltipTrigger>
                             <TooltipContent side="top">Auto-Match</TooltipContent>
@@ -1081,14 +1080,14 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
 
                         try {
                             if (isBulk) {
-                                await bulkExcludeMutation.mutateAsync({
+                                await bulkExclude({
                                     lineIds: selectedLines.map(l => l.id),
                                     reason,
                                     notes
                                 })
                                 setSelectedLines([])
                             } else if (actionDialog.lineId) {
-                                await excludeMutation.mutateAsync({
+                                await exclude({
                                     lineId: actionDialog.lineId,
                                     reason,
                                     notes
@@ -1479,7 +1478,7 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                             </Button>
                         </div>
                         <div className="flex-1 overflow-y-auto p-4 custom-scrollbar">
-                            <ReconciliationIntelligence />
+                            <ReconciliationIntelligencePanel />
                         </div>
                     </div>
                 </CollapsibleSheet>

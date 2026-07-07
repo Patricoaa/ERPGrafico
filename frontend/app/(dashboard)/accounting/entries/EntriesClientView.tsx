@@ -118,24 +118,24 @@ export default function EntriesPage({ externalOpen, onExternalOpenChange, create
         }
     }
 
-    const postMutation = usePostJournalEntry()
-    const deleteMutation = useDeleteJournalEntry()
-    const reverseMutation = useReverseJournalEntry()
+    const { postEntry } = usePostJournalEntry()
+    const { deleteEntry } = useDeleteJournalEntry()
+    const { reverseEntry } = useReverseJournalEntry()
 
     const handlePost = async (id: number) => {
-        await postMutation.mutateAsync(id)
+        await postEntry(id)
         refetch()
     }
 
     const handleDelete = async (id: number) => {
         if (!confirm("¿Está seguro de eliminar este asiento?")) return
-        await deleteMutation.mutateAsync(id)
+        await deleteEntry(id)
         refetch()
     }
 
     const handleReverse = async (id: number) => {
         if (!confirm("¿Está seguro de reversar este asiento? Se creará un asiento de reversión.")) return
-        await reverseMutation.mutateAsync(id)
+        await reverseEntry(id)
         refetch()
     }
 

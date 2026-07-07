@@ -4,7 +4,7 @@ import { TaskActionCard } from '@/features/workflow'
 import type { WorkOrderTask } from '../../types'
 import type { Task } from '@/features/workflow'
 
-interface ApprovalTaskListProps {
+interface ApprovalTaskListPanelProps {
   tasks: WorkOrderTask[]
   taskType: string
   canComplete: (task: WorkOrderTask) => boolean
@@ -15,9 +15,9 @@ interface ApprovalTaskListProps {
 }
 
 /** Renders the approval TaskActionCards for a given task_type filter. */
-export function ApprovalTaskList({
+export function ApprovalTaskListPanel({
   tasks, taskType, canComplete, taskNotes, onNoteChange, onFileChange,
-}: ApprovalTaskListProps) {
+}: ApprovalTaskListPanelProps) {
   const filtered = tasks.filter((t) => t.task_type === taskType)
   if (!filtered.length) return null
 

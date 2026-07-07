@@ -15,7 +15,7 @@ interface ProfitDistributionDrawerProps extends TransactionDrawerProps {
 
 export function ProfitDistributionDrawer({ id, open, onOpenChange, distributionId }: ProfitDistributionDrawerProps) {
   const entityId = id ?? distributionId ?? null
-  const { data: distribution, isLoading } = useProfitDistribution(entityId)
+  const { profitDistribution: distribution, isLoading } = useProfitDistribution(entityId)
   const { printRef, handlePrint } = usePrintableDrawer()
 
   const displayId = distribution?.display_id ?? `#${entityId}`

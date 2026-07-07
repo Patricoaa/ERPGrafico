@@ -42,7 +42,7 @@ export type EmployeeBasic = {
 }
 
 export function usePayrollDetail(payrollId: number, viewMode: 'admin' | 'employee' = 'admin', employee?: EmployeeBasic | null) {
-    return useQuery({
+    const { data: payrollDetail, isLoading, isError, refetch } = useQuery({
         queryKey: [...PAYROLLS_QUERY_KEY, 'detail', payrollId, viewMode],
         staleTime: 2 * 60 * 1000,
         queryFn: async () => {
@@ -67,4 +67,5 @@ export function usePayrollDetail(payrollId: number, viewMode: 'admin' | 'employe
         },
         enabled: !!payrollId,
     })
+    return { payrollDetail: payrollDetail ?? null, isLoading, isError, refetch }
 }

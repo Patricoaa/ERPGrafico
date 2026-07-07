@@ -41,7 +41,7 @@ export function ProductionPhase({
 }: ProductionPhaseProps) {
     const registry = isSale ? saleOrderActions : purchaseOrderActions
 
-    const annulWorkOrder = useAnnulWorkOrder()
+    const { annulWorkOrder } = useAnnulWorkOrder()
 
     const [confirmModal, setConfirmModal] = useState<{
         open: boolean,
@@ -82,7 +82,7 @@ export function ProductionPhase({
             requireReason: true,
             onConfirm: async (reason?: string) => {
                 try {
-                    await annulWorkOrder.mutateAsync({ id, reason })
+                    await annulWorkOrder({ id, reason })
                     setConfirmModal(prev => ({ ...prev, open: false }))
                     onActionSuccess?.()
                 } catch (error: unknown) {

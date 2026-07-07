@@ -41,7 +41,7 @@ interface NoteLogisticsModalProps {
 
 export function NoteLogisticsModal({ open, onOpenChange, invoice, onSuccess }: NoteLogisticsModalProps) {
     const { dateString } = useServerDate()
-    const processLogistics = useProcessLogistics()
+    const { processLogistics } = useProcessLogistics()
     const [warehouses, setWarehouses] = useState<Record<string, unknown>[]>([])
     const [selectedWarehouse, setSelectedWarehouse] = useState<number | null>(null)
     const [processQuantities, setProcessQuantities] = useState<{ [pId: number]: number }>({})
@@ -131,7 +131,7 @@ export function NoteLogisticsModal({ open, onOpenChange, invoice, onSuccess }: N
 
         setSubmitting(true)
         try {
-            await processLogistics.mutateAsync({
+            await processLogistics({
                 id: invoice.id,
                 data: {
                     warehouse_id: selectedWarehouse,

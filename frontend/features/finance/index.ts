@@ -2,14 +2,14 @@ export {
   AnalysisDashboard,
   BudgetsClientView,
   BudgetVarianceView,
-  BudgetDetail,
+  BudgetDetailView,
   BIAnalyticsDashboard,
   BudgetEditor,
   CashFlowTable,
   RatiosDashboard,
   FinancialStatementsReport,
   AccountDrawer,
-  AccountingEquation,
+  AccountingEquationCard,
   BalanceSheetKPIs,
   DistributionBar,
   TransactionNumberDrawer,
@@ -19,8 +19,8 @@ export type { CashFlowData } from './components'
 export type { BalanceSheetData, PLData, PLSection } from './types'
 
 export {
-  StatementsList,
-  ReconciliationIntelligence,
+  StatementsClientView,
+  ReconciliationIntelligencePanel,
   SimulationResults,
   ReconciliationPanel,
   StatementImportModal,

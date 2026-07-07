@@ -31,10 +31,10 @@ function entityLabel(type: string): string {
 }
 
 export function DetailPanel({ type, id, onClose }: DetailPanelProps) {
-    const saleOrder = useSaleOrder(type === 'sale_order' ? id : null)
+    const { saleOrder, isLoading: isSaleOrderLoading } = useSaleOrder(type === 'sale_order' ? id : null)
     const invoice = useInvoice(type === 'invoice' ? id : null)
 
-    const isLoading = saleOrder.isLoading || invoice.isLoading
+    const isLoading = isSaleOrderLoading || invoice.isLoading
 
     if (isLoading) {
         return (
@@ -56,8 +56,8 @@ export function DetailPanel({ type, id, onClose }: DetailPanelProps) {
             <ScrollArea className="flex-1">
                 <div className="p-3 space-y-3">
                     {/* Sale Order Detail */}
-                    {type === 'sale_order' && saleOrder.data && (
-                        <SaleOrderDetail order={saleOrder.data} />
+                    {type === 'sale_order' && saleOrder && (
+                        <SaleOrderDetail order={saleOrder} />
                     )}
 
                     {/* Invoice Detail */}
@@ -66,7 +66,7 @@ export function DetailPanel({ type, id, onClose }: DetailPanelProps) {
                     )}
 
                     {/* Generic fallback */}
-                    {!saleOrder.data && !invoice.data && (
+                    {!saleOrder && !invoice.data && (
                         <div className="text-sm text-muted-foreground p-4 text-center">
                             <p className="font-semibold text-foreground">{entityLabel(type)}</p>
                             <p className="text-xs mt-1">ID: {id}</p>
@@ -92,7 +92,7 @@ function Header({ onClose, label }: { onClose: () => void; label?: string }) {
     )
 }
 
-function SaleOrderDetail({ order }: { order: NonNullable<ReturnType<typeof useSaleOrder>['data']> }) {
+function SaleOrderDetail({ order }: { order: NonNullable<ReturnType<typeof useSaleOrder>['saleOrder']> }) {
     return (
         <>
             <div className="flex items-center justify-between">

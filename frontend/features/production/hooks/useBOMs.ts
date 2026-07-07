@@ -26,7 +26,7 @@ export function useBOM(id: number | undefined) {
 export function useDeleteBomMutation() {
     const queryClient = useQueryClient()
     const { markLocalMutation } = useRealtime()
-    return useMutation({
+    const deleteBomMutation = useMutation({
         mutationFn: (id: number) => productionApi.deleteBom(id),
         onSuccess: () => {
             markLocalMutation()
@@ -35,6 +35,7 @@ export function useDeleteBomMutation() {
         },
         onError: () => toast.error('Error al eliminar Lista de Materiales'),
     })
+    return { deleteBom: deleteBomMutation.mutateAsync, isDeletingBom: deleteBomMutation.isPending }
 }
 
 export function useBOMs(params: { product_id?: string | number, parent_id?: string | number }) {

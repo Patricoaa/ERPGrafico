@@ -168,10 +168,11 @@ export function useSalesNotes({ filters }: { filters?: SaleNoteFilters } = {}) {
  * SaleReturnDetailClient (las tres pantallas fetchean la misma orden padre).
  */
 export function useSaleOrder(id: number | null | undefined) {
-    return useQuery({
+    const { data: saleOrder, isLoading, isError } = useQuery({
         queryKey: id ? SALES_KEYS.order(id) : ['sales', 'order', 'noop'],
         queryFn: () => salesApi.getOrder(id as number),
         staleTime: 2 * 60 * 1000,
         enabled: !!id,
     })
+    return { saleOrder: saleOrder ?? null, isLoading, isError }
 }

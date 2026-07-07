@@ -63,16 +63,16 @@ export function DeclarationWizard({ isOpen, onOpenChange, periodId, year: propYe
         tax_rate: rate,
         notes: ""
     })
-    const calcMutation = useTaxCalculation()
-    const createDeclarationMutation = useCreateDeclaration()
-    const registerDeclarationMutation = useRegisterDeclaration()
-    const closePeriodMutation = useClosePeriod()
+    const { calculateTax } = useTaxCalculation()
+    const { createDeclaration } = useCreateDeclaration()
+    const { registerDeclaration } = useRegisterDeclaration()
+    const { closePeriod } = useClosePeriod()
 
     // Helper for direct calculation that uses params instead of state (since state might not have updated yet)
     const calculateDataForPeriod = async (y: number, m: number) => {
         setIsLoading(true)
         try {
-            const data = await calcMutation.mutateAsync({ year: y, month: m })
+            const data = await calculateTax({ year: y, month: m })
             setCalcData(data)
             if (data.tax_period_id) setTaxPeriodId(data.tax_period_id)
             if (data.tax_rate) {
@@ -141,7 +141,7 @@ export function DeclarationWizard({ isOpen, onOpenChange, periodId, year: propYe
                 })
         }
         try {
-            const declarationData = await createDeclarationMutation.mutateAsync({
+            const declarationData = await createDeclaration({
                 tax_period_year: period.year,
                 tax_period_month: period.month,
                 ...manualFields
@@ -149,7 +149,7 @@ export function DeclarationWizard({ isOpen, onOpenChange, periodId, year: propYe
             const declarationId = declarationData.id
             const currentTaxPeriodId = declarationData.tax_period || taxPeriodId
             try {
-                await registerDeclarationMutation.mutateAsync({
+                await registerDeclaration({
                     id: declarationId,
                     data: { declaration_date: dateString || "" },
                     idempotencyKey: idempotencyKeyRef.current
@@ -170,7 +170,7 @@ export function DeclarationWizard({ isOpen, onOpenChange, periodId, year: propYe
             const needsPayment = finalToPay > 0
 
             if (currentTaxPeriodId && !needsPayment) {
-                await closePeriodMutation.mutateAsync({
+                await closePeriod({
                     id: currentTaxPeriodId,
                     idempotencyKey: idempotencyKeyRef.current,
                 })

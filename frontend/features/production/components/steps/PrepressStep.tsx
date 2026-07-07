@@ -5,7 +5,7 @@ import { DataCell } from '@/components/shared'
 import { Label } from '@/components/ui/label'
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 import { formatBytes } from '@/lib/utils'
-import { ApprovalTaskList } from './ApprovalTaskList'
+import { ApprovalTaskListPanel } from './ApprovalTaskListPanel'
 import type { WorkOrder, WorkOrderTask, ProductionAttachment } from '../../types'
 
 interface PrepressStepProps {
@@ -91,7 +91,7 @@ export function PrepressStep({
         </div>
       </div>
 
-      <ApprovalTaskList
+      <ApprovalTaskListPanel
         tasks={order.workflow_tasks ?? []}
         taskType="OT_PREPRESS_APPROVAL"
         canComplete={canComplete}

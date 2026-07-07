@@ -45,7 +45,7 @@ export interface CheckoutWizardState {
     isWaitingPayment: boolean
 }
 
-export interface SalesCheckoutWizardContentProps {
+export interface SalesCheckoutWizardViewProps {
     order: SaleOrder | null
     orderLines: SaleOrderLine[]
     total: number
@@ -75,7 +75,7 @@ export interface SalesCheckoutWizardContentProps {
     touchMode?: boolean
 }
 
-export interface SalesCheckoutWizardContentHandle {
+export interface SalesCheckoutWizardViewHandle {
     goNext: () => Promise<void>
     goBack: () => void
     finishCheckout: () => Promise<void>
@@ -83,7 +83,7 @@ export interface SalesCheckoutWizardContentHandle {
     totalSteps: number
 }
 
-export const SalesCheckoutWizardContent = forwardRef<SalesCheckoutWizardContentHandle, SalesCheckoutWizardContentProps>(function SalesCheckoutWizardContent({
+export const SalesCheckoutWizardView = forwardRef<SalesCheckoutWizardViewHandle, SalesCheckoutWizardViewProps>(function SalesCheckoutWizardView({
     order,
     orderLines: initialOrderLines,
     totalDiscountAmount = 0,
@@ -108,7 +108,7 @@ export const SalesCheckoutWizardContent = forwardRef<SalesCheckoutWizardContentH
     isInline = false,
     isSessionHost = false,
     touchMode = false
-}: SalesCheckoutWizardContentProps, ref) {
+}: SalesCheckoutWizardViewProps, ref) {
     const { dateString } = useServerDate()
     const { isHubOpen } = useHubPanel()
     const { hasPermission } = useAuth()

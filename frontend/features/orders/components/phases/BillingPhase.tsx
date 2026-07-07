@@ -50,8 +50,8 @@ export function BillingPhase({
     onOpenChange,
 }: BillingPhaseProps) {
     const registry = isSale ? saleOrderActions : purchaseOrderActions
-    const annulInvoice = useAnnulInvoice()
-    const cancelInvoice = useCancelInvoice()
+    const { annulInvoice } = useAnnulInvoice()
+    const { cancelInvoice } = useCancelInvoice()
 
     const [confirmModal, setConfirmModal] = useState<{
         open: boolean,
@@ -78,7 +78,7 @@ export function BillingPhase({
             confirmText: "Cancelar Borrador",
             onConfirm: async (reason?: string) => {
                 try {
-                    await cancelInvoice.mutateAsync({ id, reason })
+                    await cancelInvoice({ id, reason })
                     setConfirmModal(prev => ({ ...prev, open: false }))
                     onActionSuccess?.()
                 } catch (error: unknown) {
@@ -94,7 +94,7 @@ export function BillingPhase({
     const handleAnnulDocument = (id: number) => {
         const executeAnnul = async (force: boolean, reason?: string) => {
             try {
-                await annulInvoice.mutateAsync({ id, force, reason })
+                await annulInvoice({ id, force, reason })
                 setConfirmModal(prev => ({ ...prev, open: false }))
                 onActionSuccess?.()
             } catch (error: unknown) {

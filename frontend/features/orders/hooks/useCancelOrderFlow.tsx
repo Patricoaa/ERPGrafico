@@ -85,7 +85,7 @@ export function useCancelOrderFlow(
     orderType: 'sale' | 'purchase',
     options?: { onSuccess?: () => void; orderId?: number | null },
 ) {
-    const cancelOrder = useCancelOrder(orderType)
+    const { cancelOrder } = useCancelOrder(orderType)
 
     const { data: impact } = useQuery({
         queryKey: ['cancel-impact', orderType, options?.orderId],
@@ -162,7 +162,7 @@ export function useCancelOrderFlow(
                     : ordersApi.annulPurchaseOrder
                 await annulFn(modal.orderId, reason ?? '', true)
             } else {
-                await cancelOrder.mutateAsync({ id: modal.orderId, reason })
+                await cancelOrder({ id: modal.orderId, reason })
             }
             setModal(prev => ({ ...prev, open: false, orderId: null }))
             options?.onSuccess?.()

@@ -41,7 +41,7 @@ const itemSchema = z.object({
 })
 type ItemFormValues = z.infer<typeof itemSchema>
 
-interface PayrollDetailContentProps {
+interface PayrollDetailViewProps {
     payrollId: number
     onClose?: () => void
     onUpdate?: () => void
@@ -56,7 +56,7 @@ interface PayrollDetailContentProps {
     }) => void
 }
 
-export function PayrollDetailContent({
+export function PayrollDetailView({
     payrollId,
     onClose,
     onUpdate,
@@ -64,7 +64,7 @@ export function PayrollDetailContent({
     viewMode = 'admin',
     employee,
     onHeaderDataChange
-}: PayrollDetailContentProps) {
+}: PayrollDetailViewProps) {
     const router = useRouter()
 
     const [posting, setPosting] = useState(false)
@@ -74,7 +74,7 @@ export function PayrollDetailContent({
     const [salaryDialog, setSalaryDialog] = useState(false)
     const [postConfirmOpen, setPostConfirmOpen] = useState(false)
 
-    const { data: payrollData, isLoading: loading, refetch: fetchPayroll } = usePayrollDetail(payrollId, viewMode, employee)
+    const { payrollDetail: payrollData, isLoading: loading, refetch: fetchPayroll } = usePayrollDetail(payrollId, viewMode, employee)
 
     const payroll = payrollData?.payroll || null
     const concepts = payrollData?.concepts || []

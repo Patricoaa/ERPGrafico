@@ -16,7 +16,7 @@ import {
 } from "lucide-react"
 import { LazyDrawer } from "@/features/_shared"
 import { useOrderHubData } from "@/hooks/useOrderHubData"
-import { OrderHubIntegrated, type OrderHubData } from "./OrderHubIntegrated"
+import { OrderHubView, type OrderHubData } from "./OrderHubView"
 import type { Order, Payment } from "../types"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import {
@@ -159,7 +159,7 @@ export function OrderHubPanel({
                 {/* ── Scrollable Phase Content ──────────────────────── */}
                 <ScrollArea className="flex-1 w-full ">
                     <div className="px-4 pt-5 pb-4">
-                        <OrderHubIntegrated
+                        <OrderHubView
                             data={{
                                 order: hubData.order,
                                 activeInvoice: hubData.activeInvoice,

@@ -48,7 +48,7 @@ export function ProductVariantsTab({ form, initialData, onTabChange }: ProductVa
     const availableAttributes = hookAttributes as unknown as Attribute[]
 
     // Variants del template (incluye archivadas — la vista admin las muestra grises).
-    const { data: variantsData, refetch: refetchVariants } = useVariants({
+    const { variants: variantsData, refetch: refetchVariants } = useVariants({
         productId: initialData?.id,
         activeOnly: false,
     })

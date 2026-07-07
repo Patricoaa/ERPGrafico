@@ -9,7 +9,7 @@ import { useRealtime } from '@/features/realtime'
 export function useMatchMutation(statementId: number, treasuryAccountId: number) {
     const queryClient = useQueryClient()
 
-    return useMutation({
+    const matchMutation = useMutation({
         mutationFn: async ({ lineId, paymentId, isBatch, confirmData }: { lineId: number; paymentId: number; isBatch?: boolean; confirmData?: Record<string, unknown> }) => {
             if (isBatch) {
                 await financeApi.groupMatchLines({
@@ -58,12 +58,13 @@ export function useMatchMutation(statementId: number, treasuryAccountId: number)
             ])
         }
     })
+    return { match: matchMutation.mutateAsync, isMatching: matchMutation.isPending }
 }
 
 export function useGroupMatchMutation(statementId: number, treasuryAccountId: number) {
     const queryClient = useQueryClient()
 
-    return useMutation({
+    const groupMatchMutation = useMutation({
         mutationFn: async ({ payload, confirmPayload, lineId }: { payload: { line_ids?: number[], payment_ids?: number[], batch_ids?: number[] }, confirmPayload?: Record<string, unknown>, lineId: number }) => {
             await financeApi.groupMatchLines(payload)
             if (confirmPayload && Object.keys(confirmPayload).length > 0) {
@@ -107,13 +108,14 @@ export function useGroupMatchMutation(statementId: number, treasuryAccountId: nu
             ])
         }
     })
+    return { groupMatch: groupMatchMutation.mutateAsync, isGroupMatching: groupMatchMutation.isPending }
 }
 
 export function useExcludeMutation(statementId: number) {
     const queryClient = useQueryClient()
     const { markLocalMutation } = useRealtime()
 
-    return useMutation({
+    const excludeMutation = useMutation({
         mutationFn: async ({ lineId, reason, notes }: { lineId: number; reason: string; notes: string }) => {
             return financeApi.updateStatementLine(lineId, {
                 reconciliation_status: 'EXCLUDED',
@@ -135,13 +137,14 @@ export function useExcludeMutation(statementId: number) {
             ])
         }
     })
+    return { exclude: excludeMutation.mutateAsync, isExcluding: excludeMutation.isPending }
 }
 
 export function useBulkExcludeMutation(statementId: number) {
     const queryClient = useQueryClient()
     const { markLocalMutation } = useRealtime()
 
-    return useMutation({
+    const bulkExcludeMutation = useMutation({
         mutationFn: async ({ lineIds, reason, notes }: { lineIds: number[]; reason: string; notes: string }) => {
             return financeApi.bulkExcludeLines({
                 line_ids: lineIds,
@@ -163,13 +166,14 @@ export function useBulkExcludeMutation(statementId: number) {
             ])
         }
     })
+    return { bulkExclude: bulkExcludeMutation.mutateAsync, isBulkExcluding: bulkExcludeMutation.isPending }
 }
 
 export function useRestoreMutation(statementId: number) {
     const queryClient = useQueryClient()
     const { markLocalMutation } = useRealtime()
 
-    return useMutation({
+    const restoreMutation = useMutation({
         mutationFn: async (lineId: number) => {
             return financeApi.updateStatementLine(lineId, {
                 reconciliation_status: 'UNRECONCILED',
@@ -191,13 +195,14 @@ export function useRestoreMutation(statementId: number) {
             ])
         }
     })
+    return { restore: restoreMutation.mutateAsync, isRestoring: restoreMutation.isPending }
 }
 
 export function useAutoMatchMutation(statementId: number) {
     const queryClient = useQueryClient()
     const { markLocalMutation } = useRealtime()
 
-    return useMutation({
+    const autoMatchMutation = useMutation({
         mutationFn: async ({ confidenceThreshold }: { confidenceThreshold: number }) => {
             return financeApi.autoMatch(statementId, { confidence_threshold: confidenceThreshold })
         },
@@ -219,13 +224,14 @@ export function useAutoMatchMutation(statementId: number) {
             ])
         }
     })
+    return { autoMatch: autoMatchMutation.mutateAsync, isAutoMatching: autoMatchMutation.isPending }
 }
 
 export function useUpdateReconciliationSettingsMutation(accountId?: number | string) {
     const queryClient = useQueryClient()
     const { markLocalMutation } = useRealtime()
 
-    return useMutation({
+    const updateSettingsMutation = useMutation({
         mutationFn: async (settings: Record<string, unknown> & { id: number }) => {
             const { id, ...rest } = settings
             return financeApi.updateReconciliationSettings(id, rest)
@@ -243,6 +249,7 @@ export function useUpdateReconciliationSettingsMutation(accountId?: number | str
             showApiError(err, 'Error al guardar configuración')
         }
     })
+    return { updateSettings: updateSettingsMutation.mutateAsync, isUpdatingSettings: updateSettingsMutation.isPending }
 }
 
 /**
@@ -252,7 +259,7 @@ export function useCreateAndMatchMutation(statementId: number, treasuryAccountId
     const queryClient = useQueryClient()
     const { markLocalMutation } = useRealtime()
 
-    return useMutation({
+    const createAndMatchMutation = useMutation({
         mutationFn: async ({ lineId, movementData }: { lineId: number, movementData: Record<string, unknown> }) => {
             const movement = await financeApi.createMovement(movementData) as Record<string, unknown>
             const paymentId = movement.id as number
@@ -274,6 +281,7 @@ export function useCreateAndMatchMutation(statementId: number, treasuryAccountId
             ])
         }
     })
+    return { createAndMatch: createAndMatchMutation.mutateAsync, isCreatingAndMatching: createAndMatchMutation.isPending }
 }
 
 /**
@@ -283,7 +291,7 @@ export function useUnmatchMutation(statementId: number, treasuryAccountId: numbe
     const queryClient = useQueryClient()
     const { markLocalMutation } = useRealtime()
 
-    return useMutation({
+    const unmatchMutation = useMutation({
         mutationFn: async (lineId: number) => {
             return financeApi.unmatchLine(lineId)
         },
@@ -302,6 +310,7 @@ export function useUnmatchMutation(statementId: number, treasuryAccountId: numbe
             ])
         }
     })
+    return { unmatch: unmatchMutation.mutateAsync, isUnmatching: unmatchMutation.isPending }
 }
 
 /**
@@ -311,7 +320,7 @@ export function useAllocateMutation(movementId: number, treasuryAccountId?: numb
     const queryClient = useQueryClient()
     const { markLocalMutation } = useRealtime()
 
-    return useMutation({
+    const allocateMutation = useMutation({
         mutationFn: async ({ allocations, validateSum = false }: { allocations: Record<string, unknown>[], validateSum?: boolean }) => {
             return financeApi.allocateMovement(movementId, { allocations, validate_sum: validateSum })
         },
@@ -329,6 +338,7 @@ export function useAllocateMutation(movementId: number, treasuryAccountId?: numb
             // Invalidate other generic movement/payment queries if necessary
         }
     })
+    return { allocate: allocateMutation.mutateAsync, isAllocating: allocateMutation.isPending }
 }
 
 /**
@@ -338,7 +348,7 @@ export function useCreateMovementMutation(treasuryAccountId: number) {
     const queryClient = useQueryClient()
     const { markLocalMutation } = useRealtime()
 
-    return useMutation({
+    const createMovementMutation = useMutation({
         mutationFn: async (movementData: Record<string, unknown>) => {
             return financeApi.createMovement(movementData)
         },
@@ -353,4 +363,5 @@ export function useCreateMovementMutation(treasuryAccountId: number) {
             invalidateCrossFeature(queryClient, [[...reconciliationKeys.all, 'unreconciled-payments', treasuryAccountId]])
         }
     })
+    return { createMovement: createMovementMutation.mutateAsync, isCreatingMovement: createMovementMutation.isPending }
 }

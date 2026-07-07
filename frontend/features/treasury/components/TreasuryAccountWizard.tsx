@@ -56,7 +56,7 @@ const USAGE_CARDS: { value: Usage; label: string; hint: string; icon: typeof Wal
 
 export function TreasuryAccountWizard({ open, onOpenChange, onSuccess, defaultBankId }: TreasuryAccountWizardProps) {
     const { banks } = useBanks()
-    const { mutateAsync: provision, isPending } = useProvisionAccount()
+    const { provision, isProvisioning } = useProvisionAccount()
 
     const [stepIndex, setStepIndex] = useState(0)
     const [accountType, setAccountType] = useState<TreasuryAccountType | "">("")
@@ -271,7 +271,7 @@ export function TreasuryAccountWizard({ open, onOpenChange, onSuccess, defaultBa
             {
                 id: "summary",
                 title: "Confirmación",
-                isValid: !isPending,
+                isValid: !isProvisioning,
                 component: (
                     <div className="space-y-5 pt-2">
                         <p className="text-center text-sm text-muted-foreground">Revise antes de crear la cuenta.</p>
@@ -295,7 +295,7 @@ export function TreasuryAccountWizard({ open, onOpenChange, onSuccess, defaultBa
             },
         ]
         return list.filter((s): s is WizardStep => s !== null)
-    }, [accountType, name, code, currency, accountId, bank, accountNumber, creditLimit, tenders, usage, isPending, banks,
+    }, [accountType, name, code, currency, accountId, bank, accountNumber, creditLimit, tenders, usage, isProvisioning, banks,
         requiresBank, requiresAccountNumber, showTendersStep, fixedTenderLabel, isLiabilityType])
 
     const handleComplete = async () => {
@@ -328,7 +328,7 @@ export function TreasuryAccountWizard({ open, onOpenChange, onSuccess, defaultBa
             initialStep={stepIndex}
             onComplete={handleComplete}
             onClose={() => onOpenChange(false)}
-            isCompleting={isPending}
+            isCompleting={isProvisioning}
             completeButtonLabel="Crear Cuenta"
             completeButtonIcon={<CheckCircle2 className="h-4 w-4" />}
             size="md"

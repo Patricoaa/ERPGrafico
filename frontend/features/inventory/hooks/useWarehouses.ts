@@ -87,7 +87,7 @@ export function useWarehouses() {
  * Fetch a single warehouse by id. Returns null while loading or when id is null.
  */
 export function useWarehouse(id: number | null | undefined) {
-    return useQuery({
+    const { data: warehouse, isLoading, isError } = useQuery({
         queryKey: id ? WAREHOUSES_KEYS.detail(id) : ['warehouses', 'detail', 'noop'],
         queryFn: async (): Promise<Warehouse> => {
             const res = await api.get<Warehouse>(`/inventory/warehouses/${id as number}/`)
@@ -96,4 +96,5 @@ export function useWarehouse(id: number | null | undefined) {
         staleTime: 15 * 60 * 1000,
         enabled: !!id,
     })
+    return { warehouse: warehouse ?? null, isLoading, isError }
 }

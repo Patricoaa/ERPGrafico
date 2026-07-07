@@ -17,7 +17,7 @@ export function useProvisionAccount() {
     const queryClient = useQueryClient()
     const { markLocalMutation } = useRealtime()
 
-    return useMutation({
+    const provisionMutation = useMutation({
         mutationFn: (payload: TreasuryAccountProvisionPayload) =>
             treasuryApi.provisionAccount(payload),
         onSuccess: () => {
@@ -29,6 +29,8 @@ export function useProvisionAccount() {
             showApiError(error, 'Error al crear la cuenta')
         },
     })
+
+    return { provision: provisionMutation.mutateAsync, isProvisioning: provisionMutation.isPending }
 }
 
 export interface TreasuryAccountFilters {

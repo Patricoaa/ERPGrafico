@@ -16,38 +16,42 @@ const CHECKS_KEYS = {
 }
 
 export function useChecks(params?: Record<string, string>) {
-    return useQuery({
+    const { data: checks, isLoading, isError } = useQuery({
         queryKey: CHECKS_KEYS.list(params),
         queryFn: () => checksApi.list(params),
         staleTime: 2 * 60 * 1000,
     })
+    return { checks: checks ?? [], isLoading, isError }
 }
 
 export function useCheck(id: number | null, enabled = true) {
-    return useQuery({
+    const { data: check, isLoading, isError } = useQuery({
         queryKey: CHECKS_KEYS.detail(id ?? 0),
         queryFn: () => checksApi.get(id as number),
         enabled: id != null && enabled,
         staleTime: 60 * 1000,
     })
+    return { check: check ?? null, isLoading, isError }
 }
 
 export function useCheckPortfolio(params?: Record<string, string>, enabled = true) {
-    return useQuery({
+    const { data: checkPortfolio, isLoading, isError } = useQuery({
         queryKey: CHECKS_KEYS.portfolio(),
         queryFn: () => checksApi.portfolio(params),
         staleTime: 60 * 1000,
         enabled,
     })
+    return { checkPortfolio: checkPortfolio ?? null, isLoading, isError }
 }
 
 export function useCheckInTransit(params?: Record<string, string>, enabled = true) {
-    return useQuery({
+    const { data: checkInTransit, isLoading, isError } = useQuery({
         queryKey: CHECKS_KEYS.inTransit(),
         queryFn: () => checksApi.inTransit(params),
         staleTime: 60 * 1000,
         enabled,
     })
+    return { checkInTransit: checkInTransit ?? null, isLoading, isError }
 }
 
 export function useCheckMutations() {

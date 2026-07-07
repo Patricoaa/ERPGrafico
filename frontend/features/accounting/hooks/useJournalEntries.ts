@@ -85,7 +85,7 @@ export function useJournalEntries(filters?: FilterState & { page?: number; page_
 export function usePostJournalEntry(options?: { onSuccess?: () => void }) {
     const queryClient = useQueryClient()
     const { markLocalMutation } = useRealtime()
-    return useMutation({
+    const postEntryMutation = useMutation({
         mutationFn: (id: number) => accountingApi.postEntry(id),
         onSuccess: () => {
             markLocalMutation()
@@ -95,12 +95,13 @@ export function usePostJournalEntry(options?: { onSuccess?: () => void }) {
         },
         onError: (error: Error) => showApiError(error, 'Error al publicar el asiento'),
     })
+    return { postEntry: postEntryMutation.mutateAsync, isPostingEntry: postEntryMutation.isPending }
 }
 
 export function useReverseJournalEntry(options?: { onSuccess?: () => void }) {
     const queryClient = useQueryClient()
     const { markLocalMutation } = useRealtime()
-    return useMutation({
+    const reverseEntryMutation = useMutation({
         mutationFn: (id: number) => accountingApi.reverseEntry(id),
         onSuccess: () => {
             markLocalMutation()
@@ -110,12 +111,13 @@ export function useReverseJournalEntry(options?: { onSuccess?: () => void }) {
         },
         onError: (error: Error) => showApiError(error, 'Error al reversar el asiento'),
     })
+    return { reverseEntry: reverseEntryMutation.mutateAsync, isReversingEntry: reverseEntryMutation.isPending }
 }
 
 export function useDeleteJournalEntry(options?: { onSuccess?: () => void }) {
     const queryClient = useQueryClient()
     const { markLocalMutation } = useRealtime()
-    return useMutation({
+    const deleteEntryMutation = useMutation({
         mutationFn: (id: number) => accountingApi.deleteEntry(id),
         onSuccess: () => {
             markLocalMutation()
@@ -125,4 +127,5 @@ export function useDeleteJournalEntry(options?: { onSuccess?: () => void }) {
         },
         onError: (error: Error) => showApiError(error, 'Error al eliminar el asiento'),
     })
+    return { deleteEntry: deleteEntryMutation.mutateAsync, isDeletingEntry: deleteEntryMutation.isPending }
 }

@@ -17,7 +17,7 @@ interface SaleOrderDrawerProps extends TransactionDrawerProps {
 
 export function SaleOrderDrawer({ id, open, onOpenChange, orderId, segmenter }: SaleOrderDrawerProps) {
     const entityId = id ?? orderId ?? null
-    const { data: order, isLoading } = useSaleOrder(entityId)
+    const { saleOrder: order, isLoading } = useSaleOrder(entityId)
     const { printRef, handlePrint } = usePrintableDrawer()
 
     const identity = useDrawerIdentity('sales.saleorder', 'view', order, {

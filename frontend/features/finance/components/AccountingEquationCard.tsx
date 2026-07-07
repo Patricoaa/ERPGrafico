@@ -13,7 +13,7 @@ interface AccountingEquationProps {
     className?: string
 }
 
-export function AccountingEquation({ totalAssets, totalLiabilities, totalEquity, check, className }: AccountingEquationProps) {
+export function AccountingEquationCard({ totalAssets, totalLiabilities, totalEquity, check, className }: AccountingEquationProps) {
     const isBalanced = Math.abs(check) < 0.01
     const totalLiabEq = totalLiabilities + totalEquity
 

@@ -1,5 +1,5 @@
 export type { AbsenceDrawerProps, AbsenceFormValues, AdvanceDrawerProps, AdvanceFormValues, CreatePayrollDrawerProps, CreatePayrollValues, EmployeeDrawerProps, EmployeeFormValues } from './components'
-export { AbsenceClientView, AbsenceDrawer, AdvanceDrawer, CreatePayrollDrawer, EmployeeClientView, EmployeeDrawer, FormulaBuilder, PayrollCard, PayrollClientView, PayrollDetailContent, PayrollDetailDrawer, SalaryAdvanceClientView, absenceSchema, advanceSchema, employeeSchema } from './components'
+export { AbsenceClientView, AbsenceDrawer, AdvanceDrawer, CreatePayrollDrawer, EmployeeClientView, EmployeeDrawer, FormulaBuilder, PayrollCard, PayrollClientView, PayrollDetailView, PayrollDetailDrawer, SalaryAdvanceClientView, absenceSchema, advanceSchema, employeeSchema } from './components'
 export type { EmployeeActionsCtx } from './employeeActions'
 export { employeeActions } from './employeeActions'
 export type { AbsenceActionsCtx } from './absenceActions'

@@ -32,7 +32,7 @@ interface BOMsPageClientProps {
 export default function BOMsPageClient({ initialBoms }: BOMsPageClientProps) {
     const [isFormOpen, setIsFormOpen] = useState(false)
     const [editingBomId, setEditingBomId] = useState<number | null>(null)
-    const deleteBomMutation = useDeleteBomMutation()
+    const { deleteBom } = useDeleteBomMutation()
     const { data: editingBomData } = useBOM(editingBomId ?? undefined)
 
     const searchParams = useSearchParams()
@@ -67,7 +67,7 @@ export default function BOMsPageClient({ initialBoms }: BOMsPageClientProps) {
     }
 
     const deleteConfirm = useConfirmAction<number>(async (id) => {
-        await deleteBomMutation.mutateAsync(id)
+        await deleteBom(id)
         refetchBoms()
     })
 

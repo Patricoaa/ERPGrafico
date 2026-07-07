@@ -88,10 +88,10 @@ export const ActionCategory = forwardRef(({
     const isSale = !!order?.customer_name || !!order?.customer || !!order?.sale_order
     const isPurchase = !!order?.supplier_name || !!order?.supplier || !!order?.purchase_order
 
-    const createInvoiceFromOrder = useCreateInvoiceFromOrder()
-    const confirmInvoice = useConfirmInvoice()
-    const registerPaymentMovement = useRegisterPaymentMovement()
-    const registerPaymentReturn = useRegisterPaymentReturn()
+    const { createInvoiceFromOrder } = useCreateInvoiceFromOrder()
+    const { confirmInvoice } = useConfirmInvoice()
+    const { registerPaymentMovement } = useRegisterPaymentMovement()
+    const { registerPaymentReturn } = useRegisterPaymentReturn()
     const { modalProps: cancelModalProps, isModalOpen: isCancelModalOpen } =
         useCancelOrderFlow(isSale ? 'sale' : 'purchase', { onSuccess: onActionSuccess })
 
@@ -183,7 +183,7 @@ export const ActionCategory = forwardRef(({
     const handleRegenerateDocument = async () => {
         setIsProcessing(true)
         try {
-            const result = await createInvoiceFromOrder.mutateAsync({
+            const result = await createInvoiceFromOrder({
                 order_id: order?.id,
                 order_type: isSale ? 'sale' : 'purchase',
                 dte_type: 'FACTURA_ELECTRONICA',
@@ -218,7 +218,7 @@ export const ActionCategory = forwardRef(({
                         ...(posSessionId ? { pos_session_id: posSessionId } : {})
                     };
                     (payload as Record<string, unknown>).invoice = order.id
-                    await registerPaymentMovement.mutateAsync({ data: payload, idempotencyKey })
+                    await registerPaymentMovement({ data: payload, idempotencyKey })
                 } else {
                     // DRAFT invoice + posted payments: return the first posted payment
                     const payments = order?.related_documents?.payments || []
@@ -228,7 +228,7 @@ export const ActionCategory = forwardRef(({
                         toast.error("No se encontró un pago contabilizado para devolver.")
                         return
                     }
-                    await registerPaymentReturn.mutateAsync({
+                    await registerPaymentReturn({
                         paymentId: Number(paymentId),
                         amount: data.amount as number,
                         treasuryAccountId: data.treasury_account_id
@@ -274,7 +274,7 @@ export const ActionCategory = forwardRef(({
                 } else {
                     (payload as Record<string, unknown>)[isSale ? 'sale_order' : 'purchase_order'] = order?.id
                 }
-                await registerPaymentMovement.mutateAsync({ data: payload, idempotencyKey })
+                await registerPaymentMovement({ data: payload, idempotencyKey })
             }
 
             closeModal()
@@ -363,7 +363,7 @@ export const ActionCategory = forwardRef(({
                                   toast.error("Error: No se pudo identificar el borrador de la factura.")
                                   throw new Error("Missing invoice ID")
                               }
-                              await confirmInvoice.mutateAsync({ id: invoiceId, formData: formData as unknown as Record<string, unknown> })
+                               await confirmInvoice({ id: invoiceId, formData: formData as unknown as Record<string, unknown> })
                           }}
                          onSuccess={() => { closeModal(); onActionSuccess?.() }}
                      />

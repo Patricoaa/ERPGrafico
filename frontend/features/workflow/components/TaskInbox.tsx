@@ -209,7 +209,7 @@ export function TaskInbox({ onCountChange }: TaskInboxProps) {
         }
     }, [selectedId, loading, approvalTasks, operationalTasks])
 
-    const updateTaskMutation = useUpdateTask()
+    const { updateTask } = useUpdateTask()
 
     const handleCreditAction = async (e: React.MouseEvent, task: Task, action: 'APPROVE' | 'REJECT') => {
         e.stopPropagation()
@@ -218,7 +218,7 @@ export function TaskInbox({ onCountChange }: TaskInboxProps) {
             const status = action === 'APPROVE' ? 'COMPLETED' : 'REJECTED'
             const notes = action === 'APPROVE' ? 'Aprobado desde Inbox POS' : 'Rechazado desde Inbox POS'
 
-            await updateTaskMutation.mutateAsync({
+            await updateTask({
                 id: task.id,
                 payload: {
                     status,
