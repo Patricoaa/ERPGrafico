@@ -57,8 +57,9 @@ export function CategoryFilter({
             >
                 {/* "All" pill */}
                 <Button
+                    variant={selectedCategoryId === null ? "default" : "outline"}
                     className={cn(
-                        "whitespace-nowrap flex items-center justify-center rounded-md font-bold uppercase tracking-wider transition-all border",
+                        "whitespace-nowrap flex items-center justify-center rounded-md font-bold uppercase tracking-wider transition-all border shadow-none",
                         isTouchPOS ? "h-10 px-5 text-xs" : "h-8 px-3 text-[10px]",
                         selectedCategoryId === null
                             ? "bg-primary text-primary-foreground border-primary shadow-card"
@@ -73,8 +74,9 @@ export function CategoryFilter({
                 {categories.map(cat => (
                     <Button
                         key={cat.id}
+                        variant={selectedCategoryId === cat.id ? "default" : "outline"}
                         className={cn(
-                            "whitespace-nowrap flex items-center justify-center gap-1.5 rounded-md font-bold uppercase tracking-wider transition-all border",
+                            "whitespace-nowrap flex items-center justify-center gap-1.5 rounded-md font-bold uppercase tracking-wider transition-all border shadow-none",
                             isTouchPOS ? "h-10 px-5 text-xs" : "h-8 px-3 text-[10px]",
                             selectedCategoryId === cat.id
                                 ? "bg-primary text-primary-foreground border-primary shadow-card"

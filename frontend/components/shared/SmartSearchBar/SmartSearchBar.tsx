@@ -224,9 +224,10 @@ export function SmartSearchBar({ searchDef, placeholder = 'Buscar...', className
               {!chip.isGlobalSearch && <span className="opacity-60">{chip.label}:</span>}
               <span>{chip.valueLabel}</span>
               <Button
+                variant="ghost"
                 type="button"
                 onClick={(e) => { e.stopPropagation(); removeFilter(chip.key) }}
-                className="rounded-full p-0.5 ml-0.5 -mr-1 flex items-center justify-center shrink-0"
+                className="rounded-full p-0.5 ml-0.5 -mr-1 flex items-center justify-center shrink-0 h-auto w-auto border-none bg-transparent hover:bg-muted/50 shadow-none text-current"
                 aria-label={`Eliminar filtro ${chip.label}`}
               >
                 <X className="h-2.5 w-2.5" />
@@ -277,9 +278,10 @@ export function SmartSearchBar({ searchDef, placeholder = 'Buscar...', className
 
         {hasActiveFilters && (
           <Button
+            variant="ghost"
             type="button"
             onClick={(e) => { e.stopPropagation(); clearAll() }}
-            className="text-muted-foreground/40 hover:text-foreground transition-colors shrink-0 ml-auto"
+            className="text-muted-foreground/40 hover:text-foreground transition-colors shrink-0 ml-auto h-auto w-auto p-1 border-none bg-transparent shadow-none"
             aria-label="Eliminar todos los filtros"
           >
             <X className="h-3.5 w-3.5" />
@@ -303,11 +305,12 @@ export function SmartSearchBar({ searchDef, placeholder = 'Buscar...', className
               {filteredFields.length === 0 ? (
                 inputValue.trim() ? (
                   <Button
+                    variant="ghost"
                     type="button"
                     role="option"
                     aria-selected={false}
                     onClick={() => handleTextSubmit()}
-                    className="w-full flex items-center gap-2 px-3 py-2 text-left transition-colors hover:bg-primary/5 rounded-sm"
+                    className="w-full flex items-center gap-2 px-3 py-2 text-left transition-colors hover:bg-primary/5 rounded-sm shadow-none"
                   >
                     <Search className="h-3.5 w-3.5 text-muted-foreground/60 shrink-0" />
                     <div className="flex-1 min-w-0">
@@ -329,12 +332,13 @@ export function SmartSearchBar({ searchDef, placeholder = 'Buscar...', className
                   <Button
                     key={field.key}
                     id={`ssb-option-${i}`}
+                    variant="ghost"
                     type="button"
                     role="option"
                     aria-selected={i === focusedIndex}
                     onClick={() => handleFieldSelect(field)}
                       className={cn(
-                        'w-full flex items-center justify-between px-2.5 py-2 text-left transition-colors rounded-sm',
+                        'w-full flex items-center justify-between px-2.5 py-2 text-left transition-colors rounded-sm shadow-none',
                         SEG_DROPDOWN_ITEM,
                         i === focusedIndex ? 'bg-primary/10 text-primary' : 'hover:bg-primary/5 text-foreground',
                       )}
@@ -361,12 +365,13 @@ export function SmartSearchBar({ searchDef, placeholder = 'Buscar...', className
                     <Button
                       key={value}
                       id={`ssb-option-${i}`}
+                      variant="ghost"
                       type="button"
                       role="option"
                       aria-selected={i === focusedIndex}
                       onClick={() => parsedActiveFieldInfo && handleSuggestionSelect(parsedActiveFieldInfo.field, value)}
                       className={cn(
-                        'w-full flex items-center px-2.5 py-1.5 text-left transition-colors rounded-sm',
+                        'w-full flex items-center px-2.5 py-1.5 text-left transition-colors rounded-sm shadow-none',
                         SEG_DROPDOWN_ITEM,
                         i === focusedIndex ? 'bg-primary/10 text-primary' : 'hover:bg-primary/5 text-foreground',
                       )}

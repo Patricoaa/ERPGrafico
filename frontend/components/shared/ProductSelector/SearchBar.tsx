@@ -80,9 +80,10 @@ export function SearchBar({
             {rightAction}
             {value && (
                 <Button
+                    variant="ghost"
                     type="button"
                     onClick={() => onChange('')}
-                    className="shrink-0 rounded-sm p-1 text-muted-foreground/40 hover:text-foreground transition-colors"
+                    className="shrink-0 rounded-sm p-1 text-muted-foreground/40 hover:text-foreground transition-colors h-auto w-auto border-none bg-transparent hover:bg-transparent shadow-none"
                     aria-label="Limpiar búsqueda"
                 >
                     <X className={isTouchDevice ? 'size-4' : 'size-3'} />
