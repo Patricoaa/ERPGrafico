@@ -8,7 +8,7 @@ import { ActionConfirmModal, DataTable, StatusBadge } from '@/components/shared'
 import { DataTableColumnHeader } from '@/components/shared'
 import { IconButton } from "@/components/shared"
 
-import { AccountDrawer } from "@/features/finance/components/AccountDrawer"
+import { AccountDrawer } from "@/features/finance"
 import { LedgerDrawer } from "@/features/accounting/components/LedgerDrawer"
 import { useAccounts } from "@/features/accounting/hooks/useAccounts"
 import { type Account } from "@/features/accounting/types"
@@ -19,7 +19,7 @@ import { useRouter, usePathname, useSearchParams } from "next/navigation"
 import { ChevronRight, ChevronDown } from "lucide-react"
 import { buildAccountTree } from "../utils/accountTree"
 
-import { ActivitySidebar } from "@/features/audit/components"
+import { ActivitySidebar } from "@/features/audit"
 import { useSelectedEntity } from "@/hooks/useSelectedEntity"
 import { SmartSearchBar, useSmartSearch, SegmentationBar, useSegmentation } from "@/components/shared"
 import { accountSearchDef } from "../searchDef"

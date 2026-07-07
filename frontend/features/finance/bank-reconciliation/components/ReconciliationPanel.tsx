@@ -59,7 +59,7 @@ import { AutoMatchProgressModal } from "./AutoMatchProgressModal"
 import { ReconciliationIntelligence } from "./ReconciliationIntelligence"
 
 import { DataTable } from '@/components/shared'
-import { LazyDrawer } from "@/features/_shared/transaction-drawer"
+import { LazyDrawer } from "@/features/_shared"
 import { type ColumnDef, type RowSelectionState, type PaginationState, type Updater } from "@tanstack/react-table"
 import { DataTableColumnHeader } from '@/components/shared'
 import { DataCell } from '@/components/shared'

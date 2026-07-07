@@ -15,8 +15,8 @@ import { Chip } from "@/components/shared"
 import { cn } from "@/lib/utils"
 import { showApiError } from "@/lib/errors"
 import { toast } from "sonner"
-import { BOMDrawer } from "@/features/production/components/BOMDrawer"
-import type { ProductMinimal } from "@/features/production/types"
+import { BOMDrawer } from "@/features/production"
+import type { ProductMinimal } from "@/features/production"
 import { useVatRate } from '@/hooks/useVatRate'
 import { useUoMs } from "../../hooks/useUoMs"
 import { useProductMutations } from "../../hooks/useProductMutations"
@@ -218,8 +218,8 @@ export function BulkVariantEditForm({
           value={activeTab}
           onValueChange={setActiveTab}
           items={[
-            { value: 'precios', label: 'Precios', icon: DollarSign as any },
-            { value: 'ldm', label: 'LDM', icon: Factory as any, badge: variantsWithBOM > 0 ? `${variantsWithBOM}/${selectedVariants.length}` : undefined },
+            { value: 'precios', label: 'Precios', icon: DollarSign },
+            { value: 'ldm', label: 'LDM', icon: Factory, badge: variantsWithBOM > 0 ? `${variantsWithBOM}/${selectedVariants.length}` : undefined },
           ]}
           className="flex-1"
           contentClassName="flex flex-col p-0"

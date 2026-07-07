@@ -22,7 +22,7 @@ import { formatEntityDisplay } from "@/lib/entity-registry"
 import { parseDateOnly } from "@/lib/utils"
 
 import { TabBar, TabBarContent } from "@/components/shared"
-import { LazyDrawer, type TransactionType } from "@/features/_shared/transaction-drawer"
+import { LazyDrawer, type TransactionType } from "@/features/_shared"
 import { WorkOrderWizard } from "@/features/production"
 import type { ColumnDef } from "@tanstack/react-table"
 import { LineChart } from "@/components/shared"

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useMemo, useRef } from "react";
-import { useProduct } from "@/features/inventory/hooks/useProducts";
+import { useProduct } from "@/features/inventory";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm, type SubmitHandler, type Resolver, type Control } from "react-hook-form";
 import { format } from "date-fns";
@@ -23,7 +23,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { FileText, User, X } from "lucide-react";
 import type { WorkOrderFormValues, WorkOrderInitialData } from "@/types/forms";
-import type { Contact } from "@/features/contacts/types";
+import type { Contact } from "@/features/contacts";
 import { useWizardStore } from "../WorkOrderWizardStore";
 import type { ManufacturingData } from "@/components/shared";
 import { ManufacturingSpecsEditor, emptyManufacturingData } from '@/components/shared';

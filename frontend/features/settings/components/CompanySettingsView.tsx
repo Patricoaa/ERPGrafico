@@ -10,7 +10,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Form, FormField } from "@/components/ui/form"
 import { Tabs, TabsContent } from "@/components/ui/tabs"
 import {Loader2, Building2, RefreshCw, Palette, Mail, Phone, MapPin, Globe, Upload, Pencil} from "lucide-react"
-import ContactDrawer from "@/features/contacts/components/ContactDrawer"
+import ContactDrawer from "@/features/contacts"
 import { AutoSaveStatusBadge, DataCell, LabeledInput, LabeledSelect, FadeIn, SkeletonShell } from "@/components/shared"
 import { Button } from "@/components/ui/button"
 import { formatRUT } from "@/lib/utils/format"
@@ -20,10 +20,10 @@ import { useUnsavedChangesGuard } from "@/hooks/useUnsavedChangesGuard"
 
 import { resolveMediaUrl } from "@/lib/api"
 import { type CompanySettings } from "@/features/settings/types"
-import { contactsApi } from "@/features/contacts/api/contactsApi"
+import { contactsApi } from "@/features/contacts"
 
 import {companySchema, type CompanyFormValues } from "./CompanySettingsView.schema"
-import { type Contact } from "@/features/contacts/types"
+import { type Contact } from "@/features/contacts"
 
 export function CompanySettingsView({ activeTab }: { activeTab: string }) {
     const { settings, isLoading, updateSettings } = useCompanySettings()

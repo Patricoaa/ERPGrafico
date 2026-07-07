@@ -16,7 +16,7 @@ import {
     CF_CATEGORIES,
     BS_CATEGORIES,
     type Account
-} from "@/features/accounting/types"
+} from "@/features/accounting"
 import { Checkbox } from "@/components/ui/checkbox"
 import { cn } from "@/lib/utils"
 import { useAutoSaveForm } from "@/hooks/useAutoSaveForm"

@@ -6,11 +6,11 @@ import { useTreasuryAccounts } from "../../hooks"
 import { LabeledSelect, GenericWizard, type WizardStep, DataCell } from "@/components/shared"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
-import { partnersApi } from "@/features/contacts/api/partnersApi"
+import { partnersApi } from "@/features/contacts"
 import { toast } from "sonner"
 
 import { Wallet, CheckCircle2, Banknote } from "lucide-react"
-import { type ProfitDistribution, type ProfitDistributionLine } from "@/features/contacts/types/partner"
+import { type ProfitDistribution, type ProfitDistributionLine } from "@/features/contacts"
 
 interface MassPaymentWizardProps {
     open: boolean

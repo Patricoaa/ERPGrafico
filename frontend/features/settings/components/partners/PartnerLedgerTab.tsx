@@ -13,8 +13,8 @@ import {
 import { TableRow, TableCell } from "@/components/ui/table"
 
 import { DataCell } from "@/components/shared"
-import { partnersApi } from "@/features/contacts/api/partnersApi"
-import { type Partner, type PartnerTransaction } from "@/features/contacts/types/partner"
+import { partnersApi } from "@/features/contacts"
+import { type Partner, type PartnerTransaction } from "@/features/contacts"
 import { toast } from "sonner"
 import {formatPlainDate as formatDate, parseDateOnly} from "@/lib/utils"
 import { PartnerContributionWizard } from "@/features/settings/components/partners/PartnerContributionWizard"

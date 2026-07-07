@@ -9,8 +9,8 @@ import {
 } from "lucide-react"
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
 
-import { partnersApi } from "@/features/contacts/api/partnersApi"
-import { type Partner, type PartnerSummary } from "@/features/contacts/types/partner"
+import { partnersApi } from "@/features/contacts"
+import { type Partner, type PartnerSummary } from "@/features/contacts"
 import { toast } from "sonner"
 import { cn } from "@/lib/utils"
 import {

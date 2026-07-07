@@ -14,8 +14,8 @@ import { LabeledInput, LabeledContainer, LabeledSelect, PeriodValidationDateInpu
 import { cn, formatPlainDate } from "@/lib/utils"
 import { formatEntityDisplay } from "@/lib/entity-registry"
 import type { WorkOrderFormValues, WorkOrderInitialData } from "@/types/forms"
-import type { SaleOrder, SaleOrderLine } from "@/features/sales/types"
-import type { Contact } from "@/features/contacts/types"
+import type { SaleOrder, SaleOrderLine } from "@/features/sales"
+import type { Contact } from "@/features/contacts"
 import type { Contact as ContactEntity } from "@/types/entities"
 import type { UoM, ProductMinimal } from "../../../types"
 

@@ -10,7 +10,7 @@ import { DataCell } from '@/components/shared'
 import { DataTableColumnHeader } from '@/components/shared'
 import { DataTableView } from '@/components/shared'
 import { paymentMethodActions, type PaymentMethodActionsCtx } from './paymentMethodActions'
-import { ActivitySidebar } from "@/features/audit/components"
+import { ActivitySidebar } from "@/features/audit"
 import { useConfirmAction } from "@/hooks/useConfirmAction"
 import { useForm, type Resolver } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"

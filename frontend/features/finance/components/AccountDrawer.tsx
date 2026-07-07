@@ -14,13 +14,13 @@ import {
 import { Button } from "@/components/ui/button"
 import { AccountSelector } from "@/components/selectors/AccountSelector"
 import { useAccountMutations } from "@/features/accounting"
-import { type AccountPayload } from "@/features/accounting/types"
+import { type AccountPayload } from "@/features/accounting"
 import { Drawer, LabeledInput, LabeledSelect, FormFooter, CancelButton, FormSplitLayout, ActionSlideButton } from "@/components/shared"
-import { ActivitySidebar } from "@/features/audit/components"
+import { ActivitySidebar } from "@/features/audit"
 import { formDrawerWidth } from "@/lib/form-widths"
-import { PrintableLayout } from "@/features/_shared/transaction-drawer"
+import { PrintableLayout } from "@/features/_shared"
 import { useReactToPrint } from "react-to-print"
-import { useDrawerIdentity, type DrawerMode } from "@/features/_shared/drawer"
+import { useDrawerIdentity, type DrawerMode } from "@/features/_shared"
 
 const accountSchema = z.object({
     code: z.string().optional().or(z.literal("")),

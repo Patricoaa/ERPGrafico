@@ -15,14 +15,14 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from "@/components/ui/tooltip"
 import { ChevronDown, Search, Check, Plus, Printer } from "lucide-react"
 import { ActionSlideButton } from "@/components/shared"
-import { ActivitySidebar } from "@/features/audit/components"
+import { ActivitySidebar } from "@/features/audit"
 import { useUoMs, type UoM } from "@/features/inventory/hooks/useUoMs"
 import { UoMCategoryDrawer, type UoMCategory } from "./UoMCategoryDrawer"
 import { cn } from "@/lib/utils"
 import { formDrawerWidth } from "@/lib/form-widths"
 import { useReactToPrint } from "react-to-print"
-import { PrintableLayout } from "@/features/_shared/transaction-drawer"
-import { useDrawerIdentity, type DrawerMode } from "@/features/_shared/drawer"
+import { PrintableLayout } from "@/features/_shared"
+import { useDrawerIdentity, type DrawerMode } from "@/features/_shared"
 
 const uomSchema = z.object({
     name: z.string().min(1, "El nombre es requerido"),
@@ -56,7 +56,7 @@ export function UoMDrawer({ open: openProp, onOpenChange, initialData, onSuccess
     const isFetchingInitialData = open && isCategoriesLoading
 
     const form = useForm<UoMFormValues>({
-        resolver: zodResolver(uomSchema) as any,
+        resolver: zodResolver(uomSchema) as unknown as import("react-hook-form").Resolver<UoMFormValues>,
         defaultValues: {
             name: "",
             category: undefined,

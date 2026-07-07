@@ -6,10 +6,10 @@ import React, { useEffect, useState } from "react"
 
 import { ActionConfirmModal, BaseModal, CancelButton, LabeledInput, LabeledSelect, PeriodValidationDateInput, SubmitButton } from '@/components/shared'
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { partnersApi } from "@/features/contacts/api/partnersApi"
+import { partnersApi } from "@/features/contacts"
 import { settingsApi } from "../../hooks"
-import { type Partner } from "@/features/contacts/types/partner"
-import { type TreasuryAccount } from "@/features/treasury/types"
+import { type Partner } from "@/features/contacts"
+import { type TreasuryAccount } from "@/features/treasury"
 import { toast } from "sonner"
 
 import {

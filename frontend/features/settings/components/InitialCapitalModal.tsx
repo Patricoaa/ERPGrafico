@@ -9,7 +9,7 @@ import { useMemo } from "react"
 import type { ColumnDef } from "@tanstack/react-table"
 
 import { toast } from "sonner"
-import { partnersApi } from "@/features/contacts/api/partnersApi"
+import { partnersApi } from "@/features/contacts"
 import { AdvancedContactSelector } from "@/components/selectors/AdvancedContactSelector"
 import {Trash2, Users} from "lucide-react"
 

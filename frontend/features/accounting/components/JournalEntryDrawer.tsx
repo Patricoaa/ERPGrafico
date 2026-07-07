@@ -24,13 +24,13 @@ import { useServerDate } from "@/hooks/useServerDate"
 import { useReactToPrint } from "react-to-print"
 import { formatCurrency } from "@/lib/money"
 
-import { PrintableLayout } from "@/features/_shared/transaction-drawer"
+import { PrintableLayout } from "@/features/_shared"
 import { useJournalEntry } from "@/features/accounting/hooks/useJournalEntries"
 import { Chip, Drawer, LabeledInput, CancelButton, IconButton, PeriodValidationDateInput, ActionSlideButton, FormFooter, FormSplitLayout, FormSection, AccountingLinesTable, SkeletonShell, StatusBadge, SourceDocumentLink } from "@/components/shared";
 import { SourceDocumentSelector, type SourceDocument } from "@/components/selectors/SourceDocumentSelector";
 import { formDrawerWidth } from "@/lib/form-widths";
-import { ActivitySidebar } from "@/features/audit/components";
-import { useDrawerIdentity, type DrawerMode } from "@/features/_shared/drawer"
+import { ActivitySidebar } from "@/features/audit";
+import { useDrawerIdentity, type DrawerMode } from "@/features/_shared"
 
 // JournalItem and JournalEntry schemas remain the same
 const journalItemSchema = z.object({

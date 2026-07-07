@@ -8,7 +8,7 @@ import { ActionConfirmModal, DataTableColumnHeader, DataTableView, EntityCard, S
 import { DataCell } from '@/components/shared'
 import { type ColumnDef } from "@tanstack/react-table"
 // useDeletePricingRule consumido vía usePricingRules.
-import { PricingRuleDrawer } from "@/features/sales/components/PricingRuleDrawer"
+import { PricingRuleDrawer } from "@/features/sales"
 import { pricingRuleActions, type PricingRuleActionsCtx } from "@/features/inventory/pricingRuleActions"
 import { toast } from "sonner"
 

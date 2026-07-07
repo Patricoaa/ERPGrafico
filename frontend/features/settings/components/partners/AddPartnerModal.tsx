@@ -7,8 +7,8 @@ import React, { useEffect, useState, useMemo } from "react"
 import { BaseModal, CancelButton, SubmitButton } from '@/components/shared'
 
 import { DataTable, LabeledInput, LabeledContainer, PeriodValidationDateInput, DataCell } from "@/components/shared"
-import { partnersApi } from "@/features/contacts/api/partnersApi"
-import { type Partner } from "@/features/contacts/types/partner"
+import { partnersApi } from "@/features/contacts"
+import { type Partner } from "@/features/contacts"
 import { toast } from "sonner"
 import {UserPlus, TrendingDown} from "lucide-react"
 import { AdvancedContactSelector } from "@/components/selectors/AdvancedContactSelector"

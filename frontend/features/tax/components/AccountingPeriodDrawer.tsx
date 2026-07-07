@@ -1,7 +1,7 @@
 "use client"
 
 import { Drawer, SkeletonShell, StatusBadge } from "@/components/shared"
-import { useDrawerIdentity } from "@/features/_shared/drawer"
+import { useDrawerIdentity } from "@/features/_shared"
 import { useTaxPeriod } from "../hooks/useTaxQueries"
 import { formDrawerWidth } from "@/lib/form-widths"
 

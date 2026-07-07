@@ -10,7 +10,7 @@ import {
     FormField
 } from "@/components/ui/form"
 import { cn } from "@/lib/utils"
-import { useUoMs } from "@/features/inventory/hooks/useUoMs"
+import { useUoMs } from "@/features/inventory"
 import type { Product } from "@/types/entities"
 import { usePricingRuleMutations } from "@/features/inventory"
 import { showApiError } from "@/lib/errors"
@@ -19,13 +19,13 @@ import { Layers, Zap, DollarSign, Calendar, Printer } from "lucide-react"
 import { PricingUtils } from '@/lib/pricing-utils'
 import { ProductSelector } from "@/components/selectors/ProductSelector"
 import { UoMSelector } from "@/components/selectors/UoMSelector"
-import { useSingleProduct } from "@/features/inventory/hooks/useProductSearch"
+import { useSingleProduct } from "@/features/inventory"
 import { Drawer, CancelButton, LabeledInput, LabeledSelect, LabeledSwitch, PeriodValidationDateInput, FormSection, FormFooter, FormSplitLayout, SkeletonShell, ActionSlideButton } from "@/components/shared"
 import { Button } from "@/components/ui/button"
 import { formDrawerWidth } from "@/lib/form-widths"
 import { useReactToPrint } from "react-to-print"
-import { PrintableLayout } from "@/features/_shared/transaction-drawer"
-import { useDrawerIdentity, type DrawerMode } from "@/features/_shared/drawer"
+import { PrintableLayout } from "@/features/_shared"
+import { useDrawerIdentity, type DrawerMode } from "@/features/_shared"
 
 const formSchema = z.object({
     name: z.string().min(2, "El nombre debe tener al menos 2 caracteres"),

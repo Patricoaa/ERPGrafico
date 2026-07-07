@@ -49,6 +49,6 @@ export type {
   CorrectionResult,
 } from './hooks'
 
-export type { WorkOrder } from './types'
+export type { WorkOrder, BOM, ProductMinimal } from './types'
 
 export { workOrderSegDef, bomSegDef } from './segmentationDef'

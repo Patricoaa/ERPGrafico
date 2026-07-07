@@ -15,10 +15,10 @@ import { Button } from "@/components/ui/button"
 import { financeApi } from "../api/financeApi"
 import { toast } from "sonner"
 import { useReactToPrint } from "react-to-print"
-import { PrintableLayout } from "@/features/_shared/transaction-drawer"
-import { useDrawerIdentity, type DrawerMode } from "@/features/_shared/drawer"
+import { PrintableLayout } from "@/features/_shared"
+import { useDrawerIdentity, type DrawerMode } from "@/features/_shared"
 import { Drawer, LabeledInput, FormFooter, FormSplitLayout, CancelButton, ActionSlideButton } from "@/components/shared"
-import { ActivitySidebar } from "@/features/audit/components"
+import { ActivitySidebar } from "@/features/audit"
 import { formDrawerWidth } from "@/lib/form-widths"
 
 const schema = z.object({

@@ -1,4 +1,4 @@
-import { type Invoice } from "@/features/billing/types"
+import { type Invoice } from "@/features/billing"
 import type { PageParams } from "@/lib/pagination"
 
 export type SaleOrderStatus = 'DRAFT' | 'OPEN' | 'CANCELLED' | 'COMPLETED' | 'PAID' | 'PARTIAL'

@@ -2,7 +2,7 @@
 
 import React from 'react'
 import { Drawer, StatusBadge, SkeletonShell, FormSplitLayout } from '@/components/shared'
-import { useDrawerIdentity, usePrintableDrawer } from "@/features/_shared/drawer"
+import { useDrawerIdentity, usePrintableDrawer } from "@/features/_shared"
 import { PrintableLayout } from '@/features/_shared'
 import { useStockMove } from '@/features/inventory/hooks/useStockMoves'
 import { ActivitySidebar } from '@/features/audit'

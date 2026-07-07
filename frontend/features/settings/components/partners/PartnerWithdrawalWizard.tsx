@@ -12,10 +12,10 @@ import {
     AlertTriangle
 } from "lucide-react"
 import { LabeledInput, LabeledSelect, LabeledContainer, PeriodValidationDateInput, Chip, GenericWizard, type WizardStep } from "@/components/shared"
-import { partnersApi } from "@/features/contacts/api/partnersApi"
-import { type Partner } from "@/features/contacts/types/partner"
-import { type TreasuryAccount } from "@/features/treasury/types"
-import { type Product } from "@/features/inventory/types"
+import { partnersApi } from "@/features/contacts"
+import { type Partner } from "@/features/contacts"
+import { type TreasuryAccount } from "@/features/treasury"
+import { type Product } from "@/features/inventory"
 import { settingsApi, type Warehouse, type UoM, type ProductMinimal } from "../../hooks"
 import { ProductSelector } from "@/components/selectors/ProductSelector"
 

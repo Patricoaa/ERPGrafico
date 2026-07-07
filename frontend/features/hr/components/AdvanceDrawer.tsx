@@ -10,15 +10,15 @@ import { updateAdvance } from '@/features/hr/api/hrApi'
 import { useEmployees } from '@/features/hr/hooks/useEmployees'
 import { usePayrolls } from '@/features/hr/hooks/usePayrolls'
 import type { SalaryAdvance, Employee, Payroll } from "@/types/hr"
-import { ActivitySidebar } from "@/features/audit/components"
+import { ActivitySidebar } from "@/features/audit"
 import { Button } from "@/components/ui/button"
 import { CancelButton, ActionSlideButton } from "@/components/shared"
 import { Form, FormField } from "@/components/ui/form"
 import { Drawer, LabeledInput, LabeledSelect, PeriodValidationDateInput, FormFooter, FormSplitLayout } from "@/components/shared"
 import { Printer } from "lucide-react"
 import { useReactToPrint } from "react-to-print"
-import { PrintableLayout } from "@/features/_shared/transaction-drawer"
-import { useDrawerIdentity, type DrawerMode } from "@/features/_shared/drawer"
+import { PrintableLayout } from "@/features/_shared"
+import { useDrawerIdentity, type DrawerMode } from "@/features/_shared"
 import { useServerDate } from "@/hooks/useServerDate"
 import { formDrawerWidth } from "@/lib/form-widths"
 

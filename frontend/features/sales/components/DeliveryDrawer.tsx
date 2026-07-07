@@ -17,7 +17,7 @@ import {
     TableRow,
 } from "@/components/ui/table"
 import { useSalesOrders } from "../hooks/useSalesOrders"
-import { fetchProductStockLevel } from "@/features/inventory/hooks/useStockMoves"
+import { fetchProductStockLevel } from "@/features/inventory"
 import { toast } from "sonner"
 import { Loader2, Package, AlertTriangle, CheckCircle2 } from "lucide-react"
 import { Alert, AlertDescription } from "@/components/ui/alert"

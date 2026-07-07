@@ -6,7 +6,7 @@ import { useVatRate } from "@/hooks/useVatRate"
 import { SalesOrdersView } from "./SalesOrdersView"
 import { FadeIn, SkeletonShell } from "@/components/shared"
 import { type SaleOrder, type SaleOrderLine } from "../types"
-import { type Invoice } from "@/features/billing/types"
+import { type Invoice } from "@/features/billing"
 import { useEntitySubscription } from "@/features/realtime"
 import { SALES_KEYS } from "../hooks/queryKeys"
 

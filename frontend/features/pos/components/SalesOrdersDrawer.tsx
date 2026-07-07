@@ -8,7 +8,7 @@ import { useState, useEffect, Suspense, useCallback } from "react"
 import { Drawer, SkeletonShell } from "@/components/shared"
 import { cn } from "@/lib/utils"
 import { useHubPanel } from "@/components/providers/HubPanelProvider"
-import { OrderHubPanel } from "@/features/orders/components/OrderHubPanel"
+import { OrderHubPanel } from "@/features/orders"
 import { DetailPanel } from "./DetailPanel"
 
 interface SalesOrdersDrawerProps {

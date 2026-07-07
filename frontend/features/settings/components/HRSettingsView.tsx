@@ -31,7 +31,7 @@ import type {
     PayrollConcept
 } from "@/types/hr"
 
-import { FormulaBuilder } from "@/features/hr/components/FormulaBuilder"
+import { FormulaBuilder } from "@/features/hr"
 import { useConfirmAction } from "@/hooks/useConfirmAction"
 
 import { DataTable } from '@/components/shared'

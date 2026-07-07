@@ -22,7 +22,7 @@ const PaymentModal = dynamic(() => import("@/features/treasury/components/Paymen
 const PaymentReferenceModal = dynamic(() => import("@/features/treasury/components/PaymentReferenceModal").then(m => m.PaymentReferenceModal))
 const UnifiedNoteWizard = dynamic(() => import("@/features/notes").then(m => ({ default: m.UnifiedNoteWizard })))
 const DocumentListModal = dynamic(() => import("./DocumentListModal").then(m => m.DocumentListModal))
-import { LazyDrawer } from "@/features/_shared/transaction-drawer"
+import { LazyDrawer } from "@/features/_shared"
 const NoteLogisticsModal = dynamic(() => import("./NoteLogisticsModal").then(m => m.NoteLogisticsModal))
 const WorkOrderWizard = dynamic(() => import("@/features/production").then(m => m.WorkOrderWizard))
 import {
@@ -36,7 +36,7 @@ import { useCancelOrderFlow } from "../hooks/useCancelOrderFlow"
 import { useHubPanel } from "@/components/providers/HubPanelProvider"
 import { type Order, type OrderLine } from "../types"
 import type { DocumentItem } from "./DocumentListModal"
-import type { Payment as TreasuryPayment } from "@/features/treasury/components/PaymentReferenceModal"
+import type { Payment as TreasuryPayment } from "@/features/treasury"
 
 interface ActionCategoryProps {
     category: CategoryType

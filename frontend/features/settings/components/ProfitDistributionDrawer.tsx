@@ -2,7 +2,7 @@
 
 import React from 'react'
 import { Drawer, StatusBadge, SkeletonShell } from '@/components/shared'
-import { useDrawerIdentity, usePrintableDrawer } from "@/features/_shared/drawer"
+import { useDrawerIdentity, usePrintableDrawer } from "@/features/_shared"
 import { formatCurrency } from '@/lib/money'
 import { PrintableLayout } from '@/features/_shared'
 import { useProfitDistribution } from '@/features/contacts'

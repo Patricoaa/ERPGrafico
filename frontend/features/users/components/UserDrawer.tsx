@@ -13,15 +13,15 @@ import { useSingleUser } from "../hooks/useUserSearch"
 import { Button } from "@/components/ui/button"
 import { Form, FormField } from "@/components/ui/form"
 import { Plus, User, ShieldCheck, Printer } from "lucide-react"
-import { ActivitySidebar } from "@/features/audit/components"
+import { ActivitySidebar } from "@/features/audit"
 import { Drawer, CancelButton, ActionSlideButton, LabeledInput, LabeledCheckboxGroup, FormSection, TabBar, TabBarContent, type TabItem, FormSplitLayout, FormFooter, LabeledSelect, LabeledSwitch, SkeletonShell } from "@/components/shared"
 import { AdvancedContactSelector } from "@/components/selectors/AdvancedContactSelector"
 import { type AppGroup } from "@/types/entities"
 import { useReactToPrint } from "react-to-print"
-import { PrintableLayout } from "@/features/_shared/transaction-drawer"
+import { PrintableLayout } from "@/features/_shared"
 import { cn } from "@/lib/utils"
 import { formDrawerWidth } from "@/lib/form-widths"
-import { useDrawerIdentity, type DrawerMode } from "@/features/_shared/drawer"
+import { useDrawerIdentity, type DrawerMode } from "@/features/_shared"
 
 const userSchema = z.object({
     username: z.string().min(3, "Mínimo 3 caracteres"),

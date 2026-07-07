@@ -9,7 +9,7 @@ import { type ProductMinimal, type UoM } from "@/types/entities"
 import * as z from "zod"
 import { Plus, DollarSign, ShoppingCart } from "lucide-react"
 import { BaseModal, ActionSlideButton, DataCell, MoneyDisplay, LabeledInput, FormSection, FormFooter, CancelButton, SkeletonShell, FormSplitLayout } from "@/components/shared"
-import { ActivitySidebar } from "@/features/audit/components/ActivitySidebar"
+import { ActivitySidebar } from "@/features/audit"
 import { Button } from "@/components/ui/button"
 import {
     Form,
