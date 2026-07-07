@@ -644,9 +644,9 @@ function InsightsTable({ data, type, title, icon: Icon, onActionSuccess }: Insig
         return createDomainCardView(label, {
             onRowClick: (data: Record<string, unknown>) => {
                 if (type === 'work_order') {
-                    openEntity('production.workorder', data.id)
+                    openEntity('production.workorder', data.id as number)
                 } else {
-                    openHub({ orderId: data.id, type: type === 'purchase' ? 'purchase' : 'sale', onActionSuccess })
+                    openHub({ orderId: data.id as number, type: type === 'purchase' ? 'purchase' : 'sale', onActionSuccess })
                 }
             },
         })
