@@ -134,6 +134,11 @@ export function AutoMatchProgressModal({
 
     const isDone = progress.status === 'SUCCESS' || progress.status === 'FAILURE'
     const isRunning = progress.status === 'PENDING' || progress.status === 'PROGRESS'
+    const isSuccess = progress.status === 'SUCCESS'
+    const isProgressOrSuccess = progress.status === 'PROGRESS' || progress.status === 'SUCCESS'
+    const chipIntent = isSuccess ? 'success' :
+        progress.status === 'FAILURE' ? 'destructive' :
+        isRunning ? 'primary' : 'neutral' as const
 
     return (
         <BaseModal
@@ -183,13 +188,7 @@ export function AutoMatchProgressModal({
                     )}
 
                     {/* Status Badge */}
-                    <Chip
-                        intent={
-                            progress.status === 'SUCCESS' ? 'success' :
-                            progress.status === 'FAILURE' ? 'destructive' :
-                            isRunning ? 'primary' : 'neutral'
-                        }
-                    >
+                    <Chip intent={chipIntent}>
                         {progress.status === 'idle' && "Iniciando..."}
                         {progress.status === 'PENDING' && "En Cola..."}
                         {progress.status === 'PROGRESS' && "Procesando..."}
@@ -215,11 +214,11 @@ export function AutoMatchProgressModal({
                 </div>
 
                 {/* Stats Grid */}
-                {(progress.status === 'PROGRESS' || progress.status === 'SUCCESS') && (
+                {isProgressOrSuccess && (
                     <div className="grid grid-cols-3 gap-3">
                         <StatCard
                             label="Procesadas"
-                            value={progress.status === 'SUCCESS' ? (progress.total_unreconciled ?? progress.total) : progress.processed}
+                            value={isSuccess ? (progress.total_unreconciled ?? progress.total) : progress.processed}
                             subtext={`de ${progress.total_unreconciled ?? progress.total}`}
                             variant="minimal"
                             accent="muted"

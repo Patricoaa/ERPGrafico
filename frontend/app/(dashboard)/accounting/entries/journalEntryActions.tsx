@@ -10,27 +10,30 @@ export interface JournalEntryActionsCtx {
     onReverse: (id: number) => void
 }
 
-export const journalEntryActions = createEntityActions<JournalEntry, JournalEntryActionsCtx>((entry, ctx) => (
-    <>
-        {entry.status === 'DRAFT' ? (
+export const journalEntryActions = createEntityActions<JournalEntry, JournalEntryActionsCtx>((entry, ctx) => {
+    const isDraft = entry.status === 'DRAFT'
+    const isPostedOrClosed = entry.status === 'POSTED' || entry.status === 'CLOSED'
+
+    return <>
+        {isDraft ? (
             <DataCell.Action action="edit" onClick={() => ctx.onEdit(entry.id)} />
         ) : (
             <DataCell.Action action="detail" onClick={() => ctx.onDetail(entry.id)} />
         )}
-        {entry.status === 'DRAFT' && (
+        {isDraft && (
             <DataCell.Action
                 icon={CheckCircle}
                 title="Publicar"
                 onClick={() => ctx.onPublish(entry.id)}
             />
         )}
-        {entry.status === 'DRAFT' && (
+        {isDraft && (
             <DataCell.Action
                 action="delete"
                 onClick={() => ctx.onDelete(entry.id)}
             />
         )}
-        {(entry.status === 'POSTED' || entry.status === 'CLOSED') && entry.is_manual && (
+        {isPostedOrClosed && entry.is_manual && (
             <DataCell.Action
                 icon={RotateCcw}
                 title="Reversar"
@@ -38,4 +41,4 @@ export const journalEntryActions = createEntityActions<JournalEntry, JournalEntr
             />
         )}
     </>
-))
+})

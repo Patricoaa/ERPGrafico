@@ -86,6 +86,8 @@ export const STATUS_MAP: Record<string, StatusStyle> = {
     SETTLED:        { label: 'Liquidado',    intent: 'success' },
     INVOICED:       { label: 'Facturado',    intent: 'info' },
     PENDING:        { label: 'Pendiente',    intent: 'warning' },
+    PROCESSING:     { label: 'Procesando',  intent: 'primary' },
+    FAILED:         { label: 'Fallido',     intent: 'destructive' },
 
     // ── Subscription / Employee ──────────────────────────────────────────
     ACTIVE:         { label: 'Activo',       intent: 'success' },

@@ -220,14 +220,17 @@ export default function WorkOrdersPageClient({ initialOrders }: WorkOrdersPageCl
             header: ({ column }) => (
                 <DataTableColumnHeader column={column} title="Estado" className="justify-center" />
             ),
-            cell: ({ row }) => (
+            cell: ({ row }) => {
+                const status = row.original.status
+                return (
                 <div className="flex justify-center gap-1.5 items-center flex-wrap">
-                    <DataCell.Status status={row.original.status} />
+                    <DataCell.Status status={status} />
                     {isWorkOrderOverdue(row.original) && (
                         <Chip size="sm" intent="destructive">Atrasada</Chip>
                     )}
                 </div>
-            ),
+                )
+            },
             filterFn: (row, id, value) => {
                 return value.includes(row.getValue(id))
             },

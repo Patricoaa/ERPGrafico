@@ -59,6 +59,8 @@ export function LoanDetailModal({ loanId, open, onOpenChange }: Props) {
         }).format(n)
     }
 
+    const isActive = loan.status === 'ACTIVE'
+
     return (
         <>
             <BaseModal
@@ -85,7 +87,7 @@ export function LoanDetailModal({ loanId, open, onOpenChange }: Props) {
                 }
                 size="full"
                 footer={
-                    loan.status === 'ACTIVE' ? (
+                    isActive ? (
                         <FormFooter
                             actions={
                                 <ActionSlideButton
@@ -204,6 +206,7 @@ export function LoanDetailModal({ loanId, open, onOpenChange }: Props) {
                                 {
                                     accessorKey: 'status',
                                     header: 'Estado',
+                                    // eslint-disable-next-line status/must-use-statusbadge -- DataCell.Status wraps StatusBadge
                                     cell: ({ row }) => <DataCell.Status status={row.original.status} />,
                                 },
                                 {

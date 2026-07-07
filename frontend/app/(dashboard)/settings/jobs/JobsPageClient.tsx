@@ -9,19 +9,12 @@ import { es } from "date-fns/locale"
 import { Download, AlertCircle, Loader2, RefreshCw } from "lucide-react"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Progress } from "@/components/ui/progress"
+import { StatusBadge } from "@/components/shared"
 
 export default function JobsPageClient() {
     const { jobs, isLoading, error, refetch } = useBackgroundJobs()
 
-    const getStatusColor = (status: BackgroundJob['status']) => {
-        switch (status) {
-            case "COMPLETED": return "bg-success/10 text-success"
-            case "FAILED": return "bg-destructive/10 text-destructive"
-            case "PROCESSING": return "bg-primary/10 text-primary"
-            case "PENDING": return "bg-warning/10 text-warning"
-            default: return "bg-muted text-muted-foreground"
-        }
-    }
+    const isProcessing = (status: BackgroundJob['status']) => status === "PROCESSING"
 
     if (isLoading) {
         return <div className="flex justify-center p-12"><Loader2 className="w-8 h-8 animate-spin text-muted-foreground" /></div>
@@ -73,10 +66,7 @@ export default function JobsPageClient() {
                                 <Badge variant="outline" className="text-[10px] uppercase tracking-wider">
                                     {job.job_type_display}
                                 </Badge>
-                                <Badge variant="secondary" className={`border-none ${getStatusColor(job.status)}`}>
-                                    {job.status === "PROCESSING" && <Loader2 className="w-3 h-3 mr-1.5 animate-spin" />}
-                                    {job.status_display}
-                                </Badge>
+                                <StatusBadge status={job.status} label={job.status_display} size="xs" />
                             </div>
                             <CardTitle className="text-base leading-tight">{job.title}</CardTitle>
                             <CardDescription className="text-xs">
