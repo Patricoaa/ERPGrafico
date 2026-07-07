@@ -15,9 +15,9 @@ import { OriginSelectionStep } from "../../steps/OriginSelectionStep"
 import { ManufacturingSpecsEditor, emptyManufacturingData, type ManufacturingData } from '@/components/shared'
 import {workOrderSchema, type WorkOrderFormValues } from "@/types/forms"
 import { LabeledInput, SkeletonShell } from "@/components/shared"
-import type { Contact } from "@/features/contacts/types"
+import type { Contact } from "@/features/contacts"
 import type { ProductMinimal } from "../../../types"
-import type { SaleOrder } from "@/features/sales/types"
+import type { SaleOrder } from "@/features/sales"
 import {
     useUoMs,
     useProductDetail,

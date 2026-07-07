@@ -30,7 +30,7 @@ import { ManufacturingSpecsEditor, emptyManufacturingData } from '@/components/s
 import type { ManufacturingData } from "@/components/shared"
 import { AdvancedContactSelector } from "@/components/selectors/AdvancedContactSelector"
 import { UoMSelector } from "@/components/selectors/UoMSelector"
-import type { Contact } from "@/features/contacts/types"
+import type { Contact } from "@/features/contacts"
 import type { WorkOrder } from "../../types"
 import type { MfgSection } from "../../lib/mfgConfigEditability"
 import { canEditMfgSection } from "../../lib/mfgConfigEditability"

@@ -17,15 +17,15 @@ import {
 import { useCategoryMutations } from "../hooks/useCategoryMutations"
 import { AccountSelector, CategorySelector } from "@/components/selectors"
 import * as LucideIcons from "lucide-react"
-import { Check, Printer } from "lucide-react"
+import { Check, Printer, type LucideIcon } from "lucide-react"
 import { formDrawerWidth } from "@/lib/form-widths"
 
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
-import { ActivitySidebar } from "@/features/audit/components"
+import { ActivitySidebar } from "@/features/audit"
 
 import { useReactToPrint } from "react-to-print"
-import { PrintableLayout } from "@/features/_shared/transaction-drawer"
-import { useDrawerIdentity, type DrawerMode } from "@/features/_shared/drawer"
+import { PrintableLayout } from "@/features/_shared"
+import { useDrawerIdentity, type DrawerMode } from "@/features/_shared"
 
 const ICON_OPTIONS = [
     // Imprenta y Diseño
@@ -79,7 +79,7 @@ const ICON_OPTIONS = [
 ]
 
 function RichIconSelector({ value, onChange, label, error, required }: { value: string, onChange: (val: string) => void, label?: string, error?: string, required?: boolean }) {
-    const SelectedIcon = (LucideIcons as any)[value] || LucideIcons.Package
+    const SelectedIcon = (LucideIcons as Record<string, LucideIcon>)[value] || LucideIcons.Package
     const selectedLabel = ICON_OPTIONS.find(i => i.name === value)?.label || value
 
     return (
@@ -120,7 +120,7 @@ function RichIconSelector({ value, onChange, label, error, required }: { value: 
                         </div>
                         <div className="h-[250px] overflow-y-auto p-1 grid grid-cols-2 gap-1">
                             {ICON_OPTIONS.map((item) => {
-                                const Icon = (LucideIcons as any)[item.name] || LucideIcons.Package
+                                const Icon = (LucideIcons as Record<string, LucideIcon>)[item.name] || LucideIcons.Package
                                 const isSelected = value === item.name
                                 return (
                                     <div
@@ -200,11 +200,11 @@ export function CategoryDrawer({
         resolver: zodResolver(categorySchema),
         defaultValues: initialData ? {
             ...initialData,
-            parent: (initialData.parent as any)?.id?.toString() || initialData.parent?.toString() || "none",
+            parent: (initialData.parent as { id?: number })?.id?.toString() || initialData.parent?.toString() || "none",
             has_custom_accounting: !!(initialData.asset_account || initialData.income_account || initialData.expense_account),
-            asset_account: (initialData.asset_account as any)?.id?.toString() || initialData.asset_account?.toString() || "none",
-            income_account: (initialData.income_account as any)?.id?.toString() || initialData.income_account?.toString() || "none",
-            expense_account: (initialData.expense_account as any)?.id?.toString() || initialData.expense_account?.toString() || "none",
+            asset_account: (initialData.asset_account as { id?: number })?.id?.toString() || initialData.asset_account?.toString() || "none",
+            income_account: (initialData.income_account as { id?: number })?.id?.toString() || initialData.income_account?.toString() || "none",
+            expense_account: (initialData.expense_account as { id?: number })?.id?.toString() || initialData.expense_account?.toString() || "none",
         } : {
             name: "",
             has_custom_accounting: false,

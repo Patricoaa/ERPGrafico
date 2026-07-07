@@ -16,13 +16,13 @@ import {
     Building2
 } from "lucide-react"
 import { type ColumnDef } from "@tanstack/react-table"
-import { type PartnerTransaction } from "@/features/contacts/types/partner"
+import { type PartnerTransaction } from "@/features/contacts"
 import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "@/components/ui/accordion"
 
 import { cn } from "@/lib/utils"
 import {SkeletonShell} from "@/components/shared"
 
-import { PaymentDrawer } from "@/features/treasury/components/PaymentDrawer"
+import { PaymentDrawer } from "@/features/treasury"
 import { usePartnerStatement } from "../hooks/usePartnerStatement"
 
 interface Props {

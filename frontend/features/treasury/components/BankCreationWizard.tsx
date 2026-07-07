@@ -11,7 +11,7 @@ import { AccountSelector } from "@/components/selectors/AccountSelector"
 import { useBanks } from "../hooks/useMasterData"
 import { useProvisionAccount, useTreasuryAccounts } from "../hooks/useTreasuryAccounts"
 import { useLoanMutations } from "../loans"
-import { useAccountSearch } from "@/features/accounting/hooks/useAccountSearch"
+import { useAccountSearch } from "@/features/accounting"
 
 // ─── Local types ─────────────────────────────────────────────────────────────
 

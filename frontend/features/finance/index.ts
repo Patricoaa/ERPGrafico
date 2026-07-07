@@ -28,5 +28,7 @@ export {
   BankJournalDrawer,
   StatementDetailPanel,
 } from './bank-reconciliation/components'
+export { financeApi } from './api/financeApi'
+export { useBillingInvoices } from './hooks'
 export { useStatementQuery } from './bank-reconciliation/hooks/useReconciliationQueries'
 export { useUnmatchMutation, useMatchMutation, useGroupMatchMutation, useExcludeMutation, useBulkExcludeMutation, useRestoreMutation, useAutoMatchMutation, useCreateAndMatchMutation, useAllocateMutation, useCreateMovementMutation, useUpdateReconciliationSettingsMutation } from './bank-reconciliation/hooks/useReconciliationMutations'

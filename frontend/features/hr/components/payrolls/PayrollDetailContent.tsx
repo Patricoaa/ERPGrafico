@@ -12,7 +12,7 @@ import {
     postPayroll, generateProformaPayroll, deletePayroll,
     createPayrollItem, updatePayrollItem, deletePayrollItem, payPrevired, paySalary,
 } from '@/features/hr/api/hrApi'
-import { PaymentModal } from "@/features/treasury/components/PaymentModal"
+import { PaymentModal } from "@/features/treasury"
 import type { PayrollItem, PayrollConcept, PayrollPayment, SalaryAdvance } from "@/types/hr"
 import { Button } from "@/components/ui/button"
 

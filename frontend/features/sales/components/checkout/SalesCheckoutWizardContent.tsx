@@ -27,9 +27,9 @@ import { useAuth } from "@/contexts/AuthContext"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { useServerDate } from "@/hooks/useServerDate"
 
-import { PINPadModal } from "@/features/pos/components/PINPadModal"
+import { PINPadModal } from "@/features/pos"
 import {type SaleOrder, type SaleOrderLine, type CheckoutDTEData, type CheckoutPaymentData, type CheckoutDeliveryData, type CheckoutResponse} from "../../types"
-import { type Contact } from "@/features/contacts/types"
+import { type Contact } from "@/features/contacts"
 import { ManualTerminalNotice, type ManualTerminalReason } from "@/features/treasury"
 
 export interface CheckoutWizardState {

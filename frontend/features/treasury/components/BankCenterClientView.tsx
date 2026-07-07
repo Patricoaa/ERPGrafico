@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation"
 import { Landmark } from "lucide-react"
 import { DataCell, DataTableView, DataTableColumnHeader, EntityCard } from '@/components/shared'
 import { bankActions, type BankActionsCtx } from './bankActions'
-import { ActivitySidebar } from "@/features/audit/components"
+import { ActivitySidebar } from "@/features/audit"
 import { useConfirmAction } from "@/hooks/useConfirmAction"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"

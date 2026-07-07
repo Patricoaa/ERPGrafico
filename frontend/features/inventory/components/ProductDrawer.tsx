@@ -17,16 +17,16 @@ import { showApiError } from "@/lib/errors"
 import { Form } from "@/components/ui/form"
 
 import {ActionConfirmModal, Drawer, FormSplitLayout, TabBar, TabBarContent, SkeletonShell, type TabItem} from '@/components/shared'
-import { ActivitySidebar } from "@/features/audit/components"
+import { ActivitySidebar } from "@/features/audit"
 // Removed Badge import for governance compliance
 
 // Import dialogs
-import { PricingRuleDrawer } from "@/features/sales/components/PricingRuleDrawer"
+import { PricingRuleDrawer } from "@/features/sales"
 import { CancelButton, ActionSlideButton } from "@/components/shared"
 
 import { formDrawerWidth } from "@/lib/form-widths"
-import { PrintableLayout } from "@/features/_shared/transaction-drawer"
-import { useDrawerMode, useDrawerIdentity, usePrintableDrawer, drawerFooter, type DrawerMode } from "@/features/_shared/drawer"
+import { PrintableLayout } from "@/features/_shared"
+import { useDrawerMode, useDrawerIdentity, usePrintableDrawer, drawerFooter, type DrawerMode } from "@/features/_shared"
 
 // Product subcomponents and schema
 import { ProductBasicInfo } from "./product/ProductBasicInfo"

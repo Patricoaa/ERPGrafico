@@ -11,7 +11,7 @@ import type { Employee } from "@/types/hr"
 
 import { Form, FormField } from "@/components/ui/form"
 import { FileText } from "lucide-react"
-import { useDrawerIdentity } from "@/features/_shared/drawer"
+import { useDrawerIdentity } from "@/features/_shared"
 import { CancelButton, Drawer, FormFooter, LabeledInput, LabeledSelect, SkeletonShell, SubmitButton } from '@/components/shared'
 import { useServerDate } from "@/hooks/useServerDate"
 import { formDrawerWidth } from "@/lib/form-widths"

@@ -16,7 +16,7 @@ import {
 } from "@/components/ui/form"
 import { ActionSlideButton, BaseModal, CancelButton, FormFooter, LabeledInput, MoneyDisplay } from '@/components/shared'
 
-import { useContactMutations } from "@/features/contacts/hooks/useContacts"
+import { useContactMutations } from "@/features/contacts"
 import { type CreditContact } from '@/features/credits/api/creditsApi'
 import { AdvancedContactSelector } from "@/components/selectors"
 import { type Contact } from "@/types/entities"

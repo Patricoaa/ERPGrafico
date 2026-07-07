@@ -19,10 +19,10 @@ import { toast } from "sonner"
 
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { settingsApi, type ProductMinimal } from "../../hooks"
-import { partnersApi } from "@/features/contacts/api/partnersApi"
+import { partnersApi } from "@/features/contacts"
 import { cn } from "@/lib/utils"
-import { type Partner } from "@/features/contacts/types/partner"
-import { type Product } from "@/features/inventory/types"
+import { type Partner } from "@/features/contacts"
+import { type Product } from "@/features/inventory"
 
 interface InventoryContributionModalProps {
     open: boolean

@@ -11,8 +11,8 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip
 import { formatCurrency } from "@/lib/money"
 import { billingApi } from "@/features/billing/api/billingApi"
 import { toast } from "sonner"
-import { PaymentModal } from "@/features/treasury/components/PaymentModal"
-import { ReceiptModal } from "@/features/purchasing/components/ReceiptModal"
+import { PaymentModal } from "@/features/treasury"
+import { ReceiptModal } from "@/features/purchasing"
 import { UnifiedNoteWizard } from '@/features/notes'
 
 import { DataTableView, createCodeColumn, createDateColumn, createCurrencyColumn, createContactColumn, DataTableColumnHeader } from '@/components/shared'

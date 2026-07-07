@@ -11,9 +11,9 @@ import { formDrawerWidth } from "@/lib/form-widths"
 import {Form, FormField} from "@/components/ui/form"
 
 import { useReactToPrint } from "react-to-print"
-import { PrintableLayout } from "@/features/_shared/transaction-drawer"
-import { useDrawerIdentity, type DrawerMode } from "@/features/_shared/drawer"
-import { partnersApi } from "@/features/contacts/api/partnersApi"
+import { PrintableLayout } from "@/features/_shared"
+import { useDrawerIdentity, type DrawerMode } from "@/features/_shared"
+import { partnersApi } from "@/features/contacts"
 import type { Contact } from "@/types/entities"
 
 const partnerSetupSchema = z.object({

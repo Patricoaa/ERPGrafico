@@ -10,19 +10,19 @@ import { FadeIn, Chip } from "@/components/shared"
 import { userActions, type UserActionsCtx } from './userActions'
 
 import { Users } from "lucide-react"
-import { UserDrawer } from "@/features/users/components/UserDrawer"
+import { UserDrawer } from "@/features/users"
 import { Tabs, TabsContent } from "@/components/ui/tabs"
 import { GroupsClientView } from "@/features/settings/components/GroupsClientView"
 
 import { type AppUser } from "@/types/entities"
-import { userSearchDef } from "@/features/users/searchDef"
-import { userSegDef } from "@/features/users/segmentationDef"
+import { userSearchDef } from "@/features/users"
+import { userSegDef } from "@/features/users"
 
 interface UsersSettingsViewProps {
     activeTab: string
 }
 
-import { useUsers } from "@/features/users/hooks/useUsers"
+import { useUsers } from "@/features/users"
 import { useSelectedEntity } from "@/hooks/useSelectedEntity"
 import { useSearchParams, useRouter, usePathname } from "next/navigation"
 

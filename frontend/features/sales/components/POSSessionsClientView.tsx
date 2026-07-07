@@ -9,10 +9,10 @@ import { type ColumnDef } from "@tanstack/react-table"
 import { DataCell } from '@/components/shared'
 import { posSessionActions, type POSSessionActionsCtx } from "@/features/sales/posSessionActions"
 import { toast } from "sonner"
-import { POSReport, type POSReportData } from "@/features/pos/components/POSReport"
-import { SessionCloseModal } from "@/features/pos/components/SessionCloseModal"
+import { POSReport, type POSReportData } from "@/features/pos"
+import { SessionCloseModal } from "@/features/pos"
 import type { POSSession as POSSessionModal } from "@/features/pos"
-import { fetchPOSSessionSummary } from "@/features/pos/hooks/usePOSSessions"
+import { fetchPOSSessionSummary } from "@/features/pos"
 
 export interface POSSession {
     id: number
@@ -42,8 +42,8 @@ interface POSSessionsClientViewProps {
     hideHeader?: boolean
 }
 
-import { usePOSSessions } from "@/features/pos/hooks/usePOSSessions"
-import { posSessionSegDef } from "@/features/pos/segmentationDef"
+import { usePOSSessions } from "@/features/pos"
+import { posSessionSegDef } from "@/features/pos"
 
 export const POSSessionsClientView = ({}: POSSessionsClientViewProps) => {
     const router = useRouter()

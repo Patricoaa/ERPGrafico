@@ -6,7 +6,7 @@ import { ActionConfirmModal, DataTableView, EntityCard } from '@/components/shar
 import { DataTableColumnHeader } from '@/components/shared'
 import { type ColumnDef } from "@tanstack/react-table"
 import { Users } from "lucide-react"
-import { GroupDrawer } from "@/features/users/components/GroupDrawer"
+import { GroupDrawer } from "@/features/users"
 import { groupActions, type GroupActionsCtx } from './groupActions'
 import type { Group } from "../api/types"
 

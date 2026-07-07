@@ -14,10 +14,10 @@ import { financeApi } from "../../api/financeApi"
 import { AccountSelector } from "@/components/selectors/AccountSelector"
 import { Printer } from "lucide-react"
 import { Drawer, LabeledInput, LabeledSelect, FormFooter, CancelButton, ActionSlideButton } from "@/components/shared"
-import { useDrawerIdentity, type DrawerMode } from "@/features/_shared/drawer"
+import { useDrawerIdentity, type DrawerMode } from "@/features/_shared"
 import { formDrawerWidth } from "@/lib/form-widths"
 import { useReactToPrint } from "react-to-print"
-import { PrintableLayout } from "@/features/_shared/transaction-drawer"
+import { PrintableLayout } from "@/features/_shared"
 
 const journalSchema = z.object({
     name: z.string().min(1, "El nombre es requerido"),

@@ -14,7 +14,7 @@ import {
     FileText,
     Receipt
 } from "lucide-react"
-import { LazyDrawer } from "@/features/_shared/transaction-drawer"
+import { LazyDrawer } from "@/features/_shared"
 import { useOrderHubData } from "@/hooks/useOrderHubData"
 import { OrderHubIntegrated, type OrderHubData } from "./OrderHubIntegrated"
 import { ScrollArea } from "@/components/ui/scroll-area"

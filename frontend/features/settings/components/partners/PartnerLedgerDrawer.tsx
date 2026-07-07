@@ -11,8 +11,8 @@ import {
     LogOut
 } from "lucide-react"
 import { Drawer, DataTable, SkeletonShell, DataCell } from "@/components/shared"
-import { partnersApi } from "@/features/contacts/api/partnersApi"
-import { type PartnerStatement, type PartnerTransaction } from "@/features/contacts/types/partner"
+import { partnersApi } from "@/features/contacts"
+import { type PartnerStatement, type PartnerTransaction } from "@/features/contacts"
 import { toast } from "sonner"
 import {formatPlainDate as formatDate, parseDateOnly} from "@/lib/utils"
 

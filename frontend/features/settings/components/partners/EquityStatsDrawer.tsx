@@ -13,7 +13,7 @@ import {
 import { PieChart, BarChart } from "@/components/shared"
 
 // Categorical data-viz palette (CMYK process inks). NOT semantic state. See color-system.md §8.
-import { type Partner, type PartnerSummary } from "@/features/contacts/types/partner"
+import { type Partner, type PartnerSummary } from "@/features/contacts"
 
 interface EquityStatsDrawerProps {
     open: boolean

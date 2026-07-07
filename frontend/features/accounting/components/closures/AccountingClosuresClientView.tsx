@@ -7,13 +7,8 @@ import { FiscalYearCard } from './FiscalYearCard';
 import { FiscalYearClosingWizard } from './FiscalYearClosingWizard';
 import { NewFiscalYearDrawer } from './NewFiscalYearDrawer';
 import { type AccountingPeriod, type FiscalYearPreviewResult, type FiscalYear, type TaxPeriod } from '../../types';
-import { useTaxPeriods } from '@/features/tax/hooks/useTaxQueries';
-import { useClosePeriod as useCloseTaxPeriod, useReopenPeriod as useReopenTaxPeriod } from '@/features/tax/hooks/useTaxMutations';
-import { DeclarationWizard } from '@/features/tax';
-
-import { F29PaymentModal, F29CloseModal } from '@/features/tax';
-import { useCreateTaxPayment } from '@/features/tax/hooks/useTaxMutations';
-import type { TaxDeclaration, TaxPaymentData } from '@/features/tax/types';
+import { useTaxPeriods, useClosePeriod as useCloseTaxPeriod, useReopenPeriod as useReopenTaxPeriod, useCreateTaxPayment, DeclarationWizard, F29PaymentModal, F29CloseModal } from '@/features/tax';
+import type { TaxDeclaration, TaxPaymentData } from '@/features/tax';
 import { AccountingPeriodCloseChecklistModal } from './AccountingPeriodCloseChecklist';
 
 import { useSearchParams, useRouter, usePathname } from 'next/navigation';

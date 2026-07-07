@@ -7,5 +7,7 @@ export { CONTACTS_KEYS, useContact, useContactCreditLedger, useContactInsights, 
 export { PARTNERS_KEYS, usePartners } from './hooks/usePartners'
 export { contactSegDef } from './segmentationDef'
 export { ContactsClientView } from './components/ContactsClientView'
+export { default } from './components/ContactDrawer'
+export { default as ContactDrawer } from './components/ContactDrawer'
 export type { Partner, PartnerTransaction, ProfitDistribution, ProfitDistributionLine, PartnerStatement, PartnerSummary } from './types/partner'
 export { useProfitDistribution } from './hooks/useProfitDistribution'

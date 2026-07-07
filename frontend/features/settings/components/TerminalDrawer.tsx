@@ -17,12 +17,12 @@ import * as LucideIcons from "lucide-react"
 import { CancelButton, LabeledInput, LabeledSelect, LabeledCheckboxGroup, FormSection, FormFooter, FormSplitLayout, SkeletonShell } from "@/components/shared"
 import { formDrawerWidth } from "@/lib/form-widths"
 
-import { ActivitySidebar } from "@/features/audit/components"
+import { ActivitySidebar } from "@/features/audit"
 import { Printer } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { useReactToPrint } from "react-to-print"
-import { PrintableLayout } from "@/features/_shared/transaction-drawer"
-import { useDrawerIdentity, type DrawerMode } from "@/features/_shared/drawer"
+import { PrintableLayout } from "@/features/_shared"
+import { useDrawerIdentity, type DrawerMode } from "@/features/_shared"
 
 export interface Terminal {
     id: number

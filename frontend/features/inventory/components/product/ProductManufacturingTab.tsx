@@ -14,9 +14,9 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { cn } from "@/lib/utils"
 import { Switch } from "@/components/ui/switch"
 
-import { useBOMs } from "@/features/production/hooks/useBOMs"
-import { BOMDrawer } from "@/features/production/components/BOMDrawer"
-import { type BOM } from "@/features/production/types"
+import { useBOMs } from "@/features/production"
+import { BOMDrawer } from "@/features/production"
+import { type BOM, type ProductMinimal } from "@/features/production"
 import { useState } from "react"
 import { Badge } from "@/components/ui/badge"
 import { Edit } from "lucide-react"
@@ -75,8 +75,9 @@ export function ProductManufacturingTab({ form, initialData }: ProductManufactur
                                             };
 
                                 Object.entries(patch).forEach(([k, v]) => {
-                                    if (form.getValues(k as any) !== v) {
-                                        form.setValue(k as any, v, { shouldDirty: true });
+                                    const key = k as keyof ProductFormValues;
+                                    if (form.getValues(key) !== v) {
+                                        form.setValue(key, v, { shouldDirty: true });
                                     }
                                 });
                             }}
@@ -146,21 +147,21 @@ export function ProductManufacturingTab({ form, initialData }: ProductManufactur
                         />
 
                         <div className="space-y-2">
-                            {[
+                            {([
                                 { name: "mfg_enable_prepress", label: "Pre-Impresión", icon: Monitor },
                                 { name: "mfg_enable_press", label: "Impresión", icon: Printer },
                                 { name: "mfg_enable_postpress", label: "Post-Impresión", icon: Scissors }
-                            ].map((stage) => (
+                            ] as const).map((stage) => (
                                 <FormField<ProductFormValues>
                                     key={stage.name}
                                     control={form.control}
-                                    name={stage.name as any}
+                                    name={stage.name}
                                     render={({ field }) => (
                                         <LabeledSwitch
                                             label={stage.label}
                                             checked={field.value}
                                             onCheckedChange={(val) => {
-                                                form.setValue(stage.name as any, val, { shouldDirty: true, shouldValidate: false })
+                                                form.setValue(stage.name, val, { shouldDirty: true, shouldValidate: false })
                                             }}
                                             icon={<stage.icon className="h-4 w-4" />}
                                         />
@@ -284,7 +285,7 @@ export function ProductManufacturingTab({ form, initialData }: ProductManufactur
                 <BOMDrawer
                     open={isBomModalOpen}
                     onOpenChange={setIsBomModalOpen}
-                    product={initialData as any}
+                    product={initialData as ProductMinimal}
                     bomToEdit={bomToEdit}
                     onSuccess={() => refetch()}
                 />

@@ -2,14 +2,14 @@
 
 import { useState, useEffect } from "react";
 import Image from "next/image";
-import { useSaleOrderSearch } from "@/features/orders/hooks/useSaleOrderSearch";
+import { useSaleOrderSearch } from "@/features/orders";
 import { useSaleOrderManufacturableLines } from "../../hooks/useSaleOrderManufacturableLines";
 import { FileText, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn, parseDateOnly } from "@/lib/utils";
 import { formatCurrency } from "@/lib/money";
-import type { SaleOrderLine } from "@/features/sales/types";
+import type { SaleOrderLine } from "@/features/sales";
 import { resolveMediaUrl } from "@/lib/api";
 
 type ExpandedProduct = { id: number; name: string; code: string; image_thumbnail?: string; requires_advanced_manufacturing?: boolean };

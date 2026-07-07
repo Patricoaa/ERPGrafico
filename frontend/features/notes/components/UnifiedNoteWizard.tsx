@@ -37,13 +37,11 @@ import {
 } from './steps'
 
 // Sales-only steps (stay in their feature, imported directly)
-import { Step2_Logistics } from '@/features/billing/components/checkout/Step2_Logistics'
-import { Step2_ManufacturingDetails } from '@/features/sales/components/checkout/Step2_ManufacturingDetails'
+import { Step2_Logistics, NoteProcessSidebar, NoteItemsSummary } from '@/features/billing'
+import { Step2_ManufacturingDetails } from '@/features/sales'
 
 // Sidebars (each feature keeps its own)
-import { NoteProcessSidebar } from '@/features/billing/components/checkout/NoteProcessSidebar'
-import { NoteItemsSummary } from '@/features/billing/components/checkout/NoteItemsSummary'
-import { PurchaseNoteSummarySidebar } from '@/features/purchasing/components/notes/PurchaseNoteSummarySidebar'
+import { PurchaseNoteSummarySidebar } from '@/features/purchasing'
 
 // Hook + types
 import { useNoteWizardState } from '../hooks/useNoteWizardState'
@@ -55,7 +53,7 @@ import type {
     NoteWizardPayload,
     NoteWizardSourceDocument,
 } from '../types'
-import type { SaleOrderLine } from '@/features/sales/types'
+import type { SaleOrderLine } from '@/features/sales'
 
 // ---------------------------------------------------------------------------
 // Props

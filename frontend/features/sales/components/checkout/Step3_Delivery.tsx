@@ -6,7 +6,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Label } from "@/components/ui/label"
 import {Truck, Package, Calendar, Info, AlertTriangle} from "lucide-react"
 import { cn } from "@/lib/utils"
-import { useAllowedUoMs } from "@/features/inventory/hooks/useUoMs"
+import { useAllowedUoMs } from "@/features/inventory"
 import {
     Select,
     SelectContent,
@@ -22,7 +22,7 @@ import {
     TableHeader,
     TableRow,
 } from "@/components/ui/table"
-import { NumpadModal } from "@/features/pos/components/NumpadModal"
+import { NumpadModal } from "@/features/pos"
 import { useTouchMode } from "@/hooks/useTouchMode"
 
 import { type CheckoutDeliveryData, type SaleOrderLine } from "../../types"

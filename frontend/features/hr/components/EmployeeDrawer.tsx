@@ -11,7 +11,7 @@ import { createEmployee, updateEmployee } from '@/features/hr/api/hrApi'
 import type { Employee, EmployeeConceptAmount } from "@/types/hr"
 import { ActionSlideButton, CancelButton } from "@/components/shared"
 import { UserCog, CalendarCheck2, Plus, ShieldCheck, Printer } from "lucide-react"
-import { ActivitySidebar } from "@/features/audit/components"
+import { ActivitySidebar } from "@/features/audit"
 import { FormSplitLayout } from "@/components/shared"
 
 import {
@@ -25,8 +25,8 @@ import { formDrawerWidth } from "@/lib/form-widths"
 import { Button } from "@/components/ui/button"
 import { useReactToPrint } from "react-to-print"
 import { useServerDate } from "@/hooks/useServerDate"
-import { PrintableLayout } from "@/features/_shared/transaction-drawer"
-import { useDrawerIdentity, type DrawerMode } from "@/features/_shared/drawer"
+import { PrintableLayout } from "@/features/_shared"
+import { useDrawerIdentity, type DrawerMode } from "@/features/_shared"
 
 export const employeeSchema = z.object({
     contact: z.string().min(1, "Contacto requerido"),

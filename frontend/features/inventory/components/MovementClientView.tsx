@@ -10,7 +10,7 @@ import { type ColumnDef } from "@tanstack/react-table"
 
 import {ArrowRightLeft} from "lucide-react"
 
-import { LazyDrawer, type TransactionType } from "@/features/_shared/transaction-drawer"
+import { LazyDrawer, type TransactionType } from "@/features/_shared"
 import { AdjustmentForm } from "@/features/inventory/components/AdjustmentForm"
 import { CancelButton, SubmitButton, FormFooter } from "@/components/shared"
 
