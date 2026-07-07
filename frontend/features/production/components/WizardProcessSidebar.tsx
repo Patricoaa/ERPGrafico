@@ -106,8 +106,9 @@ export function WizardProcessSidebar({
                                             <Tooltip>
                                                 <TooltipTrigger asChild>
                                                     <Button
+                                                        variant="ghost"
                                                         className={cn(
-                                                            "p-1 rounded hover:bg-accent transition-colors",
+                                                            "p-1 rounded hover:bg-accent transition-colors h-auto w-auto border-none bg-transparent shadow-none",
                                                             isActive && stepMode === 'view' && "bg-accent"
                                                         )}
                                                         onClick={() => onStepClick(index, 'view')}
@@ -123,9 +124,10 @@ export function WizardProcessSidebar({
                                             <Tooltip>
                                                 <TooltipTrigger asChild>
                                                     <Button
+                                                        variant="ghost"
                                                         disabled={!capabilities.canEdit}
                                                         className={cn(
-                                                            "p-1 rounded hover:bg-accent transition-colors",
+                                                            "p-1 rounded hover:bg-accent transition-colors h-auto w-auto border-none bg-transparent shadow-none",
                                                             !capabilities.canEdit && "opacity-30 cursor-not-allowed",
                                                             isActive && stepMode === 'edit-in-place' && "bg-info/20"
                                                         )}
@@ -146,9 +148,10 @@ export function WizardProcessSidebar({
                                             <Tooltip>
                                                 <TooltipTrigger asChild>
                                                     <Button
+                                                        variant="ghost"
                                                         disabled={!capabilities.canRewind}
                                                         className={cn(
-                                                            "p-1 rounded hover:bg-accent transition-colors",
+                                                            "p-1 rounded hover:bg-accent transition-colors h-auto w-auto border-none bg-transparent shadow-none",
                                                             !capabilities.canRewind && "opacity-30 cursor-not-allowed",
                                                             isActive && stepMode === 'rewind' && "bg-warning/20"
                                                         )}

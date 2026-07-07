@@ -72,6 +72,7 @@ function SectionHeader({ icon, title, section, order, editingSection, onEdit }: 
                     <Tooltip>
                         <TooltipTrigger asChild>
                             <Button
+                                variant="ghost"
                                 disabled={!canEdit || editingSection !== null}
                                 onClick={() => canEdit && editingSection === null && onEdit(section)}
                                 className={cn(
@@ -467,7 +468,12 @@ export function ManufacturingConfigSummary({ order, onSaved, onRestartComplete, 
                                         <User className="h-3.5 w-3.5 text-primary shrink-0" />
                                         <span className="font-semibold text-sm truncate">{(form.watch("contact") as Contact).name}</span>
                                     </div>
-                                    <Button type="button" onClick={() => form.setValue("contact", null)} className="text-muted-foreground hover:text-destructive">
+                                    <Button
+                                        variant="ghost"
+                                        type="button"
+                                        onClick={() => form.setValue("contact", null)}
+                                        className="text-muted-foreground hover:text-destructive h-auto w-auto p-0 border-none bg-transparent hover:bg-transparent shadow-none"
+                                    >
                                         <X className="h-3.5 w-3.5" />
                                     </Button>
                                 </div>

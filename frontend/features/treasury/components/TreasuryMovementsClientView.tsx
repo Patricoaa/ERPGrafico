@@ -347,11 +347,12 @@ export function TreasuryMovementsClientView({ externalOpen, createAction }: Trea
                                 <span className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-info/10 text-info border border-info/20 text-[10px] font-black uppercase tracking-wider font-mono shrink-0">
                                     Cta. #{treasuryAccountFromUrl}
                                     <Button
-                                        onClick={handleClearAccountFilter}
-                                        className="ml-0.5 hover:text-info/80"
-                                    >
-                                        ×
-                                    </Button>
+                                         variant="ghost"
+                                         onClick={handleClearAccountFilter}
+                                         className="ml-0.5 hover:text-info/80 h-auto w-auto p-0 border-none bg-transparent hover:bg-transparent shadow-none text-current"
+                                     >
+                                         ×
+                                     </Button>
                                 </span>
                             ) : undefined}
                         />
