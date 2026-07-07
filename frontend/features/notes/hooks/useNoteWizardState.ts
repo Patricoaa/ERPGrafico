@@ -193,8 +193,8 @@ export function useNoteWizardState({
 
     const [noteType, setNoteType] = useState<NoteType>(initialType)
     const [lines, setLines] = useState<NoteLineItem[]>([])
-    const [registration, setRegistration] = useState<RegistrationData>(makeDefaultRegistration(serverDateString))
-    const [payment, setPayment] = useState<PaymentData>(makeDefaultPayment())
+    const [registrationState, setRegistrationState] = useState<RegistrationData>(makeDefaultRegistration(serverDateString))
+    const [paymentState, setPaymentState] = useState<PaymentData>(makeDefaultPayment())
     const [logisticsData, setLogisticsData] = useState<Record<string, unknown> | null>(null)
 
     const [isPeriodValid, setIsPeriodValid] = useState(true)
@@ -210,13 +210,13 @@ export function useNoteWizardState({
 
         let cancelled = false
 
-        setInitializing(true)
+        // eslint-disable-next-line react-hooks/set-state-in-effect -- React 18+ batches synchronous setState; this resets state on wizard open/reopen
         setCurrentStepIndex0(0)
         setNoteType(initialType)
         setLines([])
         setLogisticsData(null)
-        setRegistration(makeDefaultRegistration(serverDateString))
-        setPayment(makeDefaultPayment())
+        setRegistrationState(makeDefaultRegistration(serverDateString))
+        setPaymentState(makeDefaultPayment())
         setIsPeriodValid(true)
         setSourceDocument(null)
 
@@ -229,7 +229,7 @@ export function useNoteWizardState({
                     noteQuantity: initialType === 'NOTA_CREDITO' ? 0 : line.noteQuantity
                 }))
                 setLines(mappedLines)
-                setPayment(makeDefaultPayment(doc.originalTotal))
+                setPaymentState(makeDefaultPayment(doc.originalTotal))
             })
             .catch((err: unknown) => {
                 if (cancelled) return
@@ -243,13 +243,6 @@ export function useNoteWizardState({
         return () => { cancelled = true }
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [open])
-
-    // ---- Sync server date into registration when it arrives late ----
-    useEffect(() => {
-        if (serverDateString && !registration.documentDate) {
-            setRegistration(prev => ({ ...prev, documentDate: serverDateString }))
-        }
-    }, [serverDateString]) // eslint-disable-line react-hooks/exhaustive-deps
 
     // ---- Computed totals ----
     const totalNet = useMemo(() => {
@@ -272,10 +265,15 @@ export function useNoteWizardState({
 
     const total = totalNet + totalTax
 
-    // ---- Sync payment amount when totals change ----
-    useEffect(() => {
-        setPayment(prev => ({ ...prev, amount: total }))
-    }, [total])
+    // ---- Derived registration — syncs serverDateString during render ----
+    const registration = useMemo(() =>
+        serverDateString && !registrationState.documentDate
+            ? { ...registrationState, documentDate: serverDateString }
+            : registrationState
+    , [registrationState, serverDateString])
+
+    // ---- Derived payment — amount always equals computed total ----
+    const payment = useMemo(() => ({ ...paymentState, amount: total }), [paymentState, total])
 
     // ---- Dynamic step sequence ----
     const stepsSequence = useMemo(
@@ -392,10 +390,10 @@ export function useNoteWizardState({
         total,
 
         registration,
-        setRegistration,
+        setRegistration: setRegistrationState,
 
         payment,
-        setPayment,
+        setPayment: setPaymentState,
 
         logisticsData,
         setLogisticsData,

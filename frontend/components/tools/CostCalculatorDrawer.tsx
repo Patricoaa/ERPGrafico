@@ -10,6 +10,7 @@ import { ProductSelector } from "@/components/shared"
 import { toast } from "sonner"
 import { formatCurrency } from "@/lib/money"
 
+import type { BaseProduct, ProductCategory } from "@/features/inventory"
 import {
     POSSearchSkeleton,
     POSGridSkeleton,
@@ -67,7 +68,7 @@ export function CostCalculatorDrawer({ open, onOpenChange }: CostCalculatorDrawe
             fields: 'id,name,cost_price,image,uom_name,internal_code,barcode,product_type,available_uoms,category,uom'
         }
     })
-    const products = rawProducts as any as Product[]
+    const products = rawProducts as unknown as Product[]
 
     const { categories = [], isLoading: loadingCategories } = useCategories()
 
@@ -183,20 +184,20 @@ export function CostCalculatorDrawer({ open, onOpenChange }: CostCalculatorDrawe
                         </Card>
                     ) : (
                         <ProductSelector
-                            products={filteredProducts as any}
-                            categories={categories as any}
+                            products={filteredProducts as unknown as BaseProduct[]}
+                            categories={categories as unknown as ProductCategory[]}
                             searchTerm={searchTerm}
                             onSearchChange={setSearchTerm}
                             selectedCategoryId={selectedCategoryId}
                             onSelectCategory={setSelectedCategoryId}
-                            onProductClick={(p) => addItem(p as any)}
+                            onProductClick={(p) => addItem(p as unknown as Product)}
                             priceRenderer={(product) => (
                                 <>
                                     <span className="text-base font-black text-primary">
-                                        {formatCurrency((product as any).cost_price || 0)}
+                                        {formatCurrency((product as unknown as Product).cost_price || 0)}
                                     </span>
                                     <span className="text-[10px] text-muted-foreground ml-1 uppercase">
-                                        /{(product as any).uom_name || "UN"}
+                                        /{(product as unknown as Product).uom_name || "UN"}
                                     </span>
                                 </>
                             )}

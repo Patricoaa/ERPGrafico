@@ -37,10 +37,10 @@ export default function EntriesPage({ externalOpen, onExternalOpenChange, create
     const allFilters = { ...textFilters, ...segFilters }
     const [pageState, setPageState] = useState({ pageIndex: 0, pageSize: 20 })
     const { page, entries, isLoading, refetch } = useJournalEntries({
-        ...(allFilters as any),
+        ...allFilters,
         page: pageState.pageIndex + 1,
         page_size: pageState.pageSize,
-    })
+    } as unknown as Parameters<typeof useJournalEntries>[0])
     const { accounts } = useAccountingAccounts({ filters: { is_leaf: true } })
     const [viewingTransaction, setViewingTransaction] = useState<{ type: 'journal_entry', id: number | string } | null>(null)
     const [isFormOpen, setIsFormOpen] = useState(false)
@@ -220,7 +220,7 @@ export default function EntriesPage({ externalOpen, onExternalOpenChange, create
                     pageCount={page ? Math.ceil(page.count / page.pageSize) : 0}
                     rowCount={page?.count ?? 0}
                     pagination={pageState}
-                    onPaginationChange={setPageState as any}
+                    onPaginationChange={setPageState}
                     createAction={createAction}
                     isFiltered={isFiltered}
                     emptyState={{
@@ -271,7 +271,7 @@ export default function EntriesPage({ externalOpen, onExternalOpenChange, create
                 />
 
                 <JournalEntryDrawer
-                    accounts={accounts as any}
+                    accounts={accounts as unknown as Record<string, unknown>[]}
                     initialData={editingEntry as unknown as JournalEntryInitialData | undefined}
                     onSuccess={() => {
                         refetch()

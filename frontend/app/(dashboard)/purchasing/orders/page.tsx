@@ -24,8 +24,8 @@ export default async function PurchaseOrdersPage({ searchParams }: PageProps) {
                 revalidate: 10,
             })
             initialOrders = ordersResponse.results
-        } catch (e: any) {
-            if (e?.status !== 401) {
+        } catch (e: unknown) {
+            if (e && typeof e === 'object' && 'status' in e && (e as { status: number }).status !== 401) {
                 console.warn('[PurchasingPage] serverFetch orders failed, client will refetch:', e)
             }
         }
@@ -39,8 +39,8 @@ export default async function PurchaseOrdersPage({ searchParams }: PageProps) {
                 },
                 revalidate: 10,
             })
-        } catch (e: any) {
-            if (e?.status !== 401) {
+        } catch (e: unknown) {
+            if (e && typeof e === 'object' && 'status' in e && (e as { status: number }).status !== 401) {
                 console.warn('[PurchasingPage] serverFetch notes failed, client will refetch:', e)
             }
         }

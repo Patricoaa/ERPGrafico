@@ -41,9 +41,10 @@ export function StockReport() {
     }
 
     const filteredReport = (() => {
-        if (!smartFilters || Object.keys(smartFilters).length === 0) return report;
+        const items = report as unknown as StockReportItem[]
+        if (!smartFilters || Object.keys(smartFilters).length === 0) return items;
 
-        return (report as StockReportItem[]).filter((item: StockReportItem) => {
+        return items.filter((item: StockReportItem) => {
             // Text search (Product/SKU/Code)
             if (smartFilters.search) {
                 const search = String(smartFilters.search).toLowerCase();

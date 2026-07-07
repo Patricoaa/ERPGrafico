@@ -1,3 +1,4 @@
+"use client"
 import { useState, useCallback } from "react"
 import { showApiError } from "@/lib/errors"
 import { type SaleOrder } from "@/types/entities"
@@ -44,7 +45,7 @@ export function useSaleOrderSearch(): UseSaleOrderSearchReturn {
                 search: search || undefined,
                 limit: '50',
             }) as SaleOrder[]
-            
+
             globalCache[cacheKey] = data
             setOrders(data)
         } catch (err) {

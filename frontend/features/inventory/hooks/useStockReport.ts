@@ -4,7 +4,7 @@ import api from '@/lib/api'
 export function useStockReport() {
     const { data: report, isLoading, refetch } = useQuery({
         queryKey: ['stockReport'],
-        queryFn: async (): Promise<any[]> => {
+        queryFn: async (): Promise<unknown[]> => {
             const response = await api.get('/inventory/products/stock_report/')
             // eslint-disable-next-line pagination/no-raw-response-data -- custom @action, not paginated
             return response.data

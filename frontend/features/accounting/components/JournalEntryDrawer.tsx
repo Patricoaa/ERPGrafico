@@ -446,10 +446,6 @@ export function JournalEntryDrawer({
         </SkeletonShell>
     )
 
-    if (inline) {
-        return <>{formContent}</>
-    }
-
     const identity = useDrawerIdentity('accounting.journalentry', mode, (viewEntry ?? initialData) as Record<string, unknown> | undefined, {
         overrideTitle: isViewMode
             ? `Asiento #${entityId}`
@@ -464,6 +460,10 @@ export function JournalEntryDrawer({
     const showPrintable = entityId && (mode === 'view' || mode === 'edit')
 
     const formValues = form.watch()
+
+    if (inline) {
+        return <>{formContent}</>
+    }
 
     return (
         <>

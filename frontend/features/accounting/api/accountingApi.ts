@@ -1,5 +1,5 @@
 import api from '@/lib/api'
-import type { Account, AccountFilters, AccountPayload, FiscalYear, LedgerData } from '../types'
+import type { Account, AccountFilters, AccountPayload, AccountingPeriod, FiscalYear, LedgerData } from '../types'
 import { toPage, type Page } from '@/lib/pagination'
 
 export const accountingApi = {
@@ -78,6 +78,11 @@ export const accountingApi = {
     updateSettings: async (data: Record<string, unknown>) => {
         const response = await api.patch('/accounting/settings/current/', data)
         return response.data
+    },
+
+    getAccountingPeriods: async (params?: Record<string, unknown>): Promise<AccountingPeriod[]> => {
+        const { data } = await api.get<AccountingPeriod[]>('/tax/accounting-periods/', { params })
+        return data
     },
 
     getFiscalYears: async (params?: Record<string, unknown>): Promise<FiscalYear[]> => {

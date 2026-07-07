@@ -418,7 +418,18 @@ export default function PurchasesPageClient() {
                     <PaymentModal
                         open={!!payingDoc}
                         onOpenChange={(open: boolean) => !open && setPayingDoc(null)}
-                        onConfirm={handlePayment as any}
+                        onConfirm={(data) => {
+                            handlePayment({
+                                amount: data.amount,
+                                paymentMethod: data.paymentMethod,
+                                is_pending_registration: data.is_pending_registration,
+                                treasury_account_id: data.treasury_account_id ?? undefined,
+                                dteType: data.dteType,
+                                documentReference: data.documentReference,
+                                documentDate: data.documentDate,
+                                documentAttachment: data.documentAttachment ?? undefined,
+                            })
+                        }}
                         isPurchase={true}
                         total={parseFloat(payingDoc.total)}
                         pendingAmount={payingDoc.pending_amount ?? parseFloat(payingDoc.total)}

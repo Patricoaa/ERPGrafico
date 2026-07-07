@@ -58,7 +58,7 @@ export function validateCheckoutReady(
 /**
  * Evaluates if the cart items require the Manufacturing Step in checkout
  */
-export function requiresManufacturingStep(items: Array<any>): boolean {
+export function requiresManufacturingStep(items: CartItem[]): boolean {
     return items.some(i => {
         const isManufacturable = i.product_type === 'MANUFACTURABLE' || i.has_bom;
         if (!isManufacturable) return false;
@@ -69,7 +69,7 @@ export function requiresManufacturingStep(items: Array<any>): boolean {
         // ALLOW EXCEPTION: Simple manufacturable products with sufficient availability (stock + fab) skip the manufacturing step
         const isSimple = !i.requires_advanced_manufacturing;
         const totalAvailability = (i.qty_available || 0) + (i.manufacturable_quantity || 0);
-        const qtyNeeded = i.qty || i.quantity || 0;
+        const qtyNeeded = i.qty ?? 0;
         const hasAvailability = totalAvailability >= qtyNeeded;
 
         if (isSimple && hasAvailability) return false;

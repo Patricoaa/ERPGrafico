@@ -94,7 +94,7 @@ export default function WorkbenchPage({ params }: { params: Promise<{ id: string
 
             <ReconciliationPanel
                 statementId={statement.id}
-                treasuryAccountId={(statement as any).treasury_account || (statement as any).treasury_account_id || 0}
+                treasuryAccountId={statement.treasury_account}
                 onComplete={() => refetch()}
             />
 
