@@ -13,8 +13,7 @@ export interface EntityDrawerProps {
     open: boolean
     onOpenChange: (open: boolean) => void
     /** Optional pre-fetched data to avoid round-trip when caller already has it */
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    data?: any
+    data?: unknown
     onSuccess?: () => void
     /**
      * Optional segmenter (filtro/segmentador) rendered at the bottom of the drawer.

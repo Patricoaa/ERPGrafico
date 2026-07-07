@@ -38,7 +38,7 @@ export function useSmartSearch(def: SearchDefinition) {
   }, [def])
 
   const parsers = useMemo(() => {
-    const map: Record<string, any> = {}
+    const map: Record<string, typeof parseAsString> = {}
     for (const field of def.fields) {
       for (const param of getServerParams(field)) {
         map[param] = parseAsString

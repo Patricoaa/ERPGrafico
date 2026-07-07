@@ -720,39 +720,39 @@ export function WorkOrderWizard({ mode, open, onOpenChange, onSuccess }: WorkOrd
                   )}
                   {currentStageId === 'MATERIAL_ASSIGNMENT' && (
                     <MaterialAssignmentStep
-                      order={order!}
+                      order={order as WorkOrder}
                       isViewingCurrentStage={isViewingCurrentStage}
                       onMaterialSaved={fetchOrder}
                       onMaterialDeleted={fetchOrder}
                     />
                   )}
                   {currentStageId === 'MATERIAL_APPROVAL' && (
-                    <MaterialApprovalStep order={order!} {...taskCallbacks} />
+                    <MaterialApprovalStep order={order as WorkOrder} {...taskCallbacks} />
                   )}
                   {currentStageId === 'OUTSOURCING_ASSIGNMENT' && (
                     <OutsourcingAssignmentStep
-                      order={order!}
+                      order={order as WorkOrder}
                       isViewingCurrentStage={isViewingCurrentStage}
                       onMaterialSaved={fetchOrder}
                       onMaterialDeleted={fetchOrder}
                     />
                   )}
                   {currentStageId === 'PREPRESS' && (
-                    <PrepressStep order={order!} stageData={stageData} {...taskCallbacks} />
+                    <PrepressStep order={order as WorkOrder} stageData={stageData} {...taskCallbacks} />
                   )}
                   {currentStageId === 'PRESS' && (
-                    <PressStep order={order!} {...taskCallbacks} />
+                    <PressStep order={order as WorkOrder} {...taskCallbacks} />
                   )}
                   {currentStageId === 'POSTPRESS' && (
-                    <PostpressStep order={order!} {...taskCallbacks} />
+                    <PostpressStep order={order as WorkOrder} {...taskCallbacks} />
                   )}
                   {currentStageId === 'OUTSOURCING_VERIFICATION' && (
-                    <OutsourcingVerificationStep order={order!} {...taskCallbacks} />
+                    <OutsourcingVerificationStep order={order as WorkOrder} {...taskCallbacks} />
                   )}
                   {currentStageId === 'RECTIFICATION' && (
                     <div className="space-y-6">
                       <RectificationStep
-                        order={order!}
+                        order={order as WorkOrder}
                         onChange={(adjustments, producedQty, outsourcedAdj) => {
                           setRectificationAdjustments(adjustments)
                           setRectificationProducedQty(producedQty)
@@ -763,7 +763,7 @@ export function WorkOrderWizard({ mode, open, onOpenChange, onSuccess }: WorkOrd
                   )}
                   {currentStageId === 'FINISHED' && (
                     <FinishedStep
-                      order={order!}
+                      order={order as WorkOrder}
                       onUploadPhoto={mutations.uploadFinalPhoto}
                       isUploadingPhoto={mutations.isUploadingPhoto}
                       onPrintCopy={mutations.duplicateOrder}

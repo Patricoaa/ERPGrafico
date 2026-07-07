@@ -110,7 +110,7 @@ export function ContactCardGrid({ selectedId, onSelect, placeholder = "Buscar co
                                             <span className="font-semibold text-destructive">{formatCurrency(Number(contact.credit_balance_used ?? 0))}</span>
                                             <span className="text-muted-foreground/50">por pagar</span>
                                             <span className="text-muted-foreground/30">•</span>
-                                            <span>{(contact as unknown as Record<string, string | null>).last_purchase_date ? new Date((contact as unknown as Record<string, string | null>).last_purchase_date!).toLocaleDateString() : '—'}</span>
+                                            <span>{(contact as unknown as Record<string, string | null>).last_purchase_date ? new Date((contact as unknown as Record<string, string | null>).last_purchase_date ?? '').toLocaleDateString() : '—'}</span>
                                             <span className="text-muted-foreground/50">última compra</span>
                                         </>
                                     ) : (

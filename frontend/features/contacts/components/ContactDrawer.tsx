@@ -642,7 +642,7 @@ function InsightsTable({ data, type, title, icon: Icon, onActionSuccess }: Insig
     const cardView = useMemo(() => {
         const label = type === 'sale' ? 'sales.saleorder' : type === 'purchase' ? 'purchasing.purchaseorder' : 'production.workorder'
         return createDomainCardView(label, {
-            onRowClick: (data: any) => {
+            onRowClick: (data: Record<string, unknown>) => {
                 if (type === 'work_order') {
                     openEntity('production.workorder', data.id)
                 } else {

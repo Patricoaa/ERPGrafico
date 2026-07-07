@@ -77,7 +77,7 @@ export function UserActions({ isInboxOpen, onInboxToggle }: UserActionsProps) {
     }, [])
 
     useNotifications((newNotification: NotificationPayload) => {
-        setNotifications(prev => [newNotification as any, ...prev].slice(0, 20))
+        setNotifications(prev => [newNotification as Notification, ...prev].slice(0, 20))
         setUnreadCount(prev => prev + 1)
 
         // If it's a task related notification, we might want to refresh tasks too

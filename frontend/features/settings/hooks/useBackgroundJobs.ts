@@ -16,7 +16,7 @@ export interface BackgroundJob {
 }
 
 export function useBackgroundJobs() {
-    const { data: jobs = [], isLoading, error, refetch } = useQuery<BackgroundJob[]>({
+    const { data: jobs = [], isLoading, isError, refetch } = useQuery<BackgroundJob[]>({
         queryKey: ["background_jobs"],
         queryFn: async () => {
             const data = await settingsApi.getBackgroundJobs()
@@ -28,5 +28,5 @@ export function useBackgroundJobs() {
         },
     })
 
-    return { jobs, isLoading, error, refetch }
+    return { jobs, isLoading, isError, refetch }
 }

@@ -17,6 +17,7 @@ import {
 import { LazyDrawer } from "@/features/_shared"
 import { useOrderHubData } from "@/hooks/useOrderHubData"
 import { OrderHubIntegrated, type OrderHubData } from "./OrderHubIntegrated"
+import type { Order, Payment } from "../types"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import {
     PanelHeader
@@ -168,9 +169,9 @@ export function OrderHubPanel({
                                 noteStatuses: hubData.noteStatuses,
                                 showProduction: hubData.showProduction,
                                 showLogistics: hubData.showLogistics,
-                                invoices: hubData.invoices as unknown as import("../types").Order[],
+                                invoices: hubData.invoices as unknown as Order[],
                                 billingIsComplete: hubData.billingIsComplete,
-                                payments: hubData.payments as unknown as import("../types").Payment[],
+                                payments: hubData.payments as unknown as Payment[],
                                 logisticsProgress: hubData.logisticsProgress,
                                 fetchOrderDetails: hubData.fetchOrderDetails,
                                 globalStatus,

@@ -12,7 +12,7 @@ import { Progress } from "@/components/ui/progress"
 import { StatusBadge } from "@/components/shared"
 
 export default function JobsPageClient() {
-    const { jobs, isLoading, error, refetch } = useBackgroundJobs()
+    const { jobs, isLoading, isError, refetch } = useBackgroundJobs()
 
     const isProcessing = (status: BackgroundJob['status']) => status === "PROCESSING"
 
@@ -20,7 +20,7 @@ export default function JobsPageClient() {
         return <div className="flex justify-center p-12"><Loader2 className="w-8 h-8 animate-spin text-muted-foreground" /></div>
     }
 
-    if (error) {
+    if (isError) {
         return (
             <Alert variant="destructive">
                 <AlertCircle className="w-4 h-4" />

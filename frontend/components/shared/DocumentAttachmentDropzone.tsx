@@ -4,7 +4,7 @@ import { Input } from "@/components/ui/input"
 import { Upload, X, FileText } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
-import { LabeledContainer } from "@/components/shared/LabeledContainer"
+import { LabeledContainer } from "@/components/shared"
 
 interface DocumentAttachmentDropzoneProps {
     file: File | null

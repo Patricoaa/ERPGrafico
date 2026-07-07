@@ -1,7 +1,7 @@
 import React, { Suspense } from 'react'
 import { SkeletonShell, ErrorBoundary } from '@/components/shared'
 
-export const DRAWER_MAP: Record<string, React.LazyExoticComponent<React.ComponentType<any>>> = {
+export const DRAWER_MAP: Record<string, React.LazyExoticComponent<React.ComponentType<{ open?: boolean; onOpenChange?: (open: boolean) => void; [key: string]: unknown }>>> = {
   sale_order: React.lazy(() => import('@/features/sales/components/SaleOrderDrawer').then(m => ({ default: m.SaleOrderDrawer }))),
   purchase_order: React.lazy(() => import('@/features/purchasing/components/PurchaseOrderDrawer').then(m => ({ default: m.PurchaseOrderDrawer }))),
   service_obligation: React.lazy(() => import('@/features/purchasing/components/PurchaseOrderDrawer').then(m => ({ default: m.PurchaseOrderDrawer }))),

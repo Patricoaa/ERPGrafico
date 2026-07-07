@@ -13,16 +13,16 @@ export function Err<E>(error: E): Result<never, E> {
 export interface ApiError {
     message: string;
     code: string;
-    details?: Record<string, any>;
+    details?: Record<string, unknown>;
     status_code?: number;
 }
 
-export async function wrapApiCall<T>(promise: Promise<any>): Promise<Result<T, ApiError>> {
+export async function wrapApiCall<T>(promise: Promise<unknown>): Promise<Result<T, ApiError>> {
     try {
         const response = await promise;
         return Ok(response.data as T);
     } catch (error: unknown) {
-        const err = error as any;
+        const err = error as { response?: { data?: { error?: ApiError }; status?: number }; message?: string };
         if (err.response?.data?.error) {
             return Err(err.response.data.error as ApiError);
         }

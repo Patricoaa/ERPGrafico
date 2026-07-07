@@ -25,7 +25,7 @@ export function ProductInventoryTab({ form, initialData, uoms = [], isEditing }:
     const mfgAutoFinalize = form.watch("mfg_auto_finalize")
     const requiresAdvancedmfg = form.watch("requires_advanced_manufacturing")
 
-    const purchaseUomProduct = useMemo(() => ({ uom: stockUomId } as any), [stockUomId])
+    const purchaseUomProduct = useMemo(() => ({ uom: stockUomId } as unknown as Product), [stockUomId])
 
     const isSimpleMfg = productType === 'MANUFACTURABLE' && !mfgAutoFinalize && !requiresAdvancedmfg
     const isAdvancedMfg = productType === 'MANUFACTURABLE' && requiresAdvancedmfg

@@ -18,7 +18,7 @@ interface HubPanelContextType {
     hubConfig: HubConfig | null
     isHubTemporarilyHidden: boolean
     setHubTemporarilyHidden: (hidden: boolean) => void
-    actionEngineRef: React.RefObject<any>
+    actionEngineRef: React.RefObject<{ handleActionClick: (actionId: string) => void } | null>
     triggerAction: (actionId: string) => void
     isHubEffectivelyOpen: boolean // Added unified state
     /** @deprecated always false — docking feature was removed */
@@ -38,7 +38,7 @@ export function HubPanelProvider({
     const [hubConfig, setHubConfig] = useState<HubConfig | null>(null)
     const [isHubTemporarilyHidden, setHubTemporarilyHidden] = useState(false)
     const [currentPath, setCurrentPath] = useState(pathname)
-    const actionEngineRef = React.useRef<any>(null)
+    const actionEngineRef = React.useRef<{ handleActionClick: (actionId: string) => void } | null>(null)
 
     // Auto-close on route change (pathname only)
     // T-88: we exclude searchParams because ?selected=id now drives the hub

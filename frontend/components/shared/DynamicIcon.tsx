@@ -21,7 +21,7 @@ const getIconComponent = (iconName: keyof typeof dynamicIconImports) => {
       loading: LoadingFallback
     }))
   }
-  return iconCache.get(iconName)!
+  return iconCache.get(iconName) ?? null
 }
 
 export const DynamicIcon = ({ name, ...props }: DynamicIconProps) => {
