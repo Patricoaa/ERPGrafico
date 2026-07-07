@@ -272,7 +272,8 @@ const eslintConfig = defineConfig([...nextVitals, ...nextTs, globalIgnores([
 },
 // UI component data fetching and formatting restrictions
 {
-  files: ["components/**/*.tsx", "features/*/components/**/*.tsx"],
+  files: ["components/**/*.tsx", "features/**/*.tsx"],
+  ignores: ["features/**/hooks/**", "features/**/api/**", "features/**/__tests__/**"],
   rules: {
     "no-restricted-imports": ["error", {
       paths: [{
