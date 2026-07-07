@@ -5,7 +5,7 @@ export { LoanDisburseDrawer } from './LoanDisburseDrawer'
 export { LoanDetailModal } from './LoanDetailModal'
 export { LoanPayInstallmentModal } from './LoanPayInstallmentModal'
 export { PrepayLoanModal } from './PrepayLoanModal'
-export { useLoans, useLoan, useLoanSchedule, useLoanInstallments, useLoanMutations } from './hooks'
+export { useLoans, useLoan, useLoanSchedule, useLoanInstallments, useLoanMutations } from '../hooks/useLoans'
 export { loansApi } from './api'
 export type {
     BankLoan, BankLoanCreatePayload, BankLoanStatus, BankLoanCurrency,

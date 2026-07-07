@@ -11,7 +11,7 @@ import {
     CancelButton, ActionSlideButton, MoneyDisplay,
 } from '@/components/shared'
 import { Send, AlertCircle, Settings } from 'lucide-react'
-import { useLoanMutations } from './hooks'
+import { useLoanMutations } from '../hooks/useLoans'
 import { showApiError } from '@/lib/errors'
 import { AccountSelector } from '@/components/selectors/AccountSelector'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'

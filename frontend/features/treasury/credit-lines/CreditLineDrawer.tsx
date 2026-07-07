@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import { useForm, type Resolver } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { useCreditLineMutations } from './hooks'
+import { useCreditLineMutations } from '../hooks/useCreditLines'
 import {
     Sheet,
     SheetContent,

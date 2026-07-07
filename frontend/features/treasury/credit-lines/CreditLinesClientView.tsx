@@ -11,7 +11,7 @@ import {
 } from '@/components/shared'
 import { creditLineSearchDef } from './searchDef'
 import { Button } from '@/components/ui/button'
-import { useCreditLines, useCreditLineMutations } from './hooks'
+import { useCreditLines, useCreditLineMutations } from '../hooks/useCreditLines'
 import { CreditLineDrawer } from './CreditLineDrawer'
 import type { CreditLine } from './types'
 import type { TreasuryAccount } from '../types'

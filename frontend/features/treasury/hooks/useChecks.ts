@@ -1,8 +1,8 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import { showApiError } from '@/lib/errors'
-import { checksApi } from './api'
-import type { CheckCreatePayload, CheckDepositPayload } from './types'
+import { checksApi } from '../checks/api'
+import type { CheckCreatePayload, CheckDepositPayload } from '../checks/types'
 import { invalidateCrossFeature } from '@/lib/invalidation'
 
 const CHECKS_KEYS = {

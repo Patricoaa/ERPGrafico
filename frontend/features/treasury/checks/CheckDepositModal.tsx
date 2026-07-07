@@ -4,7 +4,7 @@ import React, { useState } from 'react'
 import { BaseModal, FormFooter, CancelButton, ActionSlideButton, LabeledSelect } from '@/components/shared'
 import { formatMoney } from '@/lib/money'
 import { TreasuryAccountSelector } from '@/components/selectors/TreasuryAccountSelector'
-import { useCheckMutations } from './hooks'
+import { useCheckMutations } from '../hooks/useChecks'
 import type { Check } from './types'
 
 interface Props {

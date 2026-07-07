@@ -1,11 +1,11 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import { showApiError } from '@/lib/errors'
-import { loansApi } from './api'
+import { loansApi } from '../loans/api'
 import type {
     BankLoanCreatePayload, PayInstallmentPayload, PrepayLoanPayload,
     DisburseLoanPayload,
-} from './types'
+} from '../loans/types'
 import { invalidateCrossFeature } from '@/lib/invalidation'
 
 const LOANS_KEYS = {

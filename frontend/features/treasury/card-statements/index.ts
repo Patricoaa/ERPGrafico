@@ -6,9 +6,9 @@ export { UnbilledChargesView } from './UnbilledChargesView'
 export { CardPendingChargeDrawer } from './CardPendingChargeDrawer'
 export { AddChargeModal } from './AddChargeModal'
 export { BillChargesModal } from './BillChargesModal'
-export { useCardStatements, useCardStatement, useStatementCharges, useCardStatementMutations } from './hooks'
-export { useUnbilledAnalyticsData } from './useUnbilledAnalyticsData'
-export { useStatementsAnalyticsData } from './useStatementsAnalyticsData'
+export { useCardStatements, useCardStatement, useStatementCharges, useCardStatementMutations } from '../hooks/useCardStatements'
+export { useUnbilledAnalyticsData } from '../hooks/useUnbilledAnalyticsData'
+export { useStatementsAnalyticsData } from '../hooks/useStatementsAnalyticsData'
 export { cardStatementsApi } from './api'
 export type {
     CreditCardStatement, CreditCardStatementStatus,

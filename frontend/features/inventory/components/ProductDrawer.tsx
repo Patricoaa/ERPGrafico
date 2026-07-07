@@ -11,6 +11,7 @@ import { useProducts } from "../hooks/useProducts"
 import { useUoMs } from "../hooks/useUoMs"
 import { useWarehouses } from "../hooks/useWarehouses"
 import { useProductPricingRules } from "../hooks/usePricingRules"
+import { type ProductInitialData, type PricingRuleInitialData } from "@/types/forms"
 import {ShoppingCart, Package, Truck, Layers, Factory, DollarSign} from "lucide-react"
 import { showApiError } from "@/lib/errors"
 import { Form } from "@/components/ui/form"
@@ -41,7 +42,7 @@ interface ProductDrawerProps {
     sidebar?: React.ReactNode
     open: boolean
     onOpenChange: (open: boolean) => void
-    initialData?: any // Bridging discrepancies between local/global Product and ProductInitialData
+    initialData?: ProductInitialData
     onSuccess: () => void
     lockedType?: string
     variantMode?: boolean
@@ -61,7 +62,7 @@ export function ProductDrawer({ open, onOpenChange, initialData, onSuccess, lock
 
     const [loading, setLoading] = useState(false)
     const [imagePreview, setImagePreview] = useState<string | null>(null)
-    const [selectedPricingRule, setSelectedPricingRule] = useState<any | null>(null)
+    const [selectedPricingRule, setSelectedPricingRule] = useState<PricingRuleInitialData | null>(null)
     const [pricingRuleDialogOpen, setPricingRuleDialogOpen] = useState(false)
     const [variantsRefreshKey] = useState(0)
     const [confirmCloseOpen, setConfirmCloseOpen] = useState(false)
@@ -118,7 +119,7 @@ export function ProductDrawer({ open, onOpenChange, initialData, onSuccess, lock
     }, [initialData, lockedType])
 
     const form: UseFormReturn<ProductFormValues> = useForm<ProductFormValues>({
-        resolver: zodResolver(productSchema) as any,
+        resolver: zodResolver(productSchema),
         defaultValues: productDefaultValues,
     })
 
@@ -279,18 +280,18 @@ export function ProductDrawer({ open, onOpenChange, initialData, onSuccess, lock
                     code: initialData.code || "",
                     internal_code: initialData.internal_code || "",
                     name: initialData.name || "",
-                    category: typeof initialData.category === 'object' ? String((initialData.category as any)?.id) : String(initialData.category || ""),
+                    category: typeof initialData.category === 'object' ? String(initialData.category.id) : String(initialData.category || ""),
                     product_type: initialData.product_type || "STORABLE",
                     sale_price: Number(initialData.sale_price) || 0,
                     sale_price_gross: Number(initialData.sale_price_gross) || 0,
                     is_dynamic_pricing: initialData.is_dynamic_pricing ?? false,
-                    uom: typeof initialData.uom === 'object' ? String((initialData.uom as any)?.id) : String(initialData.uom || ""),
-                    sale_uom: typeof initialData.sale_uom === 'object' ? String((initialData.sale_uom as any)?.id) : String(initialData.sale_uom || initialData.uom || ""),
-                    purchase_uom: typeof initialData.purchase_uom === 'object' ? String((initialData.purchase_uom as any)?.id) : String(initialData.purchase_uom || initialData.uom || ""),
+                    uom: typeof initialData.uom === 'object' ? String(initialData.uom.id) : String(initialData.uom || ""),
+                    sale_uom: typeof initialData.sale_uom === 'object' ? String(initialData.sale_uom.id) : String(initialData.sale_uom || initialData.uom || ""),
+                    purchase_uom: typeof initialData.purchase_uom === 'object' ? String(initialData.purchase_uom.id) : String(initialData.purchase_uom || initialData.uom || ""),
                     allowed_sale_uoms: (initialData.allowed_sale_uoms && initialData.allowed_sale_uoms.length > 0)
-                        ? initialData.allowed_sale_uoms.map((u: any) => typeof u === 'object' ? String(u.id) : String(u))
+                        ? initialData.allowed_sale_uoms.map(u => typeof u === 'object' ? String(u.id) : String(u))
                         : (initialData.uom ? [getId(initialData.uom)] : []),
-                    receiving_warehouse: typeof initialData.receiving_warehouse === 'object' ? String((initialData.receiving_warehouse as any)?.id) : String(initialData.receiving_warehouse || ""),
+                    receiving_warehouse: typeof initialData.receiving_warehouse === 'object' ? String(initialData.receiving_warehouse.id) : String(initialData.receiving_warehouse || ""),
                     track_inventory: initialData.track_inventory ?? true,
                     can_be_sold: initialData.can_be_sold ?? true,
                     can_be_purchased: initialData.can_be_purchased ?? true,
@@ -311,19 +312,19 @@ export function ProductDrawer({ open, onOpenChange, initialData, onSuccess, lock
                     parent_template: initialData.parent_template?.toString() || null,
                     attribute_values: initialData.attribute_values?.map((v: unknown) => String(v)) || [],
                     variant_display_name: initialData.variant_display_name || "",
-                    boms: initialData.boms?.map((b: any) => ({
+                    boms: initialData.boms?.map(b => ({
                         id: b.id,
                         name: b.name || "",
                         active: b.active || false,
-                        lines: b.lines.map((l: any) => ({
+                        lines: b.lines.map(l => ({
                             id: l.id,
                             component: l.component?.toString() || "",
-                            quantity: parseFloat(l.quantity) || 0,
+                            quantity: parseFloat(String(l.quantity)) || 0,
                             uom: l.uom?.toString() || undefined,
                             notes: l.notes || ""
                         }))
                     })) || [],
-                    uom_prices: initialData.uom_prices?.map((p: any) => ({
+                    uom_prices: initialData.uom_prices?.map(p => ({
                         id: p.id,
                         uom: typeof p.uom === 'object' ? p.uom.id : Number(p.uom),
                         price_net: Number(p.price_net) || 0,
@@ -336,13 +337,13 @@ export function ProductDrawer({ open, onOpenChange, initialData, onSuccess, lock
                     payment_day: initialData.payment_day || undefined,
                     payment_interval_days: initialData.payment_interval_days || undefined,
                     default_invoice_type: initialData.default_invoice_type || undefined,
-                    subscription_supplier: typeof initialData.subscription_supplier === 'object' ? String((initialData.subscription_supplier as any)?.id) : String(initialData.subscription_supplier || ""),
+                    subscription_supplier: typeof initialData.subscription_supplier === 'object' ? String(initialData.subscription_supplier.id) : String(initialData.subscription_supplier || ""),
                     subscription_amount: initialData.subscription_amount || undefined,
                     subscription_start_date: initialData.subscription_start_date || "",
                     auto_activate_subscription: initialData.auto_activate_subscription ?? true,
                     is_indefinite: initialData.is_indefinite ?? true,
                     contract_end_date: initialData.contract_end_date || "",
-                    preferred_supplier: typeof initialData.preferred_supplier === 'object' ? String((initialData.preferred_supplier as any)?.id) : String(initialData.preferred_supplier || ""),
+                    preferred_supplier: typeof initialData.preferred_supplier === 'object' ? String(initialData.preferred_supplier.id) : String(initialData.preferred_supplier || ""),
                 })
                 setImagePreview(resolveMediaUrl(initialData.image) || null)
             } else {
@@ -449,7 +450,7 @@ export function ProductDrawer({ open, onOpenChange, initialData, onSuccess, lock
             formData.append('sale_price_gross', (data.sale_price_gross || 0).toString())
             formData.append('is_dynamic_pricing', data.is_dynamic_pricing ? 'true' : 'false')
 
-            const appendValid = (key: string, val: any) => {
+            const appendValid = (key: string, val: unknown) => {
                 if (val !== undefined && val !== null && val !== 'undefined' && val !== '') {
                     formData.append(key, val)
                 }

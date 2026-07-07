@@ -8,7 +8,7 @@ import {
     DataTableView, DataTableColumnHeader, DataCell,
 } from '@/components/shared'
 import { Button } from '@/components/ui/button'
-import { useCardStatement, useStatementCharges, useCardStatementMutations } from './hooks'
+import { useCardStatement, useStatementCharges, useCardStatementMutations } from '../hooks/useCardStatements'
 import { PayStatementModal } from './PayStatementModal'
 import { mapToStatementChargeRows } from './utils'
 import { parseDateOnly } from '@/lib/utils'
