@@ -20,9 +20,10 @@ export function CategoryDropdown({ categories, selectedCategoryId, onSelectCateg
         <Popover>
             <PopoverTrigger asChild>
                 <Button
+                    variant="ghost"
                     type="button"
                     className={cn(
-                        "flex items-center gap-1 shrink-0 rounded-md px-1.5 py-1 text-muted-foreground/50 hover:text-foreground transition-colors",
+                        "flex items-center gap-1 shrink-0 rounded-md px-1.5 py-1 text-muted-foreground/50 hover:text-foreground transition-colors h-auto border-none bg-transparent hover:bg-transparent shadow-none",
                         selectedCategoryId !== null && "text-primary"
                     )}
                     aria-label="Filtrar por categoría"
@@ -42,9 +43,10 @@ export function CategoryDropdown({ categories, selectedCategoryId, onSelectCateg
             >
                 <div className="space-y-1">
                     <Button
+                        variant="ghost"
                         onClick={() => onSelectCategory(null)}
                         className={cn(
-                            "w-full flex items-center gap-2 px-2.5 py-2 text-left rounded-md transition-colors text-[10px] uppercase tracking-widest",
+                            "w-full flex items-center gap-2 px-2.5 py-2 text-left rounded-md transition-colors text-[10px] uppercase tracking-widest shadow-none",
                             selectedCategoryId === null
                                 ? "bg-primary/10 text-primary font-bold"
                                 : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
@@ -56,9 +58,10 @@ export function CategoryDropdown({ categories, selectedCategoryId, onSelectCateg
                         {categories.map(cat => (
                             <Button
                                 key={cat.id}
+                                variant="ghost"
                                 onClick={() => onSelectCategory(cat.id)}
                                 className={cn(
-                                    "w-full flex items-center gap-2 px-2.5 py-2 text-left rounded-md transition-colors text-xs",
+                                    "w-full flex items-center gap-2 px-2.5 py-2 text-left rounded-md transition-colors text-xs shadow-none",
                                     selectedCategoryId === cat.id
                                         ? "bg-primary/10 text-primary font-bold"
                                         : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
