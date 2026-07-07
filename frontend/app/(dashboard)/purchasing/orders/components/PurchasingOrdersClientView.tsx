@@ -31,7 +31,6 @@ interface PurchaseOrder extends Order {
     supplier_name: string
     date: string
     warehouse_name: string
-    supplier?: number | string
     total_paid: number
     is_invoiced: boolean
     invoice_details?: {
@@ -541,7 +540,7 @@ export function PurchasingOrdersClientView({ viewMode, externalOpenCheckout, cre
                         onOpenChange={(open) => !open && setInvoicingOrder(null)}
                         orderId={invoicingOrder.id}
                         orderNumber={invoicingOrder.number}
-                        supplierId={invoicingOrder.supplier}
+                        supplierId={invoicingOrder.supplier_id}
                         onSuccess={fetchOrders}
                     />
                 )

@@ -344,7 +344,7 @@ export function ProductDrawer({ open, onOpenChange, initialData, onSuccess, lock
                     is_indefinite: initialData.is_indefinite ?? true,
                     contract_end_date: initialData.contract_end_date || "",
                     preferred_supplier: typeof initialData.preferred_supplier === 'object' ? String(initialData.preferred_supplier.id) : String(initialData.preferred_supplier || ""),
-                })
+                } as Partial<ProductFormValues>)
                 setImagePreview(resolveMediaUrl(initialData.image) || null)
             } else {
                 form.reset({
@@ -452,7 +452,7 @@ export function ProductDrawer({ open, onOpenChange, initialData, onSuccess, lock
 
             const appendValid = (key: string, val: unknown) => {
                 if (val !== undefined && val !== null && val !== 'undefined' && val !== '') {
-                    formData.append(key, val)
+                    formData.append(key, val as string | Blob)
                 }
             }
 
@@ -712,8 +712,8 @@ export function ProductDrawer({ open, onOpenChange, initialData, onSuccess, lock
                                                 initialData={initialData}
                                                 pricingRules={pricingRules}
                                                 fetchPricingRules={refetchPricingRules}
-                                                onOpenRuleDialog={(rule) => {
-                                                    setSelectedPricingRule(rule || null)
+                                                    onOpenRuleDialog={(rule) => {
+                                                    setSelectedPricingRule(rule as unknown as PricingRuleInitialData | null)
                                                     setPricingRuleDialogOpen(true)
                                                 }}
                                                 isDynamicPricing={form.watch('is_dynamic_pricing')}
@@ -736,7 +736,7 @@ export function ProductDrawer({ open, onOpenChange, initialData, onSuccess, lock
                     setPricingRuleDialogOpen(open)
                     if (!open) setSelectedPricingRule(null)
                 }}
-                initialData={selectedPricingRule}
+                initialData={selectedPricingRule ?? undefined}
                 onSuccess={refetchPricingRules}
                 productId={initialData?.id}
                 productName={initialData?.name}
