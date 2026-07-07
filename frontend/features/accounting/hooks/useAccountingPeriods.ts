@@ -5,6 +5,7 @@ import { type AccountingPeriod } from '../types';
 import { showApiError } from '@/lib/errors';
 import { useRealtime } from '@/features/realtime';
 import { invalidateCrossFeature } from '@/lib/invalidation';
+import { accountingApi } from '../api/accountingApi';
 
 import { ACCOUNTING_PERIODS_QUERY_KEY } from './queryKeys'
 
@@ -16,10 +17,7 @@ export function useAccountingPeriods() {
 
     const { data, isLoading, refetch } = useQuery({
         queryKey: ACCOUNTING_PERIODS_QUERY_KEY,
-        queryFn: async () => {
-            const response = await api.get('/tax/accounting-periods/?ordering=-year,-month');
-            return response.data;
-        },
+        queryFn: () => accountingApi.getAccountingPeriods({ ordering: '-year,-month' }),
         staleTime: 10 * 60 * 1000, // 10 min
     });
 

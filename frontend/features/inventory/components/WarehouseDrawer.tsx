@@ -173,10 +173,6 @@ export function WarehouseDrawer({ onSuccess, initialData, open: openProp, onOpen
         </FormSplitLayout>
     )
 
-    if (inline) {
-        return <>{formContent}</>
-    }
-
     const identity = useDrawerIdentity('inventory.warehouse', mode, initialData, {
         overrideTitle: isView
             ? `Ficha de Almacén${initialData?.id ? ` #${initialData.id}` : ""}`
@@ -185,6 +181,10 @@ export function WarehouseDrawer({ onSuccess, initialData, open: openProp, onOpen
             ? `${form.watch("code") ? `${form.watch("code")} | ` : ""}${form.watch("name")}`
             : (initialData ? undefined : "Nuevo Almacén"),
     })
+
+    if (inline) {
+        return <>{formContent}</>
+    }
 
     return (
         <>

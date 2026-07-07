@@ -79,7 +79,7 @@ const ICON_OPTIONS = [
 ]
 
 function RichIconSelector({ value, onChange, label, error, required }: { value: string, onChange: (val: string) => void, label?: string, error?: string, required?: boolean }) {
-    const SelectedIcon = (LucideIcons as Record<string, LucideIcon>)[value] || LucideIcons.Package
+    const SelectedIcon = (LucideIcons as unknown as Record<string, LucideIcon>)[value] || LucideIcons.Package
     const selectedLabel = ICON_OPTIONS.find(i => i.name === value)?.label || value
 
     return (
@@ -120,7 +120,7 @@ function RichIconSelector({ value, onChange, label, error, required }: { value: 
                         </div>
                         <div className="h-[250px] overflow-y-auto p-1 grid grid-cols-2 gap-1">
                             {ICON_OPTIONS.map((item) => {
-                                const Icon = (LucideIcons as Record<string, LucideIcon>)[item.name] || LucideIcons.Package
+                                const Icon = (LucideIcons as unknown as Record<string, LucideIcon>)[item.name] || LucideIcons.Package
                                 const isSelected = value === item.name
                                 return (
                                     <div
@@ -433,10 +433,6 @@ export function CategoryDrawer({
         </FormSplitLayout>
     )
 
-    if (inline) {
-        return <>{formContent}</>
-    }
-
     const identity = useDrawerIdentity('inventory.category', mode, initialData, {
         overrideSubtitle: form.watch("name")
             ? `${form.watch("prefix") ? `${form.watch("prefix")} | ` : ""}${form.watch("name")}`
@@ -444,6 +440,10 @@ export function CategoryDrawer({
         printable: (mode === 'view' || mode === 'edit') && !!initialData?.id,
         onPrint: handlePrint,
     })
+
+    if (inline) {
+        return <>{formContent}</>
+    }
 
     return (
         <>

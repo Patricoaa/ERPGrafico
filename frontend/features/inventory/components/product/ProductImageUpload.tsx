@@ -35,7 +35,7 @@ interface ProductImageUploadProps {
 }
 
 export function ProductImageUpload({ form, imagePreview, setImagePreview }: ProductImageUploadProps) {
-    const handleFileSelect = useCallback((e: React.ChangeEvent<HTMLInputElement>, field: any) => {
+    const handleFileSelect = useCallback((e: React.ChangeEvent<HTMLInputElement>, field: { onChange: (value: unknown) => void }) => {
         const file = e.target.files?.[0]
         if (!file) return
         if (!validateImageFile(file)) {

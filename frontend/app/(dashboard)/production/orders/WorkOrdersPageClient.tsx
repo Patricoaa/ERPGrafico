@@ -60,7 +60,7 @@ export default function WorkOrdersPageClient({ initialOrders }: WorkOrdersPageCl
     const allFilters = { ...textFilters, ...segFilters }
     const [pageState, setPageState] = useState({ pageIndex: 0, pageSize: 50 })
     const { page, orders, isLoading: loading, isRefetching, refetch: refetchOrders } = useWorkOrders({
-        ...(allFilters as any),
+        ...allFilters,
         my_tasks: myTasks,
         page: pageState.pageIndex + 1,
         page_size: pageState.pageSize,
@@ -309,7 +309,7 @@ export default function WorkOrdersPageClient({ initialOrders }: WorkOrdersPageCl
                         pageCount={page ? Math.ceil(page.count / page.pageSize) : 0}
                         rowCount={page?.count ?? 0}
                         pagination={pageState}
-                        onPaginationChange={setPageState as any}
+                        onPaginationChange={setPageState}
                         isFiltered={isFiltered || myTasks}
                         emptyState={{
                             context: "production",

@@ -5,13 +5,13 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import { type z } from "zod"
 
 interface UseFormWithToastProps<T extends FieldValues> extends Omit<UseFormProps<T>, 'resolver'> {
-    schema?: z.ZodType<T>
+    schema?: z.ZodType<T, T>
 }
 
 export function useFormWithToast<T extends FieldValues>({ schema, ...props }: UseFormWithToastProps<T>) {
      
     const form = useForm<T>({
-        ...(schema ? { resolver: zodResolver(schema as any) } : {}),
+        ...(schema ? { resolver: zodResolver(schema as z.ZodType<T, T>) } : {}),
         ...props
     })
 

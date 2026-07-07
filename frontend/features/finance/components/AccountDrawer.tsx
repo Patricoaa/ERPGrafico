@@ -246,16 +246,16 @@ export function AccountDrawer({
         </FormSplitLayout>
     )
 
-    if (inline) {
-        return <>{formContent}</>
-    }
-
     const identity = useDrawerIdentity('accounting.account', mode, initialData as Record<string, unknown> | undefined, {
         overrideTitle: isViewMode ? `Ficha de Cuenta #${initialData?.id}` : undefined,
         overrideSubtitle: isViewMode
             ? `${(initialData?.code as string) || ""} • ${form.watch("name") || "Vista de detalle"}`
             : `${(initialData?.code as string) || ""} • ${form.watch("name") || "Plan de Cuentas • Contabilidad General"}`,
     })
+
+    if (inline) {
+        return <>{formContent}</>
+    }
 
     return (
         <>
