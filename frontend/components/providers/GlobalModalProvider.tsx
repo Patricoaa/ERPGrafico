@@ -2,6 +2,7 @@
 
 import React, { createContext, useContext, useState, type ReactNode, useCallback, useMemo, useEffect } from "react"
 import { ENTITY_DRAWERS, hasEntityDrawer } from "@/lib/entity-drawers"
+import { ErrorBoundary } from "@/components/shared"
 
 interface OpenEntityState {
     label: string
@@ -166,7 +167,9 @@ export function GlobalModalProvider({ children }: { children: ReactNode }) {
         <GlobalModalActionsContext.Provider value={actionsValue}>
         <GlobalModalStateContext.Provider value={stateValue}>
             {children}
-            {renderEntityDrawer()}
+            <ErrorBoundary variant="inline">
+                {renderEntityDrawer()}
+            </ErrorBoundary>
         </GlobalModalStateContext.Provider>
         </GlobalModalActionsContext.Provider>
     )
