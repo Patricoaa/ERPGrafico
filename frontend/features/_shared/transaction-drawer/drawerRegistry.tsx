@@ -1,5 +1,5 @@
 import React, { Suspense } from 'react'
-import { SkeletonShell } from '@/components/shared'
+import { SkeletonShell, ErrorBoundary } from '@/components/shared'
 
 export const DRAWER_MAP: Record<string, React.LazyExoticComponent<React.ComponentType<any>>> = {
   sale_order: React.lazy(() => import('@/features/sales/components/SaleOrderDrawer').then(m => ({ default: m.SaleOrderDrawer }))),
@@ -28,7 +28,9 @@ export function LazyDrawer({ type, open, onOpenChange, ...props }: {
   if (!Drawer) return null
   return (
     <Suspense fallback={<SkeletonShell isLoading ariaLabel="Cargando..." />}>
-      <Drawer open={open} onOpenChange={onOpenChange} {...props} />
+      <ErrorBoundary variant="inline">
+        <Drawer open={open} onOpenChange={onOpenChange} {...props} />
+      </ErrorBoundary>
     </Suspense>
   )
 }
