@@ -1,5 +1,6 @@
 "use client"
 
+import { Button } from "@/components/ui/button"
 import React from 'react'
 import { Card } from '@/components/ui/card'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
@@ -67,13 +68,13 @@ export function CombinedPeriodCard({
                             {acct ? (
                                 <StatusBadge status={acct.status} label={acct.status_display} variant="dot" size="xs" />
                             ) : (
-                                <button
+                                <Button
                                     className="inline-flex items-center justify-center rounded-sm text-[9px] font-medium transition-colors hover:bg-accent hover:text-accent-foreground h-5 px-1.5 text-muted-foreground/60 border border-dashed border-border"
                                     onClick={() => onCreatePeriod(year, month)}
                                     disabled={isPeriodActionLoading}
                                 >
                                     <Plus className="w-2.5 h-2.5 mr-0.5" /> Abrir
-                                </button>
+                                </Button>
                             )}
                         </div>
                         {acct && !acctClosed && (

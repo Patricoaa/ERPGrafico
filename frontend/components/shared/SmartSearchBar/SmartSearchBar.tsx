@@ -1,5 +1,6 @@
 'use client'
 
+import { Button } from "@/components/ui/button"
 import { useRef, useState, useCallback, useEffect, type KeyboardEvent, useMemo } from 'react'
 import { Search, X, CornerDownLeft } from 'lucide-react'
 import { SEG_TEXT, SEG_DROPDOWN_ITEM } from '../SegmentationBar/styles'
@@ -222,14 +223,14 @@ export function SmartSearchBar({ searchDef, placeholder = 'Buscar...', className
             <span className="flex items-center gap-1">
               {!chip.isGlobalSearch && <span className="opacity-60">{chip.label}:</span>}
               <span>{chip.valueLabel}</span>
-              <button
+              <Button
                 type="button"
                 onClick={(e) => { e.stopPropagation(); removeFilter(chip.key) }}
                 className="rounded-full p-0.5 ml-0.5 -mr-1 flex items-center justify-center shrink-0"
                 aria-label={`Eliminar filtro ${chip.label}`}
               >
                 <X className="h-2.5 w-2.5" />
-              </button>
+              </Button>
             </span>
           </Chip>
         ))}
@@ -275,14 +276,14 @@ export function SmartSearchBar({ searchDef, placeholder = 'Buscar...', className
         )}
 
         {hasActiveFilters && (
-          <button
+          <Button
             type="button"
             onClick={(e) => { e.stopPropagation(); clearAll() }}
             className="text-muted-foreground/40 hover:text-foreground transition-colors shrink-0 ml-auto"
             aria-label="Eliminar todos los filtros"
           >
             <X className="h-3.5 w-3.5" />
-          </button>
+          </Button>
         )}
       </div>
 
@@ -301,7 +302,7 @@ export function SmartSearchBar({ searchDef, placeholder = 'Buscar...', className
             <div className="p-1">
               {filteredFields.length === 0 ? (
                 inputValue.trim() ? (
-                  <button
+                  <Button
                     type="button"
                     role="option"
                     aria-selected={false}
@@ -319,13 +320,13 @@ export function SmartSearchBar({ searchDef, placeholder = 'Buscar...', className
                       Enter
                       <CornerDownLeft className="h-2.5 w-2.5" />
                     </span>
-                  </button>
+                  </Button>
                 ) : (
                   <p className={`px-3 py-2 ${SEG_TEXT} text-muted-foreground tracking-tight`}>Sin coincidencias</p>
                 )
               ) : (
                 filteredFields.map((field, i) => (
-                  <button
+                  <Button
                     key={field.key}
                     id={`ssb-option-${i}`}
                     type="button"
@@ -339,7 +340,7 @@ export function SmartSearchBar({ searchDef, placeholder = 'Buscar...', className
                       )}
                   >
                     <span>{field.label}</span>
-                  </button>
+                  </Button>
                 ))
               )}
             </div>
@@ -357,7 +358,7 @@ export function SmartSearchBar({ searchDef, placeholder = 'Buscar...', className
               ) : (
                 <div>
                   {suggestions.map((value, i) => (
-                    <button
+                    <Button
                       key={value}
                       id={`ssb-option-${i}`}
                       type="button"
@@ -371,7 +372,7 @@ export function SmartSearchBar({ searchDef, placeholder = 'Buscar...', className
                       )}
                     >
                       {value}
-                    </button>
+                    </Button>
                   ))}
                 </div>
               )}

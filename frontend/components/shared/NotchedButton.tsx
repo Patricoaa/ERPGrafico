@@ -1,5 +1,6 @@
 "use client"
 
+import { Button } from "@/components/ui/button"
 import { type ButtonHTMLAttributes, forwardRef } from "react"
 import { cn } from "@/lib/utils"
 
@@ -33,7 +34,7 @@ export const NotchedButton = forwardRef<HTMLButtonElement, NotchedButtonProps>(
                         {label}
                     </legend>
                 )}
-                <button
+                <Button
                     ref={ref}
                     type="button"
                     disabled={disabled}
@@ -41,7 +42,7 @@ export const NotchedButton = forwardRef<HTMLButtonElement, NotchedButtonProps>(
                     {...props}
                 >
                     {children}
-                </button>
+                </Button>
             </fieldset>
         )
     }

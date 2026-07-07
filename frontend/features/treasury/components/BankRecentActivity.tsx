@@ -1,5 +1,6 @@
 "use client"
 
+import { Button } from "@/components/ui/button"
 import { useRouter } from "next/navigation"
 import { TrendingDown, TrendingUp, ArrowLeftRight, Receipt, ArrowRight } from "lucide-react"
 import { MoneyDisplay, EmptyState, SectionHeader } from "@/components/shared"
@@ -46,7 +47,7 @@ export function BankRecentActivity({ data, bankId }: BankRecentActivityProps) {
                         : null
 
                     return (
-                        <button
+                        <Button
                             key={mov.id}
                             onClick={() => router.push(`/treasury/operaciones/movements?selected=${mov.id}`)}
                             className="w-full flex items-center gap-3 py-2 px-1 -mx-1 text-left hover:bg-muted/30 transition-colors rounded-sm group"
@@ -72,7 +73,7 @@ export function BankRecentActivity({ data, bankId }: BankRecentActivityProps) {
                                 <MoneyDisplay amount={mov.movement_type === "OUTBOUND" ? -Math.abs(mov.amount) : mov.amount} className="text-xs font-bold tabular-nums" />
                             </div>
                             <ArrowRight className="h-3 w-3 text-muted-foreground/0 group-hover:text-muted-foreground transition-all shrink-0" />
-                        </button>
+                        </Button>
                     )
                 })}
             </div>

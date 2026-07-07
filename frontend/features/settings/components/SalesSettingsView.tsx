@@ -1,6 +1,7 @@
 "use client"
  
 
+import { Button } from "@/components/ui/button"
 import React, { useEffect, useCallback, useState } from "react"
 
 import { useForm, type UseFormReturn, type Path } from "react-hook-form"
@@ -30,7 +31,7 @@ const DiscountPermissionControl = ({ form, userField, groupField }: { form: UseF
     return (
         <div className="flex flex-col gap-3">
             <div className="flex items-center p-0.5 bg-muted rounded-md border shadow-card w-fit self-start">
-                <button
+                <Button
                     type="button"
                     className={cn(
                         "px-3 py-1 rounded-md text-[10px] font-medium transition-all flex items-center gap-1.5",
@@ -43,8 +44,8 @@ const DiscountPermissionControl = ({ form, userField, groupField }: { form: UseF
                 >
                     <UserIcon className="h-3 w-3" />
                     Usuario
-                </button>
-                <button
+                </Button>
+                <Button
                     type="button"
                     className={cn(
                         "px-3 py-1 rounded-md text-[10px] font-medium transition-all flex items-center gap-1.5",
@@ -57,7 +58,7 @@ const DiscountPermissionControl = ({ form, userField, groupField }: { form: UseF
                 >
                     <UsersIcon className="h-3 w-3" />
                     Grupo
-                </button>
+                </Button>
             </div>
 
             <div className="w-full">

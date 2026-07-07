@@ -1,5 +1,6 @@
 "use client"
 
+import { Button } from "@/components/ui/button"
 import { useRouter } from "next/navigation"
 import { HandCoins } from "lucide-react"
 import { MoneyDisplay, SectionHeader } from "@/components/shared"
@@ -28,7 +29,7 @@ export function BankLoanSection({ data, bankId }: Props) {
 
             <div className="space-y-2">
                 {active_loans.map(loan => (
-                    <button
+                    <Button
                         key={loan.id}
                         onClick={() => router.push(`/treasury/bank-center/${bankId}/loans?selected=${loan.id}`)}
                         className="card-base w-full text-left bg-card p-4 cursor-pointer"
@@ -58,7 +59,7 @@ export function BankLoanSection({ data, bankId }: Props) {
                                 </span>
                             </div>
                         </div>
-                    </button>
+                    </Button>
                 ))}
             </div>
         </section>

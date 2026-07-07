@@ -1,5 +1,6 @@
 "use client"
 
+import { Button } from "@/components/ui/button"
 import React, { useState } from "react"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { ScrollArea } from "@/components/ui/scroll-area"
@@ -235,7 +236,7 @@ export function CostCalculatorDrawer({ open, onOpenChange }: CostCalculatorDrawe
 
                                                 <div className="flex flex-col items-center">
                                                     <div className="flex items-center gap-0">
-                                                        <button
+                                                        <Button
                                                             className="rounded-full h-8 w-8 border-2 border-primary/20 hover:border-primary hover:bg-primary/5 shrink-0 flex items-center justify-center transition-colors disabled:opacity-30 disabled:pointer-events-none"
                                                             onClick={() => {
                                                                 const qty = Math.max(0.01, item.quantity - 1)
@@ -245,17 +246,17 @@ export function CostCalculatorDrawer({ open, onOpenChange }: CostCalculatorDrawe
                                                             type="button"
                                                         >
                                                             <Minus className="h-3.5 w-3.5 text-muted-foreground" />
-                                                        </button>
+                                                        </Button>
 
                                                         <span className="w-10 text-center text-sm font-bold">{item.quantity}</span>
 
-                                                        <button
+                                                        <Button
                                                             className="rounded-full h-8 w-8 border-2 border-primary/20 hover:border-primary hover:bg-primary/5 shrink-0 flex items-center justify-center transition-colors"
                                                             onClick={() => updateQuantity(item.id, item.quantity + 1)}
                                                             type="button"
                                                         >
                                                             <Plus className="h-3.5 w-3.5 text-muted-foreground" />
-                                                        </button>
+                                                        </Button>
                                                     </div>
                                                     <div className="flex justify-center mt-0.5">
                                                         <Select value={String(item.uom_id ?? '')} onValueChange={val => updateUom(item.id, parseInt(val))}>
@@ -281,13 +282,13 @@ export function CostCalculatorDrawer({ open, onOpenChange }: CostCalculatorDrawe
                                                 </div>
 
                                                 <div>
-                                                    <button
+                                                    <Button
                                                         className="flex items-center justify-center text-muted-foreground hover:text-destructive transition-all h-8 w-8 rounded-full hover:bg-destructive/10"
                                                         onClick={() => removeItem(item.id)}
                                                         type="button"
                                                     >
                                                         <Trash2 className="h-4 w-4" />
-                                                    </button>
+                                                    </Button>
                                                 </div>
                                             </div>
                                         </div>

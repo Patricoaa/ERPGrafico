@@ -1,5 +1,6 @@
 "use client"
 
+import { Button } from "@/components/ui/button"
 import React, { useEffect, useCallback, useRef } from "react"
 import { useForm, Controller } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
@@ -139,7 +140,7 @@ function AssignmentModeToggle({
 }) {
     return (
         <div className="flex items-center p-0.5 bg-muted rounded-md border shadow-card shrink-0 scale-90 sm:scale-100">
-            <button
+            <Button
                 type="button"
                 className={cn(
                     "px-2 py-1 rounded-md text-[10px] font-medium transition-all flex items-center gap-1.5",
@@ -148,8 +149,8 @@ function AssignmentModeToggle({
                 onClick={() => onSwitch("user")}
             >
                 <User className="h-3 w-3" /> Usuario
-            </button>
-            <button
+            </Button>
+            <Button
                 type="button"
                 className={cn(
                     "px-2 py-1 rounded-md text-[10px] font-medium transition-all flex items-center gap-1.5",
@@ -158,7 +159,7 @@ function AssignmentModeToggle({
                 onClick={() => onSwitch("group")}
             >
                 <Users className="h-3 w-3" /> Grupo
-            </button>
+            </Button>
         </div>
     )
 }

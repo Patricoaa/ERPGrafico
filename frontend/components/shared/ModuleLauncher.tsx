@@ -1,5 +1,6 @@
 "use client"
 
+import { Button } from "@/components/ui/button"
 import { useEffect } from "react"
 import { createPortal } from "react-dom"
 import Link from "next/link"
@@ -75,13 +76,13 @@ export function ModuleLauncher({ open, onClose }: ModuleLauncherProps) {
                         className="relative w-full mx-2 md:mx-4 max-w-[clamp(48rem,90vw,72rem)]"
                         onClick={(e) => e.stopPropagation()}
                     >
-                        <button
+                        <Button
                             onClick={onClose}
                             className="absolute -top-[clamp(2.5rem,6vw,3rem)] right-0 p-2 rounded-full text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors"
                             aria-label="Cerrar selector de módulos"
                         >
                             <X className="h-[clamp(1rem,2.5vw,1.5rem)] w-[clamp(1rem,2.5vw,1.5rem)]" />
-                        </button>
+                        </Button>
 
                         <h2 className="text-[clamp(0.65rem,1.5vw,0.875rem)] font-bold tracking-tight text-muted-foreground uppercase mb-[clamp(0.75rem,2vw,1.5rem)] text-center">
                             Seleccionar Módulo

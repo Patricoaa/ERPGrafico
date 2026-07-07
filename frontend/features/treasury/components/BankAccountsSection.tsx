@@ -1,5 +1,6 @@
 "use client"
 
+import { Button } from "@/components/ui/button"
 import { useRouter } from "next/navigation"
 import { Landmark, CreditCard, Wallet, ArrowRight } from "lucide-react"
 import { MoneyDisplay, EmptyState, SectionHeader } from "@/components/shared"
@@ -55,7 +56,7 @@ export function BankAccountsSection({ data, bankId }: BankAccountsSectionProps) 
                                     ? Math.max(0, acc.current_balance + creditLine)
                                     : acc.current_balance
                                 return (
-                                    <button
+                                    <Button
                                         key={acc.id}
                                         onClick={() => router.push(`/treasury/bank-center/${bankId}/movements?account=${acc.id}`)}
                                         className="w-full flex items-center gap-3 py-2 px-1 -mx-1 text-left hover:bg-muted/30 transition-colors rounded-sm group"
@@ -85,7 +86,7 @@ export function BankAccountsSection({ data, bankId }: BankAccountsSectionProps) 
                                             </span>
                                         </div>
                                         <ArrowRight className="h-3 w-3 text-muted-foreground/0 group-hover:text-muted-foreground transition-all shrink-0" />
-                                    </button>
+                                    </Button>
                                 )
                             })}
                         </div>
@@ -101,7 +102,7 @@ export function BankAccountsSection({ data, bankId }: BankAccountsSectionProps) 
                                     ? card.credit_limit - Math.abs(card.current_balance)
                                     : null
                                 return (
-                                    <button
+                                    <Button
                                         key={card.id}
                                         onClick={() => router.push(`/treasury/bank-center/${bankId}/cards/unbilled?card=${card.id}`)}
                                         className={cn(
@@ -142,7 +143,7 @@ export function BankAccountsSection({ data, bankId }: BankAccountsSectionProps) 
                                                 </div>
                                             )}
                                         </div>
-                                    </button>
+                                    </Button>
                                 )
                             })}
                         </div>

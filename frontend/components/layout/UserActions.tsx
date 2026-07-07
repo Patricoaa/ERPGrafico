@@ -155,7 +155,7 @@ export function UserActions({ isInboxOpen, onInboxToggle }: UserActionsProps) {
                 {/* Calculator Action */}
                 <Tooltip>
                     <TooltipTrigger asChild>
-                        <button
+                        <Button
                             onClick={() => setIsCalculatorOpen(true)}
                             className={cn(
                                 "h-10 w-10 flex items-center justify-center rounded-md transition-all duration-200 active:scale-95",
@@ -165,7 +165,7 @@ export function UserActions({ isInboxOpen, onInboxToggle }: UserActionsProps) {
                             )}
                         >
                             <Calculator className="h-5 w-5" />
-                        </button>
+                        </Button>
                     </TooltipTrigger>
                     <TooltipContent side="bottom">
                         Calculadora de Costos
@@ -175,7 +175,7 @@ export function UserActions({ isInboxOpen, onInboxToggle }: UserActionsProps) {
                 {/* Inbox Action */}
                 <Tooltip>
                     <TooltipTrigger asChild>
-                        <button
+                        <Button
                             onClick={onInboxToggle}
                             className={cn(
                                 "relative h-10 w-10 flex items-center justify-center rounded-md transition-all duration-200 active:scale-95",
@@ -190,7 +190,7 @@ export function UserActions({ isInboxOpen, onInboxToggle }: UserActionsProps) {
                                     {pendingTasksCount > 99 ? '99+' : pendingTasksCount}
                                 </span>
                             )}
-                        </button>
+                        </Button>
                     </TooltipTrigger>
                     <TooltipContent side="bottom">
                         Bandeja de Entrada {pendingTasksCount > 0 && `(${pendingTasksCount})`}
@@ -204,7 +204,7 @@ export function UserActions({ isInboxOpen, onInboxToggle }: UserActionsProps) {
                     <Tooltip>
                         <TooltipTrigger asChild>
                             <DropdownMenuTrigger asChild>
-                                <button
+                                <Button
                                     className="relative h-10 w-10 flex items-center justify-center rounded-md text-foreground/50 hover:bg-accent hover:text-accent-foreground transition-all duration-200 active:scale-95 bg-transparent border-none shadow-none"
                                 >
                                     <Bell className="h-5 w-5" />
@@ -214,7 +214,7 @@ export function UserActions({ isInboxOpen, onInboxToggle }: UserActionsProps) {
                                             <span className="relative inline-flex rounded-full h-2 w-2 bg-primary"></span>
                                         </span>
                                     )}
-                                </button>
+                                </Button>
                             </DropdownMenuTrigger>
                         </TooltipTrigger>
                         <TooltipContent side="bottom">
@@ -254,7 +254,7 @@ export function UserActions({ isInboxOpen, onInboxToggle }: UserActionsProps) {
                     <Tooltip>
                         <TooltipTrigger asChild>
                             <DropdownMenuTrigger asChild>
-                                <button
+                                <Button
                                     className="relative h-10 w-10 flex items-center justify-center rounded-md text-foreground/50 hover:bg-accent hover:text-accent-foreground transition-all duration-200 active:scale-95 bg-transparent border border-border/60"
                                 >
                                     <Avatar className="h-full w-full rounded-md bg-transparent">
@@ -262,7 +262,7 @@ export function UserActions({ isInboxOpen, onInboxToggle }: UserActionsProps) {
                                             {user?.username?.substring(0, 2).toUpperCase() || 'US'}
                                         </AvatarFallback>
                                     </Avatar>
-                                </button>
+                                </Button>
                             </DropdownMenuTrigger>
                         </TooltipTrigger>
                         <TooltipContent side="bottom">

@@ -56,7 +56,7 @@ export function CategoryFilter({
                 )}
             >
                 {/* "All" pill */}
-                <button
+                <Button
                     className={cn(
                         "whitespace-nowrap flex items-center justify-center rounded-md font-bold uppercase tracking-wider transition-all border",
                         isTouchPOS ? "h-10 px-5 text-xs" : "h-8 px-3 text-[10px]",
@@ -68,10 +68,10 @@ export function CategoryFilter({
                     onClick={() => onSelectCategory(null)}
                 >
                     Todos
-                </button>
+                </Button>
 
                 {categories.map(cat => (
-                    <button
+                    <Button
                         key={cat.id}
                         className={cn(
                             "whitespace-nowrap flex items-center justify-center gap-1.5 rounded-md font-bold uppercase tracking-wider transition-all border",
@@ -85,7 +85,7 @@ export function CategoryFilter({
                     >
                         {cat.icon && <DynamicIcon name={cat.icon} className={isTouchPOS ? "h-4 w-4" : "h-3 w-3"} />}
                         {cat.name}
-                    </button>
+                    </Button>
                 ))}
             </div>
 
