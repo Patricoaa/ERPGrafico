@@ -3,7 +3,7 @@
 import { showApiError, getErrorMessage } from "@/lib/errors"
 import React, { useEffect, useState, useMemo } from "react"
 import { useSearchParams, useRouter, usePathname } from "next/navigation"
-import { ActionConfirmModal, DataTableView, DocumentCompletionModal, DomainHubStatus, SmartSearchBar, useSmartSearch, SegmentationBar, useSegmentation } from '@/components/shared'
+import { ActionConfirmModal, DataTableView, DocumentCompletionModal, DomainHubStatus, SmartSearchBar, useSmartSearch, SegmentationBar, useSegmentation, type FilterState } from '@/components/shared'
 import { DataTableColumnHeader, DataCell } from '@/components/shared'
 import type { AnalyticsPanelConfig } from '@/components/shared'
 import { type ColumnDef } from "@tanstack/react-table"
@@ -54,7 +54,7 @@ export function PurchasingOrdersClientView({ viewMode, externalOpenCheckout, cre
     const { filters: segFilters, isFiltered: isSegFiltered, clearAll: clearSeg } = useSegmentation(purchaseOrderSegDef, basePeriod)
     const isFiltered = isTextFiltered || isSegFiltered
     const [pageState, setPageState] = useState({ pageIndex: 0, pageSize: 20 })
-    const allFilters = { ...textFilters, ...segFilters, page: pageState.pageIndex + 1, page_size: pageState.pageSize }
+    const allFilters = { ...textFilters, ...segFilters, page: pageState.pageIndex + 1, page_size: pageState.pageSize } as unknown as FilterState & { page: number; page_size: number }
     const { page, orders, isLoading: isLoadingOrders, isRefetching, refetch: fetchOrders, deleteOrder, annulOrder } = usePurchasingOrders(allFilters, initialOrders ? { results: initialOrders, count: initialOrders.length } as Page<PurchaseOrderAPI> : undefined)
     // TODO: migrate purchasing notes to Page<T>
     const { notes, isLoading: isLoadingNotes } = usePurchasingNotes(initialNotes)
@@ -553,7 +553,7 @@ export function PurchasingOrdersClientView({ viewMode, externalOpenCheckout, cre
                         onOpenChange={(open) => !open && setCompletingInvoice(null)}
                         invoiceId={completingInvoice.id}
                         invoiceType={completingInvoice.type}
-                        contactId={invoicingOrder?.supplier || ((orders as unknown as PurchaseOrder[]).find((o) => o.related_documents?.invoices?.some((i: Record<string, unknown>) => i.id === completingInvoice.id))?.supplier ?? undefined)}
+                        contactId={invoicingOrder?.supplier_id || ((orders as unknown as PurchaseOrder[]).find((o) => o.related_documents?.invoices?.some((i: Record<string, unknown>) => i.id === completingInvoice.id))?.supplier_id ?? undefined)}
                         isPurchase={true}
                         onComplete={async (invoiceId, formData) => {
                             await billingApi.confirmInvoice(invoiceId, formData)
@@ -597,7 +597,7 @@ export function PurchasingOrdersClientView({ viewMode, externalOpenCheckout, cre
                         onOpenChange={setFolioModalOpen}
                         invoiceId={selectedInvoice.id}
                         invoiceType={selectedInvoice.type}
-                        contactId={invoicingOrder?.supplier || ((orders as unknown as PurchaseOrder[]).find((o) => o.related_documents?.invoices?.some((i: Record<string, unknown>) => i.id === selectedInvoice.id))?.supplier ?? undefined)}
+                        contactId={invoicingOrder?.supplier_id || ((orders as unknown as PurchaseOrder[]).find((o) => o.related_documents?.invoices?.some((i: Record<string, unknown>) => i.id === selectedInvoice.id))?.supplier_id ?? undefined)}
                         isPurchase={true}
                         onComplete={async (invoiceId, formData) => {
                             await billingApi.confirmInvoice(invoiceId, formData)

@@ -36,8 +36,8 @@ export function StockReport() {
     const [isFormLoading, setIsFormLoading] = useState(false)
 
     const stockReportActionsCtx: StockReportActionsCtx = {
-        onAdjust: (product) => setAdjustingProduct(product),
-        onHistory: (product) => setInsightsProduct(product),
+        onAdjust: (product) => setAdjustingProduct(product as StockReportItem | null),
+        onHistory: (product) => setInsightsProduct(product as StockReportItem | null),
     }
 
     const filteredReport = (() => {
@@ -165,7 +165,7 @@ export function StockReport() {
             },
         },
 
-        stockReportActions.column(stockReportActionsCtx),
+        stockReportActions.column(stockReportActionsCtx) as unknown as ColumnDef<StockReportItem>,
     ], [setAdjustingProduct, setInsightsProduct])
 
     return (
@@ -246,8 +246,8 @@ export function StockReport() {
             <ProductInsightsModal
                 open={!!insightsProduct}
                 onOpenChange={(open) => !open && setInsightsProduct(null)}
-                productId={insightsProduct?.id}
-                productName={insightsProduct?.name}
+                productId={(insightsProduct?.id as number) ?? null}
+                productName={insightsProduct?.name ?? null}
             />
         </PageContainer>
     )

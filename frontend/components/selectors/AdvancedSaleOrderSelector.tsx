@@ -20,7 +20,7 @@ interface AdvancedSaleOrderSelectorProps {
     onChange: (value: string | null) => void
     placeholder?: string
     disabled?: boolean
-    customFilter?: (order: any) => boolean
+    customFilter?: (order: SaleOrder) => boolean
     label?: string
     error?: string
     className?: string

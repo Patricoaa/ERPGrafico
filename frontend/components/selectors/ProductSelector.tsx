@@ -22,7 +22,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge"
 import { useProductSearch, useSingleProduct } from "@/features/inventory/hooks/useProductSearch"
 
-import { type Product } from "@/types/entities"
+import { type Product, type ProductVariant, type ProductAttributeValue } from "@/types/entities"
 import { BaseModal, CardSkeleton, EmptyState, LabeledContainer, MoneyDisplay } from '@/components/shared'
 
 const ProductIcon = getEntityIcon('inventory.product')
@@ -38,9 +38,9 @@ interface ProductSelectorProps {
     excludeIds?: (string | number)[]
     context?: 'sale' | 'purchase'
     excludeVariantTemplates?: boolean
-    onSelect?: (product: any) => void
-    customFilter?: (product: any) => boolean
-    customDisabled?: (product: any) => boolean
+    onSelect?: (product: Product) => void
+    customFilter?: (product: Product) => boolean
+    customDisabled?: (product: Product) => boolean
     className?: string
     shouldResolveVariants?: boolean
     simpleOnly?: boolean
@@ -50,17 +50,15 @@ interface ProductSelectorProps {
     variant?: 'standalone' | 'inline'
 }
 
-const EMPTY_ARRAY: any[] = []
-
 export function ProductSelector({
     value,
     onChange,
     placeholder = "Seleccionar producto...",
     productType,
-    allowedTypes = EMPTY_ARRAY,
+    allowedTypes = [],
     disabled = false,
     restrictStock = false,
-    excludeIds = EMPTY_ARRAY,
+    excludeIds = [],
     context,
     excludeVariantTemplates = false,
     onSelect,
@@ -144,7 +142,7 @@ export function ProductSelector({
         }
     }
 
-    const getStockRestrictionReason = (product: any) => {
+    const getStockRestrictionReason = (product: Product) => {
         if (!restrictStock) return null
 
         if (product.product_type === 'STORABLE') {
@@ -165,16 +163,16 @@ export function ProductSelector({
         return null
     }
 
-    const isStockRestricted = (product: any) => getStockRestrictionReason(product) !== null
+    const isStockRestricted = (product: Product) => getStockRestrictionReason(product) !== null
 
-    const isCustomDisabled = (product: any) => {
+    const isCustomDisabled = (product: Product) => {
         if (customDisabled && customDisabled(product)) {
             return true
         }
         return false
     }
 
-    const handleSelect = (product: any) => {
+    const handleSelect = (product: Product) => {
         if (isStockRestricted(product) || isCustomDisabled(product)) {
             return;
         }
@@ -192,13 +190,13 @@ export function ProductSelector({
         setSearchTerm("")
     }
 
-    const handleVariantSelect = (variant: any) => {
+    const handleVariantSelect = (variant: ProductVariant) => {
         setIsVariantDialogOpen(false)
         setTemplateToResolve(null)
 
-        setSelectedProduct(variant)
-        onChange(variant ? variant.id.toString() : null)
-        if (onSelect) onSelect(variant)
+        setSelectedProduct(variant as unknown as Product)
+        onChange(variant.id.toString())
+        if (onSelect) onSelect(variant as unknown as Product)
     }
 
     const selectButton = (
@@ -390,7 +388,7 @@ export function ProductSelector({
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
-                                {templateToResolve?.variants?.map((v: any) => (
+                                {templateToResolve?.variants?.map((v: ProductVariant) => (
                                     <TableRow
                                         key={v.id}
                                         className="cursor-pointer hover:bg-muted/50 transition-colors"
@@ -400,7 +398,7 @@ export function ProductSelector({
                                             <div className="flex flex-col">
                                                 <span className="font-medium">{v.variant_display_name || v.name}</span>
                                                 <div className="flex gap-1 mt-1">
-                                                    {v.attribute_values_data?.map((av: any) => (
+                                                    {v.attribute_values_data?.map((av: ProductAttributeValue) => (
                                                         <Badge key={av.id} variant="secondary" className="text-[9px] py-0 h-4">
                                                             {av.attribute_name}: {av.value}
                                                         </Badge>

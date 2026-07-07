@@ -7,7 +7,7 @@ import { Check, Loader2, Banknote, CreditCard, Wallet, Landmark } from "lucide-r
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { ChevronDown } from "lucide-react"
-import { useTreasuryAccounts, type PaymentContext } from "@/hooks/useTreasuryAccounts"
+import { useTreasuryAccounts, type PaymentContext, type TreasuryAccount } from "@/hooks/useTreasuryAccounts"
 import { LabeledContainer, SearchablePopover, MoneyDisplay } from '@/components/shared'
 import type { TreasuryAccountType } from "@/features/treasury/types"
 
@@ -39,7 +39,7 @@ interface TreasuryAccountSelectorProps {
     allowedIds?: number[]
 
     // Optional: Return full account object on select
-    onSelect?: (account: any) => void
+    onSelect?: (account: TreasuryAccount) => void
     label?: string
     error?: string
     required?: boolean
@@ -109,7 +109,7 @@ export function TreasuryAccountSelector({
         ? accounts.find(a => a.id.toString() === value.toString()) || null
         : null
 
-    const handleSelect = (account: any) => {
+    const handleSelect = (account: TreasuryAccount) => {
         onChange(account ? account.id.toString() : null)
         if (account && onSelect) onSelect(account)
         setOpen(false)
