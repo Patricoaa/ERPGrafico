@@ -6,7 +6,7 @@
 import { createContext, useContext, useState, useCallback, type ReactNode, useEffect, useMemo } from 'react'
 import type { Product, CartItem, Category, UoM, POSSession, BOMCache, ComponentCache, BOM, WizardState, Customer } from '../types'
 import * as CartUtils from '../utils/cart-utils'
-import api from '@/lib/api'
+import { posApi } from '../api/posApi'
 
 
 
@@ -95,15 +95,13 @@ export function POSProvider({ children }: { children: ReactNode }) {
     useEffect(() => {
         const fetchDefaultCustomer = async () => {
             try {
-                const response = await api.get('/contacts/?is_default_customer=true')
-                const results = response.data.results || response.data
-                const defaultCustomer = results.find((c: Customer) => c.is_default_customer)
+                const defaultCustomer = await posApi.getDefaultCustomer()
                 if (defaultCustomer) {
                     setDefaultCustomerId(defaultCustomer.id)
                     // Only set as selected if none is already selected (prevents overwriting draft loads)
                     if (!selectedCustomerId) {
                         setSelectedCustomerId(defaultCustomer.id)
-                        setSelectedCustomer(defaultCustomer)
+                        setSelectedCustomer(defaultCustomer as unknown as Customer)
                     }
                 }
             } catch (error) {
@@ -123,8 +121,8 @@ export function POSProvider({ children }: { children: ReactNode }) {
     // Fetch full customer details when ID changes
     useEffect(() => {
         if (selectedCustomerId && (!selectedCustomer || selectedCustomer.id !== selectedCustomerId)) {
-            api.get(`/contacts/${selectedCustomerId}/`)
-                .then(res => requestAnimationFrame(() => setSelectedCustomer(res.data)))
+            posApi.getContact(selectedCustomerId)
+                .then(data => requestAnimationFrame(() => setSelectedCustomer(data as unknown as Customer)))
                 .catch(err => console.error("Error fetching customer in POSContext:", err))
         } else if (!selectedCustomerId) {
             requestAnimationFrame(() => setSelectedCustomer(null))

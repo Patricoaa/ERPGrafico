@@ -18,7 +18,7 @@ import type { BaseProduct, ProductCategory } from '@/features/inventory'
 import { Plus, Heart } from 'lucide-react'
 import { memo } from 'react'
 import { DynamicIcon, EmptyState } from '@/components/shared'
-import { resolveMediaUrl } from '@/lib/api'
+import { resolveMediaUrl } from '@/lib/media-url'
 import { VirtuosoGrid } from 'react-virtuoso'
 
 // Define StockLimits locally here since they are passed from POS but might not be present in other contexts
