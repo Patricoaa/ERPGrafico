@@ -208,8 +208,9 @@ export function useAutoMatchMutation(statementId: number) {
         },
         onSuccess: (data) => {
             markLocalMutation()
+            const res = data as { matched_count?: number; total_unreconciled?: number }
             toast.success(`Conciliación Finalizada`, {
-                description: `${data.matched_count} de ${data.total_unreconciled} líneas conciliadas automáticamente.`
+                description: `${res.matched_count ?? 0} de ${res.total_unreconciled ?? 0} líneas conciliadas automáticamente.`
             })
         },
         onError: (err) => {

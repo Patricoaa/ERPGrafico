@@ -17,7 +17,7 @@ export interface ApiError {
     status_code?: number;
 }
 
-export async function wrapApiCall<T>(promise: Promise<unknown>): Promise<Result<T, ApiError>> {
+export async function wrapApiCall<T>(promise: Promise<{ data: unknown }>): Promise<Result<T, ApiError>> {
     try {
         const response = await promise;
         return Ok(response.data as T);

@@ -65,10 +65,10 @@ export function AutoMatchProgressModal({
         stopPolling()
         pollRef.current = setInterval(async () => {
             try {
-                const data: ProgressData = await financeApi.getAutoMatchStatus(
+                const data = await financeApi.getAutoMatchStatus(
                     statementId,
                     { task_id: id }
-                )
+                ) as ProgressData
                 setProgress(data)
 
                 if (data.status === 'SUCCESS') {

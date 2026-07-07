@@ -232,7 +232,7 @@ export function BulkVariantEditForm({
           <Form {...form}>
             <div className="space-y-5">
 
-              <FormField<BulkEditValues>
+              <FormField
                 control={form.control}
                 name="price_inheritance_mode"
                 render={({ field }) => (
@@ -253,7 +253,7 @@ export function BulkVariantEditForm({
               />
 
               {currentMode === 'SURCHARGE' && (
-                <FormField<BulkEditValues>
+                <FormField
                   control={form.control}
                   name="price_surcharge"
                   render={({ field, fieldState }) => (
@@ -301,7 +301,7 @@ export function BulkVariantEditForm({
                 />
               </div>
 
-              <FormField<BulkEditValues>
+              <FormField
                 control={form.control}
                 name="sale_uom"
                 render={({ field, fieldState }) => (

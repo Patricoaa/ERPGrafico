@@ -33,7 +33,7 @@ export default function InventorySettingsPageClient() {
     useEffect(() => {
         (async () => {
             try {
-                const data = await accountingApi.getSettings()
+                const data = await accountingApi.getSettings() as { inventory_valuation_method?: "AVERAGE" | "FIFO" | "LIFO" }
                 form.reset({
                     inventory_valuation_method: data.inventory_valuation_method || "AVERAGE",
                 })

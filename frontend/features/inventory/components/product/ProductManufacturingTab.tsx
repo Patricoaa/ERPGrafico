@@ -117,7 +117,7 @@ export function ProductManufacturingTab({ form, initialData }: ProductManufactur
                     </LabeledContainer>
 
                     <div className="space-y-4">
-                        <FormField<ProductFormValues>
+                        <FormField
                             control={form.control}
                             name="has_bom"
                             render={({ field }) => (
@@ -153,7 +153,7 @@ export function ProductManufacturingTab({ form, initialData }: ProductManufactur
                                 { name: "mfg_enable_press", label: "Impresión", icon: Printer },
                                 { name: "mfg_enable_postpress", label: "Post-Impresión", icon: Scissors }
                             ] as const).map((stage) => (
-                                <FormField<ProductFormValues>
+                                <FormField
                                     key={stage.name}
                                     control={form.control}
                                     name={stage.name}

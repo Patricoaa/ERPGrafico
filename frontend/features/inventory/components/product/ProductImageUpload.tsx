@@ -50,7 +50,7 @@ export function ProductImageUpload({ form, imagePreview, setImagePreview }: Prod
 
     return (
         <div className="h-full">
-            <FormField<ProductFormValues>
+            <FormField
                 control={form.control}
                 name="image"
                 render={({ field, fieldState }) => (

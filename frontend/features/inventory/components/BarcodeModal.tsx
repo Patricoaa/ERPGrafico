@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useRef } from "react"
+import React, { useState, useEffect, useRef, useCallback } from "react"
 import JsBarcode from "jsbarcode"
 
 import { Button } from "@/components/ui/button"
@@ -22,7 +22,7 @@ export function BarcodeModal({ open, onOpenChange, initialValue = "", onApply }:
     const [mounted, setMounted] = useState(false)
     const barcodeSvgRef = useRef<SVGSVGElement | null>(null)
 
-    const generateBarcode = React.useCallback((node: SVGSVGElement | null, value: string) => {
+    const generateBarcode = useCallback((node: SVGSVGElement | null, value: string) => {
         if (!node || !value || !open) return
         
         try {

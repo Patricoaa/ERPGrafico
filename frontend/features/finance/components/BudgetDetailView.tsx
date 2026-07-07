@@ -95,13 +95,13 @@ const columns: ColumnDef<BudgetExecutionItem>[] = [
 export function BudgetDetailView({ budgetId }: BudgetDetailViewProps) {
     const { data, isLoading, isError } = useBudgetDetailData(budgetId ? Number(budgetId) : null)
 
-    const budget = data?.budget ?? null
-    const executionData = data?.execution ?? null
+    const budget = (data?.budget as Budget) ?? null
+    const executionData = (data?.execution as BudgetExecutionData) ?? null
 
     const handleExport = async () => {
         if (!budget) return
         try {
-            const blob = await financeApi.exportBudgetCsv(budget.id)
+            const blob = await financeApi.exportBudgetCsv(budget.id) as BlobPart
             const url = window.URL.createObjectURL(new Blob([blob]))
             const link = document.createElement('a')
             link.href = url

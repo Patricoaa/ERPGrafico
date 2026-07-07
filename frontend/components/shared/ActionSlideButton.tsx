@@ -7,6 +7,7 @@ import { Loader2, type LucideIcon } from "lucide-react";
 
 export interface ActionSlideButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
     variant?: 'primary' | 'destructive' | 'success' | 'cmyk';
+    size?: 'default' | 'sm' | 'lg' | 'icon' | 'icon-sm' | 'icon-lg';
     /** Show loading spinner and disable interaction */
     loading?: boolean;
     /** Leading icon (Lucide component or instance) */
@@ -27,7 +28,7 @@ export interface ActionSlideButtonProps extends React.ButtonHTMLAttributes<HTMLB
  * Supports `loading` (spinner + disabled) and `icon` (leading Lucide icon).
  */
 export const ActionSlideButton = React.forwardRef<HTMLButtonElement, ActionSlideButtonProps>(
-    ({ className, variant = 'cmyk', loading = false, icon, disabled, children, ...props }, ref) => {
+    ({ className, variant = 'cmyk', size, loading = false, icon, disabled, children, ...props }, ref) => {
         const isPrimary = variant === 'primary';
         const isDestructive = variant === 'destructive';
         const isSuccess = variant === 'success';
@@ -38,6 +39,7 @@ export const ActionSlideButton = React.forwardRef<HTMLButtonElement, ActionSlide
             <Button
                 ref={ref}
                 disabled={isDisabled}
+                size={size}
                 className={cn(
                     "relative flex items-center justify-center overflow-hidden transition-all duration-300 ease-out cursor-pointer",
                     "h-9 px-4 text-[10px] font-black tracking-widest uppercase rounded-sm shadow-card",
