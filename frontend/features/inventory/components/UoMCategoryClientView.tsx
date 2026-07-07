@@ -87,10 +87,10 @@ export function UoMCategoryClientView({ externalOpen, onExternalOpenChange, crea
 
     const handleDelete = (id: number) => deleteConfirm.requestConfirm(id)
 
-    const actionsCtx: UoMCategoryActionsCtx = {
+    const actionsCtx: UoMCategoryActionsCtx = useMemo(() => ({
         onEdit: (item) => openSelected(item.id),
         onDelete: (id) => handleDelete(id),
-    }
+    }), [openSelected])
 
     const columns = useMemo<ColumnDef<UoMCategory>[]>(() => [
         {
@@ -141,7 +141,7 @@ export function UoMCategoryClientView({ externalOpen, onExternalOpenChange, crea
             intent: "destructive",
             onClick: async (items) => bulkDeleteConfirm.requestConfirm(items),
         },
-    ], [deleteUoMCategory, bulkDeleteConfirm])
+    ], [bulkDeleteConfirm])
 
     return (
         <div className="flex-1 min-h-0 flex flex-col">

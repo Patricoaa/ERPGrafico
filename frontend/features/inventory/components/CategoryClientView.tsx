@@ -142,7 +142,7 @@ export function CategoryClientView({ externalOpen, onExternalOpenChange, createA
             cell: ({ row }) => <DataCell.Secondary>{row.getValue("parent_name") || "-"}</DataCell.Secondary>,
         },
         categoryActions.column(actionsCtx),
-    ], [actionsCtx, handleDelete])
+    ], [actionsCtx])
 
     // Sync external trigger (toolbar button) → create modal
     React.useEffect(() => {

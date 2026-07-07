@@ -23,21 +23,21 @@ export const accountingApi = {
     },
 
     getEntries: async (params?: Record<string, unknown>): Promise<Page<unknown>> => {
-        const { data } = await api.get('/accounting/entries/', { params })
+        const { data } = await api.get<unknown>('/accounting/entries/', { params })
         return toPage(data, (params?.page as number) ?? 1, (params?.page_size as number) ?? 50)
     },
     getEntry: async (id: number | string) => {
-        const { data } = await api.get(`/accounting/entries/${id}/`)
+        const { data } = await api.get<unknown>(`/accounting/entries/${id}/`)
         return data
     },
 
     createEntry: async (payload: Record<string, unknown>): Promise<unknown> => {
-        const { data } = await api.post('/accounting/entries/', payload)
+        const { data } = await api.post<unknown>('/accounting/entries/', payload)
         return data
     },
 
     updateEntry: async (id: number, payload: Record<string, unknown>): Promise<unknown> => {
-        const { data } = await api.patch(`/accounting/entries/${id}/`, payload)
+        const { data } = await api.patch<unknown>(`/accounting/entries/${id}/`, payload)
         return data
     },
 
@@ -71,12 +71,12 @@ export const accountingApi = {
     },
 
     getSettings: async () => {
-        const response = await api.get('/accounting/settings/current/')
+        const response = await api.get<Record<string, unknown>>('/accounting/settings/current/')
         return response.data
     },
 
     updateSettings: async (data: Record<string, unknown>) => {
-        const response = await api.patch('/accounting/settings/current/', data)
+        const response = await api.patch<Record<string, unknown>>('/accounting/settings/current/', data)
         return response.data
     },
 
@@ -99,12 +99,12 @@ export const accountingApi = {
     },
 
     getAccountingPeriodStatus: async (periodId: number): Promise<Record<string, unknown>> => {
-        const { data } = await api.get(`/tax/accounting-periods/${periodId}/status_check/`)
+        const { data } = await api.get<Record<string, unknown>>(`/tax/accounting-periods/${periodId}/status_check/`)
         return data
     },
 
     checkPeriodClosed: async (date: string): Promise<{ is_closed: boolean; date: string; period_name?: string }> => {
-        const { data } = await api.get(`tax/accounting-periods/check_closed/?date=${date}`)
+        const { data } = await api.get<{ is_closed: boolean; date: string; period_name?: string }>(`tax/accounting-periods/check_closed/?date=${date}`)
         return data
     },
 }

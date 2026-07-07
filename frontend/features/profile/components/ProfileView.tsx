@@ -21,7 +21,7 @@ import { type ColumnDef } from "@tanstack/react-table"
 import { Form, FormField } from "@/components/ui/form"
 import { cn } from "@/lib/utils"
 import {
-    Loader2, User, ShieldCheck, KeyRound, Mail,
+    User, ShieldCheck, KeyRound, Mail,
     Building2, Briefcase, Calendar, CreditCard, Wallet,
     Download, Clock, FileText,
     ChevronDown, ChevronRight, Sun, Moon, Monitor
@@ -281,8 +281,7 @@ function PasswordChangeCard() {
                         </div>
 
                         <div className="flex justify-end pt-2">
-                            <ActionSlideButton type="submit" disabled={saving} className="rounded-sm text-xs font-bold gap-2">
-                                {saving && <Loader2 className="h-4 w-4 animate-spin" />}
+                            <ActionSlideButton type="submit" loading={saving} disabled={saving} className="rounded-sm text-xs font-bold gap-2">
                                 <KeyRound className="h-4 w-4" />
                                 Cambiar Contraseña
                             </ActionSlideButton>
@@ -387,7 +386,7 @@ function PersonalTab({
                         variant="ghost"
                         size="icon"
                         className="h-7 w-7 opacity-50 hover:opacity-100"
-                        onClick={(e) => {
+                        onClick={(e: React.MouseEvent) => {
                             e.stopPropagation()
                             row.toggleExpanded()
                         }}
@@ -585,16 +584,17 @@ function PersonalTab({
                         <CardContent className="p-0">
                             {selectedPayrolls.length > 0 && (
                                 <div className="px-6 py-2 border-b bg-muted/10 flex justify-end">
-                                    <Button
+                                    <ActionSlideButton
                                         size="sm"
                                         variant="outline"
                                         className="gap-2 rounded-sm text-xs font-bold border-primary/30 text-primary hover:bg-primary/5"
                                         onClick={onBulkDownload}
                                         disabled={downloadingAll}
+                                        loading={downloadingAll}
                                     >
-                                        {downloadingAll ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Download className="h-3.5 w-3.5" />}
+                                        {!downloadingAll && <Download className="h-3.5 w-3.5" />}
                                         Descargar {selectedPayrolls.length} seleccionada(s)
-                                    </Button>
+                                    </ActionSlideButton>
                                 </div>
                             )}
                             <div className="flex-1 min-h-0">
@@ -762,8 +762,7 @@ function PinChangeCard() {
                         </div>
 
                         <div className="flex justify-end pt-2">
-                            <ActionSlideButton type="submit" disabled={saving} className="rounded-sm text-xs font-bold gap-2">
-                                {saving && <Loader2 className="h-4 w-4 animate-spin" />}
+                            <ActionSlideButton type="submit" loading={saving} disabled={saving} className="rounded-sm text-xs font-bold gap-2">
                                 <Wallet className="h-4 w-4" />
                                 Guardar PIN
                             </ActionSlideButton>

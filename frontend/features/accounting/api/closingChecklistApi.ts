@@ -18,11 +18,11 @@ export interface ChecklistItem {
 }
 
 export async function fetchChecklist(year: number): Promise<ChecklistItem[]> {
-    const res = await api.get(`/accounting/fiscal-years/${year}/checklist/`)
+    const res = await api.get<ChecklistItem[]>(`/accounting/fiscal-years/${year}/checklist/`)
     return res.data
 }
 
 export async function updateChecklistItem(year: number, itemId: number, data: { is_completed: boolean; notes?: string }): Promise<ChecklistItem> {
-    const res = await api.patch(`/accounting/fiscal-years/${year}/checklist/${itemId}/`, data)
+    const res = await api.patch<ChecklistItem>(`/accounting/fiscal-years/${year}/checklist/${itemId}/`, data)
     return res.data
 }

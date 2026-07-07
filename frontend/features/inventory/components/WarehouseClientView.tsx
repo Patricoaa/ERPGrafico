@@ -161,7 +161,7 @@ export function WarehouseClientView({ externalOpen, onExternalOpenChange, create
             ),
         },
         warehouseActions.column(actionsCtx),
-    ], [actionsCtx, handleDelete])
+    ], [actionsCtx])
 
     const bulkActions = useMemo<BulkAction<Warehouse>[]>(() => [
         {
@@ -171,7 +171,7 @@ export function WarehouseClientView({ externalOpen, onExternalOpenChange, create
             intent: "destructive",
             onClick: async (items) => bulkDeleteConfirm.requestConfirm(items),
         },
-    ], [deleteWarehouse, bulkDeleteConfirm])
+    ], [bulkDeleteConfirm])
 
     return (
         <div className="flex-1 min-h-0 flex flex-col">

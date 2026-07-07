@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/incompatible-library */
 "use client"
 
 import {type UoM, type Product} from "@/types/entities"
@@ -389,7 +390,7 @@ export function ProductDrawer({ open, onOpenChange, initialData, onSuccess, lock
                 // producto nuevo (sin initialData.id) el hook ya devuelve [].
             }
         }
-    }, [open, initialData])
+    }, [open, initialData, form, lockedType])
 
     const FIELD_LABELS: Record<string, string> = {
         name: "Nombre Comercial",

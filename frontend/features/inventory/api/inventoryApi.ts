@@ -50,7 +50,7 @@ export const inventoryApi = {
         if (filters?.page_size) params.append('page_size', String(filters.page_size))
         if (filters?.fields) params.append('fields', filters.fields)
 
-        const { data } = await api.get('inventory/products/', { params })
+        const { data } = await api.get<{ count: number; results: Product[] }>('inventory/products/', { params })
         return toPage<Product>(data, filters?.page ?? 1, filters?.page_size ?? 50)
     },
 
@@ -118,7 +118,7 @@ export const inventoryApi = {
         templateId: number,
         selection: Array<{ attribute: number, values: number[] }>,
     ): Promise<unknown> => {
-        const { data } = await api.post(`inventory/products/${templateId}/generate_variants/`, { selection })
+        const { data } = await api.post<unknown>(`inventory/products/${templateId}/generate_variants/`, { selection })
         return data
     },
 

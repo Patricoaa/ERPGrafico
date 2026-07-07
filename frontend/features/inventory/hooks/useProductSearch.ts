@@ -24,7 +24,7 @@ const resolveVariants = async (productList: Product[], limit?: number): Promise<
     await Promise.all(itemsToResolve.map(async (p, idx) => {
         if (p.has_variants && (!p.variants || p.variants.length === 0)) {
             try {
-                const res = await api.get(`/inventory/products/${p.id}/variants/`)
+                const res = await api.get<Product[]>(`/inventory/products/${p.id}/variants/`)
                 resolved[idx] = { ...p, variants: res.data }
             } catch (e) {
                 console.error("Failed to fetch variants for", p.name, e)

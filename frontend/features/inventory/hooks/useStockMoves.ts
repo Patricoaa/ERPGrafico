@@ -107,7 +107,7 @@ export function useStockAdjustment() {
 
     const adjustMutation = useMutation({
         mutationFn: async (payload: StockAdjustmentPayload) => {
-            const res = await api.post('/inventory/moves/adjust/', payload)
+            const res = await api.post<unknown>('/inventory/moves/adjust/', payload)
             return res.data
         },
         onSuccess: () => {

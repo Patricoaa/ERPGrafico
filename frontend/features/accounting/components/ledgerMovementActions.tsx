@@ -1,5 +1,5 @@
 import { DataCell, createEntityActions } from '@/components/shared'
-import { Eye, Trash2 } from 'lucide-react'
+import { Eye } from 'lucide-react'
 import type { LedgerMovement } from '@/features/accounting/types'
 
 export interface LedgerMovementActionsCtx {

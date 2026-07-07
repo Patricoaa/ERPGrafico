@@ -117,6 +117,7 @@ export function PieChart({
                             <>
                                 <span className="font-medium">{String(datum.label ?? datum.id)}</span>
                                 <span className="ml-2 font-bold">
+                                    {/* eslint-disable-next-line no-restricted-syntax -- Nivo chart tooltip; MoneyDisplay not applicable in SVG context */}
                                     {Number(datum.value).toLocaleString()}
                                 </span>
                             </>

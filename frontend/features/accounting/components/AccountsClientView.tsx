@@ -89,17 +89,13 @@ export function AccountsClientView({ externalOpen, onExternalOpenChange, createA
         clearSelection()
     }
 
-    const handleAddAccount = (parentId?: string) => {
-        setEditingAccount(null)
-        setFormParentId(parentId || null)
-        setIsFormOpen(true)
-    }
 
-    const handleEditAccount = (account: Account) => {
+
+    const handleEditAccount = React.useCallback((account: Account) => {
         const params = new URLSearchParams(searchParams.toString())
         params.set('selected', String(account.id))
         router.push(`${pathname}?${params.toString()}`, { scroll: false })
-    }
+    }, [pathname, router, searchParams])
 
     // Synchronize external modal trigger
     useEffect(() => {
@@ -108,9 +104,7 @@ export function AccountsClientView({ externalOpen, onExternalOpenChange, createA
         }
     }, [externalOpen])
 
-    const handleDelete = async (id: number) => {
-        setDeleteTarget(id)
-    }
+
 
     const confirmDelete = async () => {
         if (!deleteTarget) return
@@ -236,7 +230,7 @@ export function AccountsClientView({ externalOpen, onExternalOpenChange, createA
         },
         accountActions.column(actionCtx),
         ]
-    }, [])
+    }, [handleEditAccount, pathname, router, searchParams])
 
     return (
         <div className="flex-1 min-h-0 flex flex-col">

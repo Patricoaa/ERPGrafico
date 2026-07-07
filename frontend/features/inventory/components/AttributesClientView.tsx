@@ -254,7 +254,7 @@ export function AttributesClientView({ externalOpen, createAction }: AttributesC
             },
         },
         attributeActions.column(attributeActionsCtx) as ColumnDef<ProductAttribute>,
-    ], [handleDeleteValue, handleDeleteAttribute])
+    ], [handleDeleteValue, handleDeleteAttribute, attributeActionsCtx])
 
     const bulkActions = useMemo<BulkAction<ProductAttribute>[]>(() => [
         {
@@ -264,7 +264,7 @@ export function AttributesClientView({ externalOpen, createAction }: AttributesC
             intent: "destructive",
             onClick: async (items) => bulkDeleteConfirm.requestConfirm(items),
         },
-    ], [deleteAttribute, bulkDeleteConfirm])
+    ], [bulkDeleteConfirm])
 
     return (
         <div className="flex-1 min-h-0 flex flex-col">

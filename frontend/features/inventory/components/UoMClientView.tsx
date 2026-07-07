@@ -141,7 +141,7 @@ export function UoMClientView({ externalOpen, onExternalOpenChange, createAction
             ),
         },
         uomActions.column(actionsCtx),
-    ], [actionsCtx, handleDelete, openSelected])
+    ], [actionsCtx])
 
     const bulkActions = useMemo<BulkAction<UoM>[]>(() => [
         {
@@ -151,7 +151,7 @@ export function UoMClientView({ externalOpen, onExternalOpenChange, createAction
             intent: "destructive",
             onClick: async (items) => bulkDeleteConfirm.requestConfirm(items),
         },
-    ], [deleteUoM, bulkDeleteConfirm])
+    ], [bulkDeleteConfirm])
 
     return (
         <div className="flex-1 min-h-0 flex flex-col">

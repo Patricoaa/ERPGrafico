@@ -14,8 +14,6 @@ import { StatusBadge } from "@/components/shared"
 export default function JobsPageClient() {
     const { jobs, isLoading, isError, refetch } = useBackgroundJobs()
 
-    const isProcessing = (status: BackgroundJob['status']) => status === "PROCESSING"
-
     if (isLoading) {
         return <div className="flex justify-center p-12"><Loader2 className="w-8 h-8 animate-spin text-muted-foreground" /></div>
     }

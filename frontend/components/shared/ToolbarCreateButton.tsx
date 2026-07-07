@@ -20,7 +20,7 @@ export function ToolbarCreateButton({
     iconName,
     href,
     className,
-    size: _size,
+    size: _,
     ...props
 }: ToolbarCreateButtonProps) {
     const renderIcon = () => {

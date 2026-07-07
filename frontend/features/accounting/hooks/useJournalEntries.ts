@@ -50,7 +50,7 @@ export function useJournalEntry(id: string | number | undefined) {
         queryKey: [...JOURNAL_ENTRIES_QUERY_KEY, 'detail', id],
         queryFn: async () => {
             const data = await accountingApi.getEntry(id as string | number)
-            return data
+            return data as JournalEntry
         },
         staleTime: 2 * 60 * 1000,
         enabled: !!id,

@@ -24,6 +24,7 @@ export const PrintableReceipt = forwardRef<HTMLDivElement, PrintableReceiptProps
         const formattedDate = date
             ? (typeof date === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(date)
                 ? formatPlainDate(date)
+                // eslint-disable-next-line no-restricted-syntax -- date/time formatting, not currency or quantity
                 : new Date(date).toLocaleString("es-CL"))
             : ""
         const terminalName = data?.terminal_name ?? data?.pos_session?.terminal_name ?? data?.session?.terminal_name ?? ""
