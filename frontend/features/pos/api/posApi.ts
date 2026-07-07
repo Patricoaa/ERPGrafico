@@ -71,4 +71,23 @@ export const posApi = {
     // ── Accounting Settings ──
     getAccountingSettings: () =>
         api.get('/accounting/settings/current/').then(r => r.data),
+
+    // ── Contacts ──
+    getDefaultCustomer: () =>
+        api.get('/contacts/?is_default_customer=true').then(r => {
+            const results = r.data.results || r.data
+            return results.find((c: { is_default_customer: boolean }) => c.is_default_customer) ?? null
+        }),
+    getContact: (id: number) =>
+        api.get(`/contacts/${id}/`).then(r => r.data),
+
+    // ── BOM ──
+    getActiveBOM: (productId: number) =>
+        api.get<{ results: Record<string, unknown>[] }>(`/production/boms/?product_id=${productId}&active=true`).then(r =>
+            r.data.results.find((b: Record<string, unknown>) => b.active) ?? null
+        ),
+
+    // ── Inventory ──
+    getProductName: (productId: number) =>
+        api.get(`/inventory/products/${productId}/`).then(r => r.data.name as string),
 }

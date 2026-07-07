@@ -1,6 +1,6 @@
 'use server'
 
-import api from '@/lib/api'
+import { accountingApi } from './api/accountingApi'
 
 /**
  * Checks if a specific date belongs to a CLOSED accounting period.
@@ -10,8 +10,7 @@ export async function validateAccountingPeriod(date: string) {
     if (!date) return { is_closed: false }
     
     try {
-        const response = await api.get(`tax/accounting-periods/check_closed/?date=${date}`)
-        return response.data as { is_closed: boolean; date: string; period_name?: string }
+        return await accountingApi.checkPeriodClosed(date)
     } catch (error: unknown) {
         console.error('Error validating accounting period:', error)
         const apiError = error as { response?: { data?: { error?: string } } }

@@ -2,7 +2,7 @@
 // Business logic for stock validation and limit calculation
 
 import type {Product, CartItem, BOM, UoM, BOMCache} from '../types'
-import api from '@/lib/api'
+import { posApi } from '../api/posApi'
 
 /**
  * Calculate Unit of Measurement conversion factor
@@ -147,8 +147,7 @@ export async function validateStock(
             let name = prod?.name
             if (!name) {
                 try {
-                    const res = await api.get(`/inventory/products/${componentId}/`)
-                    name = res.data.name
+                    name = await posApi.getProductName(componentId)
                 } catch {
                     name = `Componente #${componentId}`
                 }

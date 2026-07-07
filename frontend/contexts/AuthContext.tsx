@@ -4,7 +4,8 @@ import React, { createContext, useContext, useEffect, useState, useCallback, use
 import {useRouter} from "next/navigation";
 import axios from "axios";
 import { toast } from "sonner";
-import api, { AUTH_UNAUTHORIZED_EVENT } from "@/lib/api";
+import { AUTH_UNAUTHORIZED_EVENT } from "@/lib/api";
+import { authApi } from "@/features/auth/api/authApi";
 import { useTheme } from "next-themes";
 import { setClientToken, removeClientTokens, getClientToken } from "@/lib/client-token";
 
@@ -59,8 +60,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                 return;
             }
 
-            const res = await api.get<User>('/core/auth/me/');
-            const userData = res.data;
+            const userData = await authApi.getCurrentUser();
             setUser(userData);
             setIsAuthenticated(true);
 
@@ -113,7 +113,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     const logout = () => {
         // Clear backend HttpOnly cookie
-        api.post('/logout/').catch(() => {
+        authApi.logout().catch(() => {
             // Best-effort: cookie also expires after max-age
         });
         removeClientTokens();

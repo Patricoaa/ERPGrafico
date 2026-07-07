@@ -102,4 +102,9 @@ export const accountingApi = {
         const { data } = await api.get(`/tax/accounting-periods/${periodId}/status_check/`)
         return data
     },
+
+    checkPeriodClosed: async (date: string): Promise<{ is_closed: boolean; date: string; period_name?: string }> => {
+        const { data } = await api.get(`tax/accounting-periods/check_closed/?date=${date}`)
+        return data
+    },
 }

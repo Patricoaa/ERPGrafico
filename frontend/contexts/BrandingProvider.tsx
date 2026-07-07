@@ -2,7 +2,7 @@
 
 import React, { createContext, useContext, useMemo } from 'react'
 import { useCompanySettings, type CompanySettings } from '@/features/settings'
-import { resolveMediaUrl } from '@/lib/api'
+import { resolveMediaUrl } from '@/lib/media-url'
 
 interface BrandingContextType {
     logo: string | null
