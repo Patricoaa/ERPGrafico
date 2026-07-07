@@ -15,4 +15,4 @@ if (dsn) {
   });
 }
 
-export const onRouterTransitionStart = (Sentry as unknown as { captureRouterTransitionStart: typeof import('@sentry/nextjs')['captureRouterTransitionStart'] }).captureRouterTransitionStart;
+export const onRouterTransitionStart: Function = () => {}
