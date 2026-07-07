@@ -1,7 +1,7 @@
 "use client"
 
 import { useMemo, useState, useEffect } from 'react'
-import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import {
     Receipt, CreditCard,
@@ -28,7 +28,6 @@ import {
 } from '@/components/shared'
 import type { SegmentationDefinition } from '@/types/segmentation'
 import type { SearchDefinition } from '@/types/search'
-import { treasuryApi } from '../api/treasuryApi'
 import { useBankOverview } from '../hooks/useBankOverview'
 import type { BankOverviewData } from '../hooks/useBankOverview'
 import type { PendingChargeRow, UpcomingInstallment, UnbilledItemRow } from '../types'
@@ -39,6 +38,7 @@ import { PieChart } from "@/components/shared"
 import { useHubPanel } from '@/components/providers'
 import { useSearchParams, usePathname, useRouter } from 'next/navigation'
 import { useEntityRouteActions } from '@/hooks/useEntityRouteActions'
+import { useUnbilledCharges } from '../hooks/useUnbilledCharges'
 import { invalidateCrossFeature } from '@/lib/invalidation'
 
 const unbilledSearchDef: SearchDefinition = {
@@ -145,13 +145,7 @@ export function UnbilledChargesView({
     const today = new Date().toISOString().split('T')[0]
     const cutOffDate = segFilters.scope !== 'all' ? today : undefined
 
-    const { data: result, isLoading } = useQuery({
-        queryKey: ['unbilled-charges', selectedCardAccount, cutOffDate ?? 'all'],
-        queryFn: () => treasuryApi.getUnbilledCharges(selectedCardAccount, cutOffDate),
-        enabled: !!selectedCardAccount,
-        staleTime: 2 * 60 * 1000,
-        placeholderData: (prev) => prev,
-    })
+    const { data: result, isLoading } = useUnbilledCharges(selectedCardAccount, cutOffDate)
 
     const charges: PendingChargeRow[] = result?.charges ?? []
     // ── Derive chargeToEdit from URL param (selectedId) ───────────
