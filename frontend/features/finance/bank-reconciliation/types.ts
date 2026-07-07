@@ -147,3 +147,14 @@ export interface PaymentAllocationPayload {
     purchase_order?: number
     bank_statement_line?: number
 }
+
+export interface PaymentSuggestion {
+    is_batch?: boolean
+    payment_data?: { id: number, contact_name: string }
+    batch_data?: { id: number, name: string, display_id?: string }
+    difference: string
+}
+
+export interface LineSuggestion {
+    line_data: { id: number, description: string }
+}

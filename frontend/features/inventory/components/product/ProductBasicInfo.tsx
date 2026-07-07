@@ -33,7 +33,7 @@ export function ProductBasicInfo({ form, isEditing, imagePreview, setImagePrevie
                 <div className="grid grid-cols-4 gap-4 items-stretch">
                     {/* Fila 1: Nombre (3) / Imagen (1) */}
                     <div className="col-span-3">
-                        <FormField<ProductFormValues>
+                        <FormField
                             control={form.control}
                             name="name"
                             render={({ field, fieldState }) => (
@@ -76,7 +76,7 @@ export function ProductBasicInfo({ form, isEditing, imagePreview, setImagePrevie
                     </div>
 
                     <div className="col-span-1">
-                        <FormField<ProductFormValues>
+                        <FormField
                             control={form.control}
                             name="can_be_sold"
                             render={({ field }) => (
@@ -102,7 +102,7 @@ export function ProductBasicInfo({ form, isEditing, imagePreview, setImagePrevie
                     </div>
 
                     <div className="col-span-1">
-                        <FormField<ProductFormValues>
+                        <FormField
                             control={form.control}
                             name="can_be_purchased"
                             render={({ field }) => (
@@ -129,7 +129,7 @@ export function ProductBasicInfo({ form, isEditing, imagePreview, setImagePrevie
 
                     {/* Fila 3: Tipo (1) / Categoría (2) / Variantes (1) */}
                     <div className="col-span-1">
-                        <FormField<ProductFormValues>
+                        <FormField
                             control={form.control}
                             name="product_type"
                             render={({ field, fieldState }) => (
@@ -161,7 +161,7 @@ export function ProductBasicInfo({ form, isEditing, imagePreview, setImagePrevie
                         />
                     </div>
                     <div className="col-span-1">
-                        <FormField<ProductFormValues>
+                        <FormField
                             control={form.control}
                             name="category"
                             render={({ field, fieldState }) => (
@@ -177,7 +177,7 @@ export function ProductBasicInfo({ form, isEditing, imagePreview, setImagePrevie
                         />
                     </div>
                     <div className="col-span-1">
-                        <FormField<ProductFormValues>
+                        <FormField
                             control={form.control}
                             name="has_variants"
                             render={({ field }) => (
@@ -204,7 +204,7 @@ export function ProductBasicInfo({ form, isEditing, imagePreview, setImagePrevie
 
                     {/* Fila 4: SKU (Propietary Row) */}
                     <div className="col-span-4">
-                        <FormField<ProductFormValues>
+                        <FormField
                             control={form.control}
                             name="code"
                             render={({ field, fieldState }) => (

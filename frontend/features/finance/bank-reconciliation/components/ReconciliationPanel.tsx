@@ -75,7 +75,9 @@ import type {
     ReconciliationSystemItem,
     ReconciliationMovement,
     ReconciliationBatch,
-    QueryPaginationParams
+    QueryPaginationParams,
+    PaymentSuggestion,
+    LineSuggestion
 } from "../types"
 
 interface ReconGroupData {
@@ -88,16 +90,7 @@ interface ReconGroupData {
     difference_journal_entry?: number
 }
 
-interface PaymentSuggestion {
-    is_batch?: boolean
-    payment_data?: { id: number, contact_name: string }
-    batch_data?: { id: number, name: string }
-    difference: string
-}
 
-interface LineSuggestion {
-    line_data: { id: number, description: string }
-}
 
 interface ReconciliationPanelProps {
     statementId: number

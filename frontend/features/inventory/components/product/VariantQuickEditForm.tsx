@@ -222,7 +222,7 @@ export function VariantQuickEditForm({
           <Form {...form}>
             <div className="space-y-5">
 
-              <FormField<QuickEditValues>
+              <FormField
                 control={form.control}
                 name="price_inheritance_mode"
                 render={({ field }) => (
@@ -248,7 +248,7 @@ export function VariantQuickEditForm({
               />
 
               {form.watch('price_inheritance_mode') === 'SURCHARGE' && (
-                <FormField<QuickEditValues>
+                <FormField
                   control={form.control}
                   name="price_surcharge"
                   render={({ field, fieldState }) => (
@@ -293,7 +293,7 @@ export function VariantQuickEditForm({
                 />
               </div>
 
-              <FormField<QuickEditValues>
+              <FormField
                 control={form.control}
                 name="sale_uom"
                 render={({ field, fieldState }) => (
@@ -318,7 +318,7 @@ export function VariantQuickEditForm({
                 )}
 
               <div className="flex items-end gap-2">
-                <FormField<QuickEditValues>
+                <FormField
                   control={form.control}
                   name="code"
                   render={({ field, fieldState }) => (

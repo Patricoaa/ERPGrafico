@@ -25,7 +25,12 @@ export function ProductInventoryTab({ form, initialData, uoms = [], isEditing }:
     const mfgAutoFinalize = form.watch("mfg_auto_finalize")
     const requiresAdvancedmfg = form.watch("requires_advanced_manufacturing")
 
-    const purchaseUomProduct = useMemo(() => ({ uom: stockUomId } as unknown as Product), [stockUomId])
+    const purchaseUomProduct = useMemo(() => ({
+        id: 0,
+        name: "",
+        uom: stockUomId ? Number(stockUomId) : undefined,
+        allowed_sale_uoms: []
+    }), [stockUomId])
 
     const isSimpleMfg = productType === 'MANUFACTURABLE' && !mfgAutoFinalize && !requiresAdvancedmfg
     const isAdvancedMfg = productType === 'MANUFACTURABLE' && requiresAdvancedmfg
@@ -41,7 +46,7 @@ export function ProductInventoryTab({ form, initialData, uoms = [], isEditing }:
                     <FormSection title="Unidades y Conversión" icon={Package} />
                     <div className="grid grid-cols-2 gap-4">
                         <div className="col-span-2">
-                            <FormField<ProductFormValues>
+                            <FormField
                                 control={form.control}
                                 name="uom"
                                 render={({ field, fieldState }) => (
@@ -60,7 +65,7 @@ export function ProductInventoryTab({ form, initialData, uoms = [], isEditing }:
                         </div>
 
                         <div className="col-span-2">
-                            <FormField<ProductFormValues>
+                            <FormField
                                 control={form.control}
                                 name="purchase_uom"
                                 render={({ field, fieldState }) => (
@@ -81,7 +86,7 @@ export function ProductInventoryTab({ form, initialData, uoms = [], isEditing }:
 
                         <div className="col-span-2">
                             {canBeSold && (
-                                <FormField<ProductFormValues>
+                                <FormField
                                     control={form.control}
                                     name="allowed_sale_uoms"
                                     render={({ field, fieldState }) => {
@@ -118,7 +123,7 @@ export function ProductInventoryTab({ form, initialData, uoms = [], isEditing }:
                 {/* Logistics Section */}
                 <div className="col-span-2 space-y-4">
                     <FormSection title="Control y Abastecimiento" icon={Warehouse} />
-                    <FormField<ProductFormValues>
+                    <FormField
                         control={form.control}
                         name="track_inventory"
                         render={({ field }) => (
@@ -139,7 +144,7 @@ export function ProductInventoryTab({ form, initialData, uoms = [], isEditing }:
 
                                 {/* Kept mounted with CSS visibility — avoids unmount of Radix Popover-based selectors during production-mode commits, which would loop via usePresence/safelyDetachRef. */}
                                 <div className={cn("space-y-4 animate-in fade-in slide-in-from-top-2 duration-400", !field.value && "hidden")}>
-                                    <FormField<ProductFormValues>
+                                    <FormField
                                         control={form.control}
                                         name="receiving_warehouse"
                                         render={({ field: whField, fieldState }) => (
@@ -153,7 +158,7 @@ export function ProductInventoryTab({ form, initialData, uoms = [], isEditing }:
                                         )}
                                     />
 
-                                    <FormField<ProductFormValues>
+                                    <FormField
                                         control={form.control}
                                         name="preferred_supplier"
                                         render={({ field: supplierField, fieldState }) => (

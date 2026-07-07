@@ -100,9 +100,9 @@ export function JournalEntryDrawer({
         description?: string;
         label?: string;
         items?: Array<Record<string, unknown>>;
-        source_documents?: Array<{ id: number; display_name: string }>;
+        source_documents?: Array<{ id: number; display_name?: string; type?: string; display?: string; name?: string; url?: string }>;
         is_manual?: boolean;
-        reversal_of?: unknown;
+        reversal_of?: { id?: number; display_id?: string } | null;
         status?: string;
     } | undefined;
     const printRef = useRef<HTMLDivElement>(null)
@@ -236,7 +236,7 @@ export function JournalEntryDrawer({
     useEffect(() => {
         if (isViewMode && viewEntry) {
             form.reset({
-                date: toDate(viewEntry.date),
+                date: toDate(viewEntry.date || ''),
                 description: viewEntry.description ?? viewEntry.label ?? '',
                 items: (viewEntry.items ?? []).map((item: Record<string, unknown>) => ({
                     account: viewEntryAccountId(item),
@@ -381,7 +381,7 @@ export function JournalEntryDrawer({
                                 <fieldset className="notched-field h-full" aria-disabled="true">
                                     <legend>Documento Origen</legend>
                                     <div className="flex items-center gap-2">
-                                        {viewEntry.source_documents.map((doc: { type: string; id: number; display?: string; name?: string; url?: string }) => (
+                                        {viewEntry.source_documents.map((doc) => (
                                             <SourceDocumentLink key={doc.id} doc={doc as unknown as { type: string; id: number; display?: string; name?: string; url?: string }} />
                                         ))}
                                     </div>

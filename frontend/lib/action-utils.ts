@@ -3,7 +3,7 @@ import type { ActionRegistry, Action, UserPermissions } from '@/types/actions'
 /**
  * Filter actions based on order state and user permissions
  */
-export function filterAvailableActions<T>(
+export function filterAvailableActions<T extends { status: string }>(
     registry: ActionRegistry<T>,
     order: T,
     userPermissions?: UserPermissions

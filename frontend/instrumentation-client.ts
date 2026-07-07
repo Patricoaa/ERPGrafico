@@ -15,4 +15,4 @@ if (dsn) {
   });
 }
 
-export const onRouterTransitionStart: Function = () => {}
+export const onRouterTransitionStart: () => void = () => {}

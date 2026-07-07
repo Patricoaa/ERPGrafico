@@ -51,7 +51,7 @@ export function ProductPricingSection({ form, canBeSold, uoms }: ProductPricingS
             <FormSection title="Precio de Venta" icon={DollarSign} />
 
             <div className="space-y-4">
-                <FormField<ProductFormValues>
+                <FormField
                     control={form.control}
                     name="is_dynamic_pricing"
                     render={({ field }) => (
@@ -81,7 +81,7 @@ export function ProductPricingSection({ form, canBeSold, uoms }: ProductPricingS
                 {/* Base price row */}
                 <div className={cn(isDynamicPricing && "hidden")}>
                     <div className="grid grid-cols-1 md:grid-cols-4 gap-4 rounded-md items-end">
-                        <FormField<ProductFormValues>
+                        <FormField
                             control={form.control}
                             name="sale_price"
                             render={({ field, fieldState }) => (
@@ -107,7 +107,7 @@ export function ProductPricingSection({ form, canBeSold, uoms }: ProductPricingS
                             className="h-9 text-right bg-info/5 border-info/20 text-info/80 cursor-default font-bold"
                         />
 
-                        <FormField<ProductFormValues>
+                        <FormField
                             control={form.control}
                             name="sale_price_gross"
                             render={({ field, fieldState }) => (
@@ -126,7 +126,7 @@ export function ProductPricingSection({ form, canBeSold, uoms }: ProductPricingS
                             )}
                         />
 
-                        <FormField<ProductFormValues>
+                        <FormField
                             control={form.control}
                             name="sale_uom"
                             render={({ field }) => (

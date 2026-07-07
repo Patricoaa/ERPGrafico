@@ -147,15 +147,15 @@ export default function StatementImportModal({ open, onOpenChange, onSuccess, de
             const fData = new FormData()
             fData.append('file', file as Blob)
 
-            const previewResult = await financeApi.previewStatement(fData)
+            const previewResult = await financeApi.previewStatement(fData) as ImportPreviewData
             setPreviewData(previewResult)
 
             // Update bank format if it's generic and file type matches excel
-            if ((previewResult as Record<string, unknown>).file_type === 'excel' && bankFormat === 'GENERIC_CSV') {
+            if (previewResult.file_type === 'excel' && bankFormat === 'GENERIC_CSV') {
                 form.setValue('bank_format', 'GENERIC_EXCEL')
             }
 
-            const cols = (previewResult as Record<string, unknown>).columns as (string | number)[]
+            const cols = previewResult.columns
             const newMapping = { ...mapping }
             cols.forEach((col: string | number) => {
                 const colStr = String(col).toLowerCase()
@@ -217,7 +217,7 @@ export default function StatementImportModal({ open, onOpenChange, onSuccess, de
                 dryRunData.append('custom_config', JSON.stringify(config))
             }
             
-            const dryRunResultData = await financeApi.dryRunStatement(dryRunData)
+            const dryRunResultData = await financeApi.dryRunStatement(dryRunData) as DryRunResult
             setDryRunResult(dryRunResultData)
             return true
         } catch (error: unknown) {

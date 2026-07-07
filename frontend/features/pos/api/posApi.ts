@@ -74,9 +74,10 @@ export const posApi = {
 
     // ── Contacts ──
     getDefaultCustomer: () =>
-        api.get('/contacts/?is_default_customer=true').then(r => {
-            const results = r.data.results || r.data
-            return results.find((c: { is_default_customer: boolean }) => c.is_default_customer) ?? null
+        api.get<{ results: Array<{ is_default_customer: boolean }> }>('/contacts/?is_default_customer=true').then(r => {
+            const data = r.data
+            const results = Array.isArray(data) ? data : (data?.results ?? [])
+            return results.find((c) => c.is_default_customer) ?? null
         }),
     getContact: (id: number) =>
         api.get(`/contacts/${id}/`).then(r => r.data),

@@ -586,7 +586,6 @@ function PersonalTab({
                                 <div className="px-6 py-2 border-b bg-muted/10 flex justify-end">
                                     <ActionSlideButton
                                         size="sm"
-                                        variant="outline"
                                         className="gap-2 rounded-sm text-xs font-bold border-primary/30 text-primary hover:bg-primary/5"
                                         onClick={onBulkDownload}
                                         disabled={downloadingAll}

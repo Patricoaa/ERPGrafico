@@ -116,7 +116,7 @@ export function ProductVariantsTab({ form, initialData, onTabChange }: ProductVa
     const handleGenerateVariants = async () => {
         const selection = Object.entries(selectedValues).map(([id, vals]) => ({
             attribute: Number(id),
-            values: vals
+            values: vals.map(String)
         })).filter(item => item.values.length > 0)
 
         if (selection.length === 0) {
@@ -137,7 +137,13 @@ export function ProductVariantsTab({ form, initialData, onTabChange }: ProductVa
         // generateVariants invalida PRODUCTS_KEYS.all + ['inventory','variants']
         // → la tabla se refresca automáticamente. isGenerating viene del hook.
         try {
-            await generateVariants({ templateId: initialData.id, selection })
+            await generateVariants({
+                templateId: initialData.id,
+                selection: selection.map(s => ({
+                    attribute: s.attribute,
+                    values: s.values.map(Number)
+                }))
+            })
             toast.success("Variantes generadas con éxito")
             setSelectedValues({})
         } catch (error: unknown) {
