@@ -15,6 +15,7 @@ import { formatRUT } from "@/lib/utils/format"
 import { useContactSearch, useSingleContact } from "@/features/contacts/hooks/useContactSearch"
 
 import { type Contact } from "@/types/entities"
+import { type Contact as ContactInitialData } from "@/features/contacts/types"
 import { CardSkeleton, EmptyState, LabeledContainer, SearchBar } from '@/components/shared'
 import React, { Suspense } from "react"
 
@@ -60,7 +61,7 @@ export function AdvancedContactSelector({
     const shouldFetchSearch = open || searchTerm.length > 0
     const { contacts, loading: searchLoading } = useContactSearch({
         search: debouncedSearch,
-        contactType: contactType === 'BOTH' ? undefined : contactType as any,
+        contactType: contactType === 'BOTH' ? undefined : contactType,
         isCustomer: contactType === 'CUSTOMER' ? true : undefined,
         isVendor: contactType === 'SUPPLIER' ? true : undefined,
         isPartnerOnly
@@ -246,8 +247,8 @@ export function AdvancedContactSelector({
                     <ContactDrawer
                         open={isCreateModalOpen}
                         onOpenChange={setIsCreateModalOpen}
-                        onSuccess={handleCreateSuccess as any}
-                        contact={initialContactTemplate as any}
+                        onSuccess={handleCreateSuccess}
+                        contact={initialContactTemplate as unknown as ContactInitialData | null}
                     />
                 </Suspense>
             )}
