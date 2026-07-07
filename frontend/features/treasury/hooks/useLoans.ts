@@ -7,6 +7,7 @@ import type {
     DisburseLoanPayload,
 } from '../loans/types'
 import { invalidateCrossFeature } from '@/lib/invalidation'
+import { useRealtime } from '@/features/realtime'
 
 const LOANS_KEYS = {
     all: ['loans'] as const,
@@ -54,6 +55,7 @@ export function useLoanInstallments(params?: Record<string, string>) {
 
 export function useLoanMutations() {
     const queryClient = useQueryClient()
+    const { markLocalMutation } = useRealtime()
 
     const invalidate = () => {
         invalidateCrossFeature(queryClient, [LOANS_KEYS.all])
@@ -61,28 +63,28 @@ export function useLoanMutations() {
 
     const create = useMutation({
         mutationFn: (payload: BankLoanCreatePayload) => loansApi.create(payload),
-        onSuccess: () => { invalidate(); toast.success('Crédito creado') },
+        onSuccess: () => { markLocalMutation(); invalidate(); toast.success('Crédito creado') },
         onError: (e: Error) => showApiError(e, 'Error al crear crédito'),
     })
 
     const disburse = useMutation({
         mutationFn: ({ id, payload }: { id: number; payload?: DisburseLoanPayload }) =>
             loansApi.disburse(id, payload),
-        onSuccess: () => { invalidate(); toast.success('Crédito desembolsado') },
+        onSuccess: () => { markLocalMutation(); invalidate(); toast.success('Crédito desembolsado') },
         onError: (e: Error) => showApiError(e, 'Error al desembolsar crédito'),
     })
 
     const prepay = useMutation({
         mutationFn: ({ id, payload }: { id: number; payload: PrepayLoanPayload }) =>
             loansApi.prepay(id, payload),
-        onSuccess: () => { invalidate(); toast.success('Prepago registrado — crédito pagado') },
+        onSuccess: () => { markLocalMutation(); invalidate(); toast.success('Prepago registrado — crédito pagado') },
         onError: (e: Error) => showApiError(e, 'Error al prepagar crédito'),
     })
 
     const payInstallment = useMutation({
         mutationFn: ({ id, payload }: { id: number; payload: PayInstallmentPayload }) =>
             loansApi.payInstallment(id, payload),
-        onSuccess: () => { invalidate(); toast.success('Cuota pagada') },
+        onSuccess: () => { markLocalMutation(); invalidate(); toast.success('Cuota pagada') },
         onError: (e: Error) => showApiError(e, 'Error al pagar cuota'),
     })
 

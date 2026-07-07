@@ -12,6 +12,7 @@ export function useAuthLogin() {
 
   return useMutation({
     mutationFn: authApi.login,
+    // eslint-disable-next-line mutation/must-mark-local -- login doesn't invalidate entity caches
     onSuccess: (data) => {
       authLogin(data.access)
       if (data.refresh) {

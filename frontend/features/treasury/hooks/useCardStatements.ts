@@ -6,6 +6,7 @@ import type {
     CreditCardStatementCreatePayload, PayStatementPayload, ApplyChargesPayload,
 } from '../card-statements/types'
 import { invalidateCrossFeature } from '@/lib/invalidation'
+import { useRealtime } from '@/features/realtime'
 
 const STMT_KEYS = {
     all: ['card-statements'] as const,
@@ -42,6 +43,7 @@ export function useStatementCharges(statementId: number | null) {
 
 export function useCardStatementMutations() {
     const queryClient = useQueryClient()
+    const { markLocalMutation } = useRealtime()
 
     const invalidate = () => {
         invalidateCrossFeature(queryClient, [STMT_KEYS.all, ['card-analytics']])
@@ -49,28 +51,28 @@ export function useCardStatementMutations() {
 
     const create = useMutation({
         mutationFn: (payload: CreditCardStatementCreatePayload) => cardStatementsApi.create(payload),
-        onSuccess: () => { invalidate(); toast.success('Estado de cuenta creado') },
+        onSuccess: () => { markLocalMutation(); invalidate(); toast.success('Estado de cuenta creado') },
         onError: (e: Error) => showApiError(e, 'Error al crear estado de cuenta'),
     })
 
     const pay = useMutation({
         mutationFn: ({ id, payload }: { id: number; payload: PayStatementPayload }) =>
             cardStatementsApi.pay(id, payload),
-        onSuccess: () => { invalidate(); toast.success('Estado de cuenta pagado') },
+        onSuccess: () => { markLocalMutation(); invalidate(); toast.success('Estado de cuenta pagado') },
         onError: (e: Error) => showApiError(e, 'Error al pagar estado de cuenta'),
     })
 
     const applyCharges = useMutation({
         mutationFn: ({ id, payload }: { id: number; payload: ApplyChargesPayload }) =>
             cardStatementsApi.applyCharges(id, payload),
-        onSuccess: () => { invalidate(); toast.success('Cargos aplicados') },
+        onSuccess: () => { markLocalMutation(); invalidate(); toast.success('Cargos aplicados') },
         onError: (e: Error) => showApiError(e, 'Error al aplicar cargos'),
     })
 
     const cancel = useMutation({
         mutationFn: ({ id, notes }: { id: number; notes?: string }) =>
             cardStatementsApi.cancel(id, notes),
-        onSuccess: () => { invalidate(); toast.success('Estado de cuenta anulado') },
+        onSuccess: () => { markLocalMutation(); invalidate(); toast.success('Estado de cuenta anulado') },
         onError: (e: Error) => showApiError(e, 'Error al anular estado de cuenta'),
     })
 
