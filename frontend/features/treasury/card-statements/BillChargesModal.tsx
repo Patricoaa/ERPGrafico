@@ -198,9 +198,10 @@ export function BillChargesModal({
                                     return (
                                         <div key={key}>
                                             <Button
+                                                variant="ghost"
                                                 type="button"
                                                 onClick={() => toggleGroup(key)}
-                                                className="flex w-full items-center gap-2 px-4 py-2.5 text-left hover:bg-muted/20 transition-colors"
+                                                className="flex w-full items-center gap-2 px-4 py-2.5 text-left hover:bg-muted/20 transition-colors shadow-none text-foreground"
                                             >
                                                 {isExpanded ? (
                                                     <ChevronDown className="h-4 w-4 shrink-0 text-muted-foreground" />

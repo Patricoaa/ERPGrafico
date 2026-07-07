@@ -278,6 +278,7 @@ export function UnbilledChargesView({
                             </span>
                         )}
                         <Button
+                            variant="ghost"
                             type="button"
                             onClick={(e) => {
                                 e.stopPropagation()
@@ -285,7 +286,7 @@ export function UnbilledChargesView({
                                     openHub({ orderId: inst.purchase_order_id, type: 'purchase' })
                                 }
                             }}
-                            className="inline-block outline-none ring-offset-background focus:ring-2 focus:ring-ring focus:ring-offset-2 rounded-md transition-shadow"
+                            className="inline-block outline-none ring-offset-background focus:ring-2 focus:ring-ring focus:ring-offset-2 rounded-md transition-shadow h-auto w-auto p-0 border-none bg-transparent hover:bg-transparent shadow-none"
                         >
                             <StatusBadge
                                 status={inst.purchase_order_display_id ? 'info' : 'muted'}

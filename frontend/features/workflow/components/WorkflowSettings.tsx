@@ -141,9 +141,10 @@ function AssignmentModeToggle({
     return (
         <div className="flex items-center p-0.5 bg-muted rounded-md border shadow-card shrink-0 scale-90 sm:scale-100">
             <Button
+                variant="ghost"
                 type="button"
                 className={cn(
-                    "px-2 py-1 rounded-md text-[10px] font-medium transition-all flex items-center gap-1.5",
+                    "px-2 py-1 rounded-md text-[10px] font-medium transition-all flex items-center gap-1.5 h-auto border-none shadow-none",
                     mode === "user" ? "bg-background text-foreground shadow-card" : "text-muted-foreground hover:text-foreground",
                 )}
                 onClick={() => onSwitch("user")}
@@ -151,9 +152,10 @@ function AssignmentModeToggle({
                 <User className="h-3 w-3" /> Usuario
             </Button>
             <Button
+                variant="ghost"
                 type="button"
                 className={cn(
-                    "px-2 py-1 rounded-md text-[10px] font-medium transition-all flex items-center gap-1.5",
+                    "px-2 py-1 rounded-md text-[10px] font-medium transition-all flex items-center gap-1.5 h-auto border-none shadow-none",
                     mode === "group" ? "bg-background text-foreground shadow-card" : "text-muted-foreground hover:text-foreground",
                 )}
                 onClick={() => onSwitch("group")}
