@@ -3,7 +3,7 @@
 import {type UoM, type Product} from "@/types/entities"
 
 import { useState, useEffect, useMemo } from "react"
-import { useForm, type FieldErrors, type UseFormReturn } from "react-hook-form"
+import { useForm, type FieldErrors, type Resolver } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { toast } from "sonner"
 import { resolveMediaUrl } from "../api/inventoryApi"
@@ -118,8 +118,8 @@ export function ProductDrawer({ open, onOpenChange, initialData, onSuccess, lock
         variant_display_name: "",
     }, [initialData, lockedType])
 
-    const form: UseFormReturn<ProductFormValues> = useForm<ProductFormValues>({
-        resolver: zodResolver(productSchema),
+    const form = useForm<ProductFormValues>({
+        resolver: zodResolver(productSchema) as unknown as Resolver<ProductFormValues>,
         defaultValues: productDefaultValues,
     })
 

@@ -22,6 +22,15 @@ export function useChecks(params?: Record<string, string>) {
     })
 }
 
+export function useCheck(id: number | null, enabled = true) {
+    return useQuery({
+        queryKey: CHECKS_KEYS.detail(id ?? 0),
+        queryFn: () => checksApi.get(id as number),
+        enabled: id != null && enabled,
+        staleTime: 60 * 1000,
+    })
+}
+
 export function useCheckPortfolio(params?: Record<string, string>, enabled = true) {
     return useQuery({
         queryKey: CHECKS_KEYS.portfolio(),
