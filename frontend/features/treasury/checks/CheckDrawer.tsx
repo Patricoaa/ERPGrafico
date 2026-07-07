@@ -12,7 +12,7 @@ interface CheckDrawerProps {
 }
 
 export function CheckDrawer({ id, open, onOpenChange }: CheckDrawerProps) {
-    const { data: check, isLoading, isError } = useCheck(id, open)
+    const { check, isLoading, isError } = useCheck(id, open)
     const identity = useDrawerIdentity('treasury.check', 'view', check, {
         overrideTitle: check ? `${check.display_id}` : "Cheque",
     })

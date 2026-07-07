@@ -17,7 +17,7 @@ interface SaleDeliveryDrawerProps extends TransactionDrawerProps {
 
 export function SaleDeliveryDrawer({ id, open, onOpenChange, saleOrderId, deliveryId }: SaleDeliveryDrawerProps) {
     const entityId = saleOrderId ?? null
-    const { data: order, isLoading } = useSaleOrder(entityId)
+    const { saleOrder: order, isLoading } = useSaleOrder(entityId)
     const { printRef, handlePrint } = usePrintableDrawer()
 
     const delivery = order?.related_documents?.deliveries?.find(d => d.id === (id ?? deliveryId))

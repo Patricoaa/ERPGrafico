@@ -40,7 +40,7 @@ export function VariantSelectorModal({
 }: VariantSelectorModalProps) {
     const [variantLimits, setVariantLimits] = useState<Record<number, number>>({})
 
-    const { data: variants = [], isLoading: loading } = useVariants({
+    const { variants = [], isLoading: loading } = useVariants({
         productId: product?.id,
         enabled: open && !!product?.id,
         extraParams: extraApiParams

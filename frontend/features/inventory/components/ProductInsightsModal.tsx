@@ -83,7 +83,7 @@ export function ProductInsightsModal({ productId, productName, open, onOpenChang
     // useProductInsights cachea por PRODUCTS_KEYS.detail(id) + 'insights'.
     // Cualquier mutación del producto invalida también este bundle vía
     // prefix match en PRODUCTS_KEYS.all.
-    const { data, isLoading: loading, refetch: refetchInsights } = useProductInsights<ProductInsights>(open ? productId : null)
+    const { insights: data, isLoading: loading, refetch: refetchInsights } = useProductInsights<ProductInsights>(open ? productId : null)
     const [activeTab, setActiveTab] = useState("overview")
 
     const [selectedTransaction, setSelectedTransaction] = useState<{ id: number | string, type: TransactionType } | null>(null)

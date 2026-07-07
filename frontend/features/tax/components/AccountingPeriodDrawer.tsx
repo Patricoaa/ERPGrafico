@@ -13,7 +13,7 @@ interface AccountingPeriodDrawerProps {
 }
 
 export function AccountingPeriodDrawer({ periodId, open, onOpenChange }: AccountingPeriodDrawerProps) {
-    const { data: period, isLoading } = useTaxPeriod(periodId ?? undefined)
+    const { taxPeriod: period, isLoading } = useTaxPeriod(periodId ?? undefined)
 
     const identity = useDrawerIdentity('tax.accountingperiod', 'view', period, {
         overrideTitle: period ? `Período ${period.month_display || period.id}` : "Período Contable",

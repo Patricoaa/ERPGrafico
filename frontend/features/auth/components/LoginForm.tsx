@@ -34,12 +34,12 @@ export function LoginForm() {
         },
     })
 
-    const { mutateAsync: loginMutation, isPending: isLoggingIn } = useAuthLogin()
+    const { login, isLoggingIn } = useAuthLogin()
 
     async function onSubmit(values: z.infer<typeof formSchema>) {
         setError("")
         try {
-            await loginMutation(values)
+            await login(values)
         } catch (err: unknown) {
             const axiosErr = err as { response?: { status?: number } }
             if (axiosErr.response?.status === 401) {

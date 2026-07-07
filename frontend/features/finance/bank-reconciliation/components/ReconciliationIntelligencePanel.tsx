@@ -87,9 +87,9 @@ const ThresholdControl = ({ label, value, suffix, tooltip, onChange, min = 0, ma
     </div>
 )
 
-export function ReconciliationIntelligence({ externalOpen }: { externalOpen?: boolean }) {
+export function ReconciliationIntelligencePanel({ externalOpen }: { externalOpen?: boolean }) {
     const { data: settings, isLoading: isLoadingSettings, isFetching: isFetchingSettings } = useReconciliationSettingsQuery("global")
-    const updateMutation = useUpdateReconciliationSettingsMutation("global")
+    const { updateSettings } = useUpdateReconciliationSettingsMutation("global")
 
     const form = useForm<IntelligenceFormValues>({
         resolver: zodResolver(intelligenceSchema),
@@ -112,8 +112,8 @@ export function ReconciliationIntelligence({ externalOpen }: { externalOpen?: bo
 
     const onSave = useCallback(async (data: IntelligenceFormValues) => {
         if (!settings) return
-        await updateMutation.mutateAsync({ ...data, id: settings.id })
-    }, [updateMutation, settings])
+        await updateSettings({ ...data, id: settings.id })
+    }, [updateSettings, settings])
 
     const { status, invalidReason, lastSavedAt, retry } = useAutoSaveForm({
         form,

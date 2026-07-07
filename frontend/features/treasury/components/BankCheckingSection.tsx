@@ -10,7 +10,7 @@ interface Props {
     bankId: number
 }
 
-export function BankOverviewCheckingCards({ data, bankId }: Props) {
+export function BankCheckingSection({ data, bankId }: Props) {
     const router = useRouter()
     const checking = data.accounts.filter(a => a.account_type === "CHECKING")
 

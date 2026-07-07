@@ -40,7 +40,7 @@ export function POSCheckoutHeader() {
 
     const currentStep = posMode === 'SHOPPING' ? 1 : (wizardState?.step ?? 1) + 1
     const hasManufacturing = Validation.requiresManufacturingStep(items)
-    // Define steps — mirrors SalesCheckoutWizardContent steps + leading 'Carrito'
+    // Define steps — mirrors SalesCheckoutWizardView steps + leading 'Carrito'
     const steps = [
         { id: 1, label: 'Carrito', icon: ShoppingCart },
         { id: 2, label: 'Cliente', icon: User },

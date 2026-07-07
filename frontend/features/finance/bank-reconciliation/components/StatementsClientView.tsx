@@ -50,7 +50,7 @@ const statementsSegDef: SegmentationDefinition = {
     ],
 }
 
-interface StatementsListProps {
+interface StatementsClientViewProps {
     externalOpen?: boolean
     createAction?: React.ReactNode
     bankId?: number
@@ -58,7 +58,7 @@ interface StatementsListProps {
     detailBasePath?: string
 }
 
-export function StatementsList({ externalOpen = false, createAction, bankId, accounts, detailBasePath }: StatementsListProps) {
+export function StatementsClientView({ externalOpen = false, createAction, bankId, accounts, detailBasePath }: StatementsClientViewProps) {
     const statementDetailUrl = (id: number) => detailBasePath ? `${detailBasePath}/${id}` : `/treasury/reconciliation/${id}`
     const router = useRouter()
     const searchParams = useSearchParams()

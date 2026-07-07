@@ -51,7 +51,7 @@ export function LogisticsPhase({
 }: LogisticsPhaseProps) {
     const registry = isSale ? saleOrderActions : purchaseOrderActions
 
-    const annulLogistics = useAnnulLogistics()
+    const { annulLogistics } = useAnnulLogistics()
 
     const [confirmModal, setConfirmModal] = useState<{
         open: boolean,
@@ -84,7 +84,7 @@ export function LogisticsPhase({
             requireReason: true,
             onConfirm: async (reason?: string) => {
                 try {
-                    await annulLogistics.mutateAsync({ id, docType, reason })
+                    await annulLogistics({ id, docType, reason })
                     setConfirmModal(prev => ({ ...prev, open: false }))
                     onActionSuccess?.()
                 } catch (error: unknown) {

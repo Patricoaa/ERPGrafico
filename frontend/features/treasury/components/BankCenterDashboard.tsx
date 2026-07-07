@@ -8,15 +8,15 @@ import { useBankOverview, type BankOverviewData } from "../hooks/useBankOverview
 import { getSubViewTabs } from "../constants"
 import { BankUpcomingMaturities } from "./BankUpcomingMaturities"
 import { BankRecentActivity } from "./BankRecentActivity"
-import { BankOverviewCheckingCards } from "./BankOverviewCheckingCards"
-import { BankOverviewLoanCards } from "./BankOverviewLoanCards"
+import { BankCheckingSection } from "./BankCheckingSection"
+import { BankLoanSection } from "./BankLoanSection"
 
-import { BankOverviewCreditCards } from "./BankOverviewCreditCards"
+import { BankCreditSection } from "./BankCreditSection"
 import { ChecksClientView } from "../checks/ChecksClientView"
 import { LoansClientView } from "../loans/LoansClientView"
 import { CardChargesView } from "../card-statements/CardChargesView"
 import { BankMovementsClientView } from "./BankMovementsClientView"
-import { StatementsList } from "@/features/finance"
+import { StatementsClientView } from "@/features/finance"
 
 export function BankCenterDashboard({ bankId, subtab }: { bankId: number; subtab?: string }) {
     const pathname = usePathname()
@@ -57,11 +57,11 @@ export function BankCenterDashboard({ bankId, subtab }: { bankId: number; subtab
                         <section className="py-4">
                             <div className="flex flex-col lg:flex-row gap-5">
                                 <div className="flex-1 grid grid-cols-1 lg:grid-cols-2 gap-5">
-                                    <BankOverviewCheckingCards data={overviewData} bankId={bankId} />
-                                    <BankOverviewLoanCards data={overviewData} bankId={bankId} />
+                                    <BankCheckingSection data={overviewData} bankId={bankId} />
+                                    <BankLoanSection data={overviewData} bankId={bankId} />
                                 </div>
                                 <div className="w-full lg:w-[380px] shrink-0">
-                                    <BankOverviewCreditCards data={overviewData} bankId={bankId} />
+                                    <BankCreditSection data={overviewData} bankId={bankId} />
                                 </div>
                             </div>
                         </section>
@@ -98,7 +98,7 @@ export function BankCenterDashboard({ bankId, subtab }: { bankId: number; subtab
             )}
             {activeTab === "reconciliation" && (
                 <div className="flex-1 min-h-0">
-                    <StatementsList
+                    <StatementsClientView
                         bankId={bankId}
                         detailBasePath={`/treasury/bank-center/${bankId}/reconciliation`}
                         accounts={checkingAccounts}

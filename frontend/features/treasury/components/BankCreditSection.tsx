@@ -25,7 +25,7 @@ const GRADIENTS = [
     "from-[var(--magenta)] to-[var(--magenta)]/70",
 ]
 
-export function BankOverviewCreditCards({ data, bankId }: Props) {
+export function BankCreditSection({ data, bankId }: Props) {
     const router = useRouter()
     const { company } = useBranding()
     const companyName = company?.trade_name || company?.name || ""

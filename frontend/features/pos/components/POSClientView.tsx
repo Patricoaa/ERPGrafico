@@ -46,7 +46,7 @@ import {
     useDraftSync,
     type SyncDraft
 } from '@/features/pos/hooks'
-import { type CheckoutResponse, type SaleOrderLine, type CheckoutDTEData, type CheckoutPaymentData, type CheckoutDeliveryData, type CheckoutWizardState, SalesCheckoutWizardContent, type SalesCheckoutWizardContentHandle } from '@/features/sales'
+import { type CheckoutResponse, type SaleOrderLine, type CheckoutDTEData, type CheckoutPaymentData, type CheckoutDeliveryData, type CheckoutWizardState, SalesCheckoutWizardView, type SalesCheckoutWizardViewHandle } from '@/features/sales'
 import type { Product, WizardState } from '../types'
 import type { TransactionData } from '@/types/transactions'
 import { type DraftCart } from './DraftCartsClientView'
@@ -183,7 +183,7 @@ export function POSClientView() {
     const [ordersModalOpen, setOrdersModalOpen] = useState(false)
     const [, setIsSharedSession] = useState(false)
     const draftLoadedFromUrl = useRef(false)
-    const checkoutWizardRef = useRef<SalesCheckoutWizardContentHandle>(null)
+    const checkoutWizardRef = useRef<SalesCheckoutWizardViewHandle>(null)
 
     const checkoutTotalSteps = 4 + (Validation.requiresManufacturingStep(items) ? 1 : 0)
     const isCheckoutLastStep = posMode === 'CHECKOUT' && (wizardState?.step ?? 0) >= checkoutTotalSteps
@@ -597,7 +597,7 @@ export function POSClientView() {
                         </div>
                     ) : (
                         <div key={currentDraftId || 'checkout-new'} className="flex-1 flex flex-col min-h-0 bg-card dot-grid-surface border border-border/50 rounded-md shadow-card shadow-black/5 overflow-hidden relative animate-in fade-in slide-in-from-right-2 ease-premium duration-300 fill-mode-both">
-                            <SalesCheckoutWizardContent
+                            <SalesCheckoutWizardView
                                 ref={checkoutWizardRef}
                                 key={currentDraftId || 'checkout-new'}
                                 order={null}

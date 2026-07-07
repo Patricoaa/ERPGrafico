@@ -54,14 +54,14 @@ export function AccountingClosuresClientView({ externalOpen, onExternalOpenChang
         createPeriod
     } = useAccountingPeriods();
 
-    const { data: taxPeriodsRaw, isLoading: isLoadingTax, refetch: refetchTaxPeriods } = useTaxPeriods();
+    const { taxPeriods: taxPeriodsRaw, isLoading: isLoadingTax, refetch: refetchTaxPeriods } = useTaxPeriods();
     const taxPeriods: TaxPeriod[] = useMemo(
         () => ((taxPeriodsRaw as { results?: TaxPeriod[] })?.results ?? []) as TaxPeriod[],
         [taxPeriodsRaw]
     );
-    const closeTaxPeriod = useCloseTaxPeriod();
-    const reopenTaxPeriod = useReopenTaxPeriod();
-    const isLoadingTaxAction = closeTaxPeriod.isPending || reopenTaxPeriod.isPending;
+    const { closePeriod: closeTaxPeriod, isClosingPeriod: isClosingTaxPeriod } = useCloseTaxPeriod();
+    const { reopenPeriod: reopenTaxPeriod, isReopeningPeriod: isReopeningTaxPeriod } = useReopenTaxPeriod();
+    const isLoadingTaxAction = isClosingTaxPeriod || isReopeningTaxPeriod;
 
     const [previewModalOpen, setPreviewModalOpen] = useState(false);
     const [newFYModalOpen, setNewFYModalOpen] = useState(false);
@@ -73,7 +73,7 @@ export function AccountingClosuresClientView({ externalOpen, onExternalOpenChang
     // Payment state
     const [paymentPeriodId, setPaymentPeriodId] = useState<number | null>(null);
     const [paymentDeclaration, setPaymentDeclaration] = useState<TaxDeclaration | null>(null);
-    const createTaxPayment = useCreateTaxPayment();
+    const { createTaxPayment } = useCreateTaxPayment();
 
     // F29 Close state
     const [closeF29PeriodId, setCloseF29PeriodId] = useState<number | null>(null);
@@ -223,7 +223,7 @@ export function AccountingClosuresClientView({ externalOpen, onExternalOpenChang
                 const v = c === 'x' ? r : (r & 0x3) | 0x8
                 return v.toString(16)
             })
-        await closeTaxPeriod.mutateAsync({ id: closeF29PeriodId, idempotencyKey: key });
+        await closeTaxPeriod({ id: closeF29PeriodId, idempotencyKey: key });
         refetchTaxPeriods();
         fetchPeriods();
         setCloseF29PeriodId(null);
@@ -231,7 +231,7 @@ export function AccountingClosuresClientView({ externalOpen, onExternalOpenChang
     }, [closeF29PeriodId, closeTaxPeriod, refetchTaxPeriods, fetchPeriods]);
 
     const handleReopenTaxPeriod = useCallback(async (params: { id: number; reason?: string }) => {
-        await reopenTaxPeriod.mutateAsync(params);
+        await reopenTaxPeriod(params);
         refetchTaxPeriods();
         fetchPeriods();
     }, [reopenTaxPeriod, refetchTaxPeriods, fetchPeriods]);
@@ -267,7 +267,7 @@ export function AccountingClosuresClientView({ externalOpen, onExternalOpenChang
         if (!paymentDeclaration) return
         try {
             const dateString = new Date().toISOString().split('T')[0]
-            await createTaxPayment.mutateAsync({
+            await createTaxPayment({
                 declaration: paymentDeclaration.id,
                 payment_date: data.documentDate || dateString,
                 amount: data.amount,
@@ -479,7 +479,7 @@ export function AccountingClosuresClientView({ externalOpen, onExternalOpenChang
                     }}
                     onConfirm={handleConfirmCloseTaxPeriod}
                     declaration={closeF29Declaration}
-                    isClosing={closeTaxPeriod.isPending}
+                    isClosing={isClosingTaxPeriod}
                 />
             )}
 

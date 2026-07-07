@@ -102,7 +102,7 @@ export function useCategories(initialData?: Category[]) {
  * Fetch a single category by id. Returns null while loading or when id is null.
  */
 export function useCategory(id: number | null | undefined) {
-    return useQuery({
+    const { data: category, isLoading, isError } = useQuery({
         queryKey: id ? CATEGORIES_KEYS.detail(id) : ['categories', 'detail', 'noop'],
         queryFn: async (): Promise<Category> => {
             const res = await api.get<Category>(`/inventory/categories/${id as number}/`)
@@ -111,4 +111,5 @@ export function useCategory(id: number | null | undefined) {
         staleTime: 15 * 60 * 1000,
         enabled: !!id,
     })
+    return { category: category ?? null, isLoading, isError }
 }

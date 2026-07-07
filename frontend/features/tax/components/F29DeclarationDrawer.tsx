@@ -13,7 +13,7 @@ interface F29DeclarationDrawerProps {
 }
 
 export function F29DeclarationDrawer({ declarationId, open, onOpenChange }: F29DeclarationDrawerProps) {
-    const { data: declaration, isLoading } = useF29Detail(declarationId ?? undefined)
+    const { f29Detail: declaration, isLoading } = useF29Detail(declarationId ?? undefined)
 
     const identity = useDrawerIdentity('tax.f29declaration', 'view', declaration, {
         overrideTitle: declaration ? `Declaración F29 — ${declaration.period_display || declaration.id}` : "Declaración F29",

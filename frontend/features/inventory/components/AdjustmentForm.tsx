@@ -131,7 +131,7 @@ export function AdjustmentForm({
 
     // Producto seleccionado — detalle reactivo vía useProduct.
     const numericProductId = selectedProductId ? Number(selectedProductId) : null
-    const { data: productDetailRaw, isLoading: isProductLoading } = useProduct(numericProductId)
+    const { product: productDetailRaw, isLoading: isProductLoading } = useProduct(numericProductId)
     const productDetails = productDetailRaw as (Product & { cost_price?: number, uom_category?: number }) | null | undefined
 
     // UoMs filtradas por categoría del producto.

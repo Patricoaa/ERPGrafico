@@ -6,20 +6,22 @@ import { showApiError } from '@/lib/errors'
 import { invalidateCrossFeature } from '@/lib/invalidation'
 
 export function useTaxCalculation() {
-  return useMutation({
+  const calcMutation = useMutation({
     mutationFn: (data: { year: number; month: number }) =>
       taxApi.calculateDeclaration(data),
     onError: (error: Error) => {
       showApiError(error, 'Error al calcular declaración')
     }
   })
+
+  return { calculateTax: calcMutation.mutateAsync, isCalculatingTax: calcMutation.isPending }
 }
 
 export function useCreateDeclaration() {
   const queryClient = useQueryClient()
   const { markLocalMutation } = useRealtime()
 
-  return useMutation({
+  const createDeclarationMutation = useMutation({
     mutationFn: (data: Record<string, unknown>) =>
       taxApi.createDeclaration(data),
     onSuccess: () => {
@@ -27,13 +29,15 @@ export function useCreateDeclaration() {
       invalidateCrossFeature(queryClient, [TAX_KEYS.declarations.all(), TAX_KEYS.periods.all()])
     }
   })
+
+  return { createDeclaration: createDeclarationMutation.mutateAsync, isCreatingDeclaration: createDeclarationMutation.isPending }
 }
 
 export function useRegisterDeclaration() {
   const queryClient = useQueryClient()
   const { markLocalMutation } = useRealtime()
 
-  return useMutation({
+  const registerDeclarationMutation = useMutation({
     mutationFn: ({ id, data, idempotencyKey }: { id: number; data: { declaration_date: string }; idempotencyKey?: string }) =>
       taxApi.registerDeclaration(id, data, idempotencyKey),
     onSuccess: () => {
@@ -41,13 +45,15 @@ export function useRegisterDeclaration() {
       invalidateCrossFeature(queryClient, [TAX_KEYS.declarations.all(), TAX_KEYS.periods.all()])
     }
   })
+
+  return { registerDeclaration: registerDeclarationMutation.mutateAsync, isRegisteringDeclaration: registerDeclarationMutation.isPending }
 }
 
 export function useClosePeriod() {
   const queryClient = useQueryClient()
   const { markLocalMutation } = useRealtime()
 
-  return useMutation({
+  const closePeriodMutation = useMutation({
     mutationFn: ({ id, idempotencyKey }: { id: number; idempotencyKey?: string }) =>
         taxApi.closePeriod(id, idempotencyKey),
     onSuccess: () => {
@@ -55,26 +61,30 @@ export function useClosePeriod() {
       invalidateCrossFeature(queryClient, [TAX_KEYS.periods.all()])
     }
   })
+
+  return { closePeriod: closePeriodMutation.mutateAsync, isClosingPeriod: closePeriodMutation.isPending }
 }
 
 export function useReopenPeriod() {
   const queryClient = useQueryClient()
   const { markLocalMutation } = useRealtime()
 
-  return useMutation({
+  const reopenPeriodMutation = useMutation({
     mutationFn: (params: { id: number; reason?: string }) => taxApi.reopenPeriod(params),
     onSuccess: () => {
       markLocalMutation()
       invalidateCrossFeature(queryClient, [TAX_KEYS.periods.all()])
     }
   })
+
+  return { reopenPeriod: reopenPeriodMutation.mutateAsync, isReopeningPeriod: reopenPeriodMutation.isPending }
 }
 
 export function useCreateTaxPayment() {
   const queryClient = useQueryClient()
   const { markLocalMutation } = useRealtime()
 
-  return useMutation({
+  const createTaxPaymentMutation = useMutation({
     mutationFn: (data: Record<string, unknown>) =>
       taxApi.createPayment(data),
     onSuccess: () => {
@@ -85,19 +95,23 @@ export function useCreateTaxPayment() {
       showApiError(error, 'Error al registrar pago')
     }
   })
+
+  return { createTaxPayment: createTaxPaymentMutation.mutateAsync, isCreatingTaxPayment: createTaxPaymentMutation.isPending }
 }
 
 export function useCheckPeriodClosed() {
-  return useMutation({
+  const checkPeriodClosedMutation = useMutation({
     mutationFn: (date: string) => taxApi.checkPeriodClosed(date),
   })
+
+  return { checkPeriodClosed: checkPeriodClosedMutation.mutateAsync, isCheckingPeriodClosed: checkPeriodClosedMutation.isPending }
 }
 
 export function useUploadF29Document(declarationId: number) {
   const queryClient = useQueryClient()
   const { markLocalMutation } = useRealtime()
 
-  return useMutation({
+  const uploadF29DocumentMutation = useMutation({
     mutationFn: (file: File) => taxApi.attachDeclarationDocument(declarationId, file),
     onSuccess: () => {
       markLocalMutation()
@@ -107,4 +121,6 @@ export function useUploadF29Document(declarationId: number) {
       showApiError(error, 'Error al subir documento F29')
     },
   })
+
+  return { uploadF29Document: uploadF29DocumentMutation.mutateAsync, isUploadingF29Document: uploadF29DocumentMutation.isPending }
 }

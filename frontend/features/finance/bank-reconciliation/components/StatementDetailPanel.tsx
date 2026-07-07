@@ -78,7 +78,7 @@ export function StatementDetailPanel({
     const loading = statementQuery.isLoading
     const fetchStatement = statementQuery.refetch
 
-    const unmatchMutation = useUnmatchMutation(statementId, (statement as BankStatement | null)?.treasury_account ?? 0)
+    const { unmatch } = useUnmatchMutation(statementId, (statement as BankStatement | null)?.treasury_account ?? 0)
 
     const statementLineUnmatchActionsCtx: StatementLineUnmatchActionsCtx = {
         onUnmatch: (lineId) => setUnmatchDialog({ open: true, lineId }),
@@ -92,7 +92,7 @@ export function StatementDetailPanel({
     const handleUnmatch = async () => {
         if (!unmatchDialog.lineId) return
         try {
-            await unmatchMutation.mutateAsync(unmatchDialog.lineId)
+            await unmatch(unmatchDialog.lineId)
             await fetchStatement()
         } catch {
             toast.error('Error al deshacer la reconciliación')

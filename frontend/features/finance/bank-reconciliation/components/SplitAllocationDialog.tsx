@@ -43,7 +43,7 @@ interface SplitAllocationDialogProps {
 }
 
 export function SplitAllocationDialog({ open, onOpenChange, payment, treasuryAccountId, onSuccess }: SplitAllocationDialogProps) {
-    const allocateMutation = useAllocateMutation(payment?.id || 0, treasuryAccountId)
+    const { allocate, isAllocating } = useAllocateMutation(payment?.id || 0, treasuryAccountId)
 
     const form = useForm<AllocationFormValues>({
         resolver: zodResolver(allocationSchema),
@@ -80,7 +80,7 @@ export function SplitAllocationDialog({ open, onOpenChange, payment, treasuryAcc
     const handleSave = async (validateSum: boolean) => {
         const values = form.getValues()
         try {
-            await allocateMutation.mutateAsync({
+            await allocate({
                 allocations: values.allocations,
                 validateSum
             })
@@ -108,7 +108,7 @@ export function SplitAllocationDialog({ open, onOpenChange, payment, treasuryAcc
                             <Button
                                 variant="secondary"
                                 onClick={() => handleSave(false)}
-                                disabled={allocateMutation.isPending || fields.length === 0}
+                                disabled={isAllocating || fields.length === 0}
                                 type="button"
                                 className="h-9 px-5 text-[10px] font-black tracking-widest uppercase rounded-sm shadow-card"
                             >
@@ -116,8 +116,8 @@ export function SplitAllocationDialog({ open, onOpenChange, payment, treasuryAcc
                             </Button>
                             <SubmitButton
                                 onClick={() => handleSave(true)}
-                                disabled={allocateMutation.isPending || !isZeroTolerance(remaining) || fields.length === 0}
-                                loading={allocateMutation.isPending}
+                                disabled={isAllocating || !isZeroTolerance(remaining) || fields.length === 0}
+                                loading={isAllocating}
                                 icon={<CheckCircle2 className="h-3.5 w-3.5" />}
                                 type="button"
                             >

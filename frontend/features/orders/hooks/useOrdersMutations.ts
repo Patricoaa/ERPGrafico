@@ -16,7 +16,7 @@ import { PRODUCTS_KEYS } from '@/features/inventory'
 export function useAnnulInvoice() {
     const queryClient = useQueryClient()
     const { markLocalMutation } = useRealtime()
-    return useMutation({
+    const annulInvoiceMutation = useMutation({
         mutationFn: ({ id, force, reason }: { id: number; force?: boolean; reason?: string }) =>
             ordersApi.annulInvoice(id, force ?? false, reason ?? ''),
         onSuccess: () => {
@@ -25,12 +25,13 @@ export function useAnnulInvoice() {
             invalidateCrossFeature(queryClient, [INVOICES_QUERY_KEY, SALES_KEYS.all, PURCHASING_KEYS.all])
         },
     })
+    return { annulInvoice: annulInvoiceMutation.mutateAsync, isAnnulingInvoice: annulInvoiceMutation.isPending }
 }
 
 export function useCancelInvoice() {
     const queryClient = useQueryClient()
     const { markLocalMutation } = useRealtime()
-    return useMutation({
+    const cancelInvoiceMutation = useMutation({
         mutationFn: ({ id, reason }: { id: number; reason?: string }) =>
             ordersApi.cancelInvoice(id, reason ?? ''),
         onSuccess: () => {
@@ -39,12 +40,13 @@ export function useCancelInvoice() {
             invalidateCrossFeature(queryClient, [INVOICES_QUERY_KEY, SALES_KEYS.all, PURCHASING_KEYS.all])
         },
     })
+    return { cancelInvoice: cancelInvoiceMutation.mutateAsync, isCancellingInvoice: cancelInvoiceMutation.isPending }
 }
 
 export function useConfirmInvoice() {
     const queryClient = useQueryClient()
     const { markLocalMutation } = useRealtime()
-    return useMutation({
+    const confirmInvoiceMutation = useMutation({
         mutationFn: ({ id, formData }: { id: number; formData: Record<string, unknown> }) =>
             ordersApi.confirmInvoice(id, formData),
         onSuccess: () => {
@@ -52,24 +54,26 @@ export function useConfirmInvoice() {
             invalidateCrossFeature(queryClient, [INVOICES_QUERY_KEY, SALES_KEYS.all, PURCHASING_KEYS.all])
         },
     })
+    return { confirmInvoice: confirmInvoiceMutation.mutateAsync, isConfirmingInvoice: confirmInvoiceMutation.isPending }
 }
 
 export function useCreateInvoiceFromOrder() {
     const queryClient = useQueryClient()
     const { markLocalMutation } = useRealtime()
-    return useMutation({
+    const createInvoiceFromOrderMutation = useMutation({
         mutationFn: (data: Record<string, unknown>) => ordersApi.createInvoiceFromOrder(data),
         onSuccess: () => {
             markLocalMutation()
             invalidateCrossFeature(queryClient, [INVOICES_QUERY_KEY])
         },
     })
+    return { createInvoiceFromOrder: createInvoiceFromOrderMutation.mutateAsync, isCreatingInvoiceFromOrder: createInvoiceFromOrderMutation.isPending }
 }
 
 export function useProcessLogistics() {
     const queryClient = useQueryClient()
     const { markLocalMutation } = useRealtime()
-    return useMutation({
+    const processLogisticsMutation = useMutation({
         mutationFn: ({ id, data }: { id: number; data: Record<string, unknown> }) =>
             ordersApi.processLogistics(id, data),
         onSuccess: () => {
@@ -78,12 +82,13 @@ export function useProcessLogistics() {
             invalidateCrossFeature(queryClient, [INVOICES_QUERY_KEY, PRODUCTS_KEYS.all])
         },
     })
+    return { processLogistics: processLogisticsMutation.mutateAsync, isProcessingLogistics: processLogisticsMutation.isPending }
 }
 
 export function useCancelOrder(orderType: 'sale' | 'purchase') {
     const queryClient = useQueryClient()
     const { markLocalMutation } = useRealtime()
-    return useMutation({
+    const cancelOrderMutation = useMutation({
         mutationFn: ({ id, reason }: { id: number; reason?: string }) =>
             orderType === 'purchase'
                 ? ordersApi.cancelPurchaseOrder(id, reason ?? '')
@@ -94,6 +99,7 @@ export function useCancelOrder(orderType: 'sale' | 'purchase') {
             invalidateCrossFeature(queryClient, [SALES_KEYS.all, PURCHASING_KEYS.all])
         },
     })
+    return { cancelOrder: cancelOrderMutation.mutateAsync, isCancellingOrder: cancelOrderMutation.isPending }
 }
 
 // ─── Logistics mutations ──────────────────────────────────────────────────────
@@ -101,7 +107,7 @@ export function useCancelOrder(orderType: 'sale' | 'purchase') {
 export function useAnnulLogistics() {
     const queryClient = useQueryClient()
     const { markLocalMutation } = useRealtime()
-    return useMutation({
+    const annulLogisticsMutation = useMutation({
         mutationFn: ({ id, docType, reason }: { id: number; docType: string; reason?: string }) => {
             switch (docType) {
                 case 'sale_delivery': return ordersApi.annulSaleDelivery(id, reason ?? '')
@@ -117,6 +123,7 @@ export function useAnnulLogistics() {
             invalidateCrossFeature(queryClient, [SALES_KEYS.all, PURCHASING_KEYS.all, PRODUCTS_KEYS.all])
         },
     })
+    return { annulLogistics: annulLogisticsMutation.mutateAsync, isAnnulingLogistics: annulLogisticsMutation.isPending }
 }
 
 // ─── Treasury mutations ───────────────────────────────────────────────────────
@@ -124,7 +131,7 @@ export function useAnnulLogistics() {
 export function useRegisterPaymentMovement() {
     const queryClient = useQueryClient()
     const { markLocalMutation } = useRealtime()
-    return useMutation({
+    const registerPaymentMovementMutation = useMutation({
         mutationFn: ({ data, idempotencyKey }: { data: Record<string, unknown>; idempotencyKey?: string }) =>
             ordersApi.registerPaymentMovement(data, idempotencyKey),
         onSuccess: () => {
@@ -133,12 +140,13 @@ export function useRegisterPaymentMovement() {
             invalidateCrossFeature(queryClient, [MOVEMENTS_KEYS.all, PAYMENTS_KEYS.all, SALES_KEYS.all, PURCHASING_KEYS.all])
         },
     })
+    return { registerPaymentMovement: registerPaymentMovementMutation.mutateAsync, isRegisteringPaymentMovement: registerPaymentMovementMutation.isPending }
 }
 
 export function useAnnulPayment() {
     const queryClient = useQueryClient()
     const { markLocalMutation } = useRealtime()
-    return useMutation({
+    const annulPaymentMutation = useMutation({
         mutationFn: ({ id, reason, treasuryAccountId, amount }: {
             id: number; reason?: string; treasuryAccountId?: number; amount?: number
         }) =>
@@ -149,12 +157,13 @@ export function useAnnulPayment() {
             invalidateCrossFeature(queryClient, [PAYMENTS_KEYS.all, MOVEMENTS_KEYS.all, SALES_KEYS.all, PURCHASING_KEYS.all])
         },
     })
+    return { annulPayment: annulPaymentMutation.mutateAsync, isAnnulingPayment: annulPaymentMutation.isPending }
 }
 
 export function useRegisterPaymentReturn() {
     const queryClient = useQueryClient()
     const { markLocalMutation } = useRealtime()
-    return useMutation({
+    const registerPaymentReturnMutation = useMutation({
         mutationFn: ({ paymentId, amount, reason, treasuryAccountId }: {
             paymentId: number; amount: number; reason?: string; treasuryAccountId?: number | null
         }) =>
@@ -169,12 +178,13 @@ export function useRegisterPaymentReturn() {
             invalidateCrossFeature(queryClient, [PAYMENTS_KEYS.all, MOVEMENTS_KEYS.all, SALES_KEYS.all, PURCHASING_KEYS.all])
         },
     })
+    return { registerPaymentReturn: registerPaymentReturnMutation.mutateAsync, isRegisteringPaymentReturn: registerPaymentReturnMutation.isPending }
 }
 
 export function useCancelPayment() {
     const queryClient = useQueryClient()
     const { markLocalMutation } = useRealtime()
-    return useMutation({
+    const cancelPaymentMutation = useMutation({
         mutationFn: ({ id, reason }: { id: number; reason?: string }) =>
             ordersApi.cancelPayment(id, reason ?? ''),
         onSuccess: () => {
@@ -183,6 +193,7 @@ export function useCancelPayment() {
             invalidateCrossFeature(queryClient, [PAYMENTS_KEYS.all, MOVEMENTS_KEYS.all, SALES_KEYS.all, PURCHASING_KEYS.all])
         },
     })
+    return { cancelPayment: cancelPaymentMutation.mutateAsync, isCancellingPayment: cancelPaymentMutation.isPending }
 }
 
 // ─── Production mutations ─────────────────────────────────────────────────────
@@ -190,7 +201,7 @@ export function useCancelPayment() {
 export function useAnnulWorkOrder() {
     const queryClient = useQueryClient()
     const { markLocalMutation } = useRealtime()
-    return useMutation({
+    const annulWorkOrderMutation = useMutation({
         mutationFn: ({ id, reason }: { id: number; reason?: string }) =>
             ordersApi.annulWorkOrder(id, reason ?? ''),
         onSuccess: () => {
@@ -199,6 +210,7 @@ export function useAnnulWorkOrder() {
             invalidateCrossFeature(queryClient, [SALES_KEYS.all, PURCHASING_KEYS.all])
         },
     })
+    return { annulWorkOrder: annulWorkOrderMutation.mutateAsync, isAnnulingWorkOrder: annulWorkOrderMutation.isPending }
 }
 
 // ─── Imperative API access (for read operations in useEffect-based components) ─

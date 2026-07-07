@@ -3,7 +3,7 @@
 import { Drawer } from "@/components/shared"
 import { getEntityIcon } from "@/lib/entity-registry"
 import { useState } from "react"
-import { PayrollDetailContent } from "./PayrollDetailContent"
+import { PayrollDetailView } from "./PayrollDetailView"
 import type { EmployeeBasic } from "@/features/hr/hooks/usePayrolls"
 import { formDrawerWidth } from "@/lib/form-widths"
 
@@ -38,7 +38,7 @@ export function PayrollDetailDrawer({ payrollId, open, onOpenChange, onUpdate, v
                 headerActions={headerData.headerActions}
             >
                 {payrollId && (
-                    <PayrollDetailContent 
+                    <PayrollDetailView 
                         payrollId={payrollId} 
                         onClose={() => onOpenChange(false)}
                         onUpdate={onUpdate}

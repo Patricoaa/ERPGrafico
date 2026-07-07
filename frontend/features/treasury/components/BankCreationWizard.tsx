@@ -127,7 +127,7 @@ interface BankCreationWizardProps {
 
 export function BankCreationWizard({ open, onOpenChange, onSuccess }: BankCreationWizardProps) {
     const { createBank, updateBank, isCreating: isBankCreating, isUpdating: isBankUpdating } = useBanks()
-    const { mutateAsync: provision, isPending: isProvisioning } = useProvisionAccount()
+    const { provision, isProvisioning } = useProvisionAccount()
     const { create: createLoan, isCreating: isLoanCreating } = useLoanMutations()
     const { accounts: existingAccounts } = useTreasuryAccounts()
     const { accounts: allAccountingAccounts } = useAccountSearch()

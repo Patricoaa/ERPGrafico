@@ -12,7 +12,7 @@ interface Props {
     bankId: number
 }
 
-export function BankOverviewCheckCards({ data, bankId }: Props) {
+export function BankCheckSection({ data, bankId }: Props) {
     const router = useRouter()
     const { serverDate } = useServerDate()
     const { issued_checks_list } = data

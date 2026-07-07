@@ -103,8 +103,8 @@ export default function ContactDrawer({ open, onOpenChange, contact, onSuccess, 
         },
     })
 
-    const { data: defaultCustomer } = useDefaultCustomer(open)
-    const { data: defaultVendor } = useDefaultVendor(open)
+    const { defaultCustomer } = useDefaultCustomer(open)
+    const { defaultVendor } = useDefaultVendor(open)
 
     const { data: contactDetails, isLoading: isLoadingContact } = useContact(c?.id && !c.name ? c.id : undefined)
 

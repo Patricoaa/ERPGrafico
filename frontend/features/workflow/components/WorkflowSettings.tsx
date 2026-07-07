@@ -258,8 +258,8 @@ const AssignmentRuleRow = React.memo(function AssignmentRuleRow({ taskType, rule
         }
     }, [rule, form])
 
-    const updateMutation = useUpdateAssignmentRule()
-    const createMutation = useCreateAssignmentRule()
+    const { updateAssignmentRule } = useUpdateAssignmentRule()
+    const { createAssignmentRule } = useCreateAssignmentRule()
     
     const onSave = useCallback(async (data: AssignmentValues) => {
         const current = ruleRef.current
@@ -269,9 +269,9 @@ const AssignmentRuleRow = React.memo(function AssignmentRuleRow({ taskType, rule
             assigned_group: data.mode === "group" ? (data.assigned_group ?? "") : "",
         }
         if (current?.id) {
-            await updateMutation.mutateAsync({ id: current.id, data: payload })
+            await updateAssignmentRule({ id: current.id, data: payload })
         } else {
-            await createMutation.mutateAsync(payload)
+            await createAssignmentRule(payload)
         }
     }, [taskType.id])
 
@@ -333,8 +333,8 @@ const RecurrentRuleRow = React.memo(function RecurrentRuleRow({ taskType, rule, 
         }
     }, [rule, assignmentForm])
 
-    const updateMutation = useUpdateAssignmentRule()
-    const createMutation = useCreateAssignmentRule()
+    const { updateAssignmentRule } = useUpdateAssignmentRule()
+    const { createAssignmentRule } = useCreateAssignmentRule()
     
     const onSaveAssignment = useCallback(async (data: AssignmentValues) => {
         const current = ruleRef.current
@@ -344,9 +344,9 @@ const RecurrentRuleRow = React.memo(function RecurrentRuleRow({ taskType, rule, 
             assigned_group: data.mode === "group" ? (data.assigned_group ?? "") : "",
         }
         if (current?.id) {
-            await updateMutation.mutateAsync({ id: current.id, data: payload })
+            await updateAssignmentRule({ id: current.id, data: payload })
         } else {
-            await createMutation.mutateAsync(payload)
+            await createAssignmentRule(payload)
         }
     }, [taskType.id])
 
@@ -364,10 +364,10 @@ const RecurrentRuleRow = React.memo(function RecurrentRuleRow({ taskType, rule, 
         }
     }, [dayValue, dayForm])
 
-    const updateWorkflowSettingsMutation = useUpdateWorkflowSettings()
+    const { updateWorkflowSettings } = useUpdateWorkflowSettings()
     
     const onSaveDay = useCallback(async (data: DayValues) => {
-        await updateWorkflowSettingsMutation.mutateAsync({ [taskType.dayField]: data.value })
+        await updateWorkflowSettings({ [taskType.dayField]: data.value })
         invalidateCrossFeature(queryClient, [workflowKeys.recurrentSettings()])
     }, [taskType.dayField])
 
@@ -446,10 +446,10 @@ const MarginThresholdInput = React.memo(function MarginThresholdInput({ initialV
         }
     }, [initialValue, form])
 
-    const updateWorkflowSettingsMutation = useUpdateWorkflowSettings()
+    const { updateWorkflowSettings } = useUpdateWorkflowSettings()
     
     const onSave = useCallback(async (data: ThresholdValues) => {
-        await updateWorkflowSettingsMutation.mutateAsync({ low_margin_threshold_percent: data.value })
+        await updateWorkflowSettings({ low_margin_threshold_percent: data.value })
     }, [])
 
     const { status } = useAutoSaveForm({ form, onSave, debounceMs: 400 })
@@ -507,8 +507,8 @@ const NotificationRuleRow = React.memo(function NotificationRuleRow({ type, rule
         }
     }, [rule, form])
 
-    const updateNotificationRuleMutation = useUpdateNotificationRule()
-    const createNotificationRuleMutation = useCreateNotificationRule()
+    const { updateNotificationRule } = useUpdateNotificationRule()
+    const { createNotificationRule } = useCreateNotificationRule()
     
     const onSave = useCallback(async (data: NotificationValues) => {
         const current = ruleRef.current
@@ -519,9 +519,9 @@ const NotificationRuleRow = React.memo(function NotificationRuleRow({ type, rule
             notify_creator: data.notify_creator,
         }
         if (current?.id) {
-            await updateNotificationRuleMutation.mutateAsync({ id: current.id, data: payload })
+            await updateNotificationRule({ id: current.id, data: payload })
         } else {
-            await createNotificationRuleMutation.mutateAsync(payload)
+            await createNotificationRule(payload)
         }
     }, [type.id])
 
@@ -606,9 +606,9 @@ interface WorkflowSettingsProps {
 }
 
 export function WorkflowSettings({ activeTab }: WorkflowSettingsProps) {
-    const { data: rules = [], isLoading: rulesLoading } = useWorkflowRulesQuery()
-    const { data: notifRules = [], isLoading: notifLoading } = useNotificationRulesQuery()
-    const { data: recurrentSettings, isLoading: recurrentLoading } = useWorkflowRecurrentSettingsQuery()
+    const { rules = [], isLoading: rulesLoading } = useWorkflowRulesQuery()
+    const { notificationRules: notifRules = [], isLoading: notifLoading } = useNotificationRulesQuery()
+    const { recurrentSettings, isLoading: recurrentLoading } = useWorkflowRecurrentSettingsQuery()
 
     const isLoading = rulesLoading || notifLoading || recurrentLoading
 

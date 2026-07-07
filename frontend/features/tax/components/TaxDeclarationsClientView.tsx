@@ -48,9 +48,9 @@ export function TaxDeclarationsClientView({ externalOpen, onExternalOpenChange, 
         endpoint: '/tax/periods'
     })
 
-    const { data: periodsData, isLoading: isLoadingPeriods, refetch: refetchPeriods } = useTaxPeriods()
+    const { taxPeriods: periodsData, isLoading: isLoadingPeriods, refetch: refetchPeriods } = useTaxPeriods()
     const { fetchDeclarations } = useLazyTaxDeclarations()
-    const createPaymentMutation = useCreateTaxPayment()
+    const { createTaxPayment } = useCreateTaxPayment()
 
     const periods = ((periodsData as { results?: TaxPeriod[] })?.results ?? []) as TaxPeriod[]
     const isLoading = isLoadingPeriods
@@ -137,7 +137,7 @@ export function TaxDeclarationsClientView({ externalOpen, onExternalOpenChange, 
     const handlePaymentConfirm = async (data: TaxPaymentData) => {
         if (!selectedDeclaration) return
         try {
-            await createPaymentMutation.mutateAsync({
+            await createTaxPayment({
                 declaration: selectedDeclaration.id,
                 payment_date: data.documentDate || dateString || "",
                 amount: data.amount,

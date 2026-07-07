@@ -28,7 +28,7 @@ export interface OrderHubData {
     globalStatus: { label: string; status: string; icon: LucideIcon }
 }
 
-interface OrderHubIntegratedProps {
+interface OrderHubViewProps {
     data: OrderHubData
     type?: 'purchase' | 'sale' | 'obligation'
     onActionSuccess?: () => void
@@ -39,7 +39,7 @@ interface OrderHubIntegratedProps {
     compact?: boolean
 }
 
-export function OrderHubIntegrated({
+export function OrderHubView({
     data,
     type,
     onActionSuccess,
@@ -47,7 +47,7 @@ export function OrderHubIntegrated({
     onEdit,
     posSessionId = null,
     showAnimations = true
-}: OrderHubIntegratedProps) {
+}: OrderHubViewProps) {
     const {
         order,
         activeInvoice,

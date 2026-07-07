@@ -10,7 +10,7 @@ export function useAuthLogin() {
   const { login: authLogin } = useAuth()
   const router = useRouter()
 
-  return useMutation({
+  const loginMutation = useMutation({
     mutationFn: authApi.login,
     // eslint-disable-next-line mutation/must-mark-local -- login doesn't invalidate entity caches
     onSuccess: (data) => {
@@ -25,4 +25,6 @@ export function useAuthLogin() {
       showApiError(error, 'Error de autenticación')
     }
   })
+
+  return { login: loginMutation.mutateAsync, isLoggingIn: loginMutation.isPending }
 }

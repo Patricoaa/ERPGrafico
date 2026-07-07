@@ -24,11 +24,11 @@ interface F29CloseModalProps {
 
 export function F29CloseModal({ isOpen, onOpenChange, onConfirm, declaration, isClosing }: F29CloseModalProps) {
   const [file, setFile] = useState<File | null>(null)
-  const uploadDoc = useUploadF29Document(declaration.id)
+  const { uploadF29Document, isUploadingF29Document } = useUploadF29Document(declaration.id)
 
   const handleConfirm = async () => {
     if (file) {
-      await uploadDoc.mutateAsync(file)
+      await uploadF29Document(file)
     }
     await onConfirm()
     onOpenChange(false)
@@ -52,11 +52,11 @@ export function F29CloseModal({ isOpen, onOpenChange, onConfirm, declaration, is
         </div>
 
         <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)} disabled={isClosing || uploadDoc.isPending}>
+          <Button variant="outline" onClick={() => onOpenChange(false)} disabled={isClosing || isUploadingF29Document}>
             Cancelar
           </Button>
-          <Button onClick={handleConfirm} disabled={!file || isClosing || uploadDoc.isPending}>
-            {isClosing || uploadDoc.isPending ? "Cerrando..." : "Confirmar Cierre"}
+          <Button onClick={handleConfirm} disabled={!file || isClosing || isUploadingF29Document}>
+            {isClosing || isUploadingF29Document ? "Cerrando..." : "Confirmar Cierre"}
           </Button>
         </DialogFooter>
       </DialogContent>

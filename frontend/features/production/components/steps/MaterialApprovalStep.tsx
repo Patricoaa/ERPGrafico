@@ -2,7 +2,7 @@
 
 import { cn } from '@/lib/utils'
 import { StatusBadge } from '@/components/shared'
-import { ApprovalTaskList } from './ApprovalTaskList'
+import { ApprovalTaskListPanel } from './ApprovalTaskListPanel'
 import type { WorkOrder, WorkOrderMaterial, WorkOrderTask } from '../../types'
 
 interface MaterialApprovalStepProps {
@@ -21,7 +21,7 @@ export function MaterialApprovalStep({
 
   return (
     <div className="space-y-6">
-      <ApprovalTaskList
+      <ApprovalTaskListPanel
         tasks={order.workflow_tasks ?? []}
         taskType="OT_MATERIAL_APPROVAL"
         canComplete={canComplete}

@@ -50,8 +50,8 @@ export function TreasuryPhase({
 }: TreasuryPhaseProps) {
     const registry = isSale ? saleOrderActions : purchaseOrderActions
 
-    const cancelPayment = useCancelPayment()
-    const annulPayment = useAnnulPayment()
+    const { cancelPayment } = useCancelPayment()
+    const { annulPayment } = useAnnulPayment()
 
     const [confirmModal, setConfirmModal] = useState<{
         open: boolean,
@@ -112,7 +112,7 @@ export function TreasuryPhase({
                 requireReason: false,
                 onConfirm: async (reason?: string) => {
                     try {
-                        await cancelPayment.mutateAsync({ id, reason })
+                        await cancelPayment({ id, reason })
                         setConfirmModal(prev => ({ ...prev, open: false }))
                         onActionSuccess?.()
                     } catch (error: unknown) {
@@ -238,7 +238,7 @@ export function TreasuryPhase({
                             onClick={async () => {
                                 setIsAnnuling(true)
                                 try {
-                                    await annulPayment.mutateAsync({
+                                    await annulPayment({
                                         id: annulPaymentState.paymentId,
                                         reason: annulReason,
                                         treasuryAccountId: annulPaymentData.treasuryAccountId

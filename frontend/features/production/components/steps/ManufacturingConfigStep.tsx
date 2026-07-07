@@ -109,7 +109,7 @@ export function ManufacturingConfigStep({
   const { data: uoms = [] } = useUoMs();
 
   // Fetch product details (UoM, mfg flags) when product is selected
-  const { data: selectedProduct } = useProduct(
+  const { product: selectedProduct } = useProduct(
     otType === "NONE" && selectedProductId ? Number(selectedProductId) : null
   );
 

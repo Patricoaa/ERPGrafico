@@ -1,5 +1,5 @@
-export * from './StatementsList'
-export * from './ReconciliationIntelligence'
+export * from './StatementsClientView'
+export * from './ReconciliationIntelligencePanel'
 export * from './SimulationResults'
 export * from './ReconciliationPanel'
 export { default as StatementImportModal } from './StatementImportModal'

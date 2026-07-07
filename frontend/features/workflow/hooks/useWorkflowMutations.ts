@@ -9,8 +9,8 @@ import { invalidateCrossFeature } from '@/lib/invalidation'
 export function useCompleteTask() {
   const queryClient = useQueryClient()
   const { markLocalMutation } = useRealtime()
-  
-  return useMutation({
+
+  const completeTaskMutation = useMutation({
     mutationFn: (id: number) => workflowApi.completeTask(id),
     onSuccess: (_, id) => {
       markLocalMutation()
@@ -21,13 +21,15 @@ export function useCompleteTask() {
       showApiError(error, 'Error al completar la tarea')
     }
   })
+
+  return { completeTask: completeTaskMutation.mutateAsync, isCompletingTask: completeTaskMutation.isPending }
 }
 
 export function useUpdateTask() {
   const queryClient = useQueryClient()
   const { markLocalMutation } = useRealtime()
-  
-  return useMutation({
+
+  const updateTaskMutation = useMutation({
     mutationFn: ({ id, payload }: { id: number; payload: Record<string, unknown> }) => 
       workflowApi.updateTask(id, payload),
     onSuccess: (_, variables) => {
@@ -39,13 +41,15 @@ export function useUpdateTask() {
       showApiError(error, 'Error al actualizar la tarea')
     }
   })
+
+  return { updateTask: updateTaskMutation.mutateAsync, isUpdatingTask: updateTaskMutation.isPending }
 }
 
 export function useUpdateAssignmentRule() {
   const queryClient = useQueryClient()
   const { markLocalMutation } = useRealtime()
-  
-  return useMutation({
+
+  const updateAssignmentRuleMutation = useMutation({
     mutationFn: ({ id, data }: { id: number; data: workflowApi.AssignmentRulePayload }) => 
       workflowApi.updateAssignmentRule(id, data),
     onSuccess: () => {
@@ -57,13 +61,15 @@ export function useUpdateAssignmentRule() {
       showApiError(error, 'Error al actualizar la regla de asignación')
     }
   })
+
+  return { updateAssignmentRule: updateAssignmentRuleMutation.mutateAsync, isUpdatingAssignmentRule: updateAssignmentRuleMutation.isPending }
 }
 
 export function useCreateAssignmentRule() {
   const queryClient = useQueryClient()
   const { markLocalMutation } = useRealtime()
-  
-  return useMutation({
+
+  const createAssignmentRuleMutation = useMutation({
     mutationFn: workflowApi.createAssignmentRule,
     onSuccess: () => {
       markLocalMutation()
@@ -74,13 +80,15 @@ export function useCreateAssignmentRule() {
       showApiError(error, 'Error al crear la regla de asignación')
     }
   })
+
+  return { createAssignmentRule: createAssignmentRuleMutation.mutateAsync, isCreatingAssignmentRule: createAssignmentRuleMutation.isPending }
 }
 
 export function useUpdateNotificationRule() {
   const queryClient = useQueryClient()
   const { markLocalMutation } = useRealtime()
-  
-  return useMutation({
+
+  const updateNotificationRuleMutation = useMutation({
     mutationFn: ({ id, data }: { id: number; data: workflowApi.NotificationRulePayload }) => 
       workflowApi.updateNotificationRule(id, data),
     onSuccess: () => {
@@ -92,13 +100,15 @@ export function useUpdateNotificationRule() {
       showApiError(error, 'Error al actualizar la regla de notificación')
     }
   })
+
+  return { updateNotificationRule: updateNotificationRuleMutation.mutateAsync, isUpdatingNotificationRule: updateNotificationRuleMutation.isPending }
 }
 
 export function useCreateNotificationRule() {
   const queryClient = useQueryClient()
   const { markLocalMutation } = useRealtime()
-  
-  return useMutation({
+
+  const createNotificationRuleMutation = useMutation({
     mutationFn: workflowApi.createNotificationRule,
     onSuccess: () => {
       markLocalMutation()
@@ -109,13 +119,15 @@ export function useCreateNotificationRule() {
       showApiError(error, 'Error al crear la regla de notificación')
     }
   })
+
+  return { createNotificationRule: createNotificationRuleMutation.mutateAsync, isCreatingNotificationRule: createNotificationRuleMutation.isPending }
 }
 
 export function useUpdateWorkflowSettings() {
   const queryClient = useQueryClient()
   const { markLocalMutation } = useRealtime()
-  
-  return useMutation({
+
+  const updateWorkflowSettingsMutation = useMutation({
     mutationFn: workflowApi.updateWorkflowSettings,
     onSuccess: () => {
       markLocalMutation()
@@ -126,17 +138,21 @@ export function useUpdateWorkflowSettings() {
       showApiError(error, 'Error al actualizar la configuración')
     }
   })
+
+  return { updateWorkflowSettings: updateWorkflowSettingsMutation.mutateAsync, isUpdatingWorkflowSettings: updateWorkflowSettingsMutation.isPending }
 }
 
 export function useGetUnreadNotificationCount() {
   const queryClient = useQueryClient()
   const { markLocalMutation } = useRealtime()
-  
-  return useMutation({
+
+  const getUnreadNotificationCountMutation = useMutation({
     mutationFn: workflowApi.getUnreadNotificationCount,
     onSuccess: (data) => {
       markLocalMutation()
       queryClient.setQueryData(WORKFLOW_KEYS.getUnreadNotificationCount(), data)
     }
   })
+
+  return { getUnreadNotificationCount: getUnreadNotificationCountMutation.mutateAsync, isGettingUnreadNotificationCount: getUnreadNotificationCountMutation.isPending }
 }

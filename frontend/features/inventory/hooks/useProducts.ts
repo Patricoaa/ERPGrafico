@@ -122,12 +122,13 @@ export function useProducts({ filters, initialData, page = 1, page_size = 50 }: 
  * Use this in detail panels, modals and forms that need to display one product.
  */
 export function useProduct(id: number | null | undefined) {
-    return useQuery({
+    const { data: product, isLoading, isError } = useQuery({
         queryKey: id ? PRODUCTS_KEYS.detail(id) : ['products', 'detail', 'noop'],
         queryFn: () => inventoryApi.getProduct(id as number),
         staleTime: 5 * 60 * 1000,
         enabled: !!id,
     })
+    return { product: product ?? null, isLoading, isError }
 }
 
 /**
@@ -140,7 +141,7 @@ export function useProduct(id: number | null | undefined) {
  * PRODUCTS_KEYS.all).
  */
 export function useProductInsights<T = unknown>(id: number | null | undefined) {
-    return useQuery<T | null>({
+    const { data: insights, isLoading, isError, refetch } = useQuery<T | null>({
         queryKey: id ? [...PRODUCTS_KEYS.detail(id), 'insights'] : ['products', 'insights', 'noop'],
         queryFn: async () => {
             if (!id) return null
@@ -149,4 +150,5 @@ export function useProductInsights<T = unknown>(id: number | null | undefined) {
         staleTime: 5 * 60 * 1000,
         enabled: !!id,
     })
+    return { insights: insights ?? null, isLoading, isError, refetch }
 }

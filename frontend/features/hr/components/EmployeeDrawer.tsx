@@ -105,7 +105,7 @@ export function EmployeeDrawer({ open, onOpenChange, employee, onSaved, trigger,
         }
     })
 
-    const { data: hrData, isLoading: depsLoading } = useEmployeeFormDeps(open)
+    const { employeeFormDeps: hrData, isLoading: depsLoading } = useEmployeeFormDeps(open)
 
     const isFetchingInitialData = open && depsLoading
 

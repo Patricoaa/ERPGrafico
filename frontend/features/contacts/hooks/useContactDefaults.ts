@@ -2,7 +2,7 @@ import { useQuery } from "@tanstack/react-query"
 import { contactsApi } from "../api/contactsApi"
 
 export function useDefaultCustomer(enabled: boolean) {
-    return useQuery({
+    const { data: defaultCustomer, isLoading, isError } = useQuery({
         queryKey: ['contacts', 'defaultCustomer'],
         queryFn: async () => {
             const data = await contactsApi.getContacts({ is_default_customer: true })
@@ -11,10 +11,11 @@ export function useDefaultCustomer(enabled: boolean) {
         staleTime: 10 * 60 * 1000,
         enabled
     })
+    return { defaultCustomer: defaultCustomer ?? null, isLoading, isError }
 }
 
 export function useDefaultVendor(enabled: boolean) {
-    return useQuery({
+    const { data: defaultVendor, isLoading, isError } = useQuery({
         queryKey: ['contacts', 'defaultVendor'],
         queryFn: async () => {
             const data = await contactsApi.getContacts({ is_default_vendor: true })
@@ -23,4 +24,5 @@ export function useDefaultVendor(enabled: boolean) {
         staleTime: 10 * 60 * 1000,
         enabled
     })
+    return { defaultVendor: defaultVendor ?? null, isLoading, isError }
 }

@@ -56,7 +56,7 @@ export function ChecksClientView({ bankId, direction }: ChecksClientViewProps = 
         return Object.keys(p).length ? p : undefined
     }, [effectiveBank, direction, textFilters, segFilters])
 
-    const { data: checks = [], isLoading } = useChecks(queryParams)
+    const { checks = [], isLoading } = useChecks(queryParams)
 
     const { clear, bounce, void: voidCheck, markCashed } = useCheckMutations()
 

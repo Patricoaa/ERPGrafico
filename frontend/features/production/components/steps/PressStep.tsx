@@ -1,6 +1,6 @@
 "use client"
 
-import { ApprovalTaskList } from './ApprovalTaskList'
+import { ApprovalTaskListPanel } from './ApprovalTaskListPanel'
 import type { WorkOrder, WorkOrderTask } from '../../types'
 
 interface PressStepProps {
@@ -15,7 +15,7 @@ interface PressStepProps {
 export function PressStep({ order, canComplete, taskNotes, taskFiles, onNoteChange, onFileChange }: PressStepProps) {
   return (
     <div className="space-y-6">
-      <ApprovalTaskList
+      <ApprovalTaskListPanel
         tasks={order.workflow_tasks ?? []}
         taskType="OT_PRESS_APPROVAL"
         canComplete={canComplete}
