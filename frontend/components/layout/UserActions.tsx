@@ -156,11 +156,13 @@ export function UserActions({ isInboxOpen, onInboxToggle }: UserActionsProps) {
                 <Tooltip>
                     <TooltipTrigger asChild>
                         <Button
+                            variant={isCalculatorOpen ? "default" : "ghost"}
+                            size="icon"
                             onClick={() => setIsCalculatorOpen(true)}
                             className={cn(
-                                "h-10 w-10 flex items-center justify-center rounded-md transition-all duration-200 active:scale-95",
+                                "rounded-md transition-all duration-200 active:scale-95",
                                 isCalculatorOpen
-                                    ? "bg-primary text-primary-foreground"
+                                    ? ""
                                     : "text-foreground/50 hover:bg-accent hover:text-accent-foreground"
                             )}
                         >
@@ -176,11 +178,13 @@ export function UserActions({ isInboxOpen, onInboxToggle }: UserActionsProps) {
                 <Tooltip>
                     <TooltipTrigger asChild>
                         <Button
+                            variant={isInboxOpen ? "default" : "ghost"}
+                            size="icon"
                             onClick={onInboxToggle}
                             className={cn(
-                                "relative h-10 w-10 flex items-center justify-center rounded-md transition-all duration-200 active:scale-95",
+                                "relative rounded-md transition-all duration-200 active:scale-95",
                                 isInboxOpen
-                                    ? "bg-primary text-primary-foreground"
+                                    ? ""
                                     : "text-foreground/50 hover:bg-accent hover:text-accent-foreground"
                             )}
                         >
@@ -205,7 +209,9 @@ export function UserActions({ isInboxOpen, onInboxToggle }: UserActionsProps) {
                         <TooltipTrigger asChild>
                             <DropdownMenuTrigger asChild>
                                 <Button
-                                    className="relative h-10 w-10 flex items-center justify-center rounded-md text-foreground/50 hover:bg-accent hover:text-accent-foreground transition-all duration-200 active:scale-95 bg-transparent border-none shadow-none"
+                                    variant="ghost"
+                                    size="icon"
+                                    className="relative rounded-md text-foreground/50 hover:bg-accent hover:text-accent-foreground transition-all duration-200 active:scale-95"
                                 >
                                     <Bell className="h-5 w-5" />
                                     {unreadCount > 0 && (
@@ -255,7 +261,9 @@ export function UserActions({ isInboxOpen, onInboxToggle }: UserActionsProps) {
                         <TooltipTrigger asChild>
                             <DropdownMenuTrigger asChild>
                                 <Button
-                                    className="relative h-10 w-10 flex items-center justify-center rounded-md text-foreground/50 hover:bg-accent hover:text-accent-foreground transition-all duration-200 active:scale-95 bg-transparent border border-border/60"
+                                    variant="outline"
+                                    size="icon"
+                                    className="relative rounded-md text-foreground/50 hover:bg-accent hover:text-accent-foreground transition-all duration-200 active:scale-95 border-border/60"
                                 >
                                     <Avatar className="h-full w-full rounded-md bg-transparent">
                                         <AvatarFallback className="bg-transparent text-current  font-black text-[10px] rounded-md">

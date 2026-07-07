@@ -220,8 +220,9 @@ function CartItemComponent({
 
                     {posMode === 'SHOPPING' && (
                         <Button
+                            variant="ghost"
                             className={cn(
-                                "flex items-center justify-center text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors rounded-md shrink-0 ml-1",
+                                "flex items-center justify-center text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors rounded-md shrink-0 ml-1 border-none shadow-none",
                                 isTouchMode ? "h-10 w-10" : "h-7 w-7 opacity-0 group-hover:opacity-100"
                             )}
                             onClick={() => onRemove(item.cartItemId)}
@@ -239,9 +240,10 @@ function CartItemComponent({
                 <div className="flex items-center">
                     {hasMultipleUoms ? (
                         <Button
+                            variant="ghost"
                             type="button"
                             className={cn(
-                                "font-semibold underline underline-offset-2 border-none bg-transparent text-muted-foreground hover:text-primary transition-colors cursor-pointer flex items-center px-1 rounded-sm hover:bg-primary/5",
+                                "font-semibold underline underline-offset-2 border-none bg-transparent text-muted-foreground hover:text-primary transition-colors cursor-pointer flex items-center px-1 rounded-sm hover:bg-primary/5 shadow-none",
                                 isTouchMode ? "text-sm h-8" : "text-xs h-6"
                             )}
                             onClick={() => setUomDialogOpen(true)}
@@ -266,8 +268,9 @@ function CartItemComponent({
                         isTouchMode ? "h-9" : "h-7"
                     )}>
                     <Button
+                        variant="ghost"
                         className={cn(
-                            "flex items-center justify-center hover:bg-black/5 dark:hover:bg-white/10 transition-colors disabled:opacity-30 disabled:pointer-events-none active:bg-black/10",
+                            "flex items-center justify-center hover:bg-black/5 dark:hover:bg-white/10 transition-colors disabled:opacity-30 disabled:pointer-events-none active:bg-black/10 border-none shadow-none rounded-none",
                             isTouchMode ? "w-10 h-full" : "w-7 h-full"
                         )}
                         {...(isTouchMode ? {
@@ -310,8 +313,9 @@ function CartItemComponent({
                     </div>
 
                     <Button
+                        variant="ghost"
                         className={cn(
-                            "flex items-center justify-center hover:bg-black/5 dark:hover:bg-white/10 transition-colors disabled:opacity-30 disabled:pointer-events-none active:bg-black/10",
+                            "flex items-center justify-center hover:bg-black/5 dark:hover:bg-white/10 transition-colors disabled:opacity-30 disabled:pointer-events-none active:bg-black/10 border-none shadow-none rounded-none",
                             isTouchMode ? "w-10 h-full" : "w-7 h-full"
                         )}
                         {...(isTouchMode ? {
@@ -351,9 +355,10 @@ function CartItemComponent({
                         {saleUoms.map(uom => (
                             <Button
                                 key={uom.id}
+                                variant="ghost"
                                 type="button"
                                 className={cn(
-                                    "w-full text-center px-4 py-3 text-sm rounded-lg hover:bg-muted transition-colors border border-transparent",
+                                    "w-full text-center px-4 py-3 text-sm rounded-lg hover:bg-muted transition-colors border border-transparent shadow-none",
                                     item.uom === uom.id && "bg-primary/5 border-primary/20 text-primary font-bold"
                                 )}
                                 onClick={() => {

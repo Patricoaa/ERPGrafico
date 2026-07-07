@@ -76,7 +76,12 @@ export function FormulaBuilder({ value, onChange }: FormulaBuilderProps) {
                             {VARIABLES.map((v) => (
                                 <Tooltip key={v.val}>
                                     <TooltipTrigger asChild>
-                                        <Button type="button" onClick={() => insert(v.val)}>
+                                        <Button
+                                            variant="ghost"
+                                            className="h-auto p-0 border-none bg-transparent shadow-none"
+                                            type="button"
+                                            onClick={() => insert(v.val)}
+                                        >
                                             <Chip 
                                                 size="xs"
                                                 intent="neutral" 

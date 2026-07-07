@@ -137,11 +137,12 @@ export function QuickActionsMenu({ isInboxOpen, onInboxToggle }: QuickActionsMen
                     <Tooltip>
                         <TooltipTrigger asChild>
                             <Button
+                                variant={isInboxOpen ? "default" : "ghost"}
                                 onClick={onInboxToggle}
                                 className={cn(
                                     "relative flex items-center justify-center h-12 w-12 rounded-sm transition-all duration-300 group hover:scale-110 active:scale-95",
                                     isInboxOpen
-                                        ? "bg-primary text-primary-foreground "
+                                        ? ""
                                         : "text-sidebar-foreground/40 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
                                 )}
                             >
@@ -165,11 +166,12 @@ export function QuickActionsMenu({ isInboxOpen, onInboxToggle }: QuickActionsMen
                     <Tooltip>
                         <TooltipTrigger asChild>
                             <Button
+                                variant={isCalculatorOpen ? "default" : "ghost"}
                                 onClick={() => setIsCalculatorOpen(true)}
                                 className={cn(
                                     "relative flex items-center justify-center h-12 w-12 rounded-sm transition-all duration-300 group hover:scale-110 active:scale-95",
                                     isCalculatorOpen
-                                        ? "bg-primary text-primary-foreground "
+                                        ? ""
                                         : "text-sidebar-foreground/40 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
                                 )}
                             >

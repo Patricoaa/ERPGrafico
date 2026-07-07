@@ -159,9 +159,10 @@ export function BOMManager({ product, variantMode = false, onBomsChange }: BOMMa
             cell: ({ row }) => (
                 <div className="flex justify-center">
                     <Button
+                        variant="ghost"
                         type="button"
                         onClick={() => !row.original.active && handleToggleActive(row.original)}
-                        className={cn(!row.original.active && "hover:scale-105 transition-transform")}
+                        className={cn("h-auto p-0 border-none bg-transparent hover:bg-transparent shadow-none", !row.original.active && "hover:scale-105 transition-transform")}
                     >
                         <StatusBadge
                             status={row.original.active ? "active" : "inactive"}
