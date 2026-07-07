@@ -107,6 +107,8 @@ export interface DataTableProps<TData, TValue> {
      */
     isFiltered?: boolean
     renderRow?: (row: Row<TData>, children: React.ReactNode) => React.ReactNode
+    /** Callback to compute a CSS class name for each row. Receives the full TanStack Row object. */
+    getRowClassName?: (row: Row<TData>) => string
     manualPagination?: boolean
     pageCount?: number
     /**
@@ -190,6 +192,7 @@ export function DataTable<TData, TValue>({
     initialColumnFilters = EMPTY_ARRAY,
     initialSorting,
     renderRow,
+    getRowClassName,
     manualPagination,
     pageCount,
     rowCount,
@@ -468,7 +471,8 @@ export function DataTable<TData, TValue>({
                                     key={row.id}
                                     className={cn(
                                         "table-row-hover border-b border-border/40",
-                                        onRowClick && "cursor-pointer"
+                                        onRowClick && "cursor-pointer",
+                                        getRowClassName?.(row)
                                     )}
                                     onClick={() => onRowClick?.(row.original)}
                                 >
@@ -560,7 +564,8 @@ export function DataTable<TData, TValue>({
                                     className={cn(
                                         "grid grid-cols-subgrid col-span-full",
                                         "items-center px-3 py-2.5 hover:bg-muted/40 transition-all group animate-in fade-in duration-300 border-b border-border/60 last:border-b-0",
-                                        onRowClick && "cursor-pointer"
+                                        onRowClick && "cursor-pointer",
+                                        getRowClassName?.(row)
                                     )}
                                     onClick={() => onRowClick?.(row.original)}
                                 >
@@ -603,7 +608,8 @@ export function DataTable<TData, TValue>({
                                     className={cn(
                                         "group border-b border-border/40 table-row-hover transition-all",
                                         onRowClick && "cursor-pointer",
-                                        row.getIsSelected() && "bg-primary/5"
+                                        row.getIsSelected() && "bg-primary/5",
+                                        getRowClassName?.(row)
                                     )}
                                     onClick={() => onRowClick?.(row.original)}
                                 >
@@ -623,7 +629,8 @@ export function DataTable<TData, TValue>({
                                 className={cn(
                                     "group border-b border-border/40 table-row-hover transition-all",
                                     onRowClick && "cursor-pointer",
-                                    row.getIsSelected() && "bg-primary/5"
+                                    row.getIsSelected() && "bg-primary/5",
+                                    getRowClassName?.(row)
                                 )}
                                 onClick={() => onRowClick?.(row.original)}
                             >
@@ -827,7 +834,8 @@ export function DataTable<TData, TValue>({
                                                     data-state={row.getIsSelected() && "selected"}
                                                     className={cn(
                                                         "group table-row-hover",
-                                                        onRowClick && "cursor-pointer"
+                                                        onRowClick && "cursor-pointer",
+                                                        getRowClassName?.(row)
                                                     )}
                                                     onClick={() => onRowClick?.(row.original)}
                                                 >
@@ -846,7 +854,8 @@ export function DataTable<TData, TValue>({
                                                 data-state={row.getIsSelected() && "selected"}
                                                 className={cn(
                                                     "group table-row-hover",
-                                                    onRowClick && "cursor-pointer"
+                                                    onRowClick && "cursor-pointer",
+                                                    getRowClassName?.(row)
                                                 )}
                                                 onClick={() => onRowClick?.(row.original)}
                                             >

@@ -12,6 +12,7 @@ import { type ColumnDef } from "@tanstack/react-table"
 import type { BulkAction } from "@/components/shared"
 import type { Page } from '@/lib/pagination'
 import { ProductDrawer } from "./ProductDrawer"
+import type { ProductInitialData } from "@/types/forms"
 import { ChevronDown, Plus, AlertTriangle, Layers, ChevronDown as ChevronDownIcon } from "lucide-react"
 import type { LucideIcon } from "lucide-react"
 import * as LucideIcons from "lucide-react"
@@ -570,7 +571,7 @@ export function ProductClientView({ externalOpen, onExternalOpenChange, createAc
                         setIsFormOpen(true)
                     }
                 }}
-                initialData={editingProduct || undefined}
+                initialData={(editingProduct || undefined) as ProductInitialData | undefined}
                 onSuccess={refetch}
             />
 

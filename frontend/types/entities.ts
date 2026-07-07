@@ -268,7 +268,7 @@ export interface ProductMinimal {
     uom_category?: number
     cost_price?: number | string
     last_purchase_price?: string | number
-    purchase_uom?: number | string
+    purchase_uom?: number | string | { id: number; name: string }
     has_variants?: boolean
     track_inventory?: boolean
     requires_bom_validation?: boolean

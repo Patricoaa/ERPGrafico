@@ -22,6 +22,7 @@ import { toast } from "sonner"
 import { productionApi, useAllowedDteTypes } from "../hooks"
 import { useUoMs, useProductionVariants } from "../hooks"
 import type { BOM, BOMLine, ProductMinimal, UoM } from "../types"
+import type { Product } from "@/types/entities"
 import { ActionSlideButton, CancelButton, DataCell, Drawer, FormFooter, FormLineItemsTable, IconButton, LabeledInput, LabeledSelect, LabeledSwitch, SkeletonShell } from '@/components/shared'
 import { useVatRate } from "@/hooks/useVatRate"
 import { formDrawerWidth } from "@/lib/form-widths"
@@ -419,7 +420,7 @@ export function BOMDrawer({
                                                             label="Producto a fabricar"
                                                             required
                                                             value={selectedProduct?.id}
-                                                            onSelect={(p) => setSelectedProduct(p)}
+                                                            onSelect={(p: Product) => setSelectedProduct(p as ProductMinimal)}
                                                             onChange={(val) => {
                                                                 if (!val) setSelectedProduct(null)
                                                             }}
@@ -576,7 +577,7 @@ export function BOMDrawer({
                                                                                 if (p.uom) {
                                                                                     const uomId = typeof p.uom === 'object' ? p.uom.id.toString() : p.uom.toString()
                                                                                     form.setValue(`lines.${index}.uom`, uomId)
-                                                                                    form.setValue(`lines.${index}.uom_name`, p.uom_name || (typeof p.uom === 'object' ? p.uom.name : ""))
+                                                                                    form.setValue(`lines.${index}.uom_name`, typeof p.uom === 'object' ? p.uom.name : "")
 
                                                                                     const effectiveCost = getEffectiveCost(baseCost, baseUomId, uomId)
                                                                                     form.setValue(`lines.${index}.component_cost`, effectiveCost)
@@ -584,13 +585,13 @@ export function BOMDrawer({
                                                                                     form.setValue(`lines.${index}.component_cost`, baseCost)
                                                                                 }
 
-                                                                                if (p.uom_category) form.setValue(`lines.${index}.component_uom_category`, p.uom_category)
+                                                                                if (typeof p.uom === 'object' && p.uom?.category) form.setValue(`lines.${index}.component_uom_category`, p.uom.category)
                                                                                 if (p.has_variants) fetchLineVariants(p.id)
                                                                             }}
                                                                             onChange={(val) => propField.onChange(val)}
                                                                             placeholder="Buscar componente..."
                                                                             allowedTypes={['STORABLE', 'MANUFACTURABLE']}
-                                                                            customFilter={(p: ProductMinimal) =>
+                                                                            customFilter={(p: Product) =>
                                                                                 !!(p.product_type === 'STORABLE' ||
                                                                                     (p.product_type === 'MANUFACTURABLE' && !p.requires_advanced_manufacturing))
                                                                             }
@@ -619,7 +620,7 @@ export function BOMDrawer({
                                                                                 if (p.uom) {
                                                                                     const uomId = typeof p.uom === 'object' ? p.uom.id.toString() : p.uom.toString()
                                                                                     form.setValue(`lines.${index}.uom`, uomId)
-                                                                                    form.setValue(`lines.${index}.uom_name`, p.uom_name || (typeof p.uom === 'object' ? p.uom.name : ""))
+                                                                                    form.setValue(`lines.${index}.uom_name`, typeof p.uom === 'object' ? p.uom.name : "")
 
                                                                                     const effectiveCost = getEffectiveCost(baseCost, baseUomId, uomId)
                                                                                     form.setValue(`lines.${index}.component_cost`, effectiveCost)
@@ -627,13 +628,13 @@ export function BOMDrawer({
                                                                                     form.setValue(`lines.${index}.component_cost`, baseCost)
                                                                                 }
 
-                                                                                if (p.uom_category) form.setValue(`lines.${index}.component_uom_category`, p.uom_category)
+                                                                                if (typeof p.uom === 'object' && p.uom?.category) form.setValue(`lines.${index}.component_uom_category`, p.uom.category)
                                                                                 if (p.has_variants) fetchLineVariants(p.id)
                                                                             }}
                                                                             onChange={(val) => propField.onChange(val)}
                                                                             placeholder="Buscar..."
                                                                             allowedTypes={['STORABLE', 'MANUFACTURABLE']}
-                                                                            customFilter={(p: ProductMinimal) =>
+                                                                            customFilter={(p: Product) =>
                                                                                 !!(p.product_type === 'STORABLE' ||
                                                                                     (p.product_type === 'MANUFACTURABLE' && !p.requires_advanced_manufacturing))
                                                                             }
@@ -835,7 +836,7 @@ if (p.has_variants) fetchLineVariants(p.id)
                                                                             placeholder="Buscar servicio..."
                                                                             shouldResolveVariants={false}
                                                                             variant="inline"
-                                                                            customFilter={(p: ProductMinimal & { product_type?: string, can_be_purchased?: boolean }) => !!(p.product_type === 'SERVICE' && p.can_be_purchased)}
+                                                                            customFilter={(p: Product) => !!(p.product_type === 'SERVICE' && p.can_be_purchased)}
                                                                             className={cn(tableInputClass, "w-full text-left font-normal", fieldState.error && "border-destructive/50 ring-1 ring-destructive/10")}
                                                                         />
                                                                     )
@@ -852,13 +853,13 @@ if (p.has_variants) fetchLineVariants(p.id)
                                                                                     const uomId = typeof p.uom === 'object' ? p.uom.id.toString() : p.uom.toString()
                                                                                     form.setValue(`service_lines.${index}.uom`, uomId)
                                                                                 }
-if (p.has_variants) fetchLineVariants(p.id)
+ if (p.has_variants) fetchLineVariants(p.id)
                                                                              }}
                                                                             onChange={(val) => propField.onChange(val)}
                                                                             placeholder="Buscar..."
                                                                             shouldResolveVariants={false}
                                                                             variant="inline"
-                                                                            customFilter={(p: ProductMinimal & { product_type?: string, can_be_purchased?: boolean }) => !!(p.product_type === 'SERVICE' && p.can_be_purchased)}
+                                                                            customFilter={(p: Product) => !!(p.product_type === 'SERVICE' && p.can_be_purchased)}
                                                                             className={cn(tableInputClass, "flex-1 text-left font-normal", fieldState.error && "border-destructive/50 ring-1 ring-destructive/10")}
                                                                         />
                                                                         <LabeledSelect

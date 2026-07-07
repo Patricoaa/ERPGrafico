@@ -19,6 +19,7 @@ import type { ColumnDef } from '@tanstack/react-table'
 
 import { cn } from '@/lib/utils'
 import { showApiError } from '@/lib/errors'
+import type { Product } from "@/types/entities"
 import type { WorkOrder, WorkOrderMaterial, ProductMinimal } from '../../types'
 
 
@@ -199,13 +200,13 @@ export function MaterialAssignmentStep({
                           <ProductSelector
                             value={productId}
                             onChange={setProductId}
-                            onSelect={(p) => {
-                              setProductObj(p)
+                            onSelect={(p: Product) => {
+                              setProductObj(p as ProductMinimal)
                               if (p?.uom) setUomId(typeof p.uom === 'object' ? p.uom.id.toString() : p.uom.toString())
                             }}
                             disabled={!!editingMaterialId}
                             shouldResolveVariants={false}
-                            customFilter={(p) => {
+                            customFilter={(p: Product) => {
                               if (order.main_product_id && p.id.toString() === order.main_product_id.toString()) return false
                               if (p.product_type === 'CONSUMABLE') return false
                               if (p.product_type === 'MANUFACTURABLE' && !p.requires_advanced_manufacturing) return false

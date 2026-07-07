@@ -219,7 +219,7 @@ export function PricingRuleDrawer({ auditSidebar, initialData, onSuccess, open, 
                             disabled={!!productId}
                             placeholder="Si no se selecciona, aplica a todos"
                             shouldResolveVariants={false}
-                            customFilter={(p: Record<string, unknown>) => !p.parent_template}
+                            customFilter={(p: Product) => !p.parent_template}
                         />
                     )}
                 />

@@ -43,9 +43,9 @@ Chip.Category = function ChipCategory({
     className?: string
 }) {
     const { intent, label, icon } = resolveCategory(domain, value)
-    const Icon = icon
-        ? (LucideIcons as unknown as Record<string, React.ElementType>)[icon] ?? null
-        : null
+    const Icon: LucideIcon | undefined = icon
+        ? (LucideIcons as unknown as Record<string, LucideIcon>)[icon] ?? undefined
+        : undefined
     return (
         <Chip intent={intent} size={size} icon={Icon} className={className}>
             {label}
