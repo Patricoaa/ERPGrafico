@@ -10,9 +10,11 @@ export interface POSSessionActionsCtx {
 export const posSessionActions = createEntityActions<
     POSSession,
     POSSessionActionsCtx
->((item, ctx) => (
-    <>
-        {item.status === 'OPEN' ? (
+>((item, ctx) => {
+    const isOpen = item.status === 'OPEN'
+
+    return <>
+        {isOpen ? (
             <>
                 <DataCell.Action
                     icon={FileText}
@@ -36,4 +38,4 @@ export const posSessionActions = createEntityActions<
             />
         )}
     </>
-))
+})

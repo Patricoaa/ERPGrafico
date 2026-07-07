@@ -83,7 +83,8 @@ export default function DashboardPageClient() {
               <div className="flex items-center gap-2 mt-auto">
                 <div className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider flex items-center gap-1.5 ${mod.statusColor}`}>
                   <span className="w-1.5 h-1.5 rounded-full bg-current opacity-70" />
-                  {mod.status}
+                    {/* eslint-disable-next-line status/must-use-statusbadge -- module config label, not entity status */}
+                    {mod.status}
                 </div>
               </div>
             </Link>
