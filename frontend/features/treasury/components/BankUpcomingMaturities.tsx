@@ -1,5 +1,6 @@
 "use client"
 
+import { Button } from "@/components/ui/button"
 import { useRouter } from "next/navigation"
 import { HandCoins, FileCheck, CreditCard, ArrowRight, Calendar } from "lucide-react"
 import { MoneyDisplay, EmptyState, SectionHeader } from "@/components/shared"
@@ -86,7 +87,7 @@ export function BankUpcomingMaturities({ data, bankId }: BankUpcomingMaturitiesP
                     const { label: timeLabel, isToday } = formatTimeUntil(item.due_date, serverDate ?? undefined)
 
                     return (
-                        <button
+                        <Button
                             key={`${item.type}-${item.entity_id}-${idx}`}
                             onClick={() => router.push(config.href(bankId, item))}
                             className="w-full flex items-center gap-3 py-2 px-1 -mx-1 text-left hover:bg-muted/30 transition-colors rounded-sm group"
@@ -103,18 +104,18 @@ export function BankUpcomingMaturities({ data, bankId }: BankUpcomingMaturitiesP
                                 <MoneyDisplay amount={item.amount} showColor={false} />
                             </span>
                             <ArrowRight className="h-3 w-3 text-muted-foreground/0 group-hover:text-muted-foreground transition-all shrink-0" />
-                        </button>
+                        </Button>
                     )
                 })}
             </div>
 
             {remaining > 0 && (
-                <button
+                <Button
                     onClick={() => router.push(`/treasury/bank-center/${bankId}/movements`)}
                     className="text-[11px] font-medium text-muted-foreground hover:text-foreground transition-colors mt-1.5 ml-[68px]"
                 >
                     y {remaining} más →
-                </button>
+                </Button>
             )}
         </section>
     )

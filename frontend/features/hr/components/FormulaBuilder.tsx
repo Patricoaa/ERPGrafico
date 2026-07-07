@@ -76,7 +76,7 @@ export function FormulaBuilder({ value, onChange }: FormulaBuilderProps) {
                             {VARIABLES.map((v) => (
                                 <Tooltip key={v.val}>
                                     <TooltipTrigger asChild>
-                                        <button type="button" onClick={() => insert(v.val)}>
+                                        <Button type="button" onClick={() => insert(v.val)}>
                                             <Chip 
                                                 size="xs"
                                                 intent="neutral" 
@@ -84,7 +84,7 @@ export function FormulaBuilder({ value, onChange }: FormulaBuilderProps) {
                                             >
                                                 {v.label}
                                             </Chip>
-                                        </button>
+                                        </Button>
                                     </TooltipTrigger>
                                     <TooltipContent side="top">
                                         <p className="text-xs">{v.desc}</p>

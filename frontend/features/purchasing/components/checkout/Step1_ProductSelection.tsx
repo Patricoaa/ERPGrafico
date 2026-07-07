@@ -1,5 +1,6 @@
 "use client"
 
+import { Button } from "@/components/ui/button"
 import { useState, useEffect, useMemo } from "react"
 import {
     TableBody,
@@ -47,14 +48,14 @@ function GrossToNetCalculator({ rate, multiplier }: { rate: number; multiplier: 
     return (
         <Popover>
             <PopoverTrigger asChild>
-                <button
+                <Button
                     type="button"
                     className="flex items-center gap-1 text-[10px] font-bold uppercase tracking-widest text-muted-foreground/60 hover:text-primary transition-colors"
                     title="Calculadora bruto a neto"
                 >
                     <Calculator className="h-3 w-3" />
                     Bruto → Neto
-                </button>
+                </Button>
             </PopoverTrigger>
             <PopoverContent className="w-64 p-4" align="end">
                 <div className="space-y-3">

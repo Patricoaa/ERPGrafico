@@ -1,5 +1,6 @@
 'use client'
 
+import { Button } from "@/components/ui/button"
 import { History, RefreshCw } from 'lucide-react'
 import { Chip } from '@/components/shared'
 
@@ -11,7 +12,7 @@ interface MappingToggleProps {
 
 export function MappingToggle({ year, isHistorical, onToggle }: MappingToggleProps) {
     return (
-        <button type="button" onClick={onToggle} className="cursor-pointer">
+        <Button type="button" onClick={onToggle} className="cursor-pointer">
             {isHistorical ? (
                 <Chip intent="info" size="sm" icon={History}>
                     Mapeo congelado al cierre {year}
@@ -21,6 +22,6 @@ export function MappingToggle({ year, isHistorical, onToggle }: MappingTogglePro
                     Mapeo vivo
                 </Chip>
             )}
-        </button>
+        </Button>
     )
 }

@@ -1,5 +1,6 @@
 "use client";
 
+import { Button } from "@/components/ui/button"
 import React from 'react';
 import {
     Table,
@@ -73,13 +74,13 @@ const ReportRow = ({
                 <TableCell className="py-2.5 px-4">
                     <div className="flex items-center gap-2" style={{ paddingLeft: `${paddingLeft}px` }}>
                         {(hasChildren || mode === 'flat') && (
-                            <button 
+                            <Button 
                                 onClick={() => mode === 'tree' && setExpanded(!expanded)} 
                                 className={cn("flex-shrink-0", !hasChildren && mode === 'flat' && "cursor-default opacity-50")}
                                 disabled={!hasChildren}
                             >
                                 <RowIcon isExpanded={expanded} hasChildren={!!hasChildren} level={level} />
-                            </button>
+                            </Button>
                         )}
                         {!hasChildren && mode === 'tree' && <div className="w-6 mr-1 flex justify-center"><div className="w-1 h-1 rounded-full bg-muted-foreground/30" /></div>}
                         

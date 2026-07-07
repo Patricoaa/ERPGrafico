@@ -333,7 +333,7 @@ export function PortfolioTable({
             id: "expander",
             header: () => null,
             cell: ({ row }) => (
-                <button
+                <Button
                     onClick={(e) => {
                         e.stopPropagation()
                         row.toggleExpanded()
@@ -345,7 +345,7 @@ export function PortfolioTable({
                     ) : (
                         <ChevronRight className="h-4 w-4" />
                     )}
-                </button>
+                </Button>
             ),
             size: 40,
             enableSorting: false,

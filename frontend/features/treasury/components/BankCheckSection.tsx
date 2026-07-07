@@ -1,5 +1,6 @@
 "use client"
 
+import { Button } from "@/components/ui/button"
 import { useRouter } from "next/navigation"
 import { FileCheck } from "lucide-react"
 import { MoneyDisplay, SectionHeader } from "@/components/shared"
@@ -33,7 +34,7 @@ export function BankCheckSection({ data, bankId }: Props) {
                 {issued_checks_list.map(chk => {
                     const isOverdue = parseDateOnly(chk.due_date) < (serverDate ?? new Date())
                     return (
-                        <button
+                        <Button
                             key={chk.id}
                             onClick={() => router.push(`/treasury/bank-center/${bankId}/checks?selected=${chk.id}`)}
                             className={cn(
@@ -64,7 +65,7 @@ export function BankCheckSection({ data, bankId }: Props) {
                                     A nombre de: <span className="font-medium text-foreground/80">{chk.counterparty_name}</span>
                                 </div>
                             )}
-                        </button>
+                        </Button>
                     )
                 })}
             </div>

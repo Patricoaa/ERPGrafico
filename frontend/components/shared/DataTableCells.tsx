@@ -114,7 +114,7 @@ export const DataCell = {
         const { openEntity } = useGlobalModals();
         return (
             <div className={cn("flex justify-center items-center w-full group", className)}>
-                <button
+                <Button
                     onClick={(e) => {
                         e.stopPropagation();
                         if (onClick) onClick(e);
@@ -125,7 +125,7 @@ export const DataCell = {
                 >
                     <span className="truncate">{children}</span>
                     <ExternalLink className="h-3 w-3 text-primary/50 group-hover:text-primary transition-colors flex-shrink-0" />
-                </button>
+                </Button>
             </div>
         )
     },
@@ -149,13 +149,13 @@ export const DataCell = {
         }
         return (
             <div className={cn("text-xs font-mono font-medium text-foreground/90 flex justify-center items-center", className)}>
-                <button
+                <Button
                     onClick={onClick}
                     className={cn("text-xs font-mono font-medium text-foreground/90 flex justify-center items-center hover:underline hover:text-primary/80 text-center w-fit")}
                     {...(props as React.ButtonHTMLAttributes<HTMLButtonElement>)}
                 >
                     {children}
-                </button>
+                </Button>
             </div>
         )
     },

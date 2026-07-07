@@ -1,5 +1,6 @@
 "use client"
 
+import { Button } from "@/components/ui/button"
 import React, { useState, useEffect } from "react"
 import dynamic from "next/dynamic"
 import Link from "next/link"
@@ -135,7 +136,7 @@ export function QuickActionsMenu({ isInboxOpen, onInboxToggle }: QuickActionsMen
                     <div className="w-px h-8 bg-sidebar-border/50 mx-1" />
                     <Tooltip>
                         <TooltipTrigger asChild>
-                            <button
+                            <Button
                                 onClick={onInboxToggle}
                                 className={cn(
                                     "relative flex items-center justify-center h-12 w-12 rounded-sm transition-all duration-300 group hover:scale-110 active:scale-95",
@@ -153,7 +154,7 @@ export function QuickActionsMenu({ isInboxOpen, onInboxToggle }: QuickActionsMen
                                         {pendingCount > 99 ? '99+' : pendingCount}
                                     </span>
                                 )}
-                            </button>
+                            </Button>
                         </TooltipTrigger>
                         <TooltipContent side="top">
                             Bandeja de Entrada {pendingCount > 0 && `(${pendingCount})`}
@@ -163,7 +164,7 @@ export function QuickActionsMenu({ isInboxOpen, onInboxToggle }: QuickActionsMen
                     {/* Calculator Toggle Button */}
                     <Tooltip>
                         <TooltipTrigger asChild>
-                            <button
+                            <Button
                                 onClick={() => setIsCalculatorOpen(true)}
                                 className={cn(
                                     "relative flex items-center justify-center h-12 w-12 rounded-sm transition-all duration-300 group hover:scale-110 active:scale-95",
@@ -176,7 +177,7 @@ export function QuickActionsMenu({ isInboxOpen, onInboxToggle }: QuickActionsMen
                                 {isCalculatorOpen && (
                                     <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-1 h-1 bg-primary-foreground rounded-full" />
                                 )}
-                            </button>
+                            </Button>
                         </TooltipTrigger>
                         <TooltipContent side="top">
                             Calculadora de Costos

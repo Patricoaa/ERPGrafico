@@ -4,6 +4,7 @@
 // Generic product search input matching SmartSearchBar visual style,
 // with touch optimization for POS devices.
 
+import { Button } from "@/components/ui/button"
 import { useRef } from 'react'
 import { Search, X } from 'lucide-react'
 import { cn } from '@/lib/utils'
@@ -78,14 +79,14 @@ export function SearchBar({
             />
             {rightAction}
             {value && (
-                <button
+                <Button
                     type="button"
                     onClick={() => onChange('')}
                     className="shrink-0 rounded-sm p-1 text-muted-foreground/40 hover:text-foreground transition-colors"
                     aria-label="Limpiar búsqueda"
                 >
                     <X className={isTouchDevice ? 'size-4' : 'size-3'} />
-                </button>
+                </Button>
             )}
         </div>
     )

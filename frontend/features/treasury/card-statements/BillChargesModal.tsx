@@ -197,7 +197,7 @@ export function BillChargesModal({
                                     const isExpanded = expandedGroups.has(key)
                                     return (
                                         <div key={key}>
-                                            <button
+                                            <Button
                                                 type="button"
                                                 onClick={() => toggleGroup(key)}
                                                 className="flex w-full items-center gap-2 px-4 py-2.5 text-left hover:bg-muted/20 transition-colors"
@@ -224,7 +224,7 @@ export function BillChargesModal({
                                                 <div className="text-sm font-semibold tabular-nums shrink-0">
                                                     <MoneyDisplay amount={g.subtotal} currency={currency} />
                                                 </div>
-                                            </button>
+                                            </Button>
 
                                             {isExpanded && (
                                                 <div className="border-t bg-muted/10 px-4 py-2">

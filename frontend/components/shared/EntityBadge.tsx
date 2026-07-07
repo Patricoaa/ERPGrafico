@@ -15,6 +15,7 @@
  * <EntityBadge label="order" data={order} />
  */
 
+import { Button } from "@/components/ui/button"
 import React from 'react'
 import Link from 'next/link'
 import { Badge } from '@/components/shared'
@@ -84,13 +85,13 @@ export const EntityBadge: React.FC<EntityBadgeProps> = ({
     const entityId = (data as Record<string, unknown>).id as number | undefined
     if (hasEntityDrawer(label) && entityId !== undefined && entityId !== null) {
         return (
-            <button
+            <Button
                 type="button"
                 onClick={(e) => { e.stopPropagation(); openEntity(label, Number(entityId), data, segmenter) }}
                 className="inline-block outline-none ring-offset-background focus:ring-2 focus:ring-ring focus:ring-offset-2 rounded-md transition-shadow"
             >
                 {badgeEl}
-            </button>
+            </Button>
         )
     }
 

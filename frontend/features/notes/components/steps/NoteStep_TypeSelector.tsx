@@ -10,6 +10,7 @@
  * Replaces the type-selector cards inside purchasing/notes/Step1_GeneralInfo.
  */
 
+import { Button } from "@/components/ui/button"
 import { FileText } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { NoteType } from '@/features/notes'
@@ -31,7 +32,7 @@ export function NoteStep_TypeSelector({ noteType, onNoteTypeChange }: NoteStep_T
 
             <div className="grid grid-cols-2 gap-4 p-1">
                 {/* Nota de Crédito */}
-                <button
+                <Button
                     type="button"
                     className={cn(
                         'cursor-pointer rounded-md border-2 p-6 transition-all hover:bg-muted/50 text-left',
@@ -54,10 +55,10 @@ export function NoteStep_TypeSelector({ noteType, onNoteTypeChange }: NoteStep_T
                     <p className="text-sm text-muted-foreground">
                         Para anulaciones, descuentos o devoluciones. <strong>Rebaja</strong> el monto adeudado.
                     </p>
-                </button>
+                </Button>
 
                 {/* Nota de Débito */}
-                <button
+                <Button
                     type="button"
                     className={cn(
                         'cursor-pointer rounded-md border-2 p-6 transition-all hover:bg-muted/50 text-left',
@@ -80,7 +81,7 @@ export function NoteStep_TypeSelector({ noteType, onNoteTypeChange }: NoteStep_T
                     <p className="text-sm text-muted-foreground">
                         Para aumentos de valor o facturación adicional. <strong>Aumenta</strong> el monto adeudado.
                     </p>
-                </button>
+                </Button>
             </div>
         </div>
     )

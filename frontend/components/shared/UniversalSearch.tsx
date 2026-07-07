@@ -1,5 +1,6 @@
 "use client"
 
+import { Button } from "@/components/ui/button"
 import { useEffect, useRef, useState, useMemo } from "react"
 import { useRouter } from "next/navigation"
 import Image from "next/image"
@@ -117,14 +118,14 @@ export function UniversalSearch() {
     return (
         <>
             {/* Wider Trigger Button */}
-            <button
+            <Button
                 type="button"
                 onClick={() => setOpen(true)}
                 aria-label="Búsqueda universal (Ctrl+K)"
                 className="group flex h-10 w-10 items-center justify-center rounded-md text-foreground/50 transition-all hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/20"
             >
                 <Search className="h-5 w-5 shrink-0 transition-colors group-hover:text-foreground" aria-hidden />
-            </button>
+            </Button>
 
             <Dialog open={open} onOpenChange={setOpen}>
                 <DialogPortal>
@@ -166,9 +167,9 @@ export function UniversalSearch() {
                                 </div>
                             ) : (
                                 <div className="flex items-center gap-1">
-                                    <button onClick={() => setOpen(false)} className="rounded-md p-1.5 hover:bg-accent transition-colors">
+                                    <Button onClick={() => setOpen(false)} className="rounded-md p-1.5 hover:bg-accent transition-colors">
                                         <X className="size-4 text-muted-foreground/60" />
-                                    </button>
+                                    </Button>
                                 </div>
                             )}
                         </div>
@@ -177,7 +178,7 @@ export function UniversalSearch() {
                         {results.length > 0 && (
                             <div className="flex items-center border-b border-border bg-overlay/20 px-4 py-2">
                                 <div className="flex w-full items-center gap-2 overflow-x-auto flex-nowrap scrollbar-none [ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden pb-1">
-                                    <button
+                                    <Button
                                         onClick={() => setSelectedType(null)}
                                         className={cn(
                                             "flex shrink-0 items-center gap-2 rounded-sm px-4 py-2 text-[10px] uppercase tracking-widest transition-all",
@@ -187,9 +188,9 @@ export function UniversalSearch() {
                                         )}
                                     >
                                         Todos
-                                    </button>
+                                    </Button>
                                     {entityTypes.map((type) => (
-                                        <button
+                                        <Button
                                             key={type.label}
                                             onClick={() => setSelectedType(type.label)}
                                             className={cn(
@@ -201,7 +202,7 @@ export function UniversalSearch() {
                                         >
                                             {type.icon && <DynamicIcon name={type.icon} className="size-3" />}
                                             {type.title_plural}
-                                        </button>
+                                        </Button>
                                     ))}
                                 </div>
                             </div>

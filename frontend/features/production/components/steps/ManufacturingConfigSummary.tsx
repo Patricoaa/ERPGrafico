@@ -71,7 +71,7 @@ function SectionHeader({ icon, title, section, order, editingSection, onEdit }: 
                 <TooltipProvider delayDuration={200}>
                     <Tooltip>
                         <TooltipTrigger asChild>
-                            <button
+                            <Button
                                 disabled={!canEdit || editingSection !== null}
                                 onClick={() => canEdit && editingSection === null && onEdit(section)}
                                 className={cn(
@@ -83,7 +83,7 @@ function SectionHeader({ icon, title, section, order, editingSection, onEdit }: 
                             >
                                 {canEdit ? <Pencil className="h-3 w-3" /> : <Lock className="h-3 w-3" />}
                                 {canEdit ? "Editar" : "Bloqueado"}
-                            </button>
+                            </Button>
                         </TooltipTrigger>
                         <TooltipContent side="left">
                             {!canEdit
@@ -467,9 +467,9 @@ export function ManufacturingConfigSummary({ order, onSaved, onRestartComplete, 
                                         <User className="h-3.5 w-3.5 text-primary shrink-0" />
                                         <span className="font-semibold text-sm truncate">{(form.watch("contact") as Contact).name}</span>
                                     </div>
-                                    <button type="button" onClick={() => form.setValue("contact", null)} className="text-muted-foreground hover:text-destructive">
+                                    <Button type="button" onClick={() => form.setValue("contact", null)} className="text-muted-foreground hover:text-destructive">
                                         <X className="h-3.5 w-3.5" />
-                                    </button>
+                                    </Button>
                                 </div>
                             ) : (
                                 <AdvancedContactSelector

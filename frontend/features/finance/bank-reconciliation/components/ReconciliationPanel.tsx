@@ -1271,7 +1271,7 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                                     <span className="text-xs font-bold uppercase tracking-widest text-warning/80">Sugerencias</span>
                                 </div>
                                 {suggestions.length === 1 ? (
-                                    <button
+                                    <Button
                                         onClick={() => {
                                             const s = suggestions[0]
                                             const paymentId = s.is_batch ? s.batch_data?.id : s.payment_data?.id
@@ -1297,7 +1297,7 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                                         <div className="h-5 w-5 rounded-full bg-warning/20 flex items-center justify-center group-hover:bg-warning/30 transition-all duration-300">
                                             <ChevronRight className="h-3 w-3 text-warning group-hover:translate-x-0.5 transition-transform" />
                                         </div>
-                                    </button>
+                                    </Button>
                                 ) : (
                                     <div className="bg-warning/10 border border-warning/20 rounded-full py-1 px-3 shadow-card">
                                         <span className="text-xs text-warning">{suggestions.length} Coincidencias</span>
@@ -1313,7 +1313,7 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                                 <span className="text-xs font-bold uppercase tracking-widest text-warning/80">Sugerencias</span>
                             </div>
                             {lineSuggestions.length === 1 ? (
-                                <button
+                                <Button
                                     onClick={() => {
                                         const s = lineSuggestions[0]
                                         const lineId = s.line_data?.id
@@ -1330,7 +1330,7 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                                         <ChevronLeft className="h-3 w-3 text-warning group-hover:-translate-x-0.5 transition-transform" />
                                     </div>
                                     <span className="text-xs font-bold truncate max-w-[150px]">{lineSuggestions[0].line_data?.description}</span>
-                                    </button>
+                                    </Button>
                                 ) : (
                                     <div className="bg-warning/10 border border-warning/20 rounded-full py-1 px-3 shadow-card">
                                         <span className="text-xs text-warning">{lineSuggestions.length} Coincidencias</span>

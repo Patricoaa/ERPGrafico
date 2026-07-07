@@ -7,6 +7,7 @@
 // Requires a parent container with explicit height (e.g. `flex-1 min-h-0`) 
 // to work correctly with VirtuosoGrid.
 
+import { Button } from "@/components/ui/button"
 import { Card } from '@/components/ui/card'
 
 import Image from 'next/image'
@@ -132,7 +133,7 @@ function ProductGridComponent({
 
                             {/* Left side Favorite Badge */}
                             {onToggleFavorite && (
-                                <button
+                                <Button
                                     className={cn(
                                         "absolute top-2 left-2 z-20 flex h-7 w-7 items-center justify-center rounded-full bg-background/90 backdrop-blur-sm border shadow-floating hover:scale-110 active:scale-95 transition-all",
                                         product.is_favorite ? "text-destructive border-destructive/10 bg-destructive/10" : "text-muted-foreground"
@@ -149,7 +150,7 @@ function ProductGridComponent({
                                             product.is_favorite ? "fill-current" : ""
                                         )}
                                     />
-                                </button>
+                                </Button>
                             )}
 
                             {/* Right side badges (Availability) */}

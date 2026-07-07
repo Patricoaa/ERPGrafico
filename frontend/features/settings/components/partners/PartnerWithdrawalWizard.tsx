@@ -1,4 +1,5 @@
 "use client"
+import { Button } from "@/components/ui/button"
 import { formatCurrency } from "@/lib/money"
 
 import React, { useState, useEffect } from "react"
@@ -236,7 +237,7 @@ export function PartnerWithdrawalWizard({
             isValid: !!method,
             component: (
                 <div className="grid grid-cols-2 gap-4 py-8">
-                    <button
+                    <Button
                         onClick={() => setMethod("CASH")}
                         className={cn(
                             "group flex flex-col items-center gap-4 p-6 rounded-md border-2 transition-all text-center",
@@ -255,9 +256,9 @@ export function PartnerWithdrawalWizard({
                             <p className="font-black text-sm uppercase tracking-tight">Efectivo</p>
                             <p className="text-[10px] text-muted-foreground leading-tight">Egreso de caja o transferencia bancaria.</p>
                         </div>
-                    </button>
+                    </Button>
 
-                    <button
+                    <Button
                         onClick={() => setMethod("ASSETS")}
                         className={cn(
                             "group flex flex-col items-center gap-4 p-6 rounded-md border-2 transition-all text-center",
@@ -276,7 +277,7 @@ export function PartnerWithdrawalWizard({
                             <p className="font-black text-sm uppercase tracking-tight">Bienes / Stock</p>
                             <p className="text-[10px] text-muted-foreground leading-tight">Retiro de mercaderías o productos del inventario.</p>
                         </div>
-                    </button>
+                    </Button>
                 </div>
             )
         },

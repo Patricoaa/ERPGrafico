@@ -1,5 +1,6 @@
 "use client";
 
+import { Button } from "@/components/ui/button"
 import React from "react";
 import { cn } from "@/lib/utils";
 import { Loader2, type LucideIcon } from "lucide-react";
@@ -34,7 +35,7 @@ export const ActionSlideButton = React.forwardRef<HTMLButtonElement, ActionSlide
         const isDisabled = disabled || loading;
 
         return (
-            <button
+            <Button
                 ref={ref}
                 disabled={isDisabled}
                 className={cn(
@@ -82,7 +83,7 @@ export const ActionSlideButton = React.forwardRef<HTMLButtonElement, ActionSlide
                     )}
                     {children}
                 </span>
-            </button>
+            </Button>
         );
     }
 );

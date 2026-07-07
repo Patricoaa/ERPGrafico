@@ -415,7 +415,7 @@ export function PaymentMethodSelector({
                         const isMultiCard = m.isMultiple
 
                         return (
-                            <button
+                            <Button
                                 key={m.id}
                                 type="button"
                                 onClick={() => {
@@ -488,7 +488,7 @@ export function PaymentMethodSelector({
                                     )}
                                 </div>
 
-                            </button>
+                            </Button>
                         )
                     })}
                 </div>
@@ -526,13 +526,13 @@ export function PaymentMethodSelector({
                         <Layers className="h-5 w-5 text-primary" />
                         <span className="text-sm font-semibold uppercase tracking-wider text-primary">Modo múltiple</span>
                     </div>
-                    <button
+                    <Button
                         type="button"
                         onClick={exitMultiMode}
                         className="text-sm font-semibold text-destructive hover:text-destructive/80 px-4 py-2"
                     >
                         Salir
-                    </button>
+                    </Button>
                 </div>
 
                 {/* Unified grid: all methods in strict columns */}
@@ -562,42 +562,42 @@ export function PaymentMethodSelector({
                                         <div className="flex items-center gap-2 shrink-0 ml-auto">
                                             <Tooltip>
                                                 <TooltipTrigger asChild>
-                                                    <button
+                                                    <Button
                                                         type="button"
                                                         onClick={() => handleEditAmount(allocIndex)}
                                                         className="p-1.5 rounded-sm hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
                                                         aria-label="Editar monto"
                                                     >
                                                         <Pencil className="h-5 w-5" />
-                                                    </button>
+                                                    </Button>
                                                 </TooltipTrigger>
                                                 <TooltipContent side="top">Editar monto</TooltipContent>
                                             </Tooltip>
                                             {hasAdditionalFieldsForMethod(m.id) && (
                                                 <Tooltip>
                                                     <TooltipTrigger asChild>
-                                                        <button
+                                                        <Button
                                                             type="button"
                                                             onClick={() => setShowFieldsForIndex(showFieldsForIndex === allocIndex ? null : allocIndex)}
                                                             className="p-1.5 rounded-sm hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
                                                             aria-label="Campos adicionales"
                                                         >
                                                             <Layers className="h-5 w-5" />
-                                                        </button>
+                                                        </Button>
                                                     </TooltipTrigger>
                                                     <TooltipContent side="top">Campos adicionales</TooltipContent>
                                                 </Tooltip>
                                             )}
                                             <Tooltip>
                                                 <TooltipTrigger asChild>
-                                                    <button
+                                                    <Button
                                                         type="button"
                                                         onClick={() => removePayment(allocIndex)}
                                                         className="p-1.5 rounded-sm hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors"
                                                         aria-label="Eliminar pago"
                                                     >
                                                         <Trash2 className="h-5 w-5" />
-                                                    </button>
+                                                    </Button>
                                                 </TooltipTrigger>
                                                 <TooltipContent side="top">Eliminar pago</TooltipContent>
                                             </Tooltip>
@@ -613,7 +613,7 @@ export function PaymentMethodSelector({
                         }
 
                         return (
-                            <button
+                            <Button
                                 key={m.id}
                                 type="button"
                                 onClick={() => handlePaymentMethodSelect(m.id)}
@@ -633,7 +633,7 @@ export function PaymentMethodSelector({
                                         NO DISPONIBLE
                                     </div>
                                 )}
-                            </button>
+                            </Button>
                         )
                     })}
                 </div>

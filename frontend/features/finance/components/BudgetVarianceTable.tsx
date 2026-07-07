@@ -1,4 +1,5 @@
 "use client"
+import { Button } from "@/components/ui/button"
 import { useState } from "react";
 
 import {
@@ -98,12 +99,12 @@ const AccountRow = ({ node, level = 0 }: { node: BudgetVarianceNode, level?: num
                 <TableCell className="p-2 min-w-[280px]">
                     <div className="flex items-center" style={{ paddingLeft: `${paddingLeft}px` }}>
                         {hasChildren ? (
-                            <button
+                            <Button
                                 onClick={() => setExpanded(!expanded)}
                                 className="mr-2 h-5 w-5 flex items-center justify-center hover:bg-accent rounded transition-colors"
                             >
                                 {expanded ? <ChevronDown className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />}
-                            </button>
+                            </Button>
                         ) : (
                             <div className="w-7" />
                         )}

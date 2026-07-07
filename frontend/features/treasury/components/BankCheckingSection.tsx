@@ -1,5 +1,6 @@
 "use client"
 
+import { Button } from "@/components/ui/button"
 import { useRouter } from "next/navigation"
 import { Landmark, Wallet } from "lucide-react"
 import { MoneyDisplay, SectionHeader } from "@/components/shared"
@@ -34,7 +35,7 @@ export function BankCheckingSection({ data, bankId }: Props) {
                         : acc.current_balance
 
                     return (
-                        <button
+                        <Button
                             key={acc.id}
                             onClick={() => router.push(`/treasury/bank-center/${bankId}/movements?account=${acc.id}`)}
                             className="card-base w-full text-left bg-card p-4 cursor-pointer"
@@ -62,7 +63,7 @@ export function BankCheckingSection({ data, bankId }: Props) {
                                     <MoneyDisplay amount={available} className="text-sm font-semibold" showColor={available >= 0} />
                                 </div>
                             </div>
-                        </button>
+                        </Button>
                     )
                 })}
             </div>

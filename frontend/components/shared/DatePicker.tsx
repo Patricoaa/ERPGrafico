@@ -55,7 +55,7 @@ export function DatePicker({
 
   return (
     <>
-      <button
+      <Button
         type="button"
         disabled={disabled}
         onClick={() => handleOpenChange(true)}
@@ -68,7 +68,7 @@ export function DatePicker({
       >
         <CalendarIcon className="h-4 w-4 shrink-0" />
         {date ? format(date, "PPP", { locale: es }) : <span>{placeholder}</span>}
-      </button>
+      </Button>
 
       <Dialog open={open} onOpenChange={handleOpenChange}>
         <DialogContent size="sm" className="p-4 sm:p-5">
@@ -98,7 +98,7 @@ export function DatePicker({
               const val = preset.getValue()
               const key = formatDateKey(val)
               return (
-                <button
+                <Button
                   key={preset.label}
                   type="button"
                   onClick={() => setTempDate(val)}
@@ -111,7 +111,7 @@ export function DatePicker({
                   )}
                 >
                   {preset.label}
-                </button>
+                </Button>
               )
             })}
           </div>

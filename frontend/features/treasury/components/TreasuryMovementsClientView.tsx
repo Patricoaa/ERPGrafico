@@ -1,5 +1,6 @@
 "use client"
 
+import { Button } from "@/components/ui/button"
 import React, { useState, useEffect, lazy, Suspense } from "react"
 import { DataTableView, EntityCard, StatusBadge, SegmentationBar, useSegmentation, SmartSearchBar, useSmartSearch } from '@/components/shared'
 import { DataTableColumnHeader } from '@/components/shared'
@@ -345,12 +346,12 @@ export function TreasuryMovementsClientView({ externalOpen, createAction }: Trea
                             prefix={isAccountFiltered ? (
                                 <span className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-info/10 text-info border border-info/20 text-[10px] font-black uppercase tracking-wider font-mono shrink-0">
                                     Cta. #{treasuryAccountFromUrl}
-                                    <button
+                                    <Button
                                         onClick={handleClearAccountFilter}
                                         className="ml-0.5 hover:text-info/80"
                                     >
                                         ×
-                                    </button>
+                                    </Button>
                                 </span>
                             ) : undefined}
                         />

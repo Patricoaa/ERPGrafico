@@ -36,7 +36,7 @@ const CollapsibleSection = ({
     children: React.ReactNode
 }) => (
     <div className="mb-4">
-        <button
+        <Button
             onClick={onToggle}
             className="flex items-center justify-between w-full p-2 text-sm font-semibold text-muted-foreground uppercase tracking-wide hover:text-foreground transition-colors rounded-md hover:bg-muted/50"
         >
@@ -46,7 +46,7 @@ const CollapsibleSection = ({
             ) : (
                 <ChevronRight className="h-4 w-4 transition-transform duration-200" />
             )}
-        </button>
+        </Button>
         <div
             className={cn(
                 "mt-2 space-y-2 overflow-hidden transition-all duration-200 ease-out",

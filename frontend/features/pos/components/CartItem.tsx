@@ -1,5 +1,6 @@
 "use client"
 
+import { Button } from "@/components/ui/button"
 import { memo, useState, useRef, useEffect, useCallback } from 'react'
 import { Input } from '@/components/ui/input'
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
@@ -150,7 +151,7 @@ function CartItemComponent({
                     
                     {/* Unit Price Info */}
                     {originalProduct?.is_dynamic_pricing && (
-                        <button 
+                        <Button 
                             onClick={() => isTouchMode && onOpenNumpad(item.cartItemId, 'price', item.unit_price_gross || 0)} 
                             className={cn(
                                 "text-primary text-left underline-offset-2 hover:underline font-medium transition-colors mt-0.5", 
@@ -159,7 +160,7 @@ function CartItemComponent({
                             type="button"
                         >
                             Editar precio
-                        </button>
+                        </Button>
                     )}
                 </div>
 
@@ -167,7 +168,7 @@ function CartItemComponent({
                     {/* Discount */}
                     {showLineDiscount && (
                         isTouchMode ? (
-                            <button 
+                            <Button 
                                 className={cn(
                                     "font-semibold text-foreground cursor-pointer hover:bg-muted transition-colors rounded px-2 h-8 flex items-center justify-center underline underline-offset-4 decoration-border hover:decoration-foreground", 
                                     isTouchMode ? "text-sm" : "text-xs",
@@ -182,7 +183,7 @@ function CartItemComponent({
                                 ) : (
                                     <span className="opacity-60 hover:opacity-100">-%</span>
                                 )}
-                            </button>
+                            </Button>
                         ) : (
                             <div className="flex items-center gap-1">
                                 <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide">Dscto:</span>
@@ -218,7 +219,7 @@ function CartItemComponent({
                     </Tooltip>
 
                     {posMode === 'SHOPPING' && (
-                        <button
+                        <Button
                             className={cn(
                                 "flex items-center justify-center text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors rounded-md shrink-0 ml-1",
                                 isTouchMode ? "h-10 w-10" : "h-7 w-7 opacity-0 group-hover:opacity-100"
@@ -228,7 +229,7 @@ function CartItemComponent({
                             title="Eliminar"
                         >
                             <Trash2 className={isTouchMode ? "h-5 w-5" : "h-4 w-4"} />
-                        </button>
+                        </Button>
                     )}
                 </div>
             </div>
@@ -237,7 +238,7 @@ function CartItemComponent({
             <div className="flex items-center justify-between border-t border-border/50 pt-2.5 mt-0.5">
                 <div className="flex items-center">
                     {hasMultipleUoms ? (
-                        <button
+                        <Button
                             type="button"
                             className={cn(
                                 "font-semibold underline underline-offset-2 border-none bg-transparent text-muted-foreground hover:text-primary transition-colors cursor-pointer flex items-center px-1 rounded-sm hover:bg-primary/5",
@@ -246,7 +247,7 @@ function CartItemComponent({
                             onClick={() => setUomDialogOpen(true)}
                         >
                             {item.uom_name}
-                        </button>
+                        </Button>
                     ) : (
                         <span className={cn(
                             "text-muted-foreground/70 font-medium px-1", 
@@ -264,7 +265,7 @@ function CartItemComponent({
                         "flex items-center bg-muted/40 border border-border/50 rounded-md overflow-hidden",
                         isTouchMode ? "h-9" : "h-7"
                     )}>
-                    <button
+                    <Button
                         className={cn(
                             "flex items-center justify-center hover:bg-black/5 dark:hover:bg-white/10 transition-colors disabled:opacity-30 disabled:pointer-events-none active:bg-black/10",
                             isTouchMode ? "w-10 h-full" : "w-7 h-full"
@@ -280,7 +281,7 @@ function CartItemComponent({
                         type="button"
                     >
                         <Minus className={cn("text-foreground", isTouchMode ? "h-4 w-4" : "h-3 w-3")} />
-                    </button>
+                    </Button>
 
                     <div className="flex flex-col items-center justify-center border-x border-border/50 bg-background/50 h-full">
                         {isTouchMode ? (
@@ -308,7 +309,7 @@ function CartItemComponent({
                         )}
                     </div>
 
-                    <button
+                    <Button
                         className={cn(
                             "flex items-center justify-center hover:bg-black/5 dark:hover:bg-white/10 transition-colors disabled:opacity-30 disabled:pointer-events-none active:bg-black/10",
                             isTouchMode ? "w-10 h-full" : "w-7 h-full"
@@ -324,7 +325,7 @@ function CartItemComponent({
                         type="button"
                     >
                         <Plus className={cn("text-foreground", isTouchMode ? "h-4 w-4" : "h-3 w-3")} />
-                    </button>
+                    </Button>
                 </div>
 
                 {maxQty !== undefined && maxQty !== Infinity && (
@@ -348,7 +349,7 @@ function CartItemComponent({
                     </DialogHeader>
                     <div className="flex flex-col gap-1 mt-2">
                         {saleUoms.map(uom => (
-                            <button
+                            <Button
                                 key={uom.id}
                                 type="button"
                                 className={cn(
@@ -361,7 +362,7 @@ function CartItemComponent({
                                 }}
                             >
                                 {uom.name}
-                            </button>
+                            </Button>
                         ))}
                     </div>
                 </DialogContent>

@@ -1,5 +1,6 @@
 "use client"
 
+import { Button } from "@/components/ui/button"
 import { useMemo, useState, useEffect } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
@@ -276,7 +277,7 @@ export function UnbilledChargesView({
                                 {inst.partner_name}
                             </span>
                         )}
-                        <button
+                        <Button
                             type="button"
                             onClick={(e) => {
                                 e.stopPropagation()
@@ -290,7 +291,7 @@ export function UnbilledChargesView({
                                 status={inst.purchase_order_display_id ? 'info' : 'muted'}
                                 label={inst.purchase_order_display_id || 'Sin OC'}
                             />
-                        </button>
+                        </Button>
                     </div>
                 )
             },

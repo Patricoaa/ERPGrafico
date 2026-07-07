@@ -300,7 +300,7 @@ export function ProductClientView({ externalOpen, onExternalOpenChange, createAc
                                     />
                                 )}
                                 {product.has_variants && !isChild && (
-                                    <button
+                                    <Button
                                         onClick={() => toggleExpand(product.id)}
                                         className={cn(
                                             "flex items-center gap-2 px-1 transition-all duration-200 group/var",
@@ -320,7 +320,7 @@ export function ProductClientView({ externalOpen, onExternalOpenChange, createAc
                                             "h-3 w-3 transition-transform duration-300",
                                             expandedTemplates.has(product.id) ? "rotate-180" : "opacity-40 group-hover/var:opacity-100"
                                         )} />
-                                    </button>
+                                    </Button>
                                 )}
                             </div>
                             {isChild && product.variant_display_name && (

@@ -1,5 +1,6 @@
 "use client"
 
+import { Button } from "@/components/ui/button"
 import { useRouter } from "next/navigation"
 import { CreditCard } from "lucide-react"
 import { MoneyDisplay, SectionHeader } from "@/components/shared"
@@ -49,7 +50,7 @@ export function BankCreditSection({ data, bankId }: Props) {
                         ? card.credit_limit - Math.abs(card.current_balance)
                         : 0
                     return (
-                        <button
+                        <Button
                             key={card.id}
                             onClick={() => router.push(`/treasury/bank-center/${bankId}/cards/unbilled?card=${card.id}`)}
                             className={cn(
@@ -85,7 +86,7 @@ export function BankCreditSection({ data, bankId }: Props) {
                                     <MoneyDisplay amount={available} showColor={false} className="text-white text-sm font-semibold" />
                                 </div>
                             </div>
-                        </button>
+                        </Button>
                     )
                 })}
             </div>

@@ -158,7 +158,7 @@ export function BOMManager({ product, variantMode = false, onBomsChange }: BOMMa
             header: ({ column }) => <DataTableColumnHeader column={column} title="Estado" className="justify-center" />,
             cell: ({ row }) => (
                 <div className="flex justify-center">
-                    <button
+                    <Button
                         type="button"
                         onClick={() => !row.original.active && handleToggleActive(row.original)}
                         className={cn(!row.original.active && "hover:scale-105 transition-transform")}
@@ -167,7 +167,7 @@ export function BOMManager({ product, variantMode = false, onBomsChange }: BOMMa
                             status={row.original.active ? "active" : "inactive"}
                             className="cursor-pointer"
                         />
-                    </button>
+                    </Button>
                 </div>
             )
         },

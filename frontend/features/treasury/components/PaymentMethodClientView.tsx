@@ -497,14 +497,14 @@ function PaymentMethodModal({ open, onOpenChange, method, onSuccess }: PaymentMe
                             </div>
 
                             <div className="col-span-4">
-                                <button
+                                <Button
                                     type="button"
                                     onClick={() => setShowAdvanced((v) => !v)}
                                     className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-muted-foreground hover:text-foreground transition-colors"
                                 >
                                     <ChevronDown className={cn("h-3.5 w-3.5 transition-transform", showAdvanced && "rotate-180")} />
                                     Avanzado · Permisos de uso
-                                </button>
+                                </Button>
                                 {!showAdvanced && (
                                     <p className="text-[11px] text-muted-foreground mt-1 ml-5">
                                         Por defecto se deriva del tipo. Ábrelo solo si necesitas restringir ventas/compras.

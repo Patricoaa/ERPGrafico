@@ -1,5 +1,6 @@
 "use client"
 
+import { Button } from "@/components/ui/button"
 import { useRouter } from "next/navigation"
 import { ArrowRight } from "lucide-react"
 import type { LucideIcon } from "lucide-react"
@@ -50,7 +51,7 @@ export function SectionHeader({
 
     if (href && variant === "card") {
         return (
-            <button
+            <Button
                 onClick={() => router.push(href)}
                 className="w-full flex items-center justify-between group mb-3"
             >
@@ -58,7 +59,7 @@ export function SectionHeader({
                 <span className="text-[10px] font-medium text-muted-foreground/0 group-hover:text-muted-foreground transition-all flex items-center gap-0.5">
                     Ver todas <ArrowRight className="h-3 w-3" />
                 </span>
-            </button>
+            </Button>
         )
     }
 
@@ -66,12 +67,12 @@ export function SectionHeader({
         <div className="flex items-center justify-between mb-3">
             {heading}
             {href && (
-                <button
+                <Button
                     onClick={() => router.push(href)}
                     className="text-[10px] font-medium text-muted-foreground hover:text-foreground transition-colors"
                 >
                     Ver todos →
-                </button>
+                </Button>
             )}
         </div>
     )
