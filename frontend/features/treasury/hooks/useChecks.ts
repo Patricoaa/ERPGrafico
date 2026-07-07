@@ -4,6 +4,7 @@ import { showApiError } from '@/lib/errors'
 import { checksApi } from '../checks/api'
 import type { CheckCreatePayload, CheckDepositPayload } from '../checks/types'
 import { invalidateCrossFeature } from '@/lib/invalidation'
+import { useRealtime } from '@/features/realtime'
 
 const CHECKS_KEYS = {
     all: ['checks'] as const,
@@ -51,6 +52,7 @@ export function useCheckInTransit(params?: Record<string, string>, enabled = tru
 
 export function useCheckMutations() {
     const queryClient = useQueryClient()
+    const { markLocalMutation } = useRealtime()
 
     const invalidate = () => {
         invalidateCrossFeature(queryClient, [CHECKS_KEYS.all])
@@ -58,40 +60,40 @@ export function useCheckMutations() {
 
     const create = useMutation({
         mutationFn: (payload: CheckCreatePayload) => checksApi.create(payload),
-        onSuccess: () => { invalidate(); toast.success('Cheque registrado en cartera') },
+        onSuccess: () => { markLocalMutation(); invalidate(); toast.success('Cheque registrado en cartera') },
         onError: (e: Error) => showApiError(e, 'Error al registrar cheque'),
     })
 
     const deposit = useMutation({
         mutationFn: ({ id, payload }: { id: number; payload: CheckDepositPayload }) =>
             checksApi.deposit(id, payload),
-        onSuccess: () => { invalidate(); toast.success('Cheque depositado') },
+        onSuccess: () => { markLocalMutation(); invalidate(); toast.success('Cheque depositado') },
         onError: (e: Error) => showApiError(e, 'Error al depositar cheque'),
     })
 
     const clear = useMutation({
         mutationFn: (id: number) => checksApi.clear(id),
-        onSuccess: () => { invalidate(); toast.success('Cheque marcado como cobrado') },
+        onSuccess: () => { markLocalMutation(); invalidate(); toast.success('Cheque marcado como cobrado') },
         onError: (e: Error) => showApiError(e, 'Error al marcar cobrado'),
     })
 
     const bounce = useMutation({
         mutationFn: ({ id, notes }: { id: number; notes?: string }) =>
             checksApi.bounce(id, notes),
-        onSuccess: () => { invalidate(); toast.error('Cheque protestado') },
+        onSuccess: () => { markLocalMutation(); invalidate(); toast.error('Cheque protestado') },
         onError: (e: Error) => showApiError(e, 'Error al protestar cheque'),
     })
 
     const voidCheck = useMutation({
         mutationFn: ({ id, notes }: { id: number; notes?: string }) =>
             checksApi.void(id, notes),
-        onSuccess: () => { invalidate(); toast.success('Cheque anulado') },
+        onSuccess: () => { markLocalMutation(); invalidate(); toast.success('Cheque anulado') },
         onError: (e: Error) => showApiError(e, 'Error al anular cheque'),
     })
 
     const markCashed = useMutation({
         mutationFn: (id: number) => checksApi.markCashed(id),
-        onSuccess: () => { invalidate(); toast.success('Cheque marcado como cobrado') },
+        onSuccess: () => { markLocalMutation(); invalidate(); toast.success('Cheque marcado como cobrado') },
         onError: (e: Error) => showApiError(e, 'Error al marcar cheque como cobrado'),
     })
 
