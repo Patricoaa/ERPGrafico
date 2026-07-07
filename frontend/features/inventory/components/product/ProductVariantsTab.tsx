@@ -16,7 +16,7 @@ import { type ProductInitialData } from "@/types/forms"
 import { ActionConfirmModal, Chip, DataCell, type MultiSelectOption, MultiSelectTagInput } from '@/components/shared'
 
 import { VariantQuickEditForm } from "./VariantQuickEditForm"
-import { BulkVariantEditFormV2 } from "./BulkVariantEditFormV2"
+import { BulkVariantEditForm } from "./BulkVariantEditForm"
 import { useConfirmAction } from "@/hooks/useConfirmAction"
 
 import { useAttributes } from "../../hooks/useAttributes"
@@ -409,7 +409,7 @@ export function ProductVariantsTab({ form, initialData, onTabChange }: ProductVa
                 {/* Right: Detail View / Generator */}
                 <div className="w-full md:w-1/2 lg:w-5/12 flex-shrink-0 h-full">
                     {selectedVariantIds.length > 1 ? (
-                        <BulkVariantEditFormV2
+                        <BulkVariantEditForm
                             selectedVariants={selectedVariantsList}
                             availableVariants={variants}
                             templateData={initialData as Product | undefined}
