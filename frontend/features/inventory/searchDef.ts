@@ -111,13 +111,6 @@ export const stockReportSearchDef: SearchDefinition = {
       serverParam: 'search',
       clientKey: ['name', 'code', 'internal_code'],
     },
-    {
-      key: 'category_name',
-      label: 'Categoría',
-      type: 'text',
-      serverParam: 'category_name',
-      clientKey: ['category_name'],
-    },
   ],
 }
 
