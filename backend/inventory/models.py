@@ -1194,6 +1194,27 @@ class Warehouse(models.Model):
         return self.name
 
 
+class Stock(models.Model):
+    product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name="stocks")
+    warehouse = models.ForeignKey(Warehouse, on_delete=models.CASCADE, related_name="stocks")
+    quantity = models.DecimalField(_("Existencia"), max_digits=12, decimal_places=4, default=0)
+    reserved_quantity = models.DecimalField(_("Reservado"), max_digits=12, decimal_places=4, default=0)
+    
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = _("Stock")
+        verbose_name_plural = _("Stocks")
+        unique_together = ["product", "warehouse"]
+
+    def __str__(self):
+        return f"{self.product.name} @ {self.warehouse.name}: {self.available_quantity}"
+
+    @property
+    def available_quantity(self):
+        return self.quantity - self.reserved_quantity
+
+
 class StockMove(models.Model):
     class Type(models.TextChoices):
         IN = "IN", _("Entrada")
