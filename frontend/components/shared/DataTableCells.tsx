@@ -115,12 +115,13 @@ export const DataCell = {
         return (
             <div className={cn("flex justify-center items-center w-full group", className)}>
                 <Button
+                    variant="ghost"
                     onClick={(e) => {
                         e.stopPropagation();
                         if (onClick) onClick(e);
                         else if (contactId) openEntity('contacts.contact', Number(contactId));
                     }}
-                    className={cn("flex justify-center items-center gap-1.5 text-sm font-bold hover:underline hover:text-primary/80 transition-colors text-foreground")}
+                    className={cn("flex justify-center items-center gap-1.5 text-sm font-bold hover:underline hover:text-primary/80 transition-colors text-foreground h-auto p-0 border-none bg-transparent hover:bg-transparent shadow-none")}
                     {...props}
                 >
                     <span className="truncate">{children}</span>
@@ -150,8 +151,9 @@ export const DataCell = {
         return (
             <div className={cn("text-xs font-mono font-medium text-foreground/90 flex justify-center items-center", className)}>
                 <Button
+                    variant="ghost"
                     onClick={onClick}
-                    className={cn("text-xs font-mono font-medium text-foreground/90 flex justify-center items-center hover:underline hover:text-primary/80 text-center w-fit")}
+                    className={cn("text-xs font-mono font-medium text-foreground/90 flex justify-center items-center hover:underline hover:text-primary/80 text-center w-fit h-auto p-0 border-none bg-transparent hover:bg-transparent shadow-none", className)}
                     {...(props as React.ButtonHTMLAttributes<HTMLButtonElement>)}
                 >
                     {children}

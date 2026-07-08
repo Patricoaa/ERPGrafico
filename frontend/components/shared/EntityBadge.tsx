@@ -86,9 +86,10 @@ export const EntityBadge: React.FC<EntityBadgeProps> = ({
     if (hasEntityDrawer(label) && entityId !== undefined && entityId !== null) {
         return (
             <Button
+                variant="ghost"
                 type="button"
                 onClick={(e) => { e.stopPropagation(); openEntity(label, Number(entityId), data, segmenter) }}
-                className="inline-block outline-none ring-offset-background focus:ring-2 focus:ring-ring focus:ring-offset-2 rounded-md transition-shadow"
+                className="inline-block outline-none ring-offset-background focus:ring-2 focus:ring-ring focus:ring-offset-2 rounded-md transition-shadow h-auto w-auto p-0 border-none bg-transparent hover:bg-transparent shadow-none"
             >
                 {badgeEl}
             </Button>

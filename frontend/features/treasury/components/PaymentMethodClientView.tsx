@@ -498,9 +498,10 @@ function PaymentMethodModal({ open, onOpenChange, method, onSuccess }: PaymentMe
 
                             <div className="col-span-4">
                                 <Button
+                                    variant="ghost"
                                     type="button"
                                     onClick={() => setShowAdvanced((v) => !v)}
-                                    className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-muted-foreground hover:text-foreground transition-colors"
+                                    className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-muted-foreground hover:text-foreground transition-colors h-auto w-auto p-0 border-none bg-transparent hover:bg-transparent shadow-none"
                                 >
                                     <ChevronDown className={cn("h-3.5 w-3.5 transition-transform", showAdvanced && "rotate-180")} />
                                     Avanzado · Permisos de uso

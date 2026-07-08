@@ -56,6 +56,7 @@ export function DatePicker({
   return (
     <>
       <Button
+        variant="ghost"
         type="button"
         disabled={disabled}
         onClick={() => handleOpenChange(true)}
@@ -100,10 +101,11 @@ export function DatePicker({
               return (
                 <Button
                   key={preset.label}
+                  variant={selectedKey === key ? "default" : "outline"}
                   type="button"
                   onClick={() => setTempDate(val)}
                   className={cn(
-                    "px-3 py-1.5 rounded-md text-xs font-medium transition-all border cursor-pointer",
+                    "px-3 py-1.5 rounded-md text-xs font-medium transition-all border cursor-pointer shadow-none",
                     "hover:bg-accent hover:border-primary/30 active:scale-95",
                     selectedKey === key
                       ? "bg-primary/10 border-primary text-primary"
