@@ -111,6 +111,110 @@ class InventoryService:
             
         return stock
 
+    @staticmethod
+    @transaction.atomic
+    def confirmar_documento(document, user=None):
+        from .models import InventoryDocument, StockMove
+        
+        if document.status not in [InventoryDocument.Status.DRAFT, InventoryDocument.Status.APPROVED]:
+            raise ValidationError("Solo se pueden confirmar documentos en estado borrador o aprobado.")
+            
+        for detail in document.details.select_related('product', 'warehouse', 'source_warehouse'):
+            if document.document_type == InventoryDocument.Type.TRANSFER:
+                if not detail.source_warehouse:
+                    raise ValidationError("Las transferencias requieren una bodega de origen.")
+                # Source OUT
+                StockMove.objects.create(
+                    product=detail.product,
+                    warehouse=detail.source_warehouse,
+                    quantity=detail.quantity,
+                    move_type=StockMove.Type.OUT,
+                    description=f"Transferencia Salida Doc: {document.reference or document.id}"
+                )
+                # Dest IN
+                StockMove.objects.create(
+                    product=detail.product,
+                    warehouse=detail.warehouse,
+                    quantity=detail.quantity,
+                    move_type=StockMove.Type.IN,
+                    description=f"Transferencia Entrada Doc: {document.reference or document.id}"
+                )
+            else:
+                if document.document_type == InventoryDocument.Type.RECEIPT:
+                    move_type = StockMove.Type.IN
+                    qty = detail.quantity
+                elif document.document_type == InventoryDocument.Type.DELIVERY:
+                    move_type = StockMove.Type.OUT
+                    qty = detail.quantity
+                else: # ADJUSTMENT, PRODUCTION
+                    # For adjustments we check if it's negative or positive directly on the payload or assume positive IN and negative OUT, but here it's explicit.
+                    # Since we don't have enough logic for all cases, we default to ADJUSTMENT type.
+                    move_type = StockMove.Type.ADJUSTMENT
+                    qty = detail.quantity
+                    
+                StockMove.objects.create(
+                    product=detail.product,
+                    warehouse=detail.warehouse,
+                    quantity=qty,
+                    move_type=move_type,
+                    unit_cost=detail.unit_cost,
+                    description=f"{document.get_document_type_display()} Doc: {document.reference or document.id}"
+                )
+                
+        document.status = InventoryDocument.Status.CONFIRMED
+        if user:
+            document.confirmed_by = user
+        document.save(update_fields=['status', 'confirmed_by'])
+        return document
+
+    @staticmethod
+    @transaction.atomic
+    def anular_documento(document):
+        from .models import InventoryDocument, StockMove
+        
+        if document.status != InventoryDocument.Status.CONFIRMED:
+            raise ValidationError("Solo se pueden anular documentos confirmados.")
+            
+        # To reverse the document, we create reverse StockMoves
+        for detail in document.details.select_related('product', 'warehouse', 'source_warehouse'):
+            if document.document_type == InventoryDocument.Type.TRANSFER:
+                # Reverse Dest IN -> OUT
+                StockMove.objects.create(
+                    product=detail.product,
+                    warehouse=detail.warehouse,
+                    quantity=detail.quantity,
+                    move_type=StockMove.Type.OUT,
+                    description=f"Anulación Transferencia Entrada Doc: {document.reference or document.id}"
+                )
+                # Reverse Source OUT -> IN
+                StockMove.objects.create(
+                    product=detail.product,
+                    warehouse=detail.source_warehouse,
+                    quantity=detail.quantity,
+                    move_type=StockMove.Type.IN,
+                    description=f"Anulación Transferencia Salida Doc: {document.reference or document.id}"
+                )
+            else:
+                if document.document_type == InventoryDocument.Type.RECEIPT:
+                    move_type = StockMove.Type.OUT
+                elif document.document_type == InventoryDocument.Type.DELIVERY:
+                    move_type = StockMove.Type.IN
+                else:
+                    move_type = StockMove.Type.ADJUSTMENT # Needs negative qty in payload if adjustment
+                    
+                StockMove.objects.create(
+                    product=detail.product,
+                    warehouse=detail.warehouse,
+                    quantity=-detail.quantity if move_type == StockMove.Type.ADJUSTMENT else detail.quantity,
+                    move_type=move_type,
+                    unit_cost=detail.unit_cost,
+                    description=f"Anulación {document.get_document_type_display()} Doc: {document.reference or document.id}"
+                )
+                
+        document.status = InventoryDocument.Status.CANCELLED
+        document.save(update_fields=['status'])
+        return document
+
 
 class StockService:
     @staticmethod
