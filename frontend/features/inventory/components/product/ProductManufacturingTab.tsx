@@ -2,7 +2,7 @@
 "use client"
 
 import { type UoM, type Product } from "@/types/entities"
-import {ActionConfirmModal, FormLineItemsTable, FormSection, LabeledContainer, LabeledSeparator, LabeledSwitch} from '@/components/shared'
+import {ActionConfirmModal, FormLineItemsTable, FormSection, LabeledContainer, LabeledSeparator, LabeledSwitch, RadioCard} from '@/components/shared'
 import { FormField } from "@/components/ui/form"
 
 import { Button } from "@/components/ui/button"
@@ -11,7 +11,7 @@ import {Package, Layers, Clock, Settings2, Info, Monitor, Printer, Scissors, Tra
 import { type UseFormReturn } from "react-hook-form"
 import { type ProductFormValues } from "./schema"
 import { type ProductInitialData } from "@/types/forms"
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { RadioGroup } from "@/components/ui/radio-group"
 import { cn } from "@/lib/utils"
 import { Switch } from "@/components/ui/switch"
 
@@ -51,7 +51,7 @@ export function ProductManufacturingTab({ form, initialData }: ProductManufactur
                     <LabeledContainer
                         label="Modo de Producción"
                     >
-                        <Tabs
+                        <RadioGroup
                             value={productionMode}
                             onValueChange={(value) => {
                                 if (value === productionMode) return;
@@ -82,38 +82,33 @@ export function ProductManufacturingTab({ form, initialData }: ProductManufactur
                                     }
                                 });
                             }}
-                            className="w-full"
+                            className="grid grid-cols-3 gap-3 w-full"
                         >
-                            <TabsList className="grid w-full grid-cols-3 h-20 bg-transparent p-1 border-none shadow-none">
-                                <TabsTrigger
-                                    type="button"
-                                    value="simple"
-                                    className="flex flex-col gap-1 py-1 h-full data-[state=active]:bg-primary/5 data-[state=active]:border-primary/50 data-[state=active]:ring-1 data-[state=active]:ring-primary/10 border-2 border-transparent transition-all duration-300"
-                                >
-                                    <Package className="h-4 w-4" />
-                                    <span className="text-[10px] font-black uppercase tracking-tighter">Simple</span>
-                                    <span className="text-[9px] text-muted-foreground font-medium leading-tight text-center">Manual / Lote</span>
-                                </TabsTrigger>
-                                <TabsTrigger
-                                    type="button"
-                                    value="express"
-                                    className="flex flex-col gap-1 py-1 h-full data-[state=active]:bg-primary/5 data-[state=active]:border-primary/50 data-[state=active]:ring-1 data-[state=active]:ring-primary/10 border-2 border-transparent transition-all duration-300"
-                                >
-                                    <Clock className="h-4 w-4" />
-                                    <span className="text-[10px] font-black uppercase tracking-tighter">Express</span>
-                                    <span className="text-[9px] text-muted-foreground font-medium leading-tight text-center">Auto-cierre</span>
-                                </TabsTrigger>
-                                <TabsTrigger
-                                    type="button"
-                                    value="advanced"
-                                    className="flex flex-col gap-1 py-1 h-full data-[state=active]:bg-primary/5 data-[state=active]:border-primary/50 data-[state=active]:ring-1 data-[state=active]:ring-primary/10 border-2 border-transparent transition-all duration-300"
-                                >
-                                    <Layers className="h-4 w-4" />
-                                    <span className="text-[10px] font-black uppercase tracking-tighter">Avanzado</span>
-                                    <span className="text-[9px] text-muted-foreground font-medium leading-tight text-center">Wizard Etapas</span>
-                                </TabsTrigger>
-                            </TabsList>
-                        </Tabs>
+                            <RadioCard
+                                id="mfg-mode-simple"
+                                value="simple"
+                                label="Simple"
+                                description="Manual / Lote"
+                                icon={<Package className="h-4 w-4" />}
+                                orientation="vertical"
+                            />
+                            <RadioCard
+                                id="mfg-mode-express"
+                                value="express"
+                                label="Express"
+                                description="Auto-cierre"
+                                icon={<Clock className="h-4 w-4" />}
+                                orientation="vertical"
+                            />
+                            <RadioCard
+                                id="mfg-mode-advanced"
+                                value="advanced"
+                                label="Avanzado"
+                                description="Wizard Etapas"
+                                icon={<Layers className="h-4 w-4" />}
+                                orientation="vertical"
+                            />
+                        </RadioGroup>
                     </LabeledContainer>
 
                     <div className="space-y-4">

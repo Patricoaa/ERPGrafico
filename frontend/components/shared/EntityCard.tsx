@@ -1,3 +1,5 @@
+"use client"
+
 import * as React from "react"
 import Image from "next/image"
 import { cn } from "@/lib/utils"
@@ -6,8 +8,22 @@ import { type VariantProps } from "class-variance-authority"
 import { type badgeVariants } from "@/components/ui/badge"
 import { type LucideIcon } from "lucide-react"
 import { Skeleton } from "@/components/ui/skeleton"
+import { Checkbox } from "@/components/ui/checkbox"
 
 // ─── Base props ───────────────────────────────────────────────────────────────
+
+interface EntityCardSelectionContextValue {
+    selectable?: boolean
+    checked?: boolean
+    onCheckedChange?: (checked: boolean) => void
+    isAnySelected?: boolean
+}
+
+const EntityCardSelectionContext = React.createContext<EntityCardSelectionContextValue>({
+    selectable: false,
+    checked: false,
+    isAnySelected: false,
+})
 
 interface EntityCardRootProps {
     /** Compact removes footer and reduces padding — ideal for dense grids */
@@ -16,6 +32,10 @@ interface EntityCardRootProps {
     onClick?: () => void
     className?: string
     children: React.ReactNode
+    selectable?: boolean
+    checked?: boolean
+    onCheckedChange?: (checked: boolean) => void
+    isAnySelected?: boolean
 }
 
 function EntityCardRoot({
@@ -24,29 +44,36 @@ function EntityCardRoot({
     onClick,
     className,
     children,
+    selectable = false,
+    checked = false,
+    onCheckedChange,
+    isAnySelected = false,
 }: EntityCardRootProps) {
     return (
-        <div
-            role={onClick ? "button" : undefined}
-            tabIndex={onClick ? 0 : undefined}
-            onClick={onClick}
-            onKeyDown={(e) => {
-                if (onClick && (e.key === "Enter" || e.key === " ")) {
-                    e.preventDefault()
-                    onClick()
-                }
-            }}
-            className={cn(
-                "card-base group flex flex-col",
-                "bg-card text-foreground",
-                variant === "compact" ? "gap-1.5 p-3" : "gap-3 p-4",
-                isSelected && "accent-visible",
-                onClick && "cursor-pointer select-none",
-                className
-            )}
-        >
-            {children}
-        </div>
+        <EntityCardSelectionContext.Provider value={{ selectable, checked, onCheckedChange, isAnySelected }}>
+            <div
+                role={onClick ? "button" : undefined}
+                tabIndex={onClick ? 0 : undefined}
+                onClick={onClick}
+                onKeyDown={(e) => {
+                    if (onClick && (e.key === "Enter" || e.key === " ")) {
+                        e.preventDefault()
+                        onClick()
+                    }
+                }}
+                className={cn(
+                    "card-base group flex flex-col relative transition-all duration-300",
+                    "bg-card text-foreground",
+                    variant === "compact" ? "gap-1.5 p-3" : "gap-3 p-4",
+                    isSelected && "accent-visible",
+                    checked && "border-primary/40 bg-primary/5 shadow-sm",
+                    onClick && "cursor-pointer select-none",
+                    className
+                )}
+            >
+                {children}
+            </div>
+        </EntityCardSelectionContext.Provider>
     )
 }
 
@@ -71,10 +98,31 @@ interface EntityCardHeaderProps {
 }
 
 function EntityCardHeader({ title, subtitle, trailing, center, icon: Icon, imageSrc, iconClassName, className }: EntityCardHeaderProps) {
+    const { selectable, checked, onCheckedChange, isAnySelected } = React.useContext(EntityCardSelectionContext)
+
+    const checkboxNode = selectable && (
+        <div
+            className={cn(
+                "shrink-0 z-10 self-center flex items-center justify-center transition-all duration-300",
+                isAnySelected
+                    ? "opacity-100 w-5 mr-1"
+                    : "opacity-0 w-0 pointer-events-none group-hover:opacity-100 group-hover:w-5 group-hover:pointer-events-auto group-hover:mr-1 group-focus-within:opacity-100 group-focus-within:w-5 group-focus-within:pointer-events-auto group-focus-within:mr-1 overflow-hidden"
+            )}
+            onClick={(e) => e.stopPropagation()}
+        >
+            <Checkbox
+                variant="circle"
+                checked={checked}
+                onCheckedChange={onCheckedChange}
+            />
+        </div>
+    )
+
     if (center) {
         return (
             <div className={cn("grid grid-cols-[1fr_auto_1fr] items-start gap-2", className)}>
                 <div className="flex items-start gap-3 min-w-0">
+                    {checkboxNode}
                     {imageSrc ? (
                         <div className={cn("flex h-8 w-8 shrink-0 items-center justify-center rounded-md overflow-hidden", iconClassName ?? "bg-accent text-muted-foreground")}>
                             <Image src={imageSrc} alt="" fill className="object-cover" />
@@ -108,6 +156,7 @@ function EntityCardHeader({ title, subtitle, trailing, center, icon: Icon, image
     return (
         <div className={cn("flex items-start justify-between gap-2", className)}>
             <div className="flex items-start gap-3 min-w-0 flex-1">
+                {checkboxNode}
                 {imageSrc ? (
                     <div className={cn("flex h-8 w-8 shrink-0 items-center justify-center rounded-md overflow-hidden", iconClassName ?? "bg-accent text-muted-foreground")}>
                         <Image src={imageSrc} alt="" fill className="object-cover" />

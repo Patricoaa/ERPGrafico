@@ -250,10 +250,10 @@ export function AdjustmentForm({
     return (
         <SkeletonShell isLoading={isFetchingInitialData} ariaLabel="Cargando formulario de ajuste">
             <Form {...form}>
-                <form id="adjustment-form" onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 px-6 pb-6 pt-6">
+                <form id="adjustment-form" onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col h-full">
 
                     {periodClosed && (
-                        <Alert variant="destructive" className="py-2 mb-2">
+                        <Alert variant="destructive" className="shrink-0 py-2 mx-6 mt-6">
                             <AlertTitle className="text-xs font-bold mb-1">Periodo Cerrado</AlertTitle>
                             <AlertDescription className="text-xs opacity-90">
                                 {periodMessage || 'El periodo contable actual está cerrado. No podrá guardar este ajuste.'}
@@ -261,20 +261,24 @@ export function AdjustmentForm({
                         </Alert>
                     )}
 
-                    <TabBar
-                        items={tabItems}
-                        value={moveType}
-                        onValueChange={(val) => form.setValue("type", val as "IN" | "OUT")}
-                        orientation="horizontal"
-                        listClassName={cn(
-                            moveType === 'IN'
-                                ? "[&_[data-state=active]]:bg-success/15 [&_[data-state=active]]:text-success [&_[data-state=active]]:border-success/30"
-                                : "[&_[data-state=active]]:bg-destructive/15 [&_[data-state=active]]:text-destructive [&_[data-state=active]]:border-destructive/30"
-                        )}
-                        className="flex-1 flex flex-col min-h-0"
-                        contentClassName="flex-1 flex flex-col overflow-hidden bg-background"
-                    >
-                        <div className="flex-1 overflow-y-auto space-y-8 pt-6 px-8 pb-8 scrollbar-thin">
+                    <div className="shrink-0 px-6 pt-4 pb-2">
+                        <TabBar
+                            items={tabItems}
+                            value={moveType}
+                            onValueChange={(val) => form.setValue("type", val as "IN" | "OUT")}
+                            variant="toolbar"
+                            listClassName={cn(
+                                moveType === 'IN'
+                                    ? "[&_[data-state=active]]:bg-success/15 [&_[data-state=active]]:text-success [&_[data-state=active]]:border-success/30"
+                                    : "[&_[data-state=active]]:bg-destructive/15 [&_[data-state=active]]:text-destructive [&_[data-state=active]]:border-destructive/30"
+                            )}
+                        >
+                            <div className="hidden" />
+                        </TabBar>
+                    </div>
+
+                    <div className="flex-1 overflow-y-auto scrollbar-thin px-6 pb-6">
+                        <div className="space-y-8 pt-6">
                             <FormSection title="Clasificación y Origen" icon={Info} />
 
                             <div className="grid grid-cols-4 gap-6">
@@ -367,7 +371,6 @@ export function AdjustmentForm({
                             <FormSection title="Detalles del Movimiento" icon={WarehouseIcon} />
 
                             <div className="space-y-6">
-                                {/* Row 1: Almacén | Producto */}
                                 <div className="grid grid-cols-4 gap-6">
                                     <div className="col-span-2">
                                         <FormField
@@ -411,7 +414,6 @@ export function AdjustmentForm({
                                     </div>
                                 </div>
 
-                                {/* Row 2: Cantidad | Unidad | Costo */}
                                 <div className="grid grid-cols-4 gap-6">
                                     <div className="col-span-1">
                                         <FormField
@@ -521,7 +523,6 @@ export function AdjustmentForm({
                                     </div>
                                 </div>
 
-                                {/* Conversion Alert / Info */}
                                 {conversion && baseUoM && (
                                     <Alert variant="primary" className="animate-in slide-in-from-top-2 duration-300">
                                         <AlertTitle className="text-[10px] font-bold uppercase mb-0.5">Conversión Automática</AlertTitle>
@@ -533,7 +534,7 @@ export function AdjustmentForm({
                             </div>
 
                         </div>
-                    </TabBar>
+                    </div>
                 </form>
             </Form>
         </SkeletonShell>

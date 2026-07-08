@@ -13,6 +13,7 @@ interface RadioCardProps {
     iconColor?: string
     disabled?: boolean
     className?: string
+    orientation?: "horizontal" | "vertical"
     children?: ReactNode
 }
 
@@ -25,13 +26,18 @@ export function RadioCard({
     iconColor = "text-foreground",
     disabled,
     className,
+    orientation = "horizontal",
     children
 }: RadioCardProps) {
+    const isVertical = orientation === "vertical"
     return (
         <Label
             htmlFor={id}
             className={cn(
-                "group flex flex-row items-center gap-3 rounded-md border border-input p-3 transition-all h-full",
+                "relative group flex rounded-sm border border-input p-3 transition-all h-full",
+                isVertical 
+                    ? "flex-col items-center justify-center text-center gap-2 p-4 min-h-[110px]" 
+                    : "flex-row items-center gap-3",
                 !disabled && "cursor-pointer hover:border-primary/50 hover:bg-accent/50",
                 disabled && "opacity-50 cursor-not-allowed",
                 "[&:has([data-state=checked])]:border-primary [&:has([data-state=checked])]:bg-primary/5 [&:has([data-state=checked])]:ring-1 [&:has([data-state=checked])]:ring-primary/20",
@@ -39,7 +45,10 @@ export function RadioCard({
             )}
         >
             {/* Círculo decorativo que envuelve al Radio */}
-            <div className="relative flex h-5 w-5 shrink-0 items-center justify-center rounded-full border-2 border-muted bg-background transition-colors has-[[data-state=checked]]:border-primary has-[[data-state=checked]]:bg-primary/10">
+            <div className={cn(
+                "relative flex h-5 w-5 shrink-0 items-center justify-center rounded-full border-2 border-muted bg-background transition-colors has-[[data-state=checked]]:border-primary has-[[data-state=checked]]:bg-primary/10",
+                isVertical && "absolute top-2.5 right-2.5"
+            )}>
                 <RadioGroupItem 
                     value={value} 
                     id={id} 
@@ -60,7 +69,10 @@ export function RadioCard({
             )}
             
             {/* Textos */}
-            <div className="flex flex-col gap-1 min-w-0 flex-1 justify-center">
+            <div className={cn(
+                "flex flex-col gap-1 min-w-0 flex-1 justify-center",
+                isVertical && "items-center"
+            )}>
                 <span className="text-sm font-bold truncate leading-none">{label}</span>
                 {description && (
                     <span className="text-xs text-muted-foreground line-clamp-2 leading-tight mt-0.5">
@@ -73,3 +85,4 @@ export function RadioCard({
         </Label>
     )
 }
+

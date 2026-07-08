@@ -4,7 +4,7 @@ import { formatCurrency } from "@/lib/money"
 import React, { useState, useMemo } from "react"
 import { ArrowRightLeft } from "lucide-react"
 
-import { BaseModal, DataCell, DataTableView, EntityCard, PageContainer, DataTableColumnHeader, SmartSearchBar, useSmartSearch, CancelButton, SubmitButton, FormFooter } from '@/components/shared'
+import { BaseModal, DataCell, DataTableView, EntityCard, DataTableColumnHeader, SmartSearchBar, useSmartSearch, CancelButton, SubmitButton, FormFooter } from '@/components/shared'
 import { type ColumnDef } from "@tanstack/react-table"
 import { cn } from "@/lib/utils"
 
@@ -170,7 +170,7 @@ export function StockReport() {
     ], [setAdjustingProduct, setInsightsProduct, stockReportActionsCtx])
 
     return (
-        <PageContainer className="h-full flex flex-col">
+        <div className="flex-1 flex flex-col min-h-0">
             <div className="flex-1 min-h-0">
                 <DataTableView
                     entityLabel="inventory.stockreport"
@@ -250,6 +250,6 @@ export function StockReport() {
                 productId={(insightsProduct?.id as number) ?? null}
                 productName={insightsProduct?.name ?? null}
             />
-        </PageContainer>
+        </div>
     )
 }

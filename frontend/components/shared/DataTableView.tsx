@@ -1,7 +1,7 @@
 "use client"
 
 import React, { useMemo } from "react"
-import { type Row, type SortingState, type Table as ReactTable } from "@tanstack/react-table"
+import { type Row, type Table as ReactTable } from "@tanstack/react-table"
 import { useViewMode } from "@/hooks/useViewMode"
 import { ENTITY_REGISTRY } from "@/lib/entity-registry"
 import { createDomainCardView, createEntityCardView, createCardLoadingView, createCardGroupView, createCardGroupLoadingView } from "@/lib/view-helpers"
@@ -17,7 +17,7 @@ interface DataTableViewProps<TData, TValue>
   entityLabel: string
   renderCustomView?: (table: ReactTable<TData>) => React.ReactNode
   renderLoadingView?: () => React.ReactNode
-  renderCard?: (data: TData, row: Row<TData>) => React.ReactNode
+  renderCard?: (data: TData, row: Row<TData>, table?: ReactTable<TData>) => React.ReactNode
   isSelected?: (data: TData) => boolean
   isHubOpen?: boolean
   cardGroupBy?: {
@@ -43,10 +43,8 @@ export function DataTableView<TData, TValue>({
 }: DataTableViewProps<TData, TValue>) {
   const policy = ENTITY_REGISTRY[entityLabel]?.viewPolicy
 
-  const effectiveInitialSorting: SortingState | undefined = cardGroupBy
-    ? [{ id: cardGroupBy.field, desc: cardGroupBy.sort !== 'asc' }]
-    : undefined
   const { currentView, handleViewChange, viewOptions, isCustomView } = useViewMode(entityLabel)
+  const hasBulkActions = !!(dataTableProps.bulkActions?.length || dataTableProps.bulkDock)
 
   const internalCustomView = useMemo((): ((table: ReactTable<TData>) => React.ReactNode) | undefined => {
     if (!isCustomView) return undefined
@@ -66,14 +64,26 @@ export function DataTableView<TData, TValue>({
       case "domain":
         if (cardGroupByAsRecord) {
           return createCardGroupView({
-            renderCard: (data: Record<string, unknown>) =>
-              React.createElement(DomainCard, {
+            renderCard: (data: Record<string, unknown>, row?: Row<Record<string, unknown>>, table?: ReactTable<Record<string, unknown>>) => {
+              const isAnySelected = table ? table.getSelectedRowModel().rows.length > 0 : false
+              return React.createElement(DomainCard, {
                 label: entityLabel,
                 data,
                 isSelected: isSelected?.(data as TData) ?? false,
                 isHubOpen: isHubOpen ?? false,
-                onClick: () => dataTableProps.onRowClick?.(data as TData),
-              }),
+                onClick: () => {
+                  if (hasBulkActions && isAnySelected && row) {
+                    row.toggleSelected()
+                  } else {
+                    dataTableProps.onRowClick?.(data as TData)
+                  }
+                },
+                selectable: hasBulkActions,
+                checked: row?.getIsSelected() ?? false,
+                onCheckedChange: (checked) => row?.toggleSelected(checked),
+                isAnySelected,
+              })
+            },
             cardGroupBy: cardGroupByAsRecord,
             gridLayout: policy.gridLayout,
             emptyState: dataTableProps.emptyState,
@@ -86,28 +96,31 @@ export function DataTableView<TData, TValue>({
           isHubOpen: isHubOpen ?? false,
           emptyState: dataTableProps.emptyState,
           isFiltered: dataTableProps.isFiltered,
+          hasBulkActions,
         }) as unknown as (table: ReactTable<TData>) => React.ReactNode
       case "entity":
         if (!renderCard) return undefined
         if (cardGroupByAsRecord) {
           return createCardGroupView({
-            renderCard: renderCard as (data: Record<string, unknown>) => React.ReactNode,
+            renderCard: renderCard as (data: Record<string, unknown>, row?: Row<Record<string, unknown>>, table?: ReactTable<Record<string, unknown>>) => React.ReactNode,
             cardGroupBy: cardGroupByAsRecord,
             gridLayout: policy.gridLayout,
             emptyState: dataTableProps.emptyState,
             isFiltered: dataTableProps.isFiltered,
+            hasBulkActions,
           }) as unknown as (table: ReactTable<TData>) => React.ReactNode
         }
         return createEntityCardView(entityLabel, {
-          renderCard: renderCard as (data: Record<string, unknown>, row: Row<Record<string, unknown>>) => React.ReactNode,
+          renderCard: renderCard as (data: Record<string, unknown>, row: Row<Record<string, unknown>>, table?: ReactTable<Record<string, unknown>>) => React.ReactNode,
           gridLayout: policy.gridLayout,
           emptyState: dataTableProps.emptyState,
           isFiltered: dataTableProps.isFiltered,
+          hasBulkActions,
         }) as unknown as (table: ReactTable<TData>) => React.ReactNode
       default:
         return undefined
     }
-  }, [externalRenderCustomView, isCustomView, policy, entityLabel, renderCard, isSelected, isHubOpen, cardGroupBy, dataTableProps.onRowClick, dataTableProps.emptyState, dataTableProps.isFiltered])
+  }, [externalRenderCustomView, isCustomView, policy, entityLabel, renderCard, isSelected, isHubOpen, cardGroupBy, dataTableProps.onRowClick, dataTableProps.emptyState, dataTableProps.isFiltered, hasBulkActions, dataTableProps.bulkActions, dataTableProps.bulkDock])
 
   const internalLoadingView = useMemo(() => {
     if (externalLoadingView) return externalLoadingView
@@ -132,7 +145,6 @@ export function DataTableView<TData, TValue>({
       onViewChange={handleViewChange}
       renderCustomView={internalCustomView}
       renderLoadingView={internalLoadingView}
-      initialSorting={effectiveInitialSorting}
     />
   )
 }

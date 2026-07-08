@@ -26,6 +26,10 @@ interface DomainCardProps {
     icon?: LucideIcon
     /** Override the auto-derived icon container styling */
     iconClassName?: string
+    selectable?: boolean
+    checked?: boolean
+    onCheckedChange?: (checked: boolean) => void
+    isAnySelected?: boolean
 }
 
 /**
@@ -45,7 +49,11 @@ export function DomainCard({
     isDetailView = false,
     imageSrc,
     icon: iconOverride,
-    iconClassName: iconClassNameOverride
+    iconClassName: iconClassNameOverride,
+    selectable = false,
+    checked = false,
+    onCheckedChange,
+    isAnySelected = false
 }: DomainCardProps) {
     const { openHub } = useHubPanel()
     const Icon = useMemo(() => iconOverride ?? getEntityIcon(label), [label, iconOverride])
@@ -87,6 +95,10 @@ export function DomainCard({
                 isDetailView && "cursor-default shadow-card",
                 className
             )}
+            selectable={selectable}
+            checked={checked}
+            onCheckedChange={onCheckedChange}
+            isAnySelected={isAnySelected}
         >
             <EntityCard.Header
                 imageSrc={imageSrc}

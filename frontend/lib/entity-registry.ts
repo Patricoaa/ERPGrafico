@@ -6,7 +6,7 @@ import {
   Building2, Smartphone, CreditCard, Calendar, CalendarX2, Repeat,
   Tag, Percent, Ruler, PieChart, HandCoins, ClipboardList, PackageCheck,
   BarChart3, Scale, Monitor,
-  ScrollText,
+  ScrollText, RefreshCw,
   type LucideIcon 
 } from 'lucide-react';
 
@@ -499,6 +499,19 @@ export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
     listUrl: '/settings/users',
     detailUrlPattern: '/settings/users/{id}',
     viewPolicy: { availableViews: ['list', 'card'], defaultView: 'list', cardComponent: 'entity' },
+  },
+  'core.backgroundjob': {
+    label: 'core.backgroundjob',
+    title: 'Proceso en Segundo Plano',
+    titlePlural: 'Procesos en Segundo Plano',
+    icon: RefreshCw,
+    iconName: 'RefreshCw',
+    description: 'Historial de tareas y procesos asíncronos',
+    subtitleTemplate: '{title}',
+    shortTemplate: 'JOB-{id}',
+    listUrl: '/settings/jobs',
+    detailUrlPattern: '/settings/jobs',
+    viewPolicy: { availableViews: ['list', 'card'], defaultView: 'card', cardComponent: 'entity', gridLayout: 'multi-column' },
   },
   'settings.group': {
     label: 'settings.group',
