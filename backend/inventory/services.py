@@ -382,24 +382,36 @@ class StockService:
                     product.cost_price = new_cost.quantize(Decimal("0.01"))
                 product.save()
 
-        # 2. Create Stock Move
-        move_type = StockMove.Type.ADJUSTMENT
-        # Even if tagged as ADJ, we check direction for move_type logic if needed (though ADJ is valid)
-        # We'll use ADJ but keep the direction in quantity
-
-        move = StockMove.objects.create(
+        # 2. Create Inventory Document (ADJUSTMENT)
+        from .models import InventoryDocument, InventoryDocumentDetail
+        doc = InventoryDocument.objects.create(
+            document_type=InventoryDocument.Type.ADJUSTMENT,
+            status=InventoryDocument.Status.DRAFT,
             date=timezone.now().date(),
+            reference=adjustment_reason or "Ajuste Manual",
+            notes=description,
+            partner=partner_contact
+        )
+
+        detail = InventoryDocumentDetail.objects.create(
+            document=doc,
             product=product,
             warehouse=warehouse,
-            uom=product.uom,
             quantity=quantity,
-            move_type=move_type,
-            adjustment_reason=adjustment_reason,
-            description=description,
-            source_uom=uom or product.uom,
-            source_quantity=quantity_orig,
-            unit_cost=unit_cost,  # Frozen at creation time
+            unit_cost=unit_cost
         )
+        
+        # We confirm the document which creates the StockMove natively
+        InventoryService.confirmar_documento(doc)
+        
+        # Get the generated move for accounting linking (temporarily to not break external things that expect a StockMove returned)
+        from .models import StockMove
+        move = StockMove.objects.filter(
+            product=product, warehouse=warehouse, quantity=quantity, move_type=StockMove.Type.ADJUSTMENT
+        ).order_by('-id').first()
+        
+        if not move: # Fallback if move_type was something else
+            move = StockMove.objects.filter(product=product, warehouse=warehouse).order_by('-id').first()
 
         # 3. Accounting Logic
         asset_account = product.get_asset_account

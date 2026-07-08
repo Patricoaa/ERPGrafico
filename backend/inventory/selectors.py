@@ -51,7 +51,7 @@ def list_products(*, user, params: dict) -> QuerySet:
             ),
         )
         .annotate(
-            annotated_current_stock=Sum("stock_moves__quantity"),
+            annotated_current_stock=Coalesce(Sum("stocks__quantity"), Value(0, output_field=DecimalField())),
             variants_count=Count("variants"),
         )
     )
@@ -102,8 +102,8 @@ def list_products(*, user, params: dict) -> QuerySet:
             queryset=BillOfMaterialsLine.objects.select_related("uom").prefetch_related(
                 Prefetch(
                     "component",
-                    queryset=Product.objects.annotate(
-                        annotated_current_stock=Sum("stock_moves__quantity")
+                    queryset=Product.objects.filter(is_active=True).annotate(
+                        annotated_current_stock=Coalesce(Sum("stocks__quantity"), 0.0)
                     ).select_related("uom"),
                 )
             ),
@@ -166,7 +166,7 @@ def get_product_base_queryset(*, user) -> QuerySet:
             ),
         )
         .annotate(
-            annotated_current_stock=Sum("stock_moves__quantity"),
+            annotated_current_stock=Coalesce(Sum("stocks__quantity"), Value(0, output_field=DecimalField())),
             variants_count=Count("variants"),
         )
     )
@@ -219,15 +219,17 @@ def get_stock_report_data(warehouse_id: int | None = None) -> list[dict]:
     report = []
     for p in products:
         if warehouse_id:
+            stocks_qs = p.stocks.filter(warehouse_id=warehouse_id)
             moves_qs = p.stock_moves.filter(warehouse_id=warehouse_id)
             moves_in_qs = moves_qs.filter(quantity__gt=0)
             moves_out_qs = moves_qs.filter(quantity__lt=0)
         else:
+            stocks_qs = p.stocks.all()
             moves_qs = p.stock_moves.all()
             moves_in_qs = p.stock_moves.filter(quantity__gt=0)
             moves_out_qs = p.stock_moves.filter(quantity__lt=0)
 
-        stock_qty = moves_qs.aggregate(total=Sum("quantity"))["total"] or 0
+        stock_qty = stocks_qs.aggregate(total=Sum("quantity"))["total"] or 0
         moves_in = moves_in_qs.aggregate(total=Sum("quantity"))["total"] or 0
         moves_out = abs(moves_out_qs.aggregate(total=Sum("quantity"))["total"] or 0)
 
@@ -579,13 +581,13 @@ class StockMoveSelector:
     @staticmethod
     def stock_level(product_id: int, warehouse_id: int) -> str:
         from decimal import Decimal
-        from django.db.models import Sum
-        from .models import StockMove
+        from .models import Stock
 
-        total = StockMove.objects.filter(
+        stock = Stock.objects.filter(
             product_id=product_id,
             warehouse_id=warehouse_id,
-        ).aggregate(total=Sum("quantity"))["total"] or Decimal("0.0")
+        ).first()
+        total = stock.quantity if stock else Decimal("0.0")
         return str(total)
     @staticmethod
     def get_related_documents(obj):
