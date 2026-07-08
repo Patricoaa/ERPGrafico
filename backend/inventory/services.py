@@ -50,6 +50,68 @@ class SubscriptionService:
         return subscription
 
 
+class InventoryService:
+    @staticmethod
+    def recalcular_stock(product_id: int, warehouse_id: int):
+        """
+        Recalcula el stock total a partir del histórico de StockMove y actualiza la entidad Stock.
+        """
+        from django.db.models import Sum
+        from .models import Stock, StockMove
+        
+        # Calculate in memory to avoid N+1 and complex DB locks
+        in_qty = StockMove.objects.filter(
+            product_id=product_id, 
+            warehouse_id=warehouse_id, 
+            move_type=StockMove.Type.IN
+        ).aggregate(total=Sum('quantity'))['total'] or Decimal('0')
+        
+        out_qty = StockMove.objects.filter(
+            product_id=product_id, 
+            warehouse_id=warehouse_id, 
+            move_type=StockMove.Type.OUT
+        ).aggregate(total=Sum('quantity'))['total'] or Decimal('0')
+        
+        adj_qty = StockMove.objects.filter(
+            product_id=product_id, 
+            warehouse_id=warehouse_id, 
+            move_type=StockMove.Type.ADJUSTMENT
+        ).aggregate(total=Sum('quantity'))['total'] or Decimal('0')
+
+        total_qty = in_qty - out_qty + adj_qty
+
+        stock, _ = Stock.objects.get_or_create(
+            product_id=product_id,
+            warehouse_id=warehouse_id,
+            defaults={"quantity": total_qty}
+        )
+        if stock.quantity != total_qty:
+            stock.quantity = total_qty
+            stock.save(update_fields=['quantity', 'updated_at'])
+            
+        return stock
+
+    @staticmethod
+    def actualizar_stock(product_id: int, warehouse_id: int, quantity_change: Decimal):
+        """
+        Actualiza el stock sumando (o restando) la cantidad indicada de manera atómica.
+        """
+        from django.db.models import F
+        from .models import Stock
+        
+        stock, created = Stock.objects.get_or_create(
+            product_id=product_id,
+            warehouse_id=warehouse_id,
+            defaults={"quantity": quantity_change}
+        )
+        if not created:
+            stock.quantity = F('quantity') + quantity_change
+            stock.save(update_fields=['quantity', 'updated_at'])
+            stock.refresh_from_db(fields=['quantity'])
+            
+        return stock
+
+
 class StockService:
     @staticmethod
     @transaction.atomic
