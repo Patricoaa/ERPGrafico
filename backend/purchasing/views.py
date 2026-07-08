@@ -21,7 +21,8 @@ from .serializers import (
     PurchaseReturnSerializer,
     WritePurchaseOrderSerializer,
 )
-from .selectors import PurchaseOrderSelector
+from .filters import PurchaseReceiptFilter
+from .selectors import PurchaseOrderSelector, PurchaseReceiptSelector
 from .services import PurchasingService
 
 
@@ -141,9 +142,6 @@ class PurchaseOrderViewSet(NoDestroyModelMixin, viewsets.ModelViewSet, AuditHist
     @action(detail=True, methods=["get"])
     def cancel_impact(self, request, pk=None):
         """Preview what will happen when cancelling this purchase order."""
-from .filters import PurchaseReceiptFilter
-from .selectors import PurchaseOrderSelector, PurchaseReceiptSelector
-
         impact = PurchaseOrderSelector.get_cancel_impact(self.get_object())
         return Response(impact)
 
