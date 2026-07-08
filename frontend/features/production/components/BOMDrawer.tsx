@@ -427,6 +427,7 @@ export function BOMDrawer({
                                                             placeholder="Seleccionar producto..."
                                                             allowedTypes={['MANUFACTURABLE']}
                                                             shouldResolveVariants={false}
+                                                            className="!rounded-sm"
                                                         />
                                                     </div>
 
@@ -457,7 +458,7 @@ export function BOMDrawer({
                                                     )}
                                                 </div>
                                             ) : (
-                                                <div className="flex items-center gap-3 bg-primary/[0.02] p-2 rounded-md border border-primary/10 h-[2.5rem]">
+                                                <div className="flex items-center gap-3 bg-primary/[0.02] p-2 rounded-sm border border-primary/10 h-[2.5rem]">
                                                     <div className="h-7 w-7 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
                                                         <Box className="h-3.5 w-3.5 text-primary" />
                                                     </div>

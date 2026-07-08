@@ -40,6 +40,7 @@ export function createDomainCardView(
     isHubOpen?: boolean
     emptyState?: DataTableEmptyState
     isFiltered?: boolean
+    hasBulkActions?: boolean
   }
 ) {
   const DomainCardView = (table: ReactTable<Record<string, unknown>>) => {
@@ -59,6 +60,8 @@ export function createDomainCardView(
         })
       )
     }
+    const isAnySelected = table.getSelectedRowModel().rows.length > 0
+
     return React.createElement(
       "div",
       { className: "grid gap-3 pt-1" },
@@ -69,8 +72,18 @@ export function createDomainCardView(
           data: row.original,
           isSelected: options.isSelected?.(row.original) ?? false,
           isHubOpen: options.isHubOpen ?? false,
-          onClick: () => options.onRowClick?.(row.original),
+          onClick: () => {
+            if (options.hasBulkActions && isAnySelected) {
+              row.toggleSelected()
+            } else {
+              options.onRowClick?.(row.original)
+            }
+          },
           visibleColumns: table.getState().columnVisibility,
+          selectable: options.hasBulkActions,
+          checked: row.getIsSelected(),
+          onCheckedChange: (checked) => row.toggleSelected(checked),
+          isAnySelected,
         })
       )
     )
@@ -92,11 +105,12 @@ export function createDomainCardView(
 export function createEntityCardView(
   entityLabel: string,
   options: {
-    renderCard: (data: Record<string, unknown>, row: Row<Record<string, unknown>>) => React.ReactNode
+    renderCard: (data: Record<string, unknown>, row: Row<Record<string, unknown>>, table?: ReactTable<Record<string, unknown>>) => React.ReactNode
     gridLayout?: 'single-column' | 'multi-column'
     emptyState?: DataTableEmptyState
     isFiltered?: boolean
     skeleton?: Pick<EntityCardSkeletonProps, 'showHeader' | 'showBody' | 'showFooter'>
+    hasBulkActions?: boolean
   }
 ) {
   const policy = ENTITY_REGISTRY[entityLabel]?.viewPolicy
@@ -123,13 +137,36 @@ export function createEntityCardView(
         })
       )
     }
+    const isAnySelected = table.getSelectedRowModel().rows.length > 0
+
     return React.createElement(
       "div",
       { className: gridClass },
       rows.map((row) => {
-        const node = options.renderCard(row.original, row)
+        const node = options.renderCard(row.original, row, table)
         if (React.isValidElement(node)) {
-          return React.cloneElement(node, { key: (row.original as Record<string, unknown>).id as React.Key ?? row.id })
+          const originalOnClick = (node.props as any).onClick
+          const isChecked = row.getIsSelected()
+
+          const injectedProps: Record<string, any> = {
+            key: (row.original as Record<string, unknown>).id as React.Key ?? row.id
+          }
+
+          if (options.hasBulkActions) {
+            injectedProps.selectable = true
+            injectedProps.checked = isChecked
+            injectedProps.onCheckedChange = (checked: boolean) => row.toggleSelected(checked)
+            injectedProps.isAnySelected = isAnySelected
+            injectedProps.onClick = () => {
+              if (isAnySelected) {
+                row.toggleSelected()
+              } else if (originalOnClick) {
+                originalOnClick()
+              }
+            }
+          }
+
+          return React.cloneElement(node, injectedProps)
         }
         return node
       })
@@ -141,7 +178,7 @@ export function createEntityCardView(
 
 export function createCardGroupView<TData>(
   options: {
-    renderCard: (data: TData) => React.ReactNode
+    renderCard: (data: TData, row?: Row<TData>, table?: ReactTable<TData>) => React.ReactNode
     cardGroupBy: {
       field: string
       sort?: 'asc' | 'desc'
@@ -152,6 +189,7 @@ export function createCardGroupView<TData>(
     gridLayout?: "single-column" | "multi-column"
     emptyState?: DataTableEmptyState
     isFiltered?: boolean
+    hasBulkActions?: boolean
   },
 ) {
   const {
@@ -205,6 +243,8 @@ export function createCardGroupView<TData>(
       }, cardGroupBy.aggregators)
     }
 
+    const isAnySelected = table.getSelectedRowModel().rows.length > 0
+
     return React.createElement(
       "div",
       { className: "space-y-1" },
@@ -240,9 +280,30 @@ export function createCardGroupView<TData>(
             "div",
             { className: innerGridClass },
             group.items.map((item) => {
-              const node = renderCard(item)
+              const row = rows.find(r => (r.original as Record<string, unknown>).id === (item as Record<string, unknown>).id)
+              const node = renderCard(item, row, table)
               if (React.isValidElement(node)) {
-                return React.cloneElement(node, { key: (item as Record<string, unknown>).id as React.Key })
+                const originalOnClick = (node.props as any).onClick
+                const injectedProps: Record<string, any> = {
+                  key: (item as Record<string, unknown>).id as React.Key,
+                }
+
+                if (options.hasBulkActions && row) {
+                  const isChecked = row.getIsSelected()
+                  injectedProps.selectable = true
+                  injectedProps.checked = isChecked
+                  injectedProps.onCheckedChange = (checked: boolean) => row.toggleSelected(checked)
+                  injectedProps.isAnySelected = isAnySelected
+                  injectedProps.onClick = () => {
+                    if (isAnySelected) {
+                      row.toggleSelected()
+                    } else if (originalOnClick) {
+                      originalOnClick()
+                    }
+                  }
+                }
+
+                return React.cloneElement(node, injectedProps)
               }
               return node
             }),

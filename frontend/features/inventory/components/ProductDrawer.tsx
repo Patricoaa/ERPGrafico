@@ -281,18 +281,18 @@ export function ProductDrawer({ open, onOpenChange, initialData, onSuccess, lock
                     code: initialData.code || "",
                     internal_code: initialData.internal_code || "",
                     name: initialData.name || "",
-                    category: typeof initialData.category === 'object' ? String(initialData.category.id) : String(initialData.category || ""),
+                    category: getId(initialData.category),
                     product_type: initialData.product_type || "STORABLE",
                     sale_price: Number(initialData.sale_price) || 0,
                     sale_price_gross: Number(initialData.sale_price_gross) || 0,
                     is_dynamic_pricing: initialData.is_dynamic_pricing ?? false,
-                    uom: typeof initialData.uom === 'object' ? String(initialData.uom.id) : String(initialData.uom || ""),
-                    sale_uom: typeof initialData.sale_uom === 'object' ? String(initialData.sale_uom.id) : String(initialData.sale_uom || initialData.uom || ""),
-                    purchase_uom: typeof initialData.purchase_uom === 'object' ? String(initialData.purchase_uom.id) : String(initialData.purchase_uom || initialData.uom || ""),
+                    uom: getId(initialData.uom),
+                    sale_uom: getId(initialData.sale_uom) || getId(initialData.uom),
+                    purchase_uom: getId(initialData.purchase_uom) || getId(initialData.uom),
                     allowed_sale_uoms: (initialData.allowed_sale_uoms && initialData.allowed_sale_uoms.length > 0)
-                        ? initialData.allowed_sale_uoms.map(u => typeof u === 'object' ? String(u.id) : String(u))
+                        ? initialData.allowed_sale_uoms.map(u => getId(u))
                         : (initialData.uom ? [getId(initialData.uom)] : []),
-                    receiving_warehouse: typeof initialData.receiving_warehouse === 'object' ? String(initialData.receiving_warehouse.id) : String(initialData.receiving_warehouse || ""),
+                    receiving_warehouse: getId(initialData.receiving_warehouse),
                     track_inventory: initialData.track_inventory ?? true,
                     can_be_sold: initialData.can_be_sold ?? true,
                     can_be_purchased: initialData.can_be_purchased ?? true,
@@ -338,13 +338,13 @@ export function ProductDrawer({ open, onOpenChange, initialData, onSuccess, lock
                     payment_day: initialData.payment_day || undefined,
                     payment_interval_days: initialData.payment_interval_days || undefined,
                     default_invoice_type: initialData.default_invoice_type || undefined,
-                    subscription_supplier: typeof initialData.subscription_supplier === 'object' ? String(initialData.subscription_supplier.id) : String(initialData.subscription_supplier || ""),
+                    subscription_supplier: getId(initialData.subscription_supplier),
                     subscription_amount: initialData.subscription_amount || undefined,
                     subscription_start_date: initialData.subscription_start_date || "",
                     auto_activate_subscription: initialData.auto_activate_subscription ?? true,
                     is_indefinite: initialData.is_indefinite ?? true,
                     contract_end_date: initialData.contract_end_date || "",
-                    preferred_supplier: typeof initialData.preferred_supplier === 'object' ? String(initialData.preferred_supplier.id) : String(initialData.preferred_supplier || ""),
+                    preferred_supplier: getId(initialData.preferred_supplier),
                 } as Partial<ProductFormValues>)
                 setImagePreview(resolveMediaUrl(initialData.image) || null)
             } else {
