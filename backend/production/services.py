@@ -958,6 +958,23 @@ class WorkOrderService:
                 total_material_cost += mat.quantity_planned * service_cost
                 continue
 
+        from inventory.models import InventoryDocument, InventoryDocumentDetail
+        from inventory.services import InventoryService
+
+        doc_inv = InventoryDocument.objects.create(
+            document_type=InventoryDocument.Type.PRODUCTION,
+            status=InventoryDocument.Status.DRAFT,
+            date=timezone.now().date(),
+            reference=f"Producción {EntityPrefix.WORK_ORDER}-{work_order.number}"
+        )
+        details_to_create = []
+        mat_consumptions_data = []
+
+        # 1. Process Material Consumption
+        for mat in work_order.materials.all():
+            if not mat.component:
+                continue
+
             # Convert quantity from planned UoM to component base UoM
             base_comp_qty = UoMService.convert_quantity(
                 mat.quantity_planned, from_uom=mat.uom, to_uom=mat.component.uom
@@ -976,25 +993,19 @@ class WorkOrderService:
                     f"Requerido: {base_comp_qty} {mat.component.uom.name}"
                 )
 
-            move = StockMove.objects.create(
-                product=mat.component,
-                warehouse=work_order.warehouse,
-                uom=mat.component.uom,
-                quantity=-base_comp_qty,  # Consumption in base units
-                move_type=StockMove.Type.OUT,
-                description=f"Consumo producción {EntityPrefix.WORK_ORDER}-{work_order.number}",
+            details_to_create.append(
+                InventoryDocumentDetail(
+                    document=doc_inv,
+                    product=mat.component,
+                    warehouse=work_order.warehouse,
+                    quantity=-base_comp_qty,  # Consumption in base units
+                    unit_cost=mat.component.cost_price
+                )
             )
+            mat_consumptions_data.append((mat, base_comp_qty))
+
             mat.quantity_consumed = mat.quantity_planned  # We consume what was planned
             mat.save()
-
-            # Create traceability record
-            ProductionConsumption.objects.create(
-                work_order=work_order,
-                product=mat.component,
-                warehouse=work_order.warehouse,
-                quantity=base_comp_qty,
-                stock_move=move,
-            )
 
         # 2. Add finished product
         product = None
@@ -1018,6 +1029,7 @@ class WorkOrderService:
                 quantity = Decimal(str(work_order.canonical_stage_data.get("quantity", 0)))
             uom = product.uom
 
+        finished_product_created = False
         if product and product.track_inventory:
             # Convert quantity from work order/sale line UoM to product base UoM
             base_qty = UoMService.convert_quantity(quantity, from_uom=uom, to_uom=product.uom)
@@ -1044,14 +1056,32 @@ class WorkOrderService:
                     product.cost_price = new_wac.quantize(Decimal("0.01"))
                     product.save()
 
-            StockMove.objects.create(
-                product=product,
-                warehouse=work_order.warehouse,
-                uom=product.uom,
-                quantity=base_qty,
-                move_type=StockMove.Type.IN,
-                description=f"Entrada producción {EntityPrefix.WORK_ORDER}-{work_order.number}",
-            )
+                details_to_create.append(
+                    InventoryDocumentDetail(
+                        document=doc_inv,
+                        product=product,
+                        warehouse=work_order.warehouse,
+                        quantity=base_qty,
+                        unit_cost=unit_production_cost
+                    )
+                )
+                finished_product_created = True
+
+        if details_to_create:
+            InventoryDocumentDetail.objects.bulk_create(details_to_create)
+            doc_inv, generated_moves = InventoryService.confirmar_documento(doc_inv)
+            
+            # Create traceability records for materials
+            for (mat, base_comp_qty), move in zip(mat_consumptions_data, generated_moves[:len(mat_consumptions_data)]):
+                ProductionConsumption.objects.create(
+                    work_order=work_order,
+                    product=mat.component,
+                    warehouse=work_order.warehouse,
+                    quantity=base_comp_qty,
+                    stock_move=move,
+                )
+        else:
+            doc_inv.delete()
 
         # 3. Generate Accounting Entry for Production
         if product and product.strategy.requires_manufacturing_profile:

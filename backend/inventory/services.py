@@ -113,32 +113,36 @@ class InventoryService:
 
     @staticmethod
     @transaction.atomic
-    def confirmar_documento(document, user=None):
+    def confirmar_documento(document, user=None, journal_entry=None):
         from .models import InventoryDocument, StockMove
         
         if document.status not in [InventoryDocument.Status.DRAFT, InventoryDocument.Status.APPROVED]:
             raise ValidationError("Solo se pueden confirmar documentos en estado borrador o aprobado.")
             
+        generated_moves = []
         for detail in document.details.select_related('product', 'warehouse', 'source_warehouse'):
             if document.document_type == InventoryDocument.Type.TRANSFER:
                 if not detail.source_warehouse:
                     raise ValidationError("Las transferencias requieren una bodega de origen.")
                 # Source OUT
-                StockMove.objects.create(
+                out_move = StockMove.objects.create(
                     product=detail.product,
                     warehouse=detail.source_warehouse,
                     quantity=detail.quantity,
                     move_type=StockMove.Type.OUT,
-                    description=f"Transferencia Salida Doc: {document.reference or document.id}"
+                    description=f"Transferencia Salida Doc: {document.reference or document.id}",
+                    journal_entry=journal_entry
                 )
                 # Dest IN
-                StockMove.objects.create(
+                in_move = StockMove.objects.create(
                     product=detail.product,
                     warehouse=detail.warehouse,
                     quantity=detail.quantity,
                     move_type=StockMove.Type.IN,
-                    description=f"Transferencia Entrada Doc: {document.reference or document.id}"
+                    description=f"Transferencia Entrada Doc: {document.reference or document.id}",
+                    journal_entry=journal_entry
                 )
+                generated_moves.extend([out_move, in_move])
             else:
                 if document.document_type == InventoryDocument.Type.RECEIPT:
                     move_type = StockMove.Type.IN
@@ -147,25 +151,28 @@ class InventoryService:
                     move_type = StockMove.Type.OUT
                     qty = detail.quantity
                 else: # ADJUSTMENT, PRODUCTION
-                    # For adjustments we check if it's negative or positive directly on the payload or assume positive IN and negative OUT, but here it's explicit.
-                    # Since we don't have enough logic for all cases, we default to ADJUSTMENT type.
-                    move_type = StockMove.Type.ADJUSTMENT
+                    if document.document_type == InventoryDocument.Type.PRODUCTION:
+                        move_type = StockMove.Type.IN if detail.quantity >= 0 else StockMove.Type.OUT
+                    else:
+                        move_type = StockMove.Type.ADJUSTMENT
                     qty = detail.quantity
                     
-                StockMove.objects.create(
+                move = StockMove.objects.create(
                     product=detail.product,
                     warehouse=detail.warehouse,
                     quantity=qty,
                     move_type=move_type,
                     unit_cost=detail.unit_cost,
-                    description=f"{document.get_document_type_display()} Doc: {document.reference or document.id}"
+                    description=f"{document.get_document_type_display()} Doc: {document.reference or document.id}",
+                    journal_entry=journal_entry
                 )
+                generated_moves.append(move)
                 
         document.status = InventoryDocument.Status.CONFIRMED
         if user:
             document.confirmed_by = user
         document.save(update_fields=['status', 'confirmed_by'])
-        return document
+        return document, generated_moves
 
     @staticmethod
     @transaction.atomic
@@ -402,15 +409,13 @@ class StockService:
         )
         
         # We confirm the document which creates the StockMove natively
-        InventoryService.confirmar_documento(doc)
+        doc, generated_moves = InventoryService.confirmar_documento(doc)
         
         # Get the generated move for accounting linking (temporarily to not break external things that expect a StockMove returned)
-        from .models import StockMove
-        move = StockMove.objects.filter(
-            product=product, warehouse=warehouse, quantity=quantity, move_type=StockMove.Type.ADJUSTMENT
-        ).order_by('-id').first()
+        move = generated_moves[0] if generated_moves else None
         
         if not move: # Fallback if move_type was something else
+            from .models import StockMove
             move = StockMove.objects.filter(product=product, warehouse=warehouse).order_by('-id').first()
 
         # 3. Accounting Logic
