@@ -1339,6 +1339,73 @@ class StockMove(models.Model):
         super().delete(*args, **kwargs)
 
 
+class InventoryDocument(TimeStampedModel):
+    class Type(models.TextChoices):
+        RECEIPT = "RECEIPT", _("Recepción")
+        DELIVERY = "DELIVERY", _("Entrega")
+        TRANSFER = "TRANSFER", _("Transferencia")
+        ADJUSTMENT = "ADJUSTMENT", _("Ajuste")
+        PRODUCTION = "PRODUCTION", _("Producción")
+
+    class Status(models.TextChoices):
+        DRAFT = "DRAFT", _("Borrador")
+        APPROVED = "APPROVED", _("Aprobado")
+        CONFIRMED = "CONFIRMED", _("Confirmado")
+        CANCELLED = "CANCELLED", _("Anulado")
+
+    document_type = models.CharField(_("Tipo"), max_length=20, choices=Type.choices)
+    status = models.CharField(_("Estado"), max_length=20, choices=Status.choices, default=Status.DRAFT)
+    date = models.DateField(_("Fecha"), default=get_current_date)
+    partner = models.ForeignKey(
+        "contacts.Contact", 
+        on_delete=models.PROTECT, 
+        null=True, 
+        blank=True,
+        related_name="inventory_documents"
+    )
+    reference = models.CharField(_("Referencia"), max_length=100, blank=True)
+    notes = models.TextField(_("Notas"), blank=True)
+    
+    # Audit fields
+    created_by = models.ForeignKey("core.User", on_delete=models.SET_NULL, null=True, blank=True, related_name="created_inventory_docs")
+    confirmed_by = models.ForeignKey("core.User", on_delete=models.SET_NULL, null=True, blank=True, related_name="confirmed_inventory_docs")
+    
+    history = HistoricalRecords()
+
+    class Meta:
+        verbose_name = _("Documento de Inventario")
+        verbose_name_plural = _("Documentos de Inventario")
+        ordering = ["-id"]
+
+    def __str__(self):
+        return f"{self.get_document_type_display()} {self.id}"
+
+
+class InventoryDocumentDetail(models.Model):
+    document = models.ForeignKey(InventoryDocument, on_delete=models.CASCADE, related_name="details")
+    product = models.ForeignKey(Product, on_delete=models.PROTECT, related_name="document_details")
+    warehouse = models.ForeignKey(Warehouse, on_delete=models.PROTECT, related_name="document_details")
+    quantity = models.DecimalField(_("Cantidad"), max_digits=12, decimal_places=4)
+    unit_cost = models.DecimalField(_("Costo Unitario"), max_digits=12, decimal_places=2, default=0)
+    
+    # Optional Source Warehouse for Transfers
+    source_warehouse = models.ForeignKey(
+        Warehouse, 
+        on_delete=models.PROTECT, 
+        related_name="document_source_details", 
+        null=True, 
+        blank=True,
+        help_text=_("Solo aplicable para transferencias. Bodega de origen.")
+    )
+
+    class Meta:
+        verbose_name = _("Detalle de Documento")
+        verbose_name_plural = _("Detalles de Documento")
+
+    def __str__(self):
+        return f"{self.quantity} x {self.product.name}"
+
+
 class PricingRule(models.Model):
     class RuleType(models.TextChoices):
         FIXED = "FIXED", _("Precio Fijo (Unitario)")
