@@ -363,11 +363,21 @@ class SaleDeliverySerializer(serializers.ModelSerializer):
     warehouse_name = serializers.CharField(source="warehouse.name", read_only=True)
     customer_name = serializers.CharField(source="sale_order.customer.name", read_only=True)
     customer_id = serializers.IntegerField(source="sale_order.customer_id", read_only=True)
+    delivery_type = serializers.SerializerMethodField()
+    related_note_display = serializers.SerializerMethodField()
 
     class Meta:
         model = SaleDelivery
         fields = "__all__"
         read_only_fields = ["id", "number", "status"]
+
+    def get_delivery_type(self, obj):
+        return "debit_note" if obj.related_note_id else "normal"
+
+    def get_related_note_display(self, obj):
+        if obj.related_note_id and obj.related_note:
+            return obj.related_note.display_id
+        return None
 
 
 class SaleReturnLineSerializer(serializers.ModelSerializer):

@@ -551,7 +551,7 @@ export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
     description: 'Ingreso de mercadería comprada',
     subtitleTemplate: '{supplier_name}',
     shortTemplate: 'REC-{number}',
-    listUrl: '/purchasing/orders',
+    listUrl: '/purchasing/receipts',
     detailUrlPattern: '/purchasing/receipts/{id}',
     partnerField: 'supplier_name',
   },

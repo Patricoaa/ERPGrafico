@@ -150,3 +150,15 @@ class DraftCartSelector:
         return DraftCart.objects.filter(pos_session_id=pos_session_id).select_related(
             "customer", "created_by", "last_modified_by", "pos_session", "locked_by"
         )
+
+
+class SaleDeliverySelector:
+    @staticmethod
+    def get_base_queryset():
+        from .models import SaleDelivery
+
+        return SaleDelivery.objects.select_related(
+            "sale_order__customer", "warehouse", "related_note"
+        ).prefetch_related(
+            "lines__product", "lines__uom"
+        ).all()

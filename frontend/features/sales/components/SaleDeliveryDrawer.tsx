@@ -1,30 +1,50 @@
 'use client'
 
 import React from 'react'
-import { Drawer, StatusBadge, SkeletonShell } from '@/components/shared'
+import { Chip, Drawer, StatusBadge, SkeletonShell } from '@/components/shared'
 import { useDrawerIdentity, usePrintableDrawer } from '@/features/_shared/drawer'
 import { formatPlainDate } from '@/lib/utils'
 import { PrintableLayout } from '@/features/_shared'
 import { useSaleOrder } from '@/features/sales/hooks/useSalesOrders'
+import { useSaleDelivery } from '@/features/sales/hooks/useSaleDeliveries'
 import type { TransactionDrawerProps } from '@/features/_shared'
 import { formDrawerWidth } from '@/lib/form-widths'
 
 interface SaleDeliveryDrawerProps extends TransactionDrawerProps {
     deliveryId?: number
-    /** The sale order that this delivery belongs to */
     saleOrderId?: number
 }
 
 export function SaleDeliveryDrawer({ id, open, onOpenChange, saleOrderId, deliveryId }: SaleDeliveryDrawerProps) {
     const entityId = saleOrderId ?? null
-    const { saleOrder: order, isLoading } = useSaleOrder(entityId)
+    const entityOpen = open && !!entityId ? entityId : null
+    const { saleOrder: order, isLoading: orderLoading } = useSaleOrder(entityOpen)
     const { printRef, handlePrint } = usePrintableDrawer()
 
-    const delivery = order?.related_documents?.deliveries?.find(d => d.id === (id ?? deliveryId))
-    const deliveryNumber = delivery?.number ?? `#${id ?? deliveryId}`
-    const partnerName = order?.customer_name ?? ''
+    const deliveryId_ = id ?? deliveryId
 
-    const identity = useDrawerIdentity('sales.saledelivery', 'view', delivery, {
+    const { data: directDelivery, isLoading: directLoading } = useSaleDelivery(
+        open && !entityId ? (deliveryId_ ?? null) : null
+    )
+
+    const rawDelivery: Record<string, unknown> | undefined = entityId
+        ? order?.related_documents?.deliveries?.find((d: Record<string, unknown>) => d.id === deliveryId_)
+        : (directDelivery as Record<string, unknown> | undefined)
+
+    const isLoading = entityId ? orderLoading : directLoading
+
+    const d = (key: string): string | undefined => rawDelivery?.[key] as string | undefined
+
+    const deliveryNumber = d('number') ?? `#${deliveryId_}`
+    const partnerName = d('customer_name') ?? order?.customer_name ?? ''
+    const relatedNoteDisplay = d('related_note_display')
+    const deliveryType = d('delivery_type')
+    const date = d('delivery_date') ?? d('date')
+    const status = d('status') ?? ''
+    const saleOrderNumber = d('sale_order_number') ?? order?.number ?? '-'
+    const warehouseName = d('warehouse_name') ?? '-'
+
+    const identity = useDrawerIdentity('sales.saledelivery', 'view', rawDelivery, {
         overrideTitle: deliveryNumber,
         onPrint: handlePrint,
     })
@@ -40,15 +60,15 @@ export function SaleDeliveryDrawer({ id, open, onOpenChange, saleOrderId, delive
                 <div className="text-[9px] space-y-1 mb-2">
                     <div className="flex justify-between">
                         <span>Orden:</span>
-                        <span>{order?.number ?? '-'}</span>
+                        <span>{saleOrderNumber}</span>
                     </div>
                     <div className="flex justify-between">
                         <span>Fecha:</span>
-                        <span>{formatPlainDate(delivery?.date)}</span>
+                        <span>{date ? formatPlainDate(date) : '-'}</span>
                     </div>
                     <div className="flex justify-between">
                         <span>Estado:</span>
-                        <span>{delivery?.status ?? '-'}</span>
+                        <span>{status}</span>
                     </div>
                 </div>
             </PrintableLayout>
@@ -65,15 +85,24 @@ export function SaleDeliveryDrawer({ id, open, onOpenChange, saleOrderId, delive
             >
                 <SkeletonShell isLoading={isLoading} ariaLabel="Cargando despacho">
                     <div className="p-4 space-y-4">
-                        <StatusBadge status={delivery?.status ?? ''} />
+                        {deliveryType === 'debit_note' && (
+                            <div className="flex items-center gap-2">
+                                <Chip intent="warning" size="sm">Nota Débito</Chip>
+                                {relatedNoteDisplay && (
+                                    <span className="text-sm text-muted-foreground">ND: {relatedNoteDisplay}</span>
+                                )}
+                            </div>
+                        )}
+                        <StatusBadge status={status} />
                         <div className="text-sm text-muted-foreground">
-                            <p>Orden asociada: {order?.number ?? '-'}</p>
+                            <p>Orden asociada: {saleOrderNumber}</p>
                             <p>Cliente: {partnerName}</p>
+                            <p>Bodega: {warehouseName}</p>
                         </div>
-                        {delivery?.date && (
+                        {date && (
                             <p className="text-sm">
                                 <span className="text-muted-foreground">Fecha: </span>
-                                {formatPlainDate(delivery.date)}
+                                {formatPlainDate(date)}
                             </p>
                         )}
                     </div>

@@ -234,11 +234,21 @@ class PurchaseReceiptSerializer(serializers.ModelSerializer):
     warehouse_name = serializers.CharField(source="warehouse.name", read_only=True)
     supplier_name = serializers.CharField(source="purchase_order.supplier.name", read_only=True)
     supplier_id = serializers.IntegerField(source="purchase_order.supplier_id", read_only=True)
+    receipt_type = serializers.SerializerMethodField()
+    related_note_display = serializers.SerializerMethodField()
 
     class Meta:
         model = PurchaseReceipt
         fields = "__all__"
         read_only_fields = ["id", "number", "status"]
+
+    def get_receipt_type(self, obj):
+        return "debit_note" if obj.related_note_id else "normal"
+
+    def get_related_note_display(self, obj):
+        if obj.related_note_id and obj.related_note:
+            return obj.related_note.display_id
+        return None
 
 
 class PurchaseReturnLineSerializer(serializers.ModelSerializer):

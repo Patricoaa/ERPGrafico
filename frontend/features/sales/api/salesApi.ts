@@ -2,7 +2,8 @@ import api from '@/lib/api'
 import type { SaleOrder, SaleOrderFilters, SaleOrderPayload, SaleNote } from '../types'
 import type { SaleNoteFilters } from '../hooks/useSalesOrders'
 import { type Invoice } from '@/features/billing'
-import { toPage, type Page } from '@/lib/pagination'
+import { toPage } from '@/lib/pagination'
+import type { Page, PageParams } from '@/lib/pagination'
 
 /**
  * Centralized API service for sales operations
@@ -91,6 +92,35 @@ export const salesApi = {
         const { data } = await api.post<SaleOrder>(`/sales/orders/${orderId}/register_note/`, payload, {
             headers: { 'Content-Type': 'multipart/form-data' as const },
         })
+        return data
+    },
+
+    /**
+     * Fetch deliveries (paginated, standalone list)
+     */
+    getDeliveriesPaginated: async (filters?: Record<string, unknown>): Promise<Page<Record<string, unknown>>> => {
+        const params = new URLSearchParams()
+        const page = Number(filters?.page ?? 1)
+        const page_size = Number(filters?.page_size ?? 50)
+        if (filters?.page) params.append('page', String(filters.page))
+        if (filters?.page_size) params.append('page_size', String(filters.page_size))
+        if (filters?.status) params.append('status', String(filters.status))
+        if (filters?.date_after) params.append('date_after', String(filters.date_after))
+        if (filters?.date_before) params.append('date_before', String(filters.date_before))
+        if (filters?.customer_name) params.append('customer_name', String(filters.customer_name))
+        if (filters?.sale_order_number) params.append('sale_order_number', String(filters.sale_order_number))
+        if (filters?.warehouse_id) params.append('warehouse_id', String(filters.warehouse_id))
+        if (filters?.search) params.append('search', String(filters.search))
+        if (filters?.note_type) params.append('note_type', String(filters.note_type))
+        const { data } = await api.get('/sales/deliveries/', { params })
+        return toPage<Record<string, unknown>>(data, page, page_size)
+    },
+
+    /**
+     * Fetch a single delivery by id
+     */
+    getDelivery: async (id: number): Promise<Record<string, unknown>> => {
+        const { data } = await api.get(`/sales/deliveries/${id}/`)
         return data
     },
 
