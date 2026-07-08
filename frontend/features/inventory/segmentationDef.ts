@@ -47,6 +47,39 @@ export const subscriptionSegDef: SegmentationDefinition = {
   ],
 }
 
+export const stockReportSegDef: SegmentationDefinition = {
+  segments: [
+    {
+      key: 'stock_qty',
+      label: 'Stock (Físico)',
+      type: 'range',
+      serverParamFrom: 'stock_qty_from',
+      serverParamTo: 'stock_qty_to',
+    },
+    {
+      key: 'qty_available',
+      label: 'Disponible',
+      type: 'range',
+      serverParamFrom: 'qty_available_from',
+      serverParamTo: 'qty_available_to',
+    },
+    {
+      key: 'qty_reserved',
+      label: 'Reservado',
+      type: 'range',
+      serverParamFrom: 'qty_reserved_from',
+      serverParamTo: 'qty_reserved_to',
+    },
+    {
+      key: 'total_value',
+      label: 'Valorización',
+      type: 'range',
+      serverParamFrom: 'total_value_from',
+      serverParamTo: 'total_value_to',
+    },
+  ],
+}
+
 export const productSegDef: SegmentationDefinition = {
   segments: [
     {

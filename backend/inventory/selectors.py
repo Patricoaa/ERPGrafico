@@ -196,10 +196,11 @@ def get_product_base_queryset(*, user) -> QuerySet:
     return queryset
 
 
-def get_stock_report_data() -> list[dict]:
+def get_stock_report_data(warehouse_id: int | None = None) -> list[dict]:
     """
     Raw stock report: one dict per trackable product.
     Called by stock_report action; result is Redis-cached upstream.
+    When warehouse_id is provided, quantities are scoped to that warehouse.
     """
     from decimal import Decimal
 
@@ -217,15 +218,23 @@ def get_stock_report_data() -> list[dict]:
 
     report = []
     for p in products:
-        stock_qty = p.stock_moves.aggregate(total=Sum("quantity"))["total"] or 0
-        moves_in = (
-            p.stock_moves.filter(quantity__gt=0).aggregate(total=Sum("quantity"))["total"] or 0
-        )
-        moves_out = abs(
-            p.stock_moves.filter(quantity__lt=0).aggregate(total=Sum("quantity"))["total"] or 0
-        )
+        if warehouse_id:
+            moves_qs = p.stock_moves.filter(warehouse_id=warehouse_id)
+            moves_in_qs = moves_qs.filter(quantity__gt=0)
+            moves_out_qs = moves_qs.filter(quantity__lt=0)
+        else:
+            moves_qs = p.stock_moves.all()
+            moves_in_qs = p.stock_moves.filter(quantity__gt=0)
+            moves_out_qs = p.stock_moves.filter(quantity__lt=0)
+
+        stock_qty = moves_qs.aggregate(total=Sum("quantity"))["total"] or 0
+        moves_in = moves_in_qs.aggregate(total=Sum("quantity"))["total"] or 0
+        moves_out = abs(moves_out_qs.aggregate(total=Sum("quantity"))["total"] or 0)
+
+        qty_reserved = float(p.qty_reserved)
         unit_cost = float(p.cost_price) if stock_qty > 0 else 0.0
         total_value = float(stock_qty * Decimal(str(unit_cost)))
+        qty_available = float(stock_qty) - qty_reserved
 
         report.append(
             {
@@ -233,6 +242,7 @@ def get_stock_report_data() -> list[dict]:
                 "code": p.code,
                 "internal_code": p.internal_code,
                 "name": p.name,
+                "category_id": p.category_id,
                 "category_name": p.category.name,
                 "uom_id": p.uom.id if p.uom else None,
                 "uom_category_id": p.uom.category_id if p.uom else None,
@@ -242,8 +252,8 @@ def get_stock_report_data() -> list[dict]:
                 "total_value": total_value,
                 "moves_in": float(moves_in),
                 "moves_out": float(moves_out),
-                "qty_reserved": float(p.qty_reserved),
-                "qty_available": float(p.qty_available),
+                "qty_reserved": qty_reserved,
+                "qty_available": qty_available,
             }
         )
     return report

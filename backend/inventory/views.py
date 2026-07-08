@@ -129,11 +129,19 @@ class ProductViewSet(NoDestroyModelMixin, BulkImportMixin, AuditHistory, viewset
                 detail="Demasiadas solicitudes al reporte de stock. Intente en un momento."
             )
 
+        warehouse_id = request.query_params.get("warehouse_id")
+        if warehouse_id is not None:
+            try:
+                warehouse_id = int(warehouse_id)
+            except (ValueError, TypeError):
+                warehouse_id = None
+
         data = cache_report(
             module="inventory",
             endpoint="stock_report",
+            params={"warehouse_id": warehouse_id} if warehouse_id else None,
             timeout=60,
-            generator=get_stock_report_data,
+            generator=lambda: get_stock_report_data(warehouse_id=warehouse_id),
         )
         return Response(data)
 
