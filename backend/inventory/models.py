@@ -1052,7 +1052,7 @@ class Product(models.Model):
                 component_stock = float(component.annotated_current_stock or 0.0)
             else:
                 component_stock = (
-                    component.stock_moves.aggregate(total=Sum("quantity"))["total"] or 0.0
+                    component.stocks.aggregate(total=Sum("quantity"))["total"] or 0.0
                 )
                 component_stock = float(component_stock)
 
@@ -1106,7 +1106,7 @@ class Product(models.Model):
 
         from django.db.models import Sum
 
-        return self.stock_moves.aggregate(total=Sum("quantity"))["total"] or Decimal("0.0")
+        return self.stocks.aggregate(total=Sum("quantity"))["total"] or Decimal("0.0")
 
     def get_qty_reserved(self, exclude_draft_id=None):
         """
